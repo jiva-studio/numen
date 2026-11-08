@@ -67,94 +67,128 @@ func carry[R, T any](
 	return none, &connectionport.AllFailedError{Failures: failures}
 }
 
+// rowCall is one row being called: the connection as resolved, the secrets once they are read, and the
+// operation to carry out.
+type rowCall[R, T any] struct {
+	calls    *Calls
+	resolved connection.Resolved
+	row      connectionport.Row
+	pick     func(connectionport.Provider) R
+	do       attempt[R, T]
+	secrets  map[string]string
+}
+
 func tryRow[R, T any](
 	ctx context.Context, c *Calls, row connectionport.Row, operation string, pick func(connectionport.Provider) R, do attempt[R, T],
 ) rowOutcome[T] {
-	resolved, err := c.connections.Resolve.Execute(row.ConnectionID)
-	switch {
-	case errors.Is(err, connection.ErrNotFound):
-		return skipped[T](row.ConnectionID, "connection missing")
-	case errors.Is(err, connection.ErrTypeUnavailable):
-		return skipped[T](row.ConnectionID, "type unavailable")
-	case err != nil:
+	resolved, skip, err := c.checkRow(row, operation)
+	if err != nil {
 		return rowOutcome[T]{err: err}
 	}
-	if !resolved.Declaration.HasOperation(operation) {
-		return skipped[T](resolved.Name, "this type cannot "+operation)
+	if skip != nil {
+		return rowOutcome[T]{failure: skip}
 	}
-	version := connectionVersion{id: resolved.ID, revision: resolved.Revision}
-	if cooling, isCooling := c.cooldown.get(version, c.clock.Now()); isCooling {
-		return skipped[T](resolved.Name, cooling.reason.String())
-	}
-	var secrets map[string]string
+	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do}
 	for tries := 1; ; tries++ {
-		value, err := callOnce(ctx, c, resolved, row, &secrets, pick, do)
+		value, err := call.callOnce(ctx)
 		if err == nil {
 			return rowOutcome[T]{value: value, isDone: true}
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return rowOutcome[T]{err: ctxErr}
 		}
-		var unavailable *openError
-		var stopError *connectionport.StopError
-		switch {
-		case errors.As(err, &unavailable):
-			return skipped[T](resolved.Name, connectionport.FailureReasonUnreachable.String())
-		case errors.Is(err, connection.ErrSecretMissing):
-			return skipped[T](resolved.Name, "key missing")
-		case errors.Is(err, connection.ErrKeyStore):
-			return skipped[T](resolved.Name, "key store failed")
-		case errors.Is(err, connection.ErrStaleRevision):
-			return rowOutcome[T]{err: fmt.Errorf("call %s: %w", resolved.Name, err)}
-		case errors.As(err, &stopError):
-			return rowOutcome[T]{err: &connectionport.RejectedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
+		judged := readVerdict(resolved, err)
+		if judged.isSkipped || judged.err != nil {
+			return rowOutcome[T]{failure: judged.skip, err: judged.err}
 		}
-		reason, retryAfter := readTryNext(err)
-		if tries == 1 && isRetried(reason) {
+		if tries == 1 && isRetried(judged.reason) {
 			continue
 		}
-		c.cooldown.start(version, reason, retryAfter, c.clock.Now())
+		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome[T]{
-			failure: &connectionport.Failure{ConnectionName: resolved.Name, Reason: reason.String()},
-			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: reason},
+			failure: &connectionport.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
+			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason},
 		}
 	}
 }
 
-func skipped[T any](name, reason string) rowOutcome[T] {
-	return rowOutcome[T]{failure: &connectionport.Failure{ConnectionName: name, Reason: reason}}
+// checkRow resolves the connection of a row. It returns the failure that skips the row when the
+// connection is gone, its type is not provided or lacks the operation, or it is set aside.
+func (c *Calls) checkRow(row connectionport.Row, operation string) (connection.Resolved, *connectionport.Failure, error) {
+	resolved, err := c.connections.Resolve.Execute(row.ConnectionID)
+	switch {
+	case errors.Is(err, connection.ErrNotFound):
+		return resolved, newSkip(row.ConnectionID, "connection missing"), nil
+	case errors.Is(err, connection.ErrTypeUnavailable):
+		return resolved, newSkip(row.ConnectionID, "type unavailable"), nil
+	case err != nil:
+		return resolved, nil, err
+	}
+	if !resolved.Declaration.HasOperation(operation) {
+		return resolved, newSkip(resolved.Name, "this type cannot "+operation), nil
+	}
+	version := connectionVersion{id: resolved.ID, revision: resolved.Revision}
+	if cooling, isCooling := c.cooldown.get(version, c.clock.Now()); isCooling {
+		return resolved, newSkip(resolved.Name, cooling.reason.String()), nil
+	}
+	return resolved, nil, nil
 }
 
-func readTryNext(err error) (connectionport.FailureReason, time.Duration) {
+func newSkip(name, reason string) *connectionport.Failure {
+	return &connectionport.Failure{ConnectionName: name, Reason: reason}
+}
+
+// verdict is what a failed call means for its row.
+type verdict struct {
+	isSkipped  bool
+	skip       *connectionport.Failure
+	err        error
+	reason     connectionport.FailureReason
+	retryAfter time.Duration
+}
+
+// readVerdict sorts the failure of a call: a row to skip, an error that ends the call, or a connection to
+// set aside for a reason. An error of no failure kind is a provider that could not be reached.
+func readVerdict(resolved connection.Resolved, err error) verdict {
+	var unavailable *openError
+	var stopError *connectionport.StopError
 	var tryNext *connectionport.TryNextError
-	if errors.As(err, &tryNext) {
-		return tryNext.Reason, tryNext.RetryAfter
+	switch {
+	case errors.As(err, &unavailable):
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connectionport.FailureReasonUnreachable.String())}
+	case errors.Is(err, connection.ErrSecretMissing):
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key missing")}
+	case errors.Is(err, connection.ErrKeyStore):
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key store failed")}
+	case errors.Is(err, connection.ErrStaleRevision):
+		return verdict{err: fmt.Errorf("call %s: %w", resolved.Name, err)}
+	case errors.As(err, &stopError):
+		return verdict{err: &connectionport.RejectedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
+	case errors.As(err, &tryNext):
+		return verdict{reason: tryNext.Reason, retryAfter: tryNext.RetryAfter}
 	}
-	return connectionport.FailureReasonUnreachable, 0
+	return verdict{reason: connectionport.FailureReasonUnreachable}
 }
 
 func isRetried(reason connectionport.FailureReason) bool {
 	return reason == connectionport.FailureReasonTimeout || reason == connectionport.FailureReasonUnreachable
 }
 
-func callOnce[R, T any](
-	ctx context.Context, c *Calls, resolved connection.Resolved, row connectionport.Row, secrets *map[string]string,
-	pick func(connectionport.Provider) R, do attempt[R, T],
-) (T, error) {
+func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 	var none T
-	provider, release, err := c.source.OpenProvider(ctx, resolved.PluginID)
+	provider, release, err := r.calls.source.OpenProvider(ctx, r.resolved.PluginID)
 	if err != nil {
 		return none, &openError{err: err}
 	}
 	defer release()
-	if *secrets == nil {
-		read, err := c.connections.ReadSecrets.Execute(ctx, resolved)
+	if r.secrets == nil {
+		secrets, err := r.calls.connections.ReadSecrets.Execute(ctx, r.resolved)
 		if err != nil {
 			return none, err
 		}
-		*secrets = read
+		r.secrets = secrets
 	}
-	return do(ctx, pick(provider), resolved.NewCall(*secrets, row.Model, row.Reasoning), row)
+	return r.do(ctx, r.pick(provider), r.resolved.NewCall(r.secrets, r.row.Model, r.row.Reasoning), r.row)
 }
 
 func (c *Calls) reportSetAside(rows []asideRow) {

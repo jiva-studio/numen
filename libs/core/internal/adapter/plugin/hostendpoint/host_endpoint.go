@@ -51,6 +51,8 @@ type Callers interface {
 
 type workServices interface {
 	windowServices
+	// GetModelCalls returns what carries out the operations on models, or nil when the host has none.
+	GetModelCalls() modelcallport.ModelCalls
 	GetPluginWork() pluginport.PluginWork
 	GetPluginSearch() pluginport.PluginSearch
 	GetPluginTools() PluginTools
@@ -59,8 +61,6 @@ type workServices interface {
 // Services is what the host lends the plugins that call it.
 type Services interface {
 	GetCompleter() completionport.Completer
-	// GetModelCalls returns what carries out the operations on models, or nil when the host has none.
-	GetModelCalls() modelcallport.ModelCalls
 	GetPluginVault() pluginport.PluginVault
 	GetPluginTexts() pluginport.PluginTexts
 	GetDependencies() pluginport.DependencyCatalog

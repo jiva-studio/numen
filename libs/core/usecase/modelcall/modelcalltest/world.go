@@ -217,8 +217,8 @@ type World struct {
 // first plugin, completer (complete only).
 func New() *World {
 	address := manifest.ConnectionField{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
-	key := manifest.ConnectionField{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true}
-	optionalKey := manifest.ConnectionField{Key: "apiKey", Type: "secret", Title: "API key"}
+	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
+	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
 	serverType := func(pluginID string) connectionport.Type {
 		return connectionport.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "server", Title: "Server", Operations: []string{"complete", "embed"}, Fields: []manifest.ConnectionField{address, key},
@@ -248,7 +248,7 @@ func (w *World) Add(t *testing.T, typeID, name, address, key string) connection.
 	t.Helper()
 	request := connection.CreateRequest{TypeID: typeID, Name: name, Fields: map[string]any{"baseUrl": address}}
 	if key != "" {
-		request.Secrets = map[string]string{"apiKey": key}
+		request.Secrets = map[string]string{apiKeyField: key}
 	}
 	entry, err := w.Connections.Create.Execute(t.Context(), request)
 	if err != nil {
@@ -324,3 +324,5 @@ func (w *World) SetAvailable(pluginID string, isAvailable bool) {
 		}
 	}
 }
+
+const apiKeyField = "apiKey"

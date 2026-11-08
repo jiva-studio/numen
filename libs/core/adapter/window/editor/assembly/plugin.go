@@ -37,8 +37,6 @@ type pluginSecretAssembly interface {
 	OpenSecrets() *secret.Secrets
 	// OpenConnections is the use cases on the connections, and nil for an installation with no plugin host.
 	OpenConnections() *connection.Connections
-	// OpenModelLists is the models and reasoning levels of a connection, and nil for an installation with no plugin host.
-	OpenModelLists() *modellist.Lists
 	GetPluginCommands() plugincommand.Commands
 	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
 	OpenChooseTabKind() *tabkind.Choose
@@ -51,6 +49,12 @@ type pluginWorkAssembly interface {
 	OpenRetryPlugin() *settings.RetryPlugin
 	ReportPluginFailures(tasks *run.Tasks)
 	SetPluginWork(tasks *run.Tasks, models *run.Lock)
+}
+
+// modelAssembly is what the window requires for the models of a connection and the calls plugins make on them.
+type modelAssembly interface {
+	// OpenModelLists is the models and reasoning levels of a connection, and nil for an installation with no plugin host.
+	OpenModelLists() *modellist.Lists
 	// SetModelCalls lets the plugins ask for the operations on models; notices tells the person of a
 	// connection set aside. An installation with no plugin host does nothing.
 	SetModelCalls(notices modelcallport.Notices)
@@ -63,4 +67,5 @@ type PluginAssembly interface {
 	GetAgent() agentport.Agent
 	pluginSecretAssembly
 	pluginWorkAssembly
+	modelAssembly
 }
