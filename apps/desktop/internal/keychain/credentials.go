@@ -32,12 +32,12 @@ func (s *Store) readEntries() (map[string]string, error) {
 	}
 	entries := map[string]string{}
 	if err := json.Unmarshal(raw, &entries); err != nil {
-		return nil, fmt.Errorf("read the credentials file: it is not one JSON object of texts: %s", describeSyntax(err))
+		return nil, fmt.Errorf("read the credentials file: it is not one JSON object of texts: %s", describeJSONSyntax(err))
 	}
 	return entries, nil
 }
 
-func describeSyntax(err error) string {
+func describeJSONSyntax(err error) string {
 	var syntax *json.SyntaxError
 	if errors.As(err, &syntax) {
 		return fmt.Sprintf("invalid JSON at byte %d", syntax.Offset)
@@ -46,8 +46,6 @@ func describeSyntax(err error) string {
 }
 
 func (s *Store) readFromFile(name string) (string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	entries, err := s.readEntries()
 	if err != nil {
 		return "", err

@@ -8,10 +8,16 @@ import (
 	"syscall"
 )
 
-func lockOpenFile(file *os.File) error {
+func tryLockFile(file *os.File) error {
 	for {
-		err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
-		if !errors.Is(err, syscall.EINTR) {
+		err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+		switch {
+		case err == nil:
+			return nil
+		case errors.Is(err, syscall.EINTR):
+		case errors.Is(err, syscall.EWOULDBLOCK):
+			return errLocked
+		default:
 			return err
 		}
 	}

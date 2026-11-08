@@ -6,7 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/zalando/go-keyring"
 
@@ -26,26 +29,64 @@ var (
 // stays valid.
 const maxValueBytes = 2560
 
+// credentialsProbeTimeout bounds the probe of the keychain in GetCredentialsPath, which the core
+// calls with a context that has no deadline. A keychain that does not answer in this time counts as
+// not in use for the file, and the path is empty.
+const credentialsProbeTimeout = 2 * time.Second
+
 // Store keeps keys in the system keychain and, where the machine has none, in a file next to the
-// settings file. A store made by NewStore probes the keychain until it is reached. The file serves only a machine that has no keychain; a keychain that is there and refuses fails the call with port.ErrNoKeyStore and nothing is written to the file. The zero
-// Store is keychain only: a machine without one fails every call with port.ErrNoKeyStore and no
-// key is written anywhere else.
+// settings file. A store made by NewStore probes the keychain until it is reached. While the
+// keychain is reachable the file is not read, and a key stored in the keychain is removed from the
+// file. The file serves only a machine that has no keychain; a keychain that is there and refuses
+// fails the call with port.ErrNoKeyStore and nothing is written to the file. The zero Store is
+// keychain only: a machine without one fails every call with port.ErrNoKeyStore and no key is
+// written anywhere else.
 type Store struct {
-	dir string
+	dir     string
+	writer  chan struct{}
+	backend keychainBackend
 
 	mu           sync.Mutex
 	isKeychainUp bool
-	locks        lockRegistry
+	probe        *probeCall
+}
+
+// keychainBackend is the keychain a store calls. The system keychain is the default.
+type keychainBackend interface {
+	Get(name string) (string, error)
+	Set(name, key string) error
+	Delete(name string) error
+}
+
+type systemKeychain struct{}
+
+func (systemKeychain) Get(name string) (string, error) { return keyring.Get(service, name) }
+func (systemKeychain) Set(name, key string) error      { return keyring.Set(service, name, key) }
+func (systemKeychain) Delete(name string) error        { return keyring.Delete(service, name) }
+
+func (s *Store) getBackend() keychainBackend {
+	if s.backend == nil {
+		return systemKeychain{}
+	}
+	return s.backend
+}
+
+// probeCall is one probe of the keychain that every caller waiting for the answer shares.
+type probeCall struct {
+	finished chan struct{}
+	isUp     bool
+	err      error
 }
 
 // NewStore returns a store that keeps keys in the system keychain, and in
 // <dir>/credentials/credentials.json where the keychain cannot be reached. dir is the folder of
 // the settings file.
-func NewStore(dir string) *Store { return &Store{dir: dir} }
+func NewStore(dir string) *Store { return &Store{dir: dir, writer: make(chan struct{}, 1)} }
 
-// GetKey returns the key stored under the name: the one in the keychain, else the one in the file.
+// GetKey returns the key stored under the name: the one in the keychain, or, on a machine that has
+// no keychain, the one in the file.
 func (s *Store) GetKey(ctx context.Context, name string) (string, error) {
-	if err := check(ctx, name); err != nil {
+	if err := checkName(ctx, name); err != nil {
 		return "", err
 	}
 	isUp, err := s.isKeychainReachable(ctx)
@@ -53,10 +94,7 @@ func (s *Store) GetKey(ctx context.Context, name string) (string, error) {
 		return "", err
 	}
 	if isUp {
-		key, err := getFromKeychain(ctx, name)
-		if err == nil || !errors.Is(err, pluginport.ErrNoKey) || s.dir == "" {
-			return key, err
-		}
+		return s.getFromKeychain(ctx, name)
 	}
 	return s.readFromFile(name)
 }
@@ -64,7 +102,7 @@ func (s *Store) GetKey(ctx context.Context, name string) (string, error) {
 // SetKey stores the key under the name and replaces the one already there. A key over the limit of
 // the smallest keychain is refused and stored nowhere.
 func (s *Store) SetKey(ctx context.Context, name, key string) error {
-	if err := check(ctx, name); err != nil {
+	if err := checkName(ctx, name); err != nil {
 		return err
 	}
 	if len(key) > maxValueBytes {
@@ -74,16 +112,32 @@ func (s *Store) SetKey(ctx context.Context, name, key string) error {
 	if err != nil {
 		return err
 	}
-	if isUp {
-		_, err := await(ctx, func() (struct{}, error) { return struct{}{}, keyring.Set(service, name, key) })
-		return readError(name, err)
+	if !isUp {
+		return s.writeToFile(ctx, name, key)
 	}
-	return s.writeToFile(ctx, name, key)
+	_, err = await(ctx, func() (struct{}, error) { return struct{}{}, s.getBackend().Set(name, key) })
+	if err = mapError(name, err); err != nil {
+		return err
+	}
+	return s.removeStaleCopy(ctx, name)
+}
+
+func (s *Store) removeStaleCopy(ctx context.Context, name string) error {
+	if s.dir == "" {
+		return nil
+	}
+	if _, err := os.Stat(s.getCredentialsFile()); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err := s.removeFromFile(ctx, name); err != nil && !errors.Is(err, pluginport.ErrNoKey) {
+		return err
+	}
+	return nil
 }
 
 // DeleteKey removes the key stored under the name, from the keychain and from the file.
 func (s *Store) DeleteKey(ctx context.Context, name string) error {
-	if err := check(ctx, name); err != nil {
+	if err := checkName(ctx, name); err != nil {
 		return err
 	}
 	isUp, err := s.isKeychainReachable(ctx)
@@ -93,8 +147,8 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 	var failures []error
 	hasRemoved := false
 	if isUp {
-		_, err := await(ctx, func() (struct{}, error) { return struct{}{}, keyring.Delete(service, name) })
-		if err = readError(name, err); err == nil {
+		_, err := await(ctx, func() (struct{}, error) { return struct{}{}, s.getBackend().Delete(name) })
+		if err = mapError(name, err); err == nil {
 			hasRemoved = true
 		} else if !errors.Is(err, pluginport.ErrNoKey) {
 			failures = append(failures, err)
@@ -118,11 +172,13 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 }
 
 // GetCredentialsPath returns the file the keys are kept in while the keychain cannot be reached,
-// and the empty text while the keychain is in use.
+// and the empty text while the keychain is in use or does not answer within credentialsProbeTimeout.
 func (s *Store) GetCredentialsPath(ctx context.Context) string {
 	if s.dir == "" {
 		return ""
 	}
+	ctx, cancel := context.WithTimeout(ctx, credentialsProbeTimeout)
+	defer cancel()
 	if isUp, err := s.isKeychainReachable(ctx); err != nil || isUp {
 		return ""
 	}
@@ -134,31 +190,48 @@ func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.isKeychainUp {
+		s.mu.Unlock()
 		return true, nil
 	}
-	_, err := await(ctx, func() (string, error) { return keyring.Get(service, probeName) })
+	call := s.probe
+	if call == nil {
+		call = &probeCall{finished: make(chan struct{})}
+		s.probe = call
+		go s.runProbe(call)
+	}
+	s.mu.Unlock()
+	select {
+	case <-call.finished:
+		return call.isUp, call.err
+	case <-ctx.Done():
+		return false, ctx.Err()
+	}
+}
+
+func (s *Store) runProbe(call *probeCall) {
+	_, err := s.getBackend().Get(probeName)
 	switch {
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return false, err
 	case err == nil, errors.Is(err, keyring.ErrNotFound):
-		s.isKeychainUp = true
-		return true, nil
+		call.isUp = true
 	case isKeychainAbsent(err):
-		return false, nil
 	default:
-		return false, readError(probeName, err)
+		call.err = mapError(probeName, err)
 	}
+	s.mu.Lock()
+	s.isKeychainUp = call.isUp
+	s.probe = nil
+	s.mu.Unlock()
+	close(call.finished)
 }
 
 // probeName is the entry the probe asks the keychain for. No key is kept under it.
 const probeName = "probe"
 
-func getFromKeychain(ctx context.Context, name string) (string, error) {
-	key, err := await(ctx, func() (string, error) { return keyring.Get(service, name) })
+func (s *Store) getFromKeychain(ctx context.Context, name string) (string, error) {
+	key, err := await(ctx, func() (string, error) { return s.getBackend().Get(name) })
 	if err != nil {
-		return "", readError(name, err)
+		return "", mapError(name, err)
 	}
 	return key, nil
 }
@@ -168,14 +241,13 @@ func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 		value T
 		err   error
 	}
-	// gomutants:disable-next-line
-	isDone := make(chan outcome, 1)
+	results := make(chan outcome, 1)
 	go func() {
 		value, err := call()
-		isDone <- outcome{value, err}
+		results <- outcome{value, err}
 	}()
 	select {
-	case result := <-isDone:
+	case result := <-results:
 		return result.value, result.err
 	case <-ctx.Done():
 		var none T
@@ -183,7 +255,7 @@ func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 	}
 }
 
-func check(ctx context.Context, name string) error {
+func checkName(ctx context.Context, name string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -193,7 +265,7 @@ func check(ctx context.Context, name string) error {
 	return nil
 }
 
-func readError(name string, err error) error {
+func mapError(name string, err error) error {
 	switch {
 	case err == nil:
 		return nil

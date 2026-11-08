@@ -154,12 +154,37 @@ func TestAKeychainThatAppearsLaterIsUsedAndTheFileStillAnswersForItsKeys(t *test
 	if got, err := keyring.Get(service, otherEntry); err != nil || got != valueTwo {
 		t.Errorf("a write after the keychain appeared did not reach it: %q, %v", got, err)
 	}
-	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != valueOne {
-		t.Errorf("a key kept in the file read as %q, %v", got, err)
+	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+		t.Errorf("a key kept in the file read as %v while the keychain is reachable, want ErrNoKey", err)
+	}
+}
+
+func TestAKeyStoredInTheKeychainIsRemovedFromTheFile(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	store := NewStore(dir)
+	for name, value := range map[string]string{entryName: valueOne, otherEntry: valueTwo} {
+		if err := store.SetKey(t.Context(), name, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	keyring.MockInit()
+	other := NewStore(dir)
+	if err := other.SetKey(t.Context(), entryName, "rotated-value"); err != nil {
+		t.Fatal(err)
+	}
+	got := readCredentials(t, dir)
+	if _, found := got[entryName]; found || got[otherEntry] != valueTwo {
+		t.Errorf("the file holds %v after the key moved to the keychain, want only %s", got, otherEntry)
+	}
+	if value, err := keyring.Get(service, entryName); err != nil || value != "rotated-value" {
+		t.Errorf("the keychain holds %q, %v", value, err)
 	}
 }
 
 func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
+	useReachableSessionBus(t)
 	keyring.MockInitWithError(errors.New("the collection is locked"))
 	dir := t.TempDir()
 	store := NewStore(dir)
@@ -195,7 +220,7 @@ func TestWithAReachableKeychainTheCredentialsFileIsNotCreated(t *testing.T) {
 	}
 }
 
-func TestAValueFoundOnlyInTheFileIsReadWhenTheKeychainHasNone(t *testing.T) {
+func TestTheCredentialsFileIsNotReadWhileTheKeychainIsReachable(t *testing.T) {
 	keyring.MockInit()
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Dir(credentialsPath(dir)), 0o700); err != nil {
@@ -206,14 +231,14 @@ func TestAValueFoundOnlyInTheFileIsReadWhenTheKeychainHasNone(t *testing.T) {
 	}
 	store := NewStore(dir)
 
-	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != valueOne {
-		t.Errorf("read %q, %v, want the value of the file", got, err)
+	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+		t.Errorf("error = %v, want ErrNoKey: the file is not read while the keychain is reachable", err)
 	}
 	if err := keyring.Set(service, entryName, valueTwo); err != nil {
 		t.Fatal(err)
 	}
 	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != valueTwo {
-		t.Errorf("read %q, %v, want the value of the keychain first", got, err)
+		t.Errorf("read %q, %v, want the value of the keychain", got, err)
 	}
 }
 
