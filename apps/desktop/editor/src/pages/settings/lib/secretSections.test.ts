@@ -3,6 +3,9 @@ import { createPluginInfo } from '@/testing/installation'
 import {
   createSecretSections,
   getMenuSecrets,
+  getNewGroupName,
+  getSectionDeclarations,
+  getDeclarations,
   getNextSecretName,
   getReaderNames,
   hasGroupSecrets,
@@ -112,5 +115,47 @@ describe('a permission', () => {
     expect(isAllowed(allowed, declaration('openai'))).toBe(false)
     expect(getReaderNames(allowed, [plugin])).toStrictEqual(['Sample'])
     expect(getReaderNames(allowed, [])).toStrictEqual(['md.numen.sample'])
+  })
+})
+
+describe('the declarations of a section', () => {
+  const all = getDeclarations([plugin])
+
+  it('are those of its group and those with no group', () => {
+    expect(getSectionDeclarations(all, 'openrouter').map((one) => one.description)).toStrictEqual([
+      'A key',
+      'A token',
+    ])
+    expect(getSectionDeclarations(all, 'openai').map((one) => one.description)).toStrictEqual([
+      'Another key',
+      'A token',
+    ])
+  })
+
+  it('are only those with no group in a group no plugin asks for', () => {
+    expect(getSectionDeclarations(all, 'travel').map((one) => one.name)).toStrictEqual(['token'])
+  })
+
+  it('list a declaration once', () => {
+    expect(getSectionDeclarations([...all, ...all], 'openai')).toHaveLength(2)
+  })
+})
+
+describe('the name of a new group', () => {
+  it('is New group, then the first number after it that is not taken', () => {
+    expect(getNewGroupName(['a'])).toBe('New group')
+    expect(getNewGroupName(['New group'])).toBe('New group 2')
+    expect(getNewGroupName(['New group', 'New group 3'])).toBe('New group 2')
+    expect(getNewGroupName(['New group', 'New group 2'])).toBe('New group 3')
+  })
+})
+
+describe('the sections with groups the person made and left empty', () => {
+  it('list them with the groups of the secrets, once', () => {
+    const sections = createSecretSections([], [secret('s1', 'a', 'beta')], ['alpha', 'beta'])
+    expect(sections.map((one) => [one.group, one.secrets.length])).toStrictEqual([
+      ['alpha', 0],
+      ['beta', 1],
+    ])
   })
 })

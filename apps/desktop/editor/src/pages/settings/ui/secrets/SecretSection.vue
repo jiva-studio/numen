@@ -3,12 +3,16 @@
  * The secrets of one group in priority order. A group a plugin asks for shows one empty secret
  * named Default while it has none. A group the person made can be renamed.
  */
-import { nextTick, ref, useId, useTemplateRef } from 'vue'
+import { nextTick, onMounted, ref, useId, useTemplateRef } from 'vue'
 import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
-import type { Declaration, SecretSection } from '../../lib/secretSections'
-import { trimGroupName } from '../../lib/trimGroupName'
+import {
+  getSectionDeclarations,
+  type Declaration,
+  type SecretSection,
+} from '../../lib/secretSections'
+import { MAX_GROUP_LENGTH, trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
 import SecretDraftRow from './SecretDraftRow.vue'
 import SecretRow from './SecretRow.vue'
@@ -19,6 +23,8 @@ const props = defineProps<{
   /** The names of the secrets of the group not created yet. */
   drafts: readonly string[]
   declarations: readonly Declaration[]
+  /** Whether the name of the group is edited as the section appears. */
+  isNew?: boolean
   /** Creates the secret of a draft and resolves true when it was created; the field keeps a failed value. */
   create: (name: string, value: string) => Promise<boolean>
 }>()
@@ -41,11 +47,16 @@ const draftName = ref('')
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 const headingId = useId()
 
+onMounted(async () => {
+  if (props.isNew) await onStartRename()
+})
+
 /* -------------------------------- Handlers -------------------------------- */
 async function onStartRename(): Promise<void> {
   draftName.value = props.section.group
   isRenaming.value = true
   await nextTick()
+  nameInput.value?.focus()
   nameInput.value?.select()
 }
 
@@ -53,7 +64,8 @@ function onCommitRename(): void {
   if (!isRenaming.value) return
   isRenaming.value = false
   const name = trimGroupName(draftName.value)
-  if (name !== '' && name !== props.section.group) emit('rename-group', name)
+  if (name === '' || name === props.section.group) return
+  if ([...name].length <= MAX_GROUP_LENGTH) emit('rename-group', name)
 }
 
 function onCancelRename(): void {
@@ -94,6 +106,7 @@ function onMoveDown(index: number): void {
       <h2 v-show="!isRenaming" :id="headingId" class="secret-section__name">{{ section.group }}</h2>
       <Button
         v-if="!section.isAsked && !isRenaming"
+        class="secret-section__tool"
         variant="ghost"
         size="icon-small"
         :aria-label="words.secretGroupRename"
@@ -104,7 +117,8 @@ function onMoveDown(index: number): void {
         <Pencil :size="14" aria-hidden="true" />
       </Button>
       <Button
-        v-if="!section.isAsked && section.secrets.length > 0 && !isRenaming"
+        v-if="!section.isAsked && !isRenaming"
+        class="secret-section__tool"
         variant="ghost"
         size="icon-small"
         :aria-label="words.secretGroupDelete"
@@ -128,7 +142,8 @@ function onMoveDown(index: number): void {
         :secret="secret"
         :is-first="index === 0"
         :is-last="index === section.secrets.length - 1"
-        :declarations="declarations"
+        :can-move="section.secrets.length > 1"
+        :declarations="getSectionDeclarations(declarations, section.group)"
         @move-up="onMoveUp(index)"
         @move-down="onMoveDown(index)"
         @rename="(name) => emit('rename', secret.id, name)"
@@ -177,6 +192,21 @@ function onMoveDown(index: number): void {
   color: var(--numen-ink);
   font-size: var(--numen-text-3);
   font-weight: 600;
+}
+
+.secret-section__tool {
+  opacity: 0;
+}
+
+.secret-section:hover .secret-section__tool,
+.secret-section:focus-within .secret-section__tool {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .secret-section__tool {
+    opacity: 1;
+  }
 }
 
 .secret-section__name-input {

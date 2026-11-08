@@ -10,16 +10,15 @@ import type { Secret } from '@/entities/settings'
 import {
   createSecretSections,
   getDeclarations,
+  getNewGroupName,
   getNextSecretName,
   type Declaration,
   type SecretSection as SectionData,
 } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
 import { useSecretDeletion } from '../../model/secretDeletion'
-import { MAX_GROUP_LENGTH, trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
 import SecretDeleteDialog from './SecretDeleteDialog.vue'
-import SecretDraftRow from './SecretDraftRow.vue'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -39,16 +38,15 @@ interface Draft {
 const installation = computed(() => props.state.installation)
 const plugins = computed(() => installation.value.plugins?.value ?? [])
 const credentialsPath = computed(() => installation.value.credentialsPath?.value ?? '')
+/** The groups the person made that hold no secret yet; a group exists on the core through its secrets. */
+const emptyGroups = ref<readonly string[]>([])
+/** The group whose name is edited as it appears. */
+const newGroup = ref('')
 const sections = computed(() =>
-  createSecretSections(plugins.value, installation.value.secrets?.value ?? []),
+  createSecretSections(plugins.value, installation.value.secrets?.value ?? [], emptyGroups.value),
 )
 const declarations = computed(() => getDeclarations(plugins.value))
 const drafts = ref<readonly Draft[]>([])
-/** The group name typed for a secret in a group no section shows yet, or null while none is added. */
-const newGroup = ref<string | null>(null)
-const newGroupName = computed(() => trimGroupName(newGroup.value ?? ''))
-const isNewGroupTooLong = computed(() => [...newGroupName.value].length > MAX_GROUP_LENGTH)
-const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
 const deletion = useSecretDeletion(
   (id) => installation.value.deleteSecret(id),
   () => plugins.value,
@@ -59,16 +57,15 @@ function onAdd(group: string): void {
   drafts.value = [...drafts.value, { group, name: getNextSecretName(getNamesInGroup(group)) }]
 }
 
-function onOpenNewGroup(): void {
-  newGroup.value = ''
+function onAddGroup(): void {
+  newGroup.value = getNewGroupName(sections.value.map((one) => one.group))
+  emptyGroups.value = [...emptyGroups.value, newGroup.value]
 }
 
-async function onCreateInNewGroup(value: string): Promise<boolean> {
-  if (isNewGroupTooLong.value) return false
-  const id = await installation.value.createSecret(newGroupName.value, newName.value, value)
-  if (id === '') return false
-  newGroup.value = null
-  return true
+function onRenameGroup(section: SectionData, name: string): void {
+  newGroup.value = ''
+  if (section.secrets.length > 0) installation.value.renameSecretGroup(section.group, name)
+  else emptyGroups.value = emptyGroups.value.map((one) => (one === section.group ? name : one))
 }
 
 function onDiscard(group: string, name: string): void {
@@ -77,7 +74,10 @@ function onDiscard(group: string, name: string): void {
 
 async function onCreate(group: string, name: string, value: string): Promise<boolean> {
   const id = await installation.value.createSecret(group, name, value)
-  if (id !== '') onDiscard(group, name)
+  if (id !== '') {
+    onDiscard(group, name)
+    emptyGroups.value = emptyGroups.value.filter((one) => one !== group)
+  }
   return id !== ''
 }
 
@@ -92,6 +92,10 @@ function onAskDelete(secret: Secret, opener: HTMLElement): void {
 }
 
 function onAskDeleteGroup(section: SectionData, opener: HTMLElement): void {
+  if (section.secrets.length === 0) {
+    emptyGroups.value = emptyGroups.value.filter((one) => one !== section.group)
+    return
+  }
   deletion.ask({ kind: 'group', section }, opener)
 }
 
@@ -119,8 +123,8 @@ function getNamesInGroup(group: string): readonly string[] {
 
     <h1 class="secrets-page__title">{{ words.secretsTitle }}</h1>
     <p class="secrets-page__about">{{ words.secretsAbout }}</p>
-    <p class="secrets-page__where">
-      {{ credentialsPath === '' ? words.secretsKeychain : words.secretsFile(credentialsPath) }}
+    <p v-if="credentialsPath !== ''" class="secrets-page__where">
+      {{ words.secretsFile(credentialsPath) }}
     </p>
 
     <SecretSection
@@ -129,8 +133,9 @@ function getNamesInGroup(group: string): readonly string[] {
       :section="section"
       :drafts="getDraftNames(section.group)"
       :declarations="declarations"
+      :is-new="section.group === newGroup"
       @add="onAdd(section.group)"
-      @rename-group="(name) => installation.renameSecretGroup(section.group, name)"
+      @rename-group="(name) => onRenameGroup(section, name)"
       :create="(name, value) => onCreate(section.group, name, value)"
       @discard="(name) => onDiscard(section.group, name)"
       @move="(id, beforeId) => installation.moveSecret(id, beforeId)"
@@ -141,35 +146,9 @@ function getNamesInGroup(group: string): readonly string[] {
       @toggle="onToggle"
     />
 
-    <p v-if="sections.length === 0 && newGroup === null" class="secrets-page__empty">
-      {{ words.secretsEmpty }}
-    </p>
-
-    <div v-if="newGroup !== null" class="secrets-page__new">
-      <input
-        v-model="newGroup"
-        type="text"
-        :aria-label="words.secretNewGroup"
-        :placeholder="words.secretNewGroupPlaceholder"
-        class="secrets-page__new-group"
-        @keydown.esc="newGroup = null"
-      />
-      <p v-if="isNewGroupTooLong" role="alert" class="secrets-page__new-error">
-        {{ words.secretGroupTooLong(MAX_GROUP_LENGTH) }}
-      </p>
-      <ul v-if="newGroupName !== ''" class="secrets-page__new-secrets">
-        <SecretDraftRow
-          :key="newName"
-          :name="newName"
-          can-discard
-          :submit="onCreateInNewGroup"
-          @discard="newGroup = null"
-        />
-      </ul>
-    </div>
-    <Button v-else variant="ghost" size="small" class="secrets-page__add" @click="onOpenNewGroup">
+    <Button variant="ghost" size="small" class="secrets-page__add" @click="onAddGroup">
       <Plus :size="14" aria-hidden="true" />
-      {{ words.secretAdd }}
+      {{ words.secretAddGroup }}
     </Button>
 
     <SecretDeleteDialog
@@ -205,57 +184,19 @@ function getNamesInGroup(group: string): readonly string[] {
 }
 
 .secrets-page__about {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--settings-apart);
   color: var(--numen-hushed);
 }
 
 .secrets-page__where {
   margin: 0 0 var(--settings-apart);
-  padding-block-end: 1rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   overflow-wrap: anywhere;
 }
 
-.secrets-page__empty {
-  margin: 0 0 var(--settings-apart);
-  color: var(--numen-hushed);
-}
-
 .secrets-page__add {
   align-self: flex-start;
   margin-inline-start: -0.5rem;
-}
-
-.secrets-page__new {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-block-end: var(--settings-apart);
-}
-
-.secrets-page__new-group {
-  box-sizing: border-box;
-  block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font-family: inherit;
-  font-size: var(--numen-text-2);
-}
-
-.secrets-page__new-error {
-  margin: 0.5rem 0 0;
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-}
-
-.secrets-page__new-secrets {
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 </style>

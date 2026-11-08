@@ -104,9 +104,45 @@ describe('the deletion of a group', () => {
     wrapper.unmount()
   })
 
-  it('has no button for a group with no secret', () => {
+  it('has a button for a group the person made with no secret', () => {
     const wrapper = mountWith(false, [])
-    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('the name of a group', () => {
+  it('selects the name of a new group for typing', async () => {
+    const wrapper = mount(SecretSection, {
+      attachTo: document.body,
+      props: { section, drafts: [], declarations: [], isNew: true, create: vi.fn() },
+    })
+    await flushPromises()
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Name of the group"]')
+    expect(input?.value).toBe('harbour')
+    expect(document.activeElement).toBe(input)
+    wrapper.unmount()
+  })
+
+  const renameTo = async (name: string) => {
+    const wrapper = mountSection()
+    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
+    await input.setValue(name)
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    return wrapper
+  }
+
+  it('refuses a group name of more than 64 characters', async () => {
+    const wrapper = await renameTo('g'.repeat(65))
+    expect(wrapper.emitted('rename-group')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('accepts a group name of 64 characters', async () => {
+    const wrapper = await renameTo('g'.repeat(64))
+    expect(wrapper.emitted('rename-group')).toEqual([['g'.repeat(64)]])
     wrapper.unmount()
   })
 })

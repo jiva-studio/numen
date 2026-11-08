@@ -24,9 +24,14 @@ const emit = defineEmits<{
 
 <template>
   <li class="secret-draft">
-    <div class="secret-draft__title">
-      <span class="secret-draft__name">{{ name }}</span>
-    </div>
+    <span class="secret-draft__name">{{ name }}</span>
+    <SecretValueInput
+      :label="words.secretValue(name)"
+      :placeholder="words.keyPlaceholder"
+      :submit="submit"
+      @commit="(value) => emit('create', value)"
+    />
+    <span />
     <div class="secret-draft__actions">
       <Button
         v-if="canDiscard"
@@ -39,33 +44,30 @@ const emit = defineEmits<{
         <X :size="14" aria-hidden="true" />
       </Button>
     </div>
-    <SecretValueInput
-      class="secret-draft__value"
-      :label="words.secretValue(name)"
-      :placeholder="words.keyPlaceholder"
-      :submit="submit"
-      @commit="(value) => emit('create', value)"
-    />
   </li>
 </template>
 
 <style scoped>
 .secret-draft {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 8rem minmax(0, 1fr) 9rem 5.5rem;
   align-items: center;
   gap: 0.5rem var(--numen-panel-gap);
-  padding-block: 0.75rem;
+  padding-block: 0.5rem;
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
   list-style: none;
 }
 
 .secret-draft__name {
+  padding-inline: 0.625rem;
+  overflow: hidden;
   color: var(--numen-ink);
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.secret-draft__value {
-  grid-column: 1 / -1;
+.secret-draft__actions {
+  min-inline-size: 1.75rem;
 }
 </style>

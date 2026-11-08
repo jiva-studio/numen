@@ -115,23 +115,23 @@ const renderEmpty = () => ({
   `,
 })
 
-/** With no secret and no plugin the page says so and offers to add one. */
+/** With no secret and no plugin the page offers to add a group. */
 export const EmptyPageHasAddControl: Story = {
   render: renderEmpty,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/No secrets yet/)).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Add secret' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Add group' })).toBeVisible()
   },
 }
 
-/** A group typed on the page opens a field for the value of its first secret. */
+/** A new group takes its name at once; a secret added to it opens a field for the value. */
 export const AddsInATypedGroup: Story = {
   render: renderEmpty,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Add group' }))
+    await userEvent.type(canvas.getByLabelText('Name of the group'), 'Local Llama{Enter}')
     await userEvent.click(canvas.getByRole('button', { name: 'Add secret' }))
-    await userEvent.type(canvas.getByLabelText('Group of the new secret'), 'Local Llama')
     await expect(canvas.getByLabelText('Value of Default')).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const row of canvasElement.querySelectorAll('li')) {

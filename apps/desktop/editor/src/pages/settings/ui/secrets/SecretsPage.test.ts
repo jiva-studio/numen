@@ -206,31 +206,45 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('shows a check box for each declaration of each plugin with the description of the declaration', () => {
+  const openReaders = (row: HTMLElement) => click(findButton(/plugin/i, row))
+  const checkboxOf = (description: string) =>
+    root().querySelector<HTMLInputElement>(
+      `label[title="${description}"] input`,
+    ) as HTMLInputElement
+
+  it('lists in a section only the declarations of its group and those with no group', async () => {
     const { wrapper } = mountPage()
-    const work = rowOf('Work')
-    for (const description of [
+    await openReaders(rowOf('Work'))
+    const titles = Array.from(root().querySelectorAll('label')).map((one) => one.title)
+    expect(titles).toStrictEqual([
       'Key of the embeddings service',
       'Key of the custom embeddings service',
       'Key of the proofreading service',
-      'Key of the proofreading chat',
-    ]) {
-      expect(work.textContent).toContain(description)
-    }
-    expect(work.querySelectorAll('input[type="checkbox"], [role="checkbox"]')).toHaveLength(4)
+    ])
+    expect(root().querySelectorAll('input[type="checkbox"]')).toHaveLength(3)
+    dispose(wrapper)
+  })
+
+  it('lists the declarations of the other groups in no section', async () => {
+    const { wrapper } = mountPage()
+    await openReaders(rowOf('Personal'))
+    const titles = Array.from(root().querySelectorAll('label')).map((one) => one.title)
+    expect(titles).toStrictEqual(['Key of the custom embeddings service'])
+    dispose(wrapper)
+  })
+
+  it('reads the number of plugins that may read the secret on the button', () => {
+    const { wrapper } = mountPage()
+    expect(findButton(/plugin/i, rowOf('Work')).textContent).toContain('1 plugin')
+    expect(findButton(/plugin/i, rowOf('Home')).textContent).toContain('No plugins')
     dispose(wrapper)
   })
 
   it('shows a permission as checked and toggles it with allow and deny', async () => {
     const { installation, wrapper } = mountPage()
-    const work = rowOf('Work')
-    const boxes = Array.from(work.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
-    const embeddingsBox = boxes.find((one) =>
-      one.closest('label, li, div')?.textContent?.includes('Key of the embeddings service'),
-    ) as HTMLInputElement
-    const proofreadingBox = boxes.find((one) =>
-      one.closest('label, li, div')?.textContent?.includes('Key of the proofreading service'),
-    ) as HTMLInputElement
+    await openReaders(rowOf('Work'))
+    const embeddingsBox = checkboxOf('Key of the embeddings service')
+    const proofreadingBox = checkboxOf('Key of the proofreading service')
     expect(embeddingsBox.checked).toBe(true)
     expect(proofreadingBox.checked).toBe(false)
 
@@ -248,6 +262,13 @@ describe('the page of secrets', () => {
       'apiKey',
       'openrouter',
     )
+    dispose(wrapper)
+  })
+
+  it('shows order arrows only in a group with more than one secret', () => {
+    const { wrapper } = mountPage()
+    expect(findButtons(/move up/i, rowOf('Work'))).toHaveLength(1)
+    expect(findButtons(/move up|move down/i, rowOf('Personal'))).toHaveLength(0)
     dispose(wrapper)
   })
 
@@ -287,24 +308,41 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('says plainly that the secrets are not in the keychain, with the path of the file, when the fallback file is in use', () => {
+  it('shows the path of the file only when the fallback file is in use', () => {
     const path = '/home/someone/.config/numen/credentials/credentials.json'
     const { wrapper } = mountPage([WORK], { credentialsPath: ref(path) })
-    expect(root().textContent).toMatch(/not in the (system )?keychain/i)
     expect(root().textContent).toContain(path)
     dispose(wrapper)
+    const { wrapper: other } = mountPage([WORK], { credentialsPath: ref('') })
+    expect(root().textContent).not.toContain('credentials')
+    dispose(other)
   })
 
-  it('makes no statement about a file when the keychain is in use', () => {
-    const { wrapper } = mountPage([WORK], { credentialsPath: ref('') })
-    expect(root().textContent).not.toMatch(/not in the (system )?keychain/i)
+  it('shows a stored value as dots with a Replace action and no field', () => {
+    const { wrapper } = mountPage([WORK])
+    const row = rowOf('Work')
+    expect(row.textContent).toContain('••••••••')
+    expect(maskedInputs(row)).toHaveLength(0)
+    expect(findButton(/replace/i, row)).toBeTruthy()
     dispose(wrapper)
   })
 
-  it('shows a secret with no value on this machine as having none', () => {
+  it('opens an empty field on Replace and writes the value entered', async () => {
+    const { installation, wrapper } = mountPage([WORK])
+    await click(findButton(/replace/i, rowOf('Work')))
+    const input = maskedInputs(rowOf('Work'))[0] as HTMLInputElement
+    expect(input.value).toBe('')
+    expect(document.activeElement).toBe(input)
+    await enterText(input, 'made-up-new-value')
+    expect(installation.writeSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'made-up-new-value')
+    dispose(wrapper)
+  })
+
+  it('shows an empty field with a placeholder where no value is stored', () => {
     const { wrapper } = mountPage([secret('s00000009', 'Imported', 'openrouter', [], false)])
     const row = rowOf('Imported')
-    expect(row.textContent).toMatch(/no value/i)
+    expect(maskedInputs(row)[0]?.placeholder).toBe('Paste a value')
+    expect(row.textContent).not.toContain('••••••••')
     dispose(wrapper)
   })
 

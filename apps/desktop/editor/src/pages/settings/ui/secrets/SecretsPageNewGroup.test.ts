@@ -12,10 +12,10 @@ import {
   dispose,
   enterText,
   findButton,
-  findButtons,
   findText,
   maskedInputs,
   root,
+  rowOf,
 } from '@/testing/secretsDom'
 
 const HARBOUR = 'md.numen.sample.harbour'
@@ -52,12 +52,14 @@ const mountPage = (
   return { installation, wrapper }
 }
 
-const typeGroup = async (text: string) => {
-  const input = root().querySelector<HTMLInputElement>(
-    'input[aria-label="Group of the new secret"]',
-  )
+const groupField = (): HTMLInputElement => {
+  const input = root().querySelector<HTMLInputElement>('input[aria-label="Name of the group"]')
   if (input === null) throw new Error('no field for the group name')
-  await enterText(input, text)
+  return input
+}
+
+const typeGroup = async (text: string) => {
+  await enterText(groupField(), text)
 }
 
 beforeEach(() => {
@@ -77,26 +79,43 @@ afterEach(() => {
 })
 
 describe('the page of secrets with no group', () => {
-  it('says there is no secret yet and offers to add one', () => {
+  it('has no explanation and offers to add a group', () => {
     const { wrapper } = mountPage()
-    expect(findText(/no secrets yet/i)).not.toBeNull()
-    expect(findButton(/add secret/i)).toBeTruthy()
-    dispose(wrapper)
-  })
-
-  it('does not say there is no secret when one exists', () => {
-    const { wrapper } = mountPage([secret('s00000001', 'Work', 'harbour')])
     expect(findText(/no secrets yet/i)).toBeNull()
+    expect(findButton(/add group/i)).toBeTruthy()
     dispose(wrapper)
   })
 
-  it('creates a secret in a group the person types, named Default', async () => {
+  it('creates a group at once with a name to type over, focused and selected', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
-    expect(maskedInputs()).toHaveLength(0)
+    await click(findButton(/add group/i))
+    const input = groupField()
+    expect(input.value).toBe('New group')
+    expect(document.activeElement).toBe(input)
+    expect(input.selectionStart).toBe(0)
+    expect(input.selectionEnd).toBe('New group'.length)
+    expect(installation.createSecret).not.toHaveBeenCalled()
+    dispose(wrapper)
+  })
+
+  it('numbers the name of a new group when it is taken', async () => {
+    const { wrapper } = mountPage([secret('s00000001', 'Work', 'New group')])
+    await click(findButton(/add group/i))
+    expect(groupField().value).toBe('New group 2')
+    await click(findButton(/add group/i))
+    expect(findText('New group')).not.toBeNull()
+    expect(findText('New group 2')).not.toBeNull()
+    dispose(wrapper)
+  })
+
+  it('keeps an empty group the person named until a secret is added, then creates the secret in it', async () => {
+    const { installation, wrapper } = mountPage()
+    await click(findButton(/add group/i))
     await typeGroup('Local Llama')
-    const [input] = maskedInputs()
-    await enterText(input as HTMLInputElement, 'made-up-llama-value')
+    expect(installation.renameSecretGroup).not.toHaveBeenCalled()
+    expect(findText('Local Llama')?.tagName).toBe('H2')
+    await click(findButton(/add secret/i))
+    await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
       'Default',
@@ -105,13 +124,22 @@ describe('the page of secrets with no group', () => {
     dispose(wrapper)
   })
 
-  it('puts the secret in the existing group when the typed name equals it', async () => {
+  it('drops an empty group the person deletes, without a question', async () => {
+    const { wrapper } = mountPage()
+    await click(findButton(/add group/i))
+    await typeGroup('New group')
+    await click(findButton(/delete group/i))
+    expect(findText('New group')).toBeNull()
+    expect(root().querySelector('[role="dialog"], [role="alertdialog"], dialog')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('puts the next secret in the existing group', async () => {
     const { installation, wrapper } = mountPage([
       secret('s00000001', '1', 'Local Llama'),
       secret('s00000002', 'Home', 'Local Llama'),
     ])
-    await click(findButtons(/add secret/i).at(-1) as HTMLElement)
-    await typeGroup('Local Llama')
+    await click(findButton(/add secret/i))
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
@@ -122,11 +150,13 @@ describe('the page of secrets with no group', () => {
     dispose(wrapper)
   })
 
-  it('lists the ungrouped declarations of a plugin under a secret of any group', () => {
+  it('lists only the ungrouped declarations of a plugin under a secret of a group no plugin asks for', async () => {
     const { wrapper } = mountPage([secret('s00000001', 'Work', 'Local Llama')], {
       plugins: ref(plugins),
     })
-    expect(findText('Key of a local harbour')).not.toBeNull()
+    await click(findButton(/plugin/i, rowOf('Work')))
+    const labels = Array.from(root().querySelectorAll('label')).map((one) => one.title)
+    expect(labels).toStrictEqual(['Key of a local harbour'])
     dispose(wrapper)
   })
 })

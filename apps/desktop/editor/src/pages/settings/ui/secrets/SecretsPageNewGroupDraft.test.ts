@@ -39,9 +39,7 @@ const mountPage = (
 }
 
 const groupField = (): HTMLInputElement => {
-  const input = root().querySelector<HTMLInputElement>(
-    'input[aria-label="Group of the new secret"]',
-  )
+  const input = root().querySelector<HTMLInputElement>('input[aria-label="Name of the group"]')
   if (input === null) throw new Error('no field for the group name')
   return input
 }
@@ -69,8 +67,9 @@ afterEach(() => {
 describe('the name of the first secret in a group the person types', () => {
   it('is Default', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('Local Llama')
+    await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
@@ -82,8 +81,7 @@ describe('the name of the first secret in a group the person types', () => {
 
   it('is followed by 2 in a group that has Default', async () => {
     const { installation, wrapper } = mountPage([secret('s00000001', 'Default', 'Local Llama')])
-    await click(findButtons(/add secret/i).at(-1) as HTMLElement)
-    await typeGroup('Local Llama')
+    await click(findButton(/add secret/i))
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
@@ -99,8 +97,7 @@ describe('the name of the first secret in a group the person types', () => {
       secret('s00000001', 'Default', 'Local Llama'),
       secret('s00000002', '2', 'Local Llama'),
     ])
-    await click(findButtons(/add secret/i).at(-1) as HTMLElement)
-    await typeGroup('Local Llama')
+    await click(findButton(/add secret/i))
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-third-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
@@ -116,12 +113,13 @@ describe('a secret that fails to be created from the control that adds a secret'
   it('keeps the group and the typed value in the field', async () => {
     const createSecret = vi.fn(async () => '')
     const { wrapper } = mountPage([], { createSecret })
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('Local Llama')
+    await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
 
     expect(createSecret).toHaveBeenCalled()
-    expect(groupField().value).toBe('Local Llama')
+    expect(findText('Local Llama')?.tagName).toBe('H2')
     expect(maskedInputs()).toHaveLength(1)
     expect((maskedInputs()[0] as HTMLInputElement).value).toBe('made-up-llama-value')
     dispose(wrapper)
@@ -129,21 +127,20 @@ describe('a secret that fails to be created from the control that adds a secret'
 })
 
 describe('a group name of more than 64 characters', () => {
-  it('is refused on the page with a message, before the call', async () => {
+  it('is refused on the page, the name stays', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('g'.repeat(65))
-    await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-
+    expect(findText('New group')?.tagName).toBe('H2')
     expect(installation.createSecret).not.toHaveBeenCalled()
-    expect(findText(/64/)).not.toBeNull()
     dispose(wrapper)
   })
 
   it('is accepted at 64 characters', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('g'.repeat(64))
+    await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
     expect(installation.createSecret).toHaveBeenCalledWith(
@@ -173,8 +170,9 @@ describe('a secret that fails to be created from the control that adds a secret 
 describe('the name of a group the person types', () => {
   it('loses U+0085 at its ends, as the core trims it', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('\u0085abc')
+    await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
     expect(installation.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
@@ -183,8 +181,9 @@ describe('the name of a group the person types', () => {
 
   it('keeps U+FEFF at its ends, as the core does', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add secret/i))
+    await click(findButton(/add group/i))
     await typeGroup('﻿abc')
+    await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
     expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')

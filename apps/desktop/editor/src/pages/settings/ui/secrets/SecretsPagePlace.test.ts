@@ -33,11 +33,10 @@ afterEach(() => {
 })
 
 describe('the place of the values on the page of secrets', () => {
-  it('names the keychain and the fallback file where no file is used', () => {
+  it('says only that secrets are stored here where no file is used', () => {
     const wrapper = mountPage({ credentialsPath: ref('') })
-    expect(root().textContent).toMatch(
-      /kept in the system keychain or, where it is not available, in the file credentials\/credentials\.json/i,
-    )
+    expect(root().textContent).toContain('Secrets for plugins are stored here.')
+    expect(root().textContent).not.toMatch(/keychain|kept in/i)
     dispose(wrapper)
   })
 

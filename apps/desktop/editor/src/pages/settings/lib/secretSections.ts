@@ -56,23 +56,49 @@ export function getDeclarations(plugins: readonly PluginInfo[]): readonly Declar
 
 /**
  * The sections of the page: the groups the installed plugins ask for by name, then the groups the
- * person made by name. A group the plugins ask for is a section while it has no secret.
+ * person made by name. A group the plugins ask for is a section while it has no secret. The
+ * extra groups are groups the person made that hold no secret yet.
  */
 export function createSecretSections(
   plugins: readonly PluginInfo[],
   secrets: readonly Secret[],
+  extraGroups: readonly string[] = [],
 ): readonly SecretSection[] {
   const pluginGroups = new Set(
     getDeclarations(plugins)
       .map((one) => one.group)
       .filter((one) => one !== ''),
   )
-  const made = new Set(secrets.map((one) => one.group).filter((one) => !pluginGroups.has(one)))
+  const made = new Set(
+    [...secrets.map((one) => one.group), ...extraGroups].filter((one) => !pluginGroups.has(one)),
+  )
   const sorted = (groups: ReadonlySet<string>): string[] => [...groups].sort(compareNames)
   return [
     ...sorted(pluginGroups).map((group) => ({ group, isAsked: true })),
     ...sorted(made).map((group) => ({ group, isAsked: false })),
   ].map((one) => ({ ...one, secrets: secrets.filter((secret) => secret.group === one.group) }))
+}
+
+/** The declarations a section offers: those of its group and those with no group, each once. */
+export function getSectionDeclarations(
+  declarations: readonly Declaration[],
+  group: string,
+): readonly Declaration[] {
+  const keys = new Set<string>()
+  return declarations.filter((one) => {
+    const key = `${one.pluginId}/${one.name}/${one.group}`
+    if ((one.group !== '' && one.group !== group) || keys.has(key)) return false
+    keys.add(key)
+    return true
+  })
+}
+
+/** The name of a new group: New group, else the first number after it that no group has. */
+export function getNewGroupName(groups: readonly string[]): string {
+  if (!groups.includes(WORDS.secretNewGroupName)) return WORDS.secretNewGroupName
+  let number = 2
+  while (groups.includes(`${WORDS.secretNewGroupName} ${number}`)) number++
+  return `${WORDS.secretNewGroupName} ${number}`
 }
 
 /** Whether the declaration may read the secret. */

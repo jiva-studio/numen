@@ -13,14 +13,13 @@ export const WORDS = {
   /** The secrets declared by plugins, on their page and on the field of a plugin. */
   keyPlaceholder: 'Paste a value',
   secretsTitle: 'Secrets',
-  secretsAbout:
-    'Keys and tokens for plugins. Enter a value once; it is never shown again. Allow each plugin declaration to read the secrets it needs.',
-  secretsKeychain:
-    'The values are kept in the system keychain or, where it is not available, in the file credentials/credentials.json, not in the settings file.',
-  secretsFile: (path: string) =>
-    `The values are not in the system keychain on this machine. They are kept in a protected file: ${path}`,
-  secretStored: 'Enter a new value',
-  secretNoValue: 'No value on this machine',
+  secretsAbout: 'Secrets for plugins are stored here.',
+  secretsFile: (path: string) => `Values are kept in ${path}`,
+  secretMasked: '••••••••',
+  secretReplace: 'Replace',
+  secretReaders: (count: number) =>
+    count === 0 ? 'No plugins' : count === 1 ? '1 plugin' : `${count} plugins`,
+  secretNewGroupName: 'New group',
   secretDefault: 'Default',
   secretValue: (name: string) => `Value of ${name}`,
   secretMoveUp: 'Move up',
@@ -30,10 +29,7 @@ export const WORDS = {
   secretDelete: 'Delete secret',
   secretDiscard: 'Discard',
   secretAdd: 'Add secret',
-  secretsEmpty: 'No secrets yet. Add one to share a key or token between plugins.',
-  secretNewGroup: 'Group of the new secret',
-  secretNewGroupPlaceholder: 'Group name',
-  secretGroupTooLong: (limit: number) => `A group name has at most ${limit} characters.`,
+  secretAddGroup: 'Add group',
   secretAllowedTo: 'Allowed to',
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',
