@@ -4,6 +4,41 @@ import path from 'node:path'
 import { expect } from 'playwright/test'
 import {
   getPaletteField,
+  waitForWindow,
+} from '../../../e2e/desktop/tests/support/workspace.js'
+import { getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
+import { assertApplication, getEscaped, parseAsk, parseCount, readNoteType } from './rules.js'
+import type { Scenario } from './scenario.js'
+
+/** A command that depends on a download is listed within this time of the download. */
+const COMMAND_LIMIT_MS = 30_000
+
+export class ApplicationDriver {
+  constructor(private readonly scenario: Scenario) {}
+
+  async startApplication(name: string): Promise<void> {
+    assertApplication(name)
+    const { page } = this.scenario
+    if (this.scenario.isOpen) {
+      await page.reload()
+    } else {
+      await this.scenario.ensureWorkspace()
+    }
+    await waitForWindow(page)
+  }
+
+  async runCommand(label: string): Promise<void> {
+    await this.scenario.ensureWorkspace()
+    const { page } = this.scenario
+    const field = page.locator('input[data-palette="field"]').first()
+    const command = page
+      .getByRole('option')
+      .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${getEscaped(label)}/** The person at the application as a whole: starting it, running a command, looking at the vault. */
+import fs from 'node:fs'
+import path from 'node:path'
+import { expect } from 'playwright/test'
+import {
+  getPaletteField,
   runPaletteCommand,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
@@ -25,9 +60,17 @@ export class ApplicationDriver {
     await waitForWindow(page)
   }
 
-  async runCommand(label: string): Promise<void> {
-    await this.scenario.ensureWorkspace()
-    await runPaletteCommand(this.scenario.page, label, label)
+) }) })
+      .first()
+    // The palette lists the commands the open tab has when it opens: a command that a download adds is listed on the next opening.
+    await expect(async () => {
+      if (await field.isVisible()) await page.keyboard.press('Escape')
+      await page.keyboard.press('Control+p')
+      await expect(field).toBeVisible()
+      await field.fill(label)
+      await expect(command).toBeVisible({ timeout: 3_000 })
+    }).toPass({ timeout: COMMAND_LIMIT_MS })
+    await command.click()
   }
 
   async enter(value: string): Promise<void> {

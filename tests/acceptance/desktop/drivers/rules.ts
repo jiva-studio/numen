@@ -18,6 +18,9 @@ export const getStem = (file: string): string => path.basename(file).replace(/\.
 
 export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+/** A title names a tab by its end: the tab of a link is titled by its whole address, and a person names its last words. */
+export const getTitlePattern = (title: string): RegExp => new RegExp(`${getEscaped(title)}( Close |$)`)
+
 export const parseReference = (how: string, value: string): Reference => {
   if (how !== 'at' && how !== 'titled') {
     throw new Error(`"${how}" does not name a tab or a note: use "at" or "titled"`)

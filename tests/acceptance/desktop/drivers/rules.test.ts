@@ -4,6 +4,7 @@ import {
   assertPlace,
   assertSingleTab,
   getStem,
+  getTitlePattern,
   parseAsk,
   parseCount,
   parseReference,
@@ -22,6 +23,23 @@ describe('parseReference', () => {
     expect(() => parseReference('named', 'A')).toThrow(
       '"named" does not name a tab or a note: use "at" or "titled"',
     )
+  })
+})
+
+describe('getTitlePattern', () => {
+  it('matches a title and the end of a longer title, and the name of a tab with its close button', () => {
+    expect(getTitlePattern('rance').test('rance')).toBe(true)
+    expect(getTitlePattern('rance').test('http---a.test-history-rance')).toBe(true)
+    expect(getTitlePattern('rance').test('rance Close rance')).toBe(true)
+  })
+
+  it('does not match a title that goes on after the words', () => {
+    expect(getTitlePattern('rance').test('http---a.test-history-rance-part=2')).toBe(false)
+    expect(getTitlePattern('rance').test('rances')).toBe(false)
+  })
+
+  it('takes the words as they are, not as a pattern', () => {
+    expect(getTitlePattern('a.c').test('abc')).toBe(false)
   })
 })
 

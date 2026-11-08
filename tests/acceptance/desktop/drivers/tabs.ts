@@ -1,7 +1,7 @@
 /** The person at a tab, whatever it holds: closing it, finding the one in front, its place, what it shows. */
 import { expect, type Locator } from 'playwright/test'
 import { getNoteTab, getTabName, revealTreeRow } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertSingleTab, getEscaped, getStem, parseReference } from './rules.js'
+import { assertSingleTab, getEscaped, getStem, getTitlePattern, parseReference } from './rules.js'
 import type { Scenario } from './scenario.js'
 import { expectTabAt, openTabAt } from './tab-position.js'
 
@@ -14,7 +14,7 @@ export class TabDriver {
       if (value.endsWith('.md')) return getNoteTab(page, value)
       return page.getByRole('tab', { name: new RegExp(`^${getEscaped(getStem(value))}`, 'i') })
     }
-    const tabs = page.getByRole('tab', { name: new RegExp(`^${getEscaped(value)}( Close |$)`) })
+    const tabs = page.getByRole('tab', { name: getTitlePattern(value) })
     await expect(tabs.first()).toBeVisible()
     assertSingleTab(value, await tabs.count())
     return tabs
@@ -27,14 +27,13 @@ export class TabDriver {
 
   private getPanel(how: string, value: string): Locator {
     return this.scenario.page.getByRole('tabpanel', {
-      name: new RegExp(`^${getEscaped(this.getTitle(how, value))}( Close |$)`),
+      name: getTitlePattern(this.getTitle(how, value)),
     })
   }
 
   async close(how: string, value: string): Promise<void> {
     const tab = await this.getTab(how, value)
-    const name = this.getTitle(how, value)
-    await this.scenario.page.getByRole('button', { name: `Close ${name}`, exact: true }).click()
+    await tab.getByRole('button', { name: /^Close / }).click()
     await expect(tab).toHaveCount(0)
   }
 
