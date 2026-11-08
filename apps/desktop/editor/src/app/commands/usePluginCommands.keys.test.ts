@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-host'
 import type { VaultCore } from '../vault'
-import { usePluginCommands } from './usePluginCommands'
+import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 describe('the palette entry of a command a plugin declares with a Shift shortcut', () => {
   it('is drawn with the keystroke holding Shift that the manifest names', () => {
@@ -12,7 +12,10 @@ describe('the palette entry of a command a plugin declares with a Shift shortcut
       ],
     } as unknown as PluginHost
 
-    const entries = usePluginCommands({} as VaultCore, host).getPaletteEntries()
+    const entries = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      host,
+    ).getPaletteEntries()
 
     expect(entries.map((one) => [one.keys?.letter, one.keys?.icons.includes('shift')])).toEqual([
       ['A', true],
