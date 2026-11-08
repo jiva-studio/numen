@@ -7,7 +7,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import Slider from './Slider.vue'
 
 interface Knobs {
@@ -240,64 +240,5 @@ export const DisabledTakesNoKeyboard: Story = {
     const control = handle(canvasElement)
     await userEvent.tab()
     await expect(document.activeElement).not.toBe(control)
-  },
-}
-
-/**
- * A drag with the pointer passes through values that never go back, and the
- * value committed on release is the last one passed, the place the handle is
- * dropped on.
- */
-export const KeepsTheValueItIsDroppedOn: Story = {
-  render: (args) => ({
-    components: { Slider },
-    setup: () => {
-      const share = ref(args.value)
-      const moves = ref<number[]>([])
-      const rests = ref<number[]>([])
-      watch(share, (now) => moves.value.push(now))
-      return { args, share, moves, rests }
-    },
-    template: `
-      <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem">
-        <span id="slider-label">{{ args.label }}</span>
-        <div :style="{ inlineSize: args.width }">
-          <Slider
-            v-model="share"
-            aria-labelledby="slider-label"
-            :min="args.min"
-            :max="args.max"
-            :step="args.step"
-            @commit="rests.push($event)"
-          />
-        </div>
-        <span data-slot="moves">{{ moves.join(' ') }}</span>
-        <span data-slot="rests">{{ rests.join(' ') }}</span>
-      </div>
-    `,
-  }),
-  play: async ({ canvasElement }) => {
-    const read = (slot: string) =>
-      (canvasElement.querySelector(`[data-slot="${slot}"]`)?.textContent ?? '')
-        .split(' ')
-        .filter(Boolean)
-        .map(Number)
-    const box = handle(canvasElement).getBoundingClientRect()
-    const from = { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 }
-
-    await userEvent.pointer([
-      { keys: '[MouseLeft>]', target: handle(canvasElement), coords: from },
-      { coords: { clientX: from.clientX + 30, clientY: from.clientY } },
-      { coords: { clientX: from.clientX + 60, clientY: from.clientY } },
-      { keys: '[/MouseLeft]' },
-    ])
-
-    await waitFor(() => expect(read('rests')).toHaveLength(1))
-    const moves = read('moves')
-    await expect(moves.length).toBeGreaterThan(1)
-    await expect(moves).toStrictEqual([...moves].sort((one, other) => one - other))
-    await expect(moves.at(-1)).toBeGreaterThan(40)
-    await expect(read('rests')).toStrictEqual([moves.at(-1)])
-    await expect(getValueNow(canvasElement)).toBe(String(moves.at(-1)))
   },
 }

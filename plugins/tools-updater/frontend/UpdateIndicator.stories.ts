@@ -80,7 +80,8 @@ export const PopoverOpened: Story = {
     const header = popover.querySelector('header') as HTMLElement
     await expect(header).toHaveTextContent(words.title)
     await expect(header).not.toHaveTextContent(RELEASE.version)
-    const release = within(popover).getByText(
+    const release = popover.querySelector('.update-popover__release') as HTMLElement
+    await expect(release).toHaveTextContent(
       new RegExp(`^v${RELEASE.version} · ${words.releasedOn}`),
     )
     await expect(release).toBeVisible()

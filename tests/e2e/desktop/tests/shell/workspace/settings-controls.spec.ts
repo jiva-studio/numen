@@ -1,6 +1,6 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
-import { writeSetting } from '../../support/vault.js'
+import { readOwner, writeSetting } from '../../support/vault.js'
 
 /** `--numen-surface` in the Dracula theme of the preset themes plugin. */
 const DRACULA_SURFACE = '#21222c'
@@ -21,8 +21,8 @@ const openSystemSettings = async (page: Page): Promise<Locator> => {
   return settings
 }
 
-/** What the control of a list shows, read in the page. */
-type Control = { readonly list: string }
+/** What the control of a list or a slider shows, read in the page. */
+type Control = { readonly list: string } | { readonly slider: string }
 
 const watchControl = async (
   page: Page,
@@ -32,14 +32,32 @@ const watchControl = async (
   const sampler = await page.evaluateHandle(
     ({ target, step }) => {
       const read = (): string => {
-        const holder = document.querySelector(`[data-testid="setting-${target.list}"]`)
-        return holder?.querySelector('button')?.textContent?.trim() ?? ''
+        if ('list' in target) {
+          const holder = document.querySelector(`[data-testid="setting-${target.list}"]`)
+          return holder?.querySelector('button')?.textContent?.trim() ?? ''
+        }
+        const handle = [...document.querySelectorAll('[role="slider"]')].find((one) => {
+          const named = one.getAttribute('aria-labelledby')
+          return (
+            named !== null && document.getElementById(named)?.textContent?.trim() === target.slider
+          )
+        })
+        return handle?.getAttribute('aria-valuenow') ?? ''
       }
       const samples = [read()]
       const timer = window.setInterval(() => samples.push(read()), step)
+      const observer = new MutationObserver(() => samples.push(read()))
+      if ('slider' in target) {
+        observer.observe(document.body, {
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['aria-valuenow'],
+        })
+      }
       return {
         stop: () => {
           window.clearInterval(timer)
+          observer.disconnect()
           return samples
         },
       }
@@ -113,5 +131,35 @@ test.describe('A control of the page System after a change', () => {
     expect(runs).toHaveLength(2)
     expect(runs[0]).toBe(before)
     expect(runs[1]).toContain('Eco')
+  })
+
+  test('keeps the interface size at the place the handle is dropped on', async ({
+    page,
+    request,
+  }) => {
+    await openWorkspace(page)
+    const settings = await openSystemSettings(page)
+    const slider = settings.getByRole('slider', { name: 'Interface size' })
+    const box = await slider.boundingBox()
+    expect(box).not.toBeNull()
+    const startX = (box?.x ?? 0) + (box?.width ?? 0) / 2
+    const y = (box?.y ?? 0) + (box?.height ?? 0) / 2
+
+    const { samples } = await watchControl(page, { slider: 'Interface size' }, async () => {
+      await page.mouse.move(startX, y)
+      await page.mouse.down()
+      await page.mouse.move(startX + 60, y, { steps: 12 })
+      await page.mouse.move(startX + 120, y, { steps: 12 })
+      await page.mouse.up()
+    })
+
+    const values = getRuns(samples).map(Number)
+    expect(values.length).toBeGreaterThan(1)
+    expect(values).toStrictEqual([...values].sort((one, other) => one - other))
+    const last = values[values.length - 1]
+    expect(last).toBeGreaterThan(1)
+    await expect
+      .poll(async () => (await readOwner(request, 'app'))['appearance'])
+      .toMatchObject({ interfaceScale: last })
   })
 })
