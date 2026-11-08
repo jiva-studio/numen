@@ -12,6 +12,7 @@ interface Options {
   platform?: AppInfo['platform']
   buttons?: 'windows' | 'mac'
   isMaximized?: boolean
+  isFullscreen?: boolean
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
   listItems?: (command: string) => Promise<readonly CommandItem[]>
