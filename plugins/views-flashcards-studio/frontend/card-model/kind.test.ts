@@ -456,6 +456,16 @@ describe('a card model edited before its file is read', () => {
     expect(tab.cardModel.value.templates).toStrictEqual([])
   })
 
+  it('takes no template where the read failed', async () => {
+    const { cardModels, tab, writtenFiles } = await open({ error: 'notACardModel' })
+
+    tab.addTemplate('Name it')
+    await cardModels.store.flush()
+
+    expect(tab.cardModel.value.templates).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
+  })
+
   it('shows the file once it is read, and writes nothing', async () => {
     const { cardModels, tab, answerRead, writtenFiles } = await openUnread()
 

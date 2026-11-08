@@ -77,6 +77,8 @@ const mountDeck = async (
     saying?: string
     notScheduled?: ErrorCode
   } = {},
+  /** The read of the deck, where a test needs one other than the deck above. */
+  readDeck?: Cards['readDeck'],
 ) => {
   const core: Cards = {
     cardModels: async () => ({
@@ -86,19 +88,21 @@ const mountDeck = async (
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
-    readDeck: async (path) =>
-      asValue({
-        deck: {
-          path,
-          title: 'Animals',
-          preamble: '',
-          cards: CARDS,
-          sections: SECTIONS,
-          tail: '',
-          problems,
-        },
-        at: 'read',
-      }),
+    readDeck:
+      readDeck ??
+      (async (path) =>
+        asValue({
+          deck: {
+            path,
+            title: 'Animals',
+            preamble: '',
+            cards: CARDS,
+            sections: SECTIONS,
+            tail: '',
+            problems,
+          },
+          at: 'read',
+        })),
     writeDeck: async () => asValue({ at: 'written' }),
     readCardModel: async () => asFailure('notFound' as const),
     writeCardModel: async () => asValue({ at: '' }),
@@ -183,6 +187,33 @@ const withoutCardModel: DeckProblem = {
   field: '',
   text: 'a card under no card model',
 }
+
+/** The button that adds a section, found by its text. */
+const findAddSection = (window: ReturnType<typeof mount>) =>
+  window.findAll('button').find((one) => one.text() === 'Add a section')
+
+describe('a deck whose file is being read', () => {
+  it('takes no gesture until the file is read', async () => {
+    // The read never answers.
+    const { window } = await mountDeck([], {}, () => new Promise(() => undefined))
+
+    expect(findAddSection(window)?.element.matches(':disabled')).toBe(true)
+  })
+
+  it('takes no gesture where the read failed', async () => {
+    const { window } = await mountDeck([], {}, async () =>
+      asFailure({ code: 'notADeck' as const, bound: 0 }),
+    )
+
+    expect(findAddSection(window)?.element.matches(':disabled')).toBe(true)
+  })
+
+  it('takes gestures once the file is read', async () => {
+    const { window } = await mountDeck()
+
+    expect(findAddSection(window)?.element.matches(':disabled')).toBe(false)
+  })
+})
 
 describe('a deck drawn', () => {
   it('draws a tile for every card the vault read', async () => {

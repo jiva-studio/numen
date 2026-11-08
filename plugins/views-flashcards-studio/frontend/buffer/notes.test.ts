@@ -48,6 +48,34 @@ describe('openNotes for flashcards studio', () => {
     expect(notes.write).not.toHaveBeenCalled()
   })
 
+  it('takes no edit where the first read failed', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asFailure('notADeck')),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'bad.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('error'))
+    store.setBody('tab-1', 'typed after the read failed')
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'error', isRead: false })
+    expect(notes.write).not.toHaveBeenCalled()
+  })
+
+  it('is read once a read answered with the body', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'deck content', at: 'v1' })),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    expect(store.getOpenNote('tab-1').isRead).toBe(false)
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').isRead).toBe(true))
+  })
+
   it('marks error when read fails or throws', async () => {
     const notes: Notes = {
       read: vi.fn(async () => asFailure('notADeck')),
