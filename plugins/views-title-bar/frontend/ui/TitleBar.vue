@@ -44,6 +44,7 @@ const props = withDefaults(
     status?: readonly SlotItem[]
     canCreateVault?: boolean
     listItems?: (command: string) => Promise<readonly CommandItem[]>
+    reportError?: (error: unknown) => void
   }>(),
   {
     platform: 'windows',
@@ -196,6 +197,7 @@ function onRunCommand(command: string, argument?: string): void {
         :hidden="fit.hidden"
         :platform="platform"
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
 
@@ -206,6 +208,7 @@ function onRunCommand(command: string, argument?: string): void {
         :icon="Ellipsis"
         data-title-bar-more
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
 
@@ -236,6 +239,7 @@ function onRunCommand(command: string, argument?: string): void {
         :hidden="fit.hidden"
         :platform="platform"
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
     </div>

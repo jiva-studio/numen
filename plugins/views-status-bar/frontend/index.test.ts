@@ -348,6 +348,37 @@ describe('a command with items', () => {
     expect(getMenus().flatMap((menu) => getRows(menu))).toStrictEqual([])
   })
 
+  it('opens on the next click after a click whose command listed no item', async () => {
+    const { context, view } = activateBar()
+    context.commands.setItems(LANGUAGE.command, [])
+    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    const wrapper = mountBar(view)
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    expect(getRows(getMenus()[0]).map((one) => one.textContent?.trim())).toStrictEqual(['Sanskrit'])
+  })
+
+  it('shows the error of a list that failed to read', async () => {
+    const notices = createMockNoticeHost()
+    const context = createMockPluginContext({ pluginId: manifest.id, notices })
+    vi.spyOn(context.commands, 'listItems').mockRejectedValue(new Error('the languages are gone'))
+    activate(context)
+    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    const wrapper = mountBar(context.getRegisteredSlotViews()[0]!.component as Component)
+
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    expect(notices.getShown()).toStrictEqual([
+      { text: 'the languages are gone', severity: 'error' },
+    ])
+  })
+
   it('runs the command with the item picked as its argument', async () => {
     const { context, view } = activateBar()
     context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])

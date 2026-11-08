@@ -284,6 +284,29 @@ describe('the note type and the properties of the file of a tab', () => {
   })
 })
 
+describe('an open of the menu of a tab cancelled while its note type is read', () => {
+  it('opens nothing after Escape', async () => {
+    let finish: (kind: NoteKind) => void = () => undefined
+    const commands = createCommands()
+    const menu = useTabMenu({
+      slots: createSlots(ENTRIES),
+      runCommand: commands.run,
+      listItems: commands.listItems,
+      getTabTarget: (tab) => TARGETS[tab]!,
+      readNoteKind: () => new Promise<NoteKind>((done) => (finish = done)),
+    })
+
+    menu.open('reef', { x: 4, y: 8 })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    finish({ noteType: 'link' })
+    await settle()
+    await settle()
+
+    expect(menu.menu.value).toBeNull()
+    expect(commands.listItems).not.toHaveBeenCalled()
+  })
+})
+
 describe('an entry of the menu of a tab that offers items', () => {
   const getItemRows = (menu: ReturnType<typeof setup>['menu']) =>
     menu.menu.value?.items

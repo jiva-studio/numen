@@ -18,6 +18,7 @@ const props = defineProps<{
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: (error: unknown) => void
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -59,6 +60,7 @@ function isDrawn(entry: SlotItem): boolean {
           :tooltip="getTooltip(entry)"
           is-item-list
           :list-items="listItems"
+          :report-error="reportError"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-command="entry.command"
           @run-command="onRunCommand"
@@ -87,6 +89,7 @@ function isDrawn(entry: SlotItem): boolean {
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-submenu="entry.submenu"
           :list-items="listItems"
+          :report-error="reportError"
           @run-command="onRunCommand"
         />
         <div

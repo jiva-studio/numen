@@ -13,6 +13,7 @@ defineProps<{
   place: string
   entries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: (error: unknown) => void
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -37,6 +38,7 @@ function onRun(command: string, argument?: string): void {
         :tooltip="formatTooltip(entry)"
         is-item-list
         :list-items="listItems"
+        :report-error="reportError"
         @run="onRun"
       />
       <button
@@ -58,6 +60,7 @@ function onRun(command: string, argument?: string): void {
         :label="entry.title"
         :icon="entry.icon"
         :list-items="listItems"
+        :report-error="reportError"
         @run="onRun"
       />
     </template>

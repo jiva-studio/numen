@@ -2,17 +2,14 @@
  * The menu of a tab, which the tab strip draws: the entries of the slot `tabStrip.context` over the
  * tab and the file it shows, the commands of the window over a tab among them.
  */
-import { computed, ref, shallowRef, type Component } from 'vue'
+import { computed, type Component } from 'vue'
 import type { TabMenu } from '@numen/shell'
 import {
-  createSlotMenu,
-  readCommandItemLists,
   SLOT,
+  useSlotMenu,
   type CommandItem,
-  type CommandItemLists,
   type CommandsHost,
   type CommandTarget as RunTarget,
-  type Disposable,
   type SlotHost,
   type SlotItem,
   type SlotMenu,
@@ -31,7 +28,7 @@ export interface TabMenuDeps {
   getTabTarget(tab: string): RunTarget
   /** Turns the highlight of another window on or off while the pointer is over its item. */
   onHighlight?(windowId: string, isOn: boolean): void
-  /** Receives the failure of a command that runs after the menu closed. */
+  /** Receives the failure of a command that runs after the menu closed, or of a list read. */
   reportError?(error: unknown): void
   /** The type and the properties of the note of the path, which the entries are asked for over. */
   readNoteKind?(path: string): Promise<NoteKind>
@@ -43,37 +40,15 @@ const NOTE_EXTENSION = '.md'
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: WORDS.loadingItems }
 
-function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
-  const lists = shallowRef<CommandItemLists>(new Map())
-  let itemSubscription: Disposable | null = null
-  const stop = () => {
-    itemSubscription?.dispose()
-    itemSubscription = null
-  }
-  /** Reads the lists of the entries over the target; onShow once the menu may be drawn, onCancel when its open is cancelled. */
-  const read = (
-    entries: readonly SlotItem[],
-    target: RunTarget,
-    onShow: () => void,
-    onCancel: () => void,
-  ) => {
-    stop()
-    itemSubscription = readCommandItemLists(
-      entries,
-      (command) => deps.listItems?.(command, target) ?? Promise.resolve([]),
-      {
-        onChange: (next) => (lists.value = next),
-        onShow,
-        onCancel,
-        onError: (error) => deps.reportError?.(error),
-      },
-    )
-  }
-  return { lists, read, stop }
+/** What the menu of a tab is over: the tab, where it was requested, and the target of its commands. */
+interface TabMenuTarget {
+  readonly tab: string
+  readonly at: { readonly x: number; readonly y: number }
+  readonly target: RunTarget
 }
 
-const getMoveWindow = (tree: SlotMenu, id: string | null): string | null => {
-  const pick = id === null ? undefined : tree.getPick(id)
+const getMoveWindow = (tree: SlotMenu | null, id: string | null): string | null => {
+  const pick = id === null ? undefined : tree?.getPick(id)
   return pick?.command === COMMAND.moveTabToWindow ? (pick.argument ?? null) : null
 }
 
@@ -97,26 +72,24 @@ const readTypedTarget = async (
 }
 
 export function useTabMenu(deps: TabMenuDeps) {
-  const tabId = ref<string | null>(null)
-  const position = ref({ x: 0, y: 0 })
-  const openTarget = shallowRef<RunTarget | null>(null)
   const getEntries = (target: RunTarget): readonly SlotItem[] =>
     deps.slots?.getEntries(SLOT.tabStripContext, target) ?? []
-  const entries = computed(() => (openTarget.value === null ? [] : getEntries(openTarget.value)))
-  const entryItems = useEntryItems(deps)
+  const slotMenu = useSlotMenu<TabMenuTarget>({
+    listItems: (command, { target }) => deps.listItems?.(command, target) ?? Promise.resolve([]),
+    words: MENU_WORDS,
+    onError: (error) => deps.reportError?.(error),
+  })
   let highlighted: string | null = null
-  /** How many menus were requested or closed, which tells a read of a note type it is too late. */
-  let requests = 0
-
-  const tree = computed(() => createSlotMenu(entries.value, entryItems.lists.value, MENU_WORDS))
 
   const menu = computed<TabMenu | null>(() => {
-    if (tabId.value === null) return null
-    return { tab: tabId.value, at: position.value, items: tree.value.items }
+    const shown = slotMenu.target.value
+    const tree = slotMenu.menu.value
+    if (shown === null || tree === null) return null
+    return { tab: shown.tab, at: shown.at, items: tree.items }
   })
 
   const highlight = (id: string | null): void => {
-    const windowId = getMoveWindow(tree.value, id)
+    const windowId = getMoveWindow(slotMenu.menu.value, id)
     if (windowId === highlighted) return
     if (highlighted !== null) deps.onHighlight?.(highlighted, false)
     highlighted = windowId
@@ -124,61 +97,43 @@ export function useTabMenu(deps: TabMenuDeps) {
   }
 
   const dismiss = (): void => {
-    requests += 1
     highlight(null)
-    entryItems.stop()
-    tabId.value = null
-    openTarget.value = null
-  }
-
-  const show = (tab: string, where: { x: number; y: number }, target: RunTarget): void => {
-    const found = getEntries(target)
-    if (found.length === 0) return
-    entryItems.read(
-      found,
-      target,
-      () => {
-        tabId.value = tab
-        position.value = where
-        openTarget.value = target
-      },
-      dismiss,
-    )
+    slotMenu.close()
   }
 
   /**
    * Opens the menu on a tab, over the type and properties of its note where the menu reads one first; a tab the
    * slot holds no entry for has none.
    */
-  const open = (tab: string, where: { x: number; y: number }): void => {
+  const open = (tab: string, at: { x: number; y: number }): void => {
     const target = deps.getTabTarget(tab)
-    const request = ++requests
+    highlight(null)
+    const request = (typed: RunTarget) => ({
+      target: { tab, at, target: typed },
+      entries: getEntries(typed),
+    })
     if (!deps.readNoteKind || !target.path.endsWith(NOTE_EXTENSION)) {
-      show(tab, where, target)
+      slotMenu.open(() => request(target))
       return
     }
-    readTypedTarget(target, deps.readNoteKind)
-      .then((typed) => {
-        if (request === requests) show(tab, where, typed)
-      })
-      .catch((error: unknown) => deps.reportError?.(error))
+    const readNoteKind = deps.readNoteKind
+    slotMenu.open(async () => request(await readTypedTarget(target, readNoteKind)))
   }
 
   /** Chooses the row `id` of the menu requested on `tab`; a menu since closed runs nothing. */
   const choose = (tab: string, id: string): void => {
-    const target = openTarget.value
-    if (tabId.value !== tab || !target) return
-    const pick = tree.value.getPick(id)
-    if (!pick) return
-    dismiss()
-    ;(deps.runCommand?.(pick.command, target, pick.argument) ?? Promise.resolve()).catch(
-      (error: unknown) => deps.reportError?.(error),
-    )
+    if (slotMenu.target.value?.tab !== tab) return
+    highlight(null)
+    const choice = slotMenu.pick(id)
+    if (!choice) return
+    ;(
+      deps.runCommand?.(choice.command, choice.target.target, choice.argument) ?? Promise.resolve()
+    ).catch((error: unknown) => deps.reportError?.(error))
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */
   const getIcon = (id: string): Component | null =>
-    (tree.value.getIcon(id) as Component | undefined) ?? null
+    (slotMenu.getIcon(id) as Component | undefined) ?? null
 
   return { menu, open, choose, dismiss, highlight, getIcon }
 }

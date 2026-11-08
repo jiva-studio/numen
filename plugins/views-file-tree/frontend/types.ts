@@ -86,7 +86,7 @@ export interface FileTree {
 /** What one files tab holds. */
 export interface FilesTabState {
   readonly list: FileTree
-  readonly menu: Ref<MenuRequest | null>
+  readonly menu: Readonly<Ref<MenuRequest | null>>
   readonly renamingPath: Ref<string | null>
   setRenamingPath(path: string | null): void
   getOverPaths(path: string): readonly string[]

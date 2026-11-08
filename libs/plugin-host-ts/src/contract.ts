@@ -15,7 +15,7 @@ export {
   getRelationErrorWords,
   isNotePath,
   MENU_HOLD_MS,
-  readCommandItemLists,
+  useSlotMenu,
 } from '@numen/plugin-sdk'
 export type {
   AgentHost,
@@ -26,8 +26,10 @@ export type {
   Backlink,
   BufferHost,
   CommandItem,
-  CommandItemLists,
   SlotMenu,
+  SlotMenuChoice,
+  SlotMenuRequest,
+  SlotMenuState,
   CommandNote,
   CommandTarget,
   CommandsHost,

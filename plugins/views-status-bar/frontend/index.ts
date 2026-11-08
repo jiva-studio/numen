@@ -29,6 +29,7 @@ function createStatusBarView(context: PluginContext) {
           startEntries: startEntries.value,
           endEntries: endEntries.value,
           listItems,
+          reportError,
           onRun,
         })
     },

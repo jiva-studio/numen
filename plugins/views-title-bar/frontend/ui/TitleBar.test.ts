@@ -14,6 +14,7 @@ interface Options {
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
   listItems?: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: (error: unknown) => void
 }
 
 const mounted: VueWrapper[] = []
@@ -450,6 +451,34 @@ describe('a command with items', () => {
     await settle()
 
     expect(menuTexts()).toStrictEqual([])
+  })
+
+  it('opens on the next click after a click whose command listed no item', async () => {
+    const listItems = vi.fn<() => Promise<readonly CommandItem[]>>(async () => [])
+    const wrapper = mountBar({ commands: [MOVE], listItems })
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    listItems.mockResolvedValue(items)
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(menuTexts()).toStrictEqual(['Window 1', 'Window 2'])
+  })
+
+  it('reports a list that failed to read', async () => {
+    const failure = new Error('the windows are gone')
+    const reportError = vi.fn()
+    const wrapper = mountBar({
+      commands: [MOVE],
+      listItems: () => Promise.reject(failure),
+      reportError,
+    })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
   })
 
   it('emits run-command with the command and the item picked as its argument', async () => {

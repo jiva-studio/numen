@@ -13,6 +13,7 @@ defineProps<{
   startEntries: readonly SlotItem[]
   endEntries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: (error: unknown) => void
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -27,12 +28,19 @@ function onRun(command: string, argument?: string): void {
 
 <template>
   <footer class="status-bar" role="region" :aria-label="words.bar">
-    <SlotRow place="statusBar.left" :entries="startEntries" :list-items="listItems" @run="onRun" />
+    <SlotRow
+      place="statusBar.left"
+      :entries="startEntries"
+      :list-items="listItems"
+      :report-error="reportError"
+      @run="onRun"
+    />
     <SlotRow
       class="status-bar__slot--end"
       place="statusBar.right"
       :entries="endEntries"
       :list-items="listItems"
+      :report-error="reportError"
       @run="onRun"
     />
   </footer>

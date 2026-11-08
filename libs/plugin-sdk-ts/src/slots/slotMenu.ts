@@ -7,7 +7,6 @@ import type { Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import type { CommandItem } from '../commands/commands'
 import { SHARED_COMMANDS } from '../commands/sharedCommands'
-import type { Disposable } from '../types'
 import type { SlotCommand, SlotEntryKey, SlotItem } from './slots'
 
 // CommandItemLists is the items read for the commands of an open menu, by the key of their entry;
@@ -121,93 +120,4 @@ export function createSlotMenu(
     getPick: (id) => parts.picks.get(id),
     getIcon: (id) => parts.icons.get(id),
   }
-}
-
-const listItemCommands = (entries: readonly SlotItem[]): readonly SlotCommand[] =>
-  entries.flatMap((entry) => {
-    if (entry.kind === 'command') return entry.hasItems ? [entry] : []
-    return entry.kind === 'submenu' ? listItemCommands(entry.entries) : []
-  })
-
-// MENU_HOLD_MS is how long an opening menu stays hidden while the item lists of its commands are read.
-export const MENU_HOLD_MS = 150
-
-// CommandItemListsHandlers receives what the read of the item lists of an opening menu reports.
-interface CommandItemListsHandlers {
-  readonly onChange: (lists: CommandItemLists) => void
-  readonly onShow: () => void
-  readonly onCancel: () => void
-  readonly onError?: (error: unknown) => void
-  readonly events?: EventTarget
-}
-
-function listenForCancel(events: EventTarget | undefined, onCancel: () => void): () => void {
-  const controller = new AbortController()
-  const options = { capture: true, signal: controller.signal }
-  events?.addEventListener(
-    'keydown',
-    (event) => {
-      if ((event as KeyboardEvent).key === 'Escape') onCancel()
-    },
-    options,
-  )
-  events?.addEventListener('pointerdown', onCancel, options)
-  return () => controller.abort()
-}
-
-/**
- * Reads the items of every command of the entries that offers them, for the menu that opens now. The
- * menu is shown once every list is read, or after MENU_HOLD_MS with loading rows for the lists still
- * read; Escape or a pointer press before that cancels the open. A list that fails to read is
- * reported and empty. Disposing stops the reports, as the menu closes.
- */
-export function readCommandItemLists(
-  entries: readonly SlotItem[],
-  listItems: (command: string) => Promise<readonly CommandItem[]>,
-  handlers: CommandItemListsHandlers,
-): Disposable {
-  let isDisposed = false
-  let isShown = false
-  const commands = listItemCommands(entries)
-  let lists: CommandItemLists = new Map(commands.map((one) => [one.key, null]))
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let stopListening = () => undefined as void
-  const show = () => {
-    if (isShown || isDisposed) return
-    isShown = true
-    clearTimeout(timer)
-    stopListening()
-    handlers.onShow()
-  }
-  const dispose = () => {
-    isDisposed = true
-    clearTimeout(timer)
-    stopListening()
-  }
-  const set = (key: SlotEntryKey, items: readonly CommandItem[]) => {
-    if (isDisposed) return
-    lists = new Map([...lists, [key, items]])
-    handlers.onChange(lists)
-    if ([...lists.values()].every((one) => one !== null)) show()
-  }
-  handlers.onChange(lists)
-  if (commands.length === 0) {
-    show()
-    return { dispose }
-  }
-  timer = setTimeout(show, MENU_HOLD_MS)
-  stopListening = listenForCancel(handlers.events ?? globalThis.document, () => {
-    dispose()
-    handlers.onCancel()
-  })
-  for (const entry of commands) {
-    listItems(entry.command)
-      .then((items) => set(entry.key, items))
-      .catch((error: unknown) => {
-        if (isDisposed) return
-        handlers.onError?.(error)
-        set(entry.key, [])
-      })
-  }
-  return { dispose }
 }
