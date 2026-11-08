@@ -226,6 +226,9 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A link written in the text of a note as `[[Note Title]]`.
 - Not: only the README of the notes plugin uses this word.
 
+### completion
+- Is: The list of suggestions the editor of a note shows while a link `[[…` is typed.
+
 ### link inspector and quick link
 - Is: Two small popovers of the plex. The inspector edits the link between two notes. The quick link opens when you drag from a node to empty space, to pick or create the note to link.
 - Texts: "Note to link"; "Search or type note title…"; `Create "<title>"`; "No matching notes".
