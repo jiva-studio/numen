@@ -129,7 +129,6 @@
   cursor: pointer;
 }
 
-.title-bar__title--trigger:hover,
 .title-bar__title--trigger:focus-visible,
 .title-bar__title--trigger[aria-expanded='true'] {
   background: var(--numen-surface);
