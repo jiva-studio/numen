@@ -46,8 +46,51 @@ linters:
     - gochecknoinits
     - gochecknoglobals
     - reassign
+    - govet
+    - errorlint
+    - nilnesserr
+    - copyloopvar
+    - modernize
+    - intrange
+    - usestdlibvars
+    - exptostd
+    - asasalint
+    - durationcheck
+    - makezero
+    - errchkjson
+    - canonicalheader
+    - sloglint
+    - testifylint
+    - bidichk
+    - predeclared
+    - gocheckcompilerdirectives
+    - ineffassign
+    - errname
+    - recvcheck
+    - protogetter
+    - musttag
+    - thelper
+    - misspell
+    - gosec
 
   settings:
+    govet:
+      enable:
+        - nilness
+
+    gosec:
+      excludes:
+        - G104
+        - G115
+        - G301
+        - G302
+        - G304
+        - G306
+        - G404
+
+    misspell:
+      locale: US
+
     depguard:
       rules:
         domain:
