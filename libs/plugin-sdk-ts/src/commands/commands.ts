@@ -28,6 +28,7 @@ export interface CommandTarget {
 export interface CommandItem {
   readonly id: string
   readonly title: string
+  readonly detail?: string
   readonly group?: string
 }
 

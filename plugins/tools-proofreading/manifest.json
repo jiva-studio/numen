@@ -6,6 +6,7 @@
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
   "contributes": {
+    "textKinds": [{ "kind": "proofreading", "title": "Proofread text" }],
     "category": "tools",
     "commands": [
       {

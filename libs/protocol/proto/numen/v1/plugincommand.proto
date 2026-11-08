@@ -215,6 +215,9 @@ message CommandItem {
   string id = 1;
 
   string title = 2;
+
+  // detail is a second, smaller line under the title. Empty for none.
+  string detail = 3;
 }
 
 message RunPluginCommandResponse {

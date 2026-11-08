@@ -7,6 +7,7 @@
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
+    "textKinds": [{ "kind": "page-text", "title": "Text layer" }],
     "tabKinds": [
       {
         "kind": "reader:reader-pdf",

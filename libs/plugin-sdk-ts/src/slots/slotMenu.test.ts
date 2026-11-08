@@ -79,6 +79,27 @@ describe('createSlotMenu', () => {
     expect(menu.items[0]?.children?.map((one) => one.id)).toStrictEqual([OPEN.key, RENAME.key])
   })
 
+  it('draws the detail of an item on its row, and none on an item without one', () => {
+    const menu = createSlotMenu(
+      [MOVE],
+      lists([
+        [
+          MOVE,
+          [
+            { id: 'a', title: 'Transcript (current)', detail: 'Transcription · 2026-11-08' },
+            { id: 'b', title: 'Plain' },
+          ],
+        ],
+      ]),
+      WORDS,
+    )
+
+    expect(menu.items[0]?.children?.map((one) => one.detail)).toStrictEqual([
+      'Transcription · 2026-11-08',
+      undefined,
+    ])
+  })
+
   it('draws a loading row in the submenu of a command whose items are being read', () => {
     const menu = createSlotMenu([MOVE], lists([[MOVE, null]]), WORDS)
 

@@ -110,6 +110,14 @@ func (u List) ExecuteHandlers() []Entry {
 	})
 }
 
+// GetParts says what the enabled plugin of the id has, its name and the readable names of its text kinds.
+func (u List) GetParts(pluginID string) Parts {
+	if u.commands == nil {
+		return Parts{}
+	}
+	return u.commands.GetParts(pluginID)
+}
+
 // HasBackend reports whether the plugin has a backend that runs its commands and handlers.
 func (u List) HasBackend(pluginID string) bool {
 	return u.commands != nil && u.commands.GetParts(pluginID).HasBackend

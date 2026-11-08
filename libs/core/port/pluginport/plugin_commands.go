@@ -25,6 +25,8 @@ type PluginParts struct {
 	HasBackend  bool
 	HasFrontend bool
 	IsSuspended bool
+	Name        string
+	TextKinds   map[string]string
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.

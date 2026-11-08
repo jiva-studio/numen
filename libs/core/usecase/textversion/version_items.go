@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -51,9 +52,11 @@ func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path
 
 // VersionItem is a text version of a file that a command with items offers to run over.
 type VersionItem struct {
-	Version domain.TextVersionID
-	Kind    string
-	IsLive  bool
+	Version    domain.TextVersionID
+	Kind       string
+	IsLive     bool
+	PluginID   string
+	CreateTime time.Time
 }
 
 func listVersionItems(condition pluginport.PluginCondition, target pluginport.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
@@ -61,7 +64,10 @@ func listVersionItems(condition pluginport.PluginCondition, target pluginport.Ta
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
 		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == pluginport.ConditionTrue {
-			items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
+			items = append(items, VersionItem{
+				Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
+				PluginID: version.PluginID, CreateTime: version.CreateTime,
+			})
 		}
 	}
 	return items
@@ -100,7 +106,10 @@ func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, pat
 	items := make([]VersionItem, 0, len(versions))
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
-		items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
+		items = append(items, VersionItem{
+			Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
+			PluginID: version.PluginID, CreateTime: version.CreateTime,
+		})
 	}
 	return items, nil
 }

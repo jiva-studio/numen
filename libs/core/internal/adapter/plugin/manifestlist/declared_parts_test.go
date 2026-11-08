@@ -1,6 +1,7 @@
 package manifestlist
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -24,7 +25,7 @@ func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 		"md.numen.missing": {},
 	}
 	for id, parts := range want {
-		if got := commands.GetParts(id); got != parts {
+		if got := commands.GetParts(id); !reflect.DeepEqual(got, parts) {
 			t.Errorf("plugin %s has parts %+v, want %+v", id, got, parts)
 		}
 	}
@@ -60,5 +61,20 @@ func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
 	}
 	if host.infoReads != 0 {
 		t.Errorf("the parts of one plugin read the listing of all plugins %d times", host.infoReads)
+	}
+}
+
+func TestGetParts_ReadsTheNameAndTheTextKindsOfThePlugin(t *testing.T) {
+	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
+		{Manifest: manifest.Manifest{
+			ID: "md.numen.ears", Name: "Transcription", Backend: manifest.Backend{Entrypoint: "bin/ears"},
+			Contributes: manifest.Contributes{TextKinds: []manifest.TextKind{{Kind: "transcript", Title: "Transcript"}}},
+		}},
+	}}
+
+	parts := Open(host).GetParts("md.numen.ears")
+
+	if parts.Name != "Transcription" || parts.TextKinds["transcript"] != "Transcript" {
+		t.Fatalf("got %+v", parts)
 	}
 }

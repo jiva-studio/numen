@@ -56,7 +56,12 @@ function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): Me
   const children = list.map((item): MenuItem => {
     const id = `${entry.key}${ITEM_MARK}${item.id}`
     parts.picks.set(id, { command: entry.command, itemId: item.id })
-    return { id, text: item.title, ...(item.group === undefined ? {} : { group: item.group }) }
+    return {
+      id,
+      text: item.title,
+      ...(item.detail === undefined ? {} : { detail: item.detail }),
+      ...(item.group === undefined ? {} : { group: item.group }),
+    }
   })
   const [only] = children
   // A shared command with one handler is drawn as the row of that handler.

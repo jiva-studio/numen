@@ -41,7 +41,25 @@ type Contributes struct {
 	Slots        []SlotEntry
 	Handlers     []Handler
 	Triggers     []Trigger
+	TextKinds    []TextKind
 	Listeners    []Listener
+}
+
+// TextKind is the readable name of one kind of text version the plugin makes.
+type TextKind struct {
+	Kind  string
+	Title string
+}
+
+// GetTextKindTitle returns the name the plugin declares for the kind of text version, and false where
+// it declares none.
+func (c Contributes) GetTextKindTitle(kind string) (string, bool) {
+	for _, declared := range c.TextKinds {
+		if declared.Kind == kind {
+			return declared.Title, true
+		}
+	}
+	return "", false
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -85,6 +103,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listSlotIssues()...)
 	issues = append(issues, m.listHandlerIssues()...)
 	issues = append(issues, m.listTriggerIssues()...)
+	issues = append(issues, listTextKindIssues(c.TextKinds)...)
 	issues = append(issues, m.listListenerIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
@@ -122,6 +141,24 @@ func listTabKindIssues(kinds []TabKind) []error {
 		}
 		if _, err := when.Parse(declared.When); err != nil {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q: when: %w", ErrInvalidContribution, declared.Kind, err))
+		}
+	}
+	return issues
+}
+
+func listTextKindIssues(kinds []TextKind) []error {
+	var issues []error
+	observed := map[string]bool{}
+	for _, declared := range kinds {
+		switch {
+		case strings.TrimSpace(declared.Kind) == "":
+			issues = append(issues, fmt.Errorf("%w: a text kind has no kind", ErrInvalidContribution))
+		case observed[declared.Kind]:
+			issues = append(issues, fmt.Errorf("%w: text kind %q is declared twice", ErrInvalidContribution, declared.Kind))
+		}
+		observed[declared.Kind] = true
+		if strings.TrimSpace(declared.Title) == "" {
+			issues = append(issues, fmt.Errorf("%w: text kind %q has no title", ErrInvalidContribution, declared.Kind))
 		}
 	}
 	return issues

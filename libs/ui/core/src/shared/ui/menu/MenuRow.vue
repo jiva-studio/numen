@@ -15,7 +15,6 @@ defineProps<{
   current: string | null
   hasName: boolean
   hasIcons: boolean
-  /** The row the next Enter activates: the one the keyboard or the pointer came onto last. */
   isActive: boolean
 }>()
 

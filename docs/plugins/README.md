@@ -78,6 +78,7 @@ The core discovers plugins from their manifests and has no code that names a plu
 | `contributes.themes`       | `ManifestContributes`  | Stylesheets added to the list of themes: `id`, `name`, `appearance`, `file`.                                                                             |
 | `contributes.handlers`     | `ManifestContributes`  | The plugin's handlers of shared commands: `command`, `title`, `when` (see [Shared commands and handlers](#shared-commands-and-handlers)).                |
 | `contributes.triggers`     | `ManifestContributes`  | Events on which the plugin's own handlers run: `on`, `command`, `when` (see [Triggers](#triggers)).                                                      |
+| `contributes.textKinds`    | `ManifestContributes`  | The readable name of each kind of text version the plugin makes: `kind`, `title`. A text version is listed by this name, and by its raw kind where none is declared. |
 | `contributes.readers`      | `ManifestContributes`  | Tabs that open files of some types: `id`, `contentTypes`, `rank`.                                                                                        |
 | `contributes.noteTypes`    | `ManifestContributes`  | Types of note the plugin defines: `type`, `chunks`, `headings`, `idHeadingLevels`, `idPattern`.                                                          |
 | `contributes.frameOrigins` | `ManifestContributes`  | The https origins the plugin's pages frame.                                                                                                              |

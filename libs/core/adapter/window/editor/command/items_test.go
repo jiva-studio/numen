@@ -84,7 +84,7 @@ func TestListCommandItems_ListsTheVersionsOfTheFileByKind(t *testing.T) {
 	for _, one := range list.GetItems() {
 		got = append(got, [2]string{one.GetId(), one.GetTitle()})
 	}
-	want := [][2]string{{"org.example.ears/ears", "transcript (live)"}, {"org.example.ears/older", "transcript"}}
+	want := [][2]string{{"org.example.ears/ears", "transcript (current)"}, {"org.example.ears/older", "transcript"}}
 	if !reflect.DeepEqual(got, want) || list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("got %v, %v, want %v", got, list.GetError(), want)
 	}

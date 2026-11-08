@@ -79,3 +79,32 @@ func TestReadManifest_RejectsATriggerOfAPluginWithoutABackend(t *testing.T) {
 		t.Errorf("got %v, want ErrNoBackend", err)
 	}
 }
+
+func TestReadManifest_ReadsTheTextKindsOfAPlugin(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(handlerManifestHead +
+		`{"textKinds":[{"kind":"recognition","title":"Recognized text"}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []manifest.TextKind{{Kind: "recognition", Title: "Recognized text"}}
+	if !reflect.DeepEqual(m.Contributes.TextKinds, want) {
+		t.Errorf("text kinds = %+v; want %+v", m.Contributes.TextKinds, want)
+	}
+	if title, ok := m.Contributes.GetTextKindTitle("recognition"); !ok || title != "Recognized text" {
+		t.Errorf("title = %q %v", title, ok)
+	}
+}
+
+func TestReadManifest_RejectsATextKindWithoutAKindOrATitleOrDeclaredTwice(t *testing.T) {
+	for name, kinds := range map[string]string{
+		"no kind":  `[{"title":"Text"}]`,
+		"no title": `[{"kind":"recognition"}]`,
+		"twice":    `[{"kind":"a","title":"A"},{"kind":"a","title":"B"}]`,
+	} {
+		_, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{"textKinds":` + kinds + `}}`))
+		if !errors.Is(err, manifest.ErrInvalidContribution) {
+			t.Errorf("%s: got %v, want ErrInvalidContribution", name, err)
+		}
+	}
+}

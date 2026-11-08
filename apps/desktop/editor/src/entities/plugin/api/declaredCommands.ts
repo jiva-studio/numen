@@ -238,7 +238,14 @@ export async function listDeclaredItemLists(
     command: one.command,
     result:
       one.error === COMMAND_ERROR_CODE.UNSPECIFIED
-        ? { ok: true, value: one.items.map((item) => ({ id: item.id, title: item.title })) }
+        ? {
+            ok: true,
+            value: one.items.map((item) => ({
+              id: item.id,
+              title: item.title,
+              ...(item.detail ? { detail: item.detail } : {}),
+            })),
+          }
         : { ok: false, error: one.message },
   }))
 }

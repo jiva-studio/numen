@@ -46,6 +46,7 @@ const everyFieldManifest = `{
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"handlers": [{"command": "app:file.createText", "title": "Transcribe", "when": "target.contentType.startsWith('audio/')"}],
 		"triggers": [{"event": "file.added", "command": "app:file.createText", "when": "config.org.example.full.mode == 'a'"}],
+		"textKinds": [{"kind": "recognition", "title": "Recognized text"}],
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 		"frameOrigins": ["https://player.example"],

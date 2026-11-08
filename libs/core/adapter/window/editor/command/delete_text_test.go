@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -11,6 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -33,7 +36,7 @@ func TestListCommandItems_OfDeleteTextIsEveryVersionOfTheFile(t *testing.T) {
 	for _, one := range list.GetItems() {
 		titles = append(titles, one.GetId()+" "+one.GetTitle())
 	}
-	want := []string{"org.example.ears/ears transcript (live)", "org.example.viewer/edit-1 transcript"}
+	want := []string{"org.example.ears/ears transcript (current)", "org.example.viewer/edit-1 transcript"}
 	if list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || !reflect.DeepEqual(titles, want) {
 		t.Errorf("got %v %v, want %v", list.GetError(), titles, want)
 	}
@@ -67,5 +70,40 @@ func TestRunPluginCommand_OfDeleteTextNeedsAnItem(t *testing.T) {
 
 	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS || len(items.deleted) != 0 {
 		t.Errorf("got %v, deleted %v", res.Msg.GetError(), items.deleted)
+	}
+}
+
+// namedVersions offers the versions of two plugins, one declaring the names of its kinds.
+type namedVersions struct{ versionItems }
+
+func (namedVersions) ListEveryVersion(context.Context, domain.Vault, string) ([]textversion.VersionItem, error) {
+	made := time.Date(2026, time.November, 8, 10, 0, 0, 0, time.UTC)
+	return []textversion.VersionItem{
+		{Version: "org.example.ears/ears", PluginID: "org.example.ears", Kind: "transcript", IsLive: true, CreateTime: made},
+		{Version: "org.example.viewer/edit-1", PluginID: "org.example.viewer", Kind: "edit", CreateTime: made},
+	}, nil
+}
+
+type namingPlugins struct{ pluginCommands }
+
+func (namingPlugins) GetParts(pluginID string) plugincommand.Parts {
+	if pluginID != "org.example.ears" {
+		return plugincommand.Parts{}
+	}
+	return plugincommand.Parts{Name: "Transcription", TextKinds: map[string]string{"transcript": "Transcript"}}
+}
+
+func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, fileTypes{}, nil, nil), &namedVersions{})
+
+	list := listItemsOfOne(t, handler, "", "app:version.delete", "talks/a.mp3")
+
+	var got [][2]string
+	for _, one := range list.GetItems() {
+		got = append(got, [2]string{one.GetTitle(), one.GetDetail()})
+	}
+	want := [][2]string{{"Transcript (current)", "Transcription · 2026-11-08"}, {"edit", "org.example.viewer · 2026-11-08"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }

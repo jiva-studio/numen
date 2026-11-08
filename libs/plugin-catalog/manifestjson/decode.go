@@ -175,6 +175,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Slots:        newSlots(wire.GetSlots()),
 		Handlers:     newHandlers(wire.GetHandlers()),
 		Triggers:     newTriggers(wire.GetTriggers()),
+		TextKinds:    newTextKinds(wire.GetTextKinds()),
 		Listeners:    newListeners(wire.GetListeners()),
 	}, nil
 }
@@ -407,6 +408,14 @@ func newTriggers(wire []*v1.ManifestTrigger) []manifest.Trigger {
 	var out []manifest.Trigger
 	for _, one := range wire {
 		out = append(out, manifest.Trigger{Event: one.GetEvent(), Command: one.GetCommand(), When: one.GetWhen()})
+	}
+	return out
+}
+
+func newTextKinds(wire []*v1.ManifestTextKind) []manifest.TextKind {
+	var out []manifest.TextKind
+	for _, one := range wire {
+		out = append(out, manifest.TextKind{Kind: one.GetKind(), Title: one.GetTitle()})
 	}
 	return out
 }

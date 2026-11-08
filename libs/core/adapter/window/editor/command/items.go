@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -64,7 +65,7 @@ func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID strin
 	if err != nil {
 		return newItemsFailure(err)
 	}
-	return newVersionList(versions)
+	return h.newVersionList(versions)
 }
 
 func (h *Handler) listEveryVersion(ctx context.Context, path string) *v1.CommandItemList {
@@ -75,13 +76,16 @@ func (h *Handler) listEveryVersion(ctx context.Context, path string) *v1.Command
 	if err != nil {
 		return newItemsFailure(err)
 	}
-	return newVersionList(versions)
+	return h.newVersionList(versions)
 }
 
-func newVersionList(versions []textversion.VersionItem) *v1.CommandItemList {
+func (h *Handler) newVersionList(versions []textversion.VersionItem) *v1.CommandItemList {
 	items := make([]*v1.CommandItem, 0, len(versions))
 	for _, one := range versions {
-		items = append(items, &v1.CommandItem{Id: string(one.Version), Title: getVersionTitle(one)})
+		parts := h.list.GetParts(one.PluginID)
+		items = append(items, &v1.CommandItem{
+			Id: string(one.Version), Title: getVersionTitle(one, parts), Detail: getVersionDetail(one, parts),
+		})
 	}
 	return &v1.CommandItemList{Items: items}
 }
@@ -140,15 +144,32 @@ func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool
 	return plugincommand.Entry{}, false
 }
 
-func getVersionTitle(item textversion.VersionItem) string {
-	kind := item.Kind
-	if kind == "" {
-		kind = "text"
+func getVersionTitle(item textversion.VersionItem, parts plugincommand.Parts) string {
+	title := item.Kind
+	if declared, ok := parts.TextKinds[item.Kind]; ok {
+		title = declared
+	}
+	if title == "" {
+		title = "text"
 	}
 	if item.IsLive {
-		return kind + " (live)"
+		return title + " (current)"
 	}
-	return kind
+	return title
+}
+
+func getVersionDetail(item textversion.VersionItem, parts plugincommand.Parts) string {
+	maker := parts.Name
+	if maker == "" {
+		maker = item.PluginID
+	}
+	if item.CreateTime.IsZero() {
+		return maker
+	}
+	if maker == "" {
+		return item.CreateTime.Format(time.DateOnly)
+	}
+	return maker + " · " + item.CreateTime.Format(time.DateOnly)
 }
 
 func newItemsFailure(err error) *v1.CommandItemList {

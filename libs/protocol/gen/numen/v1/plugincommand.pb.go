@@ -943,9 +943,11 @@ func (x *CommandItemList) GetMessage() string {
 // CommandItem is one item a command offers: the id the run takes as its
 // item_id, and what a person reads.
 type CommandItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// detail is a second, smaller line under the title. Empty for none.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -990,6 +992,13 @@ func (x *CommandItem) GetId() string {
 func (x *CommandItem) GetTitle() string {
 	if x != nil {
 		return x.Title
+	}
+	return ""
+}
+
+func (x *CommandItem) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
 	return ""
 }
@@ -1127,10 +1136,11 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12+\n" +
 	"\x05items\x18\x03 \x03(\v2\x15.numen.v1.CommandItemR\x05items\x120\n" +
 	"\x05error\x18\x04 \x01(\x0e2\x1a.numen.v1.CommandErrorCodeR\x05error\x12\x18\n" +
-	"\amessage\x18\x05 \x01(\tR\amessage\"3\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\"K\n" +
 	"\vCommandItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x87\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x87\x01\n" +
 	"\x18RunPluginCommandResponse\x120\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.CommandErrorCodeR\x05error\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1f\n" +

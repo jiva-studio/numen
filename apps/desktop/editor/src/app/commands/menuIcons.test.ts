@@ -45,7 +45,7 @@ const findCommand = createSlotCommandFinder({
 })
 
 describe('the icons of the rows of a menu', () => {
-  it.each(APP_SLOT_ENTRIES.map((one) => one.command))(
+  it.each(APP_SLOT_ENTRIES.flatMap((one) => (one.command ? [one.command] : [])))(
     'the application command %s has one',
     (command) => {
       expect(findCommand(command, NOTE)?.icon).toBeDefined()

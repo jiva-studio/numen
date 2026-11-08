@@ -3,6 +3,8 @@
 package manifestlist
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
@@ -116,7 +118,19 @@ func (m Manifests) GetParts(pluginID string) pluginport.PluginParts {
 	return pluginport.PluginParts{
 		HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend(),
 		IsSuspended: m.host.IsPluginSuspended(pluginID),
+		Name:        plugin.Manifest.Name, TextKinds: listTextKinds(plugin.Manifest),
 	}
+}
+
+func listTextKinds(m manifest.Manifest) map[string]string {
+	if len(m.Contributes.TextKinds) == 0 {
+		return nil
+	}
+	titles := make(map[string]string, len(m.Contributes.TextKinds))
+	for _, one := range m.Contributes.TextKinds {
+		titles[one.Kind] = one.Title
+	}
+	return titles
 }
 
 // NoManifests is an installation with no plugin.
