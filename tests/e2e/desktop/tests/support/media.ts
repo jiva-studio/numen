@@ -4,6 +4,7 @@
  * stand-ins' address.
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { expect, type APIRequestContext } from 'playwright/test'
 import { getVaultPath, listFilePaths, readOwner, writeSetting } from './vault.js'
@@ -94,4 +95,27 @@ export const getStandInsOrigin = async (request: APIRequestContext): Promise<str
   const endpoint = String((await readOwner(request, 'md.numen.tools.updater'))['endpoint'] ?? '')
   if (!endpoint) throw new Error('the settings give the updater no release feed address')
   return new URL(endpoint).origin
+}
+
+// The file `scripts/start-server.mjs` reads the texts of web pages from, named by the server's port.
+const getPageTextsFile = (): string =>
+  path.join(os.tmpdir(), `numen-e2e-page-texts-${process.env.NUMEN_TEST_PORT ?? '3456'}.json`)
+
+const readPageTexts = (): Record<string, string> => {
+  try {
+    return JSON.parse(fs.readFileSync(getPageTextsFile(), 'utf8')) as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+/** Makes the page stand-in answer the address with the text in the first paragraph of its page. */
+export const writePageText = (address: string, text: string): void => {
+  fs.writeFileSync(getPageTextsFile(), JSON.stringify({ ...readPageTexts(), [address]: text }))
+}
+
+/** Makes the page stand-in answer the address with its own page again. */
+export const removePageText = (address: string): void => {
+  const { [address]: _removed, ...kept } = readPageTexts()
+  fs.writeFileSync(getPageTextsFile(), JSON.stringify(kept))
 }

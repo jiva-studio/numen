@@ -5,7 +5,7 @@
 //
 // A scope is `all`, `none`, or tokens separated by spaces. A token without `/` is a folder under
 // tests/plugins/ (`readers.epub`); a token with `/` is a folder (ending in `/`) or a spec file
-// under tests/ (`scenarios/link.spec.ts`). A scope of tokens runs them and tests/shell/.
+// under tests/ (`scenarios/recording.spec.ts`). A scope of tokens runs them and tests/shell/.
 //
 // `scope` reads changed paths, relative to the repository root, and prints `scope=<scope>`. A
 // change to plugins/<dir>/ selects the tests of that plugin: tests/plugins/<id without md.numen.>/,
@@ -56,7 +56,7 @@ export const PLUGIN_TESTS = {
   ],
   'engines-transcription': ['scenarios/proofreading.spec.ts', 'scenarios/recording.spec.ts'],
   'readers-pdf': ['scenarios/ocr-disabled.spec.ts', 'scenarios/recognition.spec.ts'],
-  'tools-media-importer': ['scenarios/link.spec.ts'],
+  'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': ['scenarios/proofreading.spec.ts'],
   'views-media-viewer': ['scenarios/recording.spec.ts'],
 }

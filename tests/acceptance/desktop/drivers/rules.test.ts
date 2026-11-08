@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-  assertPaletteStep,
+  assertApplication,
   assertPlace,
   assertSingleTab,
   getStem,
+  parseAsk,
+  parseCount,
   parseReference,
   parseTime,
   pickByTitle,
+  readNoteType,
 } from './rules.js'
 
 describe('parseReference', () => {
@@ -51,13 +54,50 @@ describe('parseTime', () => {
   })
 })
 
-describe('assertPaletteStep', () => {
-  it('passes the name', () => {
-    expect(() => assertPaletteStep('name')).not.toThrow()
+describe('parseAsk', () => {
+  it('reads the placeholders of a name and of a list', () => {
+    expect(parseAsk('Name')).toBe('name')
+    expect(parseAsk('Search')).toBe('item')
   })
 
-  it('throws for a step that is not built', () => {
-    expect(() => assertPaletteStep('vault')).toThrow('the palette step "vault" is not built yet')
+  it('reads any other placeholder as a text', () => {
+    expect(parseAsk('Web address')).toBe('text')
+  })
+})
+
+describe('assertApplication', () => {
+  it('passes the editor', () => {
+    expect(() => assertApplication('editor')).not.toThrow()
+  })
+
+  it('throws for the flashcards window, which is not built', () => {
+    expect(() => assertApplication('flashcards')).toThrow('is not built yet')
+  })
+
+  it('throws for a word that is no application', () => {
+    expect(() => assertApplication('mail')).toThrow('"mail" is not an application')
+  })
+})
+
+describe('parseCount', () => {
+  it('reads digits as a number', () => {
+    expect(parseCount('12')).toBe(12)
+  })
+
+  it('throws for other text', () => {
+    expect(() => parseCount('two')).toThrow('"two" is not a number')
+  })
+})
+
+describe('readNoteType', () => {
+  it('reads the type key of the frontmatter', () => {
+    expect(readNoteType('---\ntype: link\nurl: http://a.test/\n---\ntext')).toBe('link')
+    expect(readNoteType('---\ntype: "deck"\n---\n')).toBe('deck')
+  })
+
+  it('gives nothing for a note without a type', () => {
+    expect(readNoteType('---\ntitle: A\n---\n')).toBe('')
+    expect(readNoteType('type: link\n')).toBe('')
   })
 })
 

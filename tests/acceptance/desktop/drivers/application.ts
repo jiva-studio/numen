@@ -1,21 +1,27 @@
-/** The person at the window as a whole: starting it, running a command, looking at the vault. */
+/** The person at the application as a whole: starting it, running a command, looking at the vault. */
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect } from 'playwright/test'
 import {
   getPaletteField,
   runPaletteCommand,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
-import { listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertPaletteStep } from './rules.js'
+import { getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
+import { assertApplication, getEscaped, parseAsk, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
 
-  async startWindow(): Promise<void> {
+  async startApplication(name: string): Promise<void> {
+    assertApplication(name)
     const { page } = this.scenario
-    await this.scenario.ensureWorkspace()
-    await page.reload()
+    if (this.scenario.isOpen) {
+      await page.reload()
+    } else {
+      await this.scenario.ensureWorkspace()
+    }
     await waitForWindow(page)
   }
 
@@ -24,14 +30,20 @@ export class ApplicationDriver {
     await runPaletteCommand(this.scenario.page, label, label)
   }
 
-  async enter(kind: string, value: string): Promise<void> {
-    assertPaletteStep(kind)
+  async enter(value: string): Promise<void> {
     const { page } = this.scenario
-    await this.scenario.useTitle(value)
     await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
-    await getPaletteField(page).fill(value)
-    await expect(page.getByRole('option', { selected: true })).toContainText(value)
-    await page.keyboard.press('Enter')
+    const field = getPaletteField(page)
+    const ask = parseAsk((await field.getAttribute('placeholder')) ?? '')
+    if (ask === 'item') {
+      await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
+    } else {
+      if (ask === 'name') await this.scenario.useTitle(value)
+      await field.fill(value)
+      if (ask === 'name') await expect(page.getByRole('option', { selected: true })).toContainText(value)
+      await page.keyboard.press('Enter')
+    }
+    await expect(field).toBeHidden()
   }
 
   async expectVaultHasNote(vaultName: string, how: string, value: string): Promise<void> {
@@ -44,6 +56,21 @@ export class ApplicationDriver {
     const notePath = await this.scenario.getPath(how, value)
     const folder = notePath.split('/').slice(0, -1).join('/')
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
+  }
+
+  async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
+    this.scenario.bindVault(vaultName)
+    const expected = parseCount(count)
+    await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
+  }
+
+  private listNotesOfType(folder: string, type: string): string[] {
+    return fs.readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(folder, entry.name)
+      if (entry.isDirectory()) return entry.name.startsWith('.') ? [] : this.listNotesOfType(full, type)
+      if (!entry.name.endsWith('.md')) return []
+      return readNoteType(fs.readFileSync(full, 'utf8')) === type ? [full] : []
+    })
   }
 
   private async findNote(title: string): Promise<string> {

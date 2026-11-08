@@ -5,3 +5,9 @@ defineParameterType({
   regexp: /the person|another program/,
   transformer: (actor: string) => actor,
 })
+
+defineParameterType({
+  name: 'has',
+  regexp: /has|does not have/,
+  transformer: (word: string) => word === 'has',
+})

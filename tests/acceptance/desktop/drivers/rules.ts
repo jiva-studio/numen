@@ -14,8 +14,6 @@ const PLACES: Record<TabKind, string> = {
   'Audio Player': 'time',
 }
 
-const PALETTE_STEPS = ['name']
-
 export const getStem = (file: string): string => path.basename(file).replace(/\.[^.]+$/, '')
 
 export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -39,8 +37,27 @@ export const parseTime = (time: string): number => {
   return Number(hit[1]) * 60 + Number(hit[2])
 }
 
-export const assertPaletteStep = (kind: string): void => {
-  if (!PALETTE_STEPS.includes(kind)) throw new Error(`the palette step "${kind}" is not built yet`)
+export type PaletteAsk = 'name' | 'item' | 'text'
+
+const PALETTE_ASKS: Record<string, PaletteAsk> = { Name: 'name', Search: 'item' }
+
+/** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, or a text. */
+export const parseAsk = (placeholder: string): PaletteAsk => PALETTE_ASKS[placeholder] ?? 'text'
+
+export const assertApplication = (name: string): void => {
+  if (name === 'flashcards') throw new Error('the application "flashcards" is not built yet: use "editor"')
+  if (name !== 'editor') throw new Error(`"${name}" is not an application: use "editor"`)
+}
+
+export const parseCount = (text: string): number => {
+  if (!/^\d+$/.test(text)) throw new Error(`"${text}" is not a number`)
+  return Number(text)
+}
+
+export const readNoteType = (content: string): string => {
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)
+  const hit = /^type:\s*(\S+)\s*$/m.exec(frontmatter?.[1] ?? '')
+  return (hit?.[1] ?? '').replace(/^["']|["']$/g, '')
 }
 
 export const pickByTitle = (title: string, paths: readonly string[]): string => {
