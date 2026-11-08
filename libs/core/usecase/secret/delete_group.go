@@ -14,35 +14,47 @@ type DeleteGroup struct{ operation }
 // with its permissions, so the value stays named and the call can be repeated.
 func (u *DeleteGroup) Execute(ctx context.Context, group string) error {
 	return u.apply(ctx, func() ([]string, error) {
-		var removed []Secret
-		var indexes []int
-		err := u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
-			removed, indexes = nil, nil
-			remaining := make([]Secret, 0, len(list))
-			for index, one := range list {
-				if one.Group == group {
-					removed = append(removed, one)
-					indexes = append(indexes, index)
-				} else {
-					remaining = append(remaining, one)
-				}
-			}
-			if len(removed) == 0 {
-				return nil, newNotFoundError(group)
-			}
-			return remaining, nil
-		})
+		removed, err := u.removeEntries(group)
 		if err != nil {
 			return nil, err
 		}
-		var failures []error
-		for position, one := range removed {
-			if err := u.deleteValue(ctx, one.ID); err != nil {
-				failures = append(failures, err, u.restoreEntry(one, indexes[position]))
+		return nil, u.deleteValues(ctx, removed)
+	})
+}
+
+type removedEntry struct {
+	secret Secret
+	index  int
+}
+
+func (u *DeleteGroup) removeEntries(group string) ([]removedEntry, error) {
+	var removed []removedEntry
+	err := u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
+		removed = nil
+		remaining := make([]Secret, 0, len(list))
+		for index, one := range list {
+			if one.Group == group {
+				removed = append(removed, removedEntry{secret: one, index: index})
+			} else {
+				remaining = append(remaining, one)
 			}
 		}
-		return nil, errors.Join(failures...)
+		if len(removed) == 0 {
+			return nil, newNotFoundError(group)
+		}
+		return remaining, nil
 	})
+	return removed, err
+}
+
+func (u *DeleteGroup) deleteValues(ctx context.Context, removed []removedEntry) error {
+	var failures []error
+	for _, one := range removed {
+		if err := u.deleteValue(ctx, one.secret.ID); err != nil {
+			failures = append(failures, err, u.restoreEntry(one.secret, one.index))
+		}
+	}
+	return errors.Join(failures...)
 }
 
 func (u *DeleteGroup) restoreEntry(entry Secret, index int) error {
