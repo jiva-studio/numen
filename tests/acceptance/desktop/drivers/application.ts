@@ -79,8 +79,8 @@ export class ApplicationDriver {
 
   private async expectOpenTabHasText(): Promise<void> {
     const { page } = this.scenario
-    const closer = page.getByRole('tab', { selected: true }).getByRole('button').first()
-    const title = ((await closer.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
+    const closeButton = page.getByRole('tab', { selected: true }).getByRole('button').first()
+    const title = ((await closeButton.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
     const notePath = await this.findNote(title)
     await expect
       .poll(async () => {

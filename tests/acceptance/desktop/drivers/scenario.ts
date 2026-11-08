@@ -36,8 +36,8 @@ export class Scenario {
 
   async getPath(reference: string, name: string): Promise<string> {
     if (parseReference(reference, name).reference === 'at') return name
-    const known = this.paths.get(name)
-    if (known) return known
+    const savedPath = this.paths.get(name)
+    if (savedPath) return savedPath
     return pickByTitle(name, [...(await readSavedStates(this.page.request)).keys()])
   }
 
