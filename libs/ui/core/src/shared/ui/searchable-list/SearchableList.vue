@@ -71,9 +71,11 @@ onMounted(async () => {
   rowList.value?.scrollToActive()
 })
 
-// A new item in force puts the keyboard back on it, over a row the pointer rests on.
-watch(model, () => {
-  activeKey.value = null
+// A new item in force set from outside puts the keyboard back on it, over a row the pointer rests on.
+// A row chosen in the list is already the active row and stays it.
+watch(model, (next) => {
+  const active = activeKey.value === null ? undefined : findRow(activeKey.value)
+  if (active?.kind !== 'item' || active.item.id !== next) activeKey.value = null
 })
 
 watch([activeIndex, model], async () => {
