@@ -32,7 +32,7 @@ export interface WideBoxBounds {
 /**
  * The box a node opens to: the space its whole title requires, clamped inside the window.
  * It grows about its own midpoint, and shifts back inside the window where the midpoint leaves no space to grow.
- * Null where the box already holds the title, and where the window is no wider than the box.
+ * Returns null when the box already holds the title or the window cannot fit a larger box.
  */
 export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
   const { viewport, margin } = bounds
