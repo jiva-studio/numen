@@ -130,13 +130,10 @@ func (c Commands) GetParts(pluginID string) pluginport.PluginParts {
 	if !isEnabled {
 		return pluginport.PluginParts{}
 	}
-	parts := pluginport.PluginParts{HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend()}
-	for _, info := range c.host.GetPluginInfos() {
-		if info.ID == pluginID {
-			parts.IsSuspended = info.Failure != nil
-		}
+	return pluginport.PluginParts{
+		HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend(),
+		IsSuspended: c.host.IsPluginSuspended(pluginID),
 	}
-	return parts
 }
 
 // RunCommand starts the plugin where it is not running and runs the command in its backend, holding

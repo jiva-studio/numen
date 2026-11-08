@@ -40,13 +40,17 @@ type commandHost struct {
 	endpoints map[string]pluginport.Endpoint
 	acquired  int
 	released  int
+	infoReads int
 }
 
 func (h *commandHost) Discover() error { return nil }
 
 func (h *commandHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
 
+func (h *commandHost) IsPluginSuspended(string) bool { return false }
+
 func (h *commandHost) GetPluginInfos() []pluginport.PluginInfo {
+	h.infoReads++
 	infos := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, one := range h.plugins {
 		infos = append(infos, pluginport.PluginInfo{ID: one.Manifest.ID})

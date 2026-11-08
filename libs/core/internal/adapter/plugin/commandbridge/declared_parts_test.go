@@ -33,13 +33,7 @@ func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 // suspendedHost reports every plugin it holds as suspended after a failed start.
 type suspendedHost struct{ *commandHost }
 
-func (h suspendedHost) GetPluginInfos() []pluginport.PluginInfo {
-	infos := h.commandHost.GetPluginInfos()
-	for i := range infos {
-		infos[i].Failure = &pluginport.PluginFailure{PluginID: infos[i].ID, Reason: "Failed to start"}
-	}
-	return infos
-}
+func (h suspendedHost) IsPluginSuspended(string) bool { return true }
 
 func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 	host := suspendedHost{&commandHost{plugins: []pluginport.DiscoveredPlugin{
@@ -50,5 +44,21 @@ func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 
 	if !parts.IsSuspended || !parts.HasBackend || !parts.HasFrontend {
 		t.Fatalf("got %+v", parts)
+	}
+}
+
+func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
+	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{
+		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}}},
+		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}}},
+	}}
+
+	parts := Open(host).GetParts("md.numen.cards")
+
+	if !parts.HasBackend || parts.IsSuspended {
+		t.Errorf("got %+v", parts)
+	}
+	if host.infoReads != 0 {
+		t.Errorf("the parts of one plugin read the listing of all plugins %d times", host.infoReads)
 	}
 }

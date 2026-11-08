@@ -50,3 +50,34 @@ func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
 		t.Errorf("the handler over versions came out as %v", got[1])
 	}
 }
+
+// commandReadsCounted is handlingPlugins counting the reads of the commands the plugins declare.
+type commandReadsCounted struct {
+	handlingPlugins
+	reads *int
+}
+
+func (p commandReadsCounted) ListCommands() []plugincommand.Entry {
+	*p.reads++
+	return p.handlingPlugins.ListCommands()
+}
+
+func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
+	reads := 0
+	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, nil, nil)
+	handler := command.NewHandler(shownVault{}, commands, &versionItems{})
+
+	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
+		PluginId: "org.example.scans", Command: "app:version.delete", Path: "scans/page.png",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(res.Msg.GetItems()) != 2 {
+		t.Errorf("got %v, want the two versions", res.Msg)
+	}
+	if reads != 0 {
+		t.Errorf("the items of a shared command read the commands of the plugins %d times", reads)
+	}
+}

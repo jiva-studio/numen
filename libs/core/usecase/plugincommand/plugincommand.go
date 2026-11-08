@@ -148,9 +148,11 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 	if u.commands == nil {
 		return Result{}, ErrUnavailable
 	}
-	entries := u.commands.ListCommands()
+	var entries []Entry
 	if pluginport.IsSharedCommand(call.Command) {
 		entries = u.commands.ListHandlers()
+	} else {
+		entries = u.commands.ListCommands()
 	}
 	if !u.commands.GetParts(call.PluginID).HasBackend {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)

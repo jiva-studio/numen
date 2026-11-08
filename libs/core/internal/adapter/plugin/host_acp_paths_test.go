@@ -3,7 +3,9 @@ package plugin
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -94,5 +96,56 @@ func TestACPAgentsFoundOnMachineAreSentToTheACPPluginOnly(t *testing.T) {
 	}
 	if got := host.GetPluginSettings(otherPluginID)[keyExecutablePath]; got != "" {
 		t.Errorf("other agent executablePath = %v, want the empty path of its manifest", got)
+	}
+}
+
+// countLookups empties the ACP agents the host found, makes it search PATH through a counter, and
+// returns the counter.
+func countLookups(host *Host) *atomic.Int32 {
+	host.forgetDiscoveredACPOptions()
+	count := &atomic.Int32{}
+	host.lookPath = func(name string) (string, error) {
+		count.Add(1)
+		return exec.LookPath(name)
+	}
+	return count
+}
+
+func TestACPAgentsAreSearchedOnceForEveryReadOfTheSettings(t *testing.T) {
+	host, gemini := newHostWithGemini(t)
+	lookups := countLookups(host)
+
+	for range 3 {
+		if got, want := getExecutablePathDefault(t, host, acpPluginID), fmt.Sprintf("%q", gemini); got != want {
+			t.Fatalf("ACP default = %s, want %s", got, want)
+		}
+		if got := host.GetPluginSettings(acpPluginID)[keyExecutablePath]; got != gemini {
+			t.Fatalf("ACP executablePath = %v, want %s", got, gemini)
+		}
+	}
+
+	if got, want := lookups.Load(), int32(len(getAcpExecutableCandidates())); got != want {
+		t.Errorf("searched PATH %d times, want %d: once per candidate", got, want)
+	}
+}
+
+func TestACPAgentsAreSearchedAgainAfterASettingChanges(t *testing.T) {
+	host, gemini := newHostWithGemini(t)
+	lookups := countLookups(host)
+	getExecutablePathDefault(t, host, acpPluginID)
+	codex := filepath.Join(filepath.Dir(gemini), "codex-acp")
+	if err := os.WriteFile(codex, []byte("#!/bin/sh\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.UpdatePluginSetting(t.Context(), otherPluginID, "theme", "dark"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := host.GetPluginSettings(acpPluginID)[keyExecutablePath], codex+"\n"+gemini; got != want {
+		t.Errorf("ACP executablePath = %v, want %s", got, want)
+	}
+	if got, want := lookups.Load(), int32(2*len(getAcpExecutableCandidates())); got != want {
+		t.Errorf("searched PATH %d times, want %d: once before and once after the change", got, want)
 	}
 }

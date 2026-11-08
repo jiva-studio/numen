@@ -125,6 +125,12 @@ type Host struct {
 	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
 	// reported, until the plugin activates or its failure is cleared.
 	reportedTargetFailures map[string]struct{}
+	// lookPath finds an executable on PATH.
+	lookPath func(string) (string, error)
+	// acpMu guards the ACP agents found on PATH. It is locked after mu, never before it.
+	acpMu           sync.Mutex
+	acpOptions      []pluginport.PluginSettingOption
+	isACPDiscovered bool
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -169,6 +175,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listeners:              make(map[string]map[string]listenerBinding),
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
+		lookPath:               exec.LookPath,
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -1112,6 +1119,7 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		}
 	}
 	h.mu.Unlock()
+	h.forgetDiscoveredACPOptions()
 	h.fillGeneratedSettings()
 	h.syncAllListeners(context.Background())
 }
@@ -1241,7 +1249,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		addDiscoveredExecutable(result, rawStored, p.Manifest)
+		h.addDiscoveredExecutable(result, rawStored, p.Manifest)
 	}
 	if result == nil {
 		result = map[string]any{}
@@ -1257,11 +1265,11 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 
 // addDiscoveredExecutable fills the executable path of an ACP plugin from the agents found
 // on the machine, where the user has stored none.
-func addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
+func (h *Host) addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
 	if _, hasStored := stored[keyExecutablePath]; hasStored || !hasACPPathsSetting(manifest) {
 		return
 	}
-	if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
+	if paths := joinOptionValues(h.getDiscoveredACPOptions()); paths != "" {
 		result[keyExecutablePath] = paths
 	}
 }
@@ -1324,6 +1332,7 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 	h.settings[pluginID][key] = value
 	isRequirementChanged := !slices.Equal(before, h.getRequirementIDsLocked(pluginID))
 	h.mu.Unlock()
+	h.forgetDiscoveredACPOptions()
 
 	if isRequirementChanged && key != settingEnabled {
 		if err := h.stopPlugin(ctx, pluginID); err != nil {
@@ -1480,10 +1489,10 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	return secretsErr
 }
 
-func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
+func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
 	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
-		defVal, options := resolveSettingDefaultAndOptions(s)
+		defVal, options := resolveSettingDefaultAndOptions(s, h.getDiscoveredACPOptions)
 		defJSON := ""
 		if defVal != nil {
 			if b, err := json.Marshal(defVal); err == nil {
@@ -1526,7 +1535,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
-		settings := toPluginSettings(p.Manifest.Settings)
+		settings := h.toPluginSettings(p.Manifest.Settings)
 		resolveSettings(p.Manifest, settings, h.getPluginSettingsLocked(p.Manifest.ID))
 
 		result = append(result, pluginport.PluginInfo{
@@ -1553,11 +1562,13 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 // resolveSettingDefaultAndOptions returns the default and the options of a setting as the window shows
 // them. The ACP agents found on the machine are the options of a setting that holds ACP agent
 // executables, and its default where the manifest gives none.
-func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, pluginport.PluginSettingOptions) {
+func resolveSettingDefaultAndOptions(
+	s pluginport.PluginManifestSetting, discover func() []pluginport.PluginSettingOption,
+) (any, pluginport.PluginSettingOptions) {
 	if !isACPPathsSetting(s) {
 		return s.Default, s.Options
 	}
-	discovered := resolveDiscoveredACPOptions()
+	discovered := discover()
 	options := s.Options
 	if len(options) == 0 {
 		options = discovered
@@ -1608,10 +1619,30 @@ func joinOptionValues(options []pluginport.PluginSettingOption) string {
 	return strings.Join(paths, "\n")
 }
 
-func resolveDiscoveredACPOptions() []pluginport.PluginSettingOption {
+// getDiscoveredACPOptions returns the ACP agents found on PATH. PATH is searched on the first call and
+// on the first call after a setting changes.
+func (h *Host) getDiscoveredACPOptions() []pluginport.PluginSettingOption {
+	h.acpMu.Lock()
+	defer h.acpMu.Unlock()
+	if !h.isACPDiscovered {
+		h.acpOptions = findACPOptions(h.lookPath)
+		h.isACPDiscovered = true
+	}
+	return slices.Clone(h.acpOptions)
+}
+
+// forgetDiscoveredACPOptions makes the next read of the ACP agents search PATH again.
+func (h *Host) forgetDiscoveredACPOptions() {
+	h.acpMu.Lock()
+	h.isACPDiscovered = false
+	h.acpMu.Unlock()
+}
+
+// findACPOptions returns the ACP agent candidates that lookPath finds.
+func findACPOptions(lookPath func(string) (string, error)) []pluginport.PluginSettingOption {
 	var options []pluginport.PluginSettingOption
 	for _, candidate := range getAcpExecutableCandidates() {
-		binaryPath, err := exec.LookPath(candidate.binary)
+		binaryPath, err := lookPath(candidate.binary)
 		if err != nil || binaryPath == "" {
 			continue
 		}
@@ -1650,6 +1681,15 @@ func emptyEndpoint() transport.Endpoint {
 
 func isEmptyEndpoint(e transport.Endpoint) bool {
 	return e.Host == "" && e.Port == 0 && e.Transport == nil
+}
+
+// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended until
+// its failure is cleared.
+func (h *Host) IsPluginSuspended(pluginID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	sup, ok := h.supervisors[pluginID]
+	return ok && sup.GetActivationFailure() != nil
 }
 
 // getFailureLocked is why the last start of a plugin failed, and nil while it did not.

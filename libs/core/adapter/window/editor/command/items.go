@@ -76,9 +76,11 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 // findEntry is the command of the id an enabled plugin declares, whichever part of it runs the command,
 // or its handler of the shared command of the id.
 func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool) {
-	entries := h.list.ExecuteAll()
+	var entries []plugincommand.Entry
 	if plugincommand.IsSharedCommand(command) {
 		entries = h.list.ExecuteHandlers()
+	} else {
+		entries = h.list.ExecuteAll()
 	}
 	for _, one := range entries {
 		if one.PluginID == pluginID && one.Command.ID == command {
