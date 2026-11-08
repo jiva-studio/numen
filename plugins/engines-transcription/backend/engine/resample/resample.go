@@ -68,13 +68,13 @@ func (s resampleSpan) fill(ctx context.Context, start, end int) {
 		if (i-start)%(1<<16) == 0 && ctx.Err() != nil {
 			return
 		}
-		centre := float64(i) / s.ratio
-		first := max(int(math.Ceil(centre-s.reach)), 0)
-		last := min(int(math.Floor(centre+s.reach)), len(s.in)-1)
+		center := float64(i) / s.ratio
+		first := max(int(math.Ceil(center-s.reach)), 0)
+		last := min(int(math.Floor(center+s.reach)), len(s.in)-1)
 
 		var sum, weight float64
 		for j := first; j <= last; j++ {
-			w := s.kernel.getValueAt(centre - float64(j))
+			w := s.kernel.getValueAt(center - float64(j))
 			sum += w * float64(s.in[j])
 			weight += w
 		}

@@ -181,8 +181,7 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	if !errors.Is(err, settingsport.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}
-	var syntax *json.SyntaxError
-	if !errors.As(err, &syntax) {
+	if !errors.As(err, new(*json.SyntaxError)) {
 		t.Errorf("what was wrong with it is not said: %v", err)
 	}
 	got, gotErr := os.ReadFile(path)

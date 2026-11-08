@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -110,9 +111,7 @@ func (k *secretKeys) snapshot() map[string]string {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	copied := make(map[string]string, len(k.items))
-	for name, value := range k.items {
-		copied[name] = value
-	}
+	maps.Copy(copied, k.items)
 	return copied
 }
 

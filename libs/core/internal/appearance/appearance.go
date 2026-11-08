@@ -27,7 +27,7 @@ const (
 	IsSizes = "sizes"
 )
 
-// ColorScheme is which half of every colour pair the tokens are read as.
+// ColorScheme is which half of every color pair the tokens are read as.
 type ColorScheme int
 
 const (
@@ -48,7 +48,7 @@ type Settings struct {
 // Styles is the elements the head ends with.
 //
 // The page contains all of them on arrival, so no frame renders with the
-// default colours or an unset scale. A scale applied after the first frame
+// default colors or an unset scale. A scale applied after the first frame
 // reflows the document.
 func (s Settings) Styles() string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is

@@ -1,5 +1,5 @@
 // Package service is the backend of the OCR plugin: the text provider that
-// recognises the text of a file on host request, the recognise command, and the agent tool
+// recognizes the text of a file on host request, the recognize command, and the agent tool
 // recognition_create.
 package service
 
@@ -55,20 +55,20 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if dpi, err := strconv.Atoi(values["dpi"]); err == nil && dpi > 0 && dpi != e.cfg.Recognise.DPI {
-		e.cfg.Recognise.DPI = dpi
+	if dpi, err := strconv.Atoi(values["dpi"]); err == nil && dpi > 0 && dpi != e.cfg.Recognize.DPI {
+		e.cfg.Recognize.DPI = dpi
 		e.dropLocked()
 	}
-	recognise := e.cfg.Recognise
+	recognize := e.cfg.Recognize
 	if address, ok := engine.FindRecogniser(values["model"]); ok {
-		recognise.Name = address
+		recognize.Name = address
 		if address == "" {
-			recognise.Name = engine.RecogniserCustom
+			recognize.Name = engine.RecogniserCustom
 		}
 	}
-	recognise.Path, recognise.Dict = values["customModelPath"], values["customDictPath"]
-	if recognise != e.cfg.Recognise {
-		e.cfg.Recognise = recognise
+	recognize.Path, recognize.Dict = values["customModelPath"], values["customDictPath"]
+	if recognize != e.cfg.Recognize {
+		e.cfg.Recognize = recognize
 		e.dropLocked()
 	}
 }
@@ -195,6 +195,6 @@ func newRecogniseCommand(agentTools *Tools) command.Run {
 		if state == stateRunning {
 			return command.Result{}, fmt.Errorf("%s: %w", req.Path, recognition.ErrAlreadyRecognising)
 		}
-		return command.Result{Message: "recognising " + req.Path, OpenedPath: ""}, nil
+		return command.Result{Message: "recognizing " + req.Path, OpenedPath: ""}, nil
 	}
 }

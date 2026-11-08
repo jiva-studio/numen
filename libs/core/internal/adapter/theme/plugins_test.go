@@ -75,10 +75,10 @@ func (f *fakePlugins) disable() {
 }
 
 func TestPluginThemesAreListedBetweenTheShippedAndThePersonsThemes(t *testing.T) {
-	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
-	writeTheme(t, catalogue, "mine.css", ":root {}")
+	catalog := createThemeFolder(t).WithPlugins(createFakePlugins())
+	writeTheme(t, catalog, "mine.css", ":root {}")
 
-	names := getNames(catalogue.Themes())
+	names := getNames(catalog.Themes())
 
 	want := []string{theme.Default, "plugin:" + pluginID + "/night", "plugin:" + pluginID + "/day", "mine:mine"}
 	if strings.Join(names, ",") != strings.Join(want, ",") {
@@ -87,9 +87,9 @@ func TestPluginThemesAreListedBetweenTheShippedAndThePersonsThemes(t *testing.T)
 }
 
 func TestAPluginThemeIsPinnedByTheAppearanceItDeclares(t *testing.T) {
-	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
+	catalog := createThemeFolder(t).WithPlugins(createFakePlugins())
 
-	for _, one := range catalogue.Themes() {
+	for _, one := range catalog.Themes() {
 		switch one.Name {
 		case theme.PluginName(pluginID, "night"):
 			if !one.IsPinned || one.Appearance != "dark" || one.PluginID != pluginID || one.Title != "Night" {
@@ -104,9 +104,9 @@ func TestAPluginThemeIsPinnedByTheAppearanceItDeclares(t *testing.T) {
 }
 
 func TestAPluginThemeIsReadByItsName(t *testing.T) {
-	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
+	catalog := createThemeFolder(t).WithPlugins(createFakePlugins())
 
-	text, err := catalogue.Text(theme.PluginName(pluginID, "night"))
+	text, err := catalog.Text(theme.PluginName(pluginID, "night"))
 
 	if err != nil || text != nightCSS {
 		t.Errorf("text = %q, error = %v", text, err)
@@ -114,7 +114,7 @@ func TestAPluginThemeIsReadByItsName(t *testing.T) {
 }
 
 func TestAPluginNameThatNothingAnswersForIsNoTheme(t *testing.T) {
-	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
+	catalog := createThemeFolder(t).WithPlugins(createFakePlugins())
 
 	for _, name := range []string{
 		"plugin:",
@@ -126,20 +126,20 @@ func TestAPluginNameThatNothingAnswersForIsNoTheme(t *testing.T) {
 		"plugin:" + pluginID + "/../night",
 		"preset:dracula",
 	} {
-		if text, err := catalogue.Text(name); !errors.Is(err, theme.ErrNoTheme) {
+		if text, err := catalog.Text(name); !errors.Is(err, theme.ErrNoTheme) {
 			t.Errorf("%s: text = %q, error = %v, want ErrNoTheme", name, text, err)
 		}
 	}
 }
 
 func TestACatalogueWithoutPluginsAnswersForNoPluginName(t *testing.T) {
-	catalogue := createThemeFolder(t)
+	catalog := createThemeFolder(t)
 
-	if _, err := catalogue.Text(theme.PluginName(pluginID, "night")); !errors.Is(err, theme.ErrNoTheme) {
+	if _, err := catalog.Text(theme.PluginName(pluginID, "night")); !errors.Is(err, theme.ErrNoTheme) {
 		t.Errorf("error = %v, want ErrNoTheme", err)
 	}
-	if catalogue.HasPlugins() {
-		t.Error("a catalogue with no source reports plugins")
+	if catalog.HasPlugins() {
+		t.Error("a catalog with no source reports plugins")
 	}
 }
 
@@ -147,7 +147,7 @@ func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *
 	plugins := createFakePlugins()
 	name := theme.PluginName(pluginID, "night")
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: name})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(plugins)
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(plugins)
 	if applied := fakeSettings.themes(t).GetApplied(); applied != name {
 		t.Fatalf("applied %q before the plugin is disabled", applied)
 	}
@@ -164,7 +164,7 @@ func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *
 
 func TestListThemesCarriesThePluginAndTheAppearanceOfAPluginTheme(t *testing.T) {
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(createFakePlugins())
 
 	found := map[string]*v1.Theme{}
 	for _, one := range fakeSettings.themes(t).GetThemes() {
@@ -184,7 +184,7 @@ func TestListThemesCarriesThePluginAndTheAppearanceOfAPluginTheme(t *testing.T) 
 
 func TestChoosingAPluginThemeWritesItsName(t *testing.T) {
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(createFakePlugins())
 	name := theme.PluginName(pluginID, "night")
 
 	if failed := fakeSettings.choose(t, name, v1.Mode_MODE_DARK); failed != "" {
@@ -198,7 +198,7 @@ func TestChoosingAPluginThemeWritesItsName(t *testing.T) {
 
 func TestReadThemeAnswersWithTheStylesheetOfAPluginTheme(t *testing.T) {
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(createFakePlugins())
 
 	answer, err := fakeSettings.service.ReadTheme(t.Context(),
 		connect.NewRequest(&v1.ReadThemeRequest{Name: theme.PluginName(pluginID, "night")}))
@@ -265,7 +265,7 @@ func readReported(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTh
 func TestWatchThemesReportsThePluginThemesOfAPluginDisabled(t *testing.T) {
 	plugins := createFakePlugins()
 	service := createFakeAppearances(t, theme.Appearance{}).service
-	service.Catalogue = service.Catalogue.WithPlugins(plugins)
+	service.Catalog = service.Catalog.WithPlugins(plugins)
 	stream := openWatch(t, service)
 
 	plugins.disable()
@@ -278,7 +278,7 @@ func TestWatchThemesReportsThePluginThemesOfAPluginEnabled(t *testing.T) {
 	plugins := createFakePlugins()
 	plugins.disable()
 	service := createFakeAppearances(t, theme.Appearance{}).service
-	service.Catalogue = service.Catalogue.WithPlugins(plugins)
+	service.Catalog = service.Catalog.WithPlugins(plugins)
 	stream := openWatch(t, service)
 
 	plugins.enable(createFakePlugins().themes...)
@@ -286,10 +286,10 @@ func TestWatchThemesReportsThePluginThemesOfAPluginEnabled(t *testing.T) {
 	readReported(t, stream, theme.PluginName(pluginID, "night"), theme.PluginName(pluginID, "day"))
 }
 
-// A catalogue with no folder but with plugins still streams.
+// A catalog with no folder but with plugins still streams.
 func TestWatchThemesOfACatalogueWithoutAFolderStillWatchesPlugins(t *testing.T) {
 	plugins := createFakePlugins()
-	service := &theme.Service{Catalogue: theme.Catalogue{}.WithPlugins(plugins)}
+	service := &theme.Service{Catalog: theme.Catalog{}.WithPlugins(plugins)}
 	stream := openWatch(t, service)
 
 	plugins.disable()

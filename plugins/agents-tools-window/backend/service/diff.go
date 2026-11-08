@@ -61,8 +61,8 @@ func CreateUnifiedDiff(filePath, original, proposed string) (string, int, int) {
 // CountDiffChanges counts additions and deletions in unified diff text.
 func CountDiffChanges(diffText string) (int, int) {
 	var additions, deletions int
-	lines := strings.Split(diffText, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(diffText, "\n")
+	for line := range lines {
 		if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
 			continue
 		}

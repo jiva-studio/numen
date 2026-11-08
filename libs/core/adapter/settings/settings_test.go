@@ -53,7 +53,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 		t.Errorf("a file nobody wrote says %q", cfg.Notices)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem {
-		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
+		t.Errorf("the colors are read as %q", cfg.Appearance.Mode)
 	}
 	if cfg.Appearance.Theme != settings.DefaultTheme {
 		t.Errorf("applied %q", cfg.Appearance.Theme)

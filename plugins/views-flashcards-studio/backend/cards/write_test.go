@@ -50,7 +50,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	u := cards.NewWrite(
 		vs.ports.Readers, writers, vs.queries, indexNothing, vaulttest.NewClock())
 
-	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
+	body := "\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	pos, err := u.CardModel(
 		t.Context(), vs.first, "Animal.md", body,
 		[]string{"Name", "Wingspan"}, domain.FileStat{})
@@ -84,14 +84,14 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Kept.md", "---\ntype: card-model\nfields:\n"+
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
-		"\n## Recognise\n\n### Front\n\n{{Name}}\n")
+		"\n## Recognize\n\n### Front\n\n{{Name}}\n")
 
 	u := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		vaulttest.NewClock())
 	if _, err := u.CardModel(
 		t.Context(), vs.first, "Kept.md",
-		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
+		"\n## Recognize\n\n### Front\n\n{{Height}}\n",
 		[]string{"Name", "Height"}, domain.FileStat{},
 	); err != nil {
 		t.Fatalf("write: %v", err)

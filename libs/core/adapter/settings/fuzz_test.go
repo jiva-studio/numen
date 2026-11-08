@@ -17,7 +17,7 @@ import (
 // The values are arbitrary user input, so none is assumed valid.
 func FuzzAt(f *testing.F) {
 	// The file the application writes, a size the setting does not go to, a word no half of a
-	// colour pair is called, a theme named nothing at all, and a version the file was never
+	// color pair is called, a theme named nothing at all, and a version the file was never
 	// written at.
 	f.Add(1, "system", "preset:numen", 1.0, 1.0)
 	f.Add(1, "dark", "mine:dracula", 2.0, 1.75)
@@ -49,8 +49,7 @@ func FuzzAt(f *testing.F) {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
 			// the setting does not go to — and the rejection names which.
-			var outside *settings.OutsideBounds
-			if !errors.As(err, &outside) {
+			if !errors.As(err, new(*settings.OutsideBounds)) {
 				t.Fatalf("%s failed as %v, which names no setting", raw, err)
 			}
 			return
@@ -65,7 +64,7 @@ func FuzzAt(f *testing.F) {
 		switch target.Appearance.Mode {
 		case settings.ModeSystem, settings.ModeLight, settings.ModeDark:
 		default:
-			t.Fatalf("%s was read as %q, which is no half of a colour pair",
+			t.Fatalf("%s was read as %q, which is no half of a color pair",
 				raw, target.Appearance.Mode)
 		}
 	})

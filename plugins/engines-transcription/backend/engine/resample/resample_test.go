@@ -49,7 +49,7 @@ func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 	}
 }
 
-// An hour of audio is minutes of computation, and a cancelled context must stop
+// An hour of audio is minutes of computation, and a canceled context must stop
 // the conversion, and closing the window does not wait for it.
 func TestConvert_StopsOnCancelledContext(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
@@ -99,10 +99,10 @@ func TestResampleEdgeCasesAndKernel(t *testing.T) {
 		t.Errorf("Convert(len=1) = len %d, %v, want 2", len(out), err)
 	}
 
-	cancelled, cancel := context.WithCancel(ctx)
+	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	if out, err := Convert(cancelled, []float32{1}, 16000, 8000, 1); err != nil || len(out) != 0 {
-		t.Errorf("Convert(out len=0, cancelled) = %v, %v, want empty nil", out, err)
+	if out, err := Convert(canceled, []float32{1}, 16000, 8000, 1); err != nil || len(out) != 0 {
+		t.Errorf("Convert(out len=0, canceled) = %v, %v, want empty nil", out, err)
 	}
 	if out, err := Convert(ctx, []float32{5}, 8000, 8001, 1); err != nil || len(out) != 1 || out[0] != 5 {
 		t.Errorf("Convert(out len=1) = %v, %v, want [5]", out, err)

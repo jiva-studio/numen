@@ -102,12 +102,10 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 		ends[round] = make([]review.Schedule, len(cards))
 		fell[round] = make([]review.Schedule, len(cards))
 		for i, c := range cards {
-			together.Add(1)
-			go func() {
-				defer together.Done()
+			together.Go(func() {
 				pos[round][i] = delta.Next(c, when, review.Good)
 				ends[round][i], fell[round][i] = delta.Endings(c, when)
-			}()
+			})
 		}
 	}
 	together.Wait()

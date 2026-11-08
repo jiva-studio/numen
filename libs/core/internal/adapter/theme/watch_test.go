@@ -29,9 +29,9 @@ func readNames(t *testing.T, changed <-chan []string) []string {
 	}
 }
 
-func startWatch(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-chan []string {
+func startWatch(t *testing.T, catalog theme.Catalog, hold time.Duration) <-chan []string {
 	t.Helper()
-	changed, err := catalogue.Watch(t.Context(), hold)
+	changed, err := catalog.Watch(t.Context(), hold)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,10 +42,10 @@ func startWatch(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-c
 }
 
 func TestAThemeSavedIntoTheFolderIsReported(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	changed := startWatch(t, catalogue, 20*time.Millisecond)
+	catalog := createThemeFolder(t)
+	changed := startWatch(t, catalog, 20*time.Millisecond)
 
-	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #282a36 }")
+	writeTheme(t, catalog, "dracula.css", ":root { --numen-surface: #282a36 }")
 	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
 		t.Errorf("reported %v", names)
 	}
@@ -63,11 +63,11 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 		t.Skipf("this machine does not make links: %v", err)
 	}
 
-	catalogue, err := theme.OpenAt(link, watchhub.NewHub())
+	catalog, err := theme.OpenAt(link, watchhub.NewHub())
 	if err != nil {
 		t.Fatal(err)
 	}
-	changed := startWatch(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalog, 20*time.Millisecond)
 
 	body := ":root { --numen-surface: #1c1c28 }"
 	if err := os.WriteFile(filepath.Join(resolved, "midnight.css"), []byte(body), 0o644); err != nil {
@@ -81,15 +81,15 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 // An editor saves through a temporary file and a rename, so the watch is on the
 // folder and the theme is named however the bytes arrive.
 func TestAThemeSavedOverItselfIsReported(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #282a36 }")
-	changed := startWatch(t, catalogue, 20*time.Millisecond)
+	catalog := createThemeFolder(t)
+	writeTheme(t, catalog, "dracula.css", ":root { --numen-surface: #282a36 }")
+	changed := startWatch(t, catalog, 20*time.Millisecond)
 
-	tmp := filepath.Join(catalogue.Dir(), ".dracula.css.swp")
+	tmp := filepath.Join(catalog.Dir(), ".dracula.css.swp")
 	if err := os.WriteFile(tmp, []byte(":root { --numen-surface: #000000 }"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(tmp, filepath.Join(catalogue.Dir(), "dracula.css")); err != nil {
+	if err := os.Rename(tmp, filepath.Join(catalog.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
 	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
@@ -100,11 +100,11 @@ func TestAThemeSavedOverItselfIsReported(t *testing.T) {
 // What changed about a theme that is gone is that it is gone, and it is named
 // here too.
 func TestAThemeDeletedIsReportedByName(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	writeTheme(t, catalogue, "dracula.css", ":root {}")
-	changed := startWatch(t, catalogue, 20*time.Millisecond)
+	catalog := createThemeFolder(t)
+	writeTheme(t, catalog, "dracula.css", ":root {}")
+	changed := startWatch(t, catalog, 20*time.Millisecond)
 
-	if err := os.Remove(filepath.Join(catalogue.Dir(), "dracula.css")); err != nil {
+	if err := os.Remove(filepath.Join(catalog.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
 	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
@@ -115,15 +115,15 @@ func TestAThemeDeletedIsReportedByName(t *testing.T) {
 // One file that is not a theme, and one that is: what is reported is the theme
 // alone.
 func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	changed := startWatch(t, catalogue, 20*time.Millisecond)
+	catalog := createThemeFolder(t)
+	changed := startWatch(t, catalog, 20*time.Millisecond)
 
-	writeTheme(t, catalogue, "dracula.css.bak", ":root {}")
-	writeTheme(t, catalogue, "notes.md", "the themes I mean to write")
-	if err := os.MkdirAll(filepath.Join(catalogue.Dir(), "kept"), 0o755); err != nil {
+	writeTheme(t, catalog, "dracula.css.bak", ":root {}")
+	writeTheme(t, catalog, "notes.md", "the themes I mean to write")
+	if err := os.MkdirAll(filepath.Join(catalog.Dir(), "kept"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	writeTheme(t, catalogue, "nord.css", ":root {}")
+	writeTheme(t, catalog, "nord.css", ":root {}")
 
 	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:nord" {
 		t.Errorf("reported %v", names)
@@ -132,11 +132,11 @@ func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 
 // Several files landing at once are one report: a folder copied in is one user action.
 func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	changed := startWatch(t, catalogue, 300*time.Millisecond)
+	catalog := createThemeFolder(t)
+	changed := startWatch(t, catalog, 300*time.Millisecond)
 
 	for _, name := range []string{"nord.css", "dracula.css", "gruvbox.css"} {
-		writeTheme(t, catalogue, name, ":root {}")
+		writeTheme(t, catalog, name, ":root {}")
 	}
 	names := readNames(t, changed)
 	if len(names) != 3 {
@@ -145,9 +145,9 @@ func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 }
 
 func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
-	var catalogue theme.Catalogue
-	if _, err := catalogue.Watch(t.Context(), 0); err == nil {
-		t.Error("a catalogue with no folder was watched")
+	var catalog theme.Catalog
+	if _, err := catalog.Watch(t.Context(), 0); err == nil {
+		t.Error("a catalog with no folder was watched")
 	}
 }
 

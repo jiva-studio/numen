@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -120,8 +121,8 @@ func resolvePath(name string) string {
 	var rest []string
 	for current := name; ; {
 		if resolved, err := filepath.EvalSymlinks(current); err == nil {
-			for i := len(rest) - 1; i >= 0; i-- {
-				resolved = filepath.Join(resolved, rest[i])
+			for _, r := range slices.Backward(rest) {
+				resolved = filepath.Join(resolved, r)
 			}
 			return resolved
 		}

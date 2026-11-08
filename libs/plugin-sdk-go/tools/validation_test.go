@@ -32,13 +32,13 @@ func TestValidationMessagesNameTheArgumentInPlainWords(t *testing.T) {
 	registry := newBookRegistry(t)
 
 	for arguments, want := range map[string]string{
-		`{"location":{"title":"Ferns"},"author":"Mira","pages":"many"}`:   `book_create: the argument pages must be an integer, not a string`,
-		`{"location":{"title":"Ferns"},"author":"Mira","tags":[3]}`:       `book_create: the argument tags[0] must be a string, not an integer`,
-		`{"location":{"title":"Ferns"}}`:                                  `book_create: the argument author is missing`,
-		`{}`:                                                              `book_create: the arguments location, author are missing`,
-		`{"location":{},"author":"Mira"}`:                                 `book_create: the argument location.title is missing`,
-		`{"location":{"title":"Ferns","row":2},"author":"Mira"}`:          `book_create: the argument location.row is not known`,
-		`{"location":{"title":"Ferns"},"author":"Mira","colour":"green"}`: `book_create: the argument colour is not known`,
+		`{"location":{"title":"Ferns"},"author":"Mira","pages":"many"}`:  `book_create: the argument pages must be an integer, not a string`,
+		`{"location":{"title":"Ferns"},"author":"Mira","tags":[3]}`:      `book_create: the argument tags[0] must be a string, not an integer`,
+		`{"location":{"title":"Ferns"}}`:                                 `book_create: the argument author is missing`,
+		`{}`:                                                             `book_create: the arguments location, author are missing`,
+		`{"location":{},"author":"Mira"}`:                                `book_create: the argument location.title is missing`,
+		`{"location":{"title":"Ferns","row":2},"author":"Mira"}`:         `book_create: the argument location.row is not known`,
+		`{"location":{"title":"Ferns"},"author":"Mira","color":"green"}`: `book_create: the argument color is not known`,
 	} {
 		res := invoke(t, registry, "book_create", []byte(arguments))
 		if !res.GetResult().GetIsError() || res.GetResult().GetText() != want {
@@ -118,7 +118,7 @@ func TestAnArgumentFailingAnotherKeywordIsInvalidInPlainWords(t *testing.T) {
 }
 
 // Every failure text is one sentence about the JSON arguments: it names no Go type, struct or field
-// and carries no formatting artefact or keyword of the schema validator.
+// and carries no formatting artifact or keyword of the schema validator.
 func TestAFailureTextNamesNoGoTypeOrValidatorKeyword(t *testing.T) {
 	catalog, _ := newCatalogRegistry(t)
 	books := newBookRegistry(t)
@@ -134,7 +134,7 @@ func TestAFailureTextNamesNoGoTypeOrValidatorKeyword(t *testing.T) {
 		`{"place":{"title":"Ferns"},"links":[{"target":null}]}`,
 		`{"place":{"title":"Ferns"},"links":"a.md"}`,
 		`{"place":{},"links":[{}]}`,
-		`{"place":{"title":"Ferns"},"links":[{"target":"a.md","colour":"green"}]}`,
+		`{"place":{"title":"Ferns"},"links":[{"target":"a.md","color":"green"}]}`,
 	} {
 		res := invoke(t, catalog, "catalog_update", []byte(arguments))
 		if !res.GetResult().GetIsError() {

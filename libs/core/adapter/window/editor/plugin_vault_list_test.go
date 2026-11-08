@@ -284,12 +284,12 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 
 	select {
 	case isFlushed := <-resolved:
-		t.Errorf("the close ended with %v before the page reported: the plugin's open cancelled it", isFlushed)
+		t.Errorf("the close ended with %v before the page reported: the plugin's open canceled it", isFlushed)
 		close(release)
 	case <-time.After(2 * time.Second):
 		close(release)
 		if isFlushed := <-resolved; !isFlushed {
-			t.Error("the close was cancelled by the plugin's open")
+			t.Error("the close was canceled by the plugin's open")
 		}
 	}
 	select {
@@ -642,7 +642,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 }
 
 // Two user actions, a close and a vault switch, arrive while a plugin opens a vault. Neither hangs,
-// one succeeds and the plugin open is cancelled.
+// one succeeds and the plugin open is canceled.
 func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindVaultSwitch()

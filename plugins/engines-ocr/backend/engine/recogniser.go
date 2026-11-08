@@ -55,20 +55,20 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
+	classes, dict, err := alphabet(found.recognize, cfg.Recognize)
 	if err != nil {
 		return nil, errors.Join(err, layout.Close())
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
 		OnnxRuntimeLibPath:  pos,
 		DetModelPath:        found.detect,
-		RecModelPath:        found.recognise,
+		RecModelPath:        found.recognize,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
 		DetOutsideExpandPix: cfg.Detect.getExpansion(),
 		HeatmapThreshold:    cfg.Detect.minimum(),
-		RecHeight:           cfg.Recognise.height(),
+		RecHeight:           cfg.Recognize.height(),
 		NumThreads:          cfg.threads(),
 		ThreadCount:         cfg.jobs(),
 		UseCuda:             false,
@@ -88,8 +88,8 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		jobs:   cfg.jobs(),
 		model: Model{
 			Layout:     name(found.layout),
-			Recogniser: name(found.recognise),
-			DPI:        cfg.Recognise.dpi(),
+			Recogniser: name(found.recognize),
+			DPI:        cfg.Recognize.dpi(),
 			From:       found.from,
 		},
 	}, nil
@@ -109,8 +109,8 @@ func (r *Recogniser) Close() error {
 	return nil
 }
 
-// Recognise extracts layout regions and text lines from a page image.
-func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]Block, error) {
+// Recognize extracts layout regions and text lines from a page image.
+func (r *Recogniser) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err

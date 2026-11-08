@@ -86,7 +86,7 @@ func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest
 
 	pageCount := scan.GetPageCount()
 	pages := make([]Page, 0, pageCount)
-	for i := 0; i < pageCount; i++ {
+	for i := range pageCount {
 		w, h, err := scan.GetPageSize(i)
 		if err != nil {
 			return GetDocumentResponse{}, server.NewAPIError(server.CodeInternal, fmt.Sprintf("page size: %v", err))

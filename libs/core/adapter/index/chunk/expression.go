@@ -45,7 +45,7 @@ func writeQuoted(out *strings.Builder, word string) {
 		out.WriteByte(' ')
 	}
 	out.WriteByte('"')
-	for i := 0; i < len(word); i++ {
+	for i := range len(word) {
 		if word[i] == '"' {
 			out.WriteByte('"')
 		}

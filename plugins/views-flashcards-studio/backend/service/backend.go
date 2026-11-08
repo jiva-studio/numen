@@ -56,11 +56,11 @@ type Backend struct {
 // Scenarios is everything the backend does to the cards of a vault, built against the settings in
 // force.
 type Scenarios struct {
-	cards         cards.Scenarios
-	deckedit      deckedit.Scenarios
-	flash         flashcards.Scenarios
-	day           review.Day
-	neighbourhood flashcards.ShowNeighbourhood
+	cards        cards.Scenarios
+	deckedit     deckedit.Scenarios
+	flash        flashcards.Scenarios
+	day          review.Day
+	neighborhood flashcards.ShowNeighbourhood
 }
 
 func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
@@ -125,7 +125,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	})
 	return &Scenarios{
 		cards: set, deckedit: deckEdits, flash: running, day: running.Day,
-		neighbourhood: flashcards.NewShowNeighbourhood(note.NewShowLinks(wired.Links), wired.Notes, note.NewRead(wired.Readers)),
+		neighborhood: flashcards.NewShowNeighbourhood(note.NewShowLinks(wired.Links), wired.Notes, note.NewRead(wired.Readers)),
 	}
 }
 

@@ -14,7 +14,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// cancelledArranging is a host whose batches were cancelled after the first note: the first entry
+// cancelledArranging is a host whose batches were canceled after the first note: the first entry
 // is done and the others are returned NOT_ATTEMPTED with the detail naming the path.
 type cancelledArranging struct {
 	fakeArrangeHost
@@ -27,7 +27,7 @@ func (a *cancelledArranging) MoveNotes(
 		{Move: &v1.MoveResult{From: "Danube.md", To: "Archive/Danube.md", Repaired: []string{"Deltas.md"}}},
 		{
 			Move: &v1.MoveResult{From: "Rivers/Rhine.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
-			Detail: "the call was cancelled before Rivers/Rhine.md was moved",
+			Detail: "the call was canceled before Rivers/Rhine.md was moved",
 		},
 	}}), nil
 }
@@ -39,7 +39,7 @@ func (a *cancelledArranging) RemoveNotes(
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
 		{
 			Path: "Rivers/Rhine.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
-			Detail: "the call was cancelled before Rivers/Rhine.md was removed",
+			Detail: "the call was canceled before Rivers/Rhine.md was removed",
 		},
 	}}), nil
 }
@@ -63,7 +63,7 @@ func TestClientReturnsMoveSkippedByCancelAsNotAttempted(t *testing.T) {
 	if m := moves[0]; m.Err != nil || !m.Move.IsMoved || m.Move.To != "Archive/Danube.md" {
 		t.Errorf("the move done before the cancel came back as %+v, want Danube.md moved to Archive/Danube.md", m)
 	}
-	const detail = "the call was cancelled before Rivers/Rhine.md was moved"
+	const detail = "the call was canceled before Rivers/Rhine.md was moved"
 	if m := moves[1]; !errors.Is(m.Err, host.ErrNotAttempted) || !strings.Contains(m.Err.Error(), detail) || m.Move.IsMoved {
 		t.Errorf("the move after the cancel came back as %+v, want ErrNotAttempted containing %q", m, detail)
 	}
@@ -81,7 +81,7 @@ func TestClientReturnsRemovalSkippedByCancelAsNotAttempted(t *testing.T) {
 	if r := removals[0]; r.Err != nil || r.TrashPath != ".trash/Danube.md" {
 		t.Errorf("the removal done before the cancel came back as %+v, want Danube.md in .trash", r)
 	}
-	const detail = "the call was cancelled before Rivers/Rhine.md was removed"
+	const detail = "the call was canceled before Rivers/Rhine.md was removed"
 	if r := removals[1]; r.Path != "Rivers/Rhine.md" || !errors.Is(r.Err, host.ErrNotAttempted) || !strings.Contains(r.Err.Error(), detail) {
 		t.Errorf("the removal after the cancel came back as %+v, want ErrNotAttempted containing %q", r, detail)
 	}

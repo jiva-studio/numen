@@ -104,7 +104,7 @@ func getTool(path string) download.Tool {
 
 func getLanguages(value string) []string {
 	var out []string
-	for _, one := range strings.Split(value, ",") {
+	for one := range strings.SplitSeq(value, ",") {
 		if one = strings.TrimSpace(one); one != "" {
 			out = append(out, one)
 		}

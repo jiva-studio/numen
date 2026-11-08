@@ -665,7 +665,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 		"  type: preset\n" +
 		"  id: 01J8\n" +
 		"  minutes_a_day: 20\n" +
-		"  colour: green\n" +
+		"  color: green\n" +
 		"---\n" +
 		"body\n"
 
@@ -688,7 +688,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 	front := Parse(domain.FileStat{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
 	want := map[string]any{
 		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
-		"colour": "green",
+		"color": "green",
 	}
 	if !reflect.DeepEqual(front, want) {
 		t.Errorf("frontmatter = %v, want %v\n%s", front, want, got)

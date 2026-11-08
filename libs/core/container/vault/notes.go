@@ -29,7 +29,7 @@ func (c Config) Notes(
 	writers := c.VaultWriters()
 	now := c.Clock
 
-	// One note.Move settles every note that travelled, whether a rename sent it
+	// One note.Move settles every note that traveled, whether a rename sent it
 	// or a move did.
 	mover := note.NewMove(note.MoveDeps{
 		Readers: readers, Writers: writers, Links: links, Names: queries,
@@ -59,11 +59,11 @@ func (c Config) Notes(
 		Join:             note.NewJoin(readers, writers, index, now, links, addresses),
 		CreateInRelation: note.NewCreateInRelation(create, addresses),
 
-		Links:         note.NewShowLinks(links),
-		Connection:    note.NewGetConnection(links),
-		Backlinks:     note.NewGetBacklinks(links),
-		Neighbourhood: note.NewShowNeighbourhood(links, queries),
-		ResolveLinks:  note.NewResolveLinks(links),
+		Links:        note.NewShowLinks(links),
+		Connection:   note.NewGetConnection(links),
+		Backlinks:    note.NewGetBacklinks(links),
+		Neighborhood: note.NewShowNeighbourhood(links, queries),
+		ResolveLinks: note.NewResolveLinks(links),
 
 		GetTitles:      note.NewGetTitles(queries),
 		GetTitle:       note.NewGetTitle(queries),

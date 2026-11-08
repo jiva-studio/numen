@@ -33,8 +33,7 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	listing.Dir = "../../"
 	items, err := listing.Output()
 	if err != nil {
-		var ran *exec.ExitError
-		if errors.As(err, &ran) {
+		if ran, ok := errors.AsType[*exec.ExitError](err); ok {
 			t.Fatalf("go list: %v: %s", err, ran.Stderr)
 		}
 		t.Fatalf("go list: %v", err)

@@ -17,7 +17,7 @@ func makeAnswers(
 ) []review.Answer {
 	var out []review.Answer
 	for reviewCard := range reviewCards {
-		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognise"}
+		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognize"}
 		for step := range each {
 			out = append(out, review.Answer{
 				ID: fmt.Sprintf("%06d", len(out)), ReviewCard: on,

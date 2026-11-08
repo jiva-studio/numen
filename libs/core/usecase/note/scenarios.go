@@ -29,11 +29,11 @@ type Scenarios struct {
 	Join             Join
 	CreateInRelation CreateInRelation
 
-	Links         ShowLinks
-	Connection    GetConnection
-	Backlinks     GetBacklinks
-	Neighbourhood ShowNeighbourhood
-	ResolveLinks  *ResolveLinks
+	Links        ShowLinks
+	Connection   GetConnection
+	Backlinks    GetBacklinks
+	Neighborhood ShowNeighbourhood
+	ResolveLinks *ResolveLinks
 
 	GetTitles      GetTitles
 	GetTitle       *GetTitle

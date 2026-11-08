@@ -90,9 +90,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 
 	for who, db := range map[string]*DB{"one": one, "two": two} {
 		for i := range each {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				name := fmt.Sprintf("%s-%d", who, i)
 				err := saveNote(t, db, getFirst(), "notes/"+name+".md", name)
 				if err != nil {
@@ -100,7 +98,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 					failed = append(failed, err)
 					mu.Unlock()
 				}
-			}()
+			})
 		}
 	}
 	wg.Wait()

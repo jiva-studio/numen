@@ -70,7 +70,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			}
 			defer cleanup.Close(t, doc)
 
-			for i := 0; i < doc.pages; i++ {
+			for i := range doc.pages {
 				response := doc.text(i)
 				read, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
 					Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc.ref, Index: i}},

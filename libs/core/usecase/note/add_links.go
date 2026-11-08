@@ -39,12 +39,12 @@ func NewAddLinks(linking EditLinks) AddLinks {
 }
 
 // ErrNotAttempted is the error of the links of a note that were not written because the call was
-// cancelled first.
+// canceled first.
 var ErrNotAttempted = errors.New("not attempted")
 
 // Execute writes the additions and answers for each one, in the order given. An
 // addition that cannot be written is rejected on its own and costs the others
-// nothing. When ctx is cancelled, the links of every note not yet written get
+// nothing. When ctx is canceled, the links of every note not yet written get
 // ErrNotAttempted, and the results are returned with a nil error.
 func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]LinkAdded, error) {
 	results := make([]LinkAdded, len(additions))
@@ -60,7 +60,7 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			content, err = u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
 		}
 		if err != nil && ctx.Err() != nil && !errors.Is(err, ErrIndexOutdated) {
-			err = fmt.Errorf("the call was cancelled before the links were added to %s: %w", from, ErrNotAttempted)
+			err = fmt.Errorf("the call was canceled before the links were added to %s: %w", from, ErrNotAttempted)
 		}
 		for _, i := range groups.positions[from] {
 			results[i].Error = err

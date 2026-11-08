@@ -84,7 +84,7 @@ func TestFilenameAndLengthBoundary(t *testing.T) {
 		t.Errorf("121 bytes: got %d, exact %v", len(got), exact)
 	}
 	for _, char := range []string{"é", "ṛ", "😀"} {
-		for pad := 0; pad < 4; pad++ {
+		for pad := range 4 {
 			title := strings.Repeat("a", pad) + strings.Repeat(char, 150)
 			got, exact := GetReducedFilename(title)
 			if exact || !utf8.ValidString(got) || !strings.HasPrefix(title, got) {

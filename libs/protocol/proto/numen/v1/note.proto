@@ -116,7 +116,7 @@ message GetNeighbourhoodRequest {
 
 message GetNeighbourhoodResponse {
   Note focus = 1;
-  repeated Neighbour related = 2;
+  repeated Neighbor related = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
@@ -144,9 +144,9 @@ enum Relation {
   RELATION_SIBLING = 4;
 }
 
-// Neighbour is one note joined to the one in focus. The records that join notes
+// Neighbor is one note joined to the one in focus. The records that join notes
 // are in GetNeighbourhoodResponse.connections.
-message Neighbour {
+message Neighbor {
   Note note = 1;
   Relation relation = 2;
 

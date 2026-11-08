@@ -64,7 +64,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 	<-started
 	cancel()
 	if err := <-ended; err == nil {
-		t.Fatal("a cancelled batch returned vectors")
+		t.Fatal("a canceled batch returned vectors")
 	}
 
 	close(release)

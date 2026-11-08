@@ -373,7 +373,7 @@ func formatSubtype(subtype string) string {
 		return "authentication with the model failed"
 	case "error_overloaded", "overloaded":
 		return "the model is overloaded"
-	case "error_interrupted", "error_cancelled", "interrupted":
+	case "error_interrupted", "error_canceled", "interrupted":
 		return "the agent was interrupted"
 	default:
 		if rest, ok := strings.CutPrefix(subtype, "error_"); ok {

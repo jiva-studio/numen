@@ -48,21 +48,21 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 	}
 
 	models.updateConfig(map[string]string{"dpi": "1"})
-	if models.cfg.Recognise.DPI != 1 || o.closed != 1 {
-		t.Fatalf("config %+v, %d closed; want DPI 1 and the recogniser closed", models.cfg.Recognise, o.closed)
+	if models.cfg.Recognize.DPI != 1 || o.closed != 1 {
+		t.Fatalf("config %+v, %d closed; want DPI 1 and the recogniser closed", models.cfg.Recognize, o.closed)
 	}
 	if eng, err := models.getEngine(t.Context()); err != nil || eng == nil || o.opened != 2 {
 		t.Fatalf("reopened after DPI change: %v, %v, opened %d", eng, err, o.opened)
 	}
 
 	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
-	if models.cfg.Recognise.DPI != 450 || models.cfg.Recognise.Path != "/opt/models/rec.onnx" || o.closed != 2 {
-		t.Fatalf("config %+v, %d closed; want the new settings and the recogniser closed", models.cfg.Recognise, o.closed)
+	if models.cfg.Recognize.DPI != 450 || models.cfg.Recognize.Path != "/opt/models/rec.onnx" || o.closed != 2 {
+		t.Fatalf("config %+v, %d closed; want the new settings and the recogniser closed", models.cfg.Recognize, o.closed)
 	}
 	for _, invalid := range []string{"-100", "0", "not-a-number"} {
 		models.updateConfig(map[string]string{"dpi": invalid, "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
-		if models.cfg.Recognise.DPI != 450 {
-			t.Errorf("a resolution of %q set it to %d", invalid, models.cfg.Recognise.DPI)
+		if models.cfg.Recognize.DPI != 450 {
+			t.Errorf("a resolution of %q set it to %d", invalid, models.cfg.Recognize.DPI)
 		}
 	}
 	if eng, err := models.getEngine(t.Context()); err != nil || eng == nil || o.opened != 3 {
@@ -107,7 +107,7 @@ func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (comma
 	case got := <-answers:
 		return got.res, got.err
 	case <-time.After(workDeadline):
-		t.Fatalf("%s did not answer within %v while the file was recognised", req.Command, workDeadline)
+		t.Fatalf("%s did not answer within %v while the file was recognized", req.Command, workDeadline)
 		return command.Result{}, nil
 	}
 }
@@ -117,7 +117,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
 
 	res, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: scanPath})
 
-	if err != nil || res.Message != "recognising "+scanPath {
+	if err != nil || res.Message != "recognizing "+scanPath {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
 	s.waitStarted(t)
@@ -205,8 +205,8 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 		if _, err := models.getEngine(t.Context()); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasSuffix(got.Recognise.Name, tc.model) || got.Recognise.Path != tc.path || got.Recognise.Dict != tc.dict {
-			t.Errorf("settings %v: opened %+v", tc.values, got.Recognise)
+		if !strings.HasSuffix(got.Recognize.Name, tc.model) || got.Recognize.Path != tc.path || got.Recognize.Dict != tc.dict {
+			t.Errorf("settings %v: opened %+v", tc.values, got.Recognize)
 		}
 	}
 }

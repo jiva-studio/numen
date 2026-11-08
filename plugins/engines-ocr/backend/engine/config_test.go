@@ -23,7 +23,7 @@ func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
 func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 	cfg := Defaults()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
-	cfg.Recognise.Threads, cfg.Recognise.Jobs = 2, 5
+	cfg.Recognize.Threads, cfg.Recognize.Jobs = 2, 5
 	if got := cfg.threads(); got != 2 {
 		t.Errorf("the recogniser takes %d threads, want 2", got)
 	}
@@ -44,8 +44,8 @@ func TestAnUnresolvedProfileConsumesTheFallbackCounts(t *testing.T) {
 
 func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	cfg := Defaults()
-	if cfg.Recognise.DPI != 300 {
-		t.Errorf("a page is rendered at %d dpi, want 300", cfg.Recognise.DPI)
+	if cfg.Recognize.DPI != 300 {
+		t.Errorf("a page is rendered at %d dpi, want 300", cfg.Recognize.DPI)
 	}
 	if !cfg.ShouldDownload {
 		t.Error("the defaults do not fetch a missing model")
@@ -56,8 +56,8 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	if cfg.Detect.MaxSide != 0 || cfg.Detect.Expand != 0 || cfg.Detect.Minimum != 0 {
 		t.Errorf("unexpected detect numeric defaults: %+v", cfg.Detect)
 	}
-	if cfg.Recognise.Classes != 0 || cfg.Recognise.Height != 0 || cfg.Recognise.Jobs != 0 || cfg.Recognise.Threads != 0 {
-		t.Errorf("unexpected recognise numeric defaults: %+v", cfg.Recognise)
+	if cfg.Recognize.Classes != 0 || cfg.Recognize.Height != 0 || cfg.Recognize.Jobs != 0 || cfg.Recognize.Threads != 0 {
+		t.Errorf("unexpected recognize numeric defaults: %+v", cfg.Recognize)
 	}
 	if cfg.Compute.Threads != 0 || cfg.Compute.Jobs != 0 {
 		t.Errorf("unexpected compute defaults: %+v", cfg.Compute)
@@ -65,7 +65,7 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	for name, got := range map[string]string{
 		"layout":     cfg.Layout.Name,
 		"detector":   cfg.Detect.Name,
-		"recogniser": cfg.Recognise.Name,
+		"recogniser": cfg.Recognize.Name,
 	} {
 		if !strings.HasPrefix(got, "https://") || !strings.HasSuffix(got, ".onnx") {
 			t.Errorf("the %s model is %q, want an address of an onnx file", name, got)
@@ -101,7 +101,7 @@ func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
 
 	cfg := Defaults()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
-	cfg.Recognise.Threads, cfg.Recognise.Jobs = 1, 1
+	cfg.Recognize.Threads, cfg.Recognize.Jobs = 1, 1
 	if got := cfg.threads(); got != 1 {
 		t.Errorf("an explicit one thread gave %d", got)
 	}
@@ -109,7 +109,7 @@ func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
 		t.Errorf("an explicit one job gave %d", got)
 	}
 
-	cfg.Recognise = RecogniserModel{}
+	cfg.Recognize = RecogniserModel{}
 	cfg.Compute = Compute{Threads: 1, Jobs: 1}
 	if got := cfg.threads(); got != 1 {
 		t.Errorf("a profile of one thread gave %d", got)

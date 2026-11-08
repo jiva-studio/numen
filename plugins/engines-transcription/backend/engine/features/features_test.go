@@ -64,9 +64,9 @@ func TestFFTAgainstDefinition(t *testing.T) {
 		a[i] = complex(math.Sin(float64(i)), math.Cos(float64(2*i)))
 	}
 	want := make([]complex128, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		var sum complex128
-		for j := 0; j < n; j++ {
+		for j := range n {
 			angle := -2 * math.Pi * float64(k*j) / n
 			sum += a[j] * complex(math.Cos(angle), math.Sin(angle))
 		}
@@ -132,7 +132,7 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 
 	out := make([]float32, 0, bands*frames)
 	for lines.Scan() {
-		for _, field := range strings.Fields(lines.Text()) {
+		for field := range strings.FieldsSeq(lines.Text()) {
 			v, err := strconv.ParseFloat(field, 32)
 			if err != nil {
 				t.Fatalf("%s: %v", path, err)
@@ -158,7 +158,7 @@ func BenchmarkLogMel(b *testing.B) {
 	}
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = GetLogMel(audio, 0)
 	}
 }

@@ -40,7 +40,7 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 	}
 
 	// Nearest by how much of the path they have in common with the note the
-	// link was written in — the neighbour is likelier than the stranger.
+	// link was written in — the neighbor is likelier than the stranger.
 	best, bestShared := candidates[0], -1
 	for _, c := range candidates {
 		if shared := countSharedPrefix(from, c); shared > bestShared {

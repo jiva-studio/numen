@@ -300,8 +300,7 @@ func describeInvalid(path, reason string) error {
 }
 
 func describeDecodeError(encoded []byte, err error) error {
-	var typeErr *json.UnmarshalTypeError
-	if errors.As(err, &typeErr) {
+	if typeErr, ok := errors.AsType[*json.UnmarshalTypeError](err); ok {
 		if path, isFound := findPathAt(encoded, typeErr.Offset); isFound && path != "" {
 			return fmt.Errorf("the argument %s is invalid", path)
 		}

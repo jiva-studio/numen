@@ -37,9 +37,9 @@ func newSessionPool[S any](sessions []S, lanes int, destroy func(S)) *sessionPoo
 
 func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	var zero S
-	var cancelled <-chan struct{}
+	var canceled <-chan struct{}
 	if ctx != nil {
-		cancelled = ctx.Done()
+		canceled = ctx.Done()
 	}
 	select {
 	case <-p.stop:
@@ -51,7 +51,7 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ErrClosed
-	case <-cancelled:
+	case <-canceled:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ctx.Err()
 	case s := <-p.idle:

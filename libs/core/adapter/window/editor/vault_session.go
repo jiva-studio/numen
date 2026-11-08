@@ -52,7 +52,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpe
 	if !flushPending(target, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
 	}
-	// A plugin's open cancelled during the flush switches nothing.
+	// A plugin's open canceled during the flush switches nothing.
 	if isInsidePluginOpen && ctx.Err() != nil {
 		o.State.Writing.open()
 		return context.Cause(ctx)

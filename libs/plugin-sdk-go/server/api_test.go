@@ -174,7 +174,7 @@ func TestNewAPI_ReportsAnInvalidName(t *testing.T) {
 		Handle(api, "bad/method", func(_ context.Context, _ echoRequest) (echoResponse, error) {
 			return echoResponse{}, nil
 		})
-		if api.Err() != firstErr {
+		if !errors.Is(api.Err(), firstErr) {
 			t.Errorf("Err() changed from %v to %v after mounting on invalid API", firstErr, api.Err())
 		}
 	}

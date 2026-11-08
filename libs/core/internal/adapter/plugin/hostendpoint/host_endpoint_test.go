@@ -285,7 +285,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 		t.Fatal("the question went on after the plugin gave up")
 	}
 	if err := <-failed; err == nil {
-		t.Error("a cancelled call succeeded")
+		t.Error("a canceled call succeeded")
 	}
 }
 

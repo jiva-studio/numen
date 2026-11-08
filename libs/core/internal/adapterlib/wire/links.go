@@ -73,8 +73,8 @@ func getTextLinks(text string) ([]*v1.TextLink, []string) {
 }
 
 func getWikilinkText(inside string) string {
-	if alias := strings.IndexByte(inside, '|'); alias >= 0 {
-		return strings.TrimSpace(inside[alias+1:])
+	if _, after, ok := strings.Cut(inside, "|"); ok {
+		return strings.TrimSpace(after)
 	}
 	return strings.TrimSpace(inside)
 }

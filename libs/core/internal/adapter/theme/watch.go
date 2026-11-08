@@ -10,7 +10,7 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// ErrNoFolder is returned by a catalogue with no folder to read user themes from.
+// ErrNoFolder is returned by a catalog with no folder to read user themes from.
 var ErrNoFolder = errors.New("there is no themes folder")
 
 // Backlog is how many events are held while they are being debounced. The folder
@@ -27,7 +27,7 @@ const DefaultDebounceDelay = 50 * time.Millisecond
 // The watch is on the folder, not on a file: a watch on a file ends at the first
 // save, which replaces the file. The watch is one level deep, which is as deep as
 // a theme is.
-func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []string, error) {
+func (c Catalog) Watch(ctx context.Context, hold time.Duration) (<-chan []string, error) {
 	if c.dir == "" {
 		return nil, ErrNoFolder
 	}
@@ -50,7 +50,7 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 	return debounced, nil
 }
 
-func (c Catalogue) debounce(
+func (c Catalog) debounce(
 	ctx context.Context,
 	hold time.Duration,
 	raw <-chan notify.EventInfo,
@@ -123,7 +123,7 @@ func (b *themeBatch) closeHold() {
 	clear(b.pending)
 }
 
-func (c Catalogue) getThemeName(absolute string) (string, bool) {
+func (c Catalog) getThemeName(absolute string) (string, bool) {
 	if filepath.Clean(filepath.Dir(absolute)) != filepath.Clean(c.dir) {
 		return "", false
 	}

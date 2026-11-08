@@ -19,7 +19,7 @@ type Appearance struct {
 	Theme string `json:"theme"`
 }
 
-// The modes a colour pair is read by.
+// The modes a color pair is read by.
 const (
 	ModeSystem = "system"
 	ModeLight  = "light"

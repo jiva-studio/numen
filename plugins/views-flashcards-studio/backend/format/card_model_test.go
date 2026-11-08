@@ -24,9 +24,9 @@ func templateNames(s format.CardModel) []string {
 func TestAFirstLevelHeadingInACardModelIsText(t *testing.T) {
 	s := format.ReadCardModel(note(t, "---\ntype: card-model\nfields:\n  - Name\n---\n"+
 		"\n# Animal\n\nHow I show these.\n"+
-		"\n## Recognise\n\n### Front\n\n# {{Name}}\n\n### Back\n\n# Anything\n"))
+		"\n## Recognize\n\n### Front\n\n# {{Name}}\n\n### Back\n\n# Anything\n"))
 
-	if got := templateNames(s); !slices.Equal(got, []string{"Recognise"}) {
+	if got := templateNames(s); !slices.Equal(got, []string{"Recognize"}) {
 		t.Fatalf("templates = %v", got)
 	}
 	if s.Preamble != "\n# Animal\n\nHow I show these.\n\n" {
@@ -47,7 +47,7 @@ fields:
   - Life span
 ---
 
-## Recognise
+## Recognize
 
 ### Front
 
@@ -81,7 +81,7 @@ Which animal lives {{Life span}}?
 	if s.First() != "Name" {
 		t.Errorf("first = %q", s.First())
 	}
-	if got := templateNames(s); !slices.Equal(got, []string{"Recognise", "Name it"}) {
+	if got := templateNames(s); !slices.Equal(got, []string{"Recognize", "Name it"}) {
 		t.Errorf("templates = %v", got)
 	}
 	if len(s.Problems) != 0 {
@@ -107,7 +107,7 @@ func TestACardModelDeclaringNoField(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := format.ReadCardModel(note(t, "---\ntype: card-model\n"+content+
-				"---\n\n## Recognise\n\n### Front\n\n{{Height}}\n\n### Back\n\nnothing\n"))
+				"---\n\n## Recognize\n\n### Front\n\n{{Height}}\n\n### Back\n\nnothing\n"))
 
 			if s.Fields != nil {
 				t.Errorf("fields = %v, want none", s.Fields)
@@ -149,7 +149,7 @@ fields:
   - Height
 ---
 
-## Recognise
+## Recognize
 
 ### Front
 
@@ -179,9 +179,9 @@ func TestATemplateMissingASideLaysOutNothing(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := format.ReadCardModel(note(t,
 				"---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n\n## Broken\n\n"+sides+
-					"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"))
+					"\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"))
 
-			if got := templateNames(s); !slices.Equal(got, []string{"Broken", "Recognise"}) {
+			if got := templateNames(s); !slices.Equal(got, []string{"Broken", "Recognize"}) {
 				t.Fatalf("templates = %v, want both, so a problem can address one", got)
 			}
 			if got := getProblem(t, s.Problems, format.FaultTemplateSide).Template; got != 0 {
@@ -199,10 +199,10 @@ func TestATemplateMissingASideLaysOutNothing(t *testing.T) {
 // is placed under it is nothing.
 func TestACardModelEndingOnAHeading(t *testing.T) {
 	for name, content := range map[string]string{
-		"a template": "## Recognise",
-		"a side":     "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back",
-		"a lead":     "## Recognise\n\nThe one to start with.\n\n### Front",
-		"deeper":     "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n#### Aside",
+		"a template": "## Recognize",
+		"a side":     "## Recognize\n\n### Front\n\n{{Name}}\n\n### Back",
+		"a lead":     "## Recognize\n\nThe one to start with.\n\n### Front",
+		"deeper":     "## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n#### Aside",
 		"nothing":    "##",
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -263,7 +263,7 @@ fields:
 const cardModelHead = "---\ntype: card-model\nfields:\n  - Name\n---\n"
 
 func TestACardModelWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
-	f, err := format.OpenCardModel([]byte("---\nfields: [Name\n---\n\n## Recognise\n"))
+	f, err := format.OpenCardModel([]byte("---\nfields: [Name\n---\n\n## Recognize\n"))
 
 	if !errors.Is(err, markdown.ErrUnreadable) {
 		t.Fatalf("open = %v, want the frontmatter rejected", err)
@@ -274,7 +274,7 @@ func TestACardModelWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
 }
 
 func TestRenamingAFieldOfACardModelSavedOnOneLineIsRefused(t *testing.T) {
-	raw := "---\n{type: card-model, fields: [Name, Height]}\n---\n\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+	raw := "---\n{type: card-model, fields: [Name, Height]}\n---\n\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 	f, err := format.OpenCardModel([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -291,7 +291,7 @@ func TestRenamingAFieldOfACardModelSavedOnOneLineIsRefused(t *testing.T) {
 // A heading deeper than a side's is text the side lays out.
 func TestADeeperHeadingInASideIsText(t *testing.T) {
 	s := format.ReadCardModel(note(t, cardModelHead+
-		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n#### Detail\n\nmore\n\n### Back\n\nanswer\n"))
+		"\n## Recognize\n\n### Front\n\n{{Name}}\n\n#### Detail\n\nmore\n\n### Back\n\nanswer\n"))
 
 	if len(s.Templates) != 1 {
 		t.Fatalf("templates = %+v", s.Templates)
@@ -323,7 +323,7 @@ func TestSideHeadingsThatOpenNothingStandBelowTheSideAboveThem(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := format.ReadCardModel(note(t, cardModelHead+"\n## Recognise\n\n"+tc.body))
+			s := format.ReadCardModel(note(t, cardModelHead+"\n## Recognize\n\n"+tc.body))
 
 			if len(s.Templates) != 1 {
 				t.Fatalf("templates = %+v", s.Templates)
@@ -341,10 +341,10 @@ func TestSideHeadingsThatOpenNothingStandBelowTheSideAboveThem(t *testing.T) {
 // The tail starts where the last thing the card model read ends.
 func TestTheTailOfACardModelStartsWhereTheLastTemplateEnds(t *testing.T) {
 	for name, tc := range map[string]struct{ body, tail string }{
-		"a lead and no sides":    {"## Recognise\n\nLead text.\n\n\n", "\n\n\n"},
-		"a template and nothing": {"## Recognise\n\n\n", "\n\n\n"},
-		"an empty back":          {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n\n", "\n\n\n"},
-		"a filled back":          {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\nanswer\n\n\n", "\n\n\n"},
+		"a lead and no sides":    {"## Recognize\n\nLead text.\n\n\n", "\n\n\n"},
+		"a template and nothing": {"## Recognize\n\n\n", "\n\n\n"},
+		"an empty back":          {"## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n\n", "\n\n\n"},
+		"a filled back":          {"## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\nanswer\n\n\n", "\n\n\n"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := format.ReadCardModel(note(t, cardModelHead+"\n"+tc.body))

@@ -38,7 +38,7 @@ func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",
-		"\n## Recognise\n\n"+strings.Repeat("a", note.MaxBytes), []string{"Name"}, domain.FileStat{})
+		"\n## Recognize\n\n"+strings.Repeat("a", note.MaxBytes), []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("write = %v, want too large", err)
 	}
@@ -127,7 +127,7 @@ func TestACardModelBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 // file is left as it was.
 func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
+	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognize\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
@@ -144,7 +144,7 @@ func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 // written are the ones it declares.
 func TestWriteCardModel_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
+	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognize\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())

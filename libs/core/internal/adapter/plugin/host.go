@@ -951,9 +951,7 @@ func (h *Host) evictTargets(ctx context.Context, targets []pluginTeardownTarget,
 }
 
 func (h *Host) startEvictLoop() {
-	h.evictWg.Add(1)
-	go func() {
-		defer h.evictWg.Done()
+	h.evictWg.Go(func() {
 		for {
 			select {
 			case <-h.evictDone:
@@ -964,7 +962,7 @@ func (h *Host) startEvictLoop() {
 				cancel()
 			}
 		}
-	}()
+	})
 }
 
 func (h *Host) stopEvictLoop() {
@@ -1082,9 +1080,7 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		if _, ok := h.settings[pluginID]; !ok {
 			h.settings[pluginID] = make(map[string]any)
 		}
-		for k, v := range cfg {
-			h.settings[pluginID][k] = v
-		}
+		maps.Copy(h.settings[pluginID], cfg)
 	}
 	h.mu.Unlock()
 	h.fillGeneratedSettings()

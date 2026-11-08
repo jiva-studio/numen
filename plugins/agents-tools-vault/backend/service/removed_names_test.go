@@ -144,7 +144,7 @@ func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 
 func getRemovedToolNames() []string {
 	return []string{
-		"search_query", "note_neighbourhood", "vault_info",
+		"search_query", "note_neighborhood", "vault_info",
 		"window_tabs_get", "window_focus_tab", "vault_problems", "note_titles", "note_headings", "card_current", "edit_preview",
 	}
 }

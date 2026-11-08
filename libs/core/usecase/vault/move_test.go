@@ -222,7 +222,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 		t.Errorf("the index still files %v under the folder it left", got)
 	}
 	if got := f.sources(t, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
-		t.Errorf("a folder whose name begins with the one that moved travelled: %v", got)
+		t.Errorf("a folder whose name begins with the one that moved traveled: %v", got)
 	}
 
 	// The chunks are still the source's, so a search answers with the note at

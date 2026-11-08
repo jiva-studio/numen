@@ -170,10 +170,10 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	history := s.getConversation(conversation)
 	messages := make([]message, 0, len(history)+2)
 	if instructions := task.Instructions; instructions != "" {
-		messages = append(messages, message{Role: "system", Content: newText(instructions), ToolCalls: nil, ToolCallID: ""})
+		messages = append(messages, message{Role: "system", Content: new(instructions), ToolCalls: nil, ToolCallID: ""})
 	}
 	messages = append(messages, history...)
-	messages = append(messages, message{Role: "user", Content: newText(task.Prompt), ToolCalls: nil, ToolCallID: ""})
+	messages = append(messages, message{Role: "user", Content: new(task.Prompt), ToolCalls: nil, ToolCallID: ""})
 
 	modelName := s.getModel(task.Model)
 	taskRun := &run{

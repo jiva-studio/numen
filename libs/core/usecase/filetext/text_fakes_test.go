@@ -73,9 +73,9 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash strin
 	if failure != nil {
 		return placedVersion{}, failure
 	}
-	for i := len(extra) - 1; i >= 0; i-- {
-		if extra[i].version.InputHash == contentHash {
-			return extra[i], nil
+	for _, e := range slices.Backward(extra) {
+		if e.version.InputHash == contentHash {
+			return e, nil
 		}
 	}
 	s.mu.Lock()

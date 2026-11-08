@@ -139,7 +139,7 @@ func TestLinkAddSendsOneHostCallPerNoteAndWritesNoFile(t *testing.T) {
 		t.Errorf("the first addition is from %s against %+v, want Rocks/Basalt.md against %+v", first.From, first.Baseline, basaltStat)
 	}
 	if l := first.Link; l.Target.Value != "Fossils" || l.Role != domain.RoleJump || l.Type != "source" || l.Label != "older" || l.Why != "shells in the lava" {
-		t.Errorf("the first link is %+v, want a jump to Fossils of type source labelled older with its note", l)
+		t.Errorf("the first link is %+v, want a jump to Fossils of type source labeled older with its note", l)
 	}
 	if second := calls.additions[0][1]; second.From != "Minerals.md" || second.Link.Target.Value != "Granite" || second.Link.Role != domain.RoleChild {
 		t.Errorf("the second addition is %+v, want a child link from Minerals.md to Granite", second)
@@ -264,7 +264,7 @@ func TestLinkUpdateSendsTheChangeToTheHostAndWritesNoFile(t *testing.T) {
 		t.Errorf("fingerprint of Rocks/Basalt.md = %q, want the one returned, %q", now, out.Fingerprint)
 	}
 	if ref, ok := findLink(readLinks(t, v, "Rocks/Basalt.md"), "Minerals", domain.RoleRef); !ok || ref.Label != "made of" {
-		t.Errorf("links = %+v, want a ref to Minerals labelled made of", readLinks(t, v, "Rocks/Basalt.md"))
+		t.Errorf("links = %+v, want a ref to Minerals labeled made of", readLinks(t, v, "Rocks/Basalt.md"))
 	}
 }
 

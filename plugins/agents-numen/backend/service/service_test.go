@@ -131,7 +131,7 @@ func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
 		"maxTokens":   "2048",
 	})
 	c := s.getChat()
-	_, _, err := c.send(t.Context(), "m1", effort{}, []message{{Role: "user", Content: newText("hello")}}, nil)
+	_, _, err := c.send(t.Context(), "m1", effort{}, []message{{Role: "user", Content: new("hello")}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

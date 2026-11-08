@@ -23,7 +23,7 @@ func parseTime(t *testing.T, s string) time.Time {
 func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
-		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"},
 		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 		Took:       4210 * time.Millisecond,
@@ -71,7 +71,7 @@ func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
-		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"},
 		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 	})
@@ -91,7 +91,7 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 
 // A line that cannot be interpreted is skipped and counted, and the rest of the file is read.
 func TestAnUnactionableLineIsCounted(t *testing.T) {
-	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","template":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
+	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","template":"Recognize","at":"2026-08-29T09:12:33.412Z","rating":3}`
 	for name, line := range map[string]string{
 		"not json at all":         `this is not a line`,
 		"a version to come":       `{"v":2,"id":"01K","card":"k7m2xq9fzp","template":"F","at":"2026-08-29T09:12:33.412Z","rating":3}`,
@@ -285,7 +285,7 @@ func lines(raw string) int {
 	if lastNewline+1 < len(raw) {
 		target++
 	}
-	for _, line := range strings.Split(raw[:lastNewline], "\n") {
+	for line := range strings.SplitSeq(raw[:lastNewline], "\n") {
 		if strings.TrimSpace(line) != "" {
 			target++
 		}

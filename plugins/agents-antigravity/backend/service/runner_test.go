@@ -309,7 +309,7 @@ func TestEventsAndJsonFieldCompleteCoverage(t *testing.T) {
 
 	// CLI events: default without conversation_id, result with non-success status and empty error, result with empty response.
 	handle(map[string]any{"event": "init"})
-	handle(map[string]any{"event": "result", "result": map[string]any{"status": "CANCELLED", "error": ""}})
+	handle(map[string]any{"event": "result", "result": map[string]any{"status": "CANCELED", "error": ""}})
 	handle(map[string]any{"event": "result", "result": map[string]any{"status": "SUCCESS", "response": ""}})
 
 	close(w.Output)
@@ -329,8 +329,8 @@ func TestEventsAndJsonFieldCompleteCoverage(t *testing.T) {
 	if steps[len(steps)-2].GetToolCall() == nil || steps[len(steps)-2].GetToolCall().Tool != "t3" || steps[len(steps)-2].GetToolCall().About != `{"k":"v"}_extra` {
 		t.Errorf("streamed tool call = %+v", steps[len(steps)-2])
 	}
-	if steps[len(steps)-1].GetStopped() != "the run ended with status CANCELLED" {
-		t.Errorf("last step = %+v, want status CANCELLED", steps[len(steps)-1])
+	if steps[len(steps)-1].GetStopped() != "the run ended with status CANCELED" {
+		t.Errorf("last step = %+v, want status CANCELED", steps[len(steps)-1])
 	}
 }
 

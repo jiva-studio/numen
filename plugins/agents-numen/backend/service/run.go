@@ -113,7 +113,7 @@ func (r *run) runToolCalls(ctx context.Context, messages []message, calls []tool
 		if err != nil {
 			return messages, err
 		}
-		messages = append(messages, message{Role: "tool", ToolCallID: call.ID, Content: newText(result), ToolCalls: nil})
+		messages = append(messages, message{Role: "tool", ToolCallID: call.ID, Content: new(result), ToolCalls: nil})
 	}
 	return messages, nil
 }

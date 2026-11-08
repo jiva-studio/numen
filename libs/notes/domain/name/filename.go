@@ -114,7 +114,7 @@ func utf8Start(b byte) bool { return b&0xC0 != 0x80 }
 // platform: a part holding one of `\ : * ? " < > |`, or ending in a space or a dot.
 // A tab key such as `note:dd` is no path, and nothing is written under it.
 func CheckPath(path string) error {
-	for _, part := range strings.Split(path, "/") {
+	for part := range strings.SplitSeq(path, "/") {
 		switch {
 		case strings.ContainsAny(part, `\:*?"<>|`):
 			return fmt.Errorf("%w: %q holds a character no file name may hold", ErrInvalidName, path)

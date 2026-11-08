@@ -44,7 +44,7 @@ func TestAMovedFolderConsumesEverythingBelowIt(t *testing.T) {
 		t.Errorf("the folder it left still holds %v", got)
 	}
 	if got := getPathsUnder(t, db, getFirst(), "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
-		t.Errorf("a folder whose name begins with the one that moved travelled: %v", got)
+		t.Errorf("a folder whose name begins with the one that moved traveled: %v", got)
 	}
 	if got := chunksOf(t, db, getFirst(), "science/physics/Entropy.md"); !slices.Equal(got, target) {
 		t.Errorf("the note's chunks are %v, and were %v", got, target)

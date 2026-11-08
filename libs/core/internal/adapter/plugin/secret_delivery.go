@@ -150,11 +150,9 @@ func (d *secretDelivery) refresh(ctx context.Context, forced []string) error {
 		if d.isAwaitingFirstConfigure(id) {
 			continue
 		}
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			failures[i] = d.refreshPlugin(ctx, id)
-		}()
+		})
 	}
 	group.Wait()
 	return errors.Join(failures...)

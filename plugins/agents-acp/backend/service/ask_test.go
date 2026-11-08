@@ -100,7 +100,7 @@ func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 	if len(replies) < 4 {
 		t.Fatalf("the agent had %d replies", len(replies))
 	}
-	allowed, denied := `{"outcome":{"optionId":"once","outcome":"selected"}}`, `{"outcome":{"outcome":"cancelled"}}`
+	allowed, denied := `{"outcome":{"optionId":"once","outcome":"selected"}}`, `{"outcome":{"outcome":"canceled"}}`
 	for i, want := range []string{allowed, denied, denied, allowed} {
 		outcome, err := json.Marshal(replies[i]["result"])
 		if err != nil {
@@ -299,8 +299,8 @@ func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	if len(replies) != 2 {
 		t.Fatalf("the agent had %d replies, want 2", len(replies))
 	}
-	if outcome := getField[map[string]any](t, getField[map[string]any](t, replies[0], "result"), "outcome")["outcome"]; outcome != "cancelled" {
-		t.Errorf("the permission was answered %v, want cancelled", outcome)
+	if outcome := getField[map[string]any](t, getField[map[string]any](t, replies[0], "result"), "outcome")["outcome"]; outcome != "canceled" {
+		t.Errorf("the permission was answered %v, want canceled", outcome)
 	}
 	if replies[1]["error"] == nil || replies[1]["result"] != nil {
 		t.Errorf("the file read was answered %v, want an error", replies[1])
@@ -326,8 +326,8 @@ func TestAskAgent_SelectsModelFromLegacyModelList(t *testing.T) {
 
 // A model the agent does not offer stops the task before the agent is prompted.
 func TestAskAgent_FailsOnUnavailableModel(t *testing.T) {
-	for program, behaviour := range map[string]string{"fake": "config", "plain": "plain"} {
-		agent, record := fakeACPAgent(t, program, behaviour)
+	for program, behavior := range map[string]string{"fake": "config", "plain": "plain"} {
+		agent, record := fakeACPAgent(t, program, behavior)
 
 		response, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{
 			Agent: "acp:" + program, Model: "m9", Prompt: "why?",
@@ -363,7 +363,7 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 	}
 	for stream.Receive() {
 		if stream.Msg().GetStopped() != "" || stream.Msg().GetText() != "" {
-			t.Errorf("a cancelled task said %v", stream.Msg())
+			t.Errorf("a canceled task said %v", stream.Msg())
 		}
 	}
 	if rpcerror.GetCode(stream.Err()) != rpcerror.DeadlineExceeded && rpcerror.GetCode(stream.Err()) != rpcerror.Canceled {
@@ -539,7 +539,7 @@ func TestAskAndSessionEdgeCases(t *testing.T) {
 		t.Errorf("Ask on text send error = %v (calls %d)", err, calls)
 	}
 
-	// Cancelled context returns ctx.Err() directly without sending StoppedStep.
+	// Canceled context returns ctx.Err() directly without sending StoppedStep.
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	var stopReason string
@@ -550,7 +550,7 @@ func TestAskAndSessionEdgeCases(t *testing.T) {
 		return nil
 	})
 	if !errors.Is(err, context.Canceled) || stopReason != "" {
-		t.Errorf("Ask on cancelled ctx = %v, stopReason = %q", err, stopReason)
+		t.Errorf("Ask on canceled ctx = %v, stopReason = %q", err, stopReason)
 	}
 
 	// setReasoning failure and session close failure propagate from answer and readACPListing.

@@ -119,7 +119,7 @@ body
 
 func TestAnUnknownRoleIsRefused(t *testing.T) {
 	// The list of roles is closed: navigation reads it, so a role with no decided
-	// behaviour has none, and storing it would misrepresent that.
+	// behavior has none, and storing it would misrepresent that.
 	n := parse(t, `---
 links:
   - to: "[[Entropy]]"

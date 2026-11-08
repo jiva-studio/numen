@@ -456,7 +456,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	filePath := filepath.Join(target, "abc.txt")
-	if err := os.WriteFile(filePath, []byte("what was recognised\n"), 0o644); err != nil {
+	if err := os.WriteFile(filePath, []byte("what was recognized\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// The link is written the way a sync tool writes one, relative to the
@@ -482,7 +482,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the derived file did not survive: %v", err)
 	}
-	if string(body) != "what was recognised\n" {
+	if string(body) != "what was recognized\n" {
 		t.Errorf("the derived file holds %q", body)
 	}
 	if entries, err := os.ReadDir(target); err != nil || len(entries) != 1 {

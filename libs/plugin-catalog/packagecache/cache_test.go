@@ -172,11 +172,9 @@ func TestApplicationsStoringTheSamePackageAtOnceLeaveOneWholePackage(t *testing.
 	var wg sync.WaitGroup
 	errs := make(chan error, 8)
 	for range 8 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			errs <- cache.Put(t.Context(), sum, strings.NewReader(content))
-		}()
+		})
 	}
 	wg.Wait()
 	close(errs)

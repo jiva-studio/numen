@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// pageSelector locates a segment on a page of the recognised file (W3C Web Annotation selector).
+// pageSelector locates a segment on a page of the recognized file (W3C Web Annotation selector).
 // Page counts from 1 (RFC 8118); Boxes are rectangles on the page, each [minX, minY, maxX, maxY]
 // in fractions of the page.
 type pageSelector struct {

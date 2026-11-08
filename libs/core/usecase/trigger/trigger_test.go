@@ -358,8 +358,7 @@ func TestAPluginThatCannotBeReachedIsSkippedForTheRestOfThePass(t *testing.T) {
 
 	err := s.triggers.ExecuteAll(t.Context(), domain.Vault{ID: "v1"})
 
-	var unavailable *pluginport.UnavailableError
-	if !errors.As(err, &unavailable) {
+	if !errors.As(err, new(*pluginport.UnavailableError)) {
 		t.Errorf("the pass answered %v, want the plugin unavailable", err)
 	}
 	want := []string{linker + " app:file.createText links/tide.md", scanner + " app:file.createText scans/a.pdf"}

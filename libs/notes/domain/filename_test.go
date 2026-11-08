@@ -225,7 +225,7 @@ func TestATitleOfTheLongestLengthIsFiledBelowItself(t *testing.T) {
 // characters are and wherever in one the limit falls.
 func TestATitleTooLongIsSplitAfterTheLastCharacterThatFits(t *testing.T) {
 	for _, char := range []string{"é", "ṛ", "😀"} {
-		for pad := 0; pad < 4; pad++ {
+		for pad := range 4 {
 			title := strings.Repeat("a", pad) + strings.Repeat(char, 150)
 			name, exact := domain.GetReducedFilename(title)
 			if exact || !utf8.ValidString(name) || !strings.HasPrefix(title, name) {

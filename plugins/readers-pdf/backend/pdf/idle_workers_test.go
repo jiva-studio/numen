@@ -139,9 +139,7 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 	var wg sync.WaitGroup
 	errs := make(chan error, 4)
 	for range 4 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 150 {
 				doc, err := openPath(workers, "testdata/tiny.pdf")
 				if err != nil {
@@ -150,7 +148,7 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 				}
 				cleanup.Close(t, doc)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 	close(errs)
@@ -224,6 +222,6 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	timerStopped := workers.release == nil
 	workers.mu.Unlock()
 	if !timerStopped {
-		t.Error("expected release timer to be cancelled and cleared upon acquiring document")
+		t.Error("expected release timer to be canceled and cleared upon acquiring document")
 	}
 }

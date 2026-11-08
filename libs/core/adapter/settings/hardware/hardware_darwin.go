@@ -33,7 +33,7 @@ func readPerfLevels() []perfLevel {
 		return nil
 	}
 	levels := make([]perfLevel, 0, count)
-	for i := 0; i < int(count); i++ {
+	for i := range count {
 		prefix := fmt.Sprintf("hw.perflevel%d.", i)
 		name, err := unix.Sysctl(prefix + "name")
 		if err != nil {

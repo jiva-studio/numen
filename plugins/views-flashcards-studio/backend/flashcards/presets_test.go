@@ -278,7 +278,7 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 
 func getSettled() map[string]string {
 	return map[string]string{
-		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolor: green\ntype: preset\n" +
 			"# how long a day runs\nminutes_a_day: 20 # twenty is plenty\n" +
 			"tags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
 			"# Sanskrit\n\nGrammar and vocabulary.\n",
@@ -316,10 +316,10 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 	}
 
 	want := map[string]any{
-		"id":     "01J8F3K2M9QRSTVWXYZ012",
-		"colour": "green",
-		"tags":   []any{"study"},
-		"type":   "preset",
+		"id":    "01J8F3K2M9QRSTVWXYZ012",
+		"color": "green",
+		"tags":  []any{"study"},
+		"type":  "preset",
 		// Owned keys are written where the setting differs from what the note was read
 		// as. The goal already stored is not rewritten, and a setting at the default that
 		// the note never named stays unnamed.
@@ -351,7 +351,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Sanskrit.md": "---\n  id: 01J8F3K2M9QRSTVWXYZ012\n  type: preset\n" +
-			"  goal: minutes_a_day\n  minutes_a_day: 20\n  colour: green\n---\n\n# Sanskrit\n",
+			"  goal: minutes_a_day\n  minutes_a_day: 20\n  color: green\n---\n\n# Sanskrit\n",
 	})
 
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
@@ -359,7 +359,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	}
 
 	want := map[string]any{
-		"id": "01J8F3K2M9QRSTVWXYZ012", "colour": "green", "type": "preset",
+		"id": "01J8F3K2M9QRSTVWXYZ012", "color": "green", "type": "preset",
 		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
 		"reviews_a_day": 45, "retention": 0.87,
 	}
@@ -616,14 +616,14 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
 	pos := map[review.CardID]review.Schedule{
-		{Card: "near", Template: "Recognise"}: {
+		{Card: "near", Template: "Recognize"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
-		{Card: "far", Template: "Recognise"}: {
+		{Card: "far", Template: "Recognize"}: {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.IsLearned(pos[review.CardID{Card: "near", Template: "Recognise"}], now) {
+	if p.IsLearned(pos[review.CardID{Card: "near", Template: "Recognize"}], now) {
 		t.Error("a review card sixteen days off is learned at an interval of twenty-one")
 	}
 

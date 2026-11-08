@@ -29,13 +29,13 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func fakeACPAgent(t *testing.T, program, behaviour string) (acpAgent, string) {
+func fakeACPAgent(t *testing.T, program, behavior string) (acpAgent, string) {
 	t.Helper()
 	record := filepath.Join(t.TempDir(), "record")
 	return acpAgent{
 		Program: program,
 		Title:   "Fake " + program,
-		Command: []string{os.Args[0], "fake-acp", behaviour, record},
+		Command: []string{os.Args[0], "fake-acp", behavior, record},
 	}, record
 }
 
@@ -46,7 +46,7 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 		t.Fatal(err)
 	}
 	observed := map[string][]map[string]any{}
-	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(raw)), "\n") {
 		var message map[string]any
 		if err := json.Unmarshal([]byte(line), &message); err != nil {
 			t.Fatalf("the agent read %q: %v", line, err)
@@ -61,8 +61,8 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 }
 
 func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
-	behaviour, record := args[0], args[1]
-	if behaviour == "fail" {
+	behavior, record := args[0], args[1]
+	if behavior == "fail" {
 		started, err := os.OpenFile(record, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -80,7 +80,7 @@ func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 	if err != nil {
 		return 2
 	}
-	agent := &fakeAgent{behaviour: behaviour, out: out, lines: bufio.NewScanner(in), record: recording}
+	agent := &fakeAgent{behavior: behavior, out: out, lines: bufio.NewScanner(in), record: recording}
 	agent.lines.Buffer(nil, 4<<20)
 	for agent.lines.Scan() {
 		agent.handle()
@@ -93,11 +93,11 @@ func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 }
 
 type fakeAgent struct {
-	behaviour string
-	out       io.Writer
-	lines     *bufio.Scanner
-	record    io.Writer
-	err       error
+	behavior string
+	out      io.Writer
+	lines    *bufio.Scanner
+	record   io.Writer
+	err      error
 }
 
 func (a *fakeAgent) fail(err error) {
@@ -138,7 +138,7 @@ func (a *fakeAgent) handle() {
 	switch message["method"] {
 	case "initialize":
 		capabilities := map[string]any{"sessionCapabilities": map[string]any{"close": map[string]any{}}}
-		if a.behaviour == "tools" {
+		if a.behavior == "tools" {
 			capabilities["mcpCapabilities"] = map[string]any{"http": true}
 		}
 		a.send(map[string]any{"id": id, "result": map[string]any{"protocolVersion": 1, "agentCapabilities": capabilities}})
@@ -147,13 +147,13 @@ func (a *fakeAgent) handle() {
 	case "session/prompt":
 		a.answerPrompt(id)
 	case "session/set_config_option":
-		if a.behaviour == "fail-reasoning" {
+		if a.behavior == "fail-reasoning" {
 			a.send(map[string]any{"id": id, "error": map[string]any{"code": -32000, "message": "reasoning rejected"}})
 			return
 		}
 		a.send(map[string]any{"id": id, "result": map[string]any{}})
 	case "session/close":
-		if a.behaviour == "fail-close" {
+		if a.behavior == "fail-close" {
 			a.send(map[string]any{"id": id, "error": map[string]any{"code": -32000, "message": "close rejected"}})
 			return
 		}
@@ -166,7 +166,7 @@ func (a *fakeAgent) handle() {
 func (a *fakeAgent) getSession() map[string]any {
 	session := map[string]any{"sessionId": "s1"}
 	models := []map[string]any{{"value": "m1", "name": "Model One"}, {"value": "m2", "name": "Model Two"}}
-	switch a.behaviour {
+	switch a.behavior {
 	case "config", "thought", "fail-reasoning":
 		options := []map[string]any{
 			{"id": "mode", "category": "mode", "type": "select", "currentValue": "ask", "options": []map[string]any{{"value": "ask"}}},
@@ -174,7 +174,7 @@ func (a *fakeAgent) getSession() map[string]any {
 				{"group": "g", "name": "Group", "options": models},
 			}},
 		}
-		if a.behaviour == "thought" || a.behaviour == "fail-reasoning" {
+		if a.behavior == "thought" || a.behavior == "fail-reasoning" {
 			options = append(options, map[string]any{
 				"id": "effort", "category": "thought_level", "type": "select", "currentValue": "medium", "options": []map[string]any{
 					{"value": "low", "name": "Low"}, {"value": "medium", "name": "Medium"}, {"value": "high", "name": "High"},
@@ -191,10 +191,10 @@ func (a *fakeAgent) getSession() map[string]any {
 }
 
 func (a *fakeAgent) answerPrompt(id any) {
-	if a.behaviour == "hang" {
+	if a.behavior == "hang" {
 		return
 	}
-	if a.behaviour == "tools" {
+	if a.behavior == "tools" {
 		a.callTools()
 	}
 	a.send(map[string]any{"id": "p1", "method": "session/request_permission", "params": map[string]any{
@@ -213,7 +213,7 @@ func (a *fakeAgent) answerPrompt(id any) {
 		a.send(map[string]any{"method": "session/update", "params": update})
 	}
 	stopReason := "end_turn"
-	if a.behaviour == "refuse" {
+	if a.behavior == "refuse" {
 		stopReason = "rejected"
 	}
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})

@@ -214,10 +214,7 @@ func stripFence(reply string) string {
 // share of the longer of them. Two lines of no letters stand nowhere apart.
 func EditDistance(a, b string) float64 {
 	x, y := extractLetters(a), extractLetters(b)
-	long := len(x)
-	if len(y) > long {
-		long = len(y)
-	}
+	long := max(len(y), len(x))
 	if long == 0 {
 		return 0
 	}

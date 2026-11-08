@@ -40,7 +40,7 @@ type blockingRecogniser struct {
 	failure   error
 }
 
-func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]recognition.Block, error) {
+func (r blockingRecogniser) Recognize(ctx context.Context, page image.Image) ([]recognition.Block, error) {
 	r.startOnce.Do(func() { close(r.startCh) })
 	select {
 	case <-r.release:
@@ -50,7 +50,7 @@ func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]
 	if r.failure != nil {
 		return nil, r.failure
 	}
-	return r.MockRecogniser.Recognise(ctx, page)
+	return r.MockRecogniser.Recognize(ctx, page)
 }
 
 // recordingQueue is the queue in memory that sends the id of every task that ends on doneCh, and
@@ -193,7 +193,7 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 	}
 }
 
-func (s *toolFixture) recognise(t *testing.T, vault, path string) RecognitionCreateOutput {
+func (s *toolFixture) recognize(t *testing.T, vault, path string) RecognitionCreateOutput {
 	t.Helper()
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: vault, Name: "recognition_create", Arguments: []byte(`{"path":"` + path + `"}`),
@@ -267,9 +267,9 @@ func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	s := newToolFixture(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
-	want := RecognitionCreateOutput{TaskID: "recognise:" + scanPath, Path: scanPath, State: "started"}
+	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
 		t.Fatalf("recognition_create returned %+v, want %+v", out, want)
 	}
@@ -292,10 +292,10 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 
 func TestRecognitionCreateOfAScanBeingRecognisedReportsItRunning(t *testing.T) {
 	s := newToolFixture(t)
-	first := s.recognise(t, "Physics", scanPath)
+	first := s.recognize(t, "Physics", scanPath)
 	s.waitStarted(t)
 
-	second := s.recognise(t, "Physics", scanPath)
+	second := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}
 	if second != want {
@@ -370,10 +370,10 @@ func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	version := s.putRecognition(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -384,7 +384,7 @@ func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
 func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	close(s.recogniser.release)
-	if _, err := s.recognitions.Recognise(t.Context(), recognition.Request{
+	if _, err := s.recognitions.Recognize(t.Context(), recognition.Request{
 		Vault: "Physics", Path: scanPath,
 	}); err != nil {
 		t.Fatal(err)
@@ -398,10 +398,10 @@ func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 		t.Fatalf("the scan lists %+v, want the recognition live", listing)
 	}
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
+		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -447,13 +447,13 @@ func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) doma
 
 func TestRecognitionCreateOfLiveProofreadReturnsItWithoutARun(t *testing.T) {
 	s := newToolFixture(t)
-	recognised := s.putRecognition(t)
-	proofread := s.putProofread(t, recognised)
+	recognized := s.putRecognition(t)
+	proofread := s.putProofread(t, recognized)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
+		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -466,9 +466,9 @@ func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
 	s.putRecognition(t)
 	s.putProofread(t, domain.TextVersion{})
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
-	want := RecognitionCreateOutput{TaskID: "recognise:" + scanPath, Path: scanPath, State: "started"}
+	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
 	}
@@ -498,8 +498,8 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 		t.Errorf("a scan only Chemistry has was accepted in Physics: %s", inShown.GetResult().GetStructured())
 	}
 
-	out := s.recognise(t, "Chemistry", chemistryScan)
-	if out.State != "started" || out.TaskID != "recognise:"+chemistryScan {
+	out := s.recognize(t, "Chemistry", chemistryScan)
+	if out.State != "started" || out.TaskID != "recognize:"+chemistryScan {
 		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
 	close(s.recogniser.release)
@@ -638,10 +638,10 @@ func TestRecognitionCreateOfARecognisedScanReadsNoFile(t *testing.T) {
 	version := s.putRecognition(t)
 	counts := s.countReads(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)

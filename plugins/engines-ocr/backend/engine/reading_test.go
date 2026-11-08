@@ -56,7 +56,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			if _, err := r.Recognise(ctx, page); err != nil {
+			if _, err := r.Recognize(ctx, page); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -67,7 +67,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			if _, err := r.Recognise(ctx, page); err != nil {
+			if _, err := r.Recognize(ctx, page); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -78,7 +78,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			if _, err := r.Recognise(ctx, page); err != nil {
+			if _, err := r.Recognize(ctx, page); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -98,7 +98,7 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 		},
 	}
 
-	if _, err := r.Recognise(t.Context(), page); !errors.Is(err, broken) {
+	if _, err := r.Recognize(t.Context(), page); !errors.Is(err, broken) {
 		t.Errorf("a page nothing could be read on answered with %v", err)
 	}
 }
@@ -119,7 +119,7 @@ func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Recognise(t.Context(), page)
+	blocks, err := r.Recognize(t.Context(), page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Recognise(t.Context(), page)
+	blocks, err := r.Recognize(t.Context(), page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,8 +183,8 @@ func TestRecogniseContextCancelled(t *testing.T) {
 		},
 	}
 
-	if _, err := r.Recognise(ctx, page); !errors.Is(err, context.Canceled) {
-		t.Errorf("cancelled recognise returned %v, want context.Canceled", err)
+	if _, err := r.Recognize(ctx, page); !errors.Is(err, context.Canceled) {
+		t.Errorf("canceled recognize returned %v, want context.Canceled", err)
 	}
 }
 
@@ -250,7 +250,7 @@ func TestCropRegionEmpty(t *testing.T) {
 	}
 }
 
-func labelled(parts ...Region) func(image.Image) ([]Region, error) {
+func labeled(parts ...Region) func(image.Image) ([]Region, error) {
 	return func(image.Image) ([]Region, error) { return parts, nil }
 }
 
@@ -268,7 +268,7 @@ func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
 		read:   oneLine("what the page says"),
 	}
 
-	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if !errors.Is(err, broken) {
 		t.Errorf("answered with %v", err)
 	}
@@ -281,7 +281,7 @@ func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 	var mu sync.Mutex
 	var heights []int
 	r := &Recogniser{
-		layout: labelled(
+		layout: labeled(
 			Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)},
 			Region{Label: "text", Rect: image.Rect(10, 100, 590, 400)},
 		),
@@ -294,7 +294,7 @@ func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,12 +336,12 @@ func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	r := &Recogniser{
-		layout: labelled(Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
+		layout: labeled(Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
 		body:   map[string]bool{"text": true},
 		read:   oneLine("never asked"),
 	}
 
-	blocks, err := r.Recognise(ctx, image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(ctx, image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil || blocks != nil {
 		t.Errorf("answered with %+v, %v", blocks, err)
 	}
@@ -356,7 +356,7 @@ func TestABoxIsAddressedFromThePage(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +376,7 @@ func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 		read:   func(image.Image) ([]read.RecResult, error) { return nil, broken },
 	}
 
-	if _, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800))); !errors.Is(err, broken) {
+	if _, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800))); !errors.Is(err, broken) {
 		t.Errorf("answered with %v", err)
 	}
 }
@@ -388,7 +388,7 @@ func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
 		read:   func(image.Image) ([]read.RecResult, error) { return nil, nil },
 	}
 
-	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil || len(blocks) != 0 {
 		t.Errorf("answered with %+v, %v", blocks, err)
 	}

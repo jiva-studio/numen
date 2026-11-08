@@ -224,12 +224,12 @@ func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOption
 	if name != settingsadapter.RegistryThemes {
 		return nil, false
 	}
-	catalogue, err := c.getCatalogue()
+	catalog, err := c.getCatalogue()
 	if err != nil {
 		c.handleError(err)
 	}
 	var options pluginport.PluginSettingOptions
-	for _, one := range catalogue.Themes() {
+	for _, one := range catalog.Themes() {
 		options = append(options, pluginport.PluginSettingOption{Value: one.Name, Title: one.Title})
 	}
 	return options, true

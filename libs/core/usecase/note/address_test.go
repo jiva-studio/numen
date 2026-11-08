@@ -40,7 +40,7 @@ func TestALinkIsSavedByNameWhereTheNameMeansOneNote(t *testing.T) {
 }
 
 // A name is read back as an exact path from the root before it is read as a
-// neighbour, so the note beside the one the link is written in is reached only
+// neighbor, so the note beside the one the link is written in is reached only
 // by writing where it is filed.
 func TestALinkIsSavedByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	t.Parallel()

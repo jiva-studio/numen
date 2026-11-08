@@ -178,7 +178,7 @@ func TestGetIndexSizesFailsOnAClosedIndex(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := openIndex(t).ChunkQueries().GetIndexSizes(ctx); err == nil {
-		t.Error("a cancelled call answered")
+		t.Error("a canceled call answered")
 	}
 }
 

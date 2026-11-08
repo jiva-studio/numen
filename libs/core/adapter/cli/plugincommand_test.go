@@ -102,7 +102,7 @@ func TestPluginCommand_InvalidArgumentsPrintUsage(t *testing.T) {
 		"no vault":                      {"sample.create"},
 		"a file to a command over none": {"sample.create", "notebook", "a.md", "--title", "T"},
 		"no file to a command over one": {"count-pages", "notebook"},
-		"a flag it does not take":       {"sample.create", "notebook", "--title", "T", "--colour", "red"},
+		"a flag it does not take":       {"sample.create", "notebook", "--title", "T", "--color", "red"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {

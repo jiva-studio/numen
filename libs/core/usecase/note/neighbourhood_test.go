@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func relationsOf(n domain.Neighbourhood) []string {
+func relationsOf(n domain.Neighborhood) []string {
 	out := make([]string, 0, len(n.Related))
 	for _, r := range n.Related {
 		out = append(out, string(r.Relation)+" "+r.Path)
@@ -19,7 +19,7 @@ func relationsOf(n domain.Neighbourhood) []string {
 	return out
 }
 
-func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.Neighbourhood {
+func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.Neighborhood {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
 	n, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).
@@ -67,7 +67,7 @@ func describeLine(c domain.Connection) string {
 	return c.A + ">" + c.B + " ab=" + describeSide(c.AB) + " ba=" + describeSide(c.BA)
 }
 
-func linesOf(n domain.Neighbourhood) []string {
+func linesOf(n domain.Neighborhood) []string {
 	out := make([]string, 0, len(n.Connections))
 	for _, c := range n.Connections {
 		out = append(out, describeLine(c))
@@ -159,10 +159,10 @@ func TestEndsThatDisagreeKeepOnlyTheRecordsOfTheWinningDirection(t *testing.T) {
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
 	if got := linesOf(neighbourhoodOf(t, mutualParents, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab=none ba="lays them"`}) {
-		t.Errorf("got %q, want the neighbour as the parent and the word written here", got)
+		t.Errorf("got %q, want the neighbor as the parent and the word written here", got)
 	}
 	if got := linesOf(neighbourhoodOf(t, mutualParents, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab=none ba="came out of one"`}) {
-		t.Errorf("got %q, want the neighbour as the parent and the word written here", got)
+		t.Errorf("got %q, want the neighbor as the parent and the word written here", got)
 	}
 
 	// Each calls the other its child, so the parent relation is earned from the far
@@ -290,7 +290,7 @@ func TestTheHigherRelationWins(t *testing.T) {
 }
 
 // TestANeighbourhoodStaysInsideItsVault. A link by identifier resolves in
-// whichever connected vault holds the note, so a neighbourhood that does not
+// whichever connected vault holds the note, so a neighborhood that does not
 // check where one landed draws a note from somewhere else — or, when the two
 // vaults file a note at the same path, the wrong note under the right name.
 func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {

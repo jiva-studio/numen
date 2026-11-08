@@ -436,11 +436,11 @@ func TestAnEmbeddingThatFailsOrChangesTheModelIsRefused(t *testing.T) {
 	}
 
 	f = newFixture()
-	cancelled, cancel := context.WithCancel(ctx)
+	canceled, cancel := context.WithCancel(ctx)
 	cancel()
 	f.embedder.err = context.Canceled
-	if _, err := f.search.EmbedTexts(cancelled, []string{"a"}); !errors.Is(err, context.Canceled) {
-		t.Errorf("a cancelled call gave %v, want the cancellation", err)
+	if _, err := f.search.EmbedTexts(canceled, []string{"a"}); !errors.Is(err, context.Canceled) {
+		t.Errorf("a canceled call gave %v, want the cancellation", err)
 	}
 }
 

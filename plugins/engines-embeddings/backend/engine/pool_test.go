@@ -103,15 +103,15 @@ func TestMeanPool(t *testing.T) {
 	rows := 2
 	multiFlat := make([]float32, rows*seq*dim)
 	// row 0, token 1: 2.0
-	for d := 0; d < dim; d++ {
+	for d := range dim {
 		multiFlat[(0*seq+1)*dim+d] = 2.0
 	}
 	// row 0, token 2: 4.0
-	for d := 0; d < dim; d++ {
+	for d := range dim {
 		multiFlat[(0*seq+2)*dim+d] = 4.0
 	}
 	// row 0, token 0: 99.0 (should be skipped by mask)
-	for d := 0; d < dim; d++ {
+	for d := range dim {
 		multiFlat[(0*seq+0)*dim+d] = 99.0
 	}
 
@@ -127,14 +127,14 @@ func TestMeanPool(t *testing.T) {
 
 	// Row 0: kept tokens 1 and 2 (sum 6.0 across all dim), unit length
 	expectedVal := 1.0 / math.Sqrt(float64(dim))
-	for d := 0; d < dim; d++ {
+	for d := range dim {
 		if math.Abs(float64(multiOut[0][d])-expectedVal) > 1e-5 {
 			t.Errorf("multiOut[0][%d] = %f; want %f", d, multiOut[0][d], expectedVal)
 		}
 	}
 
 	// Row 1: all tokens masked out, must be all zero (and not NaN)
-	for d := 0; d < dim; d++ {
+	for d := range dim {
 		if math.IsNaN(float64(multiOut[1][d])) || multiOut[1][d] != 0 {
 			t.Errorf("multiOut[1][%d] = %f; want 0", d, multiOut[1][d])
 		}

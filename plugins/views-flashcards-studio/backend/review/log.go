@@ -130,7 +130,7 @@ func Read(raw []byte) (answers []Answer, skipped int) {
 		skipped, raw = 1, raw[:lastNewline+1]
 	}
 
-	for _, one := range bytes.Split(raw, []byte("\n")) {
+	for one := range bytes.SplitSeq(raw, []byte("\n")) {
 		if len(bytes.TrimSpace(one)) == 0 {
 			continue
 		}

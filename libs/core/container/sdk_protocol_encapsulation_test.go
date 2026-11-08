@@ -43,8 +43,8 @@ func (w *leakWalk) walkNamed(named *types.Named) {
 		w.found[protocolLeak{subject: w.subject, protocolType: origin.Pkg().Path() + "." + origin.Name()}] = true
 		return
 	}
-	for i := range named.TypeArgs().Len() {
-		w.walk(named.TypeArgs().At(i))
+	for t := range named.TypeArgs().Types() {
+		w.walk(t)
 	}
 	if !strings.HasPrefix(origin.Pkg().Path(), w.familyPrefix) || w.visited[origin] {
 		return
@@ -55,8 +55,8 @@ func (w *leakWalk) walkNamed(named *types.Named) {
 	defer func() { w.subject = outer }()
 	w.walk(named.Origin().Underlying())
 	methods := types.NewMethodSet(types.NewPointer(named.Origin()))
-	for i := range methods.Len() {
-		if method := methods.At(i).Obj(); method.Exported() {
+	for method := range methods.Methods() {
+		if method := method.Obj(); method.Exported() {
 			w.walk(method.Type())
 		}
 	}
@@ -78,33 +78,33 @@ func (w *leakWalk) walk(t types.Type) {
 		w.walk(current.Key())
 		w.walk(current.Elem())
 	case *types.Struct:
-		for i := range current.NumFields() {
-			if field := current.Field(i); field.Exported() {
+		for field := range current.Fields() {
+			if field.Exported() {
 				w.walk(field.Type())
 			}
 		}
 	case *types.Tuple:
-		for i := range current.Len() {
-			w.walk(current.At(i).Type())
+		for v := range current.Variables() {
+			w.walk(v.Type())
 		}
 	case *types.Signature:
 		w.walk(current.Params())
 		w.walk(current.Results())
-		for i := range current.TypeParams().Len() {
-			w.walk(current.TypeParams().At(i).Constraint())
+		for tparam := range current.TypeParams().TypeParams() {
+			w.walk(tparam.Constraint())
 		}
 	case *types.Interface:
-		for i := range current.NumExplicitMethods() {
-			if method := current.ExplicitMethod(i); method.Exported() {
+		for method := range current.ExplicitMethods() {
+			if method.Exported() {
 				w.walk(method.Type())
 			}
 		}
-		for i := range current.NumEmbeddeds() {
-			w.walk(current.EmbeddedType(i))
+		for etyp := range current.EmbeddedTypes() {
+			w.walk(etyp)
 		}
 	case *types.Union:
-		for i := range current.Len() {
-			w.walk(current.Term(i).Type())
+		for term := range current.Terms() {
+			w.walk(term.Type())
 		}
 	case *types.TypeParam:
 		w.walk(current.Constraint())

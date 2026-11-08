@@ -383,7 +383,7 @@ const (
 )
 
 func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
-	// `numen recognise` is a separate binary and runs while the window is open,
+	// `numen recognize` is a separate binary and runs while the window is open,
 	// so what one process holds every other has to see.
 	derived, root := store(t)
 
