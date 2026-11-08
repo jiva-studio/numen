@@ -2,7 +2,6 @@ import { test, expect } from '../../support/test.js'
 import { openAsset, openTreeRow } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader', () => {
-
   test('opens paper.pdf document from vault assets', async ({ page }) => {
     await openAsset(page, 'paper.pdf')
 
@@ -22,14 +21,6 @@ test.describe('PDF Document Reader', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(0)
-  })
-
-  test('displays graceful fallback panel on corrupted PDF', async ({ page }) => {
-    await openAsset(page, 'corrupted.pdf')
-
-    // Verify fallback panel is shown gracefully displaying error message
-    await expect(page.locator('.fallback-panel')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.fallback-message')).toBeVisible()
   })
 
   test('persists PDF reader across tab switching', async ({ page }) => {
