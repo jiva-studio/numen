@@ -7,11 +7,9 @@ import (
 )
 
 // ConvertModeToWire maps the core's mode to the schema value that selects which
-// half of a colour pair the tokens are read as, and ConvertModeFromWire maps
-// the schema value back to the core's mode.
-//
-// A value the schema does not name, and the value it names for unspecified,
-// are both the machine's own choice.
+// half of a color pair the tokens are read as, and ConvertModeFromWire maps it back.
+// A value the schema does not name, and the value it names for unspecified, are
+// both the machine's own choice.
 func ConvertModeToWire(mode appearance.ColorScheme) v1.Mode {
 	switch mode {
 	case appearance.Light:

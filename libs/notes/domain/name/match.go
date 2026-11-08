@@ -6,12 +6,9 @@ import (
 )
 
 // ChooseMatch applies the priority a name resolves by: an exact path from the root,
-// then a path relative to the note the link is written in, then a single match
-// by name. Several matches are ambiguous: the link resolves to the nearest one
-// in the tree, and the ambiguity is shown.
-//
-// A path is matched under FoldName: every folder on the way to a note
-// answers the way the note's own name does.
+// then a path relative to the note the link is written in, then a single match by name.
+// Several matches are ambiguous: the link resolves to the nearest one in the tree.
+// A path is matched under FoldName.
 func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambiguous bool) {
 	if len(candidates) == 0 {
 		return "", false

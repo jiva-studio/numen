@@ -289,12 +289,9 @@ export const TheBubbleIsAboveTheKnob: Story = {
 }
 
 /**
- * The tab twice in one view: with a curve response above, and still waiting for
- * one below.
- *
- * The plot keeps its height whether or not a backlog is drawn, so nothing below
- * it moves when the response arrives. Only a browser can verify that: the height
- * is set by an aspect ratio, which is only a number until the layout is computed.
+ * The plot keeps its height whether or not a backlog is drawn, so nothing below it moves when
+ * the response arrives. Only a browser can verify that: the height is set by an aspect ratio,
+ * which is only a number until the layout is computed.
  */
 export const TheBacklogKeepsItsSpace: Story = {
   render: bothWays,

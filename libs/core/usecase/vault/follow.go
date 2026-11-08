@@ -11,10 +11,8 @@ import (
 
 // Follow keeps the index consistent with a vault that is edited concurrently,
 // and reports which notes changed.
-//
 // The rule is independent of the front end: changed files are reindexed, and
-// when the changes cannot be determined the vault is scanned again. A window
-// and a command line need the same behavior.
+// when the changes cannot be determined the vault is scanned again.
 type Follow struct {
 	watcher vaultport.VaultWatcher
 	refresh Refresh

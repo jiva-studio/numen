@@ -53,12 +53,9 @@ func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	}
 }
 
-// A card's heading is the first line of its first field, truncated to one line.
-// It ends at the first line break and at format.HeadingRunes characters,
-// counted in Unicode characters, and leading and trailing spaces are removed.
-//
-// The value is untrusted input: it is user-written HTML in a file that another
-// editor may have written.
+// A card's heading is the first line of its first field, ended at the first line break and at
+// format.HeadingRunes Unicode characters, with leading and trailing spaces removed. The value is
+// untrusted input: user-written HTML in a file that another editor may have written.
 func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

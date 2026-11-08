@@ -70,14 +70,10 @@ func CreateTempFile(root *os.Root, dir, pattern string) (*os.File, string, error
 }
 
 // Replace writes content beside the target and renames it over the top.
-//
-// The temporary file is named with a leading dot, and a name beginning with a
-// dot is not a note. The contents are flushed before the rename, so a machine
-// that loses power comes back to the old file or the new one.
-//
-// The file stat comes from the temporary file's own descriptor. The rename
-// carries the file across whole, so its size and its modification time are the
-// ones at the target from the moment the rename lands.
+// The temporary file is named with a leading dot, so it is not a note. The
+// contents are flushed before the rename, so a power loss leaves the old file
+// or the new one. The file stat comes from the temporary file's descriptor;
+// the rename carries the file across whole, so size and modification time are the target's.
 func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (content domain.FileStat, err error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := CreateTempFile(root, dir, GetTempPattern(filepath.Base(target)))
@@ -116,12 +112,9 @@ func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 }
 
 // SyncDirectory flushes the folder the rename was recorded in.
-//
-// Flushing the file is what keeps its contents whole; flushing the folder is
-// what keeps the rename itself.
-//
-// A folder that cannot be opened or flushed on this platform or filesystem is not an error: the
-// note is written either way.
+// Flushing the file keeps its contents whole; flushing the folder keeps the rename.
+// A folder that cannot be opened or flushed on this platform or filesystem is
+// not an error: the note is written either way.
 func SyncDirectory(root *os.Root, dir string) (err error) {
 	if runtime.GOOS == "windows" {
 		return nil

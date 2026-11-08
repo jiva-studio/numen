@@ -20,13 +20,10 @@ type NoteMover interface {
 }
 
 // Move files anything the vault holds somewhere else inside it: one file of any
-// kind, or a folder with everything under it. Renaming is a move within one
-// folder.
-//
+// kind, or a folder with everything under it. Renaming is a move within one folder.
 // Every note that travelled is filed where it now is, and a link that stopped
 // reaching one is written again by its name. A note given a different name
-// inside its own folder is called by that name, where a title and a filename
-// are kept as one name.
+// inside its own folder is called by that name, where a title and a filename are one name.
 type Move struct {
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries

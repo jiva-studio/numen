@@ -80,13 +80,11 @@ func getResponse(t testing.TB, handler http.Handler, path string) *httptest.Resp
 	return out
 }
 
-// The base policy is asserted in the csp package; what this window widens is
-// asserted here.
-//
-// A build that opens no socket widens nothing. A theme is an ordinary
-// stylesheet that may have been downloaded, and the policy is the only control
-// that stops it reaching the network: a remote `url()` is blocked unless its
-// origin is permitted by `style-src`.
+// TestHandler_AppliesOneContentSecurityPolicy checks what this window widens;
+// the base policy is asserted in the csp package.
+// A build that opens no socket widens nothing. A theme is a stylesheet that may
+// have been downloaded and the policy is the only control that stops it
+// reaching the network: a remote `url()` is blocked unless `style-src` permits its origin.
 func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	target := csp.Sources{}.Policy()
 
@@ -195,15 +193,11 @@ func TestThePageOpensWithTheTheme(t *testing.T) {
 	}
 }
 
-// The mode's element, the theme's and the two sizes are the last three things
-// in the head, in that order.
-//
-// A theme and the built stylesheet both declare `color-scheme` at the root with
-// equal weight, so the later declaration wins. The built stylesheet's link is
-// the last element the build puts in the head, and the theme follows the mode,
-// so a theme pinning the scheme takes effect. The sizes follow the theme: they
-// are the window sizes configured by the user, clamped to the bounds of each,
-// and the window renders at those sizes.
+// TestTheStyleElementsAreTheLastThingInTheHead checks that the mode's element, the theme's and the
+// two sizes are the last three things in the head, in that order.
+// A theme and the built stylesheet declare `color-scheme` with equal weight, so
+// the later wins: the theme follows the built stylesheet's link and the mode,
+// so a theme pinning the scheme takes effect. The sizes follow the theme.
 func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)

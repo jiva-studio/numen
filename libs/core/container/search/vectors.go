@@ -20,12 +20,10 @@ func (c Config) EmbedderReady() bool {
 	return err == nil
 }
 
-// Embedders returns the embedder that produces the vectors a vault is searched
-// by and the embedder that produces the vector for a question: the embedding
-// plugin provides both.
-//
+// Embedders returns the embedder for the vectors a vault is searched by and the
+// embedder for the vector of a question; the embedding plugin provides both.
 // An installation with no embedding plugin enabled has neither, and no error:
-// search answers on the words of the full-text index alone.
+// search answers on the full-text index alone.
 func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
 	embedder, closeEmbedder, err := c.OpenEmbedder(ctx, NewModelReadReporter(tasks))
 	if err != nil {

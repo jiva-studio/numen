@@ -25,12 +25,9 @@ export function build(title: string, counts: RelationCounts): PlexNeighbourhood 
 }
 
 /**
- * The same, around a chosen node, with the node it was chosen from placed as a
- * parent. Both keep their identifiers, so the plex recognizes them in the new
- * layout and moves them to their relations and not removing and re-adding them.
- *
- * Names come from a pool and are not numbered, because a plex of
- * "Child 1, Child 2" does not show whether real titles wrap or collide.
+ * The same, around a chosen node, with the node it was chosen from placed as a parent.
+ * Both keep their identifiers, so the plex updates the nodes in place and never removes and re-adds them.
+ * Names come from a pool and are not numbered, because "Child 1, Child 2" does not show whether real titles wrap or collide.
  */
 export function buildAround(
   focus: TitledNode,

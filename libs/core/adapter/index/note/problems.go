@@ -77,10 +77,9 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 }
 
 // GetAmbiguousLinks returns every link that more than one note matches.
-//
-// The query narrows to links written by a shared name; whether one of those is
-// ambiguous is decided by the same resolution a link goes through anywhere
-// else. Duplicating that rule in SQL would let two answers to one question
+// The query narrows to links written by a shared name; the same resolution a
+// link goes through anywhere else decides ambiguity, so SQL does not duplicate
+// that rule.
 // diverge.
 func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.AmbiguousLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)

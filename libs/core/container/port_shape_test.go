@@ -41,11 +41,9 @@ func getInterfaceProbes(file *ast.File) []string {
 	return found
 }
 
-// A value the core receives is used as the port it was received as. Checking
-// whether it is also another type creates a second port that no constructor,
-// composition root or fake references, so what a port promises is all the core
-// may rely on.
-//
+// TestNoCodeOfTheCoreProbesAValueForAnotherInterface checks that a value is
+// used as the port it was received as. Probing for another type creates a
+// second port that no constructor, composition root or fake references.
 // A case clause of an expression switch is checked as well: it names a port
 // only where the switch is over a type.
 func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {

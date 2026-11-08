@@ -13,15 +13,11 @@ type Range struct {
 	End   int
 }
 
-// currently, then punctuation and spacing are normalised to the marks they represent,
-// then a run of spacing inside a line is read as one space. A span that matches
-// exactly is therefore never reported where it only nearly matches.
-//
-// The offsets are into `text` as given, whichever reading found them, so the
-// replaced bytes are the ones the user wrote.
-//
-// isApproximate is true when the span was found only once punctuation or spacing
-// were allowed to differ.
+// FindRanges returns the spans of text that match wanted: first exactly, then with
+// punctuation and spacing normalized, where a run of spacing in a line is one space.
+// An exact match is never reported as approximate.
+// Offsets are into text as given, so the replaced bytes are the ones the user wrote.
+// isApproximate is true when a span was found only by the normalized reading.
 func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 	if wanted == "" {
 		return nil, false

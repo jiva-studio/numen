@@ -83,13 +83,9 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
 }
 
 /**
- * An edge is the pair it joins; two lines between the same pair are one, and
- * which end is which is not part of that.
- *
- * A relationship that is the same in both directions changes ends when the plex
- * moves along it — what was a jump into the focus is a jump out of it from the
- * other side. Reading those as two edges fades one out while the other fades
- * in, so the one line the reader is following is the one that disappears.
+ * An edge is the pair it joins; two lines between the same pair are one, whichever end is which.
+ * A relationship that is the same in both directions changes ends when the plex moves along it.
+ * Reading those as two edges fades one out while the other fades in, so the line the reader is following disappears.
  */
 export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
@@ -173,13 +169,10 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
 }
 
 /**
- * Direction in which a curve is traversed for the label set on it, taken from
- * the tangent at `at`, the midpoint of the title. A curve with no horizontal run
- * is traversed downward.
- *
- * The relation gives the edge's routing direction, which can differ from the
- * curve's: one that loops out of a column arrives at its midpoint running back
- * the way it came, and one that doubles back turns twice over a short run.
+ * Direction in which a curve is traversed for the label set on it, taken from the tangent at `at`, the midpoint of the title.
+ * A curve with no horizontal run is traversed downward.
+ * The relation gives the edge's routing direction, which can differ from the curve's: one that loops out of a column arrives at its midpoint
+ * running back the way it came, and one that doubles back turns twice over a short run.
  */
 export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
   const way = getTangent(edge, getParameter(measureAxis(edge), pos))

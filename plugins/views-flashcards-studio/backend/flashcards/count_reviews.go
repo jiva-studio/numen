@@ -38,16 +38,10 @@ type ReviewCounts struct {
 }
 
 // CountReviews is how much of a vault was answered on each day it was reviewed.
-//
-// What a day came to is a sum, and a sum is worked out one file at a time: a
-// run arriving from another machine adds to the days it holds and disturbs
-// nothing that was counted before it. So the cache is kept by run — a file of
-// the name and length it was read at is not read again, and a session's own
-// file is the only one re-read all evening.
-//
-// This is what a schedule cannot do. Where an answer leaves a card depends on
-// the order of every answer before it, so a schedule arriving late is the whole
-// history read again.
+// A day's total is a sum, so it is worked out one file at a time: a run arriving from another
+// machine adds to the days it holds and disturbs nothing counted before. The cache is kept by
+// run, so a file of the name and length it was read at is not read again. A schedule cannot do
+// this, since where an answer leaves a card depends on every answer before it.
 type CountReviews struct {
 	logs      ports.LogStores
 	Cache     ports.ScheduleStore
@@ -289,12 +283,9 @@ func NewGetReviewDays(counted CountReviews) GetReviewDays {
 	return GetReviewDays{counted: counted}
 }
 
-// Execute keeps the days from from to to, both ends inside it; an empty end is
-// unbounded at that end. The streak and the answer count are over the whole
-// vault.
-//
-// A day is written as the year, the month and the day, each padded, so it is
-// compared as text the way it is compared in time.
+// Execute keeps the days from from to to, both ends inside it; an empty end is unbounded at
+// that end. The streak and the answer count are over the whole vault. A day is written with
+// each part padded, so it compares as text the way it compares in time.
 func (u GetReviewDays) Execute(
 	ctx context.Context, v domain.Vault, from, to string,
 ) (ReviewCounts, error) {

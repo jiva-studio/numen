@@ -16,13 +16,9 @@ const Entries = 4096
 
 // Folders records which paths in the vault are folders, so a deleted path can
 // be classified as a folder or a file.
-//
-// A name does not determine the type — `2026.archive` is a folder and
-// `notes.txt` is not — and a deleted path cannot be inspected, so the type is
-// recorded while the path exists.
-//
-// The goroutine that drains the events reads the shape, and the goroutine that
-// scans a folder new to the watch writes it, so a lock guards access.
+// A name does not determine the type (`2026.archive` is a folder) and a deleted
+// path cannot be inspected, so the type is recorded while the path exists.
+// A lock guards access: the event goroutine reads, the folder-scanning goroutine writes.
 type Folders struct {
 	reader *VaultReader
 
@@ -44,9 +40,7 @@ func (f *Folders) addFolder(path string) {
 }
 
 // ReadShape scans the vault once to record its shape, ending where the vault's
-// own walk ends. A folder created later is recorded from the event that creates
-// it.
-//
+// own walk ends. A folder created later is recorded from its creation event.
 // A folder the walk cannot enter is missing from the shape, and the first such
 // error is returned.
 func ReadShape(reader *VaultReader) (*Folders, error) {
@@ -101,24 +95,11 @@ func (f *Folders) removeFolder(path string) {
 	}
 }
 
-// GetConcernedPaths converts an absolute operating-system path into the sources
-// of this vault that it names. The reader decides what the vault holds, so the
-// watcher and the walk give the same answer.
-//
-// A file maps to itself when the vault holds it. A folder new to the watch maps
-// to everything under it, because such a folder arrives with its contents in
-// place. A folder already known maps to nothing, as does a folder the walk
-// skips together with everything under it.
-//
-// A path that does not exist and that the vault skips as a folder yields no
-// source.
-//
-// `whole` is set when the answer cannot be derived from the disk: a deleted
-// folder takes its sources with it, and only the index has their paths. A path
-// outside the vault is the same case.
-//
-// `walk` is a folder new to the watch, returned by name. This function must not
-// block.
+// GetConcernedPaths converts an absolute path into the sources of this vault it
+// names, by the reader's rules so watcher and walk agree. A file maps to itself;
+// a folder new to the watch to everything under it; a known or skipped one to
+// nothing. `whole` is set when the disk cannot answer (a deleted folder, a path
+// outside the vault). `walk` is a folder new to the watch; it must not block.
 func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {
@@ -153,14 +134,11 @@ func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool
 	return []string{path}, false, ""
 }
 
-// GetPathsUnder is what the vault holds under a folder new to the watch, and
-// the folders under it remembered as it goes.
-//
-// A folder holding more entries than Entries is answered as the whole vault:
-// the rest of the walk costs more than reading the vault again. So is a folder
-// the walk could not enter: what it holds is missing from the shape, and a
-// shape short of a folder cannot tell a folder that has gone from a file that
-// has — the index would go on answering with files that are not there.
+// GetPathsUnder returns what the vault holds under a folder new to the watch,
+// remembering the folders under it.
+// A folder holding more entries than Entries, or one the walk could not enter,
+// is answered as the whole vault: a shape short of a folder cannot tell a gone
+// folder from a gone file, and the index would keep answering with absent files.
 func (f *Folders) GetPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
 	w := &underWalk{folders: f, absolute: absolute}
 	if err := filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {

@@ -329,13 +329,10 @@ export default meta
 type Story = StoryObj
 
 /**
- * Nothing that runs, fetches, collects or changes under a second reading is
- * left in what a card is drawn with — over two thousand arrangements, in this
- * engine.
- *
- * A run that measured almost nothing would be a run that proved nothing, so
- * what it drew is counted and drawn: an arrangement that evaluates to plain text
- * has not been measured against anything.
+ * Nothing that runs, fetches, collects or changes under a second reading is left in what a card
+ * is drawn with, over two thousand arrangements. What was drawn is counted, because a run that
+ * measured almost nothing proves nothing: an arrangement that evaluates to plain text has not
+ * been measured against anything.
  */
 export const Arrangements: Story = {
   play: async ({ canvasElement }) => {

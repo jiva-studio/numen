@@ -90,15 +90,10 @@ func (f *DeckFile) Whole(
 	return provided, nil
 }
 
-// SetValue writes the value of one field of the card with a card id. A field
-// the card does not contain is added at the end of the card, and the fields it
-// contains keep their order.
-//
-// A card id carried by two cards of the deck addresses neither: the result is
-// ErrTwoCards.
-//
-// Writing the first field rewrites the heading, which is done where the deck
-// is made whole and not here.
+// SetValue writes the value of one field of the card with a card id. A field the card does not
+// contain is added at the end of the card, and the fields it contains keep their order. A card
+// id carried by two cards addresses neither: the result is ErrTwoCards. Writing the first field
+// rewrites the heading, which is done where the deck is made whole, not here.
 func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
@@ -117,12 +112,9 @@ func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
 }
 
-// RemoveValue removes one field from a card: its heading line and its value.
-// The other fields keep their order, and a card with no heading for that
-// field yields ErrNoSuchValue.
-//
-// Removing the first field rewrites the heading, which is done where the deck
-// is made whole and not here.
+// RemoveValue removes one field from a card: its heading line and its value. The other fields
+// keep their order, and a card with no heading for that field yields ErrNoSuchValue. Removing
+// the first field rewrites the heading, which is done where the deck is made whole, not here.
 func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
@@ -378,12 +370,9 @@ func DeckBody(d Deck) (string, error) {
 	return strings.TrimRight(body, "\n") + d.Tail, nil
 }
 
-// RenameField rewrites one field's heading in every card cut by the card model
-// at cardModel, and returns the number of cards rewritten. The value under
-// each heading is unchanged.
-//
-// cutting maps each wikilink name written in the deck to the path of the note
-// it resolves to.
+// RenameField rewrites one field's heading in every card cut by the card model at cardModel,
+// and returns the number of cards rewritten. The value under each heading is unchanged. cutting
+// maps each wikilink name written in the deck to the path of the note it resolves to.
 func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
 	deck, spans := readDeck(createEmptyStat(), body)

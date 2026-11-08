@@ -16,12 +16,8 @@ export interface PlacementContext {
 }
 
 /**
- * Where the nodes go, as a strategy: a radial mind map is another
- * implementation of this.
- *
- * It decides coordinates and nothing else: how much is admitted is settled
- * before it is called, how wide each box is comes in as a number, and routing
- * follows from where the boxes ended up.
+ * Where the nodes go, as a strategy: a radial mind map is another implementation of this.
+ * It decides coordinates only: how much is admitted is settled before the call, box widths come in as numbers, and routing follows from where the boxes ended up.
  */
 export interface Placement {
   readonly name: string

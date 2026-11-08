@@ -36,12 +36,9 @@ type EffectiveFloor struct {
 // FloorHint returns the starting floor of the model in use, and zero where it has none.
 type FloorHint func(ctx context.Context) float64
 
-// FloorPolicy decides the floor that a search by meaning applies when its query names none. The first
-// source with an answer wins:
-//
-//  1. the floor stored for the vault under the recipe
-//  2. the hint of the embedding model
-//  3. DefaultFloor
+// FloorPolicy decides the floor that a search by meaning applies when its query
+// names none. The first source with an answer wins: the floor stored for the
+// vault under the recipe, then the hint of the embedding model, then DefaultFloor.
 type FloorPolicy struct {
 	store        searchpolicyport.FloorStore
 	hint         FloorHint

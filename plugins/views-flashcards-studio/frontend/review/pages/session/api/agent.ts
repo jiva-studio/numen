@@ -16,11 +16,9 @@ export const CARD_CONTEXT = {
 
 /**
  * The agent for a conversation about one card of a vault.
- *
- * The card identity is passed in the context of the question and not inside
- * it. A deck name in a synced vault is set by the sync source, and a name in
- * the question text would be read as an instruction; `card_current_get` returns
- * the same name as a tool result, which is data. The window has no vault of its
+ * The card identity goes in the context of the question, not in its text: a deck name in a synced
+ * vault is set by the sync source, and in the question it would be read as an instruction, while
+ * `card_current_get` returns it as a tool result, which is data. The window has no vault of its
  * own, so the question names the vault the card tools operate on.
  */
 export const createCardAgentPort = (

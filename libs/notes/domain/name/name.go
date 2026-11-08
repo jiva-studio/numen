@@ -10,11 +10,8 @@ import (
 
 // FoldName is the key under which two names are one name: composed, case
 // folded, and composed again, since folding `İ` yields `i` and a combining dot.
-// Every decision that two names are the same is this key compared.
-//
-// The fold is the one every reader gets, so `İstanbul` and `istanbul` are two
-// names here. The form is NFC: a disk holds `Ｎｏｔｅ` and `Note` as two files,
-// and so does this.
+// The fold is locale-independent, so `İstanbul` and `istanbul` are two names.
+// The form is NFC, but `Ｎｏｔｅ` and `Note` stay two names, as on disk.
 func FoldName(name string) string {
 	if folded, ok := foldASCII(name); ok {
 		return folded
@@ -74,11 +71,9 @@ func Basename(path string) string {
 const NoteExtension = ".md"
 
 // LinkName is the name a link is written by: the last segment of the text
-// between the brackets, without a note's extension. The extension is stripped
-// however it is spelled, because names are compared case-insensitively.
-//
-// Every other dot belongs to the name: `[[Lecture 1.2]]` names a note filed
-// under all of it.
+// between the brackets, without a note's extension.
+// The extension is stripped however it is spelled; every other dot belongs to
+// the name, so `[[Lecture 1.2]]` names a note filed under all of it.
 func LinkName(target string) string {
 	name := target
 	if i := strings.LastIndexByte(name, '/'); i >= 0 {

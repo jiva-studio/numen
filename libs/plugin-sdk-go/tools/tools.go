@@ -102,12 +102,11 @@ func New() *Registry {
 	return &Registry{}
 }
 
-// Add adds the tool that run implements. The schemas of the arguments and of the result are derived
-// from In and Out; an Out that is not a struct is returned as text. The arguments of a call are
-// validated against the schema of In before run is called, and arguments that do not match it are
-// rejected with an error result naming the argument. A run that returns an error returns
-// an error result. The text of every error result starts with the tool name and ": ". The hints of
-// the tool are set from the effect, the step and the required permissions.
+// Add adds the tool that run implements.
+// Schemas are derived from In and Out; an Out that is not a struct is returned as text.
+// Arguments are validated against the schema of In before run is called, and a
+// mismatch is rejected with an error result naming the argument.
+// The text of every error result starts with the tool name and ": ".
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
 	inputSchema, err := createSchema(reflect.TypeFor[In]())
 	if err != nil {

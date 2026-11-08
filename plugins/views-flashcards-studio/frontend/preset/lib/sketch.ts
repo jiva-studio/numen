@@ -34,15 +34,10 @@ const MIDDLE = 0.9
 
 /**
  * The sketch of a curve, drawn from the settings alone.
- *
- * `today` is the review day supplied by the application, which is the day the
- * core counts from. It is not read from a clock here: a review day begins hours
- * after midnight, and a calendar day would count a date one day nearer while the
- * two differ.
- *
- * `within` is the range of each setting, as supplied by the application. A sketch
- * of a target is drawn across that span, so the estimate and the actual curve
- * share one range.
+ * `today` is the review day supplied by the application, not read from a clock: a review day
+ * begins hours after midnight, so a calendar day would count a date one day nearer.
+ * `within` is the range of each setting; a target is sketched across that span so the estimate
+ * and the actual curve share one range.
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = createGrid(settings, today, within)

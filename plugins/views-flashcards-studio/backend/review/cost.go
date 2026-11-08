@@ -37,13 +37,10 @@ func GetDefaultCost() AnswerCost {
 	return AnswerCost{New: 20 * time.Second, Review: 8 * time.Second, ShouldReadNew: false, ShouldReadReview: false}
 }
 
-// GetCostUnder returns how long an answer takes under each preset, keyed by the
-// path the review cards are grouped under.
-//
-// A preset is costed from the answers to its own review cards: a preset of long
-// cards and a preset of short cards convert the same minutes into different
-// counts. A review card that no preset groups is excluded, and an answer half
-// that a preset has too few answers for keeps the default cost.
+// GetCostUnder returns how long an answer takes under each preset, keyed by the path the review
+// cards are grouped under. A preset is costed from the answers to its own review cards, so long
+// cards and short cards convert the same minutes into different counts. A review card no preset
+// groups is excluded, and a preset with too few answers keeps the default cost.
 func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
 	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
@@ -103,18 +100,11 @@ func getMedian(took []time.Duration) (time.Duration, bool) {
 	return max(out, ShortestAnswer), true
 }
 
-// DivideBudget divides a budget among decks in proportion to what each deck has
-// due.
-//
-// A deck with nine times another deck's due count receives nine times the share,
-// a deck with nothing due receives nothing, and no deck receives more than it has
-// due; the remainder is distributed one card at a time. The units left over by
-// the proportions go to the largest fractions, with ties going to the deck with
-// more due, and decks with equal due counts receive them in the order given.
-//
-// The proportion is computed in floating point: a budget in nanoseconds times
-// one deck's due count overflows an integer. Every returned share is a whole
-// number.
+// DivideBudget divides a budget among decks in proportion to what each deck has due. A deck
+// with nothing due receives nothing, and none receives more than it has due. Whole units left
+// over by the proportions go to the largest fractions; ties go to the deck with more due, then
+// in the order given. The proportion is computed in floating point, because a budget in
+// nanoseconds times a due count overflows an integer. Every share is a whole number.
 func DivideBudget(budget int, demands []int) []int {
 	out := make([]int, len(demands))
 	total := 0

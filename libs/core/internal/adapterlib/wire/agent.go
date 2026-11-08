@@ -16,14 +16,10 @@ import (
 )
 
 // StreamAgentTask passes one task to the agent and writes its output to the
-// stream for as long as the client is connected.
-//
-// The work is stopped on return, whether it finished, failed or the client
-// disconnected. No work outlives the panel that requested it.
-//
-// A model that thinks for a minute writes nothing, and a stream that writes
-// nothing never detects a disconnected client. A step with no content is ignored
-// by the client, and a failed write ends the work.
+// stream while the client is connected. The work stops on return, so none
+// outlives the panel that requested it.
+// A model that thinks for a minute writes nothing and a silent stream never
+// detects a disconnect, so a content-free step is sent; a failed write ends the work.
 func StreamAgentTask(
 	ctx context.Context,
 	taking agentport.Agent,

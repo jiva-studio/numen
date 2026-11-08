@@ -88,12 +88,11 @@ func TestAddress_UnqueryableVaultWritesNoLink(t *testing.T) {
 	}
 }
 
-// A note whose name is truncated at a link delimiter is reached by no link.
-//
-// A link runs to the first `#` or `|`, and what follows it names a heading or the
-// display text. A link written to such a name therefore reads back as the name
-// before the delimiter, which is another note or none, and rewriting the entry from
-// what was read moves the link there permanently.
+// TestANoteNoLinkReachesIsRefused checks that a note whose name is truncated at
+// a link delimiter is reached by no link.
+// A link runs to the first `#` or `|`, so a link to such a name reads back as
+// the name before the delimiter, which is another note or none, and rewriting
+// the entry from what was read moves the link there permanently.
 func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

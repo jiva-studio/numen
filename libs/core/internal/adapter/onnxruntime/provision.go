@@ -45,15 +45,11 @@ func New(cfg Config) *Provisioner {
 	return &Provisioner{cfg: cfg, gate: make(chan struct{}, 1), ready: make(map[string]answer)}
 }
 
-// Provision returns the path of the library and the name of the execution
-//
-// The library is, in order: the one named in the environment, used as
-// given; the first one this machine holds that opens (beside the plugin or the
-// host, in the folders shared libraries live in, in the package store, in the
-// folders the platform loader searches); and last the pinned release, fetched
-// is the CPU build. A caller that arrives while another is provisioning waits
-// for it, against its own context. A failure is returned to the caller that met
-// it and the next call tries again.
+// Provision returns the path of the library and the name of the execution provider.
+// The library is, in order: the one named in the environment, used as given;
+// the first one this machine holds that opens; and last the pinned release, fetched.
+// A caller that arrives while another is provisioning waits for it, against its
+// own context. A failure goes to the caller that met it; the next call tries again.
 func (p *Provisioner) Provision(ctx context.Context, pluginDir string) (string, string, error) {
 	return p.ProvisionWithProgress(ctx, pluginDir, nil)
 }

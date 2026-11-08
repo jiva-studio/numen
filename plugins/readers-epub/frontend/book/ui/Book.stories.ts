@@ -438,13 +438,9 @@ export const OneLine: Story = {
 }
 
 /**
- * A document with no text is rendered and counts nothing. A book can contain a
- * navigation document with no prose, and a reader that fails on one makes the
- * book unopenable.
- *
- * The line below the text is present, because navigation into the contents
- * depends on it; for a document of no pages it is neither a count nor a
- * chapter to finish.
+ * A document with no text is rendered and counts nothing.
+ * A book can contain a navigation document with no prose, and a reader that fails on one makes the book unopenable.
+ * The line below the text stays, because navigation into the contents depends on it; for zero pages it is neither a count nor a chapter to finish.
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],

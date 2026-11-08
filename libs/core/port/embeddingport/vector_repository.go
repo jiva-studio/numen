@@ -12,18 +12,14 @@ import (
 const QuantisedInt8 = "int8"
 
 // Int8Scale is the value that a stored byte of 127 represents. Bytes on two
-// scales lie on two different grids, so the recipe records the scale they were
-// created at.
-//
-// One value serves every vector width. A wider vector uses fewer of the 127
-// levels, and the resulting cosine error does not grow with the width. The
-// value 0.4 sets the headroom: a component of a unit-length vector beyond it is
-// clamped.
+// scales lie on different grids, so the recipe records the scale.
+// One value serves every vector width: a wider vector uses fewer of the 127
+// levels, and the cosine error does not grow with the width.
+// The value 0.4 sets the headroom: a larger component of a unit vector is clamped.
 const Int8Scale = 0.4
 
-// Vector is one chunk's embedding, in both representations that are stored.
-//
-// Value is the copy used for reranking, quantised as Kind specifies. Coarse is
+// Vector is one chunk's embedding, in both stored representations.
+// Value is the copy used for reranking, quantized as Kind specifies. Coarse is
 // one bit per dimension, used by the coarse pass. Hash is the digest of the
 // text the model read; the vector is stored under it after the chunk that
 // referenced it is gone.

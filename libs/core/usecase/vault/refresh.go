@@ -22,11 +22,9 @@ import (
 )
 
 // Refresh brings named notes up to date when a watcher reports which files
-// changed. A scan inspects the whole vault; Refresh inspects only the named
-// files.
-//
-// The paths come from a watcher, which reports every source type. A path
-// that is not a note is reported in the result and skipped.
+// changed. A scan inspects the whole vault; Refresh only the named files.
+// The paths come from a watcher, which reports every source type. A path that is
+// not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
 	vaults  vaultport.VaultRepository
@@ -156,13 +154,10 @@ func (r RefreshResult) GetChangedPaths() []string {
 }
 
 // Execute brings the named notes up to date.
-//
 // A note whose size and modification time equal the index's row is reported in
 // Indexed without being saved, unless Force is set. It is skipped without a read
 // when its modification time is at least TimestampGranularity old; a more recent
-// one is skipped only when its bytes hash to what the ledger recorded at its last
-// save. A recent note is hashed only when the ledger has an entry for it. A scan decides on
-// size and modification time alone.
+// one only when its bytes hash to what the ledger recorded at its last save.
 func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error) {
 	if len(paths) == 0 {
 		return RefreshResult{}, nil

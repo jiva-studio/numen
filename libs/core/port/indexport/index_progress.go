@@ -7,11 +7,10 @@ import (
 )
 
 // IndexProgress is how far indexing a vault for meaning has got.
-//
 // It is queried while the work is still running, which is the only time the
-// result is useful: chunking a vault finishes long before embedding does, so
-// the two counts together show how much remains. A vault that has not been
-// chunked has no chunks and none to embed.
+// result is useful: chunking finishes long before embedding, so the two counts
+// together show how much remains. A vault that has not been chunked has no
+// chunks and none to embed.
 type IndexProgress interface {
 	// GetProgress returns how many of the vault's chunks can have a vector, and
 	// how many of those have one for the named model. The population is the

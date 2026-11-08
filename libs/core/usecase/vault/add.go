@@ -18,14 +18,10 @@ var ErrUnreadable = errors.New("the folder cannot be read as a vault")
 // cannot hold both.
 var ErrCopy = errors.New("the folder is a copy of a vault on the list")
 
-// Add registers a folder as a vault known to this installation.
-//
-// Two steps happen, in this order: the folder is given an identity that stays with
-// it, and that identity is recorded here. A folder is recognised after it moves by
-// the identity it carries.
-//
-// A name already used by another vault gets a number appended, and the user can
-// rename it afterwards.
+// Add registers a folder as a vault known to this installation: the folder is
+// given an identity that stays with it, then that identity is recorded here.
+// A folder is recognized after it moves by the identity it carries.
+// A name already used by another vault gets a number appended.
 type Add struct {
 	identity vaultport.VaultIdentity
 	registry vaultport.VaultRegistry

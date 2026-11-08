@@ -18,13 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The load test runs at the size the product is designed for: a hundred
-// thousand notes takes minutes and gigabytes, so it is opt-in and excluded from
-// the ordinary suite.
-//
-//	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
-//	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
-//
+// TestLoad runs at the size the product is designed for: a hundred thousand
+// notes takes minutes and gigabytes, so it is opt-in (NUMEN_LOAD=1, with
+// NUMEN_LOAD_NOTES=10000 for a smaller rehearsal) and needs `-timeout 40m`.
 // It reports measurements and does not assert thresholds; the numbers belong
 // in docs/performance.md.
 func TestLoad(t *testing.T) {

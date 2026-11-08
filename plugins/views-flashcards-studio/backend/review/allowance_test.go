@@ -115,16 +115,10 @@ func drawAllowance(t *rapid.T) review.Allowance {
 	return review.Allowance{Backlog: rapid.IntRange(0, review.AllBacklog).Draw(t, "backlog")}
 }
 
-// A day with a card on both sides has spent its share on the debt at every
-// point of the run, an odd card going to the debt: after any number of cards,
-// what the debt has taken is that number of the share, rounded up.
-//
-// The count is worked out here from the share alone, so a day at the whole of
-// it is all debt, a day at none of it is all new cards, and a day at half of it
-// takes them one and one beginning with the debt.
-//
-// Backlog is how much of a day goes to what is overdue before anything new is
-// offered.
+// A day with a card on both sides has spent its share on the debt at every point of the run,
+// an odd card going to the debt: after any number of cards, the debt has taken that number of
+// the share, rounded up. The count comes from the share alone, so the whole share is all debt,
+// none is all new cards, and half takes them one and one beginning with the debt.
 func TestTheDebtConsumesItsShareOfEveryPointOfTheRun(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

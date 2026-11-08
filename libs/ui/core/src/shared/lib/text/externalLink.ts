@@ -17,12 +17,9 @@ export const isExternalLink = (target: URL, here: URL): boolean =>
   target.protocol !== here.protocol || target.host !== here.host
 
 /**
- * Holds the window on the pages it serves, for as long as the returned way of
- * stopping is not called.
- *
- * A press is read before anything on the page sees it, so nothing on the page
- * can carry the window off. What a link inside the application means is still
- * the application's, and is left alone.
+ * Keeps the window on the pages it serves until the returned function is called.
+ * A press is read before anything on the page sees it, so nothing on the page can navigate the window away.
+ * Links that mean something inside the application are left to the application.
  */
 export const interceptExternalLinks = (
   openLink: LinkOpener,

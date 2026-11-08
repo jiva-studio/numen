@@ -35,14 +35,10 @@ export interface Words {
 export const COMMANDS = 'commands'
 
 /**
- * The entry points, in render order. The settings belong to the installation,
- * so they are always offered, last. The rest depend on a vault: a window
- * showing none offers none of them, and the vault list below is where the user
- * goes first. A note is offered once the vault has been read. The commands the
- * plugins declare over the window with a keystroke follow it.
- *
- * Every keystroke shown here is the one the table binds, so a displayed key is
- * a key that works.
+ * The entry points, in render order. The settings come last and are always offered.
+ * The rest depend on a vault: a window showing none offers none of them.
+ * A note is offered once the vault has been read, followed by the commands the plugins declare.
+ * Every keystroke shown is the one the table binds, so a displayed key is a key that works.
  */
 export const createWelcomeActions = (
   currentVault: CurrentVault,

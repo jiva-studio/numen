@@ -43,11 +43,9 @@ type Heading struct {
 }
 
 // VaultProblem is a condition in a vault that was not acted on automatically.
-// It is shown to the user: repairing it requires deciding the intended meaning.
-//
-// Every problem belongs to one note: the file to open to resolve it.
-// For a link that matches two notes, that is the note the link is written in,
-// not either of the candidates.
+// It is shown to the user, because repairing it requires deciding the intended meaning.
+// Every problem belongs to one note, the file to open to resolve it; for a link
+// that matches two notes, that is the note the link is written in.
 type VaultProblem struct {
 	Path   string
 	Kind   Check

@@ -36,16 +36,11 @@ func exact(a, b []float32) float64 {
 	return dot / math.Sqrt(remaining*right)
 }
 
-// TestOneScaleServesEveryWidth is why the scale is one number and not a number
-// per model.
-//
-// A wider vector spends fewer of the 127 levels: its components are around
-// 1/sqrt(d), so at 3072 dimensions the typical byte is single figures. That
-// looks like a scale fitted to one width and wasted on the others, and it is
-// not. What the rerank orders by is a cosine, and the error quantising leaves
-// in a cosine is the error left in one component: the query's own components
-// shrink as 1/sqrt(d) while d of them are summed, and the two cancel. Levels
-// spent falls with the width; the answer does not move.
+// TestOneScaleServesEveryWidth is why the scale is one number and not one per model.
+// A wider vector spends fewer of the 127 levels (components are around
+// 1/sqrt(d)), but the rerank orders by a cosine: the query's components shrink
+// as 1/sqrt(d) while d of them are summed, and the two cancel, so the
+// quantization error in the cosine does not move with the width.
 func TestOneScaleServesEveryWidth(t *testing.T) {
 	rng := rand.New(rand.NewPCG(20260903, 7))
 	for _, d := range getWidths() {
@@ -78,13 +73,11 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 	}
 }
 
-// TestQuantisingCostsTheSameAtEveryWidth is the same statement without the
-// table: whatever width a model answers at, a stored vector puts the rerank's
-// similarity within a few of the steps the scale sets.
-//
+// TestQuantisingCostsTheSameAtEveryWidth checks that at any width a stored
+// vector puts the rerank's similarity within a few steps of the scale.
 // The width is drawn from 256 upwards: below that a unit-length vector starts
-// to carry a component beyond the scale, which is clamped, and the scale is
-// chosen with headroom for clamping.
+// to carry a component beyond the scale, which is clamped, and the scale has
+// headroom for that clamping.
 func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		d := rapid.IntRange(256, 4096).Draw(t, "dimensions")

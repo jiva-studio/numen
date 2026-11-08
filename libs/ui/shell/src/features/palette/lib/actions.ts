@@ -26,12 +26,9 @@ export interface PlacedAction {
 }
 
 /**
- * Every action the words in the panel's field leave, numbered as it is drawn.
- * The order is the order they were offered in, which is the order the keys were
- * handed out in, so an action keeps its key wherever the words put it.
- *
- * A word is looked for anywhere in the name, and case is not part of the
- * question. Nothing typed leaves every action.
+ * The actions the words in the field leave, numbered as drawn.
+ * The order is the order they were offered in, which is the order the keys were handed out in, so an action keeps its key wherever the words put it.
+ * A word matches anywhere in the name, ignoring case. Nothing typed leaves every action.
  */
 export const placeActions = (
   actions: readonly PaletteAction[] = [],

@@ -91,12 +91,10 @@ func (p Projection) isAllLearned(day int) bool {
 	return p.Through[day] >= float64(p.ReviewCards-p.Short)/float64(p.ReviewCards)
 }
 
-// Session is the first day of this run that the preset admits: the next session
-// the user starts. False means the run admits no day, so it has no session.
-//
-// It is one real day of the run, so the count read from it is the count a session
-// on that day returns. A day the preset does not admit is not a session, and the
-// following day is the next one the user starts.
+// Session is the first day of this run that the preset admits: the next session the user
+// starts. False means the run admits no day. It is one real day of the run, so the count read
+// from it is the count a session on that day returns; a day the preset does not admit is not a
+// session.
 func (p Projection) Session() (int, bool) {
 	for day, admitted := range p.Admitted {
 		if admitted {

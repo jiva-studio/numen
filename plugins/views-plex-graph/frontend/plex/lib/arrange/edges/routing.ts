@@ -100,11 +100,9 @@ export const getRise = (side: EdgeSide, type: LabelType): number =>
 
 /**
  * Where and how each label of one line is set, in the order the labels are written.
- * One label is centred along the line and on it, its vertical middle on the line, read the readable way along it.
- * Two labels are set near the two ends, on opposite sides, each read in the direction of its
- * record: when both records have a head, each label is near the end its head is at and reads toward it;
- * otherwise each is near the note that wrote it and reads away from it, the first on the left of
- * the line taken from `from`, the second on the right.
+ * One label is centered along the line and on it, its vertical middle on the line, read the readable way along it.
+ * Two labels are set near the two ends, on opposite sides. When both records have a head, each label is near the end its head is at and reads toward it;
+ * otherwise each is near the note that wrote it and reads away from it, the first on the left of the line taken from `from`, the second on the right.
  */
 export function getLabelPlaces(labels: readonly EdgeLabel[]): LabelPlace[] {
   if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: 0 }))

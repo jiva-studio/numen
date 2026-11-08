@@ -747,11 +747,8 @@ export const NotLatin: Story = {
 
 /**
  * Lines past any width, and words with nowhere to break.
- *
- * Each is one line and then an ellipsis. The panel keeps the clearance it is
- * drawn with on either side, and nothing in it pushes the window wider. The
- * clearance is a length the interface multiplier moves, so it is read from the
- * panel and not named.
+ * Each is one line ending in an ellipsis. The panel keeps its side clearance and nothing pushes the window wider.
+ * The clearance moves with the interface multiplier, so the story reads it from the panel.
  */
 export const TooLong: Story = {
   args: {

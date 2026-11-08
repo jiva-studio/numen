@@ -45,12 +45,11 @@ func (l pluginVaultList) RemoveVault(ctx context.Context, id domain.VaultID) err
 	return l.scenarios.Remove.Execute(ctx, string(id), l.state.GetCurrentVault().ID, false)
 }
 
-// OpenVault rejects a vault whose folder is not the vault, as a vault switch does, and switches
-// the window through State.OpenVault, which flushes the pages first. It runs under the lock of a
-// close and a vault switch and never ends their flush request. A close, a quit or a user vault
-// switch cancels it, as does the end of the call, and it then returns ErrUnavailable. A page that
-// returns ASKING keeps the flush request open until the user prompt closes, and OpenVault returns
-// ErrUnsavedChanges; while that prompt is open, it returns ErrUnsavedChanges without a flush.
+// OpenVault rejects a vault whose folder is not the vault, then switches the
+// window through State.OpenVault, which flushes the pages first.
+// It runs under the lock of a close and a vault switch and never ends their
+// flush request; a close, a quit, a user vault switch or the end of the call
+// cancels it with ErrUnavailable. An open ASKING prompt returns ErrUnsavedChanges without a flush.
 func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error {
 	v, err := l.scenarios.Find.Execute(string(id))
 	if err != nil {

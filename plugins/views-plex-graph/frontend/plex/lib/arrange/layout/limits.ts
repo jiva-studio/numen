@@ -15,11 +15,8 @@ const countAxis = (room: number, size: number, gap: number) =>
 
 /**
  * How each relation wraps, given the window.
- *
- * What gives is how many go on a line, not how many are shown: a row too wide
- * wraps sooner and runs deeper, into the space above and below. Rows are
- * served first — they are the axis the plex is read on — and a column takes
- * what is left beyond the widest of them.
+ * What gives is how many go on a line, not how many are shown: a row too wide wraps sooner and runs deeper.
+ * Rows are served first, being the axis the plex is read on, and a column takes what is left beyond the widest of them.
  */
 export function getLimits(
   options: PlexOptions,

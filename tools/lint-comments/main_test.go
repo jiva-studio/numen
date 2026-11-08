@@ -71,3 +71,51 @@ func TestCheckSkipsGeneratedFiles(t *testing.T) {
 		t.Fatalf("findings = %+v, want none", findings)
 	}
 }
+
+func TestCheckLimitsTheDocOfAnExportedSymbol(t *testing.T) {
+	five := "// A.\n// B.\n// C.\n// D.\n// E.\n"
+	six := five + "// F.\n"
+	cases := []struct {
+		name string
+		decl string
+		want bool
+	}{
+		{"function, 5 lines", five + "func F() {}", false},
+		{"function, 6 lines", six + "func F() {}", true},
+		{"method, 6 lines", six + "func (T) M() {}", true},
+		{"type, 6 lines", six + "type X int", true},
+		{"type, 5 lines", five + "type X int", false},
+		{"constant, 6 lines", six + "const X = 1", true},
+		{"variable, 6 lines", six + "var X = 1", true},
+		{"unexported variable, 6 lines", six + "var x = 1", false},
+		{"grouped constant, 6 lines", "const (\n" + six + "\tX = 1\n)", true},
+		{"blank comment line counts", "// A.\n// B.\n//\n// C.\n// D.\n// E.\nfunc F() {}", true},
+		{"directive does not count", five + "//go:noinline\nfunc F() {}", false},
+		{"marker does not count", five + "//numen:api\ntype X struct{}", false},
+		{"block comment, 6 lines", "/*\nA.\nB.\nC.\nD.\nE.\n*/\nfunc F() {}", true},
+	}
+	for _, c := range cases {
+		src := "package p\n\ntype T struct{}\n\n" + c.decl + "\n"
+		findings, fixed, err := Check("p.go", []byte(src))
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if got := len(findings) > 0; got != c.want {
+			t.Fatalf("%s: findings = %+v, want reported %v", c.name, findings, c.want)
+		}
+		if string(fixed) != src {
+			t.Fatalf("%s: a long doc must not be rewritten:\n%s", c.name, fixed)
+		}
+	}
+}
+
+func TestCheckLimitsTheDocOfAMarkedType(t *testing.T) {
+	src := "package p\n\n// A.\n// B.\n// C.\n// D.\n// E.\n// F.\n//\n//numen:api\ntype T struct {\n\t// Name is shown.\n\t// Second line.\n\t// Third line.\n\t// Fourth line.\n\t// Fifth line.\n\t// Sixth line.\n\tName string\n}\n"
+	findings, _, err := Check("p.go", []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(findings) != 1 || findings[0].Line != 3 {
+		t.Fatalf("findings = %+v, want only the type doc on line 3", findings)
+	}
+}

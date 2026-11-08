@@ -27,13 +27,10 @@ func isUpdating() bool {
 	return flag.Lookup(updateFlag).Value.String() == "true"
 }
 
-// The projection is the arithmetic every picture and every session rests on, so
-// what it answers over a spread of materials and settings is written down whole
-// — every scalar and every series, day by day — and compared against on every
-// run.
-//
-// A change meaning to move a number moves this file with it, under -update, and
-// the diff is what it moved.
+// The projection is the arithmetic every picture and every session rests on, so what it answers
+// over a spread of materials and settings is written down whole, every scalar and every series
+// day by day, and compared on every run. A change meant to move a number moves this file with
+// it, under -update, and the diff is what it moved.
 func TestAProjectionAnswersWhatItIsSavedDownAs(t *testing.T) {
 	got := projections(t)
 	path := filepath.Join("testdata", "projection.golden")

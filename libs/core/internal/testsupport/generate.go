@@ -13,11 +13,10 @@ import (
 )
 
 // GenerateVault writes a vault of n notes and gives it an identity.
-//
 // The content is synthetic but not uniform: notes differ in length, sit at
-// several depths, and share a vocabulary so a search has something to rank.
-// A vault of identical notes would measure the parser against one shape and the
-// full-text index against one term.
+// several depths and share a vocabulary so a search has something to rank.
+// Identical notes would measure the parser against one shape and the full-text
+// index against one term.
 func GenerateVault(tb testing.TB, n int) domain.Vault {
 	tb.Helper()
 	root := tb.TempDir()

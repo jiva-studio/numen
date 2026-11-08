@@ -97,12 +97,10 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	return out, nil
 }
 
-// GetCardCardModels returns the card model each card of a deck is cut by, keyed
-// by the wikilink name written under the card heading. A name that resolves to
-// a note that is not a card model maps to an empty card model.
-//
-// The deck and the card models are read together, which determines the first
-// field of each card.
+// GetCardCardModels returns the card model each card of a deck is cut by, keyed by the wikilink
+// name written under the card heading. A name that resolves to a note that is not a card model
+// maps to an empty card model. The deck and the card models are read together, which determines
+// the first field of each card.
 func (u Read) GetCardCardModels(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.CardModel, error) {

@@ -34,10 +34,9 @@ import (
 
 // Installation is a window put together and running: the questions a client
 // may ask, and the pieces anything else working the same vault needs.
-//
-// The index and the embedder belong to the installation and are made once. The
-// passes behind a vault belong to that vault, and are taken down and built
-// again when another is opened.
+// The index and the embedder belong to the installation and are made once.
+// The passes behind a vault belong to that vault and are rebuilt when another
+// is opened.
 type Installation struct {
 	State    *State
 	Services *Services
@@ -180,11 +179,9 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 
 // Notes returns the use cases this window works its vault through.
 // Other components working the same vault in this process, such as agent
-// tools, use the same instances, so they share error behavior and
-// dependencies. Operations on the list of vaults are in Services.Vaults.
-//
-// Activity from callers other than the user is rendered over the note through
-// Notes.Drawing.
+// tools, use the same instances and share error behavior and dependencies.
+// Operations on the list of vaults are in Services.Vaults.
+// Activity from callers other than the user is rendered through Notes.Drawing.
 func (o *Installation) Notes() note.Scenarios { return o.notes }
 
 // DraftingLocation locates where target text occurs in a note as UTF-16 count offsets.
@@ -476,12 +473,10 @@ var errWindowClosing = errors.New("this window is closing")
 var errShutdownInProgress = errors.New("the window is flushing pending writes")
 
 // FlushPending has every page write what only it holds, then waits for the
-// writes already taken. It is called while the window is still showing, and
-// calling it again returns true immediately. It returns false when a page holds
-// work that needs user confirmation; no write has been discarded.
-//
-// A vault swap flushes too. A close that arrives while a flush runs returns
-// false: the window stays, and the next close flushes again.
+// writes already taken. Calling it again returns true immediately.
+// It returns false, with no write discarded, when a page holds work that needs
+// user confirmation. A close that arrives while a flush runs returns false: the
+// window stays, and the next close flushes again.
 func (o *Installation) FlushPending(ctx context.Context) bool {
 	switch err := o.shutdown.tryBegin(); {
 	case errors.Is(err, errWindowClosing):
@@ -531,12 +526,9 @@ const namedInAnError = 3
 
 // Imports copies files dropped onto the window into a folder of the vault; the
 // root is the empty path.
-//
-// It runs where the drop reached the application, off the thread the page is
-// served on, and returns no value: results are reported to all listeners.
-//
-// The watcher does not report images or archives, so Imports names what
-// arrived to the listeners itself.
+// It runs where the drop reached the application, off the page's thread, and
+// returns no value: results go to all listeners.
+// The watcher does not report images or archives, so Imports names what arrived itself.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
 	state := o.State
 	if len(paths) == 0 {

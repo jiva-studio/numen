@@ -53,12 +53,11 @@ func Open(root string, opts vaultconfig.Options) (*VaultReader, error) {
 
 func (s *VaultReader) Root() string { return s.root }
 
-// WalkFiles reports every source in the vault, each saying which kind it is. A file
-// of no kind the application reads is not reported at all.
-//
-// What the vault's ignore rules name is skipped, and so is the service folder.
-// The service folder is named separately because its name is a setting, and a
-// name without a leading dot must still be skipped.
+// WalkFiles reports every source in the vault with its kind. A file of no kind
+// the application reads is not reported.
+// What the vault's ignore rules name is skipped, and so is the service folder,
+// named separately because its name is a setting and a name without a leading
+// dot must still be skipped.
 func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -121,15 +120,11 @@ func (s *VaultReader) getRelPath(p string) string {
 	return filepath.ToSlash(p[len(s.root)+1:])
 }
 
-// List reports what one folder holds, without descending. Every file is
-// reported whether anything reads it or not, and so is every folder under it;
-// what the vault's ignore rules name and the service folder are left out.
-//
-// Folders come first, then files, each by name compared without regard to
-// case. That is the order to draw them in.
-//
-// A path holding a file holds no folder, and is answered as a folder that is
-// not there.
+// List reports what one folder holds, without descending. Every file and
+// folder is reported, whether anything reads it or not; ignored names and the
+// service folder are left out.
+// Folders come first, then files, each by name compared without regard to case.
+// A path holding a file is answered as a folder that is not there.
 func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()

@@ -76,14 +76,11 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	}
 }
 
-// A port is named after the need and an adapter after the technology; the
-// composition root owns the binding between them. An adapter that declares
-// `var _ port.X = …` duplicates that binding.
-//
-// A method returning `port.X` is not such a declaration. Where a port opens
+// TestNoAdapterNamesThePortItSatisfies checks that no adapter declares `var _ port.X = …`,
+// which duplicates the binding the composition root owns.
+// A method returning `port.X` is not such a declaration: where a port opens
 // another (`VaultReaders.Open` returns a `VaultReader`), the return type is part
-// of the port's signature, and an adapter bound to the first must declare the
-// second. The rule rejects only free-standing assertions.
+// of the port's signature. The rule rejects only free-standing assertions.
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	var read int
@@ -123,13 +120,11 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
-// A test that builds an adapter is external to the package it exercises. The
-// rules above skip test files for that reason: an adapter built from within the
-// package is in its compilation unit when the tests build, and every other
-// scenario in the core is tested from a package_test.
-//
-// An adapter's own test is not covered by this: it builds the adapter under test,
-// as does the composition root's.
+// TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt checks that a test building an adapter is
+// external to the package it exercises, because an adapter built from within the package is in its
+// compilation unit. The rules above skip test files for that reason.
+// An adapter's own test is not covered: it builds the adapter under test, as does the composition
+// root's.
 func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	var wrong []string
 	var read int
@@ -199,13 +194,11 @@ func getLooking() map[string]bool {
 	}
 }
 
-// A scenario queries a port about the machine and never queries the machine itself.
-// Resolving a path through every link is one such query, and it has no answer
-// for a folder passed as a content URI: the disk it would read is not the one
-// holding the file. A file, a socket and a system call are the same category of query.
-//
-// Taking a path apart and joining it is string arithmetic and is allowed. The
-// distinction is whether the answer is on the disk.
+// TestNothingOfTheCoreReachesTheMachine checks that a scenario queries a port about the machine and
+// never the machine itself.
+// Resolving a path through every link is one such query and has no answer for a
+// folder passed as a content URI. A file, a socket and a system call are the
+// same category. Taking a path apart and joining it is string arithmetic and is allowed.
 func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	var wrong []string
 	var read int
@@ -359,12 +352,10 @@ func getLogging() map[string]bool {
 
 func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
-// Nothing here logs. A log is a record for a reader who was not present; the
-// application's user is in the window, and messages are shown there or on the
-// output stream of the process. A bound logger would write to neither.
-//
-// The rule covers the whole core, so the adapters and the composition root are
-// read too.
+// TestNothingOfTheCoreLogs checks that nothing in the core logs, adapters and
+// the composition root included.
+// A log is a record for a reader who was not present; the user is in the
+// window, and messages are shown there or on the process output stream.
 func TestNothingOfTheCoreLogs(t *testing.T) {
 	var wrong []string
 	var read int
@@ -452,13 +443,10 @@ func getClockReads(file *ast.File) (reads, arms []string) {
 	return reads, arms
 }
 
-// The domain has no access to the current time. A clock is a port: a scenario
-// that stamps a note or evaluates what is due today receives one, and the
-// composition root binds it to this machine's clock.
-//
-// A scenario that reads the clock itself cannot be exercised at a chosen
-// instant. Much of the work here depends on time: the day a plugin schedules
-// something for, and the identifier a note is stamped with.
+// TestNothingOfTheCoreReadsTheMachinesClock checks that the domain has no access to the current time.
+// A clock is a port: a scenario that stamps a note or evaluates what is due
+// today receives one, and the composition root binds it to this machine's clock.
+// A scenario reading the clock itself cannot be exercised at a chosen instant.
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
@@ -525,13 +513,11 @@ func getTypeName(pos ast.Expr) string {
 	return ""
 }
 
-// An identity in the core is a type of the core's own. A row number belongs to the
-// store: it identifies a row of a table, is assigned by whatever counts rows, and
-// can be ordered and paged where the entity it names cannot. A core carrying one
-// imports the store's numbering into its language and into scenario logic, such
-// as a use case looping over ascending integer keys.
-//
-// Every identity is its own type; this rule enforces that.
+// TestTheCoresIdentitiesAreItsOwn checks that every identity in the core is a type of the core's own.
+// A row number belongs to the store: it is assigned by whatever counts rows and
+// can be ordered and paged, which the entity it names cannot. A core carrying
+// one imports the store's numbering into scenario logic, such as a use case
+// looping over ascending integer keys.
 func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var wrong []string
 	var read int
@@ -699,14 +685,11 @@ func TestPorts_EveryPortTypeIsReferenced(t *testing.T) {
 	}
 }
 
-// A port is named in the words of its own domain, and those words are declared
-// next to it: the identity of a model, a page of audio, a row of the settings
-// file. A word that nothing outside port/ uses belongs to no port, and remains
-// after the port that used it is removed.
-//
-// This rule does not decide which words belong here. Whether a type is domain or
-// boundary is judged by reading: what the index holds is domain, and what an
-// adapter is configured with is boundary.
+// TestEveryTypePortDeclaresIsNamedSomewhereElse checks that every type a port
+// declares is used outside port/; a word nothing outside uses belongs to no
+// port and outlives the port that used it.
+// The rule does not decide which words belong here: domain versus boundary is
+// judged by reading.
 func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 	unnamed, err := getUnnamedTypes("..", filepath.Join("..", "port"), false)
 	if err != nil {
@@ -733,14 +716,10 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	}
 }
 
-// A port is consumed as a whole, and each of its methods is one operation the
-// core can call. A method with no caller is never exercised, adapters keep
-// implementing it, and a defect in it goes unnoticed.
-//
-// Test files are not read here, and that asymmetry is the rule. A port used only
-// by a test is still a port, so the two rules above read tests. A method called
-// only by a test exists to be tested: its only caller is the code written to
-// check it.
+// TestEveryPortMethodIsCalledSomewhereElse checks that every port method has a
+// caller. A method with no caller is never exercised and a defect in it goes unnoticed.
+// Test files are not read here, and that asymmetry is the rule: a method called
+// only by a test exists to be tested. The two rules above read tests.
 func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"))
 	if err != nil {
@@ -1168,13 +1147,10 @@ func getInstants(file *ast.File) []identity {
 	return getFieldsNamed(file, "Time")
 }
 
-// An instant in the core is a time.Time. A second count and a millisecond count
-// are both integers, so using one where the other is expected compiles and is
-// off by a factor of a thousand; the zero of either is a valid instant in 1970,
-// and the name does not say which clock it came from.
-//
-// The rule applies to domain/ and port/, where the core declares its own types
-// and what it requires of the outside.
+// TestEveryInstantTheCoreCarriesIsATime checks that an instant in domain/ and port/ is a time.Time.
+// A second count and a millisecond count are both integers, so using one where
+// the other is expected compiles and is off by a factor of a thousand; the zero
+// of either is a valid instant in 1970.
 func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var wrong []string
 	var read int

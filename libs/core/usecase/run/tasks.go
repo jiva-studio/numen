@@ -114,12 +114,9 @@ func (t *Tasks) list() []Task {
 	return out
 }
 
-// Watch is the list, now and every time it changes, until the context ends.
-//
-// What is being done is known here the moment it changes.
-//
+// Watch returns the list now and every time it changes, until the context ends.
 // A listener that is not keeping up is given the newest list and not a queue of
-// old ones: what the work was doing a second ago is of no interest to anybody.
+// old ones.
 func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: tell drains before it sends, so the channel never holds more than one list"
 	watcher := make(chan []Task, 1)

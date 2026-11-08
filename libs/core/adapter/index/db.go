@@ -31,16 +31,10 @@ import (
 )
 
 // DB owns the connections.
-//
 // There are two pools, because SQLite has one writer and any number of readers.
-// The write pool is capped at a single connection, so writers queue in Go,
-// where waiting is cheap and ordered. The read pool is sized to the available
-// cores: in WAL mode a reader never waits for the writer, which is what lets
-// a search answer while a scan is still running.
-//
-// Several processes open the one file. Their writers queue in SQLite, under the
-// busy timeout, and a writer still waiting when it runs out retries — see
-// the sqlwrite package, which every write on this pool goes through.
+// The write pool is one connection, so writers queue in Go. The read pool is
+// sized to the cores: in WAL mode a reader never waits for the writer.
+// Several processes may open the one file; see sqlwrite for the retry.
 type DB struct {
 	write   *sql.DB
 	read    *sql.DB

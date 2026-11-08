@@ -2,10 +2,12 @@
 
 Rejects comments that repeat what a name and a type already state. The rule is §1 of `AGENTS.md`.
 
-| Language        | Rejected                                                                                                                                                                                                             |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Go              | a comment on a struct field (above it or at the end of its line); a doc comment on an unexported function or method                                                                                                  |
-| TypeScript, Vue | a comment on an interface, type literal or class property, or on a member of the object passed to `defineProps` or `defineEmits`; a doc comment on a top-level function that is not exported and on a private method |
+| Language        | Rejected                                                                                                                                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Go              | a comment on a struct field (above it or at the end of its line); a doc comment on an unexported function or method; a doc comment of more than five lines on an exported function, method, type, constant or variable |
+| TypeScript, Vue | a comment on an interface, type literal or class property, or on a member of the object passed to `defineProps` or `defineEmits`; a doc comment on a top-level function that is not exported and on a private method   |
+
+The limit is one constant per checker (`maxDocLines` in `main.go`, `MAX_DOC_LINES` in `check.mjs`). It counts the lines of text of the doc comment, blank comment lines included and directive and marker lines left out; the field comments of a `//numen:api` or `//numen:settings` type are not part of its doc. The message is "A doc comment is at most five lines: say the fact the name and type cannot show". `--fix` does not touch it: the facts to keep are the author's call.
 
 Not reported:
 

@@ -248,13 +248,11 @@ const (
 	StoppedNoWeek StopReason = "no_week"
 )
 
-// GetOverallStopReason is why this preset schedules nothing on any day, and
-// StoppedNothing where it schedules something.
-//
-// It is the one place the rule is read. A goal of a date is answered against the
-// day holding now, and stops once the day it names is behind that one. A week
-// every day of which carries none of the load is read whatever the goal, since
-// no budget is spent on a day that schedules nothing.
+// GetOverallStopReason is why this preset schedules nothing on any day, and StoppedNothing where
+// it schedules something. It is the one place the rule is read. A goal of a date is answered
+// against the day holding now, and stops once the day it names is behind that one. A week every
+// day of which carries none of the load is read whatever the goal, since no budget is spent on a
+// day that schedules nothing.
 func (p Preset) GetOverallStopReason(d Day, now time.Time) StopReason {
 	switch p.Goal {
 	case GoalRetention:

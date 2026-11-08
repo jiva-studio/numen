@@ -23,20 +23,11 @@ type Setting struct {
 	Written any
 }
 
-// Save writes settings into the file, leaving every other byte of it as it was.
-//
-// The bytes of the named field's value are replaced in place and the rest of
-// the file is preserved byte for byte, including section order, indentation,
-// and number formatting such as `0.30`. A field missing from the file is
-// appended to the end of the section it belongs to.
-//
-// A file that does not parse is not written, so the existing content is never
-// lost to a failed save. A missing file is written containing only the named
-// fields, and every field the file omits keeps its default.
-//
-// A result that cannot be read back into `into` is not written either: a
-// value of the wrong shape is rejected. `into` defines the shape of the whole file, so a value
-// written into any section is validated by reading the result back before it is saved.
+// Save writes settings into the file, leaving every other byte as it was:
+// section order, indentation and number formatting such as `0.30` survive.
+// A field missing from the file is appended to its section; a missing file is
+// written with only the named fields. A file that does not parse, or a result
+// that cannot be read back into `into`, is not written.
 func (f *Files) Save(path string, into Document, settings ...Setting) error {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)

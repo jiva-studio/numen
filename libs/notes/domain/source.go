@@ -1,11 +1,9 @@
 package domain
 
-// Source is one file with text that the index holds: what the file was when it
-// was read, and what read it.
-//
-// ContentHash is the hash of the content, and Recipe identifies the extractor and the
-// sizes that produced the source's chunks. Both are empty on a source with no
-// extracted text yet.
+// Source is one file with text that the index holds.
+// ContentHash is the hash of the content, and Recipe identifies the extractor and
+// the sizes that produced the chunks.
+// Both are empty on a source with no extracted text yet.
 type Source struct {
 	FileStat    FileStat
 	ContentHash string
@@ -14,14 +12,10 @@ type Source struct {
 	Producer string
 }
 
-// Chunk is one cut of a source's text, as the index holds it. Location is where
-// format named none.
-//
-// Text is indexed for the words it holds and is not kept: it is the text at
-// Start for Length in the source.
-//
-// Small are the chunks inside this one. A Chunk with none of its own is a large
-// chunk all the same: what makes it large is that nothing encloses it.
+// Chunk is one cut of a source's text, as the index holds it.
+// Text is indexed but not kept: it is the text at Start for Length in the source.
+// Small are the chunks inside this one; a Chunk with none is still a large chunk,
+// because nothing encloses it.
 type Chunk struct {
 	Start    int
 	Length   int

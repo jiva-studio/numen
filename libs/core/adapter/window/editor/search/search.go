@@ -87,11 +87,8 @@ func (h *Handler) SearchNames(
 }
 
 // SearchPassages returns the text of the vault that matches the query.
-//
-// The search mode is chosen by the client, so a client that displays the
-// written form and the meaning separately issues two requests and fills each
-// list from its own response.
-//
+// The client chooses the search mode, so a client that shows the written form
+// and the meaning separately issues two requests, one per list.
 // A window with no open vault has no text and returns no passages.
 func (h *Handler) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
