@@ -31,6 +31,13 @@
           "when": "app.platform != 'darwin'"
         }
       ]
+    },
+    {
+      "key": "hideInFullscreen",
+      "type": "boolean",
+      "title": "Hide in full screen",
+      "description": "Draw no bar while the window is in full screen, so the tabs start at the top of the window. The bar is drawn again when the window leaves full screen.",
+      "default": false
     }
   ],
   "frontend": {}
