@@ -29,8 +29,8 @@ export class Person {
     this.web = new WebDriver()
   }
 
-  async leaveVault(): Promise<void> {
-    this.web.forget()
+  async removeNotes(): Promise<void> {
+    this.web.removePageTexts()
     await this.scenario.removeNotes()
   }
 }

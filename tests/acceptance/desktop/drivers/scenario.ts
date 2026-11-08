@@ -25,24 +25,23 @@ export class Scenario {
     this.hasWorkspace = true
   }
 
-  async useTitle(title: string): Promise<void> {
+  async claimTitle(title: string): Promise<void> {
     this.titles.add(title)
     await destroyNote(this.page.request, `notes/${title}.md`).catch(() => undefined)
   }
 
-  remember(title: string, notePath: string): void {
+  rememberNote(title: string, notePath: string): void {
     this.paths.set(title, notePath)
   }
 
-  async getPath(how: string, value: string): Promise<string> {
-    const reference = parseReference(how, value)
-    if (reference.how === 'at') return value
-    const known = this.paths.get(value)
+  async getPath(reference: string, name: string): Promise<string> {
+    if (parseReference(reference, name).reference === 'at') return name
+    const known = this.paths.get(name)
     if (known) return known
-    return pickByTitle(value, [...(await readSavedStates(this.page.request)).keys()])
+    return pickByTitle(name, [...(await readSavedStates(this.page.request)).keys()])
   }
 
-  bindVault(name: string): void {
+  setVault(name: string): void {
     this.vaultName ??= name
     if (this.vaultName !== name) {
       throw new Error(`the run has one vault, named "${this.vaultName}" here, not "${name}"`)

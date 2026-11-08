@@ -1,13 +1,13 @@
 /**
- * The place a tab is left at: a page of a PDF or a book, a time of a recording. The kind of a tab
- * is read from the tab itself, and a place of the wrong kind for it fails.
+ * The position a tab is left at: a page of a PDF or a book, a time of a recording. The kind of a tab
+ * is read from the tab itself, and a position of the wrong kind for it fails.
  */
 import path from 'node:path'
 import { expect, type Locator, type Page } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { openVaultFile } from '../../../e2e/desktop/tests/support/workspace.js'
 
-import { assertPlace, getEscaped, getStem, parseTime, type TabKind } from './rules.js'
+import { assertPosition, getEscaped, getStem, parseTime, type TabKind } from './rules.js'
 
 const getPanel = (page: Page, file: string): Locator =>
   page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })
@@ -25,7 +25,7 @@ const detectKind = async (panel: Locator): Promise<TabKind | undefined> => {
   return undefined
 }
 
-const readKind = async (panel: Locator, file: string, place: string): Promise<TabKind> => {
+const readKind = async (panel: Locator, file: string, position: string): Promise<TabKind> => {
   let kind: TabKind | undefined
   await expect
     .poll(async () => {
@@ -34,7 +34,7 @@ const readKind = async (panel: Locator, file: string, place: string): Promise<Ta
     })
     .toBeDefined()
   if (!kind) throw new Error(`the tab "${file}" has no known kind`)
-  assertPlace(kind, place, file)
+  assertPosition(kind, position, file)
   return kind
 }
 
@@ -70,21 +70,21 @@ const leaveRecordingAt = async (page: Page, panel: Locator, file: string, time: 
     .toContain(`"t":[${parseTime(time)},`)
 }
 
-/** Opens the tab of the file and leaves it at the place. */
-export const openTabAt = async (page: Page, file: string, place: string, value: string): Promise<void> => {
+/** Opens the tab of the file and leaves it at the position. */
+export const openTabAt = async (page: Page, file: string, position: string, where: string): Promise<void> => {
   const panel = await openVaultFile(page, path.dirname(file), path.basename(file))
-  const kind = await readKind(panel, file, place)
-  if (kind === 'PDF Reader') await leavePdfAt(page, panel, file, Number(value))
-  else if (kind === 'EPUB Reader') await leaveBookAt(page, panel, file, Number(value))
-  else await leaveRecordingAt(page, panel, file, value)
+  const kind = await readKind(panel, file, position)
+  if (kind === 'PDF Reader') await leavePdfAt(page, panel, file, Number(where))
+  else if (kind === 'EPUB Reader') await leaveBookAt(page, panel, file, Number(where))
+  else await leaveRecordingAt(page, panel, file, where)
 }
 
-/** Checks that the tab of the file is at the place. */
-export const expectTabAt = async (page: Page, file: string, place: string, value: string): Promise<void> => {
+/** Checks that the tab of the file is at the position. */
+export const expectTabAt = async (page: Page, file: string, position: string, where: string): Promise<void> => {
   await page.getByRole('tab', { name: new RegExp(`^${getEscaped(getStem(file))}`, 'i') }).click()
   const panel = getPanel(page, file)
-  const kind = await readKind(panel, file, place)
-  if (kind === 'PDF Reader') await expect(getPageField(panel)).toHaveValue(value)
-  else if (kind === 'EPUB Reader') await expect(getCount(panel)).toHaveText(new RegExp(`^${value} of \\d+$`))
-  else await expect(getPlayer(panel)).toContainText(value)
+  const kind = await readKind(panel, file, position)
+  if (kind === 'PDF Reader') await expect(getPageField(panel)).toHaveValue(where)
+  else if (kind === 'EPUB Reader') await expect(getCount(panel)).toHaveText(new RegExp(`^${where} of \\d+$`))
+  else await expect(getPlayer(panel)).toContainText(where)
 }

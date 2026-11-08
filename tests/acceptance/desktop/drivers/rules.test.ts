@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertApplication,
-  assertPlace,
+  assertPosition,
   assertSingleTab,
   getStem,
   getTitlePattern,
-  parseAsk,
+  getPaletteField,
   parseCount,
   parseReference,
   parseTime,
@@ -15,8 +15,8 @@ import {
 
 describe('parseReference', () => {
   it('takes at and titled', () => {
-    expect(parseReference('at', 'notes/A.md')).toEqual({ how: 'at', value: 'notes/A.md' })
-    expect(parseReference('titled', 'A')).toEqual({ how: 'titled', value: 'A' })
+    expect(parseReference('at', 'notes/A.md')).toEqual({ reference: 'at', name: 'notes/A.md' })
+    expect(parseReference('titled', 'A')).toEqual({ reference: 'titled', name: 'A' })
   })
 
   it('throws for any other word', () => {
@@ -43,19 +43,19 @@ describe('getTitlePattern', () => {
   })
 })
 
-describe('assertPlace', () => {
-  it('passes the place of each kind of tab', () => {
-    expect(() => assertPlace('PDF Reader', 'page', 'a.pdf')).not.toThrow()
-    expect(() => assertPlace('EPUB Reader', 'page', 'a.epub')).not.toThrow()
-    expect(() => assertPlace('Audio Player', 'time', 'a.mp3')).not.toThrow()
+describe('assertPosition', () => {
+  it('passes the position of each kind of tab', () => {
+    expect(() => assertPosition('PDF Reader', 'page', 'a.pdf')).not.toThrow()
+    expect(() => assertPosition('EPUB Reader', 'page', 'a.epub')).not.toThrow()
+    expect(() => assertPosition('Audio Player', 'time', 'a.mp3')).not.toThrow()
   })
 
-  it('throws for a place of the wrong kind', () => {
-    expect(() => assertPlace('PDF Reader', 'time', 'a.pdf')).toThrow(
-      'the tab "a.pdf" is a PDF Reader tab: its place is a page, not a time',
+  it('throws for a position of the wrong kind', () => {
+    expect(() => assertPosition('PDF Reader', 'time', 'a.pdf')).toThrow(
+      'the tab "a.pdf" is a PDF Reader tab: its position is a page, not a time',
     )
-    expect(() => assertPlace('Audio Player', 'page', 'a.mp3')).toThrow(
-      'its place is a time, not a page',
+    expect(() => assertPosition('Audio Player', 'page', 'a.mp3')).toThrow(
+      'its position is a time, not a page',
     )
   })
 })
@@ -72,14 +72,14 @@ describe('parseTime', () => {
   })
 })
 
-describe('parseAsk', () => {
+describe('getPaletteField', () => {
   it('reads the placeholders of a name and of a list', () => {
-    expect(parseAsk('Name')).toBe('name')
-    expect(parseAsk('Search')).toBe('item')
+    expect(getPaletteField('Name')).toBe('name')
+    expect(getPaletteField('Search')).toBe('item')
   })
 
   it('reads any other placeholder as a text', () => {
-    expect(parseAsk('Web address')).toBe('text')
+    expect(getPaletteField('Web address')).toBe('text')
   })
 })
 

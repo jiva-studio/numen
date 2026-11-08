@@ -4,11 +4,11 @@ import path from 'node:path'
 export type TabKind = 'PDF Reader' | 'EPUB Reader' | 'Audio Player'
 
 export interface Reference {
-  how: 'at' | 'titled'
-  value: string
+  reference: 'at' | 'titled'
+  name: string
 }
 
-const PLACES: Record<TabKind, string> = {
+const POSITIONS: Record<TabKind, string> = {
   'PDF Reader': 'page',
   'EPUB Reader': 'page',
   'Audio Player': 'time',
@@ -21,16 +21,16 @@ export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\
 /** A title names a tab by its end: the tab of a link is titled by its whole address, and a person names its last words. */
 export const getTitlePattern = (title: string): RegExp => new RegExp(`${getEscaped(title)}( Close |$)`)
 
-export const parseReference = (how: string, value: string): Reference => {
-  if (how !== 'at' && how !== 'titled') {
-    throw new Error(`"${how}" does not name a tab or a note: use "at" or "titled"`)
+export const parseReference = (reference: string, name: string): Reference => {
+  if (reference !== 'at' && reference !== 'titled') {
+    throw new Error(`"${reference}" does not name a tab or a note: use "at" or "titled"`)
   }
-  return { how, value }
+  return { reference, name }
 }
 
-export const assertPlace = (kind: TabKind, place: string, file: string): void => {
-  if (PLACES[kind] !== place) {
-    throw new Error(`the tab "${file}" is a ${kind} tab: its place is a ${PLACES[kind]}, not a ${place}`)
+export const assertPosition = (kind: TabKind, position: string, file: string): void => {
+  if (POSITIONS[kind] !== position) {
+    throw new Error(`the tab "${file}" is a ${kind} tab: its position is a ${POSITIONS[kind]}, not a ${position}`)
   }
 }
 
@@ -40,12 +40,12 @@ export const parseTime = (time: string): number => {
   return Number(hit[1]) * 60 + Number(hit[2])
 }
 
-export type PaletteAsk = 'name' | 'item' | 'text'
+export type PaletteField = 'name' | 'item' | 'text'
 
-const PALETTE_ASKS: Record<string, PaletteAsk> = { Name: 'name', Search: 'item' }
+const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item' }
 
 /** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, or a text. */
-export const parseAsk = (placeholder: string): PaletteAsk => PALETTE_ASKS[placeholder] ?? 'text'
+export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
 
 export const assertApplication = (name: string): void => {
   if (name === 'flashcards') throw new Error('the application "flashcards" is not built yet: use "editor"')

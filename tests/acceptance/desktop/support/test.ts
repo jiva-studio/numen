@@ -12,6 +12,6 @@ export const test = mergeTests(bdd, shared).extend<{ person: Person }>({
   person: async ({ page }, use) => {
     const person = new Person(page)
     await use(person)
-    await person.leaveVault()
+    await person.removeNotes()
   },
 })

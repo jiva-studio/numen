@@ -27,17 +27,17 @@ export class NoteDriver {
 
   async create(title: string, initialText: string): Promise<void> {
     const { page } = this.scenario
-    await this.scenario.useTitle(title)
+    await this.scenario.claimTitle(title)
     const notePath = await createNote(page.request, title)
-    this.scenario.remember(title, notePath)
+    this.scenario.rememberNote(title, notePath)
     await writeNote(page.request, notePath, `${initialText}\n`)
     await this.scenario.ensureWorkspace()
     // The editor hides the brackets of a link where the cursor is not.
     await expect(await openNote(page, notePath)).toContainText(initialText.replace(/\[\[|\]\]/g, ''))
   }
 
-  async write(actor: string, text: string, how: string, value: string): Promise<void> {
-    const notePath = await this.scenario.getPath(how, value)
+  async write(actor: string, text: string, reference: string, name: string): Promise<void> {
+    const notePath = await this.scenario.getPath(reference, name)
     if (actor === 'the person') {
       await typeAtEnd(this.scenario.page, this.getText(notePath), ` ${text}`)
     } else if (actor === 'another program') {
@@ -47,17 +47,17 @@ export class NoteDriver {
     }
   }
 
-  async removeFromDisk(how: string, value: string): Promise<void> {
-    await destroyNote(this.scenario.page.request, await this.scenario.getPath(how, value))
+  async removeFromDisk(reference: string, name: string): Promise<void> {
+    await destroyNote(this.scenario.page.request, await this.scenario.getPath(reference, name))
   }
 
-  async choose(label: string, how: string, value: string): Promise<void> {
-    const banner = this.getPanel(await this.scenario.getPath(how, value)).getByRole('alert')
+  async choose(label: string, reference: string, name: string): Promise<void> {
+    const banner = this.getPanel(await this.scenario.getPath(reference, name)).getByRole('alert')
     await banner.getByRole('button', { name: label }).click()
   }
 
-  async chooseCompletion(label: string, how: string, value: string): Promise<void> {
-    await this.scenario.getPath(how, value)
+  async chooseCompletion(label: string, reference: string, name: string): Promise<void> {
+    await this.scenario.getPath(reference, name)
     const option = this.scenario.page
       .locator('.cm-tooltip-autocomplete')
       .getByRole('option', { name: new RegExp(`^${getEscaped(label)}`) })
@@ -66,29 +66,29 @@ export class NoteDriver {
     await option.click()
   }
 
-  async openLink(link: string, how: string, value: string): Promise<void> {
+  async openLink(link: string, reference: string, name: string): Promise<void> {
     const name = link.replace(/^\[\[|\]\]$/g, '')
-    await this.getText(await this.scenario.getPath(how, value))
+    await this.getText(await this.scenario.getPath(reference, name))
       .getByText(name, { exact: false })
       .first()
       .click({ modifiers: ['ControlOrMeta'] })
   }
 
-  async expectHas(how: string, value: string, text: string): Promise<void> {
-    await expect(this.getPanel(await this.scenario.getPath(how, value))).toContainText(text)
+  async expectHasText(reference: string, name: string, text: string): Promise<void> {
+    await expect(this.getPanel(await this.scenario.getPath(reference, name))).toContainText(text)
   }
 
-  async expectLacks(how: string, value: string, text: string): Promise<void> {
-    await expect(this.getPanel(await this.scenario.getPath(how, value))).not.toContainText(text)
+  async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
+    await expect(this.getPanel(await this.scenario.getPath(reference, name))).not.toContainText(text)
   }
 
-  async expectOnDiskHas(how: string, value: string, text: string): Promise<void> {
-    await waitForSavedBody(this.scenario.page.request, await this.scenario.getPath(how, value), text)
+  async expectOnDiskHasText(reference: string, name: string, text: string): Promise<void> {
+    await waitForSavedBody(this.scenario.page.request, await this.scenario.getPath(reference, name), text)
   }
 
-  async expectLinks(how: string, value: string, toHow: string, toValue: string): Promise<void> {
-    const from = await this.scenario.getPath(how, value)
-    const to = await this.scenario.getPath(toHow, toValue)
+  async expectLinks(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+    const from = await this.scenario.getPath(reference, name)
+    const to = await this.scenario.getPath(toReference, toName)
     const backlinks = (): Promise<string[]> => listBacklinks(this.scenario.page.request, to)
     await expect.poll(backlinks).toContain(from)
   }

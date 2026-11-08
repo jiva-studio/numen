@@ -7,7 +7,13 @@ defineParameterType({
 })
 
 defineParameterType({
-  name: 'has',
-  regexp: /has|does not have/,
-  transformer: (word: string) => word === 'has',
+  name: 'reference',
+  regexp: /at|titled/,
+  transformer: (reference: string) => reference,
+})
+
+defineParameterType({
+  name: 'position',
+  regexp: /page|time/,
+  transformer: (position: string) => position,
 })

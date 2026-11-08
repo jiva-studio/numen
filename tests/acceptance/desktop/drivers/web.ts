@@ -9,7 +9,7 @@ export class WebDriver {
     this.addresses.add(address)
   }
 
-  forget(): void {
+  removePageTexts(): void {
     for (const address of this.addresses) removePageText(address)
     this.addresses.clear()
   }

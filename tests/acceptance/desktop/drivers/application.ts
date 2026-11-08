@@ -3,15 +3,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { expect } from 'playwright/test'
 import {
-  getPaletteField,
+  getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
 import { getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, getEscaped, parseAsk, parseCount, readNoteType } from './rules.js'
+import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
-
-/** A command that depends on a download is listed within this time of the download. */
-const COMMAND_LIMIT_MS = 30_000
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -36,46 +33,42 @@ export class ApplicationDriver {
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
       .first()
-    // The palette lists the commands the open tab has when it opens: a command that a download adds is listed on the next opening.
-    await expect(async () => {
-      if (await field.isVisible()) await page.keyboard.press('Escape')
-      await page.keyboard.press('Control+p')
-      await expect(field).toBeVisible()
-      await field.fill(label)
-      await command.click({ timeout: 3_000 })
-    }).toPass({ timeout: COMMAND_LIMIT_MS })
+    await page.keyboard.press('Control+p')
+    await expect(field).toBeVisible()
+    await field.fill(label)
+    await command.click()
   }
 
   async enter(value: string): Promise<void> {
     const { page } = this.scenario
     await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
-    const field = getPaletteField(page)
-    const ask = parseAsk((await field.getAttribute('placeholder')) ?? '')
-    if (ask === 'item') {
+    const field = getPaletteInput(page)
+    const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
+    if (kind === 'item') {
       await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
     } else {
-      if (ask === 'name') await this.scenario.useTitle(value)
+      if (kind === 'name') await this.scenario.claimTitle(value)
       await field.fill(value)
-      if (ask === 'name') await expect(page.getByRole('option', { selected: true })).toContainText(value)
+      if (kind === 'name') await expect(page.getByRole('option', { selected: true })).toContainText(value)
       await page.keyboard.press('Enter')
     }
     await expect(field).toBeHidden()
   }
 
-  async expectVaultHasNote(vaultName: string, how: string, value: string): Promise<void> {
-    this.scenario.bindVault(vaultName)
-    if (how === 'titled') {
-      await expect.poll(() => this.findNote(value)).not.toBe('')
-      this.scenario.remember(value, await this.findNote(value))
+  async expectVaultHasNote(vaultName: string, reference: string, name: string): Promise<void> {
+    this.scenario.setVault(vaultName)
+    if (reference === 'titled') {
+      await expect.poll(() => this.findNote(name)).not.toBe('')
+      this.scenario.rememberNote(name, await this.findNote(name))
       return
     }
-    const notePath = await this.scenario.getPath(how, value)
+    const notePath = await this.scenario.getPath(reference, name)
     const folder = notePath.split('/').slice(0, -1).join('/')
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
   async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
-    this.scenario.bindVault(vaultName)
+    this.scenario.setVault(vaultName)
     const expected = parseCount(count)
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
   }

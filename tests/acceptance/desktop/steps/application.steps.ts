@@ -12,8 +12,8 @@ When('the person enters {string}', async ({ person }, value: string) => {
   await person.application.enter(value)
 })
 
-Given('the vault {string} has the note {word} {string}', async ({ person }, vault: string, how: string, value: string) => {
-  await person.application.expectVaultHasNote(vault, how, value)
+Given('the vault {string} has the note {reference} {string}', async ({ person }, vault: string, reference: string, name: string) => {
+  await person.application.expectVaultHasNote(vault, reference, name)
 })
 
 Then(
