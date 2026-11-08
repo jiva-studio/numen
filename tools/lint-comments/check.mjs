@@ -20,12 +20,26 @@ import { fileURLToPath } from 'node:url'
 const require = createRequire(import.meta.url)
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const SCRIPT_FILE = /\.(ts|tsx|mts|cts|vue)$/
+/** The most lines of text a doc comment on an exported symbol may have. */
+export const MAX_DOC_LINES = 5
 const KEEP =
   /^(\/\/\/?|\/\*\*?)\s*(eslint|@ts-|Stryker|istanbul|prettier|c8 |v8 |@vite|webpack|#region|#endregion|<reference|global )|@deprecated|@vitest-environment|^(\/\/|\/\*)\s*[-=─*]{6,}/
 const GENERATED = /^[ \t]*(\/\/|#|\/\*)\s*(Code generated .* DO NOT EDIT|@generated)/m
 
 function isGenerated(text) {
   return GENERATED.test(text.split('\n').slice(0, 20).join('\n'))
+}
+
+/** Returns the lines of text of a JSDoc block: the lines between the markers, blank ones included. */
+function countDocLines(block) {
+  const lines = block
+    .replace(/^\/\*\*/, '')
+    .replace(/\*\/$/, '')
+    .split('\n')
+    .map((line) => line.replace(/^\s*\*? ?/, '').trim())
+  if (lines[0] === '') lines.shift()
+  if (lines.length > 0 && lines.at(-1) === '') lines.pop()
+  return lines.length
 }
 
 function getScriptBlocks(file, text) {
@@ -39,7 +53,8 @@ function getScriptBlocks(file, text) {
 
 /**
  * Returns the rejected comments of one TypeScript or Vue source, each with its line, message and
- * character range in the source.
+ * character range in the source. A finding with `long` set is a doc comment over MAX_DOC_LINES
+ * that `--fix` leaves in place.
  */
 export function findScriptComments(file, text) {
   if (isGenerated(text)) return []
@@ -71,6 +86,37 @@ export function findScriptComments(file, text) {
         const line = text.slice(0, offset + range.pos).split('\n').length
         findings.push({ file, line, message, from: offset + range.pos, to: offset + range.end })
       }
+    }
+    const reportLength = (node) => {
+      let name
+      if (ts.isVariableStatement(node)) {
+        name = node.declarationList.declarations[0]?.name.getText(source)
+      } else if (
+        ts.isFunctionDeclaration(node) ||
+        ts.isClassDeclaration(node) ||
+        ts.isInterfaceDeclaration(node) ||
+        ts.isTypeAliasDeclaration(node) ||
+        ts.isEnumDeclaration(node)
+      ) {
+        name = node.name?.getText(source) ?? 'default'
+      }
+      if (name === undefined) return
+      const leading = ts.getLeadingCommentRanges(content, node.getFullStart()) ?? []
+      const doc = leading.at(-1)
+      if (!doc || doc.kind !== ts.SyntaxKind.MultiLineCommentTrivia) return
+      if ((content.slice(doc.end, node.getStart(source)).match(/\n/g) ?? []).length > 1) return
+      const raw = content.slice(doc.pos, doc.end)
+      if (!raw.startsWith('/**') || KEEP.test(raw)) return
+      const count = countDocLines(raw)
+      if (count <= MAX_DOC_LINES) return
+      findings.push({
+        file,
+        line: text.slice(0, offset + doc.pos).split('\n').length,
+        message: `doc comment on exported ${name} has ${count} lines; A doc comment is at most five lines: say the fact the name and type cannot show`,
+        from: offset + doc.pos,
+        to: offset + doc.end,
+        long: true,
+      })
     }
     const isExported = (node) => (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export) !== 0
     const nameOf = (node) => node.name?.getText(source) ?? 'member'
@@ -105,6 +151,7 @@ export function findScriptComments(file, text) {
           false,
         )
       }
+      if (node.parent === source && isExported(node)) reportLength(node)
       if (node.parent === source) {
         const isDefault = (node.modifiers ?? []).some(
           (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
@@ -192,12 +239,14 @@ function main() {
     const absolute = path.join(root, file)
     if (!fs.existsSync(absolute)) continue
     const text = fs.readFileSync(absolute, 'utf8')
-    const findings = findScriptComments(file, text)
-    if (findings.length === 0) continue
+    const found = findScriptComments(file, text)
+    if (found.length === 0) continue
     if (fix) {
-      fs.writeFileSync(absolute, removeRanges(text, findings))
-      continue
+      const removable = found.filter((finding) => !finding.long)
+      if (removable.length > 0) fs.writeFileSync(absolute, removeRanges(text, removable))
     }
+    const findings = fix ? found.filter((finding) => finding.long) : found
+    if (findings.length === 0) continue
     failed = true
     for (const finding of findings)
       console.log(`${finding.file}:${finding.line}: ${finding.message}`)
