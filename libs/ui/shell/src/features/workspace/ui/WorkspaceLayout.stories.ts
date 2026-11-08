@@ -433,7 +433,7 @@ export const WalksOnFromAPress: Story = {
   },
 }
 
-/** Escape in a panel comes back out to the tab the panel is held under. */
+/** Escape in a panel returns to the tab the panel is held under. */
 export const LeavesAPanel: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {

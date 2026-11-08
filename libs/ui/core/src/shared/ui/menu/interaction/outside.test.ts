@@ -92,7 +92,7 @@ describe('a press outside', () => {
     expect(onOutside).not.toHaveBeenCalled()
   })
 
-  it('is not heard once the component is gone', () => {
+  it('is not heard once the component is removed', () => {
     const { onOutside, wrapper } = setup(createElement())
     wrapper.unmount()
     press(createElement())

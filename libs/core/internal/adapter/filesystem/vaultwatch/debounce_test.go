@@ -133,7 +133,7 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 // TestAListenerThatDoesNotTakeDoesNotStopTheReading. A listener takes as long as a
 // reindex takes, and the operating system does not wait. Events that arrive while a
 // batch is undelivered are read, debounced and reported after it.
-func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
+func TestAListenerThatDoesNotAcceptDoesNotStopTheReading(t *testing.T) {
 	root, reader := makeVaultOfNotes(t, 9)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()

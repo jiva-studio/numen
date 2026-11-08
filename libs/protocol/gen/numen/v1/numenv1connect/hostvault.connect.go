@@ -176,7 +176,7 @@ type HostVaultServiceClient interface {
 	// answered with the error code ALREADY_EXISTS.
 	CreateFile(context.Context, *connect.Request[v1.CreateFileRequest]) (*connect.Response[v1.CreateFileResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
-	// until the plugin goes. A caller that finds it held waits for it.
+	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
 	// UnlockVault lets the writers go.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
@@ -260,7 +260,7 @@ type HostVaultServiceClient interface {
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
-	// until the caller goes. It says nothing of what moved. The first message is
+	// until the caller disconnects. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
 	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error)
 	// WatchVault tells of the files of the vault that changed, until the caller
@@ -779,7 +779,7 @@ type HostVaultServiceHandler interface {
 	// answered with the error code ALREADY_EXISTS.
 	CreateFile(context.Context, *connect.Request[v1.CreateFileRequest]) (*connect.Response[v1.CreateFileResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
-	// until the plugin goes. A caller that finds it held waits for it.
+	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
 	// UnlockVault lets the writers go.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
@@ -863,7 +863,7 @@ type HostVaultServiceHandler interface {
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
-	// until the caller goes. It says nothing of what moved. The first message is
+	// until the caller disconnects. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
 	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error
 	// WatchVault tells of the files of the vault that changed, until the caller

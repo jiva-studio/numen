@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestARoleNobodyDecidedOnIsNotActedOn(t *testing.T) {
+func TestARoleWithNoDecisionIsNotActedOn(t *testing.T) {
 	for _, role := range []domain.LinkRole{
 		domain.RoleParent, domain.RoleChild, domain.RoleJump, domain.RoleRef, domain.RoleAttachment,
 	} {

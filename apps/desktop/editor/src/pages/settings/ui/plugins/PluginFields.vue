@@ -43,7 +43,7 @@ function isKeyRequested(key: string): boolean {
   return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
 }
 
-/** Why a path setting did not take the path last chosen, by key. */
+/** Why a path setting did not accept the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
 const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 

@@ -29,7 +29,7 @@ describe('where the keyboard goes', () => {
     expect(stepTo([{ off: true }], { from: -1, by: 1 }, isOn)).toBe(-1)
   })
 
-  it('stays where it is when one item is all there is to be on', () => {
+  it('keeps its position when one item is the only one to be on', () => {
     expect(stepTo([{}], { from: 0, by: 1 }, isOn)).toBe(0)
     expect(stepTo([{}], { from: 0, by: -1 }, isOn)).toBe(0)
   })

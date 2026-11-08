@@ -122,7 +122,7 @@ describe('the enabled switch of a plugin', () => {
 describe('the enabled switch waits for the answer of the vault', () => {
   const words = { unturned: 'u', unreadSettings: 'r' }
 
-  it('stays where it was while the write is in flight, and moves once when the answer arrives', async () => {
+  it('keeps its position while the write is in flight, and moves once when the answer arrives', async () => {
     const vault = createHeldVault(true)
     const store = createSettingsStore(vault.core, words, vi.fn())
     const first = store.start()

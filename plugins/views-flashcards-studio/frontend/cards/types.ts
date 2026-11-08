@@ -102,7 +102,7 @@ export interface DeckFailure {
   readonly bound: number
 }
 
-/** What reading a deck came back with. */
+/** What reading a deck returned. */
 export type DeckReadResult = Result<
   {
     readonly deck: VaultDeck
@@ -111,16 +111,16 @@ export type DeckReadResult = Result<
   DeckFailure
 >
 
-/** What writing a deck came back with. */
+/** What writing a deck returned. */
 export type DeckWriteResult = Result<{ readonly at: string }, DeckFailure>
 
-/** What reading a card model came back with. */
+/** What reading a card model returned. */
 export type CardModelReadResult = Result<
   { readonly cardModel: VaultCardModel; readonly at: string },
   CardsFailure
 >
 
-/** What writing a card model came back with. */
+/** What writing a card model returned. */
 export type CardModelWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** One deck a rename did not reach, which keeps the heading it had. */
@@ -137,7 +137,7 @@ export interface RenamedField {
   readonly at: string
 }
 
-/** What renaming a field came back with. */
+/** What renaming a field returned. */
 export type FieldRenameResult = Result<RenamedField, CardsFailure>
 
 /**

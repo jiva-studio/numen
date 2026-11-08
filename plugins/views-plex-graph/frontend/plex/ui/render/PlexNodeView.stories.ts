@@ -233,7 +233,7 @@ export const Reaching: Story = {
       canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect().width,
     ).toBeGreaterThan(0)
 
-    // Pressing it starts a gesture; the node is not selected and does not take
+    // Pressing it starts a gesture; the node is not selected and does not receive
     // the focus a press gives by default.
     await userEvent.pointer([{ keys: '[MouseLeft]', target: handle()! }])
     await expect(args.onReach).toHaveBeenCalledTimes(1)

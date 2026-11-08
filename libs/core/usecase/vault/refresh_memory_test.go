@@ -489,7 +489,7 @@ func TestLedger_RetainsRecentNoteWithinWindow(t *testing.T) {
 	}
 }
 
-func TestTheLedgerLetsGoOfANoteOnceItsFileHasLeftTheWindow(t *testing.T) {
+func TestTheLedgerReleasesANoteOnceItsFileHasLeftTheWindow(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))

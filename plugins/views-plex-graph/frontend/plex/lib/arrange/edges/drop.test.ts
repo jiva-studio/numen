@@ -92,7 +92,7 @@ describe('what a point lands on', () => {
   })
 })
 
-describe('letting go on nothing makes a node', () => {
+describe('dropping on nothing makes a node', () => {
   it('above the focus, a parent; below it, a child', () => {
     expect(drop(focus.id, { x: 0, y: -4000 })).toStrictEqual({
       kind: 'create',
@@ -129,7 +129,7 @@ describe('letting go on nothing makes a node', () => {
   })
 })
 
-describe('letting go on a node makes a link', () => {
+describe('dropping on a node makes a link', () => {
   it('names both ends and the relation between them', () => {
     expect(drop(focus.id, { x: child.x, y: child.y })).toStrictEqual({
       kind: 'link',

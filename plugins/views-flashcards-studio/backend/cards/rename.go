@@ -102,7 +102,7 @@ func (u RenameField) createIdentifier() (string, error) {
 
 // Execute renames the field, in the card model first and then in the vault.
 //
-// could not be written to keeps the old heading and comes back as a problem
+// could not be written to keeps the old heading and is returned as a problem
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
 	if err := u.checkDeckCount(ctx, v); err != nil {

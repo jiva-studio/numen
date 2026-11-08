@@ -594,7 +594,7 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 	}
 }
 
-// A deck the rename cannot reach keeps what it holds and is reported, whatever
+// A deck the rename cannot reach keeps its contents and is reported, whatever
 // of another of its cards.
 func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 	for _, c := range []struct {

@@ -188,7 +188,7 @@ describe('words taken up in the text', () => {
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
   })
 
-  it('do not stop a turn where they stand outside the text', () => {
+  it('do not stop a turn at positions outside the text', () => {
     const { hand, area, turn } = setUp()
     const outside = document.createElement('p')
     outside.textContent = 'elsewhere'

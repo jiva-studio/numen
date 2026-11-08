@@ -41,7 +41,7 @@ describe('the settings under the control', () => {
   //   // The share of a day taken by the backlog is moved along its whole range, so
   //   // every one of the hundred values is valid and none is a named position. The
   //   // track draws no figure, so the percentage is displayed beside it.
-  it('moves the share of a day the debt takes along a track, and reads it out', async () => {
+  it('moves the share of a day the debt occupies along a track, and reads it out', async () => {
     const { tab, recorded } = mountPresetTab({}, { backlog: 70 })
     expect(tab.text()).toContain(words.fieldName('backlog'))
     const row = tab.get('[data-preset-row="backlog"]')
@@ -210,7 +210,7 @@ describe('the load of the week', () => {
     ...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]'),
   ]
 
-  it('draws a day not named at the whole of a day, and the rest where they stand', () => {
+  it('draws a day not named at the whole of a day, and the rest at their position', () => {
     const { tab } = mountWithLoad({ sat: 50, sun: 0 })
     expect(chips(tab).map((chip) => chip.attributes('aria-label'))).toStrictEqual([
       'Monday, 100%',

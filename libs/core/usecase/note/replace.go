@@ -78,7 +78,7 @@ func (e AmbiguousSpan) Error() string {
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
 // FileStat is what the caller believes is on disk. A note that has changed
-// since it was read is left alone and port.ErrStale comes back.
+// since it was read is left alone and port.ErrStale is returned.
 func (u Replace) Execute(
 	ctx context.Context, v domain.Vault, path, current, becomes string, stat domain.FileStat,
 ) (result ReplaceResult, err error) {

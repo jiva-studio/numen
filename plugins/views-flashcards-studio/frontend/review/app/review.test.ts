@@ -258,7 +258,7 @@ afterEach(() => {
   Reflect.deleteProperty(document.documentElement, 'clientWidth')
 })
 
-describe('a person who sat down and came back to the decks', () => {
+describe('a person who sat down and returned to the decks', () => {
   it('finds the review as it opened', async () => {
     const { review } = await openReview()
     const asOpened = shot(review)
@@ -361,7 +361,7 @@ describe('a deck written underneath the review', () => {
 })
 
 describe('a review closed by the window', () => {
-  it('lets go of the session it was in', async () => {
+  it('releases the session it was in', async () => {
     const review = await openSession()
     review.session.toggleAgent()
     expect(review.session.agentPanel.about.value).not.toBeNull()

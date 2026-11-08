@@ -205,7 +205,7 @@ func TestAddingACardAtASectionThatIsNotThereIsRefused(t *testing.T) {
 	}
 }
 
-func TestADeckEditOverAnEditNobodySawIsRefused(t *testing.T) {
+func TestADeckEditOverAnEditThatWasNeverReadIsRefused(t *testing.T) {
 	e := newEditing(t)
 	before := read(t, e.vs.first, mammals)
 

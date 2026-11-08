@@ -62,7 +62,7 @@ describe('what arrives back', () => {
     expect(one?.relation).toBe('child')
   })
 
-  it('draws every box the width it was told and the height of a node', () => {
+  it('draws every box the width it is given and the height of a node', () => {
     const placedLayout = place({ child: createNodes('child', 3) })
 
     expect(placedLayout.map((node) => node.width)).toStrictEqual([144, 144, 144])

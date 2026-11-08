@@ -64,7 +64,7 @@ message IndexCoverage {
   int64 chunk_count = 1;
   int64 embedded_count = 2;
 
-  // Embedding says whether anything is going to turn the spans into vectors.
+  // Embedding reports whether anything is going to turn the spans into vectors.
   // False for an installation with no model, where the vault is searched by its
   // words alone.
   bool is_embedding = 3;

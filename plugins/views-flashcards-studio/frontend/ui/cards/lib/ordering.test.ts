@@ -22,7 +22,7 @@ describe('orderNames', () => {
     expect(orderNames(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
   })
 
-  it('puts it at the end where it lands on nothing', () => {
+  it('puts it at the end when it lands on nothing', () => {
     expect(orderNames(NAMES, 'a', null)).toEqual(['b', 'c', 'a'])
   })
 
@@ -30,11 +30,11 @@ describe('orderNames', () => {
     expect(orderNames(NAMES, 'a', 'c')).toEqual(['b', 'a', 'c'])
   })
 
-  it('leaves the order alone where it lands on itself', () => {
+  it('leaves the order alone when it lands on itself', () => {
     expect(orderNames(NAMES, 'b', 'b')).toEqual(NAMES)
   })
 
-  it('leaves the order alone where it lands on a name that is not there', () => {
+  it('leaves the order alone when it lands on a name that is not there', () => {
     expect(orderNames(NAMES, 'b', 'z')).toEqual(NAMES)
   })
 
@@ -71,7 +71,7 @@ describe('canDropField', () => {
     expect(canDropField(FIELDS, 'Weight', 'Name')).toBe(false)
   })
 
-  it('moves nothing let go at its current position', () => {
+  it('moves nothing dropped at its current position', () => {
     expect(canDropField(FIELDS, 'Height', 'Height')).toBe(false)
   })
 
@@ -95,7 +95,7 @@ describe('reorderFields', () => {
     expect(reorderFields(FIELDS, 'Name', null)).toEqual(FIELDS)
   })
 
-  it('leaves the order alone where a field is let go above the first', () => {
+  it('leaves the order alone where a field is dropped above the first', () => {
     expect(reorderFields(FIELDS, 'Weight', 'Name')).toEqual(FIELDS)
   })
 })

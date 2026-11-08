@@ -97,7 +97,7 @@ describe('a read answers with a body', () => {
   })
 
   it('replaces nothing when the body is what is already shown', () => {
-    // The tab's own save coming back around. Replacing here collapses the caret
+    // The tab's own save returning. Replacing here collapses the caret
     // in the middle of a sentence.
     const next = transitionTab(tab(), {
       kind: 'read',
@@ -417,7 +417,7 @@ describe('a write answers ok', () => {
 describe('the fingerprint the file was read at', () => {
   it('is what the next write presents, taken from the write that answered', () => {
     // Two saves with no read between. The file is what this tab's own write left
-    // behind, and the file stat that write answered with is what it carries.
+    // behind, and the file stat that write answered with is its value.
     const first = transitionTab(transitionTab(tab(), { kind: 'edited', body: 'two', at: 0 }).tab, {
       kind: 'timerFired',
     })
@@ -687,7 +687,7 @@ describe('a save is requested for', () => {
 })
 
 describe('a file about to be renamed or removed', () => {
-  it('lets go of the interval it is waiting on', () => {
+  it('clears the interval it is waiting on', () => {
     const clean = tab()
 
     expect(transitionTab(clean, { kind: 'flush' })).toEqual({
@@ -893,7 +893,7 @@ describe('a close is requested for', () => {
     expect(next.tab.editorText).toBe('mine')
   })
 
-  it('says why a stuck tab cannot be written before it goes', () => {
+  it('says why a stuck tab cannot be written before it is closed', () => {
     const next = transitionTab(tab({ editorText: 'two', error: 'unreadable', since: 10 }), {
       kind: 'close',
     })

@@ -252,7 +252,7 @@ func findVaultCount(t *testing.T, resp *api.WatchCardsDueResponse, id string) *a
 	return nil
 }
 
-// An answer is written to the run's own file, and the identifier it comes back
+// An answer is written to the run's own file, and the identifier it is returned
 // with is what taking it back names.
 func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
@@ -361,7 +361,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold fails.
-func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAQuestionAboutAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t)
 	_, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: "nothing"})

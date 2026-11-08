@@ -1354,7 +1354,7 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
   nameSource: NameSource;
 
   /**
-   * What the file did. Absent when it stayed where it was.
+   * What the file did. Absent when it kept its position.
    *
    * @generated from field: optional numen.v1.MoveResult moved = 4;
    */
@@ -1489,7 +1489,7 @@ export const RelationSchema: GenEnum<Relation> = /*@__PURE__*/
 
 /**
  * Role is what kind of relationship a link is. The list is closed: navigation
- * and drawing read it, so a role nobody decided on has no behaviour.
+ * and drawing read it, so a role no one has decided on has no behaviour.
  *
  * @generated from enum numen.v1.Role
  */

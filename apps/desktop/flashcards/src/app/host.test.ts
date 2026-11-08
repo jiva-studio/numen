@@ -80,7 +80,7 @@ describe('createShellHost', () => {
     expect(front.value?.registration.kind).toBe('second')
   })
 
-  it('lets go of what a plugin registered once it is disposed, even if subscriptions were cleared', () => {
+  it('releases what a plugin registered once it is disposed, even if subscriptions were cleared', () => {
     const { host, front } = createShellHost()
     const ctx = host.createContext('md.numen.example')
     ctx.registerTabKind(view('review', 0))
@@ -207,7 +207,7 @@ describe('createShellHost', () => {
     openSpy.mockRestore()
   })
 
-  it('draws a view one plugin declares into the element of another, until the declaring one goes', () => {
+  it('draws a view one plugin declares into the element of another, until the declaring one is disposed', () => {
     const { host } = createShellHost()
     const conversation = defineComponent({
       props: { context: { type: Object, required: true } },
@@ -269,7 +269,7 @@ describe('createShellHost', () => {
 })
 
 describe('the tab of the window', () => {
-  /** A kind that opens on a vault, keeping what it was opened on and when it was let go. */
+  /** A kind that opens on a vault, keeping what it was opened on and when it was released. */
   const createKind = (order = 0) => {
     const released: string[] = []
     const destroyed: string[] = []
@@ -337,7 +337,7 @@ describe('the tab of the window', () => {
     expect(destroyed).toStrictEqual([id])
   })
 
-  it('lets go of the open tab before it opens another', () => {
+  it('releases the open tab before it opens another', () => {
     const { host, tab, openTab } = createShellHost()
     const { registration, released } = createKind()
     host.createContext('md.numen.cards').registerTabKind(registration)
@@ -371,7 +371,7 @@ describe('the tab of the window', () => {
     expect(afterDispose).not.toHaveBeenCalled()
   })
 
-  it('opens no tab when the kind fails to open, and lets go of what it began', () => {
+  it('opens no tab when the kind fails to open, and releases what it began', () => {
     const { host, tab, openTab } = createShellHost()
     const released: string[] = []
     host.createContext('md.numen.cards').registerTabKind({

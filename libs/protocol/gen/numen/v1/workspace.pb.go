@@ -501,7 +501,7 @@ func (x *ReadOpenTabsResponse) GetActiveId() string {
 	return ""
 }
 
-// A Tab is one tab of the window: what kind it is, and what it holds.
+// A Tab is one tab of the window: what kind it is, and its contents.
 //
 // The kind is the name a plugin registers the tab kind under. A reader that
 // does not know the kind knows a tab of that kind is open and no more.

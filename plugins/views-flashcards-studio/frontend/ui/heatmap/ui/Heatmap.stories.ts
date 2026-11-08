@@ -188,7 +188,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
 
 /**
  * The account of a day of review: what was answered, how it was answered, and
- * how much of what was already being reviewed came back.
+ * how much of what was already being reviewed was recalled.
  *
  * The share is the longest line the panel draws, and the panel is narrow, so
  * this is where it is read at the width it is given.

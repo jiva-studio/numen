@@ -176,7 +176,7 @@ describe('a node that is only in one picture', () => {
     expect(late.opacity).toBe(0)
   })
 
-  it('lets go of a departing node once the movement is over', () => {
+  it('releases a departing node once the movement is over', () => {
     expect(to.nodes.find((n) => n.id === 'b')).toBeUndefined()
     expect(interpolatePlex(from, to, 0.5).nodes.some((n) => n.id === 'b')).toBe(true)
   })

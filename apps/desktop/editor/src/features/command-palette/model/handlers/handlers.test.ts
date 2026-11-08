@@ -427,7 +427,7 @@ describe('a note renamed', () => {
 })
 
 describe('a note removed', () => {
-  it('has nothing on its way to its file before the file goes', async () => {
+  it('has nothing on its way to its file before the file is removed', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.trash', front()), one.on)
@@ -484,7 +484,7 @@ describe('a note removed', () => {
     expect(one.actions.some((step) => step.startsWith('leave'))).toBe(false)
   })
 
-  it('lets go of the tab that was reading it', async () => {
+  it('releases the tab that was reading it', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
@@ -602,7 +602,7 @@ describe('a file filed somewhere else', () => {
     )
   })
 
-  it('stays where it is while its tab is waiting on the person', async () => {
+  it('keeps its position while its tab is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
@@ -611,7 +611,7 @@ describe('a file filed somewhere else', () => {
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 
-  it('stays where it is where something of that name is filed there', async () => {
+  it('keeps its position where something of that name is filed there', async () => {
     const one = window({ movement: { ok: false, error: 'alreadyExists' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
@@ -741,7 +741,7 @@ describe('a command over the vault', () => {
 })
 
 describe('what the window is requested about a note', () => {
-  it('has its path put on the clipboard', async () => {
+  it('has its path copied to the clipboard', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.copyPath', front()), one.on)

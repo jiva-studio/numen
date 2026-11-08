@@ -77,7 +77,7 @@ describe('the line at rest', () => {
     expect(rows()).toHaveLength(0)
   })
 
-  it('is not opened while nobody may turn it', async () => {
+  it('is not opened while it cannot be turned', async () => {
     const control = mountSelect({ isDisabled: true })
     expect(line(control).attributes('disabled')).toBeDefined()
     await openSelect(control)
@@ -190,7 +190,7 @@ describe('the keyboard', () => {
 })
 
 describe('how wide the choices are drawn', () => {
-  it('are told how wide the line asking for them is', async () => {
+  it('receive how wide the line asking for them is', async () => {
     const control = mountSelect()
     // jsdom measures nothing, so the width is the one the box reports.
     line(control).element.getBoundingClientRect = () =>

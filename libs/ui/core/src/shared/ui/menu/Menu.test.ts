@@ -304,7 +304,7 @@ describe('the groups the items stand in', () => {
       one.textContent?.trim(),
     )
 
-  it('are named where the menu is told to name them', async () => {
+  it('are named where the menu is configured to name them', async () => {
     mountMenu({ items: SHELVED, hasGroups: true })
     await settle()
     expect(shelves()).toStrictEqual(['Built-in', 'Yours'])
@@ -374,7 +374,7 @@ describe('typing to jump', () => {
   })
 })
 
-describe('the width it is told to keep to', () => {
+describe('the width it is configured to keep to', () => {
   it('carries the width of what requested for it into its own rule', async () => {
     mountMenu({ asking: 420 })
     await settle()

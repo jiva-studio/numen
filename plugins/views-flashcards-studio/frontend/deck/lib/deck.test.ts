@@ -391,14 +391,14 @@ describe('a card taken out and dragged', () => {
     expect(removeCard(deck(), 'c9').cards).toHaveLength(2)
   })
 
-  it('lands before the card it was let go on', () => {
+  it('lands before the card it was dropped on', () => {
     expect(dropCard(deck(), ALPACA, LLAMA).cards.map((card) => card.id)).toStrictEqual([
       ALPACA,
       LLAMA,
     ])
   })
 
-  it('lands last where it was let go on nothing', () => {
+  it('lands last where it was dropped on nothing', () => {
     expect(dropCard(deck(), LLAMA, null).cards.map((card) => card.id)).toStrictEqual([
       ALPACA,
       LLAMA,
@@ -419,7 +419,7 @@ describe('a card dragged among the sections', () => {
     })
   }
 
-  it('takes the section of the card it was let go before', () => {
+  it('takes the section of the card it was dropped before', () => {
     const card = createSectionedDeck()
     const moved = dropCard(card, LLAMA, ALPACA)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -428,7 +428,7 @@ describe('a card dragged among the sections', () => {
     ])
   })
 
-  it('is placed under the last section where it was let go on nothing', () => {
+  it('is placed under the last section where it was dropped on nothing', () => {
     const card = createSectionedDeck()
     expect(dropCard(card, LLAMA, null).cards.map((card) => card.section)).toStrictEqual([
       card.sections[0]?.id,
@@ -436,7 +436,7 @@ describe('a card dragged among the sections', () => {
     ])
   })
 
-  it('lands at the head of a section it was let go on', () => {
+  it('lands at the head of a section it was dropped on', () => {
     const card = createSectionedDeck()
     const roots = card.sections[0]?.id ?? ''
     const moved = dropCard(card, LLAMA, roots)
@@ -456,12 +456,12 @@ describe('a card dragged among the sections', () => {
     ])
   })
 
-  it('moves nothing where it was let go on nothing the deck holds', () => {
+  it('moves nothing where it was dropped on nothing the deck holds', () => {
     const card = createSectionedDeck()
     expect(dropCard(card, LLAMA, 'nowhere')).toStrictEqual(card)
   })
 
-  it('remains last under the section it was let go past the end of', () => {
+  it('remains last under the section it was dropped past the end of', () => {
     const card = createSectionedDeck()
     const roots = card.sections[0]?.id ?? ''
     const moved = dropCard(card, LLAMA, createCardRunEnd(roots))
@@ -471,7 +471,7 @@ describe('a card dragged among the sections', () => {
     ])
   })
 
-  it('remains last under no section where it was let go past those before the first', () => {
+  it('remains last under no section where it was dropped past those before the first', () => {
     const card = createSectionedDeck()
     const moved = dropCard(card, ALPACA, createCardRunEnd(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -503,7 +503,7 @@ describe('a card dragged among the sections', () => {
     expect(dropCard(card, ALPACA, createCardRunEnd(card.sections[0]?.id ?? ''))).toStrictEqual(card)
   })
 
-  it('remains first and under no section where it was let go at the head of the deck', () => {
+  it('remains first and under no section where it was dropped at the head of the deck', () => {
     const card = createSectionedDeck()
     const moved = dropCard(card, ALPACA, CARD_HEAD)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -545,7 +545,7 @@ describe('a section of a deck', () => {
 
   /* Taking a section away takes away its heading and nothing else: its cards
      stay where they stand, under whatever heading is above them now. */
-  it('leaves its cards under the section above it when it goes', () => {
+  it('keeps its cards under the section above it when it is removed', () => {
     const parsed = readItem()
     const card = deck({
       sections: [
@@ -567,7 +567,7 @@ describe('a section of a deck', () => {
 
   /* A section is a name, so removing it removes only a name: the text it was
      on stays in the deck, standing after the text above it. */
-  it('leaves the text it stood on with the section above it when it goes', () => {
+  it('keeps the text it stood on with the section above it when it is removed', () => {
     const card = deck({
       sections: [
         { name: 'Roots', preamble: 'about the roots\n' },
@@ -787,7 +787,7 @@ describe('cards and sections standing among three headings', () => {
       ])
     })
 
-    it('is placed under the last section of the deck where it was let go on nothing', () => {
+    it('is placed under the last section of the deck where it was dropped on nothing', () => {
       const currentDeck = createThreeHeadingDeck()
       const moved = dropCard(currentDeck, 'ma', null)
       expect(place(moved).at(-1)).toStrictEqual(['ma', currentDeck.sections[2]?.id])
@@ -803,7 +803,7 @@ describe('cards and sections standing among three headings', () => {
       ])
     })
 
-    it('remains after the last card of the section it was let go past, ahead of later sections', () => {
+    it('remains after the last card of the section it was dropped past, ahead of later sections', () => {
       const currentDeck = createThreeHeadingDeck()
       const roots = currentDeck.sections[0]?.id ?? ''
       const moved = dropCard(currentDeck, 'ma', createCardRunEnd(roots))
@@ -814,7 +814,7 @@ describe('cards and sections standing among three headings', () => {
       ])
     })
 
-    it('moves nothing where it was let go past a section the deck does not hold', () => {
+    it('moves nothing where it was dropped past a section the deck does not hold', () => {
       const currentDeck = createThreeHeadingDeck()
       expect(dropCard(currentDeck, 'ma', createCardRunEnd('ghost'))).toStrictEqual(currentDeck)
     })

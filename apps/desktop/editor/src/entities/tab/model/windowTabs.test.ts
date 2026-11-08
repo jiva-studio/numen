@@ -141,7 +141,7 @@ describe('a tab of a kind', () => {
     expect(window.getTab(another)?.kind.kind).toBe('other')
   })
 
-  it('is a placeholder tab for a kind the window was never told about', async () => {
+  it('is a placeholder tab for a kind the window was never notified about', async () => {
     const window = notifiedCalls([kind().declared])
 
     const id = await window.openTabOfKind('nothing', 'One.md')
@@ -182,7 +182,7 @@ describe('what a kind is given', () => {
 })
 
 describe('a tab that closes', () => {
-  it('lets go of what it retained', async () => {
+  it('releases what it retained', async () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -198,7 +198,7 @@ describe('a tab that closes', () => {
     expect(window.releaseTab('gone')).toBe(true)
   })
 
-  it('stays where it is while its kind has something to finish', async () => {
+  it('keeps its position while its kind has something to finish', async () => {
     const pendingKind = kind({ isKept: true })
     const window = notifiedCalls([pendingKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -222,7 +222,7 @@ describe('a tab that closes', () => {
 })
 
 describe('a tab release from outside', () => {
-  it('lets go of what it retained and arrives off the screen', async () => {
+  it('releases what it retained and arrives off the screen', async () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -247,7 +247,7 @@ describe('a tab release from outside', () => {
 })
 
 describe('the tab now on screen', () => {
-  it('is told, so what it holds has room to measure', async () => {
+  it('is notified, so its contents have room to measure', async () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -268,7 +268,7 @@ describe('the tab now on screen', () => {
 })
 
 describe('the tab the person is looking at', () => {
-  it('is the one showing in the pane in front, with its kind and what it holds', async () => {
+  it('is the one showing in the pane in front, with its kind and its contents', async () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     await window.openTabOfKind('thing', 'One.md')
@@ -612,7 +612,7 @@ describe('a tab opened alongside', () => {
     expect(window.layout.value.axis).toBe('horizontal')
   })
 
-  it('draws a plugin unavailable tab alongside for a kind the window was never told about', async () => {
+  it('draws a plugin unavailable tab alongside for a kind the window was never notified about', async () => {
     const window = notifiedCalls([kind().declared])
     await window.openTabOfKind('thing', 'One.md')
 
@@ -898,7 +898,7 @@ describe('a tab of a kind that is not registered', () => {
   })
 })
 
-describe('the identity a kind is told as its tab opens', () => {
+describe('the identity a kind is given as its tab opens', () => {
   it('is the one the window files the tab under', async () => {
     const provided: string[] = []
     const thing = kind({
@@ -1024,7 +1024,7 @@ describe('a window opened with nothing to restore', () => {
 })
 
 describe('a placed kind whose tab fails to open', () => {
-  it('is told, left out of the layout, and lets go of what it started', async () => {
+  it('is notified, left out of the layout, and releases what it started', async () => {
     const failure = new Error('the plugin is gone')
     const stoppedTabs: string[] = []
     const window = useWindowTabs()

@@ -430,7 +430,7 @@ export const DraggingSeveral: Story = {
   },
 }
 
-/** Two rows let go over a folder land in it together. */
+/** Two rows dropped over a folder land in it together. */
 export const DragsSeveralIntoARow: Story = {
   tags: ['!dev'],
   args: { selected: ['notes', 'loose'] },
@@ -449,7 +449,7 @@ export const DragsSeveralIntoARow: Story = {
   },
 }
 
-/** A row cannot be dragged inside what it holds, and letting go moves nothing. */
+/** A row cannot be dragged inside its contents, and dropping moves nothing. */
 export const RejectsWhatItContains: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {

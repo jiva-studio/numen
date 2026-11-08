@@ -174,7 +174,7 @@ export interface Notes {
   asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   flushPending(id: string): Promise<void>
-  /** The tab holding a note lets go of it. */
+  /** The tab holding a note releases it. */
   close(id: string): void
   /**
    * Opens a file in the editor matching its type, in its own tab or beside the
@@ -196,7 +196,7 @@ export interface Store {
   asking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
   flushPending(id: string): Promise<void>
-  /** The tab holding it lets go of it. */
+  /** The tab holding it releases it. */
   close(id: string): void
   /** The identity of the tab standing at a file, and nothing where none does. */
   getTabAt(path: string): string | null

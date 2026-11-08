@@ -115,7 +115,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 
 // An answer is taken back on the run it was given on. A run this window never
 // opened is not one to write into.
-func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
+func TestTakingBackOnAnUnopenedRunIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
 	v := target[0]
 	session := startSession(t, handler, v)
@@ -131,7 +131,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 
 // An answer names the vault it belongs to. One the installation does not hold
 // fails before a line is written into anybody's review.
-func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAnsweringAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
@@ -172,7 +172,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 }
 
 // A vault the installation does not hold fails before anything is written.
-func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestTakingBackOnAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
@@ -312,7 +312,7 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 
 // An answer for a vault that does not exist fails as an unknown vault, and not
 // as an unopened run.
-func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
+func TestAnAnswerAndATakingBackNameTheVaultThatNoVaultContains(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{

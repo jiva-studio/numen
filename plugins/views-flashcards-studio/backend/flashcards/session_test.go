@@ -85,7 +85,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.isEven)),
 			"decks/On.md": deckOf("On", 60, 0),
 		})
-		// Every review card put into review long ago, so each comes back in days
+		// Every review card put into review long ago, so each is recalled in days
 		// and the placement has a window to move it in.
 		for _, days := range []int{40, 25} {
 			run := s.run(t, getSaturday().AddDate(0, 0, -days))

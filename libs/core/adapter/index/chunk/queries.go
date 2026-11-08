@@ -510,7 +510,7 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 // GetKeptVectors is the vectors already made for the texts given under the
 // recipe given, by the hex of their hash.
 //
-// A vector that comes back was paid for once, and asking a model for it again
+// A vector that is returned was paid for once, and asking a model for it again
 // is buying what is already here.
 func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (_ map[string][]byte, err error) {
 	if len(of) == 0 {

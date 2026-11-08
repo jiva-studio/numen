@@ -10,7 +10,7 @@ func (b Bounds) Contains(value float64) bool {
 	return value >= b.Min && value <= b.Max
 }
 
-// Check returns what is wrong with a number the setting does not take, and
+// Check returns what is wrong with a number the setting does not accept, and
 // nothing where it takes it.
 func (b Bounds) Check(targetPath string, value float64) error {
 	if b.Contains(value) {

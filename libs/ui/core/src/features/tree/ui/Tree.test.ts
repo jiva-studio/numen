@@ -395,15 +395,15 @@ describe('a drag', () => {
     expect(target.emitted('move')).toBeUndefined()
   })
 
-  it('takes a row to the top level, let go past the last row', async () => {
+  it('takes a row to the top level, dropped past the last row', async () => {
     const target = mountTree()
     await dragTo(target, 'work', 5 * HEIGHT - 2)
     expect(target.emitted('move')).toStrictEqual([[['work'], { into: null }]])
   })
 
-  // The pointer is caught on the window, so a row let go over another pane is
-  // let go somewhere the tree does not answer for.
-  it('does not move let go alongside the tree', async () => {
+  // The pointer is caught on the window, so a row dropped over another pane is
+  // dropped somewhere the tree does not answer for.
+  it('does not move a row dropped alongside the tree', async () => {
     const target = mountTree()
     const from = getRow(target, 'work').element
 
@@ -415,7 +415,7 @@ describe('a drag', () => {
     expect(target.emitted('move')).toBeUndefined()
   })
 
-  it('does not move let go below the tree', async () => {
+  it('does not move a row dropped below the tree', async () => {
     const target = mountTree()
     await dragTo(target, 'work', 9 * HEIGHT)
 
@@ -474,7 +474,7 @@ describe('rows dragged out of the tree', () => {
     expect(target.emitted('move')).toBeUndefined()
   })
 
-  it('says it has let go after saying where the rows landed', async () => {
+  it('reports the drop after saying where the rows landed', async () => {
     const target = mountTree()
     await dragTo(target, 'loose', 12)
 
@@ -833,7 +833,7 @@ describe('where a drop would land, shown on the tree', () => {
     expect(marked(wrapper, 'data-before')).toStrictEqual([])
   })
 
-  it('marks no row where a drop would land nowhere', async () => {
+  it('marks no row where a drop would have no target', async () => {
     const wrapper = mountTree()
     lift(wrapper, 'loose', 9 * HEIGHT)
     await wrapper.vm.$nextTick()

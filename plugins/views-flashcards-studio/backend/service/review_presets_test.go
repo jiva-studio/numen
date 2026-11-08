@@ -119,7 +119,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 // A question about the presets of a vault this installation does not hold is
 // rejected, and nothing is read for it.
-func TestAQuestionAboutThePresetsOfAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAQuestionAboutThePresetsOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, getPointed())
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),

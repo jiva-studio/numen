@@ -58,7 +58,7 @@ type RecallTally struct {
 	Recalled int
 }
 
-// GetRetained is what came back on each day, by the name of the day.
+// GetRetained is what was recalled on each day, by the name of the day.
 //
 // It is worked out with the replay: whether a review card was spaced is a thing
 // only the answers before it can say.

@@ -825,7 +825,7 @@ func TestOneTypeNamesOnePlace(t *testing.T) {
 
 // A note naming no place under the type grows an entry for it, and one written
 // with no block grows the block too.
-func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
+func TestAnUnnamedTypeIsSavedIn(t *testing.T) {
 	for name, raw := range map[string]string{
 		"no block":       "---\ntype: sample\n---\nbody\n",
 		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",

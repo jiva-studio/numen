@@ -174,7 +174,7 @@ describe('a move requested for', () => {
     expect(currentPlace.value).toBe('before')
   })
 
-  it('hears a wheel as soon as the move has arrived', async () => {
+  it('receives a wheel as soon as the move has arrived', async () => {
     const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
@@ -186,7 +186,7 @@ describe('a move requested for', () => {
   })
 
   // A move that never arrives is over when its time is up.
-  it('hears a wheel once the move has had its time, arrived or not', async () => {
+  it('receives a wheel once the move has had its time, arrived or not', async () => {
     const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
@@ -210,7 +210,7 @@ describe('a move requested for', () => {
     expect(currentPlace.value).toBe('before')
   })
 
-  it('does not take the strip anywhere while a hand is on it', async () => {
+  it('does not move the strip anywhere while a hand is on it', async () => {
     const { window_, onPointerDown, moveTo } = createStrip('here')
 
     onPointerDown(press({ clientX: 500 }))
@@ -355,7 +355,7 @@ describe('a strip with no window', () => {
     expect(uncaught).toEqual([])
   })
 
-  it('does nothing when a hand already on it moves after the window has gone', () => {
+  it('does nothing when a hand already on it moves after the window has closed', () => {
     const { windowRef, onPointerDown, onPointerMove } = createStrip('here')
 
     onPointerDown(press({ clientX: 500 }))
@@ -391,8 +391,8 @@ const createOwner = (place: PanelPlace) => {
   return { owner, writes }
 }
 
-describe('what the owner is told', () => {
-  it('hears nothing of a strip that is scrolled and still relies on the one it showed', () => {
+describe('what the owner is notified of', () => {
+  it('receives nothing of a strip that is scrolled and still relies on the one it showed', () => {
     const { owner, writes } = createOwner('here')
     const { scrollTo } = createStrip('here', { owner })
 
@@ -401,7 +401,7 @@ describe('what the owner is told', () => {
     expect(writes).toEqual([])
   })
 
-  it('hears nothing of a hand that lets go on the one the strip showed', async () => {
+  it('receives nothing of a hand that releases on the one the strip showed', async () => {
     const { owner, writes } = createOwner('here')
     const { onPointerDown, letGo } = createStrip('here', { owner })
 
@@ -411,7 +411,7 @@ describe('what the owner is told', () => {
     expect(writes).toEqual([])
   })
 
-  it('hears of the one a hand lets go nearest to', async () => {
+  it('receives the one a hand releases nearest to', async () => {
     const { owner, writes } = createOwner('here')
     const { window_, onPointerDown, letGo } = createStrip('here', { owner })
 

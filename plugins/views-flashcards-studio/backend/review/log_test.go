@@ -90,7 +90,7 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 }
 
 // A line that cannot be interpreted is skipped and counted, and the rest of the file is read.
-func TestALineNobodyCanActOnIsCounted(t *testing.T) {
+func TestAnUnactionableLineIsCounted(t *testing.T) {
 	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","template":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
 	for name, line := range map[string]string{
 		"not json at all":         `this is not a line`,
@@ -293,7 +293,7 @@ func lines(raw string) int {
 	return target
 }
 
-// An answer written to the log comes back as itself. The file is the history a
+// An answer written to the log is returned as itself. The file is the history a
 // schedule is replayed from, so what is written has to survive being read.
 func FuzzWriteAnswer(f *testing.F) {
 	f.Add("a", "0123456789", "Word", int64(1767225600000), uint8(3), int64(1200), "")
@@ -310,7 +310,7 @@ func FuzzWriteAnswer(f *testing.F) {
 			return
 		}
 		// JSON is text, and a string that is not UTF-8 is written as the
-		// replacement character and comes back as something else. A mark is
+		// replacement character and is returned as something else. A mark is
 		// Crockford base32 and an identifier is minted here, so nothing this
 		// application writes carries one; a template's name comes off a card model's
 		// heading and could.

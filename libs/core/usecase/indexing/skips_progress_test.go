@@ -115,7 +115,7 @@ func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	}
 }
 
-// The vectors-ready listener is told once the notes nobody cancelled carry vectors, and the
+// The vectors-ready listener is notified once the notes no person cancelled carry vectors, and the
 // cancelled note still has none: the event covers the vault without it.
 func TestVectorsReadyExcludesTheCancelledNote(t *testing.T) {
 	events := &progressLog{recorder: newRecorder()}

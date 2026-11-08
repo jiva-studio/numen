@@ -8,7 +8,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it goes, are its
+// each is doing behind itself, and what has to land before it closes, are its
 // own. Every question here names the window it is about.
 
 package numenv1
@@ -305,7 +305,7 @@ type Task struct {
 	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
 	// Error is why the work stopped, when it stopped badly.
 	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
-	// Set for work a person started and is waiting to be told about.
+	// Set for work a person started and is waiting to be notified about.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`

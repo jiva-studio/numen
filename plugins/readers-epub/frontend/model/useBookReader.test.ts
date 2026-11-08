@@ -201,7 +201,7 @@ describe('a book opened', () => {
     expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
   })
 
-  it('stays where it is for a CFI that names no place in the book', async () => {
+  it('keeps its position for a CFI that names no place in the book', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -556,7 +556,7 @@ describe('a book tab closed before the book lands', () => {
 })
 
 describe('a book tab closed after the book landed', () => {
-  it('lets go of its contents and stays where it stood', async () => {
+  it('releases its contents and keeps its position', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
     await settle()

@@ -221,7 +221,7 @@ type IndexCoverage struct {
 	// Both are zero for a vault nothing has cut yet.
 	ChunkCount    int64 `protobuf:"varint,1,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	EmbeddedCount int64 `protobuf:"varint,2,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
-	// Embedding says whether anything is going to turn the spans into vectors.
+	// Embedding reports whether anything is going to turn the spans into vectors.
 	// False for an installation with no model, where the vault is searched by its
 	// words alone.
 	IsEmbedding   bool `protobuf:"varint,3,opt,name=is_embedding,json=isEmbedding,proto3" json:"is_embedding,omitempty"`

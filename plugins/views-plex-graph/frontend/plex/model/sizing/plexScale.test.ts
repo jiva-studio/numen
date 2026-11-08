@@ -12,7 +12,7 @@ describe('the size the plex was designed at', () => {
     expect(optionsForType(DESIGNED_TYPE)).toStrictEqual(DEFAULT_OPTIONS)
   })
 
-  it('is what a plex nobody measured is drawn at', () => {
+  it('is what a plex that was not measured is drawn at', () => {
     expect(optionsForType(0)).toStrictEqual(DEFAULT_OPTIONS)
   })
 

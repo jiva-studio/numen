@@ -33,7 +33,7 @@ const readItem = '12 34 Deck.md'
 const { cards } = await import('./cards')
 
 describe('the card models of a vault', () => {
-  it('come back with how many the vault holds', async () => {
+  it('return how many the vault contains', async () => {
     replyWith({
       cardModels: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
       total: 3,

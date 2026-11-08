@@ -270,7 +270,7 @@ describe('asking for a curve', () => {
   })
 })
 
-describe('an answer nobody is waiting for any more', () => {
+describe('an answer no caller is waiting for any more', () => {
   it('is not drawn over an answer already retained', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const card = curve({ cards: 99 })

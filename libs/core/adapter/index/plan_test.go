@@ -63,7 +63,7 @@ func getExpectedPlans() []struct {
 		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/", "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
 		{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
-		// Cutting a source again reads what it holds now, and then moves, writes or
+		// Cutting a source again reads its current contents now, and then moves, writes or
 		// takes out one row at a time.
 		{chunk.Statements(), "chunks_of", []any{1}, []string{"chunks_by_source"}},
 		{chunk.Statements(), "move_chunk", []any{0, 10, 1, nil, 1}, []string{"INTEGER PRIMARY KEY"}},

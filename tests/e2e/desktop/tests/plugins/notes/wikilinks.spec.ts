@@ -110,7 +110,7 @@ test.describe('Wikilink in the editor', () => {
       await expect(text.locator('.cm-line:nth-child(2)')).toHaveText('next line')
 
       // The completion list of `[[Entr` answers from the vault index and can open after the
-      // last key: the caret leaves the line with a key the list does not take.
+      // last key: the caret exits the line with a key the list does not accept.
       await text.click()
       await page.keyboard.press('ControlOrMeta+Home')
       await page.keyboard.press('End')

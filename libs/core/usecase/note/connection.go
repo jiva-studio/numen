@@ -198,7 +198,7 @@ func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, chang
 	for i, c := range changes {
 		paths[i] = c.path
 	}
-	// The files are written, so the index follows them even when the caller has gone.
+	// The files are written, so the index follows them even when the caller is canceled.
 	return WrapIndexOutdated(e.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 

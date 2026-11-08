@@ -249,7 +249,7 @@ type Model struct {
 	// What is drawn on the row, and the group the rows around it stand under.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Group string `protobuf:"bytes,4,opt,name=group,proto3" json:"group,omitempty"`
-	// Set on the model an installation nobody has configured runs on.
+	// Set on the model an installation with no configuration runs on.
 	IsDefault bool `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// What choosing it writes. One model is several keys where the model decides
 	// more than its own name.
@@ -1949,7 +1949,7 @@ type ChoosePluginPathResponse struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when the person chose a path.
 	IsChosen bool `protobuf:"varint,2,opt,name=is_chosen,json=isChosen,proto3" json:"is_chosen,omitempty"`
-	// Why the setting does not take the path, in words a person reads. Empty where it was written.
+	// Why the setting does not accept the path, in words a person reads. Empty where it was written.
 	Problem       string `protobuf:"bytes,3,opt,name=problem,proto3" json:"problem,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

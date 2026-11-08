@@ -8,14 +8,14 @@ import { describe, expect, it } from 'vitest'
 import { asFailure, asValue, type Result } from './result'
 
 describe('what a call that can fail answers with', () => {
-  it('carries the value where it came back', () => {
+  it('carries the value where it was returned', () => {
     const answer: Result<number> = asValue(7)
 
     expect(answer.ok).toBe(true)
     expect(answer.ok ? answer.value : null).toBe(7)
   })
 
-  it('carries why, where nothing came back', () => {
+  it('carries why, where nothing was returned', () => {
     const answer: Result<number> = asFailure('the folder has gone')
 
     expect(answer.ok).toBe(false)

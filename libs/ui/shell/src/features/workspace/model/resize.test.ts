@@ -117,7 +117,7 @@ describe('a handle retained', () => {
     expect(one.frame.hasAttribute(RESIZING)).toBe(true)
   })
 
-  it('drops where the handle had reached when the branch goes while it is retained', () => {
+  it('drops where the handle had reached when the branch is removed while it is retained', () => {
     const one = create()
 
     one.onHold(true)

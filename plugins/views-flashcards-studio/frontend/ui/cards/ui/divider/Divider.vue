@@ -37,7 +37,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
   border-block-start: var(--numen-stroke) dashed var(--numen-rule);
 }
 
-/* A divider that leads with what it holds keeps only a stub of line before it. */
+/* A divider that leads with its contents keeps only a stub of line before it. */
 .divider[data-at='start']::before {
   flex: 0 0 var(--numen-box-air);
 }

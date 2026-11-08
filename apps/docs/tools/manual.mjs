@@ -344,7 +344,7 @@ const commands = async () => {
  * settings file holds and so what the manual has to say. A line that is
  * neither and is still written down — one exported, tagged with something other
  * than `-` — is returned unread, for whoever asked to refuse it: a field
- * shape nobody taught this to read is a setting quietly left out.
+ * shape this was not taught to read is a setting quietly left out.
  */
 const fieldsOf = (source, name) => {
   const at = source.search(new RegExp(`^type ${name} struct \\{$`, 'm'))
@@ -478,7 +478,7 @@ const meaning = (doc, name, keys) => {
 /**
  * Where each package's settings are declared, so the walk crosses from one to
  * the next by itself. The walk runs from the document down, and a package
- * nobody listed here stops the build.
+ * no package listed here stops the build.
  */
 const PACKAGES = {
   settings: 'adapter/settings',
@@ -518,7 +518,7 @@ const named = (source) => {
 
 /**
  * Where a field's type is declared: in this file, or in another package's.
- * Nothing for a type a person writes a value of. A package nobody listed above
+ * Nothing for a type a person writes a value of. A package not listed above
  * stops the build.
  */
 const declaredIn = (pkg, type) => {
@@ -836,7 +836,7 @@ const pictured = async () => {
 /**
  * The rule every list above is held to, put through sources made up here.
  *
- * A check nobody has seen fail is an assumption, and this one's whole worth is
+ * A check never seen to fail is an assumption, and this one's whole worth is
  * the failure path, so the path is walked on every run before a page is.
  */
 const REFUSES = [

@@ -36,7 +36,7 @@ func nextAfterFixture(next func() []string) []string {
 	}
 }
 
-// A file followed inside the vault and let go leaves the vault followed.
+// A file followed inside the vault and released leaves the vault followed.
 func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
 	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.
@@ -51,7 +51,7 @@ func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
 	}
 }
 
-// A file followed inside the vault before the vault was, and let go after, leaves the vault followed.
+// A file followed inside the vault before the vault was, and released after, leaves the vault followed.
 func TestAVaultIsFollowedAfterAnEarlierWatchInsideItStops(t *testing.T) {
 	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.

@@ -175,7 +175,7 @@ describe('how far a gesture must go to be a drag', () => {
     gesture.begin('focus', createDown(drawing, 0, 0))
     send('pointermove', -6, -8)
 
-    // Back on the node it began on, which is not somewhere to let go.
+    // Back on the node it began on, which is not somewhere to drop.
     expect(gesture.outcome.value).toBeNull()
   })
 
@@ -263,7 +263,7 @@ describe('one pointer at a time', () => {
   })
 })
 
-describe('letting go', () => {
+describe('releasing', () => {
   it('commits what it came to and is over', () => {
     const { gesture, drawing, commits } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0))
@@ -277,7 +277,7 @@ describe('letting go', () => {
     expect(gesture.outcome.value).toBeNull()
   })
 
-  it('lets go of the pointer it retained', () => {
+  it('releases the pointer it retained', () => {
     const { drawing, gesture } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 7))
 
@@ -298,7 +298,7 @@ describe('letting go', () => {
     expect(gesture.from.value).toBeNull()
   })
 
-  it('lets go of the pointer once, however many times it is given up on', () => {
+  it('releases the pointer once, however many times it is given up on', () => {
     const { drawing, gesture } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 7))
 
@@ -367,7 +367,7 @@ describe('reaching out with no direction', () => {
 })
 
 describe('a plex that goes while a hand is on it', () => {
-  it('lets go of everything', () => {
+  it('releases everything', () => {
     const remove = vi.spyOn(window, 'removeEventListener')
     const { gesture, drawing, scope, commits } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 7))

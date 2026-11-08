@@ -136,7 +136,7 @@ func TestADeletedNotePreservesTheIndex(t *testing.T) {
 // TestARefreshDoesNotTakeABookForARemovedNote checks that a refresh queries the
 // reader about each path and reads fs.ErrNotExist as removed. A book the vault
 // holds exists; extracting its text is a separate step.
-func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
+func TestARefreshDoesNotAcceptABookForARemovedNote(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",

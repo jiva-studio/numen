@@ -238,7 +238,7 @@ describe('a change something other than the reader is making', () => {
   const DOC = 'the cat sat on the mat'
   const CHANGE: EditorChange = { id: 'one', from: 4, to: 7, text: 'dog' }
 
-  it('is drawn for nobody while the component is handed none', () => {
+  it('is not drawn while the component receives none', () => {
     expect(getChangeMarks(editor({ modelValue: DOC }).view)).toEqual([])
   })
 
@@ -290,7 +290,7 @@ describe('an address in the text', () => {
     expect(wrapper.emitted('open')).toEqual([['https://example.invalid']])
   })
 
-  it('is emitted for nobody until something follows one', () => {
+  it('is not emitted until something follows one', () => {
     expect(editor({ modelValue: 'go [there](note.md)' }).wrapper.emitted('open')).toBeUndefined()
   })
 
@@ -345,7 +345,7 @@ describe('the chord that keeps the text', () => {
     expect(wrapper.emitted('save')).toEqual([[]])
   })
 
-  it('is answered by the editor, so nothing behind it hears the key', () => {
+  it('is answered by the editor, so nothing behind it receives the key', () => {
     const { view } = editor({ modelValue: 'one' })
     expect(chord(view.contentDOM).defaultPrevented).toBe(true)
   })

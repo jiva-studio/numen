@@ -237,7 +237,7 @@ func (s *programsServer) GetAgentPrograms(
 	}}}), nil
 }
 
-// The programs a plugin lists come back under the plugin that listed them, and the command lines
+// The programs a plugin lists are returned under the plugin that listed them, and the command lines
 // the installation set go to it.
 func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	served := &programsServer{}
