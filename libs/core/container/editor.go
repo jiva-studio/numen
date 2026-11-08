@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -19,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
@@ -104,12 +106,13 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		StartVaultFn:             cfg.startVault(db),
 		PluginServicesFn:         cfg.GetPluginServices,
 		PluginCommandsFn:         cfg.GetPluginCommands,
-		TabKindChoiceFn:          cfg.GetTabKindChoice,
+		OpenChooseTabKindFn:      cfg.OpenChooseTabKind,
 		PluginCatalogFn:          cfg.getEditorCatalog,
 		AgentVal:                 cfg.getToolProvider(),
 		SetTextVersionListenerFn: cfg.setTextVersionListener,
 		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
-		OpenFileMenuFn:           cfg.openFileMenu,
+		OpenVersionItemsFn:       cfg.openVersionItems,
+		WatchPluginChangesFn:     cfg.WatchPluginChanges,
 		OpenTriggersFn: func() *trigger.Triggers {
 			return cfg.openTriggers()
 		},
@@ -180,16 +183,17 @@ func (c Config) startVault(db *Index) func(
 	}
 }
 
-func (c Config) openFileMenu() *textversion.FileMenu {
+func (c Config) openVersionItems() *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	var commands pluginport.PluginCommands = commandbridge.NoCommands{}
+	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
+		commands, types = c.openPluginCommands(), c.PluginHost
 	}
-	menu, err := textversion.NewFileMenu(c.TextVersions, commands, types)
+	run := plugincommand.NewCommands(commands, types, c.VaultReaders(), c.getWhenConfig()).Run
+	menu, err := textversion.NewVersionItems(c.TextVersions, run, types)
 	if err != nil {
 		c.handleError(err)
 		return nil

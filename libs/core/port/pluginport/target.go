@@ -8,11 +8,13 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// TargetVersion is one text version of a target as target.versions holds it.
+// TargetVersion is one text version of a target as target.versions holds it. A valid version still
+// matches the file, its source chain whole, and the live one is the newest valid one.
 type TargetVersion struct {
 	Kind     string
 	PluginID string
 	IsLive   bool
+	IsValid  bool
 }
 
 // TargetValues are the values a when condition reads over one target, built from its path and from
@@ -64,7 +66,7 @@ func (t TargetValues) WithNote(noteType domain.NoteType, properties map[string]a
 func (t TargetValues) WithVersions(versions []TargetVersion) TargetValues {
 	list := make([]any, 0, len(versions))
 	for _, one := range versions {
-		list = append(list, map[string]any{"kind": one.Kind, "pluginId": one.PluginID, "isLive": one.IsLive})
+		list = append(list, map[string]any{"kind": one.Kind, "pluginId": one.PluginID, "isLive": one.IsLive, "isValid": one.IsValid})
 	}
 	return t.with(map[string]any{"target.versions": list})
 }

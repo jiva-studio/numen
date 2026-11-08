@@ -29,6 +29,6 @@ type VaultTexts interface {
 	// GetContentHash returns domain.HashContent of the file as it is now.
 	GetContentHash(ctx context.Context, path string) (string, error)
 	// IsTextSource reports whether the index keeps the text of the file: it has
-	// text versions, or an enabled plugin that runs on its own takes it.
+	// text versions.
 	IsTextSource(ctx context.Context, path string) (bool, error)
 }

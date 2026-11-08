@@ -1,4 +1,4 @@
-package commandbridge
+package manifestlist
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 func TestListTabKinds_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "target.noteType == 'deck'", Rank: domain.RankDefault}
 	note := manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}
-	host := &commandHost{
+	host := &manifestHost{
 		plugins: []pluginport.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},

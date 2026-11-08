@@ -1,9 +1,9 @@
-// Package command lets a plugin run the commands its manifest declares. A Handler runs them; Mount
-// serves one to the host as PluginCommandService.
+// Package command lets a plugin run the commands its manifest declares and its handlers of the shared
+// commands. A Handler runs them; Mount serves one to the host as PluginCommandService.
 //
 // The host checks every call against the manifest before it is passed to a Handler: the command is
-// declared, every required argument is given, every argument is declared and holds a value of its
-// type, and a command over files is given a file of a declared extension.
+// declared, its when condition holds over the file, every required argument is given, and every
+// argument is declared and holds a value of its type.
 package command
 
 import (
@@ -48,8 +48,8 @@ func (a Arguments) GetString(name string) string {
 type Request struct {
 	// Command is the id the manifest declares the command under.
 	Command string
-	// Path is the file the command runs over, relative to the vault folder. Empty for a command that
-	// declares no file extensions.
+	// Path is the file the command runs over, relative to the vault folder. Empty for a run with no
+	// target, such as one from the palette.
 	Path      string
 	Arguments Arguments
 	// ItemID is the id of the item a person picked, for a command that offers its own items. Empty for

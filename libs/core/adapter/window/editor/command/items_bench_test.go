@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
@@ -29,7 +30,10 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(commandbridge.Open(host), host, nil, nil)
+	commands := plugincommand.NewCommands(struct {
+		manifestlist.Manifests
+		commandbridge.Commands
+	}{manifestlist.Open(host), commandbridge.Open(host)}, host, nil, nil)
 	return command.NewHandler(shownVault{}, commands, &versionItems{})
 }
 

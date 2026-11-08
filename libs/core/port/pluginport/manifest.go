@@ -14,13 +14,13 @@ type (
 	PluginCommand          = manifest.Command
 	PluginCommandArgument  = manifest.CommandArgument
 	PluginCondition        = when.Condition
+	PluginConditionResult  = when.Result
 	PluginContributes      = manifest.Contributes
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
 	PluginReader           = manifest.Reader
-	PluginTrigger          = manifest.Trigger
 	PluginSecret           = manifest.Secret
 	PluginSettingsView     = manifest.SettingsView
 	PluginSettingCondition = manifest.Condition

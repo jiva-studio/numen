@@ -8,12 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 )
 
-// commandCreateText is the shared command the plugin handles by writing the text of a book.
-const commandCreateText = "app:file.createText"
-
 func newCommands(texts *TextServer) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(commandCreateText, newCreateTextRun(texts)); err != nil {
+	if err := commands.Add(command.CreateText, newCreateTextRun(texts)); err != nil {
 		return nil, err
 	}
 	return commands, nil

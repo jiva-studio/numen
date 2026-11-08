@@ -136,13 +136,17 @@ func (types) GetContentType(path string) domain.ContentType {
 
 func (types) ListExtensions(domain.ContentType) []string { return nil }
 
-// plugins declares the triggers it is given and records each run.
+// plugins declares the triggers it is given and records each run. A path in failing fails, and a
+// plugin in unavailable cannot be reached.
 type plugins struct {
 	mu          sync.Mutex
 	triggers    []pluginport.PluginTriggerEntry
 	ran         []string
 	failing     map[string]bool
+	unavailable map[string]bool
 	handlerWhen map[string]string
+	hold        chan struct{}
+	started     chan struct{}
 }
 
 func (p *plugins) ListTriggers() []pluginport.PluginTriggerEntry {
@@ -165,13 +169,20 @@ func (p *plugins) ListHandlers() []pluginport.PluginCommandEntry {
 	return out
 }
 
-func (p *plugins) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (p *plugins) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+	if p.hold != nil {
+		p.started <- struct{}{}
+		<-p.hold
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+call.Path)
+	if p.unavailable[call.PluginID] {
+		return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginFailed}
+	}
 	if p.failing[call.Path] {
 		return pluginport.PluginCommandResult{}, errors.New("the scanner is out of paper")
 	}
-	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+call.Path)
 	return pluginport.PluginCommandResult{Message: "done"}, nil
 }
 
@@ -183,65 +194,64 @@ func (p *plugins) take() []string {
 	return out
 }
 
-// memoryRecord keeps the state of the triggers in memory.
-type memoryRecord struct {
-	mu    sync.Mutex
-	state pluginport.TriggerState
+// versions is the text versions of each file by its path, counting the reads.
+type versions struct {
+	mu     sync.Mutex
+	byPath map[string][]pluginport.TargetVersion
+	reads  int
 }
 
-func (m *memoryRecord) Open(domain.Vault) (pluginport.TriggerRecord, error) { return m, nil }
-
-func (m *memoryRecord) Read(context.Context) (pluginport.TriggerState, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return pluginport.TriggerState{Files: maps.Clone(m.state.Files), Runs: maps.Clone(m.state.Runs)}, nil
+func (v *versions) ListTargetVersions(_ context.Context, _ domain.Vault, path string) ([]pluginport.TargetVersion, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.reads++
+	return v.byPath[path], nil
 }
 
-func (m *memoryRecord) Write(_ context.Context, state pluginport.TriggerState) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.state = state
-	return nil
-}
+// settingsOf is the config of when conditions it holds.
+type settingsOf struct{ config *map[string]any }
+
+func (s settingsOf) GetWhenConfig() map[string]any { return *s.config }
 
 type scene struct {
 	memoryVault *memoryVault
 	plugins     *plugins
+	versions    *versions
 	config      map[string]any
 	triggers    *trigger.Triggers
 }
 
 func newScene(t *testing.T, files map[string]string, entries ...pluginport.PluginTriggerEntry) *scene {
 	t.Helper()
-	s := &scene{memoryVault: newMemoryVault(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
-	s.triggers = trigger.NewTriggers(s.plugins, readers{s.memoryVault}, types{}, &memoryRecord{},
-		sceneConfig{s: s})
+	s := &scene{
+		memoryVault: newMemoryVault(files),
+		plugins:     &plugins{triggers: entries, failing: map[string]bool{}, unavailable: map[string]bool{}},
+		versions:    &versions{byPath: map[string][]pluginport.TargetVersion{}},
+		config:      map[string]any{},
+	}
+	s.triggers = trigger.NewTriggers(s.plugins, s.plugins, readers{s.memoryVault}, types{}, s.versions, settingsOf{config: &s.config})
 	return s
 }
 
-func (s *scene) scan(t *testing.T) []string {
+func (s *scene) runAll(t *testing.T) []string {
 	t.Helper()
-	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}); err != nil {
+	if err := s.triggers.ExecuteAll(t.Context(), domain.Vault{ID: "v1"}); err != nil {
 		t.Fatal(err)
 	}
 	return s.plugins.take()
 }
 
-func getExtractOnAdd() pluginport.PluginTriggerEntry {
+func getExtractText() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
+		Event: manifest.EventFileAdded, Command: "app:file.createText",
+		When: "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'text-layer' && v.isValid)",
 	}}
 }
 
 func getRecognizeWhenOn() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		Event: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
-	}}
-}
-
-func getRecheckOnChange() pluginport.PluginTriggerEntry {
-	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		Event: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
+		Event: manifest.EventFileAdded, Command: "app:file.createText",
+		When: "target.contentType == 'image/png' && config.org.example.scans.isAutomatic == true",
 	}}
 }
 
@@ -251,140 +261,141 @@ func getCaptionsOnLink() pluginport.PluginTriggerEntry {
 	}}
 }
 
-func TestATriggerOnFileAddedRunsOnceOverEachMatchingFile(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "notes/n.md": "# A note\n"}, getExtractOnAdd())
+func TestTriggerRunsOverEveryFileWhereItsConditionIsTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels", "notes/n.md": "# A note\n"}, getExtractText())
 
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
-		t.Fatalf("the first scan ran %v, want %v", got, want)
-	}
-	if got := s.scan(t); len(got) != 0 {
-		t.Errorf("a second scan over the same content ran %v", got)
-	}
-	s.memoryVault.put("scans/b.pdf", "%PDF b")
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/b.pdf"}; !slices.Equal(got, want) {
-		t.Errorf("a file added ran %v, want %v", got, want)
+	if got, want := s.runAll(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
 	}
 }
 
-func TestATriggerOnFileAddedDoesNotRunWhenAFileChanges(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
-	s.scan(t)
+func TestTriggerSkipsAFileWithAValidVersionOfItsKind(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "scans/c.pdf": "%PDF c", "scans/d.pdf": "%PDF d"}, getExtractText())
+	s.versions.byPath["scans/a.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: true, IsValid: true}}
+	s.versions.byPath["scans/c.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: false}}
+	s.versions.byPath["scans/d.pdf"] = []pluginport.TargetVersion{
+		{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: true},
+		{Kind: "proofreading", PluginID: "org.example.proofs", IsLive: true, IsValid: true},
+	}
 
-	s.memoryVault.put("scans/a.pdf", "%PDF a, second printing")
-	if got := s.scan(t); len(got) != 0 {
-		t.Errorf("a changed file ran %v", got)
+	if got, want := s.runAll(t), []string{scanner + " app:file.createText scans/b.pdf", scanner + " app:file.createText scans/c.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want the files with no valid text layer %v", got, want)
 	}
 }
 
-func TestATriggerOnFileChangedRunsWhenTheContentChanges(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.png": "pixels"}, getRecheckOnChange())
-	if got := s.scan(t); len(got) != 0 {
-		t.Fatalf("a file found for the first time ran %v on file.changed", got)
-	}
+func TestATriggerReadsNoFileAndNoVersionsWhereThePathAndTheSettingsDecide(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.png": "pixels", "notes/n.md": "# A note\n", "scans/b.pdf": "%PDF"}, getRecognizeWhenOn())
+	s.config = map[string]any{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isAutomatic": false}}}}
 
-	s.memoryVault.put("scans/a.png", "other pixels")
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.png"}; !slices.Equal(got, want) {
-		t.Errorf("a changed file ran %v, want %v", got, want)
+	if got := s.runAll(t); len(got) != 0 {
+		t.Errorf("a trigger whose setting is off ran %v", got)
 	}
-	if got := s.scan(t); len(got) != 0 {
-		t.Errorf("a second scan ran %v", got)
+	if s.memoryVault.reads != 0 || s.memoryVault.opens != 0 || s.versions.reads != 0 {
+		t.Errorf("read %d files, opened %d and read the versions %d times, want none", s.memoryVault.reads, s.memoryVault.opens, s.versions.reads)
 	}
 }
 
 func TestATriggerRunsOverTheFilesAlreadyThereOnceASettingMakesItsConditionTrue(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.png": "pixels", "scans/b.pdf": "%PDF b"}, getRecognizeWhenOn())
-	if got := s.scan(t); len(got) != 0 {
-		t.Fatalf("a trigger whose setting is off ran %v", got)
-	}
+	s := newScene(t, map[string]string{"scans/a.png": "pixels"}, getRecognizeWhenOn())
+	s.runAll(t)
 
 	s.config = map[string]any{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isAutomatic": true}}}}
-	got := s.scan(t)
-	want := []string{scanner + " app:version.delete scans/a.png", scanner + " app:version.delete scans/b.pdf"}
-	if !slices.Equal(got, want) {
-		t.Errorf("once the setting is on the scan ran %v, want %v", got, want)
+
+	if got, want := s.runAll(t), []string{scanner + " app:file.createText scans/a.png"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
 	}
 }
 
-func TestATriggerOfAPluginEnabledLaterRunsOverTheFilesAlreadyThere(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"})
-	s.scan(t)
-
-	s.plugins.triggers = []pluginport.PluginTriggerEntry{getExtractOnAdd()}
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
-		t.Errorf("the trigger of the plugin enabled ran %v, want %v", got, want)
-	}
-}
-
-func TestATriggerReadsTheTypeAndPropertiesOfANote(t *testing.T) {
+func TestATriggerReadsANoteOnlyWhereItsTypeOrPropertiesDecide(t *testing.T) {
 	s := newScene(t, map[string]string{
-		"links/tide.md":  "---\ntype: link\nurl: https://tides.example/mill\n---\n",
-		"links/plain.md": "---\ntype: link\n---\n",
-		"notes/n.md":     "# A note\n",
+		"links/tide.md": "---\ntype: link\nurl: https://tides.example/mill\n---\n",
+		"links/bare.md": "---\ntype: link\n---\n",
+		"scans/a.pdf":   "%PDF",
 	}, getCaptionsOnLink())
 
-	if got, want := s.scan(t), []string{linker + " app:file.createText links/tide.md"}; !slices.Equal(got, want) {
-		t.Errorf("the scan ran %v, want %v", got, want)
+	if got, want := s.runAll(t), []string{linker + " app:file.createText links/tide.md"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+	if s.memoryVault.reads != 2 || s.versions.reads != 0 {
+		t.Errorf("read %d files and the versions %d times, want the two notes and no versions", s.memoryVault.reads, s.versions.reads)
 	}
 }
 
-func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
+func TestTriggerRunsOnlyWhereTheConditionOfItsHandlerIsTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b"}, getExtractText())
+	s.plugins.handlerWhen = map[string]string{"app:file.createText": "!target.contentType.startsWith('application/') || target.isRoot"}
+
+	if got := s.runAll(t); len(got) != 0 {
+		t.Errorf("ran %v where the handler does not handle the files", got)
+	}
+}
+
+func TestAPassOverPathsRunsOnlyOverThoseFiles(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "scans/c.pdf": "%PDF c"}, getExtractText())
+
+	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}, []string{"scans/b.pdf", "scans/gone.pdf", "scans"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := s.plugins.take(), []string{scanner + " app:file.createText scans/b.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestAFileWhoseRunFailsIsTriedOncePerPassAndReported(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b"}, getExtractText())
 	s.plugins.failing["scans/a.pdf"] = true
-	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}); err == nil {
-		t.Fatal("a failing run reported no error")
-	}
 
-	s.plugins.failing["scans/a.pdf"] = false
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
-		t.Errorf("the next scan ran %v, want %v", got, want)
-	}
-}
-
-func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getExtractOnAdd())
-	s.scan(t)
-	before := s.memoryVault.reads + s.memoryVault.opens
-
-	s.scan(t)
-	if s.memoryVault.reads+s.memoryVault.opens != before {
-		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads+s.memoryVault.opens-before)
+	for pass := range 2 {
+		err := s.triggers.ExecuteAll(t.Context(), domain.Vault{ID: "v1"})
+		if err == nil || !strings.Contains(err.Error(), "out of paper") {
+			t.Errorf("pass %d answered %v, want the failure", pass, err)
+		}
+		want := []string{scanner + " app:file.createText scans/a.pdf", scanner + " app:file.createText scans/b.pdf"}
+		if got := s.plugins.take(); !slices.Equal(got, want) {
+			t.Errorf("pass %d ran %v, want %v", pass, got, want)
+		}
 	}
 }
 
-func TestATriggerOnFileAddedRunsOverAFileDeletedAndAddedAgainWithTheSameContent(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
-	s.scan(t)
+func TestAPluginThatCannotBeReachedIsSkippedForTheRestOfThePass(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "links/tide.md": "---\ntype: link\nurl: https://tides.example\n---\n"},
+		getExtractText(), getCaptionsOnLink())
+	s.plugins.unavailable[scanner] = true
 
-	s.memoryVault.remove("scans/a.pdf")
-	if got := s.scan(t); len(got) != 0 {
-		t.Fatalf("a scan without the file ran %v", got)
+	err := s.triggers.ExecuteAll(t.Context(), domain.Vault{ID: "v1"})
+
+	var unavailable *pluginport.UnavailableError
+	if !errors.As(err, &unavailable) {
+		t.Errorf("the pass answered %v, want the plugin unavailable", err)
 	}
-	s.memoryVault.put("scans/a.pdf", "%PDF a")
-	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
-		t.Errorf("the file added again ran %v, want %v", got, want)
-	}
-}
-
-func TestAScanHashesAFileWithoutReadingItWhole(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
-	s.scan(t)
-
-	if s.memoryVault.reads != 0 {
-		t.Errorf("the scan read %d files whole to hash them", s.memoryVault.reads)
+	want := []string{linker + " app:file.createText links/tide.md", scanner + " app:file.createText scans/a.pdf"}
+	if got := s.plugins.take(); !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
 	}
 }
 
-func TestATriggerRunsOnlyWhereTheConditionOfItsHandlerIsTrue(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getRecognizeWhenOn())
-	s.plugins.handlerWhen = map[string]string{"app:version.delete": "target.contentType == 'image/png'"}
-	s.config = map[string]any{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isAutomatic": true}}}}
+func TestOnePassRunsAtATime(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractText())
+	s.plugins.hold, s.plugins.started = make(chan struct{}), make(chan struct{}, 2)
+	vault := domain.Vault{ID: "v1"}
+	results := make(chan error, 2)
+	go func() { results <- s.triggers.ExecuteAll(t.Context(), vault) }()
+	<-s.plugins.started
+	go func() { results <- s.triggers.Execute(t.Context(), vault, []string{"scans/a.pdf"}) }()
 
-	if got, want := s.scan(t), []string{scanner + " app:version.delete scans/b.png"}; !slices.Equal(got, want) {
-		t.Errorf("the scan ran %v, want %v", got, want)
+	select {
+	case <-s.plugins.started:
+		t.Fatal("a second pass ran while the first one was running")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(s.plugins.hold)
+	for range 2 {
+		if err := <-results; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := s.plugins.take(); len(got) != 2 {
+		t.Errorf("ran %v, want the file once in each pass", got)
 	}
 }
-
-// sceneConfig is the config of the scene as when conditions read it.
-type sceneConfig struct{ s *scene }
-
-func (c sceneConfig) GetWhenConfig() map[string]any { return c.s.config }

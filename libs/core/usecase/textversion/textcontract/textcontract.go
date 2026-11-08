@@ -19,8 +19,7 @@ type (
 )
 
 var (
-	ErrInvalidVersion    = textport.ErrInvalidVersion
-	ErrNoText            = textport.ErrNoText
-	ErrNotTextPlugin     = textport.ErrNotTextPlugin
-	ErrSourceNotAccepted = textport.ErrSourceNotAccepted
+	ErrInvalidVersion = textport.ErrInvalidVersion
+	ErrNoText         = textport.ErrNoText
+	ErrNotTextPlugin  = textport.ErrNotTextPlugin
 )

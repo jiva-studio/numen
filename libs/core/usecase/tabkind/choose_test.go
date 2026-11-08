@@ -28,6 +28,15 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) pluginport.Plug
 	}
 }
 
+func newChoose(t *testing.T, kinds declared, config pluginport.WhenConfig) *tabkind.Choose {
+	t.Helper()
+	choose, err := tabkind.NewChoose(kinds, notes{}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return choose
+}
+
 func getKinds() declared {
 	return declared{
 		entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault),
@@ -39,7 +48,7 @@ func getKinds() declared {
 }
 
 func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
-	choose := tabkind.NewChoose(getKinds(), notes{}, nil)
+	choose := newChoose(t, getKinds(), nil)
 
 	cases := []struct {
 		name       string
@@ -61,16 +70,19 @@ func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
 }
 
 func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
-	choose := tabkind.NewChoose(declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, notes{}, nil)
+	choose := newChoose(t, declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, nil)
 
 	if got := choose.Execute("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
 	}
 }
 
-func TestChoose_ReturnsNoKindWithoutPlugins(t *testing.T) {
-	if got := tabkind.NewChoose(nil, nil, nil).Execute("plain.md", domain.TypeNote, nil); got != "" {
-		t.Errorf("kind = %q, want none", got)
+func TestNewChooseNeedsTheTabKindsAndTheContentTypes(t *testing.T) {
+	if _, err := tabkind.NewChoose(nil, notes{}, nil); err == nil {
+		t.Error("a choice was made without tab kinds")
+	}
+	if _, err := tabkind.NewChoose(getKinds(), nil, nil); err == nil {
+		t.Error("a choice was made without a content type table")
 	}
 }
 
@@ -83,7 +95,7 @@ func TestChoose_ReadsTheSettingsAsConfig(t *testing.T) {
 	kinds := declared{entry("org.example.viewer", "media", "target.isNote && config.org.example.viewer.isOn == true", domain.RankDefault)}
 	on := settingsOf{"org": map[string]any{"example": map[string]any{"viewer": map[string]any{"isOn": true}}}}
 
-	if got := tabkind.NewChoose(kinds, notes{}, on).Execute("talk.md", domain.TypeNote, nil); got != "media" {
+	if got := newChoose(t, kinds, on).Execute("talk.md", domain.TypeNote, nil); got != "media" {
 		t.Errorf("kind = %q, want media while its setting holds", got)
 	}
 }

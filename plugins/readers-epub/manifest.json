@@ -42,7 +42,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "target.contentType == 'application/epub+zip'"
+        "when": "target.contentType == 'application/epub+zip' && !target.versions.exists(v, v.kind == 'book-text' && v.isValid)"
       }
     ]
   },

@@ -2,34 +2,76 @@ package editor
 
 import (
 	"context"
+	"maps"
+	"slices"
+	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func runTriggers(
-	ctx context.Context, triggers *trigger.Triggers, v domain.Vault, wake <-chan struct{},
-	watch *settings.Watch, report func(error),
-) {
-	var changes <-chan []settings.Setting
-	if watch != nil {
-		var stop func()
-		changes, stop = watch.Execute()
-		defer stop()
+// triggerPasses is the passes of the triggers asked for and not run yet: one over the whole vault, or
+// one over the paths that changed. A new one holds a pass over the whole vault.
+type triggerPasses struct {
+	mu    sync.Mutex
+	isAll bool
+	paths map[string]bool
+	wake  chan struct{}
+}
+
+func newTriggerPasses() *triggerPasses {
+	return &triggerPasses{isAll: true, paths: map[string]bool{}, wake: make(chan struct{}, 1)}
+}
+
+func (q *triggerPasses) requestAll() {
+	q.mu.Lock()
+	q.isAll = true
+	q.mu.Unlock()
+	signal(q.wake)
+}
+
+func (q *triggerPasses) requestPaths(paths []string) {
+	if len(paths) == 0 {
+		return
 	}
+	q.mu.Lock()
+	for _, path := range paths {
+		q.paths[path] = true
+	}
+	q.mu.Unlock()
+	signal(q.wake)
+}
+
+func (q *triggerPasses) take() (bool, []string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	isAll, paths := q.isAll, slices.Sorted(maps.Keys(q.paths))
+	q.isAll, q.paths = false, map[string]bool{}
+	return isAll, paths
+}
+
+func runTriggers(
+	ctx context.Context, triggers *trigger.Triggers, v domain.Vault, passes *triggerPasses,
+	changes <-chan struct{}, report func(error),
+) {
 	for {
-		if err := triggers.Execute(ctx, v); err != nil && ctx.Err() == nil {
+		isAll, paths := passes.take()
+		var err error
+		switch {
+		case isAll:
+			err = triggers.ExecuteAll(ctx, v)
+		case len(paths) > 0:
+			err = triggers.Execute(ctx, v, paths)
+		}
+		if err != nil && ctx.Err() == nil {
 			report(err)
 		}
 		select {
 		case <-ctx.Done():
 			return
-		case <-wake:
-		case _, ok := <-changes:
-			if !ok {
-				changes = nil
-			}
+		case <-passes.wake:
+		case <-changes:
+			passes.requestAll()
 		}
 	}
 }

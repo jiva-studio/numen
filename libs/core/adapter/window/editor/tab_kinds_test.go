@@ -1,6 +1,7 @@
 package editor_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -22,10 +23,14 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 		"Physics.epub":  "an epub\n",
 	})
 	f.read(t)
-	f.installation.Services.SetTabKindChoice(tabkind.NewChoose(tabKinds{
+	choose, err := tabkind.NewChoose(tabKinds{
 		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}},
 		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault}},
-	}, nil, nil))
+	}, notesOnly{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.installation.Services.SetTabKindChoice(choose)
 
 	kinds := getKindsByPath(t, f, "Entropy.md", "links/tide.md", "Physics.epub")
 
@@ -39,3 +44,15 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 		t.Errorf("the book opens in %q, want no tab kind", got)
 	}
 }
+
+// notesOnly gives a note its content type and no other file one.
+type notesOnly struct{}
+
+func (notesOnly) GetContentType(path string) domain.ContentType {
+	if strings.HasSuffix(path, ".md") {
+		return "text/markdown"
+	}
+	return domain.UnknownContentType
+}
+
+func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"md"} }

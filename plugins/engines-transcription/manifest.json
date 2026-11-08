@@ -27,7 +27,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
+        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true && !target.versions.exists(v, v.kind == 'transcript' && v.isValid)"
       }
     ]
   },
@@ -169,7 +169,7 @@
       "key": "transcribeAutomatically",
       "type": "boolean",
       "title": "Transcribe automatically",
-      "description": "Transcribe every recording added to the vault",
+      "description": "Transcribe every recording in the vault that has no transcript. A transcript removed with Delete text is made again",
       "default": false
     }
   ]

@@ -335,6 +335,7 @@ func (c Config) subscribeHost() {
 
 func (c Config) tellHost(batch []settingsport.Setting) {
 	notifyPluginSettings(c.PluginHost, batch, c.handleError)
+	defer c.getResources().pluginChanges.signal()
 	for _, one := range batch {
 		if !slices.Equal(one.Path, profilePath()) {
 			continue

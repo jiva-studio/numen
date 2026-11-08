@@ -26,7 +26,7 @@ func TestAChangeOfTheVersionsOfAFileReachesTheWindow(t *testing.T) {
 func TestAChangedFileIsCheckedForAChangeOfItsLiveVersion(t *testing.T) {
 	state := &State{ChangeEvents: newChangeBroadcaster()}
 	var checked []string
-	report := newChangeReporter(state, indexing.NewWorker(indexing.Config{}), make(chan struct{}, 1), func(paths []string) { checked = append(checked, paths...) })
+	report := newChangeReporter(state, indexing.NewWorker(indexing.Config{}), newTriggerPasses(), func(paths []string) { checked = append(checked, paths...) })
 
 	report([]string{"links/talk.md"}, []string{"scans/page.png"}, false)
 

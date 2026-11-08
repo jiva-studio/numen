@@ -14,7 +14,7 @@ func TestTheHandlerOfCreateTextWritesTheTextOfTheBook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := commands.RunCommand(t.Context(), command.Request{Command: commandCreateText, Path: "book.epub"})
+	result, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "book.epub"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestTheHandlerOfCreateTextNeedsABook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = commands.RunCommand(t.Context(), command.Request{Command: commandCreateText})
+	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Errorf("a run over no file answered %v, want ErrBadArguments", err)
 	}

@@ -14,9 +14,9 @@ var (
 	// is missing or is not JSON Lines of segments, a source that is no other version of the file, or a
 	// source property given with a source or a source hash.
 	ErrInvalidVersion = errors.New("host: the version is not valid")
-	// ErrNotOwner is what a call gets for a version of another plugin, or from a plugin that declares
-	// no text provider handle.
-	ErrNotOwner = errors.New("host: the version is another plugin's")
+	// ErrNotOwner is what a call gets for a version of another plugin, or from a plugin that is not
+	// enabled.
+	ErrNotOwner = errors.New("host: the version is not the plugin's")
 )
 
 // TextPut is what a plugin reports of one of its text versions. The plugin writes the version's

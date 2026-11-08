@@ -15,6 +15,15 @@ const (
 	DeleteMedia = "app:link.deleteMedia"
 )
 
+// IsSharedCommand reports whether the full id is a shared command of the application.
+func IsSharedCommand(id string) bool {
+	switch id {
+	case CreateText, ImportLink, DownloadMedia, DeleteMedia:
+		return true
+	}
+	return false
+}
+
 // ListSharedCommands lists the shared commands of the application in the order commands.json
 // declares them, each with the arguments the palette asks for and the host checks for every handler.
 func ListSharedCommands() []SharedCommand {

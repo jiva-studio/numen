@@ -33,8 +33,8 @@ type pluginSecretAssembly interface {
 	OpenWritePluginSecret() *settings.WriteSecret
 	OpenDeletePluginSecret() *settings.DeleteSecret
 	GetPluginCommands() plugincommand.Commands
-	// GetTabKindChoice is the choice of the kind of tab a note opens in.
-	GetTabKindChoice() *tabkind.Choose
+	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
+	OpenChooseTabKind() *tabkind.Choose
 	// GetPluginCatalog is the catalog of plugins, and nil for an installation with none.
 	GetPluginCatalog() PluginCatalog
 }

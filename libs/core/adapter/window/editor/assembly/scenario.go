@@ -14,7 +14,7 @@ import (
 
 type textScenarioAssembly interface {
 	OpenVaults(moves note.Move) vaults.Scenarios
-	OpenFileMenu() *textversion.FileMenu
+	OpenVersionItems() *textversion.VersionItems
 	OpenFileText() *textversion.FileText
 	OpenPluginData() *textversion.PluginData
 }
@@ -24,6 +24,9 @@ type fileScenarioAssembly interface {
 	// OpenTriggers is the triggers of the enabled plugins over the files of a vault, nil where the
 	// installation runs no plugins.
 	OpenTriggers() *trigger.Triggers
+	// WatchPluginChanges reports each time the host applied settings, which enables, disables and
+	// configures plugins, or forgot the failure of a plugin. The returned function stops the reports.
+	WatchPluginChanges() (<-chan struct{}, func())
 	GetMediaType() *file.GetMediaType
 	GetRefresh() vaults.Refresh
 }

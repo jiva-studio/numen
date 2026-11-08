@@ -76,13 +76,14 @@ type Runtime[H, V any] struct {
 	PluginServicesFn         func() PluginServices
 	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
-	TabKindChoiceFn          func() *tabkind.Choose
+	OpenChooseTabKindFn      func() *tabkind.Choose
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
 	ReportTextFilesChangedFn func(ctx context.Context, v domain.Vault, paths []string) error
-	OpenFileMenuFn           func() *textversion.FileMenu
+	OpenVersionItemsFn       func() *textversion.VersionItems
 	OpenPluginFileFn         func() *file.OpenPluginFile
 	OpenTriggersFn           func() *trigger.Triggers
+	WatchPluginChangesFn     func() (<-chan struct{}, func())
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -168,13 +169,13 @@ func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
 
-// GetTabKindChoice is the choice of the kind of tab a note opens in, which chooses none where the
-// assembly names none.
-func (e Runtime[H, V]) GetTabKindChoice() *tabkind.Choose {
-	if e.TabKindChoiceFn == nil {
-		return tabkind.NewChoose(nil, nil, nil)
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, nil where the assembly names
+// none.
+func (e Runtime[H, V]) OpenChooseTabKind() *tabkind.Choose {
+	if e.OpenChooseTabKindFn == nil {
+		return nil
 	}
-	return e.TabKindChoiceFn()
+	return e.OpenChooseTabKindFn()
 }
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
@@ -188,8 +189,8 @@ func (e Runtime[H, V]) ReportTextFilesChanged(ctx context.Context, v domain.Vaul
 	}
 	return e.ReportTextFilesChangedFn(ctx, v, paths)
 }
-func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu  { return e.OpenFileMenuFn() }
-func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile { return e.OpenPluginFileFn() }
+func (e Runtime[H, V]) OpenVersionItems() *textversion.VersionItems { return e.OpenVersionItemsFn() }
+func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile        { return e.OpenPluginFileFn() }
 
 func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
 	if e.OpenTriggersFn == nil {
@@ -197,6 +198,16 @@ func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
 	}
 	return e.OpenTriggersFn()
 }
+
+// WatchPluginChanges reports each time the host applied settings or forgot the failure of a plugin,
+// and never where the installation runs no plugins.
+func (e Runtime[H, V]) WatchPluginChanges() (<-chan struct{}, func()) {
+	if e.WatchPluginChangesFn == nil {
+		return nil, func() {}
+	}
+	return e.WatchPluginChangesFn()
+}
+
 func (e Runtime[H, V]) GetMediaType() *file.GetMediaType { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)

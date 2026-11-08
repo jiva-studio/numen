@@ -42,7 +42,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "target.contentType == 'application/pdf'"
+        "when": "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'page-text' && v.isValid)"
       }
     ]
   },

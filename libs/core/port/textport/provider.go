@@ -12,8 +12,6 @@ var (
 	// that is not there or is not JSON Lines of segments, or a source that is
 	// no other version of the file.
 	ErrInvalidVersion = errors.New("the version is not valid")
-	// ErrSourceNotAccepted is a source the plugin does not take.
-	ErrSourceNotAccepted = errors.New("the plugin does not take this source")
 )
 
 // TextPlugins is the enabled plugins, which may record text versions.

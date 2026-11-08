@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"slices"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
@@ -15,22 +14,10 @@ import (
 const pluginFlag = "plugin"
 
 func listSharedHandlers(deps Deps, id string) []plugincommand.Entry {
-	if deps.PluginCommands == nil || !plugincommand.IsSharedCommand(id) {
+	if deps.PluginCommands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(listRunnableHandlers(deps), func(one plugincommand.Entry) bool {
-		return one.Command.ID != id
-	})
-}
-
-func listRunnableHandlers(deps Deps) []plugincommand.Entry {
-	list := deps.PluginCommands().List
-	handlers := slices.DeleteFunc(list.ExecuteHandlers(), func(one plugincommand.Entry) bool {
-		return !list.HasBackend(one.PluginID) || plugincommand.HasItems(one.Command)
-	})
-	return slices.SortedStableFunc(slices.Values(handlers), func(a, b plugincommand.Entry) int {
-		return strings.Compare(a.PluginID, b.PluginID)
-	})
+	return deps.PluginCommands().List.ListSharedHandlers(id)
 }
 
 func isOverFile(handlers []plugincommand.Entry) bool {
@@ -51,7 +38,7 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 	if deps.PluginCommands == nil {
 		return
 	}
-	handlers := listRunnableHandlers(deps)
+	handlers := deps.PluginCommands().List.ListBackendHandlers()
 	var ids []string
 	for _, one := range handlers {
 		if !slices.Contains(ids, one.Command.ID) {
@@ -103,9 +90,11 @@ func runSharedCommand(
 	}
 	defer closeInto(&err, closeRun)
 
-	handler, err := pickHandler(handlers, picked, path, func(one plugincommand.Entry) bool {
-		return run.IsAvailable(ctx, v, one, path)
-	})
+	handler, err := run.FindHandler(ctx, v, handlers, picked, path)
+	var several *plugincommand.SeveralHandlersError
+	if errors.As(err, &several) {
+		return fmt.Errorf("%w; pick one with --%s", err, pluginFlag)
+	}
 	if err != nil {
 		return err
 	}
@@ -116,30 +105,4 @@ func runSharedCommand(
 		return err
 	}
 	return writeResult(out, result)
-}
-
-func pickHandler(
-	handlers []plugincommand.Entry, picked, path string, isAvailable func(plugincommand.Entry) bool,
-) (plugincommand.Entry, error) {
-	id := handlers[0].Command.ID
-	if picked != "" {
-		index := slices.IndexFunc(handlers, func(one plugincommand.Entry) bool { return one.PluginID == picked })
-		if index < 0 {
-			return plugincommand.Entry{}, fmt.Errorf("%w: %s handles no %s", plugincommand.ErrUnknownCommand, picked, id)
-		}
-		return handlers[index], nil
-	}
-	available := slices.DeleteFunc(slices.Clone(handlers), func(one plugincommand.Entry) bool { return !isAvailable(one) })
-	switch len(available) {
-	case 0:
-		return plugincommand.Entry{}, fmt.Errorf("%w: no plugin handles %s over %q", plugincommand.ErrBadArguments, id, path)
-	case 1:
-		return available[0], nil
-	}
-	plugins := make([]string, 0, len(available))
-	for _, one := range available {
-		plugins = append(plugins, one.PluginID)
-	}
-	return plugincommand.Entry{}, fmt.Errorf("several plugins handle %s over %q; pick one with --%s: %s",
-		id, path, pluginFlag, strings.Join(plugins, ", "))
 }

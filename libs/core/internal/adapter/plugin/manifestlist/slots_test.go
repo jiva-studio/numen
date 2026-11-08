@@ -1,4 +1,4 @@
-package commandbridge
+package manifestlist
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestListSlots_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	order := 5
-	host := &commandHost{
+	host := &manifestHost{
 		plugins: []pluginport.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Slots: []manifest.SlotEntry{
 				{Slot: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order},

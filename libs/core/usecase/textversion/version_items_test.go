@@ -105,7 +105,7 @@ func (c *commands) GetParts(string) pluginport.PluginParts {
 	return pluginport.PluginParts{HasBackend: true}
 }
 
-func (c *commands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (c *commands) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
 	c.ran = append(c.ran, call)
 	return pluginport.PluginCommandResult{}, nil
 }
@@ -141,10 +141,10 @@ func liveOfKinds(kinds ...string) string {
 	return "version.isLive && version.kind in ['" + strings.Join(kinds, "', '") + "']"
 }
 
-func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {
+func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.VersionItems, *commands) {
 	t.Helper()
 	recorder := &commands{all: entries}
-	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes())
+	menu, err := textversion.NewVersionItems(s.versions, recorder, getPdfTypes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,14 +193,14 @@ func TestFileMenuRejectsAVersionTheCommandDoesNotList(t *testing.T) {
 
 func TestNewFileMenuRequiresVersionsCommandsAndTypes(t *testing.T) {
 	s := newScene(t)
-	if _, err := textversion.NewFileMenu(nil, &commands{}, getPdfTypes()); err == nil {
-		t.Error("a file menu was made without versions")
+	if _, err := textversion.NewVersionItems(nil, &commands{}, getPdfTypes()); err == nil {
+		t.Error("version items were made without versions")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, nil, getPdfTypes()); err == nil {
-		t.Error("a file menu was made without commands")
+	if _, err := textversion.NewVersionItems(s.versions, nil, getPdfTypes()); err == nil {
+		t.Error("version items were made without commands")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, &commands{}, nil); err == nil {
-		t.Error("a file menu was made without a content type table")
+	if _, err := textversion.NewVersionItems(s.versions, &commands{}, nil); err == nil {
+		t.Error("version items were made without a content type table")
 	}
 }
 

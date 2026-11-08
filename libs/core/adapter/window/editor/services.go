@@ -86,8 +86,7 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *fil
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openPluginFile = openPluginFile
 	s.server.mediaTypes = mediaTypes
-	s.Media.statFile = file.NewStatFile(readers)
-	s.Media.openPluginFile = openPluginFile
+	s.Media.resolveAddress = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile)
 	s.Media.mediaTypes = mediaTypes
 }
 
