@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-// isSessionBusReachable reports whether a session bus can be found the way godbus finds it: the
-// address in DBUS_SESSION_BUS_ADDRESS, else the socket <runtime dir>/bus.
 func isSessionBusReachable() bool {
 	if address := os.Getenv("DBUS_SESSION_BUS_ADDRESS"); address != "" && !strings.HasPrefix(address, "autolaunch:") {
 		return true
