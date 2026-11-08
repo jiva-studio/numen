@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
@@ -190,7 +191,8 @@ func (c Config) openFileMenu() *textversion.FileMenu {
 	if c.PluginHost != nil && !c.SafeMode {
 		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
 	}
-	menu, err := textversion.NewFileMenu(c.TextVersions, commands, types)
+	run := plugincommand.NewCommands(commands, types, c.VaultReaders(), c.getWhenConfig()).Run
+	menu, err := textversion.NewFileMenu(c.TextVersions, run, types)
 	if err != nil {
 		c.handleError(err)
 		return nil

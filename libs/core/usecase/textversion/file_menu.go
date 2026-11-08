@@ -18,17 +18,23 @@ import (
 // the run of such a command over one of them.
 type FileMenu struct {
 	versions *Versions
-	commands pluginport.PluginCommands
+	run      CommandRun
 	types    contenttypeport.ContentTypeTable
 }
 
 // NewFileMenu returns the menu of plugin commands for the vault files, using the
 // table to find the type of a file.
-func NewFileMenu(versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
-	if versions == nil || commands == nil || types == nil {
-		return nil, errors.New("file menu: text versions, plugin commands and content type table are required")
+func NewFileMenu(versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
+	if versions == nil || run == nil || types == nil {
+		return nil, errors.New("file menu: text versions, the run of commands and content type table are required")
 	}
-	return &FileMenu{versions: versions, commands: commands, types: types}, nil
+	return &FileMenu{versions: versions, run: run, types: types}, nil
+}
+
+// CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
+// and its arguments.
+type CommandRun interface {
+	Execute(ctx context.Context, v domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
 }
 
 func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
@@ -122,7 +128,7 @@ func (u *FileMenu) RunVersionItem(
 		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
 			ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
 	}
-	return u.commands.RunCommand(ctx, pluginport.PluginCommandCall{
+	return u.run.Execute(ctx, v, pluginport.PluginCommandCall{
 		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
 		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(version)},
 	})

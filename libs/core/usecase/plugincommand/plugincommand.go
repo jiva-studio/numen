@@ -207,6 +207,9 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 
 func checkArguments(declared Command, call Call) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
+		if name == ArgumentVersion && HasItems(declared) {
+			continue
+		}
 		argument, isDeclared := declared.GetArgument(name)
 		if !isDeclared {
 			return fmt.Errorf("%w: %s takes no argument %q", ErrBadArguments, declared.ID, name)

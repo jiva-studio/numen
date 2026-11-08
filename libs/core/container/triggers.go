@@ -11,7 +11,7 @@ func (c Config) openTriggers() *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(
-		commandbridge.Open(c.PluginHost), c.VaultReaders(), c.PluginHost,
+		commandbridge.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders(), c.PluginHost,
 		c.TextVersions, c.getWhenConfig(),
 	)
 }

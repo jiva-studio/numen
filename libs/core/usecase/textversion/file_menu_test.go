@@ -105,7 +105,7 @@ func (c *commands) GetParts(string) pluginport.PluginParts {
 	return pluginport.PluginParts{HasBackend: true}
 }
 
-func (c *commands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (c *commands) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
 	c.ran = append(c.ran, call)
 	return pluginport.PluginCommandResult{}, nil
 }

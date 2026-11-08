@@ -17,12 +17,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// Plugins is the triggers and the handlers of the enabled plugins and the backends that run the
-// handlers.
+// Plugins is the triggers and the handlers of the enabled plugins.
 type Plugins interface {
 	pluginport.PluginTriggers
 	ListHandlers() []pluginport.PluginCommandEntry
-	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+}
+
+// CommandRun runs a handler checked against its declaration, as a run a person starts is: its
+// backend, its condition and its arguments.
+type CommandRun interface {
+	Execute(ctx context.Context, v domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
 }
 
 // Versions gives the text versions of a file as target.versions holds them.
@@ -35,6 +39,7 @@ type Versions interface {
 // Triggers runs the triggers over the files of a vault. One pass over a vault runs at a time.
 type Triggers struct {
 	plugins  Plugins
+	run      CommandRun
 	readers  vaultport.VaultReaders
 	types    contenttypeport.ContentTypeTable
 	versions Versions
@@ -43,13 +48,13 @@ type Triggers struct {
 	mu sync.Mutex
 }
 
-// NewTriggers runs the triggers of the plugins over the files the readers open, the table giving a
-// file its type, the versions giving target.versions and config giving the settings.
+// NewTriggers runs the triggers of the plugins with run over the files the readers open, the table
+// giving a file its type, the versions giving target.versions and config giving the settings.
 func NewTriggers(
-	plugins Plugins, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
+	plugins Plugins, run CommandRun, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
 	versions Versions, config pluginport.WhenConfig,
 ) *Triggers {
-	return &Triggers{plugins: plugins, readers: readers, types: types, versions: versions, config: config}
+	return &Triggers{plugins: plugins, run: run, readers: readers, types: types, versions: versions, config: config}
 }
 
 // ExecuteAll runs every trigger over each file of the vault where its condition and the condition of
@@ -176,7 +181,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 		if !isTrue {
 			continue
 		}
-		_, err = p.triggers.plugins.RunCommand(ctx, pluginport.PluginCommandCall{
+		_, err = p.triggers.run.Execute(ctx, p.vault, pluginport.PluginCommandCall{
 			PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path,
 		})
 		if err == nil {

@@ -169,7 +169,7 @@ func (p *plugins) ListHandlers() []pluginport.PluginCommandEntry {
 	return out
 }
 
-func (p *plugins) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (p *plugins) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
 	if p.hold != nil {
 		p.started <- struct{}{}
 		<-p.hold
@@ -229,7 +229,7 @@ func newScene(t *testing.T, files map[string]string, entries ...pluginport.Plugi
 		versions:    &versions{byPath: map[string][]pluginport.TargetVersion{}},
 		config:      map[string]any{},
 	}
-	s.triggers = trigger.NewTriggers(s.plugins, readers{s.memoryVault}, types{}, s.versions, settingsOf{config: &s.config})
+	s.triggers = trigger.NewTriggers(s.plugins, s.plugins, readers{s.memoryVault}, types{}, s.versions, settingsOf{config: &s.config})
 	return s
 }
 
