@@ -58,7 +58,6 @@ func (h *Host) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
 	return h.secrets.watchPluginConfig(pluginID, fn)
 }
 
-// listPluginIDs returns the ids of the registered plugins in order.
 func (h *Host) listPluginIDs() []string {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -83,9 +82,6 @@ func (h *Host) pruneSecretPermissions() {
 	}
 }
 
-// listInstalledDeclarationsLocked returns the declarations of every plugin installed in the plugin
-// folders whatever its target, and of the registered plugins that are not on disk. A host of one
-// target must not drop the permissions of a plugin that targets another window.
 func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
 	var declarations []pluginport.SecretPermission
 	installed := make(map[string]bool, len(h.installed))

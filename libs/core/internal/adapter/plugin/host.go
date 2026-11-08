@@ -61,64 +61,56 @@ const settingEnabled = "enabled"
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu               sync.RWMutex
-	target           string
-	dirs             []string
-	plugins          map[string]manifest.Discovered
-	supervisors      map[string]*lifecycle.Supervisor
-	endpoints        map[string]transport.Endpoint
-	launcher         Launcher
-	safeMode         bool
-	vaultPath        string
-	bus              *eventbus.Bus
-	settings         map[string]map[string]any
-	performance      string
-	persistHandler   PersistHandler
-	evictTicker      *time.Ticker
-	evictDone        chan struct{}
-	evictWg          sync.WaitGroup
-	isEvictStopped   bool
-	isClosed         bool
-	stdinsMu         sync.Mutex
-	stdins           map[stdinKey]io.Closer
-	processLimits    process.Limits
-	activation       lifecycle.ActivationPolicy
-	onPluginFailed   func(pluginport.PluginFailure)
-	onFailureCleared func(pluginID string)
-	errorHandler     eventbus.ErrorHandler
-	onDisk           map[string]bool
-	discoverMu       sync.RWMutex
-	failedPlugins    []pluginport.PluginFailure
-	problems         []manifestjson.DiscoveryProblem
-	// installed holds every plugin of the last scan whatever its target.
-	installed  []manifest.Discovered
-	hasScanned bool
-	completer  completionport.Completer
-	vault      pluginport.PluginVault
-	texts      pluginport.PluginTexts
-	window     pluginport.PluginWindow
-	vaultList  pluginport.PluginVaultList
-	search     pluginport.PluginSearch
-	// secrets delivers the secrets to the plugins.
-	secrets      *secretDelivery
-	hostEndpoint *hostendpoint.Endpoint
-	hostAddress  string
-	dependencies pluginport.DependencyCatalog
-	work         pluginport.PluginWork
-	builtIns     map[string]builtInPlugin
-	contentTypes contentTypeTable
-	typeCache    contentTypeCache
-	clock        machineport.Clock
-	storage      storageRoots
-	// listenersMu serializes the binding and closing of listener ports. It is locked before mu,
-	// never while mu is locked.
-	listenersMu sync.Mutex
-	// listeners maps each plugin to its bound listener ports by listener name.
-	listeners map[string]map[string]listenerBinding
-	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
-	listenerPorts map[string]map[string]int
-	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
-	// reported, until the plugin activates or its failure is cleared.
+	mu                     sync.RWMutex
+	target                 string
+	dirs                   []string
+	plugins                map[string]manifest.Discovered
+	supervisors            map[string]*lifecycle.Supervisor
+	endpoints              map[string]transport.Endpoint
+	launcher               Launcher
+	safeMode               bool
+	vaultPath              string
+	bus                    *eventbus.Bus
+	settings               map[string]map[string]any
+	performance            string
+	persistHandler         PersistHandler
+	evictTicker            *time.Ticker
+	evictDone              chan struct{}
+	evictWg                sync.WaitGroup
+	isEvictStopped         bool
+	isClosed               bool
+	stdinsMu               sync.Mutex
+	stdins                 map[stdinKey]io.Closer
+	processLimits          process.Limits
+	activation             lifecycle.ActivationPolicy
+	onPluginFailed         func(pluginport.PluginFailure)
+	onFailureCleared       func(pluginID string)
+	errorHandler           eventbus.ErrorHandler
+	onDisk                 map[string]bool
+	discoverMu             sync.RWMutex
+	failedPlugins          []pluginport.PluginFailure
+	problems               []manifestjson.DiscoveryProblem
+	installed              []manifest.Discovered
+	hasScanned             bool
+	completer              completionport.Completer
+	vault                  pluginport.PluginVault
+	texts                  pluginport.PluginTexts
+	window                 pluginport.PluginWindow
+	vaultList              pluginport.PluginVaultList
+	search                 pluginport.PluginSearch
+	secrets                *secretDelivery
+	hostEndpoint           *hostendpoint.Endpoint
+	hostAddress            string
+	dependencies           pluginport.DependencyCatalog
+	work                   pluginport.PluginWork
+	builtIns               map[string]builtInPlugin
+	contentTypes           contentTypeTable
+	typeCache              contentTypeCache
+	clock                  machineport.Clock
+	storage                storageRoots
+	listenersMu            sync.Mutex
+	listeners              map[string]map[string]listenerBinding
+	listenerPorts          map[string]map[string]int
 	reportedTargetFailures map[string]struct{}
 }
 
@@ -1404,13 +1396,10 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	// declared are the secret declarations whose condition holds under the settings in force.
-	declared []manifest.Secret
-	// requested are the groups the installed plugins ask for.
-	requested []string
-	// store and source are filled in by secretDelivery, not by the host.
-	store  pluginport.KeyStore
-	source pluginport.SecretSource
+	declared   []manifest.Secret
+	requested  []string
+	store      pluginport.KeyStore
+	source     pluginport.SecretSource
 }
 
 func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
