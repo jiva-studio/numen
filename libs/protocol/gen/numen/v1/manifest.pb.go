@@ -47,7 +47,7 @@ type Manifest struct {
 	Backend       *ManifestBackend        `protobuf:"bytes,13,opt,name=backend,proto3" json:"backend,omitempty"`
 	Frontend      *ManifestFrontend       `protobuf:"bytes,14,opt,name=frontend,proto3" json:"frontend,omitempty"`
 	Settings      []*ManifestSetting      `protobuf:"bytes,15,rep,name=settings,proto3" json:"settings,omitempty"`
-	Secrets       []*ManifestSecret       `protobuf:"bytes,16,rep,name=secrets,proto3" json:"secrets,omitempty"`
+	Secrets       []*SecretDeclaration    `protobuf:"bytes,16,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	Services      []string                `protobuf:"bytes,17,rep,name=services,proto3" json:"services,omitempty"`
 	SettingsViews []*ManifestSettingsView `protobuf:"bytes,24,rep,name=settings_views,json=settingsViews,proto3" json:"settings_views,omitempty"`
 	// contributes is what the plugin adds to the application, known before its
@@ -178,7 +178,7 @@ func (x *Manifest) GetSettings() []*ManifestSetting {
 	return nil
 }
 
-func (x *Manifest) GetSecrets() []*ManifestSecret {
+func (x *Manifest) GetSecrets() []*SecretDeclaration {
 	if x != nil {
 		return x.Secrets
 	}
@@ -1491,7 +1491,8 @@ func (x *ManifestSetting) GetGenerate() string {
 	return ""
 }
 
-type ManifestSecret struct {
+// SecretDeclaration is a secret, such as an API key, that a plugin asks the host to store.
+type SecretDeclaration struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Title       string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
@@ -1504,20 +1505,20 @@ type ManifestSecret struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ManifestSecret) Reset() {
-	*x = ManifestSecret{}
+func (x *SecretDeclaration) Reset() {
+	*x = SecretDeclaration{}
 	mi := &file_numen_v1_manifest_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ManifestSecret) String() string {
+func (x *SecretDeclaration) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ManifestSecret) ProtoMessage() {}
+func (*SecretDeclaration) ProtoMessage() {}
 
-func (x *ManifestSecret) ProtoReflect() protoreflect.Message {
+func (x *SecretDeclaration) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_manifest_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1529,40 +1530,40 @@ func (x *ManifestSecret) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ManifestSecret.ProtoReflect.Descriptor instead.
-func (*ManifestSecret) Descriptor() ([]byte, []int) {
+// Deprecated: Use SecretDeclaration.ProtoReflect.Descriptor instead.
+func (*SecretDeclaration) Descriptor() ([]byte, []int) {
 	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *ManifestSecret) GetName() string {
+func (x *SecretDeclaration) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *ManifestSecret) GetTitle() string {
+func (x *SecretDeclaration) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *ManifestSecret) GetDescription() string {
+func (x *SecretDeclaration) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *ManifestSecret) GetWhen() *ManifestCondition {
+func (x *SecretDeclaration) GetWhen() *ManifestCondition {
 	if x != nil {
 		return x.When
 	}
 	return nil
 }
 
-func (x *ManifestSecret) GetGroup() string {
+func (x *SecretDeclaration) GetGroup() string {
 	if x != nil {
 		return x.Group
 	}
@@ -1919,7 +1920,7 @@ var File_numen_v1_manifest_proto protoreflect.FileDescriptor
 
 const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xd1\x05\n" +
+	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xd4\x05\n" +
 	"\bManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1933,8 +1934,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\fdependencies\x18\v \x03(\v2\x1c.numen.v1.ManifestDependencyR\fdependencies\x123\n" +
 	"\abackend\x18\r \x01(\v2\x19.numen.v1.ManifestBackendR\abackend\x126\n" +
 	"\bfrontend\x18\x0e \x01(\v2\x1a.numen.v1.ManifestFrontendR\bfrontend\x125\n" +
-	"\bsettings\x18\x0f \x03(\v2\x19.numen.v1.ManifestSettingR\bsettings\x122\n" +
-	"\asecrets\x18\x10 \x03(\v2\x18.numen.v1.ManifestSecretR\asecrets\x12\x1a\n" +
+	"\bsettings\x18\x0f \x03(\v2\x19.numen.v1.ManifestSettingR\bsettings\x125\n" +
+	"\asecrets\x18\x10 \x03(\v2\x1b.numen.v1.SecretDeclarationR\asecrets\x12\x1a\n" +
 	"\bservices\x18\x11 \x03(\tR\bservices\x12E\n" +
 	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12?\n" +
 	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributes\"\x95\x05\n" +
@@ -2050,8 +2051,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bgenerate\x18\x14 \x01(\tR\bgenerateB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\xa3\x01\n" +
-	"\x0eManifestSecret\x12\x12\n" +
+	"\x05_step\"\xa6\x01\n" +
+	"\x11SecretDeclaration\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12/\n" +
@@ -2116,7 +2117,7 @@ var file_numen_v1_manifest_proto_goTypes = []any{
 	(*ManifestOptionsBy)(nil),       // 13: numen.v1.ManifestOptionsBy
 	(*ManifestCondition)(nil),       // 14: numen.v1.ManifestCondition
 	(*ManifestSetting)(nil),         // 15: numen.v1.ManifestSetting
-	(*ManifestSecret)(nil),          // 16: numen.v1.ManifestSecret
+	(*SecretDeclaration)(nil),       // 16: numen.v1.SecretDeclaration
 	(*ManifestNoteType)(nil),        // 17: numen.v1.ManifestNoteType
 	(*ManifestCommandArgument)(nil), // 18: numen.v1.ManifestCommandArgument
 	(*ManifestCommand)(nil),         // 19: numen.v1.ManifestCommand
@@ -2132,7 +2133,7 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	10, // 1: numen.v1.Manifest.backend:type_name -> numen.v1.ManifestBackend
 	11, // 2: numen.v1.Manifest.frontend:type_name -> numen.v1.ManifestFrontend
 	15, // 3: numen.v1.Manifest.settings:type_name -> numen.v1.ManifestSetting
-	16, // 4: numen.v1.Manifest.secrets:type_name -> numen.v1.ManifestSecret
+	16, // 4: numen.v1.Manifest.secrets:type_name -> numen.v1.SecretDeclaration
 	21, // 5: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
 	1,  // 6: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
 	8,  // 7: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
@@ -2151,7 +2152,7 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	25, // 20: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
 	13, // 21: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
 	14, // 22: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	14, // 23: numen.v1.ManifestSecret.when:type_name -> numen.v1.ManifestCondition
+	14, // 23: numen.v1.SecretDeclaration.when:type_name -> numen.v1.ManifestCondition
 	25, // 24: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
 	18, // 25: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
 	25, // 26: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue

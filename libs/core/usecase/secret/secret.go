@@ -9,13 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// Secret is one named secret and the declarations that may read it. Permission names one
-// declaration of a plugin.
-type (
-	Secret     = pluginport.Secret
-	Permission = pluginport.SecretPermission
-)
-
 var (
 	// ErrInvalid is a request whose name, value or target is not acceptable.
 	ErrInvalid = errors.New("invalid secret request")
@@ -33,11 +26,7 @@ type operation struct {
 	gate    *Gate
 }
 
-// Gate lets one operation at a time change the key store and the list and configure the plugins for
-// it. Operations of every window share one gate, so two of them never interleave their steps. The
-// file watch of the settings waits for it too, so a refresh it starts finds the plugins already
-// configured by the operation that wrote the file and the operation, not the watch, gets the error
-// of a plugin that refuses.
+// Gate serializes secret store updates, list writes, and plugin configuration refreshes.
 type Gate struct{ slot chan struct{} }
 
 // NewGate returns a gate that no operation holds.
@@ -109,12 +98,12 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	return nil
 }
 
-func getIndex(list []Secret, id string) int {
-	return slices.IndexFunc(list, func(one Secret) bool { return one.ID == id })
+func getIndex(list []pluginport.Secret, id string) int {
+	return slices.IndexFunc(list, func(one pluginport.Secret) bool { return one.ID == id })
 }
 
-func isNameTaken(list []Secret, group, name, exceptID string) bool {
-	return slices.ContainsFunc(list, func(one Secret) bool {
+func isNameTaken(list []pluginport.Secret, group, name, exceptID string) bool {
+	return slices.ContainsFunc(list, func(one pluginport.Secret) bool {
 		return one.Group == group && one.Name == name && one.ID != exceptID
 	})
 }
@@ -126,7 +115,7 @@ func checkName(kind, name string) error {
 	return nil
 }
 
-func listPluginIDs(allowed []Permission) []string {
+func listPluginIDs(allowed []pluginport.DeclarationKey) []string {
 	var ids []string
 	for _, one := range allowed {
 		if !slices.Contains(ids, one.Plugin) {
@@ -184,7 +173,7 @@ func NewSecrets(
 type NoPlugins struct{}
 
 // ListDeclarations returns no declaration.
-func (NoPlugins) ListDeclarations() []Permission { return nil }
+func (NoPlugins) ListDeclarations() []pluginport.DeclarationKey { return nil }
 
 // Refresh configures no plugin.
 func (NoPlugins) Refresh(context.Context, ...string) error { return nil }

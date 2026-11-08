@@ -176,7 +176,7 @@ type Manifest struct {
 	Backend          Backend
 	Frontend         *Frontend
 	Settings         []Setting
-	Secrets          []Secret
+	Secrets          []SecretDeclaration
 	Services         []string
 	SettingsViews    []SettingsView
 	Contributes      Contributes
@@ -426,7 +426,7 @@ func (m Manifest) listSecretIssues() []error {
 	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
 }
 
-func listSecretGroupIssues(secret Secret) []error {
+func listSecretGroupIssues(secret SecretDeclaration) []error {
 	group := secret.Group
 	if group == "" {
 		return nil
@@ -440,9 +440,9 @@ func listSecretGroupIssues(secret Secret) []error {
 	return nil
 }
 
-func listRepeatedSecretIssues(secrets []Secret) []error {
+func listRepeatedSecretIssues(secrets []SecretDeclaration) []error {
 	var issues []error
-	byName := make(map[string][]Secret, len(secrets))
+	byName := make(map[string][]SecretDeclaration, len(secrets))
 	for _, secret := range secrets {
 		byName[secret.Name] = append(byName[secret.Name], secret)
 	}
@@ -466,7 +466,7 @@ func listRepeatedSecretIssues(secrets []Secret) []error {
 	return issues
 }
 
-func isDisjoint(declared []Secret) bool {
+func isDisjoint(declared []SecretDeclaration) bool {
 	values := make(map[string]bool)
 	for _, secret := range declared {
 		if secret.When == nil || secret.When.Setting != declared[0].When.Setting {

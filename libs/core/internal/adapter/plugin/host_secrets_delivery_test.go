@@ -25,7 +25,7 @@ func (b brokenKeys) GetKey(ctx context.Context, name string) (string, error) {
 }
 
 func getTwoSecrets() pluginport.SecretSource {
-	allowed := []pluginport.SecretPermission{{Plugin: secretPluginID, Name: declared}}
+	allowed := []pluginport.DeclarationKey{{Plugin: secretPluginID, Name: declared}}
 	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
 		return []pluginport.Secret{
 			{ID: "s00000001", Name: "First", Group: "openrouter", Allowed: allowed},
@@ -34,9 +34,7 @@ func getTwoSecrets() pluginport.SecretSource {
 	}}
 }
 
-// A declaration whose values cannot all be read is sent with the values read before the failure, so
-// the plugin drops the rest, and the error is still returned.
-func TestADeclarationWithAFailedReadIsSentWithTheValuesThatWereRead(t *testing.T) {
+func TestDeclarationWithFailedReadSendsReadValues(t *testing.T) {
 	cases := map[string]struct {
 		broken string
 		want   []string

@@ -9,6 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
 func newSecretError(err error) error {
@@ -96,7 +97,7 @@ func (h *Handler) MoveSecret(
 	return connect.NewResponse(&v1.MoveSecretResponse{}), nil
 }
 
-// RenameSecretGroup changes the group of all the secrets of a group the person made.
+// RenameSecretGroup changes the group name for all secrets in a custom group.
 func (h *Handler) RenameSecretGroup(
 	ctx context.Context, r *connect.Request[v1.RenameSecretGroupRequest],
 ) (*connect.Response[v1.RenameSecretGroupResponse], error) {
@@ -116,7 +117,7 @@ func (h *Handler) AllowPluginSecret(
 	if err := h.checkSecrets(); err != nil {
 		return nil, err
 	}
-	permission := secret.Permission{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
+	permission := setting.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
 	if err := h.Secrets.Allow.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
@@ -130,7 +131,7 @@ func (h *Handler) DenyPluginSecret(
 	if err := h.checkSecrets(); err != nil {
 		return nil, err
 	}
-	permission := secret.Permission{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
+	permission := setting.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
 	if err := h.Secrets.Deny.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
@@ -150,7 +151,7 @@ func (h *Handler) DeleteSecretGroup(
 	return connect.NewResponse(&v1.DeleteSecretGroupResponse{}), nil
 }
 
-// ListSecretStates tells for each secret whether its value is on this machine.
+// ListSecretStates reports for each secret whether its value is stored on this machine.
 func (h *Handler) ListSecretStates(
 	ctx context.Context, _ *connect.Request[v1.ListSecretStatesRequest],
 ) (*connect.Response[v1.ListSecretStatesResponse], error) {
@@ -190,12 +191,12 @@ func newWireSecretMenus(menus []secret.Menu) []*v1.SecretMenu {
 	return wire
 }
 
-func newWireStoredSecrets(list []secret.Secret) []*v1.Secret {
+func newWireStoredSecrets(list []setting.Secret) []*v1.Secret {
 	secrets := make([]*v1.Secret, 0, len(list))
 	for _, one := range list {
-		allowed := make([]*v1.SecretPermission, 0, len(one.Allowed))
+		allowed := make([]*v1.DeclarationKey, 0, len(one.Allowed))
 		for _, permission := range one.Allowed {
-			allowed = append(allowed, &v1.SecretPermission{
+			allowed = append(allowed, &v1.DeclarationKey{
 				PluginId: permission.Plugin, Name: permission.Name, Group: permission.Group,
 			})
 		}

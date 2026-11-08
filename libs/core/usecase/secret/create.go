@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"slices"
+
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 // Create adds a secret at the end of the list, which is the end of its group, and keeps its value in the key store.
@@ -33,11 +35,11 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 		if err := u.setValue(ctx, id, value); err != nil {
 			return nil, err
 		}
-		change := func(list []Secret) ([]Secret, error) {
+		change := func(list []pluginport.Secret) ([]pluginport.Secret, error) {
 			if isNameTaken(list, group, name, "") {
 				return nil, newInvalidError("the name is taken in the group")
 			}
-			return append(slices.Clone(list), Secret{ID: id, Name: name, Group: group}), nil
+			return append(slices.Clone(list), pluginport.Secret{ID: id, Name: name, Group: group}), nil
 		}
 		if err := u.ledger.ChangeSecrets(change); err != nil {
 			return nil, errors.Join(err, u.deleteValue(context.WithoutCancel(ctx), id))
@@ -50,7 +52,7 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 	return id, nil
 }
 
-func (u *Create) makeID(list []Secret) (string, error) {
+func (u *Create) makeID(list []pluginport.Secret) (string, error) {
 	for {
 		id, err := u.newID()
 		if err != nil || getIndex(list, id) < 0 {

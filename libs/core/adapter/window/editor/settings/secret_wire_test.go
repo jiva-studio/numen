@@ -6,11 +6,10 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-// The group of a declaration travels with the secret a plugin asks for, and the plugin carries no value.
-func TestAPluginTravelsWithTheGroupOfItsSecretDeclarations(t *testing.T) {
+func TestNewWirePluginInfosIncludesSecretDeclarations(t *testing.T) {
 	infos := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "md.numen.sample",
-		Secrets: []setting.PluginSecret{
+		Secrets: []setting.SecretDeclaration{
 			{Name: "apiKey", Title: "API key", Description: "Key of the service", Group: "openrouter"},
 			{Name: "orgId", Title: "Organization"},
 		},

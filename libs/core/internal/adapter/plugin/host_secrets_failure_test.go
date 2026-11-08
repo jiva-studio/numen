@@ -95,9 +95,9 @@ func (l *listing) source() pluginport.SecretSource {
 	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
 		l.mu.Lock()
 		defer l.mu.Unlock()
-		var allowed []pluginport.SecretPermission
+		var allowed []pluginport.DeclarationKey
 		for _, id := range l.plugins {
-			allowed = append(allowed, pluginport.SecretPermission{Plugin: id, Name: declared})
+			allowed = append(allowed, pluginport.DeclarationKey{Plugin: id, Name: declared})
 		}
 		return []pluginport.Secret{{ID: secretID, Name: l.name, Group: l.group, Allowed: allowed}}, nil
 	}}
@@ -166,7 +166,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	t.Cleanup(server.Close)
 	host.plugins[pluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
 		ID:      pluginID,
-		Secrets: []pluginport.PluginSecret{{Name: declared, Title: "API key"}},
+		Secrets: []pluginport.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}}
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
@@ -176,10 +176,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	return probe
 }
 
-// A plugin whose Configure fails does not undo the operation. The operation returns an error that
-// names the plugin and holds no value, even when the plugin put the value in its own error text. The
-// plugin is not marked: no failure is passed on and it may be started again.
-func TestAFailedConfigureKeepsTheChangeAndNamesThePluginWithoutTheValue(t *testing.T) {
+func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	failed := &collectFailures{}
 	host.SetOnPluginFailed(failed.add)
@@ -216,9 +213,7 @@ func TestAFailedConfigureKeepsTheChangeAndNamesThePluginWithoutTheValue(t *testi
 	}
 }
 
-// A refresh does not send again the list that a send just failed with, so a failure reaches the
-// person once, with the operation that caused it.
-func TestARefreshAfterAFailedSendDoesNotSendTheSameListAgain(t *testing.T) {
+func TestRefreshSkipsSameRejectedSecretList(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	reported := &collectErrors{}
 	host.SetErrorHandler(reported.add)
@@ -306,9 +301,7 @@ func TestARestartedPluginIsSentTheListThatFailedBefore(t *testing.T) {
 	}
 }
 
-// The activation of a plugin sends to it although an earlier send failed with the same list, and
-// when that one fails too, the person is notified once and a bare refresh does not send again.
-func TestAFailedActivationConfigureIsReportedOnceAndNotSentAgainByARefresh(t *testing.T) {
+func TestFailedActivationConfigureReportedOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	reported := &collectErrors{}
 	host.SetErrorHandler(reported.add)
@@ -341,9 +334,7 @@ func TestAFailedActivationConfigureIsReportedOnceAndNotSentAgainByARefresh(t *te
 	}
 }
 
-// The next operation that changes the list of a plugin whose Configure failed sends again, and the
-// plugin ends with the list of that operation.
-func TestTheNextOperationThatChangesTheListOfAFailedPluginSendsAgain(t *testing.T) {
+func TestOperationUpdatingFailedPluginListSendsConfigure(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
 	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
@@ -361,9 +352,7 @@ func TestTheNextOperationThatChangesTheListOfAFailedPluginSendsAgain(t *testing.
 	}
 }
 
-// An operation that leaves the list of a failing plugin as it is does not send to it, so it neither
-// fails nor waits for it.
-func TestAnOperationThatDoesNotChangeTheListOfAFailingPluginDoesNotSendToIt(t *testing.T) {
+func TestUnrelatedOperationSkipsFailedPlugin(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
 	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
@@ -379,11 +368,7 @@ func TestAnOperationThatDoesNotChangeTheListOfAFailingPluginDoesNotSendToIt(t *t
 	}
 }
 
-// A plugin that never answers delays the operation by the Configure timeout, once, and the
-// operation returns an error that names it and says the call timed out. The operations that follow,
-// among them the refresh the operation's own settings event causes, send nothing to the plugin and
-// are not delayed.
-func TestAHungConfigureDelaysTheOperationByTheTimeoutOnce(t *testing.T) {
+func TestHungConfigureTimesOutOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	entered, _ := probe.setHold(t)
 
@@ -450,8 +435,7 @@ func TestNotifyingAHungPluginWaitsForTheTimeoutOnce(t *testing.T) {
 	}
 }
 
-// The operation returns after the plugin answered, so the plugin holds the new list by then.
-func TestTheOperationReturnsOnlyAfterThePluginAnswered(t *testing.T) {
+func TestOperationWaitsForConfigureResponse(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.mu.Lock()
 	probe.delay = 300 * time.Millisecond
@@ -466,9 +450,7 @@ func TestTheOperationReturnsOnlyAfterThePluginAnswered(t *testing.T) {
 	}
 }
 
-// A Configure handler that asks the host for another refresh does not deadlock the round: the
-// refresh waits for the lock until its own context ends, and the round and the lock go on.
-func TestAConfigureHandlerThatCallsBackIntoTheHostDoesNotDeadlockTheRound(t *testing.T) {
+func TestConfigureCallbackDoesNotDeadlockRefresh(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	source.rename("Renamed")
 	nested := make(chan error, 1)
@@ -505,9 +487,7 @@ func TestAConfigureHandlerThatCallsBackIntoTheHostDoesNotDeadlockTheRound(t *tes
 	}
 }
 
-// A refresh that comes while a plugin awaits the Configure of its activation does not send it an
-// older list: the plugin ends with one call, carrying the list as it is.
-func TestARefreshBeforeTheActivationConfigureSendsOneCallWithTheNewList(t *testing.T) {
+func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
@@ -535,9 +515,7 @@ func TestARefreshBeforeTheActivationConfigureSendsOneCallWithTheNewList(t *testi
 	}
 }
 
-// A refresh that comes while the Configure of the activation is on its way waits for it, and then
-// sends the new list, so the plugin ends with it.
-func TestARefreshDuringTheActivationConfigureWaitsAndThenSendsTheNewList(t *testing.T) {
+func TestRefreshDuringActivationConfigureWaitsThenSendsLatestList(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()

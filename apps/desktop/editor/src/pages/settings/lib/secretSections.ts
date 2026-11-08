@@ -4,7 +4,7 @@
  */
 import type {
   PluginInfo,
-  PluginSecret,
+  SecretDeclaration,
   Secret,
   SecretMenu,
   SecretSection,
@@ -24,7 +24,7 @@ export interface Declaration {
 }
 
 /** The declaration of one secret of a plugin. */
-export function getDeclaration(plugin: PluginInfo, secret: PluginSecret): Declaration {
+export function getDeclaration(plugin: PluginInfo, secret: SecretDeclaration): Declaration {
   return {
     pluginId: plugin.id,
     pluginName: plugin.name,
@@ -40,11 +40,7 @@ export function getDeclarations(plugins: readonly PluginInfo[]): readonly Declar
   return plugins.flatMap((plugin) => plugin.secrets.map((one) => getDeclaration(plugin, one)))
 }
 
-/**
- * The sections of the page of secrets: the sections the core ordered, then the groups the person
- * made in this window that hold no secret yet, in the order they were added. Each secret gets
- * the state of its value; a secret with no state yet has no value.
- */
+/** Builds the secret sections for the page, appending empty local groups and value states. */
 export function createPageSections(
   sections: readonly SecretSection[],
   localGroups: readonly string[],
@@ -107,7 +103,7 @@ export function hasGroupSecrets(
   return sections.some((one) => one.group === declaration.group && one.secrets.length > 0)
 }
 
-/** What the person asked to delete: one secret, or every secret of a group. */
+/** A secret or secret group selected for deletion. */
 export type DeletionTarget =
   | { readonly kind: 'secret'; readonly secret: Secret }
   | { readonly kind: 'group'; readonly section: SecretSection }
@@ -117,7 +113,7 @@ export function getDeletionIds(target: DeletionTarget): readonly string[] {
   return target.kind === 'secret' ? [target.secret.id] : target.section.secrets.map((one) => one.id)
 }
 
-/** The question the confirmation asks, naming the plugins that lose a secret. */
+/** Returns the confirmation message for deleting a secret or group. */
 export function getDeletionText(target: DeletionTarget, plugins: readonly PluginInfo[]): string {
   if (target.kind === 'secret') {
     return WORDS.secretDeleteAsking(target.secret.name, getReaderNames(target.secret, plugins))

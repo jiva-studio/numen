@@ -22,14 +22,14 @@ func (h *Host) SetSecretSource(source pluginport.SecretSource) {
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
 // plugin ids and then of the manifest.
-func (h *Host) ListDeclarations() []pluginport.SecretPermission {
+func (h *Host) ListDeclarations() []pluginport.DeclarationKey {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.listDeclarationsLocked()
 }
 
-func (h *Host) listDeclarationsLocked() []pluginport.SecretPermission {
-	var declarations []pluginport.SecretPermission
+func (h *Host) listDeclarationsLocked() []pluginport.DeclarationKey {
+	var declarations []pluginport.DeclarationKey
 	for _, p := range h.getPluginsInOrderLocked() {
 		declarations = appendDeclarations(declarations, p)
 	}
@@ -76,8 +76,8 @@ func (h *Host) pruneSecretPermissions() {
 	}
 }
 
-func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
-	var declarations []pluginport.SecretPermission
+func (h *Host) listInstalledDeclarationsLocked() []pluginport.DeclarationKey {
+	var declarations []pluginport.DeclarationKey
 	installed := make(map[string]bool, len(h.installed))
 	for _, p := range h.installed {
 		installed[p.Manifest.ID] = true
@@ -91,9 +91,9 @@ func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
-func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.Discovered) []pluginport.SecretPermission {
+func appendDeclarations(declarations []pluginport.DeclarationKey, p manifest.Discovered) []pluginport.DeclarationKey {
 	for _, declaration := range p.Manifest.Secrets {
-		declarations = append(declarations, pluginport.SecretPermission{
+		declarations = append(declarations, pluginport.DeclarationKey{
 			Plugin: p.Manifest.ID, Name: declaration.Name, Group: declaration.Group,
 		})
 	}
