@@ -12,9 +12,9 @@ Feature: Restore tabs
     Then the tab "assets/shore.pdf" is at page "2"
 
   Scenario: A book tab is restored on the same page
-    Given the tab "assets/sample.epub" is open at page "2"
+    Given the tab "assets/ledger.epub" is open at page "2"
     When the window starts again
-    Then the tab "assets/sample.epub" is at page "2"
+    Then the tab "assets/ledger.epub" is at page "2"
 
   Scenario: A recording tab is restored at the same time
     Given the tab "assets/talk.mp3" is open at time "2:00"

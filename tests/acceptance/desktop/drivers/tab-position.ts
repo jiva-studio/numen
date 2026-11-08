@@ -25,7 +25,7 @@ const getPanel = (page: Page, file: string): Locator =>
 
 const getPageField = (panel: Locator): Locator => panel.getByRole('spinbutton', { name: 'Page' })
 
-const getReading = (panel: Locator): Locator => panel.locator('.book-tab__reading')
+const getCount = (panel: Locator): Locator => panel.locator('.book__count')
 
 const getPlayer = (panel: Locator): Locator => panel.getByRole('group', { name: 'Recording' })
 
@@ -69,10 +69,10 @@ const leavePdfAt = async (page: Page, panel: Locator, file: string, target: numb
 }
 
 const leaveBookAt = async (panel: Locator, target: number): Promise<void> => {
-  const position = getReading(panel)
+  const count = getCount(panel)
   for (let next = 2; next <= target; next += 1) {
     await panel.locator('.book-tab').press('PageDown')
-    await expect(position).toContainText(new RegExp(`^${next} of \\d+`))
+    await expect(count).toHaveText(new RegExp(`^${next} of \\d+$`))
   }
 }
 
@@ -100,6 +100,6 @@ export const expectTabAt = async (page: Page, file: string, place: string, value
   const panel = getPanel(page, file)
   const kind = await readKind(panel, file, place)
   if (kind === 'PDF Reader') await expect(getPageField(panel)).toHaveValue(value)
-  else if (kind === 'EPUB Reader') await expect(getReading(panel)).toContainText(new RegExp(`^${value} of \\d+`))
+  else if (kind === 'EPUB Reader') await expect(getCount(panel)).toHaveText(new RegExp(`^${value} of \\d+$`))
   else await expect(getPlayer(panel)).toContainText(value)
 }
