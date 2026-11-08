@@ -8,6 +8,8 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { summarizeBatch, summarizeTasks } from '../lib/summary'
+import { type ChipState } from '../lib/chipDisplay'
+import { useChipDisplay } from './useChipDisplay'
 import { WORDS as words } from '../lib/words'
 import TaskPopover from './TaskPopover.vue'
 import './tasksStatus.css'
@@ -35,14 +37,19 @@ const summary = computed(() => summarizeTasks(props.tasks))
 const knownIds = ref<ReadonlySet<string>>(new Set())
 const batch = computed(() => summarizeBatch(props.tasks, knownIds.value))
 const hasFailed = computed(() => summary.value.failedCount > 0)
+const liveChip = computed<ChipState>(() => ({
+  ...batch.value,
+  isActive: summary.value.activeCount > 0,
+}))
+const chip = useChipDisplay(() => liveChip.value)
 const summaryText = computed(() => {
-  if (summary.value.activeCount === 0) return words.idle
-  return `${batch.value.done} ${words.of} ${batch.value.total}`
+  if (!chip.value.isActive) return words.idle
+  return `${chip.value.done} ${words.of} ${chip.value.total}`
 })
 const label = computed(() => {
   const failed = hasFailed.value ? `${summary.value.failedCount} ${words.failed}` : ''
-  if (summary.value.activeCount === 0) return failed || words.noneRunning
-  const progressText = `${batch.value.done} ${words.of} ${batch.value.total} ${words.tasksDone}`
+  if (!chip.value.isActive) return failed || words.noneRunning
+  const progressText = `${chip.value.done} ${words.of} ${chip.value.total} ${words.tasksDone}`
   return failed ? `${progressText}, ${failed}` : progressText
 })
 
@@ -51,7 +58,7 @@ const RING_SIZE = 12
 const RING_STROKE = 2
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS
-const ringOffset = computed(() => RING_LENGTH * (1 - batch.value.fraction))
+const ringOffset = computed(() => RING_LENGTH * (1 - chip.value.fraction))
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
@@ -81,7 +88,7 @@ function onClose() {
   <div
     ref="root"
     class="tasks-status"
-    :class="{ 'tasks-status--active': summary.activeCount > 0 }"
+    :class="{ 'tasks-status--active': chip.isActive }"
     data-tasks-status
   >
     <button
@@ -110,7 +117,7 @@ function onClose() {
           :stroke-width="RING_STROKE"
         />
         <circle
-          v-if="summary.activeCount > 0 && batch.fraction > 0"
+          v-if="chip.isActive && chip.fraction > 0"
           class="tasks-status__ring-fill"
           :cx="RING_SIZE / 2"
           :cy="RING_SIZE / 2"
