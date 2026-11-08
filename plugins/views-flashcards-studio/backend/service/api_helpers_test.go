@@ -36,6 +36,7 @@ func openStream[Req, Res any](
 	go func() {
 		defer close(s.finished)
 		defer close(s.messages)
+		defer cancel()
 		err := method(ctx, req, func(res *Res) error {
 			select {
 			case s.messages <- res:

@@ -38,8 +38,8 @@ func writePage(ctx context.Context, store host.Store, key string, link address.U
 	// gomutants:disable-next-line BRANCH_IF reason="the template writes to a buffer, which does not fail"
 	if err := parsed.Execute(&page, struct {
 		Address string
-		Player  template.URL
-	}{Address: string(link), Player: template.URL(player)}); err != nil {
+		Player  string
+	}{Address: string(link), Player: player}); err != nil {
 		return "", false, err
 	}
 	name := key + pageExt

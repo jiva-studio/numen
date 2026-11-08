@@ -212,22 +212,23 @@ func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 	for _, name := range getRemovedToolNames() {
 		removed[name] = regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`)
 	}
+	tree := os.DirFS(root)
 	for _, top := range []string{"plugins", "docs"} {
-		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
+		err := fs.WalkDir(tree, top, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 			if entry.IsDir() {
 				switch entry.Name() {
 				case "node_modules", ".git", "dist", "build":
-					return filepath.SkipDir
+					return fs.SkipDir
 				}
 				return nil
 			}
 			if isTestFile(entry.Name()) || !entry.Type().IsRegular() {
 				return nil
 			}
-			content, err := os.ReadFile(path)
+			content, err := fs.ReadFile(tree, path)
 			if err != nil {
 				return err
 			}
@@ -236,8 +237,7 @@ func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 			}
 			for name, pattern := range removed {
 				if pattern.Match(content) {
-					rel := strings.TrimPrefix(path, root)
-					t.Errorf("%s names the removed tool %s", rel, name)
+					t.Errorf("%s names the removed tool %s", path, name)
 				}
 			}
 			return nil
