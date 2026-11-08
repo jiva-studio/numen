@@ -7,11 +7,6 @@
       "about": "creates a text version of a file"
     },
     {
-      "id": "app:version.delete",
-      "title": "Delete text",
-      "about": "deletes a text version of a file"
-    },
-    {
       "id": "app:link.import",
       "title": "Import link",
       "about": "creates a link note from a web address",

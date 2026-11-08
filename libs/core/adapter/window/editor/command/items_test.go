@@ -147,7 +147,7 @@ func TestListCommandItems_AnswersOneListPerCommandInTheOrderOfTheRequest(t *test
 func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 	items := &versionItems{}
 	res, err := newItemsHandler(items).RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
-		PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", Argument: "org.example.ears/ears",
+		PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", ItemId: "org.example.ears/ears",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -163,9 +163,9 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 
 func TestRunPluginCommand_RejectsAnItemNotListedAndAnArgumentToACommandWithoutItems(t *testing.T) {
 	for name, request := range map[string]*v1.RunPluginCommandRequest{
-		"an item not offered":     {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", Argument: "org.example.ears/older"},
+		"an item not offered":     {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", ItemId: "org.example.ears/older"},
 		"no item":                 {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3"},
-		"a command without items": {PluginId: "md.numen.tools.updater", Command: "updater.check", Argument: "org.example.ears/ears"},
+		"a command without items": {PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "org.example.ears/ears"},
 	} {
 		items := &versionItems{}
 		res, err := newItemsHandler(items).RunPluginCommand(t.Context(), connect.NewRequest(request))

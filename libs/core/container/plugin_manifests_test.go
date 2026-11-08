@@ -406,7 +406,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 		t.Errorf("a key inside another word is found as read: %v", got)
 	}
 	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
-	triggered.Contributes.Triggers = []pluginport.PluginTrigger{{On: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
+	triggered.Contributes.Triggers = []pluginport.PluginTrigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
 	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
 		t.Errorf("a setting the condition of a trigger reads is found unread: %v", got)
 	}

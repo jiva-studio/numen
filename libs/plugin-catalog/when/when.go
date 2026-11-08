@@ -19,6 +19,7 @@ const (
 	kindBool kind = iota
 	kindString
 	kindMap
+	kindList
 )
 
 // variable is one variable a condition may name.
@@ -35,6 +36,8 @@ func (k kind) getType() *cel.Type {
 		return cel.StringType
 	case kindMap:
 		return cel.MapType(cel.StringType, cel.DynType)
+	case kindList:
+		return cel.ListType(cel.MapType(cel.StringType, cel.DynType))
 	}
 	return cel.BoolType
 }

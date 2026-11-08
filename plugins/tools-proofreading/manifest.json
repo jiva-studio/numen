@@ -14,21 +14,6 @@
         "icon": "spell-check",
         "when": "version.isLive && version.kind != ''"
       }
-    ],
-    "slots": [
-      {
-        "slot": "fileTree.context",
-        "command": "app:version.delete",
-        "group": "3-text",
-        "order": 90
-      }
-    ],
-    "handlers": [
-      {
-        "command": "app:version.delete",
-        "title": "Delete proofreading",
-        "when": "version.pluginId == 'md.numen.tools.proofreading' && version.kind == 'proofreading'"
-      }
     ]
   },
   "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],

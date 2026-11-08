@@ -58,6 +58,10 @@ message NameMatch {
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   string type = 4;
+
+  // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+  // where none holds.
+  string tab_kind = 5;
 }
 
 // SearchMode is how a search is asked. Each mode is an order of its own, and a
@@ -134,4 +138,8 @@ message Passage {
   // The selector of the text version segment the hit is in, as JSON, and empty
   // for a note. It locates the hit in the file; the SDK documents its keys.
   string selector = 10;
+
+  // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+  // where none holds, and for a source that is not a note.
+  string tab_kind = 11;
 }

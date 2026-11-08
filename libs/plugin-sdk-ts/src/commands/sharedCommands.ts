@@ -6,8 +6,6 @@
 export const SHARED_COMMANDS = [
   // Creates a text version of a file.
   { id: 'app:file.createText', title: 'Create text', arguments: [] },
-  // Deletes a text version of a file.
-  { id: 'app:version.delete', title: 'Delete text', arguments: [] },
   // Creates a link note from a web address.
   {
     id: 'app:link.import',

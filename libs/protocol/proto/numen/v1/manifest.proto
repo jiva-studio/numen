@@ -132,8 +132,8 @@ message ManifestHandler {
 
 // ManifestTrigger runs the plugin's own handler of a shared command over the file of an event.
 message ManifestTrigger {
-  // on is the event of events.json, such as file.added.
-  string on = 1;
+  // event is the event of events.json, such as file.added.
+  string event = 1;
   // command is the full id of the shared command whose handler of this plugin runs.
   string command = 2;
   // when is the CEL condition over the file and the settings under which the trigger runs. Empty is
