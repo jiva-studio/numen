@@ -446,10 +446,10 @@ describe('the window buttons', () => {
 
 describe('the window buttons by the setting', () => {
   it('stand at the right on Windows, and at the left when the setting says so', () => {
-    const left = mountBar({ platform: 'windows', settings: { buttons: 'mac' } }).bar
+    const macBar = mountBar({ platform: 'windows', settings: { buttons: 'mac' } }).bar
     const right = mountBar({ platform: 'windows', settings: { buttons: 'windows' } }).bar
 
-    expect(left.find('[data-title-bar]').attributes('data-controls')).toBe('mac')
+    expect(macBar.find('[data-title-bar]').attributes('data-controls')).toBe('mac')
     expect(right.find('[data-title-bar]').attributes('data-controls')).toBe('windows')
   })
 

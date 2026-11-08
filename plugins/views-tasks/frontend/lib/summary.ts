@@ -60,9 +60,9 @@ export function summarizeBatch(
   if (total === 0) return { total: 0, done: 0, fraction: 0 }
   const active = tasks.filter(isActive)
   const failedIds = new Set(tasks.filter((task) => task.state === 'failed').map((task) => task.id))
-  const done = [...seen].filter(
+  const finishedCount = [...seen].filter(
     (id) => !failedIds.has(id) && !active.some((task) => task.id === id),
   ).length
   const partial = active.reduce((sum, task) => sum + (getProgress(task) ?? 0) / 100, 0)
-  return { total, done, fraction: Math.min(1, (done + partial) / total) }
+  return { total, done: finishedCount, fraction: Math.min(1, (finishedCount + partial) / total) }
 }

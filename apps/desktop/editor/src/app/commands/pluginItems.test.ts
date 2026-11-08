@@ -119,7 +119,7 @@ describe('the commands with items in the palette', () => {
     ])
   })
 
-  it('are read again over the target that comes to the front while the palette is open', async () => {
+  it('are read again when the target changes while the palette is open', async () => {
     const front = ref({ ...TARGET, path: 'assets', file: 'assets', isFolder: true })
     const listCommandItems = vi.fn(async (_id: string, target: { path: string }) =>
       target.path.endsWith('.pdf') ? [{ id: 'pdf', title: 'Extract text layer' }] : [],

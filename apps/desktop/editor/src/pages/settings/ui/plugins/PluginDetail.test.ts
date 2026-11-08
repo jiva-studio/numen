@@ -789,7 +789,7 @@ describe('an enum whose value is not offered on this platform', () => {
     document.body.append(host)
     const { wrapper, recordedWrites } = createDetail(buttons, file, platform, host)
     const select = wrapper.findComponent(Select)
-    const shown = wrapper.find('[data-testid="setting-buttons"]').text()
+    const selectedText = wrapper.find('[data-testid="setting-buttons"]').text()
     await select.find('button').trigger('click')
     await flushPromises()
     const checked = [...document.body.querySelectorAll('[role="menuitemradio"][aria-checked="true"]')].map((one) =>
@@ -797,13 +797,13 @@ describe('an enum whose value is not offered on this platform', () => {
     )
     wrapper.unmount()
     host.remove()
-    return { shown, checked, recordedWrites, value: select.props('modelValue') }
+    return { selectedText, checked, recordedWrites, value: select.props('modelValue') }
   }
 
   it('shows Left, closed and open, on macOS where the default is Right', async () => {
     const result = await look('darwin')
 
-    expect(result.shown).toBe('Left')
+    expect(result.selectedText).toBe('Left')
     expect(result.checked).toStrictEqual(['Left'])
     expect(result.recordedWrites).toStrictEqual([])
   })
@@ -811,7 +811,7 @@ describe('an enum whose value is not offered on this platform', () => {
   it('shows Left on macOS where the stored value is None', async () => {
     const result = await look('darwin', { 'test.plugin': { buttons: 'none' } })
 
-    expect(result.shown).toBe('Left')
+    expect(result.selectedText).toBe('Left')
     expect(result.checked).toStrictEqual(['Left'])
     expect(result.recordedWrites).toStrictEqual([])
   })
@@ -819,14 +819,14 @@ describe('an enum whose value is not offered on this platform', () => {
   it.each(['linux', 'windows'])('shows Right on %s', async (platform) => {
     const result = await look(platform)
 
-    expect(result.shown).toBe('Right')
+    expect(result.selectedText).toBe('Right')
     expect(result.checked).toStrictEqual(['Right'])
   })
 
   it('shows a stored value that is offered as stored', async () => {
     const result = await look('linux', { 'test.plugin': { buttons: 'none' } })
 
-    expect(result.shown).toBe('None')
+    expect(result.selectedText).toBe('None')
     expect(result.checked).toStrictEqual(['None'])
   })
 })

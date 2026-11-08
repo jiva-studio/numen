@@ -150,15 +150,15 @@ export const ADisabledChoice: Story = {
   render: (args) => ({
     components: { Select },
     setup: () => {
-      const chosen = ref('left')
+      const current = ref('left')
       const choices = [
         { id: 'left', text: 'Left' },
         { id: 'right', text: 'Right', isDisabled: true },
         { id: 'none', text: 'None', isDisabled: true },
       ]
-      return { args, chosen, choices }
+      return { args, current, choices }
     },
-    template: '<Select v-model="chosen" :choices="choices" />',
+    template: '<Select v-model="current" :choices="choices" />',
   }),
   play: async ({ canvasElement }) => {
     await userEvent.click(control(canvasElement))

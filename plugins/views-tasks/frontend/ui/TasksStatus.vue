@@ -32,8 +32,8 @@ const dismissal = useMenuDismissal(root, onClose)
 
 const summary = computed(() => summarizeTasks(props.tasks))
 // The tasks of one busy period: the ids are forgotten when the window is idle again.
-const seen = ref<ReadonlySet<string>>(new Set())
-const batch = computed(() => summarizeBatch(props.tasks, seen.value))
+const knownIds = ref<ReadonlySet<string>>(new Set())
+const batch = computed(() => summarizeBatch(props.tasks, knownIds.value))
 const hasFailed = computed(() => summary.value.failedCount > 0)
 const summaryText = computed(() => {
   if (summary.value.activeCount === 0) return words.idle
@@ -42,8 +42,8 @@ const summaryText = computed(() => {
 const label = computed(() => {
   const failed = hasFailed.value ? `${summary.value.failedCount} ${words.failed}` : ''
   if (summary.value.activeCount === 0) return failed || words.noneRunning
-  const done = `${batch.value.done} ${words.of} ${batch.value.total} ${words.tasksDone}`
-  return failed ? `${done}, ${failed}` : done
+  const progressText = `${batch.value.done} ${words.of} ${batch.value.total} ${words.tasksDone}`
+  return failed ? `${progressText}, ${failed}` : progressText
 })
 
 // The ring is a circle of RING_SIZE pixels; its arc is the share of the batch that is done.
@@ -59,8 +59,8 @@ watch(
   () => props.tasks,
   (tasks) => {
     const active = tasks.filter((task) => task.state === 'running' || task.state === 'cancelling')
-    seen.value =
-      active.length === 0 ? new Set() : new Set([...seen.value, ...active.map((task) => task.id)])
+    knownIds.value =
+      active.length === 0 ? new Set() : new Set([...knownIds.value, ...active.map((task) => task.id)])
   },
   { immediate: true },
 )

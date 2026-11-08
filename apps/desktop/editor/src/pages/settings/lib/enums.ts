@@ -30,13 +30,13 @@ export interface EnumFields {
  */
 export function toSelectChoices(
   options: readonly PluginSettingOption[],
-  isOffered: (option: PluginSettingOption) => boolean = () => true,
+  isAvailable: (option: PluginSettingOption) => boolean = () => true,
 ): readonly SelectChoice[] {
   return options.map((one) => ({
     id: one.value,
     text: one.title || one.value,
     ...(one.detail ? { detail: one.detail } : {}),
-    ...(isOffered(one) ? {} : { isDisabled: true }),
+    ...(isAvailable(one) ? {} : { isDisabled: true }),
   }))
 }
 
@@ -93,11 +93,11 @@ export function createEnumFields(
 ): EnumFields {
   const whenReader = createWhenReader()
   /** An option with no condition, or one that cannot be read, is offered. */
-  const isOffered = (option: PluginSettingOption): boolean =>
+  const isAvailable = (option: PluginSettingOption): boolean =>
     whenReader.getCondition(option.when)?.evaluate({ 'app.platform': getPlatform() }) ?? true
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
-  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting), isOffered)
+  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting), isAvailable)
   /**
    * The value the select shows: the value in force, or the first offered option when the value in
    * force is an option this platform does not offer. Showing it writes nothing.
@@ -106,8 +106,8 @@ export function createEnumFields(
     const value = toText(getValueInForce(setting, read, isRequested))
     const options = getEnumOptions(setting)
     const current = options.find((one) => one.value === value)
-    if (!current || isOffered(current)) return value
-    return options.find(isOffered)?.value ?? value
+    if (!current || isAvailable(current)) return value
+    return options.find(isAvailable)?.value ?? value
   }
 
   const getShownSettings = () => getPlugin().settings.filter(isSettingShown)

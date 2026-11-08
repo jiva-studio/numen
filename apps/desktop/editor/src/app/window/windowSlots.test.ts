@@ -132,7 +132,7 @@ describe('the buttons of the title bar', () => {
 })
 
 describe('the buttons of the title bar while no vault is open', () => {
-  const placed: DeclaredSlot[] = [
+  const declaredSlots: DeclaredSlot[] = [
     { pluginId: TIDE, slot: SLOT.titleBarCommands, command: 'tide.vault', group: 'navigate' },
   ]
   const setVault = (windowValues: ReturnType<typeof setup>['windowValues'], isOpen: boolean) => {
@@ -140,14 +140,14 @@ describe('the buttons of the title bar while no vault is open', () => {
   }
 
   it('are none, the settings button too', () => {
-    const { registry, windowValues } = setup(placed)
+    const { registry, windowValues } = setup(declaredSlots)
     setVault(windowValues, false)
 
     expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([])
   })
 
   it('appear when a vault is open', () => {
-    const { registry, windowValues } = setup(placed)
+    const { registry, windowValues } = setup(declaredSlots)
     setVault(windowValues, true)
 
     expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([
@@ -158,7 +158,7 @@ describe('the buttons of the title bar while no vault is open', () => {
   })
 
   it('leave the command of the settings available to the palette and the shortcut', () => {
-    const { hostDeps, windowValues } = setup(placed)
+    const { hostDeps, windowValues } = setup(declaredSlots)
     setVault(windowValues, false)
 
     expect(hostDeps.findSlotCommand('app:settings.open', undefined)).toMatchObject({

@@ -16,7 +16,7 @@ type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undef
 
 /** The items a command offered over one target, kept with the key of that target. */
 interface ListedItems {
-  readonly over: string
+  readonly targetKey: string
   readonly items: readonly CommandItem[]
 }
 
@@ -37,32 +37,32 @@ function createPluginItems(deps: PluginItemsDeps) {
   const keep = (
     requestGeneration: number,
     command: string,
-    over: string,
+    targetKey: string,
     items: readonly CommandItem[],
   ): void => {
     if (requestGeneration === generation)
-      itemLists.value = new Map(itemLists.value).set(command, { over, items })
+      itemLists.value = new Map(itemLists.value).set(command, { targetKey, items })
   }
 
   /** The items stored for the command over the target of the palette now, not those stored over another. */
   const readItems = (command: string): readonly CommandItem[] | undefined => {
     const stored = itemLists.value.get(command)
-    return stored?.over === getTargetKey(deps.getTarget()) ? stored.items : undefined
+    return stored?.targetKey === getTargetKey(deps.getTarget()) ? stored.items : undefined
   }
 
   /** Asks the plugin for the items of the command over the target of the palette, once for each target. */
   const ask = (command: string): void => {
     if (!deps.pluginHost) return
     const target = deps.getTarget()
-    const over = getTargetKey(target)
-    const request = `${command}\u0000${over}`
+    const targetKey = getTargetKey(target)
+    const request = `${command}\u0000${targetKey}`
     if (requests.has(request)) return
     requests.add(request)
     const requestGeneration = generation
     const pending = deps.pluginHost.listCommandItems(command, toRunTarget(target))
     runInBackground(
-      pending.then((items) => keep(requestGeneration, command, over, items)),
-      () => keep(requestGeneration, command, over, []),
+      pending.then((items) => keep(requestGeneration, command, targetKey, items)),
+      () => keep(requestGeneration, command, targetKey, []),
     )
   }
 
