@@ -13,6 +13,7 @@ import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './useWindowPlugins'
 import { getNoteIcon } from '@/entities/note'
+import { createBackendHandlers } from '../commands/backendHandlers'
 
 const createSupport = () => {
   const windowTabs = useWindowTabs()
@@ -271,6 +272,38 @@ describe('the settings and notices a plugin is given', () => {
       target: expect.objectContaining({ path: 'scan.pdf' }),
       itemId: undefined,
     })
+  })
+
+  it('rejects a run awaited through the host with the error of a backend handler, and writes nothing', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.ears', hasFrontend: false, hasBackend: true }]) }
+    const writeMessage = vi.fn()
+    const onError = vi.fn()
+    const handlers = createBackendHandlers({
+      getHandlers: () => [
+        {
+          pluginId: 'md.numen.ears',
+          command: 'app:file.createText',
+          title: 'Transcribe',
+          hasItems: false,
+        },
+      ],
+      list: async () => [],
+      run: async () => ({ ok: false, error: 'the recording has no audio' }),
+      writeMessage,
+      openFile: async () => undefined,
+    })
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers,
+      reportError: onError,
+    })
+    const note = { path: 'talks/a.mp3', title: 'a', type: '', isFolder: false, others: [], tab: '' }
+
+    await expect(
+      pluginHost.executeCommand('app:file.createText', note, { isAwaited: true }),
+    ).rejects.toThrow('the recording has no audio')
+    expect(writeMessage).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
   })
 
   it('lists the items of a handler the core lists them for', async () => {

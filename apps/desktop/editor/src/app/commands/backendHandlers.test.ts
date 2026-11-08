@@ -33,7 +33,7 @@ describe('createBackendHandlers', () => {
     )
   })
 
-  it('runs a handler over the path with the itemId, writes its message and opens its file', async () => {
+  it('runs a handler over the path with the item picked, writes its message and opens its file', async () => {
     const { deps, handlers } = createWith({
       ok: true,
       value: { message: 'Transcribed', openedPath: 'talks/a.md' },
@@ -55,16 +55,18 @@ describe('createBackendHandlers', () => {
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
   })
 
-  it('writes the error of a run that did not succeed as the plugin words it', async () => {
+  it('rejects a run that did not succeed with the error as the plugin words it, and writes nothing', async () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 
-    await handlers.runBackendHandler({
-      pluginId: 'md.ears',
-      command: 'app:file.createText',
-      target: TARGET,
-    })
+    await expect(
+      handlers.runBackendHandler({
+        pluginId: 'md.ears',
+        command: 'app:file.createText',
+        target: TARGET,
+      }),
+    ).rejects.toThrow('no audio')
 
-    expect(deps.writeMessage).toHaveBeenCalledExactlyOnceWith('no audio', 'error')
+    expect(deps.writeMessage).not.toHaveBeenCalled()
     expect(deps.openFile).not.toHaveBeenCalled()
   })
 

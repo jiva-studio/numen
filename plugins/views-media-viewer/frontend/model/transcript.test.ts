@@ -94,6 +94,16 @@ describe('creating the text of a recording', () => {
     expect(state.textRuns).toBe(1)
     expect(tab.content.cues.value).toStrictEqual(CUES)
   })
+
+  it('shows the error of a run that failed in the tab', async () => {
+    const { tab, state } = open(createRecordings([], true))
+    await tab.content.firstRead
+    state.textError = new Error('the recording has no audio')
+
+    await tab.options.start()
+
+    expect(tab.content.error.value).toBe(formatErrorMessage(state.textError))
+  })
 })
 
 describe('a transcript still growing', () => {
