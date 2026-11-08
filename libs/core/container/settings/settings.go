@@ -375,22 +375,58 @@ func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]
 	add([]string{plugin.ID, hostFieldEnabled}, enabled)
 }
 
+// hostSubscription is the delivery of setting changes to one plugin host.
+type hostSubscription struct {
+	mu          sync.Mutex
+	unsubscribe func()
+	ended       chan struct{}
+}
+
 // SubscribeHost subscribes the plugin host to setting change events once per host.
 func (c Config) SubscribeHost() {
 	if c.SettingEvents == nil || c.PluginHost == nil {
 		return
 	}
+	var one *hostSubscription
 	if c.SubscribedHosts != nil && reflect.TypeOf(c.PluginHost).Comparable() {
-		if _, isSubscribed := c.SubscribedHosts.LoadOrStore(c.PluginHost, struct{}{}); isSubscribed {
+		one = &hostSubscription{}
+		one.mu.Lock()
+		defer one.mu.Unlock()
+		if _, isSubscribed := c.SubscribedHosts.LoadOrStore(c.PluginHost, one); isSubscribed {
 			return
 		}
 	}
-	changes, _ := c.SubscribeSettingChanges()
+	changes, unsubscribe := c.SubscribeSettingChanges()
+	ended := make(chan struct{})
 	go func() {
+		defer close(ended)
 		for batch := range changes {
 			c.NotifyHost(batch)
 		}
 	}()
+	if one != nil {
+		one.unsubscribe, one.ended = unsubscribe, ended
+	}
+}
+
+// UnsubscribeHost ends the delivery of setting changes to the plugin host and returns after the
+// batch being delivered has been handled.
+func (c Config) UnsubscribeHost() {
+	if c.SubscribedHosts == nil || c.PluginHost == nil || !reflect.TypeOf(c.PluginHost).Comparable() {
+		return
+	}
+	found, isSubscribed := c.SubscribedHosts.LoadAndDelete(c.PluginHost)
+	if !isSubscribed {
+		return
+	}
+	one, isHostSubscription := found.(*hostSubscription)
+	if !isHostSubscription {
+		return
+	}
+	one.mu.Lock()
+	defer one.mu.Unlock()
+	one.unsubscribe()
+	<-one.ended
 }
 
 // RefreshPluginSecrets refreshes the plugin host under the secret gate.

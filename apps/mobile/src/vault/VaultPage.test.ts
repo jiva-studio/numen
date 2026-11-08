@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Code, ConnectError } from '@connectrpc/connect'
+import { CapacitorException } from '@capacitor/core'
 import { IonToast } from '@ionic/vue'
 import { formatErrorMessage } from '@numen/core-client'
 import VaultPage from './VaultPage.vue'
@@ -38,6 +39,18 @@ describe('a core that cannot be reached', () => {
     expect(open).toBe(true)
     expect(message).toBe(formatErrorMessage(caughtError))
     expect(message).not.toContain('ECONNREFUSED')
+
+    page.unmount()
+  })
+
+  it('shows the generic text for a rejected native start', async () => {
+    const caughtError = new CapacitorException(
+      'mkdir /data/user/0/md.numen.sample/files/vault: permission denied',
+    )
+    const { page, open, message } = await toastAfter(caughtError)
+
+    expect(open).toBe(true)
+    expect(message).toBe('Numen is not responding; retrying')
 
     page.unmount()
   })

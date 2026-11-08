@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createDisplayOptions, type DisplayWiring } from './useWindowDisplayOptions'
 
 const createWiring = (leavePath: (from: string, to: string) => Promise<void>) => {
@@ -53,7 +54,9 @@ describe('a change of the vault', () => {
 
   it('reports a file that failed to open at spans', async () => {
     const { wiring, writeMessage } = createWiring(() => Promise.resolve())
-    vi.mocked(wiring.tabOpeners.openFileAt).mockRejectedValueOnce(new Error('cannot open'))
+    vi.mocked(wiring.tabOpeners.openFileAt).mockRejectedValueOnce(
+      createLostConnection('cannot open'),
+    )
 
     createDisplayOptions(wiring).openFileAt('a.pdf', [{ start: 1, end: 2 }])
 

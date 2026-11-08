@@ -292,7 +292,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg = cfg.SetSettings(loaded)
+	cfg = applySettings(t, cfg, loaded)
 
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
@@ -445,4 +445,11 @@ func ids(secrets []*v1.Secret) []string {
 		list = append(list, one.GetId())
 	}
 	return list
+}
+
+func applySettings(t *testing.T, cfg container.Config, loaded container.Settings) container.Config {
+	t.Helper()
+	cfg = cfg.SetSettings(loaded)
+	t.Cleanup(cfg.UnsubscribeHost)
+	return cfg
 }

@@ -39,7 +39,7 @@ test.describe('Removing and renaming a note', () => {
     } finally {
       await destroyNote(request, linker)
       await destroyNote(request, target)
-      await destroyTrashed(request, `${targetTitle}.md`)
+      destroyTrashed(`${targetTitle}.md`)
     }
   })
 })

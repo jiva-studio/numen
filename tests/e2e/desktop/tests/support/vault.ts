@@ -147,7 +147,7 @@ export const destroyIndexedNote = async (
   await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
-const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
+const findTrashed = (name: string): string[] => {
   const vault = getVaultPath()
   const trash = path.join(vault, '.trash')
   if (!fs.existsSync(trash)) return []
@@ -158,9 +158,9 @@ const findTrashed = async (request: APIRequestContext, name: string): Promise<st
 }
 
 /** Takes the files of the vault's trash named `name` off the disk. */
-export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
+export const destroyTrashed = (name: string): void => {
   const vault = getVaultPath()
-  for (const one of await findTrashed(request, name)) fs.rmSync(path.join(vault, one))
+  for (const one of findTrashed(name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
@@ -216,10 +216,10 @@ export const listVaults = async (request: APIRequestContext): Promise<Vault[]> =
 }
 
 /** The text of a file of the vault as it is on disk, frontmatter included. */
-export const readVaultFile = async (
-  request: APIRequestContext,
-  notePath: string,
-): Promise<string> => fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8')
+export const readVaultFile = (request: APIRequestContext, notePath: string): Promise<string> =>
+  new Promise((resolve) => {
+    resolve(fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8'))
+  })
 
 /** Adds a folder of this machine to the installation's vaults, and gives back the vault. */
 export const addVault = async (
@@ -325,10 +325,12 @@ export const typeAtEnd = async (page: Page, text: Locator, typed: string): Promi
 }
 
 /** Puts text into a file of the vault as another program would, frontmatter included. */
-export const writeVaultFile = async (
+export const writeVaultFile = (
   request: APIRequestContext,
   filePath: string,
   content: string,
-): Promise<void> => {
-  fs.writeFileSync(path.join(getVaultPath(), filePath), content)
-}
+): Promise<void> =>
+  new Promise((resolve) => {
+    fs.writeFileSync(path.join(getVaultPath(), filePath), content)
+    resolve()
+  })

@@ -1,7 +1,9 @@
 /**
  * One document as its tab reads it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { createApi } from '@numen/plugin-sdk'
+import { createDocuments } from '../api/wire'
 import { useDocumentReader } from './useDocumentReader'
 import type { Documents, PageHighlight, DocumentLayout } from '../types'
 
@@ -331,5 +333,50 @@ describe('a document tab closed after the layout landed', () => {
     await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(spans).toStrictEqual([])
+  })
+})
+
+describe('a document the documents service fails to open', () => {
+  const openWithAnswer = async (answer: typeof fetch): Promise<string> => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    try {
+      const api = createApi('md.numen.readers.pdf', {
+        origin: 'http://core.invalid',
+        fetch: answer,
+      })
+      const readItem = useDocumentReader(createDocuments(api), 'Gone.pdf')
+      readItem.widen(800)
+      const going = readItem.goToPage(1)
+      await vi.runAllTimersAsync()
+      await going
+      return readItem.error.value
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('shows the generic text for an internal error from the backend', async () => {
+    const message = await openWithAnswer(
+      async () =>
+        new Response(
+          JSON.stringify({
+            code: 'internal',
+            message: 'pdfium: FPDF_LoadDocument /Users/someone/Vault/Gone.pdf: error 3',
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } },
+        ),
+    )
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('/Users/someone')
+  })
+
+  it('shows the generic text for a fetch that fails before it reaches the core', async () => {
+    const message = await openWithAnswer(async () => {
+      throw new TypeError('Load failed')
+    })
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('Load failed')
   })
 })

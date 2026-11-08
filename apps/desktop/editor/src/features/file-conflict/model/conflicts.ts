@@ -34,8 +34,8 @@ export function raiseConflicts(notes: Notes, raiser: ConflictRaiser): () => void
           id,
           raiser.raise({
             note: id,
-            keep: async () => notes.keep(id),
-            take: async () => notes.take(id),
+            keep: () => new Promise((resolve) => resolve(notes.keep(id))),
+            take: () => new Promise((resolve) => resolve(notes.take(id))),
           }),
         )
       }

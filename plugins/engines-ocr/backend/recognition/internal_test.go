@@ -428,6 +428,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 
 	// 2. Canceled context skips failure ReportTask, runs FinishTask, and returns recognition result and error.
 	cancelCtx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
 	qCancel := &stubQueue{onRelease: cancel, releaseErr: context.Canceled, finishErr: errors.New("finish ignored when recognition failed")}
 	rCancel, err := New(Host{Vault: v, Store: v.Store(), Texts: texts, Queue: qCancel}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil

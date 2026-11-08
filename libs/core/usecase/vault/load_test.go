@@ -2,6 +2,8 @@ package vault_test
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -93,6 +95,7 @@ func TestLoad(t *testing.T) {
 }
 
 func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
+	t.Helper()
 	const (
 		readers  = 4
 		duration = 15 * time.Second
@@ -147,13 +150,18 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		all[len(all)-1].Round(time.Millisecond))
 }
 
-func touchEverything(root string) error {
+func touchEverything(root string) (err error) {
 	pos := testsupport.GetMachine().Now()
-	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+	scope, err := os.OpenRoot(root)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, scope.Close()) }()
+	return fs.WalkDir(scope.FS(), ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		return os.Chtimes(p, pos, pos)
+		return scope.Chtimes(p, pos, pos)
 	})
 }
 

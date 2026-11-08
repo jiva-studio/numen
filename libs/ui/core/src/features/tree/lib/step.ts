@@ -45,7 +45,7 @@ function stepToFirst(visibleRows: readonly ShownRow[]): Step {
 }
 
 function stepToLast(visibleRows: readonly ShownRow[]): Step {
-  return { at: visibleRows[visibleRows.length - 1]!.id, turn: null }
+  return { at: visibleRows.at(-1)?.id ?? null, turn: null }
 }
 
 function stepDown(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {

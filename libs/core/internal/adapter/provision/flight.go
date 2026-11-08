@@ -14,7 +14,7 @@ func getFlightKey(req pluginport.DependencyRequirement) string {
 
 // flightGroup runs one call per key at a time. A caller that arrives while a
 // call runs joins it and receives the last reported status and every later
-// one.
+// one. A call outlives the contexts of its callers and ends only when it returns.
 type flightGroup struct {
 	mu      sync.Mutex
 	flights map[string]*flight
@@ -25,7 +25,6 @@ type flight struct {
 	completion  chan struct{}
 	subscribers map[int]func(pluginport.DependencyStatus)
 	next        int
-	refs        int
 	last        *pluginport.DependencyStatus
 	resolved    pluginport.ResolvedDependency
 	err         error
@@ -57,7 +56,6 @@ func (g *flightGroup) do(
 	}
 	id := current.next
 	current.next++
-	current.refs++
 	if onProgress != nil {
 		current.subscribers[id] = onProgress
 		if current.last != nil {
@@ -72,15 +70,7 @@ func (g *flightGroup) do(
 	case <-ctx.Done():
 		g.mu.Lock()
 		delete(current.subscribers, id)
-		current.refs--
-		abandoned := current.refs == 0
-		if abandoned && g.flights[key] == current {
-			delete(g.flights, key)
-		}
 		g.mu.Unlock()
-		if abandoned {
-			current.cancel()
-		}
 		return pluginport.ResolvedDependency{}, ctx.Err()
 	}
 }

@@ -76,7 +76,7 @@ const HANDLERS: Record<string, CommandHandler> = {
 const commandRegistry = new Map<string, CommandHandler>()
 
 export const commands = {
-  registerCommand(id: string, handler: CommandHandler): () => void {
+  registerCommand: (id: string, handler: CommandHandler): (() => void) => {
     commandRegistry.set(id, handler)
     return () => {
       if (commandRegistry.get(id) === handler) {
@@ -98,9 +98,7 @@ async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promi
   try {
     await on.settings.chooseSetting(invocation.id, invocation.name)
   } catch (error) {
-    const hasCode = error instanceof Error && 'code' in error
-    const reason = error instanceof Error && !hasCode ? error.message : formatErrorMessage(error)
-    on.writeMessage(reason, 'error')
+    on.writeMessage(formatErrorMessage(error), 'error')
   }
 }
 

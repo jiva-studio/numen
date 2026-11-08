@@ -1347,6 +1347,7 @@ func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
 
 	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
 	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), clock.NewFake(getNoon()))

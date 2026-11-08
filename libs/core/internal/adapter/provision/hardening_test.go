@@ -2,69 +2,15 @@ package provision
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
-	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
-
-func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
-	var group flightGroup
-	release := make(chan struct{})
-	var releaseOnce sync.Once
-	t.Cleanup(func() { releaseOnce.Do(func() { close(release) }) })
-	started := make(chan struct{})
-	var runs atomic.Int32
-	run := func(ctx context.Context, _ func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
-		if runs.Add(1) == 1 {
-			close(started)
-			<-ctx.Done()
-			<-release
-			return pluginport.ResolvedDependency{}, ctx.Err()
-		}
-		return pluginport.ResolvedDependency{ID: "fresh"}, nil
-	}
-
-	first, leave := context.WithCancel(t.Context())
-	exit := make(chan struct{})
-	go func() {
-		if _, err := group.do(first, "k", nil, run); !errors.Is(err, context.Canceled) {
-			t.Errorf("a run whose context was canceled gave %v, want context.Canceled", err)
-		}
-		close(exit)
-	}()
-	<-started
-	leave()
-	<-exit
-
-	type outcome struct {
-		resolved pluginport.ResolvedDependency
-		err      error
-	}
-	got := make(chan outcome, 1)
-	go func() {
-		resolved, err := group.do(t.Context(), "k", nil, run)
-		got <- outcome{resolved, err}
-	}()
-	var result outcome
-	select {
-	case result = <-got:
-	case <-time.After(300 * time.Millisecond):
-		releaseOnce.Do(func() { close(release) })
-		result = <-got
-	}
-	if result.err != nil || result.resolved.ID != "fresh" {
-		t.Errorf("the caller joined the abandoned run: %+v, %v", result.resolved, result.err)
-	}
-}
 
 func TestProvision_RejectsReservedFileNames(t *testing.T) {
 	data := []byte("model-bytes")

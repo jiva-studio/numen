@@ -68,3 +68,17 @@ func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
 		t.Errorf("the plugin host received %v", got)
 	}
 }
+
+func TestAPluginHostReceivesNoChangeAfterItIsUnsubscribed(t *testing.T) {
+	cfg, path, host := openInstallation(t, `{}`)
+	cfg.UnsubscribeHost()
+
+	if err := os.WriteFile(path, []byte(`{"`+eventPlugin+`":{"enabled":false}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(quiet)
+
+	if got := host.listUpdates(); len(got) != 0 {
+		t.Errorf("the plugin host received %v after it was unsubscribed", got)
+	}
+}

@@ -99,7 +99,7 @@ async function listHandlerItems(
     return handlers.map((one) => ({ id: one.pluginId, title: one.title }))
   }
   return handlers.flatMap((one, index) =>
-    (own[index] ?? [{ id: '', title: one.title } as CommandItem]).map((item) => ({
+    (own[index] ?? [{ id: '', title: one.title }]).map((item) => ({
       id: item.id === '' ? one.pluginId : one.pluginId + ITEM_SEPARATOR + item.id,
       title: item.title,
       group: item.group ?? one.pluginId,
@@ -115,8 +115,9 @@ async function runSharedCommand(
   const { note, itemId, values } = run
   const handlers = listMatching(parts, command, note)
   if (itemId === undefined) {
-    if (handlers.length !== 1) return false
-    await runHandler(parts, handlers[0]!, { note, values, isAwaited: run.isAwaited })
+    const [only] = handlers
+    if (handlers.length !== 1 || !only) return false
+    await runHandler(parts, only, { note, values, isAwaited: run.isAwaited })
     return true
   }
   const separator = itemId.indexOf(ITEM_SEPARATOR)

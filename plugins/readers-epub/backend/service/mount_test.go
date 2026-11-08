@@ -18,6 +18,7 @@ func codeOf(err error) server.ErrorCode {
 }
 
 func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
+	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/md.numen.readers.epub/"+method, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)

@@ -45,7 +45,7 @@ export interface ConflictWords {
 export interface OpenNotesOptions {
   limits?: typeof DEFAULT_WRITE_LIMITS
   /** Called when a note on screen is replaced by the content of its file. */
-  onReplaced?(path: string): void
+  onReplaced?(this: void, path: string): void
   /** When it is now. */
-  now?(): number
+  now?(this: void): number
 }

@@ -28,11 +28,11 @@ export interface TabMenuDeps {
   /** The tab and the file it shows, which the commands of the entries run over. */
   getTabTarget(tab: string): RunTarget
   /** Turns the highlight of another window on or off while the pointer is over its item. */
-  onHighlight?(windowId: string, isOn: boolean): void
+  onHighlight?(this: void, windowId: string, isOn: boolean): void
   /** Receives the failure of a command that runs after the menu closed, or of a list read. */
-  reportError?(error: unknown): void
+  reportError?(this: void, error: unknown): void
   /** The type and the properties of the note of the path, which the entries are asked for over. */
-  readNoteKind?(path: string): Promise<NoteKind>
+  readNoteKind?(this: void, path: string): Promise<NoteKind>
 }
 
 /** The words of the rows the menu writes itself. */
@@ -141,11 +141,11 @@ export interface WindowTabMenuDeps {
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab'>
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
-  onHighlight?(windowId: string, isOn: boolean): void
+  onHighlight?(this: void, windowId: string, isOn: boolean): void
   /** The type and the properties of the note of the path. */
-  readNoteKind?(path: string): Promise<NoteKind>
+  readNoteKind?(this: void, path: string): Promise<NoteKind>
   /** Shows the error of a command of the menu that failed, or of items that could not be read. */
-  reportError?(error: unknown): void
+  reportError?(this: void, error: unknown): void
 }
 
 /** The tab of the window and the file it shows, as the commands of its menu run over them. */

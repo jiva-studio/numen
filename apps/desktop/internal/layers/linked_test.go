@@ -43,8 +43,8 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	decoder := json.NewDecoder(bytes.NewReader(items))
 	for {
 		var pkg struct {
-			ImportPath string
-			Deps       []string
+			ImportPath string   `json:"ImportPath"`
+			Deps       []string `json:"Deps"`
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {

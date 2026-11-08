@@ -49,9 +49,9 @@ type vaulted struct {
 	scan      func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-func openVault(t testing.TB, notes map[string]string) vaulted {
-	t.Helper()
-	env := vaulttest.New(t, notes)
+func openVault(tb testing.TB, notes map[string]string) vaulted {
+	tb.Helper()
+	env := vaulttest.New(tb, notes)
 	scanned := func(_ context.Context, _ domain.Vault, _ []string) error {
 		env.Host.Reindex()
 		return nil

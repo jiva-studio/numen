@@ -372,28 +372,32 @@ function createTabOpeners(ctx: TabOpenerContext) {
     return id
   }
 
-  const createTab = async (kind: string, targetPath = ''): Promise<string> =>
-    createTabSync(kind, targetPath)
+  const createTab = (kind: string, targetPath = ''): Promise<string> =>
+    new Promise((resolve) => {
+      resolve(createTabSync(kind, targetPath))
+    })
 
   const show = (id: string) => {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
   /** Opens a tab of a kind and shows it. A non-empty `id` reuses a tab id from another window. */
-  const openTabOfKind = async (kind: string, target = '', id = ''): Promise<string> => {
-    const tabId = createTabSync(kind, target, id)
-    show(tabId)
-    return tabId
-  }
-
-  const openTabAdjacentOfKind = async (kind: string, target = ''): Promise<string> => {
-    const id = createTabSync(kind, target)
-    ctx.layout.value = openTabAdjacent(ctx.layout.value, id, {
-      side: 'right',
-      createId: generatePaneId,
+  const openTabOfKind = (kind: string, target = '', id = ''): Promise<string> =>
+    new Promise((resolve) => {
+      const tabId = createTabSync(kind, target, id)
+      show(tabId)
+      resolve(tabId)
     })
-    return id
-  }
+
+  const openTabAdjacentOfKind = (kind: string, target = ''): Promise<string> =>
+    new Promise((resolve) => {
+      const id = createTabSync(kind, target)
+      ctx.layout.value = openTabAdjacent(ctx.layout.value, id, {
+        side: 'right',
+        createId: generatePaneId,
+      })
+      resolve(id)
+    })
 
   const finishClose = (id: string) => {
     ctx.open.value = omitEntry(ctx.open.value, id)
