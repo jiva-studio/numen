@@ -208,8 +208,7 @@ export function createShellHost(
       subscriptions,
       app: createWindowAppInfo(getPlatform),
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
-      registerTabKind: (registration) =>
-        add(addView({ pluginId, registration: registration as TabKindRegistration })),
+      registerTabKind: (registration) => add(addView({ pluginId, registration })),
       ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
       registerSlotView: (registration) =>

@@ -119,9 +119,9 @@ func listPackages(t *testing.T, dir, goos, goarch string) []listed {
 // listed is a package as `go list` reports it, with all transitive dependencies
 // it is compiled from.
 type listed struct {
-	ImportPath string
-	Imports    []string
-	Deps       []string
+	ImportPath string   `json:"ImportPath"`
+	Imports    []string `json:"Imports"`
+	Deps       []string `json:"Deps"`
 }
 
 // TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK checks that the core and

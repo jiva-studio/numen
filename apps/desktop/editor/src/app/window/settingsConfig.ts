@@ -18,11 +18,13 @@ export function getSettingsConfig(owners: readonly SettingOwner[]): WhenSettings
     for (const one of owner.settings) {
       const path = getConfigPath(owner.id, one.key)
       let level = config
+      const key = path.at(-1)
+      if (key === undefined) continue
       for (const part of path.slice(0, -1)) {
         level[part] ??= {}
         level = level[part] as Record<string, unknown>
       }
-      level[path.at(-1)!] = one.value
+      level[key] = one.value
     }
   }
   return config

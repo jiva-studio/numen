@@ -138,6 +138,7 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 	}
 
 	assertFinitePositive := func(t *testing.T, label string, got float64) {
+		t.Helper()
 		if math.IsNaN(got) || math.IsInf(got, 0) || got <= 0 {
 			t.Errorf("%s left stability %v, want a finite positive number", label, got)
 		}

@@ -12,7 +12,7 @@ import type {
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
-import type { SettingEdit } from '@/entities/settings'
+import type { Model, SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
@@ -25,7 +25,7 @@ export interface CommandDepsOptions {
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
+    getModelsAt?: (targetPath: readonly string[]) => readonly Model[]
   }
   travel: (path: string) => Promise<void> | void
   leavePath: (from: string, to: string) => Promise<void> | void

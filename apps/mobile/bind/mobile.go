@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -106,6 +107,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// contains the model API keys, and the files on disk next to the notes
 	// (books and the model sets that run over them) are not served.
 	server := &http.Server{
+		ReadHeaderTimeout: readHeaderTimeout,
 		Handler: allowOrigin(opened.Services.NewHandler(
 			http.NotFoundHandler(),
 			numenv1connect.VaultServiceName,
@@ -228,6 +230,9 @@ func registerVault(cfg container.Config, root string) (string, error) {
 // `androidScheme` in capacitor.config.ts, with no port. The core serves on the
 // loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
+
+// readHeaderTimeout is how long a client of the local service may take to send its request headers.
+const readHeaderTimeout = 10 * time.Second
 
 func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

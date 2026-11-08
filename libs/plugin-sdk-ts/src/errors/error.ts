@@ -60,7 +60,7 @@ export const formatErrorMessage = (error: unknown): string => {
 /**
  * The message for each error code in the schema.
  */
-const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
+const ERROR_CODE_MESSAGES: Readonly<Record<number, string>> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
   [ProtoErrorCode.NOT_FOUND]: 'note not in the vault',
   [ProtoErrorCode.NOT_A_NOTE]: 'not a note',
@@ -71,8 +71,8 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.ALREADY_EXISTS]: 'a file with this name exists',
   [ProtoErrorCode.INVALID_NAME]: 'invalid note name',
   [ProtoErrorCode.CONFLICT]: 'not saved: the note changed on disk',
-}
+} satisfies Record<ProtoErrorCode, string>
 
 /** The message for one error code; empty when there was no error. */
 export const formatErrorCodeMessage = (errorCode: number | undefined): string =>
-  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode as ProtoErrorCode] ?? UNEXPECTED)
+  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode] ?? UNEXPECTED)

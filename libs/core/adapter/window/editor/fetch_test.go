@@ -13,29 +13,29 @@ type fetched struct {
 	Body       []byte
 }
 
-func fetch(t testing.TB, client *http.Client, address string) fetched {
-	t.Helper()
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, address, nil)
+func fetch(tb testing.TB, client *http.Client, address string) fetched {
+	tb.Helper()
+	request, err := http.NewRequestWithContext(tb.Context(), http.MethodGet, address, nil)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
-	return send(t, client, request)
+	return send(tb, client, request)
 }
 
-func send(t testing.TB, client *http.Client, request *http.Request) fetched {
-	t.Helper()
+func send(tb testing.TB, client *http.Client, request *http.Request) fetched {
+	tb.Helper()
 	response, err := client.Do(request)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			t.Error(err)
+			tb.Error(err)
 		}
 	}()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return fetched{StatusCode: response.StatusCode, Header: response.Header, Body: body}
 }

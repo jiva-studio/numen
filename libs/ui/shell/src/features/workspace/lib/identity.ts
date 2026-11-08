@@ -4,7 +4,6 @@
  * It is used in the DOM as the id of a splitter panel, so it is unique to the
  * document and not only to this tree.
  */
-import type { NodeId } from './node'
 import type { NodeIdFactory } from './splice'
 
 /** What a name is drawn from. The window's own randomness by default. */
@@ -25,5 +24,5 @@ export const browserRandomness: Randomness = {
  */
 export function createNodeIdFactory(random: Randomness = browserRandomness): NodeIdFactory {
   let createdItem = 0
-  return () => (random.uuid() ?? `node-${++createdItem}`) as NodeId
+  return () => random.uuid() ?? `node-${++createdItem}`
 }

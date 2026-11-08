@@ -26,6 +26,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "a vault the index does not know holds nothing",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "a.md", kind: "note", large: "l", smalls: []string{"a"}}.save(t, db)
 			},
 			vault: nobody,
@@ -34,6 +35,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "notes only, none embedded",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "notes/a.md", kind: "note", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
 				source{path: "notes/b.md", kind: "note", large: "l", smalls: []string{"b1"}}.save(t, db)
 			},
@@ -46,6 +48,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "pdf chunks are counted by their extension, in the order of the sources",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "notes/a.md", kind: "note", large: "l", smalls: []string{"a1"}}.save(t, db)
 				source{path: "lib/one.PDF", large: "l", smalls: []string{"p1", "p2", "p3"}}.save(t, db)
 				source{path: "lib/two.pdf", large: "l", smalls: []string{"q1"}}.save(t, db)
@@ -62,6 +65,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "embedded chunks count as vectors",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 				source{path: "lib/b.pdf", large: "l", smalls: []string{"b1"}}.save(t, db)
 				embed(t, db, vaultA, "lib/a.epub", 0xF0)
@@ -78,6 +82,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "a deleted source leaves no chunk and no vector",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
 				source{path: "lib/b.epub", large: "l", smalls: []string{"b1"}}.save(t, db)
 				embed(t, db, vaultA, "lib/a.epub", 0xF0)
@@ -95,6 +100,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "a path without an extension, or with a dot in a folder only, has none",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "README", large: "l", smalls: []string{"r"}}.save(t, db)
 				source{path: "v1.2/notes", large: "l", smalls: []string{"n"}}.save(t, db)
 				source{path: "archive.tar.gz", large: "l", smalls: []string{"z"}}.save(t, db)
@@ -111,6 +117,7 @@ func TestGetIndexCounts(t *testing.T) {
 		{
 			name: "another vault is not counted",
 			setup: func(t *testing.T, db *index.DB) {
+				t.Helper()
 				source{path: "a.md", kind: "note", large: "l", smalls: []string{"a"}}.save(t, db)
 				source{vault: vaultB, path: "b.md", kind: "note", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 			},

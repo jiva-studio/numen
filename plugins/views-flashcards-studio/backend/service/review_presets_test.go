@@ -199,7 +199,6 @@ func getPresetted() map[string]string {
 	}
 }
 
-
 // The window draws a tile per preset, and pressing one opens a session over the
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	handler, target := newAPI(t, getPresetted())

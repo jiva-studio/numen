@@ -12,6 +12,7 @@ import (
 )
 
 func makeAnswer(t *testing.T, id, card, reviewCard, when string, r review.Rating) review.Answer {
+	t.Helper()
 	return review.Answer{
 		ID:         id,
 		ReviewCard: review.CardID{Card: card, Template: reviewCard},

@@ -74,6 +74,7 @@ func (p *promptingPage) getFlushCount() int {
 func (f *showing) startPromptingPage(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
 ) *promptingPage {
+	t.Helper()
 	page := &promptingPage{}
 	go func() {
 		for stream.Receive() {
@@ -522,6 +523,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 }
 
 func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult) error {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 5*time.Second)
 	defer cancel()
 	_, err := f.canvas.ReportFlush(ctx, connect.NewRequest(&v1.ReportFlushRequest{
@@ -533,6 +535,7 @@ func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult)
 func (f *showing) respondPromptUntil(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
 ) {
+	t.Helper()
 	var mu sync.Mutex
 	last := ""
 	go func() {
@@ -567,6 +570,7 @@ func (f *showing) respondPromptUntil(
 }
 
 func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
+	t.Helper()
 	go func() {
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {

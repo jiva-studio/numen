@@ -29,6 +29,7 @@ type fakeSystem struct {
 }
 
 func newFakeSystem(t *testing.T) *fakeSystem {
+	t.Helper()
 	return &fakeSystem{t: t, watched: make(map[chan<- notify.EventInfo]string)}
 }
 

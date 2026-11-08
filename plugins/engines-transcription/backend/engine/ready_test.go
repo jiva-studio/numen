@@ -53,6 +53,7 @@ func TestReady_ChecksLocalModelFiles(t *testing.T) {
 		},
 		"one of the four is not in the models folder": {
 			func(t *testing.T, _ *Config) {
+				t.Helper()
 				if err := os.Remove(filepath.Join(dir, tokensFile)); err != nil {
 					t.Fatal(err)
 				}

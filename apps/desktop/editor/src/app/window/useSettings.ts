@@ -14,7 +14,7 @@ import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
-import { WORDS } from '@/shared/words'
+import type { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
 
 type Words = typeof WORDS

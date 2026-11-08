@@ -190,7 +190,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	if taskCtx.Err() != nil {
 		return nil
 	}
-	if failed := (*chatFailure)(nil); errors.As(err, &failed) {
+	if failed := (*chatError)(nil); errors.As(err, &failed) {
 		reason = failed.Error()
 	} else if err != nil {
 		return err

@@ -116,7 +116,7 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
   const promptIndex = (step.promptIndex ?? 0) + 1
-  if (promptIndex < step.command.prompts!.length) {
+  if (promptIndex < (step.command.prompts?.length ?? 0)) {
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }

@@ -685,7 +685,7 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	}
 	closeErr := errors.New("the listener will not close")
 	accepted := make(chan struct{})
-	stubborn := &http.Server{}
+	stubborn := &http.Server{ReadHeaderTimeout: time.Minute}
 	go func() {
 		if err := stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Error(err)

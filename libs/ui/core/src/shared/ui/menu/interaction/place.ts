@@ -40,14 +40,19 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
     }),
   )
 
+  const getRoom = (): string => {
+    const viewport = options.viewport()
+    return viewport
+      ? `${Math.max(viewport.height - 2 * options.margin(), 0)}px`
+      : `calc(100dvh - ${2 * options.margin()}px)`
+  }
+
   const menuStyle = computed(() => ({
     left: `${placement.value.x}px`,
     top: `${placement.value.y}px`,
     '--asking': `${options.asking?.() ?? 0}px`,
     '--opened-width': `${openedWidth.value}px`,
-    '--room': options.viewport()
-      ? `${Math.max(options.viewport()!.height - 2 * options.margin(), 0)}px`
-      : `calc(100dvh - ${2 * options.margin()}px)`,
+    '--room': getRoom(),
   }))
 
   const setSize = (now: Size): void => {
