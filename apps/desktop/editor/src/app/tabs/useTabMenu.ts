@@ -179,6 +179,8 @@ export interface WindowTabMenuDeps {
   onHighlight?(windowId: string, isOn: boolean): void
   /** The type and the properties of the note of the path. */
   readNoteKind?(path: string): Promise<NoteKind>
+  /** Shows the error of a command of the menu that failed, or of items that could not be read. */
+  reportError?(error: unknown): void
 }
 
 /** The tab of the window and the file it shows, as the commands of its menu run over them. */
@@ -208,5 +210,6 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),
     ...(deps.readNoteKind ? { readNoteKind: deps.readNoteKind } : {}),
+    ...(deps.reportError ? { reportError: deps.reportError } : {}),
   })
 }

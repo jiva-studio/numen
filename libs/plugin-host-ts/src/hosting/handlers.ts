@@ -78,7 +78,7 @@ async function runHandler(
     entry = findEntry(parts, handler)
   }
   if (entry) {
-    await runCommand(deps, entry, { note: run.note, argument: run.argument })
+    await runCommand(deps, entry, run)
     return
   }
   try {
@@ -90,6 +90,7 @@ async function runHandler(
       values: run.values,
     })
   } catch (error) {
+    if (run.isAwaited) throw error
     reportError(deps, handler.pluginId, error)
   }
 }
@@ -133,7 +134,7 @@ async function runSharedCommand(
   const handlers = listMatching(parts, command, note)
   if (argument === undefined) {
     if (handlers.length !== 1) return false
-    await runHandler(parts, handlers[0]!, { note, values })
+    await runHandler(parts, handlers[0]!, { note, values, isAwaited: run.isAwaited })
     return true
   }
   const separator = argument.indexOf(ITEM_SEPARATOR)
@@ -141,7 +142,7 @@ async function runSharedCommand(
   const handler = handlers.find((one) => one.pluginId === pluginId)
   if (!handler) return false
   const item = separator < 0 ? undefined : argument.slice(separator + 1)
-  await runHandler(parts, handler, { note, argument: item, values })
+  await runHandler(parts, handler, { note, argument: item, values, isAwaited: run.isAwaited })
   return true
 }
 

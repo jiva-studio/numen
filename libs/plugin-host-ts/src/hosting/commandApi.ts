@@ -58,7 +58,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         entry = registry.commands.value.get(id)
       }
       if (!entry) return false
-      await runCommand(deps, entry, { note, argument })
+      await runCommand(deps, entry, { note, argument, isAwaited: run.isAwaited })
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {

@@ -1,5 +1,5 @@
 import type { CommandNote, CommandRegistration, Disposable } from '@numen/plugin-sdk'
-import type { PluginHostDeps } from './types'
+import type { CommandRun, PluginHostDeps } from './types'
 
 export interface PluginListener<E> {
   readonly pluginId: string
@@ -45,12 +45,13 @@ export interface CommandEntry {
 export async function runCommand(
   deps: PluginHostDeps,
   entry: CommandEntry,
-  run: { readonly note: CommandNote; readonly argument?: string | undefined },
+  run: { readonly note: CommandNote } & Pick<CommandRun, 'argument' | 'isAwaited'>,
 ): Promise<void> {
   const { note, argument } = run
   try {
     await (argument === undefined ? entry.reg.handler(note) : entry.reg.handler(note, argument))
   } catch (error) {
+    if (run.isAwaited) throw error
     reportError(deps, entry.pluginId, error)
   }
 }

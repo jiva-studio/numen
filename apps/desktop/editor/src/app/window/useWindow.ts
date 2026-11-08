@@ -33,7 +33,7 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { createPaletteItems, useCommands } from '../commands/useCommands'
+import { createCommandRunner, createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
@@ -745,11 +745,13 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
 function createWindowFrameServices(
   base: WindowCore,
   ctx: WindowContext,
-  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget'>,
 ) {
   const { frame } = base
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => ctx.tabCommands?.commands ?? []
+  const getCommandNote = createCommandNoteReader(core)
+  const getCommandDeps = () => getCommands(ctx).commandDeps
   const items = createPaletteItems(
     {
       getAppCommands,
@@ -757,16 +759,23 @@ function createWindowFrameServices(
       pluginHost: base.pluginHost,
       getTarget: commands.getTarget,
     },
-    createCommandNoteReader(core),
-    () => getCommands(ctx).commandDeps,
+    getCommandNote,
+    getCommandDeps,
   )
+  const runner = createCommandRunner({
+    ...getCommands(ctx),
+    pluginHost: base.pluginHost,
+    getCommandNote,
+    getCommandDeps,
+    writeMessage: base.writeMessage,
+  })
   const windowCommands = createWindowCommands({
     getAppIds: () => [
       ...(tableIds ??= createCommands(words).map((one) => one.id)),
       ...getAppCommands().map((one) => one.id),
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
-    runCommand: commands.runCommand,
+    runCommandToEnd: runner.runCommandToEnd,
     listItems: items.listCommandItems,
     runWithArgument: items.runWithArgument,
     getTarget: commands.getTarget,
@@ -874,7 +883,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    ...createWindowFrameServices(base, ctx, { getTarget, runCommand }),
+    ...createWindowFrameServices(base, ctx, { getTarget }),
     isHighlighted,
     ...moves,
   }

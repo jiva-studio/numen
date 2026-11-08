@@ -1,8 +1,8 @@
 /** How a command runs, and what a key chord triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CommandTarget, PaletteLists } from '@/features/command-palette'
+import type { CommandDeps, CommandTarget, PaletteLists } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
-import { useCommands, type CommandsDepsOptions } from './useCommands'
+import { createCommandRunner, useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({
   startCommand: vi.fn(),
@@ -144,6 +144,66 @@ describe('running a command', () => {
 
     expect(h.setCommandsOpen).toHaveBeenCalledExactlyOnceWith(false)
     expect(h.setPaletteOpen).toHaveBeenCalledExactlyOnceWith(true)
+  })
+})
+
+describe('a run to its end, as a plugin awaits it', () => {
+  /** The runner over the palette mocks, a plugin host where one is given, and the messages written. */
+  const setupRunner = (pluginHost?: object) => {
+    const messages: [string, string | undefined][] = []
+    const writeMessage = (text: string, severity?: string) => messages.push([text, severity])
+    const runner = createCommandRunner({
+      commands: {
+        startCommand: h.startCommand,
+        getObjection: h.getObjection,
+        setOpen: h.setCommandsOpen,
+        open: h.isCommandsOpen,
+      } as unknown as Parameters<typeof createCommandRunner>[0]['commands'],
+      palette: { setOpen: h.setPaletteOpen },
+      pluginHost: pluginHost as CommandsDepsOptions['pluginHost'],
+      getCommandNote: async (one) => ({ ...one, type: 'note' }) as never,
+      getCommandDeps: () => ({ writeMessage }) as unknown as CommandDeps,
+      writeMessage,
+    })
+    return { runner, messages }
+  }
+
+  it('settles when the invocation has run, and writes its error nowhere but rejects with it', async () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    h.runInvocation.mockImplementationOnce((async (_invocation: unknown, on: CommandDeps) => {
+      on.writeMessage('', 'info')
+      on.writeMessage('the disk is full', 'error')
+    }) as unknown as () => Promise<void>)
+    const { runner, messages } = setupRunner()
+
+    await expect(runner.runCommandToEnd('save', target)).rejects.toThrow('the disk is full')
+    expect(messages).toStrictEqual([['', 'info']])
+  })
+
+  it('rejects with the objection to a command that cannot start, and writes it nowhere', async () => {
+    h.startCommand.mockReturnValue(null)
+    h.getObjection.mockReturnValue('Nothing to save')
+    const { runner, messages } = setupRunner()
+
+    await expect(runner.runCommandToEnd('save', target)).rejects.toThrow('Nothing to save')
+    expect(messages).toStrictEqual([])
+  })
+
+  it('has the host await a plugin command, and rejects with its error, which it writes nowhere', async () => {
+    const executeCommand = vi.fn(async () => {
+      throw new Error('plugin command failed')
+    })
+    const { runner, messages } = setupRunner({
+      hasCommand: () => true,
+      isSharedCommand: () => false,
+      executeCommand,
+    })
+
+    await expect(runner.runCommandToEnd('summary', target)).rejects.toThrow('plugin command failed')
+    expect(executeCommand).toHaveBeenCalledExactlyOnceWith('summary', expect.any(Object), {
+      isAwaited: true,
+    })
+    expect(messages).toStrictEqual([])
   })
 })
 

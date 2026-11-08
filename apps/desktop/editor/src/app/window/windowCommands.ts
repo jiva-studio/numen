@@ -1,7 +1,7 @@
 /**
  * The commands the window gives its plugins: the ids of its own commands and of those its plugins
- * registered, the items a command offers, and the run of one through the runner the palette and
- * the shortcuts use.
+ * registered, the items a command offers, and the run of one, which settles when the run ends and
+ * rejects with its error, so the plugin that runs it shows the error and the window writes none.
  */
 import { computed, watch } from 'vue'
 import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-host'
@@ -11,8 +11,8 @@ interface WindowCommandsDeps {
   readonly getAppIds: () => readonly string[]
   /** The ids of the commands the plugins of the window registered; reactive. */
   readonly getPluginIds: () => readonly string[]
-  /** The runner the palette and the shortcuts use. */
-  readonly runCommand: (id: string, target: CommandTarget) => void
+  /** Runs the command over the target; settles when the run ends and rejects with its error, which it writes nowhere. */
+  readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<void>
   /** The items a command offers over the target; none for a command of the window. */
   readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
   /** Runs a command with the item picked as its argument. */
@@ -57,7 +57,7 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
     run: async (id, target, argument) => {
       const runTarget = getRunTarget(target)
-      if (argument === undefined) deps.runCommand(id, runTarget)
+      if (argument === undefined) await deps.runCommandToEnd(id, runTarget)
       else await deps.runWithArgument(id, toRunTarget(runTarget), argument)
     },
   }

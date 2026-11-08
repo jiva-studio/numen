@@ -89,6 +89,10 @@ vi.mock('../commands/useCommands', () => ({
     listCommandItems: async () => [],
     runWithArgument: async () => undefined,
   }),
+  createCommandRunner: () => ({
+    runCommand: () => undefined,
+    runCommandToEnd: async () => undefined,
+  }),
 }))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (_core: unknown, args: unknown) => {

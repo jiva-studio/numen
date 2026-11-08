@@ -8,6 +8,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { WorkspaceLayout } from '@numen/shell'
 import { LoadingIndicator } from '@numen/ui'
+import { formatErrorMessage } from '@numen/core-client'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -74,6 +75,7 @@ const tabMenu = useWindowTabMenu({
   slots,
   commands: windowCommands,
   readNoteKind,
+  reportError: (error: unknown) => commandDeps.writeMessage(formatErrorMessage(error), 'error'),
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

@@ -1,11 +1,15 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { h, type Component, type FunctionalComponent } from 'vue'
 import type { SlotCommand, SlotItem, SlotSubmenu, SlotView } from '@numen/plugin-sdk'
-import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
+import {
+  createMockNoticeHost,
+  createMockPluginContext,
+  type MockPluginContext,
+} from '@numen/plugin-sdk/testing'
 import { activate, STATUS_BAR_VIEW } from './index'
 
 const manifest = JSON.parse(
@@ -146,6 +150,21 @@ describe('a command', () => {
     expect(context.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:count`, target: undefined, argument: undefined },
     ])
+  })
+
+  it('shows the error of a run that fails as one notice', async () => {
+    const notices = createMockNoticeHost()
+    const context = createMockPluginContext({ pluginId: manifest.id, notices })
+    activate(context)
+    const view = context.getRegisteredSlotViews()[0]!.component as Component
+    context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
+    vi.spyOn(context.commands, 'run').mockRejectedValueOnce(new Error('the words are gone'))
+    const wrapper = mountBar(view)
+
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    expect(notices.getShown()).toStrictEqual([{ text: 'the words are gone', severity: 'error' }])
   })
 
   it('shows the icon of the command with its title and shortcut as the hover text', () => {
