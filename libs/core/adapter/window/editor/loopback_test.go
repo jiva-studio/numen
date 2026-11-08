@@ -74,11 +74,11 @@ func ask(t testing.TB, handler http.Handler, url string) *httptest.ResponseRecor
 
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.FileStat {
 	t.Helper()
-	ref, err := api.Media.statFile.Execute(t.Context(), v, path)
+	resolved, err := api.Media.resolveAddress.Execute(t.Context(), v, path)
 	if err != nil {
 		return domain.FileStat{Path: path}
 	}
-	return ref
+	return resolved.Stat
 }
 
 // takenAway is a listener that stops accepting on request, as when the

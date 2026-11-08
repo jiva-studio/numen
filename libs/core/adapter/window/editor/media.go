@@ -3,14 +3,12 @@ package editor
 import (
 	"context"
 	"errors"
-	"io/fs"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // mediaHandler serves MediaService: where a file of the shown vault or of a plugin's store of it is
@@ -18,8 +16,7 @@ import (
 type mediaHandler struct {
 	state          *State
 	playing        *Loopback
-	statFile       *file.StatFile
-	openPluginFile *file.OpenPluginFile
+	resolveAddress *file.ResolveAddress
 	mediaTypes     *file.GetMediaType
 }
 
@@ -32,43 +29,25 @@ func (h *mediaHandler) ResolveAddress(
 	if err != nil {
 		return nil, err
 	}
-	address, err := file.ParseAddress(r.Msg.GetAddress())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if address.IsPluginFile() {
-		return h.resolvePluginFile(ctx, showing, address)
-	}
-	if h.statFile == nil {
+	if h.resolveAddress == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	ref, err := h.statFile.Execute(ctx, showing, address.Path)
-	if err != nil {
+	resolved, err := h.resolveAddress.Execute(ctx, showing, r.Msg.GetAddress())
+	switch {
+	case errors.Is(err, file.ErrInvalidAddress):
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, file.ErrNoPluginFiles):
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	case err != nil:
 		return nil, connect.NewError(getListCode(err), err)
 	}
+	src := h.playing.Address(showing, resolved.Stat)
+	if resolved.Address.IsPluginFile() {
+		src = h.playing.PluginFileAddress(showing, resolved.Address, resolved.Size)
+	}
 	return connect.NewResponse(&v1.ResolveAddressResponse{
-		Src:       h.playing.Address(showing, ref),
-		MediaType: getMediaType(h.mediaTypes, ref.Path),
-	}), nil
-}
-
-func (h *mediaHandler) resolvePluginFile(
-	ctx context.Context, showing domain.Vault, address file.Address,
-) (*connect.Response[v1.ResolveAddressResponse], error) {
-	if h.openPluginFile == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
-	}
-	opened, err := h.openPluginFile.Execute(ctx, showing, address.PluginID, address.Path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, connect.NewError(connect.CodeNotFound, err)
-	}
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	closeAndReport(h.state.reportTask, opened.Body)
-	return connect.NewResponse(&v1.ResolveAddressResponse{
-		Src:       h.playing.PluginFileAddress(showing, address, opened.Size),
-		MediaType: getMediaType(h.mediaTypes, address.Path),
+		Src:       src,
+		MediaType: getMediaType(h.mediaTypes, resolved.Address.Path),
 	}), nil
 }
 
