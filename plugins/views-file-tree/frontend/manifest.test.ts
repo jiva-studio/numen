@@ -49,6 +49,7 @@ describe('the menu of a row', () => {
         slot: 'fileTree.context',
         submenu: 'fileTree.new',
         title: 'New',
+        icon: 'plus',
         group: '1-new',
         when: 'target.isFolder',
       },

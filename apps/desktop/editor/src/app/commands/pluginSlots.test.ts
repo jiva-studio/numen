@@ -1,5 +1,6 @@
 /** The slot entries of the window: those the plugins declare and those of the application, and how their commands are drawn. */
 import { describe, expect, it } from 'vitest'
+import { FileText } from '@lucide/vue'
 import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-host'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
@@ -198,6 +199,7 @@ describe('a shared command in a slot', () => {
   it('is drawn under its own title as a command with items, its handlers', () => {
     expect(find('app:file.createText', NOTE)).toStrictEqual({
       title: 'Create text',
+      icon: FileText,
       shortcut: '',
       hasItems: true,
     })

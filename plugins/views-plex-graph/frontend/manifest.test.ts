@@ -69,6 +69,7 @@ describe('the menu of a row of the file tree', () => {
         slot: 'fileTree.context',
         submenu: 'plex.relation',
         title: 'Relation',
+        icon: 'waypoints',
         group: '4-relation',
       },
       { slot: 'plex.relation', command: 'app:note.createChild', order: 10 },
