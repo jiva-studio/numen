@@ -618,6 +618,7 @@ describe('the services a plugin is given', () => {
       'app:tab.unlink',
       'app:tab.moveToWindow',
       'app:tab.link',
+      'app:version.delete',
       'org.example.sample:share.run',
     ])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
