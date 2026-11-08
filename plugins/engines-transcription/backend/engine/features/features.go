@@ -276,7 +276,7 @@ func fft(a, w []complex128) {
 	for length := 2; length <= n; length <<= 1 {
 		stride := n / length
 		for i := 0; i < n; i += length {
-			for j := 0; j < length/2; j++ {
+			for j := range length / 2 {
 				u, v := a[i+j], a[i+j+length/2]*w[j*stride]
 				a[i+j], a[i+j+length/2] = u+v, u-v
 			}

@@ -10,9 +10,6 @@ import (
 
 const pluginID = "md.numen.sample.speech"
 
-//go:fix inline
-func number(v float64) *float64 { return new(v) }
-
 func declaredSettings(owner string) ([]pluginport.PluginManifestSetting, bool) {
 	switch owner {
 	case settings.OwnerApp:
@@ -21,7 +18,7 @@ func declaredSettings(owner string) ([]pluginport.PluginManifestSetting, bool) {
 		return []pluginport.PluginManifestSetting{
 			{Key: "model", Type: "enum", Title: "Model", Options: pluginport.PluginSettingOptions{{Value: "small"}, {Value: "large"}}},
 			{Key: "maxTokens", Type: "number", Title: "Tokens"},
-			{Key: "temperature", Type: "range", Title: "Temperature", Min: number(0), Max: number(2)},
+			{Key: "temperature", Type: "range", Title: "Temperature", Min: new(float64(0)), Max: new(float64(2))},
 			{Key: "label", Type: "string", Title: "Label"},
 			{Key: "verbose", Type: "boolean", Title: "Verbose"},
 		}, true

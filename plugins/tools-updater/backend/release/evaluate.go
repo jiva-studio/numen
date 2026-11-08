@@ -134,7 +134,7 @@ func splitVersion(version string) (core []string, prerelease string) {
 
 func compareNumbers(a, b []string) int {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="getNumber returns 0 out of bounds on both sides."
-	for i := 0; i < max(len(a), len(b)); i++ {
+	for i := range max(len(a), len(b)) {
 		if order := compareInts(getNumber(a, i), getNumber(b, i)); order != 0 {
 			return order
 		}
@@ -164,7 +164,7 @@ func compareInts(a, b int) int {
 }
 
 func comparePrerelease(a, b []string) int {
-	for i := 0; i < min(len(a), len(b)); i++ {
+	for i := range min(len(a), len(b)) {
 		if order := compareIdentifier(a[i], b[i]); order != 0 {
 			return order
 		}

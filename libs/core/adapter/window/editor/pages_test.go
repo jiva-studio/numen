@@ -70,9 +70,6 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 	}
 }
 
-//go:fix inline
-func size(response float64) *float64 { return new(response) }
-
 func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	r.URL.Path = path

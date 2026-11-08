@@ -64,7 +64,7 @@ func TestTheErrorsOfAWriteNameTheKeyAndTheFault(t *testing.T) {
 
 func TestFormatRangeWithoutUpperLimitPrintsInf(t *testing.T) {
 	declared := func(owner string) ([]pluginport.PluginManifestSetting, bool) {
-		return []pluginport.PluginManifestSetting{{Key: "port", Type: "number", Title: "Port", Min: number(1024)}}, owner == "org.example.relay"
+		return []pluginport.PluginManifestSetting{{Key: "port", Type: "number", Title: "Port", Min: new(float64(1024))}}, owner == "org.example.relay"
 	}
 	err := settings.CheckWrite(declared, nil, []string{"org.example.relay", "port"}, 80.0)
 	if want := `"org.example.relay.port": 80 is out of range 1024..+inf`; err == nil || err.Error() != want {

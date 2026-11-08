@@ -269,7 +269,7 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 	workers := newWorkers(t)
 
 	isDone := make(chan string, 8)
-	for i := 0; i < cap(isDone); i++ {
+	for i := range cap(isDone) {
 		go func() {
 			book, err := workers.Read(raw)
 			if err != nil {
@@ -280,7 +280,7 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 		}()
 	}
 	want := read(t, tiny).Text
-	for i := 0; i < cap(isDone); i++ {
+	for i := range cap(isDone) {
 		if got := <-isDone; got != want {
 			t.Errorf("one reading gave %q, want %q", got, want)
 		}

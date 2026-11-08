@@ -91,10 +91,7 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 		last := min(
 			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to linked leaves last unchanged"
 			d.endLine(lines, item, items.Column), linked)
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to itemLine leaves last unchanged"
-		if last < itemLine {
-			last = itemLine
-		}
+		last = max(last, itemLine)
 		entries = append(entries, entry{
 			link:       linkOf(item),
 			start:      lines[itemLine-1],

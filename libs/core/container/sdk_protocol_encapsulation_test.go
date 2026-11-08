@@ -79,7 +79,7 @@ func (w *leakWalk) walk(t types.Type) {
 		w.walk(current.Elem())
 	case *types.Struct:
 		for field := range current.Fields() {
-			if field := field; field.Exported() {
+			if field.Exported() {
 				w.walk(field.Type())
 			}
 		}
@@ -95,7 +95,7 @@ func (w *leakWalk) walk(t types.Type) {
 		}
 	case *types.Interface:
 		for method := range current.ExplicitMethods() {
-			if method := method; method.Exported() {
+			if method.Exported() {
 				w.walk(method.Type())
 			}
 		}
