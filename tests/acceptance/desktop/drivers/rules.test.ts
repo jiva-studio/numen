@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertApplication,
+  assertEntry,
   assertPosition,
   assertSingleTab,
   getAddressTitle,
+  getAncestors,
   getStem,
   getTitlePattern,
   getPaletteField,
@@ -155,5 +157,25 @@ describe('assertSingleTab', () => {
     expect(() => assertSingleTab('Shopping list', 2)).toThrow(
       '2 tabs are titled "Shopping list": use "at" with the path',
     )
+  })
+})
+
+describe('assertEntry', () => {
+  it('passes a file that is a file and a folder that is a folder', () => {
+    expect(() => assertEntry('file', 'notes/A.md', false)).not.toThrow()
+    expect(() => assertEntry('folder', 'notes', true)).not.toThrow()
+  })
+
+  it('throws when the entry is the other kind or not a kind', () => {
+    expect(() => assertEntry('folder', 'notes/A.md', false)).toThrow('"notes/A.md" is a file, not a folder')
+    expect(() => assertEntry('file', 'notes', true)).toThrow('"notes" is a folder, not a file')
+    expect(() => assertEntry('note', 'notes', true)).toThrow('"note" is not a file or a folder')
+  })
+})
+
+describe('getAncestors', () => {
+  it('lists the folders above a path, the top one first', () => {
+    expect(getAncestors('a/b/c.md')).toEqual(['a', 'a/b'])
+    expect(getAncestors('a.md')).toEqual([])
   })
 })
