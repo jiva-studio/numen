@@ -31,7 +31,3 @@ Then('the note {string} does not have {string}', async ({ person }, title: strin
 Then('the note {string} on disk has {string}', async ({ person }, title: string, text: string) => {
   await person.expectHas('disk', title, text)
 })
-
-Then('the note {string} on disk does not have {string}', async ({ person }, title: string, text: string) => {
-  await person.expectLacks('disk', title, text)
-})

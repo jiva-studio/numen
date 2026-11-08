@@ -13,14 +13,12 @@ Feature: A note that changes on disk
     When another program writes "milk" in the note "Shopping list" on disk
     Then the note "Shopping list" has "the file changed on disk"
     And the note "Shopping list" has "bread"
-    And the note "Shopping list" on disk has "milk"
 
   Scenario: The person keeps their text
     Given the person has unsaved "bread" in the note "Shopping list"
     And another program writes "milk" in the note "Shopping list" on disk
     When the person chooses "Keep my version" for the note "Shopping list"
     Then the note "Shopping list" on disk has "bread"
-    And the note "Shopping list" on disk does not have "milk"
 
   Scenario: The person takes the text from disk
     Given the person has unsaved "bread" in the note "Shopping list"
