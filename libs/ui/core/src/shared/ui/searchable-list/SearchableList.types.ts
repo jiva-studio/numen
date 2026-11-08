@@ -12,6 +12,11 @@ export interface SearchableListProps {
   isPending?: boolean
   hasAction?: boolean
   needsQuery?: boolean
+  /**
+   * The identifiers of the items in force where several are. Every one of them is
+   * marked once, and the model of the list is not read for the mark.
+   */
+  chosen?: readonly string[] | undefined
 }
 
 export interface SearchableListPopupProps {

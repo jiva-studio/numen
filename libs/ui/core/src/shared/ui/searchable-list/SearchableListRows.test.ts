@@ -21,7 +21,7 @@ const mountRows = (props: Record<string, unknown> = {}) =>
     props: {
       rows: ROWS,
       activeIndex: 1,
-      current: 'a',
+      current: ['a'],
       listId: 'models',
       label: 'Models',
       ...props,

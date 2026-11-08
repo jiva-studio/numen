@@ -272,3 +272,80 @@ describe('what a caller reaches the line by', () => {
     expect(document.activeElement).toBe(control.get('button').element)
   })
 })
+
+describe('several choices in force', () => {
+  const getOptions = () =>
+    Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
+  const getMarks = () => document.body.querySelectorAll('.searchable-list__mark')
+  const getSelections = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
+    (control.emitted('update:selected') ?? []).map((response) => (response as unknown[])[0])
+
+  const mountMultiple = (selected: readonly string[]) =>
+    mountSelect({
+      isMultiple: true,
+      selected,
+      placeholder: 'Nothing chosen',
+      choices: [
+        { id: 'small', text: 'Small', detail: 'First group' },
+        { id: 'medium', text: 'Medium', detail: 'Second group' },
+        { id: 'large', text: 'Large', detail: 'First group' },
+      ],
+    })
+
+  it('says the stand-in where none is chosen', () => {
+    expect(line(mountMultiple([])).text()).toContain('Nothing chosen')
+  })
+
+  it('says the text of the one chosen', () => {
+    expect(line(mountMultiple(['medium'])).text()).toBe('Medium')
+  })
+
+  it('says the first text and how many more are chosen', () => {
+    expect(line(mountMultiple(['large', 'small', 'medium'])).text()).toContain('Large +2')
+  })
+
+  it('marks every chosen row once, and keeps the second line', async () => {
+    const control = mountMultiple(['small', 'large'])
+    await openSelect(control)
+    expect(getOptions().map((one) => one.getAttribute('aria-current'))).toStrictEqual([
+      'true',
+      null,
+      'true',
+    ])
+    expect(getMarks()).toHaveLength(2)
+    expect(document.body.querySelector('.searchable-list__detail')?.textContent).toBe('First group')
+  })
+
+  it('toggles a choice, stays open and marks each chosen row once', async () => {
+    const control = mountMultiple(['small'])
+    await openSelect(control)
+    getOptions()[1]!.click()
+    await nextTick()
+    expect(getSelections(control)).toStrictEqual([['small', 'medium']])
+    expect(getOptions()).toHaveLength(3)
+    expect(getMarks()).toHaveLength(2)
+  })
+
+  it('removes a chosen choice when it is pressed again', async () => {
+    const control = mountMultiple(['small', 'medium'])
+    await openSelect(control)
+    getOptions()[0]!.click()
+    await nextTick()
+    expect(getSelections(control)).toStrictEqual([['medium']])
+  })
+
+  it('narrows the choices by what is typed and toggles with Enter', async () => {
+    const control = mountMultiple([])
+    await openSelect(control)
+    const search = document.body.querySelector<HTMLInputElement>(
+      '[data-numen-searchable-list] input',
+    )!
+    search.value = 'lar'
+    search.dispatchEvent(new Event('input'))
+    await nextTick()
+    expect(getOptions()).toHaveLength(1)
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await nextTick()
+    expect(getSelections(control)).toStrictEqual([['large']])
+  })
+})

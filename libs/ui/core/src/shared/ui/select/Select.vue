@@ -25,11 +25,15 @@ const props = withDefaults(defineProps<SelectProps>(), {
   isDisabled: false,
   isSearchable: false,
   canEnterCustom: false,
+  isMultiple: false,
   searchName: 'Search',
 })
 
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
+
+/** Which choices are in force in a multiple select, by identifier. */
+const selected = defineModel<readonly string[]>('selected', { default: () => [] })
 
 /* ---------------------------------- State --------------------------------- */
 const items = computed<readonly MenuItem[]>(() =>
@@ -48,6 +52,7 @@ const query = ref('')
 const isCustomAvailable = computed(
   () =>
     props.canEnterCustom &&
+    !props.isMultiple &&
     query.value.trim() !== '' &&
     filterItems(props.choices, query.value).length === 0,
 )
@@ -55,8 +60,23 @@ const isCustomAvailable = computed(
 /** The choice in force, and none where the value is none of them. */
 const selectedChoice = computed(() => props.choices.find((one) => one.id === model.value))
 
-/** What is written on the line: the choice, the value itself, or the stand-in. */
-const displayText = computed(() => selectedChoice.value?.text || model.value || props.placeholder)
+/** The text of a chosen choice, and the identifier where it names none. */
+const getChosenText = (id: string): string => props.choices.find((one) => one.id === id)?.text || id
+
+/** What is written on the line of a multiple select: the first choice, and how many more. */
+const multipleText = computed(() => {
+  const [first, ...rest] = selected.value
+  if (first === undefined) return props.placeholder
+  return rest.length === 0 ? getChosenText(first) : `${getChosenText(first)} +${rest.length}`
+})
+
+const displayText = computed(() =>
+  props.isMultiple
+    ? multipleText.value
+    : selectedChoice.value?.text || model.value || props.placeholder,
+)
+
+const isEmpty = computed(() => (props.isMultiple ? selected.value.length === 0 : !model.value))
 
 const element = useTemplateRef<HTMLButtonElement>('element')
 
@@ -86,6 +106,12 @@ const onCloseChoices = () => {
 }
 
 const onChoose = (id: string) => {
+  if (props.isMultiple) {
+    selected.value = selected.value.includes(id)
+      ? selected.value.filter((one) => one !== id)
+      : [...selected.value, id]
+    return
+  }
   model.value = id
   onCloseChoices()
 }
@@ -123,7 +149,7 @@ const onKey = (event: KeyboardEvent) => {
   >
     <span
       class="select__reading min-w-0"
-      :class="{ 'text-hushed': !selectedChoice && !model }"
+      :class="{ 'text-hushed': isEmpty && !selectedChoice }"
       :title="displayText"
     >
       {{ displayText }}
@@ -132,9 +158,10 @@ const onKey = (event: KeyboardEvent) => {
   </button>
 
   <SearchableListPopup
-    v-if="menuAnchor && isSearchable"
+    v-if="menuAnchor && (isSearchable || isMultiple)"
     v-model:query="query"
-    :model-value="model"
+    :model-value="isMultiple ? null : model"
+    :chosen="isMultiple ? selected : undefined"
     :items="choices"
     :label="name"
     :placeholder="searchName"
