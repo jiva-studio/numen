@@ -71,8 +71,28 @@ await test('a change outside the desktop window, or to its documentation, select
     'desktop=false',
     'paths=',
     'flashcards=false',
+    'acceptance=false',
     'matrix={"include":[]}',
   ])
+})
+
+await test('a change to a scenario or its steps selects the acceptance scenarios alone', () => {
+  assert.equal(getScope(['features/notes/changes-on-disk.feature']), 'acceptance')
+  assert.equal(getScope(['tests/acceptance/desktop/drivers/person.ts']), 'acceptance')
+  assert.deepEqual(getPlan('acceptance'), [
+    'desktop=false',
+    'paths=',
+    'flashcards=false',
+    'acceptance=true',
+    'matrix={"include":[]}',
+  ])
+  assert.equal(
+    getScope(['features/notes/changes-on-disk.feature', 'tests/e2e/desktop/tests/plugins/notes/wikilinks.spec.ts']),
+    'notes acceptance',
+  )
+  assert.deepEqual(getScopePaths('notes acceptance'), ['tests/plugins/notes/', 'tests/shell/'])
+  assert.ok(getPlan('all').includes('acceptance=true'))
+  assert.ok(getPlan('notes').includes('acceptance=false'))
 })
 
 await test('a scope of folders runs them and the shell', () => {

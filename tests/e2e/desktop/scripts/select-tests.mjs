@@ -14,11 +14,15 @@
 // is built from selects every test; a change outside it, to documentation, or to a unit test,
 // story or linter config outside the e2e suite selects none.
 //
+// A change to features/ or tests/acceptance/ adds the token `acceptance`, which runs the acceptance
+// scenarios and no spec file; `all` runs them too.
+//
 // `plan` prints `key=value` lines for $GITHUB_OUTPUT:
 //
 //   desktop=true|false     whether any test of the desktop window runs
 //   paths=<paths>          the folders and spec files to run, separated by spaces; empty for all
 //   flashcards=true|false  whether the flashcards window's tests run
+//   acceptance=true|false  whether the acceptance scenarios run
 //   matrix=<json>          {"include":[{"engine","shard","shards"}]}: one job per engine and shard
 import fs from 'node:fs'
 import path from 'node:path'
@@ -34,6 +38,10 @@ const SHARD_SECONDS = 300
 const MAX_SHARDS = 4
 const ID_PREFIX = 'md.numen.'
 const FLASHCARDS = 'views.flashcards.studio'
+const ACCEPTANCE = 'acceptance'
+
+/** The scenarios and the code that runs them. */
+const isAcceptanceInput = (file) => /^(features|tests\/acceptance)\//.test(file) && !isDocumentation(file)
 
 /** Tests of a plugin beyond its own folder and the spec files that name its id, as scope tokens. */
 export const PLUGIN_TESTS = {
@@ -98,11 +106,34 @@ export const getPluginTokens = (dir) => {
 /** The path under the e2e folder that a scope token names. */
 const getTokenPath = (token) => `tests/${token.includes('/') ? token : `plugins/${token}/`}`
 
+/** The scope string of the tokens the changed files selected. */
+const joinScope = (tokens, isTested, isAcceptance) => {
+  if (tokens.size === 0) {
+    if (isTested) return isAcceptance ? `shell/ ${ACCEPTANCE}` : 'shell/'
+    return isAcceptance ? ACCEPTANCE : 'none'
+  }
+  const folders = [...tokens].map(getTokenPath).filter((one) => one.endsWith('/'))
+  const named = [...tokens]
+    .filter(
+      (one) =>
+        !folders.some(
+          (folder) => getTokenPath(one).startsWith(folder) && getTokenPath(one) !== folder,
+        ),
+    )
+    .sort((a, b) => a.localeCompare(b))
+  return (isAcceptance ? [...named, ACCEPTANCE] : named).join(' ')
+}
+
 /** The scope of the changed files. */
 export const getScope = (files) => {
   const tokens = new Set()
   let isTested = false
+  let isAcceptance = false
   for (const file of files) {
+    if (isAcceptanceInput(file)) {
+      isAcceptance = true
+      continue
+    }
     if (!isDesktopInput(file)) continue
     isTested = true
     const folder = /^tests\/e2e\/desktop\/tests\/plugins\/([^/]+)\//.exec(file)
@@ -123,17 +154,7 @@ export const getScope = (files) => {
       return 'all'
     }
   }
-  if (tokens.size === 0) return isTested ? 'shell/' : 'none'
-  const folders = [...tokens].map(getTokenPath).filter((one) => one.endsWith('/'))
-  return [...tokens]
-    .filter(
-      (one) =>
-        !folders.some(
-          (folder) => getTokenPath(one).startsWith(folder) && getTokenPath(one) !== folder,
-        ),
-    )
-    .sort((a, b) => a.localeCompare(b))
-    .join(' ')
+  return joinScope(tokens, isTested, isAcceptance)
 }
 
 /**
@@ -143,7 +164,7 @@ export const getScope = (files) => {
 export const getScopePaths = (scope) => {
   const tokens = scope.split(' ').filter(Boolean)
   if (tokens.includes('all')) return undefined
-  const named = tokens.filter((one) => one !== 'none')
+  const named = tokens.filter((one) => one !== 'none' && one !== ACCEPTANCE)
   if (named.length === 0) return []
   return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) => a.localeCompare(b))
 }
@@ -167,6 +188,7 @@ export const getPlan = (scope) => {
     `desktop=${jobs.length > 0}`,
     `paths=${(paths ?? []).join(' ')}`,
     `flashcards=${flashcards}`,
+    `acceptance=${!paths || scope.split(' ').includes(ACCEPTANCE)}`,
     `matrix=${JSON.stringify({ include: jobs })}`,
   ]
 }
