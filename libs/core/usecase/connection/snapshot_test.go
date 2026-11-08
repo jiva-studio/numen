@@ -251,3 +251,41 @@ func TestNewCallCarriesTheFieldsTheSecretsTheModelAndTheReasoning(t *testing.T) 
 		t.Errorf("call = %+v", call)
 	}
 }
+
+func TestResolveReadsTheLimitOfParallelRequestsFromTheStoredFieldFirst(t *testing.T) {
+	f := newFixture(t)
+	created := f.createOpenRouter(t, "Work")
+	if _, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
+		ID: created.ID, Revision: created.Revision, Name: "Work", Fields: map[string]any{"parallelRequests": float64(8)},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := f.connection.Resolve.Execute(created.ID)
+
+	if err != nil || resolved.ParallelRequests != 8 {
+		t.Errorf("ParallelRequests = %d, %v, want 8", resolved.ParallelRequests, err)
+	}
+}
+
+func TestResolveReadsTheLimitOfParallelRequestsFromTheDefaultOfTheType(t *testing.T) {
+	f := newFixture(t)
+	created := f.createOpenRouter(t, "Work")
+
+	resolved, err := f.connection.Resolve.Execute(created.ID)
+
+	if err != nil || resolved.ParallelRequests != 4 {
+		t.Errorf("ParallelRequests = %d, %v, want 4", resolved.ParallelRequests, err)
+	}
+}
+
+func TestResolveSetsNoLimitWhereTheTypeDeclaresNoParallelRequests(t *testing.T) {
+	f := newFixture(t)
+	created := f.createCompatible(t, "Ollama", "http://localhost:11434/v1", "")
+
+	resolved, err := f.connection.Resolve.Execute(created.ID)
+
+	if err != nil || resolved.ParallelRequests != 0 {
+		t.Errorf("ParallelRequests = %d, %v, want 0 for no limit", resolved.ParallelRequests, err)
+	}
+}

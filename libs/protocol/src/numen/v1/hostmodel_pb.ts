@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostmodel.proto.
  */
 export const file_numen_v1_hostmodel: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0bW9kZWwucHJvdG8SCG51bWVuLnYxIjsKEEhvc3RNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIuChBIb3N0TW9kZWxNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKNAQofSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLm51bWVuLnYxLkhvc3RNb2RlbE1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAiABKAFIAIgBARISCgptYXhfdG9rZW5zGAMgASgFQg4KDF90ZW1wZXJhdHVyZSKbAQogSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVzcG9uc2USDAoEdGV4dBgBIAEoCRIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSLAoIZmFpbHVyZXMYBCADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlIi0KHEhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlcXVlc3QSDQoFdGV4dHMYASADKAkisgEKHUhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvchIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSLAoIZmFpbHVyZXMYBCADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlIiwKKkhvc3RNb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVxdWVzdCKfAgorSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZRINCgVtb2RlbBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDwoHcG9vbGluZxgDIAEoCRIUCgxxdWVyeV9wcmVmaXgYBCABKAkSFwoPZG9jdW1lbnRfcHJlZml4GAUgASgJEhIKCmRpbWVuc2lvbnMYBiABKAUSEgoKbWF4X3Rva2VucxgHIAEoBRIrCgVlcnJvchgIIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYCSABKAkSLAoIZmFpbHVyZXMYCiADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlKq4BChJIb3N0TW9kZWxFcnJvckNvZGUSJQohSE9TVF9NT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJwojSE9TVF9NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QARIkCiBIT1NUX01PREVMX0VSUk9SX0NPREVfQUxMX0ZBSUxFRBACEiIKHkhPU1RfTU9ERUxfRVJST1JfQ09ERV9SRUpFQ1RFRBADMtQCChBIb3N0TW9kZWxTZXJ2aWNlEmEKCENvbXBsZXRlEikubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBoqLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlElgKBUVtYmVkEiYubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBonLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEoIBChNHZXRFbWJlZGRpbmdQcm9maWxlEjQubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0GjUubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding]);
+  fileDesc("ChhudW1lbi92MS9ob3N0bW9kZWwucHJvdG8SCG51bWVuLnYxIjsKEEhvc3RNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIuChBIb3N0TW9kZWxNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKzAQofSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLm51bWVuLnYxLkhvc3RNb2RlbE1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAiABKAFIAIgBARISCgptYXhfdG9rZW5zGAMgASgFEiQKCHByaW9yaXR5GAQgASgOMhIubnVtZW4udjEuUHJpb3JpdHlCDgoMX3RlbXBlcmF0dXJlIpsBCiBIb3N0TW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIMCgR0ZXh0GAEgASgJEisKBWVycm9yGAIgASgOMhwubnVtZW4udjEuSG9zdE1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCRIsCghmYWlsdXJlcxgEIAMoCzIaLm51bWVuLnYxLkhvc3RNb2RlbEZhaWx1cmUiUwocSG9zdE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBINCgV0ZXh0cxgBIAMoCRIkCghwcmlvcml0eRgCIAEoDjISLm51bWVuLnYxLlByaW9yaXR5IrIBCh1Ib3N0TW9kZWxTZXJ2aWNlRW1iZWRSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISKwoFZXJyb3IYAiABKA4yHC5udW1lbi52MS5Ib3N0TW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEiwKCGZhaWx1cmVzGAQgAygLMhoubnVtZW4udjEuSG9zdE1vZGVsRmFpbHVyZSIsCipIb3N0TW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlcXVlc3QinwIKK0hvc3RNb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVzcG9uc2USDQoFbW9kZWwYASABKAkSDgoGc291cmNlGAIgASgJEg8KB3Bvb2xpbmcYAyABKAkSFAoMcXVlcnlfcHJlZml4GAQgASgJEhcKD2RvY3VtZW50X3ByZWZpeBgFIAEoCRISCgpkaW1lbnNpb25zGAYgASgFEhIKCm1heF90b2tlbnMYByABKAUSKwoFZXJyb3IYCCABKA4yHC5udW1lbi52MS5Ib3N0TW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAkgASgJEiwKCGZhaWx1cmVzGAogAygLMhoubnVtZW4udjEuSG9zdE1vZGVsRmFpbHVyZSpXCghQcmlvcml0eRIYChRQUklPUklUWV9VTlNQRUNJRklFRBAAEhgKFFBSSU9SSVRZX0lOVEVSQUNUSVZFEAESFwoTUFJJT1JJVFlfQkFDS0dST1VORBACKq4BChJIb3N0TW9kZWxFcnJvckNvZGUSJQohSE9TVF9NT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJwojSE9TVF9NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QARIkCiBIT1NUX01PREVMX0VSUk9SX0NPREVfQUxMX0ZBSUxFRBACEiIKHkhPU1RfTU9ERUxfRVJST1JfQ09ERV9SRUpFQ1RFRBADMtQCChBIb3N0TW9kZWxTZXJ2aWNlEmEKCENvbXBsZXRlEikubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBoqLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlElgKBUVtYmVkEiYubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBonLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEoIBChNHZXRFbWJlZGRpbmdQcm9maWxlEjQubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0GjUubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding]);
 
 /**
  * HostModelFailure is one row that did not answer.
@@ -80,6 +80,11 @@ export type HostModelServiceCompleteRequest = Message<"numen.v1.HostModelService
    * @generated from field: int32 max_tokens = 3;
    */
   maxTokens: number;
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 4;
+   */
+  priority: Priority;
 };
 
 /**
@@ -129,6 +134,11 @@ export type HostModelServiceEmbedRequest = Message<"numen.v1.HostModelServiceEmb
    * @generated from field: repeated string texts = 1;
    */
   texts: string[];
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 2;
+   */
+  priority: Priority;
 };
 
 /**
@@ -250,6 +260,39 @@ export const HostModelServiceGetEmbeddingProfileResponseSchema: GenMessage<HostM
   messageDesc(file_numen_v1_hostmodel, 7);
 
 /**
+ * Priority says whose action a call serves. The zero value is background, so a call that sets none
+ * waits behind the calls of a person's actions.
+ *
+ * @generated from enum numen.v1.Priority
+ */
+export enum Priority {
+  /**
+   * @generated from enum value: PRIORITY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+   *
+   * @generated from enum value: PRIORITY_INTERACTIVE = 1;
+   */
+  INTERACTIVE = 1,
+
+  /**
+   * PRIORITY_BACKGROUND is a call made for work nobody waits on, such as indexing.
+   *
+   * @generated from enum value: PRIORITY_BACKGROUND = 2;
+   */
+  BACKGROUND = 2,
+}
+
+/**
+ * Describes the enum numen.v1.Priority.
+ */
+export const PrioritySchema: GenEnum<Priority> = /*@__PURE__*/
+  enumDesc(file_numen_v1_hostmodel, 0);
+
+/**
  * HostModelErrorCode is the reason a served call did not succeed. The zero value is a call that
  * succeeded.
  *
@@ -287,7 +330,7 @@ export enum HostModelErrorCode {
  * Describes the enum numen.v1.HostModelErrorCode.
  */
 export const HostModelErrorCodeSchema: GenEnum<HostModelErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostmodel, 0);
+  enumDesc(file_numen_v1_hostmodel, 1);
 
 /**
  * HostModelService is what a plugin calls to carry out an operation on a model. The core takes the

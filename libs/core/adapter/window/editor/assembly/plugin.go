@@ -56,6 +56,9 @@ type pluginWorkAssembly interface {
 type modelAssembly interface {
 	// OpenModelLists is the models and reasoning levels of a connection, and nil for an installation with no plugin host.
 	OpenModelLists() *modellist.Lists
+	// OpenModelCalls is the calls on models the window carries out for plugin views, and nil for an
+	// installation with no plugin host.
+	OpenModelCalls() modelcallport.ModelCalls
 	// SetModelCalls lets the plugins ask for the operations on models; notices tells the person of a
 	// connection set aside. An installation with no plugin host does nothing.
 	SetModelCalls(notices modelcallport.Notices)

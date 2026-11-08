@@ -11,21 +11,32 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 )
 
-// Handler serves ModelService over the lists a provider gives.
+// Handler serves ModelService over the lists a provider gives and the calls on models.
 type Handler struct {
 	lists *modellist.Lists
+	calls modelcallport.ModelCalls
 }
 
-// NewHandler is the handler over the lists of this installation.
-func NewHandler(lists *modellist.Lists) *Handler { return &Handler{lists: lists} }
+// NewHandler is the handler over the lists and the calls of this installation. Nil calls answer every
+// call with no connection.
+func NewHandler(lists *modellist.Lists, calls modelcallport.ModelCalls) *Handler {
+	if calls == nil {
+		calls = noCalls{}
+	}
+	return &Handler{lists: lists, calls: calls}
+}
 
 // ListModels returns the models of a connection that fit an operation.
 func (h *Handler) ListModels(
 	ctx context.Context, request *connect.Request[v1.ListModelsRequest],
 ) (*connect.Response[v1.ListModelsResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
 	models, err := h.lists.ListModels(ctx, request.Msg.GetConnectionId(), request.Msg.GetOperation())
 	if err != nil {
 		code, detail, isServed := readFailure(ctx, err)
@@ -45,6 +56,9 @@ func (h *Handler) ListModels(
 func (h *Handler) ListReasoningLevels(
 	ctx context.Context, request *connect.Request[v1.ListReasoningLevelsRequest],
 ) (*connect.Response[v1.ListReasoningLevelsResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
 	levels, err := h.lists.ListReasoningLevels(ctx, request.Msg.GetConnectionId(), request.Msg.GetModel())
 	if err != nil {
 		code, detail, isServed := readFailure(ctx, err)
@@ -75,11 +89,19 @@ func readFailure(ctx context.Context, err error) (v1.ModelErrorCode, string, boo
 }
 
 func getErrorCode(err error) (v1.ModelErrorCode, bool) {
+	var allFailed *modelcallport.AllFailedError
+	var rejected *modelcallport.RejectedError
 	switch {
 	case errors.Is(err, connection.ErrNotFound):
 		return v1.ModelErrorCode_MODEL_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, connection.ErrTypeUnavailable), errors.Is(err, modellist.ErrProviderUnavailable):
 		return v1.ModelErrorCode_MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE, true
+	case errors.Is(err, modelcallport.ErrNoConnection):
+		return v1.ModelErrorCode_MODEL_ERROR_CODE_NO_CONNECTION, true
+	case errors.As(err, &allFailed):
+		return v1.ModelErrorCode_MODEL_ERROR_CODE_ALL_FAILED, true
+	case errors.As(err, &rejected):
+		return v1.ModelErrorCode_MODEL_ERROR_CODE_REJECTED, true
 	}
 	return v1.ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED, false
 }

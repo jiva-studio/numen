@@ -107,7 +107,7 @@ func TestACooldownIsSharedByEveryPluginThatUsesTheConnection(t *testing.T) {
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
 	s.attempt(t)
 
-	_, err := s.calls.Complete(t.Context(), "md.example.other-consumer", connectionport.CompleteRequest{})
+	_, err := s.calls.Complete(t.Context(), "md.example.other-consumer", connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 
 	if err == nil || err.Error() != "First: payment required" {
 		t.Errorf("err = %v", err)

@@ -15,11 +15,13 @@ import (
 
 type noModelCalls struct{}
 
-func (noModelCalls) Complete(context.Context, string, connectionport.CompleteRequest) (connectionport.CompleteResult, error) {
+func (noModelCalls) Complete(context.Context, string, connectionport.CompleteRequest, connectionport.Priority) (connectionport.CompleteResult, error) {
 	return connectionport.CompleteResult{}, nil
 }
 
-func (noModelCalls) Embed(context.Context, string, []string) ([][]float32, error) { return nil, nil }
+func (noModelCalls) Embed(context.Context, string, []string, connectionport.Priority) ([][]float32, error) {
+	return nil, nil
+}
 
 func (noModelCalls) GetEmbeddingProfile(context.Context, string) (connectionport.EmbeddingProfile, error) {
 	return connectionport.EmbeddingProfile{}, nil

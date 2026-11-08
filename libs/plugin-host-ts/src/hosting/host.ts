@@ -201,6 +201,7 @@ function createServiceBridge(
   | 'getTasks'
   | 'getBackgroundTasks'
   | 'getTexts'
+  | 'getModels'
 > {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
@@ -216,6 +217,7 @@ function createServiceBridge(
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
     getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
+    getModels: (pluginId) => deps.getModels?.(pluginId),
   }
 }
 

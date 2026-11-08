@@ -5,25 +5,29 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math"
 	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // ErrSecretMissing is a required secret field with no value stored for the address the connection has.
 var ErrSecretMissing = errors.New("a required secret has no value")
 
 // Resolved is a connection as one call to its provider reads it: the fields as text, with the fixed
-// values of the type, and no value of a secret.
+// values of the type, and no value of a secret. ParallelRequests is the number of calls the connection
+// runs at once: the stored field, else the default of the type, else 0 for no limit.
 type Resolved struct {
-	ID          string
-	Name        string
-	Revision    int
-	PluginID    string
-	Declaration connectionport.ConnectionType
-	Fields      map[string]string
-	fingerprint string
+	ID               string
+	Name             string
+	Revision         int
+	PluginID         string
+	Declaration      connectionport.ConnectionType
+	Fields           map[string]string
+	ParallelRequests int
+	fingerprint      string
 }
 
 // NewCall makes the call to the provider of the connection with the secrets read for it, the model and
@@ -59,8 +63,9 @@ func (u *Resolve) Execute(connectionID string) (Resolved, error) {
 	}
 	return Resolved{
 		ID: one.ID, Name: one.Name, Revision: one.Revision, PluginID: found.PluginID, Declaration: found.Declaration,
-		Fields:      formatFields(found.Declaration, one.Fields),
-		fingerprint: getFingerprint(one.TypeID, getAddress(found.Declaration, one.Fields)),
+		Fields:           formatFields(found.Declaration, one.Fields),
+		ParallelRequests: getParallelRequests(found.Declaration, one.Fields),
+		fingerprint:      getFingerprint(one.TypeID, getAddress(found.Declaration, one.Fields)),
 	}, nil
 }
 
@@ -133,4 +138,23 @@ func readSecret(entry, fingerprint string) (string, bool) {
 	}
 	_, value, _ := strings.Cut(entry, fingerprintSeparator)
 	return value, true
+}
+
+func getParallelRequests(declared connectionport.ConnectionType, stored map[string]any) int {
+	if limit, isSet := toLimit(stored[manifest.ConnectionParallelRequests]); isSet {
+		return limit
+	}
+	if field, isDeclared := declared.GetField(manifest.ConnectionParallelRequests); isDeclared {
+		limit, _ := toLimit(field.Default)
+		return limit
+	}
+	return 0
+}
+
+func toLimit(value any) (int, bool) {
+	number, isNumber := toFloat(value)
+	if !isNumber || number < 1 || number != math.Trunc(number) {
+		return 0, false
+	}
+	return int(number), true
 }

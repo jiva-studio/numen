@@ -35,11 +35,11 @@ func (e *modelEndpoint) begin(header string) (string, modelcallport.ModelCalls, 
 // noCalls answers every call with no connection.
 type noCalls struct{}
 
-func (noCalls) Complete(context.Context, string, modelcallport.CompleteRequest) (modelcallport.CompleteResult, error) {
+func (noCalls) Complete(context.Context, string, modelcallport.CompleteRequest, modelcallport.Priority) (modelcallport.CompleteResult, error) {
 	return modelcallport.CompleteResult{}, modelcallport.ErrNoConnection
 }
 
-func (noCalls) Embed(context.Context, string, []string) ([][]float32, error) {
+func (noCalls) Embed(context.Context, string, []string, modelcallport.Priority) ([][]float32, error) {
 	return nil, modelcallport.ErrNoConnection
 }
 
@@ -60,7 +60,7 @@ func (e *modelEndpoint) Complete(
 	}
 	result, err := calls.Complete(ctx, pluginID, modelcallport.CompleteRequest{
 		Messages: messages, Temperature: request.Msg.Temperature, MaxTokens: int(request.Msg.GetMaxTokens()),
-	})
+	}, readPriority(request.Msg.GetPriority()))
 	if err != nil {
 		code, detail, failures, served := writeModelError(ctx, err)
 		if !served {
@@ -78,7 +78,7 @@ func (e *modelEndpoint) Embed(
 	if err != nil {
 		return nil, err
 	}
-	vectors, err := calls.Embed(ctx, pluginID, request.Msg.GetTexts())
+	vectors, err := calls.Embed(ctx, pluginID, request.Msg.GetTexts(), readPriority(request.Msg.GetPriority()))
 	if err != nil {
 		code, detail, failures, served := writeModelError(ctx, err)
 		if !served {
@@ -162,4 +162,12 @@ func readModelStatus(ctx context.Context, err error) error {
 		return connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	return connect.NewError(connect.CodeInternal, err)
+}
+
+// readPriority maps the wire priority to the port one. An unspecified priority is background.
+func readPriority(priority v1.Priority) modelcallport.Priority {
+	if priority == v1.Priority_PRIORITY_INTERACTIVE {
+		return modelcallport.PriorityInteractive
+	}
+	return modelcallport.PriorityBackground
 }

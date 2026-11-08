@@ -42,15 +42,28 @@ type EmbeddingProfile struct {
 	MaxTokens      int
 }
 
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+type Priority int
+
+const (
+	// PriorityBackground is work nobody waits on, such as indexing.
+	PriorityBackground Priority = iota
+	// PriorityInteractive is a person's action, such as a search or a check of a line.
+	PriorityInteractive
+)
+
 // ModelCalls carries out the operations plugins ask for. The connections come from the rows of the
-// calling plugin, and a request names none.
+// calling plugin, and a request names none. At most as many calls as the field parallelRequests of a
+// connection run at once; the rest wait, the interactive ones first, and a wait that times out sends the
+// call to the next row. GetEmbeddingProfile is background.
 type ModelCalls interface {
 	// Complete asks the rows in order. It returns ErrNoConnection, *AllFailedError or *RejectedError where
 	// no row answers, and the error of the context when the call is cancelled.
-	Complete(ctx context.Context, callerPluginID string, request CompleteRequest) (CompleteResult, error)
+	Complete(ctx context.Context, callerPluginID string, request CompleteRequest, priority Priority) (CompleteResult, error)
 	// Embed asks the rows in order and returns the vectors in the order of the texts. It returns the errors
 	// Complete does.
-	Embed(ctx context.Context, callerPluginID string, texts []string) ([][]float32, error)
+	Embed(ctx context.Context, callerPluginID string, texts []string, priority Priority) ([][]float32, error)
 	// GetEmbeddingProfile asks the rows in order for the profile of their embedding model, measuring the
 	// width where the provider has no profile. It returns the errors Complete does.
 	GetEmbeddingProfile(ctx context.Context, callerPluginID string) (EmbeddingProfile, error)
@@ -60,4 +73,6 @@ type ModelCalls interface {
 type ModelCallsHost interface {
 	// SetModelCalls sets what carries out the operations of the plugins.
 	SetModelCalls(calls ModelCalls)
+	// GetModelCalls returns what carries out the operations of the plugins, or nil where none is set.
+	GetModelCalls() ModelCalls
 }

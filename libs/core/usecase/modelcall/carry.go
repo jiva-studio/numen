@@ -35,7 +35,8 @@ type openError struct{ err error }
 func (e *openError) Error() string { return e.err.Error() }
 
 func carry[R, T any](
-	ctx context.Context, c *Calls, callerPluginID, operation string, pick func(connectionport.Provider) R, do attempt[R, T],
+	ctx context.Context, c *Calls, callerPluginID, operation string, priority connectionport.Priority,
+	pick func(connectionport.Provider) R, do attempt[R, T],
 ) (T, error) {
 	var none T
 	rows, err := c.rows.ListRows(callerPluginID, operation)
@@ -51,7 +52,7 @@ func carry[R, T any](
 		if err := ctx.Err(); err != nil {
 			return none, err
 		}
-		outcome := tryRow(ctx, c, row, operation, pick, do)
+		outcome := tryRow(ctx, c, row, operation, priority, pick, do)
 		if outcome.err != nil {
 			return none, outcome.err
 		}
@@ -75,11 +76,13 @@ type rowCall[R, T any] struct {
 	row      connectionport.Row
 	pick     func(connectionport.Provider) R
 	do       attempt[R, T]
+	priority connectionport.Priority
 	secrets  map[string]string
 }
 
 func tryRow[R, T any](
-	ctx context.Context, c *Calls, row connectionport.Row, operation string, pick func(connectionport.Provider) R, do attempt[R, T],
+	ctx context.Context, c *Calls, row connectionport.Row, operation string, priority connectionport.Priority,
+	pick func(connectionport.Provider) R, do attempt[R, T],
 ) rowOutcome[T] {
 	resolved, skip, err := c.checkRow(row, operation)
 	if err != nil {
@@ -88,7 +91,7 @@ func tryRow[R, T any](
 	if skip != nil {
 		return rowOutcome[T]{failure: skip}
 	}
-	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do}
+	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do, priority: priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
 		if err == nil {
@@ -150,6 +153,8 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	var stopError *connectionport.StopError
 	var tryNext *connectionport.TryNextError
 	switch {
+	case errors.Is(err, errQueueTimeout):
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "busy")}
 	case errors.As(err, &unavailable):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connectionport.FailureReasonUnreachable.String())}
 	case errors.Is(err, connection.ErrSecretMissing):
@@ -172,6 +177,11 @@ func isRetried(reason connectionport.FailureReason) bool {
 
 func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 	var none T
+	freeSlot, err := r.calls.queues.acquire(ctx, r.resolved.ID, r.resolved.ParallelRequests, r.priority)
+	if err != nil {
+		return none, err
+	}
+	defer freeSlot()
 	provider, release, err := r.calls.source.OpenProvider(ctx, r.resolved.PluginID)
 	if err != nil {
 		return none, &openError{err: err}

@@ -33,6 +33,7 @@ type scriptedCalls struct {
 	err      error
 	request  connectionport.CompleteRequest
 	texts    []string
+	priority connectionport.Priority
 	started  chan struct{}
 }
 
@@ -49,13 +50,13 @@ func (s *scriptedCalls) record(ctx context.Context, caller string) error {
 	return s.err
 }
 
-func (s *scriptedCalls) Complete(ctx context.Context, caller string, request connectionport.CompleteRequest) (connectionport.CompleteResult, error) {
-	s.request = request
+func (s *scriptedCalls) Complete(ctx context.Context, caller string, request connectionport.CompleteRequest, priority connectionport.Priority) (connectionport.CompleteResult, error) {
+	s.request, s.priority = request, priority
 	return s.complete, s.record(ctx, caller)
 }
 
-func (s *scriptedCalls) Embed(ctx context.Context, caller string, texts []string) ([][]float32, error) {
-	s.texts = texts
+func (s *scriptedCalls) Embed(ctx context.Context, caller string, texts []string, priority connectionport.Priority) ([][]float32, error) {
+	s.texts, s.priority = texts, priority
 	return s.vectors, s.record(ctx, caller)
 }
 
@@ -264,7 +265,7 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		world.Rows.Set("md.numen.b", "complete", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		world.Rows.Set("md.numen.b", "embed", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		arrange(world)
-		client, recording := newModelClient(t, modelcall.NewCalls(world.Connections, world.Rows, world.Source, world.Clock, world.Notices), "token-b")
+		client, recording := newModelClient(t, modelcall.NewCalls(world.Connections, world.Rows, world.Source, world.Clock, world.Waits.Wait, world.Notices), "token-b")
 
 		_, completeErr := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 		_, embedErr := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))
@@ -274,5 +275,57 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		if received := recording.received.String(); strings.Contains(received, "sk-") {
 			t.Errorf("%s: the consumer received a key: %s", name, received)
 		}
+	}
+}
+
+func TestCompleteCarriesThePriorityOfTheRequest(t *testing.T) {
+	for name, want := range map[string]struct {
+		wire v1.Priority
+		port connectionport.Priority
+	}{
+		"interactive": {v1.Priority_PRIORITY_INTERACTIVE, connectionport.PriorityInteractive},
+		"background":  {v1.Priority_PRIORITY_BACKGROUND, connectionport.PriorityBackground},
+		"unspecified": {v1.Priority_PRIORITY_UNSPECIFIED, connectionport.PriorityBackground},
+	} {
+		t.Run(name, func(t *testing.T) {
+			calls := &scriptedCalls{}
+			client, _ := newModelClient(t, calls, "token-a")
+
+			_, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{Priority: want.wire}))
+
+			if err != nil || calls.priority != want.port {
+				t.Errorf("priority = %v, %v, want %v", calls.priority, err, want.port)
+			}
+		})
+	}
+}
+
+func TestEmbedCarriesThePriorityOfTheRequest(t *testing.T) {
+	calls := &scriptedCalls{}
+	client, _ := newModelClient(t, calls, "token-a")
+
+	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{
+		Texts: []string{"a"}, Priority: v1.Priority_PRIORITY_INTERACTIVE,
+	}))
+
+	if err != nil || calls.priority != connectionport.PriorityInteractive {
+		t.Errorf("priority = %v, %v, want interactive", calls.priority, err)
+	}
+}
+
+func TestThePluginEndpointDoesNotMountModelService(t *testing.T) {
+	fakeCallers := newCallers(nil)
+	endpoint, err := Open(t.Context(), "127.0.0.1:0", fakeCallers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = endpoint.Close(t.Context()) })
+	client := numenv1connect.NewModelServiceClient(http.DefaultClient, fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
+		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+
+	_, callErr := client.Complete(t.Context(), connect.NewRequest(&v1.ModelServiceCompleteRequest{PluginId: "md.numen.b"}))
+
+	if connect.CodeOf(callErr) != connect.CodeUnimplemented && connect.CodeOf(callErr) != connect.CodeNotFound {
+		t.Errorf("code = %v, want the service to be absent", connect.CodeOf(callErr))
 	}
 }

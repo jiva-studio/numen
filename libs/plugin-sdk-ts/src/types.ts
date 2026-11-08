@@ -8,6 +8,7 @@ import type { CommandItem, CommandsHost, CommandTarget } from './commands/comman
 import type { SlotHost } from './slots/slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
+import type { ModelHost } from './models'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
@@ -238,6 +239,7 @@ export interface PluginContext {
   readonly agent?: AgentHost
   readonly buffers?: BufferHost
   readonly texts?: VaultTexts
+  readonly models?: ModelHost
   readonly notices?: NoticeHost
   readonly tasks?: TaskHost
   readonly commands?: CommandsHost

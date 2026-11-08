@@ -9,6 +9,7 @@ import {
   createPluginLoader,
   createPluginNotices,
   createPluginTasks,
+  createPluginModels,
   createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
@@ -20,7 +21,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
 import type { WindowPlatform } from '@numen/shell'
-import { texts } from '@/shared/clients'
+import { models, texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {
   readonly windowTabs: ReturnType<typeof useWindowTabs>
@@ -185,6 +186,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
+    getModels: (pluginId: string) => createPluginModels(models, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError

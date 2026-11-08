@@ -20,6 +20,16 @@ service HostModelService {
   rpc GetEmbeddingProfile(HostModelServiceGetEmbeddingProfileRequest) returns (HostModelServiceGetEmbeddingProfileResponse);
 }
 
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  // PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+  PRIORITY_INTERACTIVE = 1;
+  // PRIORITY_BACKGROUND is a call made for work nobody waits on, such as indexing.
+  PRIORITY_BACKGROUND = 2;
+}
+
 // HostModelErrorCode is the reason a served call did not succeed. The zero value is a call that
 // succeeded.
 enum HostModelErrorCode {
@@ -48,6 +58,7 @@ message HostModelServiceCompleteRequest {
   repeated HostModelMessage messages = 1;
   optional double temperature = 2;
   int32 max_tokens = 3;
+  Priority priority = 4;
 }
 
 message HostModelServiceCompleteResponse {
@@ -59,6 +70,7 @@ message HostModelServiceCompleteResponse {
 
 message HostModelServiceEmbedRequest {
   repeated string texts = 1;
+  Priority priority = 2;
 }
 
 message HostModelServiceEmbedResponse {

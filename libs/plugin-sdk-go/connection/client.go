@@ -77,15 +77,32 @@ func newClientAt(endpoint hostcall.Endpoint) *Client {
 	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
+// Priority says whose action a call serves. A call that sets none is background, so it waits behind the
+// calls of a person's actions when its connection runs as many calls as it may.
+//
+//numen:api
+type Priority int
+
+const (
+	// PriorityBackground is work nobody waits on, such as indexing.
+	PriorityBackground Priority = iota
+	// PriorityInteractive is a person's action, such as a search or a check of a line.
+	PriorityInteractive
+)
+
 // CompleteRequest is what a consumer asks a model to complete.
 type CompleteRequest struct {
 	Messages    []Message
 	Temperature *float64
 	MaxTokens   int
+	Priority    Priority
 }
 
 // EmbedRequest is the texts a consumer asks a model to embed.
-type EmbedRequest struct{ Texts []string }
+type EmbedRequest struct {
+	Texts    []string
+	Priority Priority
+}
 
 // EmbedResult holds one vector for each text, in the order of the texts.
 type EmbedResult struct{ Vectors [][]float32 }
@@ -109,7 +126,7 @@ func (c *Client) Complete(ctx context.Context, request CompleteRequest) (Complet
 	for i, one := range request.Messages {
 		messages[i] = &v1.HostModelMessage{Role: one.Role, Text: one.Text}
 	}
-	wire := &v1.HostModelServiceCompleteRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens)}
+	wire := &v1.HostModelServiceCompleteRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens), Priority: writePriority(request.Priority)}
 	response, err := c.host.Complete(ctx, connect.NewRequest(wire))
 	if err != nil {
 		return CompleteResult{}, fmt.Errorf("connection: complete: %w", err)
@@ -122,7 +139,7 @@ func (c *Client) Complete(ctx context.Context, request CompleteRequest) (Complet
 
 // Embed asks the rows of the plugin, in order, to embed the texts. It returns the errors Complete does.
 func (c *Client) Embed(ctx context.Context, request EmbedRequest) (EmbedResult, error) {
-	response, err := c.host.Embed(ctx, connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: request.Texts}))
+	response, err := c.host.Embed(ctx, connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: request.Texts, Priority: writePriority(request.Priority)}))
 	if err != nil {
 		return EmbedResult{}, fmt.Errorf("connection: embed: %w", err)
 	}
@@ -177,4 +194,11 @@ func readError(code v1.HostModelErrorCode, detail string, failures []*v1.HostMod
 		return rejected
 	}
 	return fmt.Errorf("connection: unknown error code %d: %s", code, detail)
+}
+
+func writePriority(priority Priority) v1.Priority {
+	if priority == PriorityInteractive {
+		return v1.Priority_PRIORITY_INTERACTIVE
+	}
+	return v1.Priority_PRIORITY_BACKGROUND
 }

@@ -224,13 +224,19 @@ func (c Config) OpenConnections() *connection.Connections {
 }
 
 func (c Config) modelCalls() modelcallswiring.Config {
-	return modelcallswiring.Config{PluginHost: c.PluginHost, Connections: c.OpenConnections(), Clock: c.Clock(), Rows: c.connections().OpenRows()}
+	return modelcallswiring.Config{PluginHost: c.PluginHost, Connections: c.OpenConnections(), Clock: c.Clock(), Wait: c.GetWait(), Rows: c.connections().OpenRows()}
 }
 
 // OpenModelLists returns the models and reasoning levels a provider gives for a connection, or nil
 // where the installation has no plugin host.
 func (c Config) OpenModelLists() *modellist.Lists {
 	return c.modelCalls().OpenLists()
+}
+
+// OpenModelCalls returns the calls on models the plugin host carries out, shared with the plugins, or nil
+// where the installation has no plugin host.
+func (c Config) OpenModelCalls() modelcallport.ModelCalls {
+	return c.modelCalls().OpenCalls()
 }
 
 // SetModelCalls lets the plugins ask the host for the operations on models. notices tells the person

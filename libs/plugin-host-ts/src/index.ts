@@ -38,6 +38,7 @@ export {
 } from './externalOpener'
 export { createAgentPort, type AgentClient } from './agentPort'
 export { resolveTextLinks, type LinkClient } from './textLinks'
+export { createPluginModels } from './pluginModels'
 export { createPluginTexts } from './pluginTexts'
 export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
 export * from './contract'

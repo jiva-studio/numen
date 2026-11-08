@@ -14,6 +14,7 @@ type (
 	TryNextError     = connectionport.TryNextError
 	StopError        = connectionport.StopError
 	CompleteRequest  = connectionport.CompleteRequest
+	Priority         = connectionport.Priority
 	CompleteResult   = connectionport.CompleteResult
 	Message          = connectionport.Message
 	Model            = connectionport.Model
@@ -33,6 +34,11 @@ const (
 	FailureReasonUnreachable     = connectionport.FailureReasonUnreachable
 	FailureReasonTimeout         = connectionport.FailureReasonTimeout
 	FailureReasonBadRequest      = connectionport.FailureReasonBadRequest
+)
+
+const (
+	PriorityBackground  = connectionport.PriorityBackground
+	PriorityInteractive = connectionport.PriorityInteractive
 )
 
 var ErrNoConnection = connectionport.ErrNoConnection

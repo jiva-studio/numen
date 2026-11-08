@@ -70,6 +70,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenSecretsFn:          cfg.OpenSecrets,
 		OpenConnectionsFn:      cfg.OpenConnections,
 		OpenModelListsFn:       cfg.OpenModelLists,
+		OpenModelCallsFn:       cfg.OpenModelCalls,
 		SetModelCallsFn:        cfg.SetModelCalls,
 		OpenRetryPluginFn:      func() *settings.RetryPlugin { return cfg.settings().OpenRetryPlugin(cfg.GetPluginRetrier()) },
 		ReportPluginFailuresFn: func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },

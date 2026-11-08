@@ -38,6 +38,13 @@ const (
 	// ModelServiceListReasoningLevelsProcedure is the fully-qualified name of the ModelService's
 	// ListReasoningLevels RPC.
 	ModelServiceListReasoningLevelsProcedure = "/numen.v1.ModelService/ListReasoningLevels"
+	// ModelServiceCompleteProcedure is the fully-qualified name of the ModelService's Complete RPC.
+	ModelServiceCompleteProcedure = "/numen.v1.ModelService/Complete"
+	// ModelServiceEmbedProcedure is the fully-qualified name of the ModelService's Embed RPC.
+	ModelServiceEmbedProcedure = "/numen.v1.ModelService/Embed"
+	// ModelServiceGetEmbeddingProfileProcedure is the fully-qualified name of the ModelService's
+	// GetEmbeddingProfile RPC.
+	ModelServiceGetEmbeddingProfileProcedure = "/numen.v1.ModelService/GetEmbeddingProfile"
 )
 
 // ModelServiceClient is a client for the numen.v1.ModelService service.
@@ -47,6 +54,12 @@ type ModelServiceClient interface {
 	ListModels(context.Context, *connect.Request[v1.ListModelsRequest]) (*connect.Response[v1.ListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of a model of a connection.
 	ListReasoningLevels(context.Context, *connect.Request[v1.ListReasoningLevelsRequest]) (*connect.Response[v1.ListReasoningLevelsResponse], error)
+	// Complete turns messages into the text of an answer, through the rows of the plugin the request names.
+	Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error)
+	// Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
+	Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error)
+	// GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
+	GetEmbeddingProfile(context.Context, *connect.Request[v1.ModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.ModelServiceGetEmbeddingProfileResponse], error)
 }
 
 // NewModelServiceClient constructs a client for the numen.v1.ModelService service. By default, it
@@ -72,6 +85,24 @@ func NewModelServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(modelServiceMethods.ByName("ListReasoningLevels")),
 			connect.WithClientOptions(opts...),
 		),
+		complete: connect.NewClient[v1.ModelServiceCompleteRequest, v1.ModelServiceCompleteResponse](
+			httpClient,
+			baseURL+ModelServiceCompleteProcedure,
+			connect.WithSchema(modelServiceMethods.ByName("Complete")),
+			connect.WithClientOptions(opts...),
+		),
+		embed: connect.NewClient[v1.ModelServiceEmbedRequest, v1.ModelServiceEmbedResponse](
+			httpClient,
+			baseURL+ModelServiceEmbedProcedure,
+			connect.WithSchema(modelServiceMethods.ByName("Embed")),
+			connect.WithClientOptions(opts...),
+		),
+		getEmbeddingProfile: connect.NewClient[v1.ModelServiceGetEmbeddingProfileRequest, v1.ModelServiceGetEmbeddingProfileResponse](
+			httpClient,
+			baseURL+ModelServiceGetEmbeddingProfileProcedure,
+			connect.WithSchema(modelServiceMethods.ByName("GetEmbeddingProfile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -79,6 +110,9 @@ func NewModelServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 type modelServiceClient struct {
 	listModels          *connect.Client[v1.ListModelsRequest, v1.ListModelsResponse]
 	listReasoningLevels *connect.Client[v1.ListReasoningLevelsRequest, v1.ListReasoningLevelsResponse]
+	complete            *connect.Client[v1.ModelServiceCompleteRequest, v1.ModelServiceCompleteResponse]
+	embed               *connect.Client[v1.ModelServiceEmbedRequest, v1.ModelServiceEmbedResponse]
+	getEmbeddingProfile *connect.Client[v1.ModelServiceGetEmbeddingProfileRequest, v1.ModelServiceGetEmbeddingProfileResponse]
 }
 
 // ListModels calls numen.v1.ModelService.ListModels.
@@ -91,6 +125,21 @@ func (c *modelServiceClient) ListReasoningLevels(ctx context.Context, req *conne
 	return c.listReasoningLevels.CallUnary(ctx, req)
 }
 
+// Complete calls numen.v1.ModelService.Complete.
+func (c *modelServiceClient) Complete(ctx context.Context, req *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error) {
+	return c.complete.CallUnary(ctx, req)
+}
+
+// Embed calls numen.v1.ModelService.Embed.
+func (c *modelServiceClient) Embed(ctx context.Context, req *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error) {
+	return c.embed.CallUnary(ctx, req)
+}
+
+// GetEmbeddingProfile calls numen.v1.ModelService.GetEmbeddingProfile.
+func (c *modelServiceClient) GetEmbeddingProfile(ctx context.Context, req *connect.Request[v1.ModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.ModelServiceGetEmbeddingProfileResponse], error) {
+	return c.getEmbeddingProfile.CallUnary(ctx, req)
+}
+
 // ModelServiceHandler is an implementation of the numen.v1.ModelService service.
 type ModelServiceHandler interface {
 	// ListModels lists the models of a connection that fit an operation. A model the service does not list
@@ -98,6 +147,12 @@ type ModelServiceHandler interface {
 	ListModels(context.Context, *connect.Request[v1.ListModelsRequest]) (*connect.Response[v1.ListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of a model of a connection.
 	ListReasoningLevels(context.Context, *connect.Request[v1.ListReasoningLevelsRequest]) (*connect.Response[v1.ListReasoningLevelsResponse], error)
+	// Complete turns messages into the text of an answer, through the rows of the plugin the request names.
+	Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error)
+	// Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
+	Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error)
+	// GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
+	GetEmbeddingProfile(context.Context, *connect.Request[v1.ModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.ModelServiceGetEmbeddingProfileResponse], error)
 }
 
 // NewModelServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -119,12 +174,36 @@ func NewModelServiceHandler(svc ModelServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(modelServiceMethods.ByName("ListReasoningLevels")),
 		connect.WithHandlerOptions(opts...),
 	)
+	modelServiceCompleteHandler := connect.NewUnaryHandler(
+		ModelServiceCompleteProcedure,
+		svc.Complete,
+		connect.WithSchema(modelServiceMethods.ByName("Complete")),
+		connect.WithHandlerOptions(opts...),
+	)
+	modelServiceEmbedHandler := connect.NewUnaryHandler(
+		ModelServiceEmbedProcedure,
+		svc.Embed,
+		connect.WithSchema(modelServiceMethods.ByName("Embed")),
+		connect.WithHandlerOptions(opts...),
+	)
+	modelServiceGetEmbeddingProfileHandler := connect.NewUnaryHandler(
+		ModelServiceGetEmbeddingProfileProcedure,
+		svc.GetEmbeddingProfile,
+		connect.WithSchema(modelServiceMethods.ByName("GetEmbeddingProfile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.ModelService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ModelServiceListModelsProcedure:
 			modelServiceListModelsHandler.ServeHTTP(w, r)
 		case ModelServiceListReasoningLevelsProcedure:
 			modelServiceListReasoningLevelsHandler.ServeHTTP(w, r)
+		case ModelServiceCompleteProcedure:
+			modelServiceCompleteHandler.ServeHTTP(w, r)
+		case ModelServiceEmbedProcedure:
+			modelServiceEmbedHandler.ServeHTTP(w, r)
+		case ModelServiceGetEmbeddingProfileProcedure:
+			modelServiceGetEmbeddingProfileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -140,4 +219,16 @@ func (UnimplementedModelServiceHandler) ListModels(context.Context, *connect.Req
 
 func (UnimplementedModelServiceHandler) ListReasoningLevels(context.Context, *connect.Request[v1.ListReasoningLevelsRequest]) (*connect.Response[v1.ListReasoningLevelsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.ListReasoningLevels is not implemented"))
+}
+
+func (UnimplementedModelServiceHandler) Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.Complete is not implemented"))
+}
+
+func (UnimplementedModelServiceHandler) Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.Embed is not implemented"))
+}
+
+func (UnimplementedModelServiceHandler) GetEmbeddingProfile(context.Context, *connect.Request[v1.ModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.ModelServiceGetEmbeddingProfileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.GetEmbeddingProfile is not implemented"))
 }

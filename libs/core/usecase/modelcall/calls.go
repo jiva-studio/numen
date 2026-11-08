@@ -19,25 +19,26 @@ const (
 // goes to the next row on the first failure of a connection. An error of a provider that is neither failure
 // kind counts as a service that is unreachable. A row is skipped, and its reason is in the error
 // when every row fails, if its connection is gone, its type is not provided or lacks the operation, its key is
-// missing, or it is set aside.
+// missing, it is set aside, or its connection stayed busy for the wait its priority allows.
 type Calls struct {
 	connections *connection.Connections
 	rows        connectionport.Rows
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
+	queues      *queues
 	notices     connectionport.Notices
 	cooldown    *cooldown
 	noticeLog   *noticeLog
 }
 
 // NewCalls returns the calls over the connections, the rows of the plugins and the providers the source
-// opens. notices is called when a connection was set aside and a row after it answered.
+// opens. wait times the calls that wait for a slot of their connection. notices is called when a connection was set aside and a row after it answered.
 func NewCalls(
 	connections *connection.Connections, rows connectionport.Rows, source connectionport.ProviderSource,
-	clock machineport.Clock, notices connectionport.Notices,
+	clock machineport.Clock, wait machineport.Wait, notices connectionport.Notices,
 ) *Calls {
 	return &Calls{
-		connections: connections, rows: rows, source: source, clock: clock, notices: notices,
+		connections: connections, rows: rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
 		cooldown: newCooldown(), noticeLog: newNoticeLog(),
 	}
 }

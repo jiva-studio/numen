@@ -171,3 +171,42 @@ func TestNewClientFromVarsNeedsAHostPort(t *testing.T) {
 		t.Errorf("NewClientFromVars = %v", err)
 	}
 }
+
+func TestCompleteSendsThePriorityAndABackgroundOneWhereNoneIsSet(t *testing.T) {
+	for name, want := range map[string]struct {
+		priority Priority
+		wire     v1.Priority
+	}{
+		"interactive": {PriorityInteractive, v1.Priority_PRIORITY_INTERACTIVE},
+		"background":  {PriorityBackground, v1.Priority_PRIORITY_BACKGROUND},
+		"unset":       {0, v1.Priority_PRIORITY_BACKGROUND},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var received v1.Priority
+			host := &fakeHost{complete: func(request *v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
+				received = request.GetPriority()
+				return &v1.HostModelServiceCompleteResponse{}
+			}}
+
+			_, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{Priority: want.priority})
+
+			if err != nil || received != want.wire {
+				t.Errorf("priority = %v, %v, want %v", received, err, want.wire)
+			}
+		})
+	}
+}
+
+func TestEmbedSendsThePriority(t *testing.T) {
+	var received v1.Priority
+	host := &fakeHost{embed: func(request *v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
+		received = request.GetPriority()
+		return &v1.HostModelServiceEmbedResponse{}
+	}}
+
+	_, err := newTestClient(t, host).Embed(t.Context(), EmbedRequest{Texts: []string{"a"}, Priority: PriorityInteractive})
+
+	if err != nil || received != v1.Priority_PRIORITY_INTERACTIVE {
+		t.Errorf("priority = %v, %v, want interactive", received, err)
+	}
+}

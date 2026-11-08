@@ -12,17 +12,24 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 )
 
-const address = "https://one.test/v1"
+const (
+	address      = "https://one.test/v1"
+	viewPluginID = "md.example.view"
+)
 
 func newHandler(t *testing.T) (*Handler, *modelcalltest.World, connection.Entry) {
 	t.Helper()
 	world := modelcalltest.New()
 	entry := world.AddServer(t, "First", address, "sk-one")
-	return NewHandler(modellist.NewLists(world.Connections, world.Source)), world, entry
+	world.Rows.Set(viewPluginID, "complete", modelcalltest.Row(entry, "model-1"))
+	world.Rows.Set(viewPluginID, "embed", modelcalltest.Row(entry, "model-1"))
+	calls := modelcall.NewCalls(world.Connections, world.Rows, world.Source, world.Clock, world.Waits.Wait, world.Notices)
+	return NewHandler(modellist.NewLists(world.Connections, world.Source), calls), world, entry
 }
 
 func TestListModelsReturnsTheModelsWithTheirLabels(t *testing.T) {
@@ -113,6 +120,9 @@ func TestErrorCodesAreProducedFromFailures(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.ModelErrorCode]error{
 		v1.ModelErrorCode_MODEL_ERROR_CODE_NOT_FOUND:            connection.ErrNotFound,
 		v1.ModelErrorCode_MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE: modellist.ErrProviderUnavailable,
+		v1.ModelErrorCode_MODEL_ERROR_CODE_NO_CONNECTION:        connectionport.ErrNoConnection,
+		v1.ModelErrorCode_MODEL_ERROR_CODE_ALL_FAILED:           &connectionport.AllFailedError{},
+		v1.ModelErrorCode_MODEL_ERROR_CODE_REJECTED:             &connectionport.RejectedError{},
 	}, func(failure error) v1.ModelErrorCode {
 		code, _ := getErrorCode(failure)
 		return code

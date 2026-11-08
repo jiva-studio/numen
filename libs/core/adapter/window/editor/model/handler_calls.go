@@ -1,0 +1,143 @@
+package model
+
+import (
+	"context"
+	"errors"
+	"net/http"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
+)
+
+var errPluginToken = errors.New("ModelService is not served to a plugin")
+
+// refuseToken fails a request that carries a token. A window sends none; a plugin process sends the
+// token the host issued it, and ModelService names the plugin it acts for in the request.
+func refuseToken(header http.Header) error {
+	if header.Get("Authorization") != "" {
+		return connect.NewError(connect.CodePermissionDenied, errPluginToken)
+	}
+	return nil
+}
+
+// Complete turns messages into the text of an answer through the rows of the plugin the request names.
+func (h *Handler) Complete(
+	ctx context.Context, request *connect.Request[v1.ModelServiceCompleteRequest],
+) (*connect.Response[v1.ModelServiceCompleteResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
+	messages := make([]modelcallport.Message, len(request.Msg.GetMessages()))
+	for i, one := range request.Msg.GetMessages() {
+		messages[i] = modelcallport.Message{Role: one.GetRole(), Text: one.GetText()}
+	}
+	result, err := h.calls.Complete(ctx, request.Msg.GetPluginId(), modelcallport.CompleteRequest{
+		Messages: messages, Temperature: request.Msg.Temperature, MaxTokens: int(request.Msg.GetMaxTokens()),
+	}, readPriority(request.Msg.GetPriority()))
+	if err != nil {
+		code, detail, failures, isServed := writeCallError(ctx, err)
+		if !isServed {
+			return nil, newStatusError(ctx, err)
+		}
+		return connect.NewResponse(&v1.ModelServiceCompleteResponse{Error: code, Detail: detail, Failures: failures}), nil
+	}
+	return connect.NewResponse(&v1.ModelServiceCompleteResponse{Text: result.Text}), nil
+}
+
+// Embed turns texts into vectors through the rows of the plugin the request names.
+func (h *Handler) Embed(
+	ctx context.Context, request *connect.Request[v1.ModelServiceEmbedRequest],
+) (*connect.Response[v1.ModelServiceEmbedResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
+	vectors, err := h.calls.Embed(ctx, request.Msg.GetPluginId(), request.Msg.GetTexts(), readPriority(request.Msg.GetPriority()))
+	if err != nil {
+		code, detail, failures, isServed := writeCallError(ctx, err)
+		if !isServed {
+			return nil, newStatusError(ctx, err)
+		}
+		return connect.NewResponse(&v1.ModelServiceEmbedResponse{Error: code, Detail: detail, Failures: failures}), nil
+	}
+	wire := make([]*v1.FloatVector, len(vectors))
+	for i, one := range vectors {
+		wire[i] = &v1.FloatVector{Values: one}
+	}
+	return connect.NewResponse(&v1.ModelServiceEmbedResponse{Vectors: wire}), nil
+}
+
+// GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that
+// answers.
+func (h *Handler) GetEmbeddingProfile(
+	ctx context.Context, request *connect.Request[v1.ModelServiceGetEmbeddingProfileRequest],
+) (*connect.Response[v1.ModelServiceGetEmbeddingProfileResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
+	profile, err := h.calls.GetEmbeddingProfile(ctx, request.Msg.GetPluginId())
+	if err != nil {
+		code, detail, failures, isServed := writeCallError(ctx, err)
+		if !isServed {
+			return nil, newStatusError(ctx, err)
+		}
+		return connect.NewResponse(&v1.ModelServiceGetEmbeddingProfileResponse{Error: code, Detail: detail, Failures: failures}), nil
+	}
+	return connect.NewResponse(&v1.ModelServiceGetEmbeddingProfileResponse{
+		Model:          profile.Model,
+		Source:         profile.Source,
+		Pooling:        profile.Pooling,
+		QueryPrefix:    profile.QueryPrefix,
+		DocumentPrefix: profile.DocumentPrefix,
+		Dimensions:     int32(profile.Dimensions),
+		MaxTokens:      int32(profile.MaxTokens),
+	}), nil
+}
+
+// readPriority maps the wire priority to the port one. An unspecified priority is background.
+func readPriority(priority v1.Priority) modelcallport.Priority {
+	if priority == v1.Priority_PRIORITY_INTERACTIVE {
+		return modelcallport.PriorityInteractive
+	}
+	return modelcallport.PriorityBackground
+}
+
+func writeCallError(ctx context.Context, err error) (v1.ModelErrorCode, string, []*v1.ModelFailure, bool) {
+	if ctx.Err() != nil {
+		return v1.ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED, "", nil, false
+	}
+	code, isServed := getErrorCode(err)
+	if !isServed {
+		return code, "", nil, false
+	}
+	var allFailed *modelcallport.AllFailedError
+	var rejected *modelcallport.RejectedError
+	switch {
+	case errors.As(err, &allFailed):
+		failures := make([]*v1.ModelFailure, len(allFailed.Failures))
+		for i, one := range allFailed.Failures {
+			failures[i] = &v1.ModelFailure{ConnectionName: one.ConnectionName, Reason: one.Reason}
+		}
+		return code, allFailed.Error(), failures, true
+	case errors.As(err, &rejected):
+		return code, rejected.Error(), []*v1.ModelFailure{{ConnectionName: rejected.ConnectionName, Reason: rejected.Reason}}, true
+	}
+	return code, "", nil, true
+}
+
+// noCalls answers every call with no connection.
+type noCalls struct{}
+
+func (noCalls) Complete(context.Context, string, modelcallport.CompleteRequest, modelcallport.Priority) (modelcallport.CompleteResult, error) {
+	return modelcallport.CompleteResult{}, modelcallport.ErrNoConnection
+}
+
+func (noCalls) Embed(context.Context, string, []string, modelcallport.Priority) ([][]float32, error) {
+	return nil, modelcallport.ErrNoConnection
+}
+
+func (noCalls) GetEmbeddingProfile(context.Context, string) (modelcallport.EmbeddingProfile, error) {
+	return modelcallport.EmbeddingProfile{}, modelcallport.ErrNoConnection
+}

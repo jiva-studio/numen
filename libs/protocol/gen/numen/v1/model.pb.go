@@ -31,6 +31,12 @@ const (
 	// MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that cannot be started or that failed; the detail
 	// says why, for example that the key was rejected.
 	ModelErrorCode_MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE ModelErrorCode = 2
+	// MODEL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+	ModelErrorCode_MODEL_ERROR_CODE_NO_CONNECTION ModelErrorCode = 3
+	// MODEL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one.
+	ModelErrorCode_MODEL_ERROR_CODE_ALL_FAILED ModelErrorCode = 4
+	// MODEL_ERROR_CODE_REJECTED is a request that is wrong in itself; the failure names the connection.
+	ModelErrorCode_MODEL_ERROR_CODE_REJECTED ModelErrorCode = 5
 )
 
 // Enum value maps for ModelErrorCode.
@@ -39,11 +45,17 @@ var (
 		0: "MODEL_ERROR_CODE_UNSPECIFIED",
 		1: "MODEL_ERROR_CODE_NOT_FOUND",
 		2: "MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE",
+		3: "MODEL_ERROR_CODE_NO_CONNECTION",
+		4: "MODEL_ERROR_CODE_ALL_FAILED",
+		5: "MODEL_ERROR_CODE_REJECTED",
 	}
 	ModelErrorCode_value = map[string]int32{
 		"MODEL_ERROR_CODE_UNSPECIFIED":          0,
 		"MODEL_ERROR_CODE_NOT_FOUND":            1,
 		"MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE": 2,
+		"MODEL_ERROR_CODE_NO_CONNECTION":        3,
+		"MODEL_ERROR_CODE_ALL_FAILED":           4,
+		"MODEL_ERROR_CODE_REJECTED":             5,
 	}
 )
 
@@ -412,11 +424,552 @@ func (x *ListReasoningLevelsResponse) GetDetail() string {
 	return ""
 }
 
+// ModelFailure is one row that did not answer.
+type ModelFailure struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionName string                 `protobuf:"bytes,1,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
+	Reason         string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ModelFailure) Reset() {
+	*x = ModelFailure{}
+	mi := &file_numen_v1_model_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelFailure) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelFailure) ProtoMessage() {}
+
+func (x *ModelFailure) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelFailure.ProtoReflect.Descriptor instead.
+func (*ModelFailure) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ModelFailure) GetConnectionName() string {
+	if x != nil {
+		return x.ConnectionName
+	}
+	return ""
+}
+
+func (x *ModelFailure) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type ModelMessage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// role is system, user or assistant.
+	Role          string `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Text          string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelMessage) Reset() {
+	*x = ModelMessage{}
+	mi := &file_numen_v1_model_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelMessage) ProtoMessage() {}
+
+func (x *ModelMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelMessage.ProtoReflect.Descriptor instead.
+func (*ModelMessage) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ModelMessage) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ModelMessage) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+type ModelServiceCompleteRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// plugin_id is the plugin whose rows serve the call.
+	PluginId      string          `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Messages      []*ModelMessage `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
+	Temperature   *float64        `protobuf:"fixed64,3,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	MaxTokens     int32           `protobuf:"varint,4,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Priority      Priority        `protobuf:"varint,5,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceCompleteRequest) Reset() {
+	*x = ModelServiceCompleteRequest{}
+	mi := &file_numen_v1_model_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceCompleteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceCompleteRequest) ProtoMessage() {}
+
+func (x *ModelServiceCompleteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceCompleteRequest.ProtoReflect.Descriptor instead.
+func (*ModelServiceCompleteRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ModelServiceCompleteRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *ModelServiceCompleteRequest) GetMessages() []*ModelMessage {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *ModelServiceCompleteRequest) GetTemperature() float64 {
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
+	}
+	return 0
+}
+
+func (x *ModelServiceCompleteRequest) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *ModelServiceCompleteRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
+}
+
+type ModelServiceCompleteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	Error         ModelErrorCode         `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ModelErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*ModelFailure        `protobuf:"bytes,4,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceCompleteResponse) Reset() {
+	*x = ModelServiceCompleteResponse{}
+	mi := &file_numen_v1_model_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceCompleteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceCompleteResponse) ProtoMessage() {}
+
+func (x *ModelServiceCompleteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceCompleteResponse.ProtoReflect.Descriptor instead.
+func (*ModelServiceCompleteResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ModelServiceCompleteResponse) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *ModelServiceCompleteResponse) GetError() ModelErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ModelServiceCompleteResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *ModelServiceCompleteResponse) GetFailures() []*ModelFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
+type ModelServiceEmbedRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Texts         []string               `protobuf:"bytes,2,rep,name=texts,proto3" json:"texts,omitempty"`
+	Priority      Priority               `protobuf:"varint,3,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceEmbedRequest) Reset() {
+	*x = ModelServiceEmbedRequest{}
+	mi := &file_numen_v1_model_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceEmbedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceEmbedRequest) ProtoMessage() {}
+
+func (x *ModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceEmbedRequest.ProtoReflect.Descriptor instead.
+func (*ModelServiceEmbedRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ModelServiceEmbedRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *ModelServiceEmbedRequest) GetTexts() []string {
+	if x != nil {
+		return x.Texts
+	}
+	return nil
+}
+
+func (x *ModelServiceEmbedRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
+}
+
+type ModelServiceEmbedResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Vectors       []*FloatVector         `protobuf:"bytes,1,rep,name=vectors,proto3" json:"vectors,omitempty"`
+	Error         ModelErrorCode         `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ModelErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*ModelFailure        `protobuf:"bytes,4,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceEmbedResponse) Reset() {
+	*x = ModelServiceEmbedResponse{}
+	mi := &file_numen_v1_model_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceEmbedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceEmbedResponse) ProtoMessage() {}
+
+func (x *ModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceEmbedResponse.ProtoReflect.Descriptor instead.
+func (*ModelServiceEmbedResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ModelServiceEmbedResponse) GetVectors() []*FloatVector {
+	if x != nil {
+		return x.Vectors
+	}
+	return nil
+}
+
+func (x *ModelServiceEmbedResponse) GetError() ModelErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ModelServiceEmbedResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *ModelServiceEmbedResponse) GetFailures() []*ModelFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
+type ModelServiceGetEmbeddingProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceGetEmbeddingProfileRequest) Reset() {
+	*x = ModelServiceGetEmbeddingProfileRequest{}
+	mi := &file_numen_v1_model_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceGetEmbeddingProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceGetEmbeddingProfileRequest) ProtoMessage() {}
+
+func (x *ModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceGetEmbeddingProfileRequest.ProtoReflect.Descriptor instead.
+func (*ModelServiceGetEmbeddingProfileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ModelServiceGetEmbeddingProfileRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+type ModelServiceGetEmbeddingProfileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// model is the model of the row that answered.
+	Model          string `protobuf:"bytes,1,opt,name=model,proto3" json:"model,omitempty"`
+	Source         string `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	Pooling        string `protobuf:"bytes,3,opt,name=pooling,proto3" json:"pooling,omitempty"`
+	QueryPrefix    string `protobuf:"bytes,4,opt,name=query_prefix,json=queryPrefix,proto3" json:"query_prefix,omitempty"`
+	DocumentPrefix string `protobuf:"bytes,5,opt,name=document_prefix,json=documentPrefix,proto3" json:"document_prefix,omitempty"`
+	Dimensions     int32  `protobuf:"varint,6,opt,name=dimensions,proto3" json:"dimensions,omitempty"`
+	// max_tokens is zero when the provider does not know the limit.
+	MaxTokens     int32           `protobuf:"varint,7,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Error         ModelErrorCode  `protobuf:"varint,8,opt,name=error,proto3,enum=numen.v1.ModelErrorCode" json:"error,omitempty"`
+	Detail        string          `protobuf:"bytes,9,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*ModelFailure `protobuf:"bytes,10,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) Reset() {
+	*x = ModelServiceGetEmbeddingProfileResponse{}
+	mi := &file_numen_v1_model_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceGetEmbeddingProfileResponse) ProtoMessage() {}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceGetEmbeddingProfileResponse.ProtoReflect.Descriptor instead.
+func (*ModelServiceGetEmbeddingProfileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetPooling() string {
+	if x != nil {
+		return x.Pooling
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetQueryPrefix() string {
+	if x != nil {
+		return x.QueryPrefix
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetDocumentPrefix() string {
+	if x != nil {
+		return x.DocumentPrefix
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetDimensions() int32 {
+	if x != nil {
+		return x.Dimensions
+	}
+	return 0
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetError() ModelErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *ModelServiceGetEmbeddingProfileResponse) GetFailures() []*ModelFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
 var File_numen_v1_model_proto protoreflect.FileDescriptor
 
 const file_numen_v1_model_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/model.proto\x12\bnumen.v1\"W\n" +
+	"\x14numen/v1/model.proto\x12\bnumen.v1\x1a\x18numen/v1/embedding.proto\x1a\x18numen/v1/hostmodel.proto\"W\n" +
 	"\x0fConnectionModel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1e\n" +
@@ -439,15 +992,66 @@ const file_numen_v1_model_proto_rawDesc = "" +
 	"\x1bListReasoningLevelsResponse\x12:\n" +
 	"\x06levels\x18\x01 \x03(\v2\".numen.v1.ConnectionReasoningLevelR\x06levels\x12.\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail*}\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"O\n" +
+	"\fModelFailure\x12'\n" +
+	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"6\n" +
+	"\fModelMessage\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"\xf4\x01\n" +
+	"\x1bModelServiceCompleteRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x122\n" +
+	"\bmessages\x18\x02 \x03(\v2\x16.numen.v1.ModelMessageR\bmessages\x12%\n" +
+	"\vtemperature\x18\x03 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x04 \x01(\x05R\tmaxTokens\x12.\n" +
+	"\bpriority\x18\x05 \x01(\x0e2\x12.numen.v1.PriorityR\bpriorityB\x0e\n" +
+	"\f_temperature\"\xae\x01\n" +
+	"\x1cModelServiceCompleteResponse\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\x122\n" +
+	"\bfailures\x18\x04 \x03(\v2\x16.numen.v1.ModelFailureR\bfailures\"}\n" +
+	"\x18ModelServiceEmbedRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x14\n" +
+	"\x05texts\x18\x02 \x03(\tR\x05texts\x12.\n" +
+	"\bpriority\x18\x03 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\"\xc8\x01\n" +
+	"\x19ModelServiceEmbedResponse\x12/\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\x122\n" +
+	"\bfailures\x18\x04 \x03(\v2\x16.numen.v1.ModelFailureR\bfailures\"E\n" +
+	"&ModelServiceGetEmbeddingProfileRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"\xf8\x02\n" +
+	"'ModelServiceGetEmbeddingProfileResponse\x12\x14\n" +
+	"\x05model\x18\x01 \x01(\tR\x05model\x12\x16\n" +
+	"\x06source\x18\x02 \x01(\tR\x06source\x12\x18\n" +
+	"\apooling\x18\x03 \x01(\tR\apooling\x12!\n" +
+	"\fquery_prefix\x18\x04 \x01(\tR\vqueryPrefix\x12'\n" +
+	"\x0fdocument_prefix\x18\x05 \x01(\tR\x0edocumentPrefix\x12\x1e\n" +
+	"\n" +
+	"dimensions\x18\x06 \x01(\x05R\n" +
+	"dimensions\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\a \x01(\x05R\tmaxTokens\x12.\n" +
+	"\x05error\x18\b \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\t \x01(\tR\x06detail\x122\n" +
+	"\bfailures\x18\n" +
+	" \x03(\v2\x16.numen.v1.ModelFailureR\bfailures*\xe1\x01\n" +
 	"\x0eModelErrorCode\x12 \n" +
 	"\x1cMODEL_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aMODEL_ERROR_CODE_NOT_FOUND\x10\x01\x12)\n" +
-	"%MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE\x10\x022\xbb\x01\n" +
+	"%MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE\x10\x02\x12\"\n" +
+	"\x1eMODEL_ERROR_CODE_NO_CONNECTION\x10\x03\x12\x1f\n" +
+	"\x1bMODEL_ERROR_CODE_ALL_FAILED\x10\x04\x12\x1d\n" +
+	"\x19MODEL_ERROR_CODE_REJECTED\x10\x052\xe4\x03\n" +
 	"\fModelService\x12G\n" +
 	"\n" +
 	"ListModels\x12\x1b.numen.v1.ListModelsRequest\x1a\x1c.numen.v1.ListModelsResponse\x12b\n" +
-	"\x13ListReasoningLevels\x12$.numen.v1.ListReasoningLevelsRequest\x1a%.numen.v1.ListReasoningLevelsResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x13ListReasoningLevels\x12$.numen.v1.ListReasoningLevelsRequest\x1a%.numen.v1.ListReasoningLevelsResponse\x12Y\n" +
+	"\bComplete\x12%.numen.v1.ModelServiceCompleteRequest\x1a&.numen.v1.ModelServiceCompleteResponse\x12P\n" +
+	"\x05Embed\x12\".numen.v1.ModelServiceEmbedRequest\x1a#.numen.v1.ModelServiceEmbedResponse\x12z\n" +
+	"\x13GetEmbeddingProfile\x120.numen.v1.ModelServiceGetEmbeddingProfileRequest\x1a1.numen.v1.ModelServiceGetEmbeddingProfileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_model_proto_rawDescOnce sync.Once
@@ -462,30 +1066,56 @@ func file_numen_v1_model_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_model_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_model_proto_goTypes = []any{
-	(ModelErrorCode)(0),                 // 0: numen.v1.ModelErrorCode
-	(*ConnectionModel)(nil),             // 1: numen.v1.ConnectionModel
-	(*ConnectionReasoningLevel)(nil),    // 2: numen.v1.ConnectionReasoningLevel
-	(*ListModelsRequest)(nil),           // 3: numen.v1.ListModelsRequest
-	(*ListModelsResponse)(nil),          // 4: numen.v1.ListModelsResponse
-	(*ListReasoningLevelsRequest)(nil),  // 5: numen.v1.ListReasoningLevelsRequest
-	(*ListReasoningLevelsResponse)(nil), // 6: numen.v1.ListReasoningLevelsResponse
+	(ModelErrorCode)(0),                             // 0: numen.v1.ModelErrorCode
+	(*ConnectionModel)(nil),                         // 1: numen.v1.ConnectionModel
+	(*ConnectionReasoningLevel)(nil),                // 2: numen.v1.ConnectionReasoningLevel
+	(*ListModelsRequest)(nil),                       // 3: numen.v1.ListModelsRequest
+	(*ListModelsResponse)(nil),                      // 4: numen.v1.ListModelsResponse
+	(*ListReasoningLevelsRequest)(nil),              // 5: numen.v1.ListReasoningLevelsRequest
+	(*ListReasoningLevelsResponse)(nil),             // 6: numen.v1.ListReasoningLevelsResponse
+	(*ModelFailure)(nil),                            // 7: numen.v1.ModelFailure
+	(*ModelMessage)(nil),                            // 8: numen.v1.ModelMessage
+	(*ModelServiceCompleteRequest)(nil),             // 9: numen.v1.ModelServiceCompleteRequest
+	(*ModelServiceCompleteResponse)(nil),            // 10: numen.v1.ModelServiceCompleteResponse
+	(*ModelServiceEmbedRequest)(nil),                // 11: numen.v1.ModelServiceEmbedRequest
+	(*ModelServiceEmbedResponse)(nil),               // 12: numen.v1.ModelServiceEmbedResponse
+	(*ModelServiceGetEmbeddingProfileRequest)(nil),  // 13: numen.v1.ModelServiceGetEmbeddingProfileRequest
+	(*ModelServiceGetEmbeddingProfileResponse)(nil), // 14: numen.v1.ModelServiceGetEmbeddingProfileResponse
+	(Priority)(0),                                   // 15: numen.v1.Priority
+	(*FloatVector)(nil),                             // 16: numen.v1.FloatVector
 }
 var file_numen_v1_model_proto_depIdxs = []int32{
-	1, // 0: numen.v1.ListModelsResponse.models:type_name -> numen.v1.ConnectionModel
-	0, // 1: numen.v1.ListModelsResponse.error:type_name -> numen.v1.ModelErrorCode
-	2, // 2: numen.v1.ListReasoningLevelsResponse.levels:type_name -> numen.v1.ConnectionReasoningLevel
-	0, // 3: numen.v1.ListReasoningLevelsResponse.error:type_name -> numen.v1.ModelErrorCode
-	3, // 4: numen.v1.ModelService.ListModels:input_type -> numen.v1.ListModelsRequest
-	5, // 5: numen.v1.ModelService.ListReasoningLevels:input_type -> numen.v1.ListReasoningLevelsRequest
-	4, // 6: numen.v1.ModelService.ListModels:output_type -> numen.v1.ListModelsResponse
-	6, // 7: numen.v1.ModelService.ListReasoningLevels:output_type -> numen.v1.ListReasoningLevelsResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1,  // 0: numen.v1.ListModelsResponse.models:type_name -> numen.v1.ConnectionModel
+	0,  // 1: numen.v1.ListModelsResponse.error:type_name -> numen.v1.ModelErrorCode
+	2,  // 2: numen.v1.ListReasoningLevelsResponse.levels:type_name -> numen.v1.ConnectionReasoningLevel
+	0,  // 3: numen.v1.ListReasoningLevelsResponse.error:type_name -> numen.v1.ModelErrorCode
+	8,  // 4: numen.v1.ModelServiceCompleteRequest.messages:type_name -> numen.v1.ModelMessage
+	15, // 5: numen.v1.ModelServiceCompleteRequest.priority:type_name -> numen.v1.Priority
+	0,  // 6: numen.v1.ModelServiceCompleteResponse.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 7: numen.v1.ModelServiceCompleteResponse.failures:type_name -> numen.v1.ModelFailure
+	15, // 8: numen.v1.ModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
+	16, // 9: numen.v1.ModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	0,  // 10: numen.v1.ModelServiceEmbedResponse.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 11: numen.v1.ModelServiceEmbedResponse.failures:type_name -> numen.v1.ModelFailure
+	0,  // 12: numen.v1.ModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 13: numen.v1.ModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.ModelFailure
+	3,  // 14: numen.v1.ModelService.ListModels:input_type -> numen.v1.ListModelsRequest
+	5,  // 15: numen.v1.ModelService.ListReasoningLevels:input_type -> numen.v1.ListReasoningLevelsRequest
+	9,  // 16: numen.v1.ModelService.Complete:input_type -> numen.v1.ModelServiceCompleteRequest
+	11, // 17: numen.v1.ModelService.Embed:input_type -> numen.v1.ModelServiceEmbedRequest
+	13, // 18: numen.v1.ModelService.GetEmbeddingProfile:input_type -> numen.v1.ModelServiceGetEmbeddingProfileRequest
+	4,  // 19: numen.v1.ModelService.ListModels:output_type -> numen.v1.ListModelsResponse
+	6,  // 20: numen.v1.ModelService.ListReasoningLevels:output_type -> numen.v1.ListReasoningLevelsResponse
+	10, // 21: numen.v1.ModelService.Complete:output_type -> numen.v1.ModelServiceCompleteResponse
+	12, // 22: numen.v1.ModelService.Embed:output_type -> numen.v1.ModelServiceEmbedResponse
+	14, // 23: numen.v1.ModelService.GetEmbeddingProfile:output_type -> numen.v1.ModelServiceGetEmbeddingProfileResponse
+	19, // [19:24] is the sub-list for method output_type
+	14, // [14:19] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_model_proto_init() }
@@ -493,13 +1123,16 @@ func file_numen_v1_model_proto_init() {
 	if File_numen_v1_model_proto != nil {
 		return
 	}
+	file_numen_v1_embedding_proto_init()
+	file_numen_v1_hostmodel_proto_init()
+	file_numen_v1_model_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_model_proto_rawDesc), len(file_numen_v1_model_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

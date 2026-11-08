@@ -45,6 +45,8 @@ type callsHost struct {
 
 func (h *callsHost) SetModelCalls(calls connectionport.ModelCalls) { h.calls = calls }
 
+func (h *callsHost) GetModelCalls() connectionport.ModelCalls { return h.calls }
+
 type noNotices struct{}
 
 func (noNotices) ReportSetAside(string, string, connectionport.FailureReason) {}
@@ -124,7 +126,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _, host := openRowsInstallation(t)
 	cfg.SetModelCalls(noNotices{})
 
-	_, err := host.calls.Complete(t.Context(), rowsPlugin, connectionport.CompleteRequest{})
+	_, err := host.calls.Complete(t.Context(), rowsPlugin, connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 
 	var failed *connectionport.AllFailedError
 	if !errors.As(err, &failed) {
@@ -144,7 +146,7 @@ func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _, host := openRowsInstallation(t)
 	cfg.SetModelCalls(noNotices{})
 
-	_, err := host.calls.Complete(t.Context(), "md.numen.sample.other", connectionport.CompleteRequest{})
+	_, err := host.calls.Complete(t.Context(), "md.numen.sample.other", connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 
 	if !errors.Is(err, connectionport.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)

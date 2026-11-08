@@ -350,7 +350,7 @@ func (o *Installation) wireUseCases() {
 		services.Connection = connection.NewHandler(connections)
 	}
 	if lists := made.OpenModelLists(); lists != nil {
-		services.Model = model.NewHandler(lists)
+		services.Model = model.NewHandler(lists, made.OpenModelCalls())
 	}
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
 	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)

@@ -4,13 +4,17 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { FloatVector } from "./embedding_pb.js";
+import { file_numen_v1_embedding } from "./embedding_pb.js";
+import type { Priority } from "./hostmodel_pb.js";
+import { file_numen_v1_hostmodel } from "./hostmodel_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/model.proto.
  */
 export const file_numen_v1_model: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9tb2RlbC5wcm90bxIIbnVtZW4udjEiQAoPQ29ubmVjdGlvbk1vZGVsEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCm9wZXJhdGlvbnMYAyADKAkiOAoYQ29ubmVjdGlvblJlYXNvbmluZ0xldmVsEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJIj0KEUxpc3RNb2RlbHNSZXF1ZXN0EhUKDWNvbm5lY3Rpb25faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJIngKEkxpc3RNb2RlbHNSZXNwb25zZRIpCgZtb2RlbHMYASADKAsyGS5udW1lbi52MS5Db25uZWN0aW9uTW9kZWwSJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoaTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSFQoNY29ubmVjdGlvbl9pZBgBIAEoCRINCgVtb2RlbBgCIAEoCSKKAQobTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjIKBmxldmVscxgBIAMoCzIiLm51bWVuLnYxLkNvbm5lY3Rpb25SZWFzb25pbmdMZXZlbBInCgVlcnJvchgCIAEoDjIYLm51bWVuLnYxLk1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSp9Cg5Nb2RlbEVycm9yQ29kZRIgChxNT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASHgoaTU9ERUxfRVJST1JfQ09ERV9OT1RfRk9VTkQQARIpCiVNT0RFTF9FUlJPUl9DT0RFX1BST1ZJREVSX1VOQVZBSUxBQkxFEAIyuwEKDE1vZGVsU2VydmljZRJHCgpMaXN0TW9kZWxzEhsubnVtZW4udjEuTGlzdE1vZGVsc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0TW9kZWxzUmVzcG9uc2USYgoTTGlzdFJlYXNvbmluZ0xldmVscxIkLm51bWVuLnYxLkxpc3RSZWFzb25pbmdMZXZlbHNSZXF1ZXN0GiUubnVtZW4udjEuTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS9tb2RlbC5wcm90bxIIbnVtZW4udjEiQAoPQ29ubmVjdGlvbk1vZGVsEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCm9wZXJhdGlvbnMYAyADKAkiOAoYQ29ubmVjdGlvblJlYXNvbmluZ0xldmVsEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJIj0KEUxpc3RNb2RlbHNSZXF1ZXN0EhUKDWNvbm5lY3Rpb25faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJIngKEkxpc3RNb2RlbHNSZXNwb25zZRIpCgZtb2RlbHMYASADKAsyGS5udW1lbi52MS5Db25uZWN0aW9uTW9kZWwSJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoaTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSFQoNY29ubmVjdGlvbl9pZBgBIAEoCRINCgVtb2RlbBgCIAEoCSKKAQobTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjIKBmxldmVscxgBIAMoCzIiLm51bWVuLnYxLkNvbm5lY3Rpb25SZWFzb25pbmdMZXZlbBInCgVlcnJvchgCIAEoDjIYLm51bWVuLnYxLk1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSI3CgxNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIqCgxNb2RlbE1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJIr4BChtNb2RlbFNlcnZpY2VDb21wbGV0ZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEigKCG1lc3NhZ2VzGAIgAygLMhYubnVtZW4udjEuTW9kZWxNZXNzYWdlEhgKC3RlbXBlcmF0dXJlGAMgASgBSACIAQESEgoKbWF4X3Rva2VucxgEIAEoBRIkCghwcmlvcml0eRgFIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Qg4KDF90ZW1wZXJhdHVyZSKPAQocTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIMCgR0ZXh0GAEgASgJEicKBWVycm9yGAIgASgOMhgubnVtZW4udjEuTW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEigKCGZhaWx1cmVzGAQgAygLMhYubnVtZW4udjEuTW9kZWxGYWlsdXJlImIKGE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDQoFdGV4dHMYAiADKAkSJAoIcHJpb3JpdHkYAyABKA4yEi5udW1lbi52MS5Qcmlvcml0eSKmAQoZTW9kZWxTZXJ2aWNlRW1iZWRSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSKAoIZmFpbHVyZXMYBCADKAsyFi5udW1lbi52MS5Nb2RlbEZhaWx1cmUiOwomTW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIpMCCidNb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVzcG9uc2USDQoFbW9kZWwYASABKAkSDgoGc291cmNlGAIgASgJEg8KB3Bvb2xpbmcYAyABKAkSFAoMcXVlcnlfcHJlZml4GAQgASgJEhcKD2RvY3VtZW50X3ByZWZpeBgFIAEoCRISCgpkaW1lbnNpb25zGAYgASgFEhIKCm1heF90b2tlbnMYByABKAUSJwoFZXJyb3IYCCABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYCSABKAkSKAoIZmFpbHVyZXMYCiADKAsyFi5udW1lbi52MS5Nb2RlbEZhaWx1cmUq4QEKDk1vZGVsRXJyb3JDb2RlEiAKHE1PREVMX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpNT0RFTF9FUlJPUl9DT0RFX05PVF9GT1VORBABEikKJU1PREVMX0VSUk9SX0NPREVfUFJPVklERVJfVU5BVkFJTEFCTEUQAhIiCh5NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QAxIfChtNT0RFTF9FUlJPUl9DT0RFX0FMTF9GQUlMRUQQBBIdChlNT0RFTF9FUlJPUl9DT0RFX1JFSkVDVEVEEAUy5AMKDE1vZGVsU2VydmljZRJHCgpMaXN0TW9kZWxzEhsubnVtZW4udjEuTGlzdE1vZGVsc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0TW9kZWxzUmVzcG9uc2USYgoTTGlzdFJlYXNvbmluZ0xldmVscxIkLm51bWVuLnYxLkxpc3RSZWFzb25pbmdMZXZlbHNSZXF1ZXN0GiUubnVtZW4udjEuTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlElkKCENvbXBsZXRlEiUubnVtZW4udjEuTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiYubnVtZW4udjEuTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRJQCgVFbWJlZBIiLm51bWVuLnYxLk1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBojLm51bWVuLnYxLk1vZGVsU2VydmljZUVtYmVkUmVzcG9uc2USegoTR2V0RW1iZWRkaW5nUHJvZmlsZRIwLm51bWVuLnYxLk1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0GjEubnVtZW4udjEuTW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding, file_numen_v1_hostmodel]);
 
 /**
  * @generated from message numen.v1.ConnectionModel
@@ -163,6 +167,267 @@ export const ListReasoningLevelsResponseSchema: GenMessage<ListReasoningLevelsRe
   messageDesc(file_numen_v1_model, 5);
 
 /**
+ * ModelFailure is one row that did not answer.
+ *
+ * @generated from message numen.v1.ModelFailure
+ */
+export type ModelFailure = Message<"numen.v1.ModelFailure"> & {
+  /**
+   * @generated from field: string connection_name = 1;
+   */
+  connectionName: string;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message numen.v1.ModelFailure.
+ * Use `create(ModelFailureSchema)` to create a new message.
+ */
+export const ModelFailureSchema: GenMessage<ModelFailure> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 6);
+
+/**
+ * @generated from message numen.v1.ModelMessage
+ */
+export type ModelMessage = Message<"numen.v1.ModelMessage"> & {
+  /**
+   * role is system, user or assistant.
+   *
+   * @generated from field: string role = 1;
+   */
+  role: string;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.ModelMessage.
+ * Use `create(ModelMessageSchema)` to create a new message.
+ */
+export const ModelMessageSchema: GenMessage<ModelMessage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 7);
+
+/**
+ * @generated from message numen.v1.ModelServiceCompleteRequest
+ */
+export type ModelServiceCompleteRequest = Message<"numen.v1.ModelServiceCompleteRequest"> & {
+  /**
+   * plugin_id is the plugin whose rows serve the call.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: repeated numen.v1.ModelMessage messages = 2;
+   */
+  messages: ModelMessage[];
+
+  /**
+   * @generated from field: optional double temperature = 3;
+   */
+  temperature?: number | undefined;
+
+  /**
+   * @generated from field: int32 max_tokens = 4;
+   */
+  maxTokens: number;
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 5;
+   */
+  priority: Priority;
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceCompleteRequest.
+ * Use `create(ModelServiceCompleteRequestSchema)` to create a new message.
+ */
+export const ModelServiceCompleteRequestSchema: GenMessage<ModelServiceCompleteRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 8);
+
+/**
+ * @generated from message numen.v1.ModelServiceCompleteResponse
+ */
+export type ModelServiceCompleteResponse = Message<"numen.v1.ModelServiceCompleteResponse"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: numen.v1.ModelErrorCode error = 2;
+   */
+  error: ModelErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+
+  /**
+   * @generated from field: repeated numen.v1.ModelFailure failures = 4;
+   */
+  failures: ModelFailure[];
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceCompleteResponse.
+ * Use `create(ModelServiceCompleteResponseSchema)` to create a new message.
+ */
+export const ModelServiceCompleteResponseSchema: GenMessage<ModelServiceCompleteResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 9);
+
+/**
+ * @generated from message numen.v1.ModelServiceEmbedRequest
+ */
+export type ModelServiceEmbedRequest = Message<"numen.v1.ModelServiceEmbedRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: repeated string texts = 2;
+   */
+  texts: string[];
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 3;
+   */
+  priority: Priority;
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceEmbedRequest.
+ * Use `create(ModelServiceEmbedRequestSchema)` to create a new message.
+ */
+export const ModelServiceEmbedRequestSchema: GenMessage<ModelServiceEmbedRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 10);
+
+/**
+ * @generated from message numen.v1.ModelServiceEmbedResponse
+ */
+export type ModelServiceEmbedResponse = Message<"numen.v1.ModelServiceEmbedResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.FloatVector vectors = 1;
+   */
+  vectors: FloatVector[];
+
+  /**
+   * @generated from field: numen.v1.ModelErrorCode error = 2;
+   */
+  error: ModelErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+
+  /**
+   * @generated from field: repeated numen.v1.ModelFailure failures = 4;
+   */
+  failures: ModelFailure[];
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceEmbedResponse.
+ * Use `create(ModelServiceEmbedResponseSchema)` to create a new message.
+ */
+export const ModelServiceEmbedResponseSchema: GenMessage<ModelServiceEmbedResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 11);
+
+/**
+ * @generated from message numen.v1.ModelServiceGetEmbeddingProfileRequest
+ */
+export type ModelServiceGetEmbeddingProfileRequest = Message<"numen.v1.ModelServiceGetEmbeddingProfileRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceGetEmbeddingProfileRequest.
+ * Use `create(ModelServiceGetEmbeddingProfileRequestSchema)` to create a new message.
+ */
+export const ModelServiceGetEmbeddingProfileRequestSchema: GenMessage<ModelServiceGetEmbeddingProfileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 12);
+
+/**
+ * @generated from message numen.v1.ModelServiceGetEmbeddingProfileResponse
+ */
+export type ModelServiceGetEmbeddingProfileResponse = Message<"numen.v1.ModelServiceGetEmbeddingProfileResponse"> & {
+  /**
+   * model is the model of the row that answered.
+   *
+   * @generated from field: string model = 1;
+   */
+  model: string;
+
+  /**
+   * @generated from field: string source = 2;
+   */
+  source: string;
+
+  /**
+   * @generated from field: string pooling = 3;
+   */
+  pooling: string;
+
+  /**
+   * @generated from field: string query_prefix = 4;
+   */
+  queryPrefix: string;
+
+  /**
+   * @generated from field: string document_prefix = 5;
+   */
+  documentPrefix: string;
+
+  /**
+   * @generated from field: int32 dimensions = 6;
+   */
+  dimensions: number;
+
+  /**
+   * max_tokens is zero when the provider does not know the limit.
+   *
+   * @generated from field: int32 max_tokens = 7;
+   */
+  maxTokens: number;
+
+  /**
+   * @generated from field: numen.v1.ModelErrorCode error = 8;
+   */
+  error: ModelErrorCode;
+
+  /**
+   * @generated from field: string detail = 9;
+   */
+  detail: string;
+
+  /**
+   * @generated from field: repeated numen.v1.ModelFailure failures = 10;
+   */
+  failures: ModelFailure[];
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceGetEmbeddingProfileResponse.
+ * Use `create(ModelServiceGetEmbeddingProfileResponseSchema)` to create a new message.
+ */
+export const ModelServiceGetEmbeddingProfileResponseSchema: GenMessage<ModelServiceGetEmbeddingProfileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 13);
+
+/**
  * ModelErrorCode is the reason a served call did not succeed. The zero value is a call that succeeded.
  *
  * @generated from enum numen.v1.ModelErrorCode
@@ -187,6 +452,27 @@ export enum ModelErrorCode {
    * @generated from enum value: MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE = 2;
    */
   PROVIDER_UNAVAILABLE = 2,
+
+  /**
+   * MODEL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+   *
+   * @generated from enum value: MODEL_ERROR_CODE_NO_CONNECTION = 3;
+   */
+  NO_CONNECTION = 3,
+
+  /**
+   * MODEL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one.
+   *
+   * @generated from enum value: MODEL_ERROR_CODE_ALL_FAILED = 4;
+   */
+  ALL_FAILED = 4,
+
+  /**
+   * MODEL_ERROR_CODE_REJECTED is a request that is wrong in itself; the failure names the connection.
+   *
+   * @generated from enum value: MODEL_ERROR_CODE_REJECTED = 5;
+   */
+  REJECTED = 5,
 }
 
 /**
@@ -196,7 +482,9 @@ export const ModelErrorCodeSchema: GenEnum<ModelErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_model, 0);
 
 /**
- * ModelService answers the editor about the models of a connection. A plugin token does not reach it.
+ * ModelService answers a window about the models of a connection and carries out the operations a plugin
+ * view asks for. The calls name the plugin they are made for, so the host endpoint that plugin processes
+ * reach with their token does not mount it, and the handler refuses a request that carries a token.
  *
  * @generated from service numen.v1.ModelService
  */
@@ -221,6 +509,36 @@ export const ModelService: GenService<{
     methodKind: "unary";
     input: typeof ListReasoningLevelsRequestSchema;
     output: typeof ListReasoningLevelsResponseSchema;
+  },
+  /**
+   * Complete turns messages into the text of an answer, through the rows of the plugin the request names.
+   *
+   * @generated from rpc numen.v1.ModelService.Complete
+   */
+  complete: {
+    methodKind: "unary";
+    input: typeof ModelServiceCompleteRequestSchema;
+    output: typeof ModelServiceCompleteResponseSchema;
+  },
+  /**
+   * Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
+   *
+   * @generated from rpc numen.v1.ModelService.Embed
+   */
+  embed: {
+    methodKind: "unary";
+    input: typeof ModelServiceEmbedRequestSchema;
+    output: typeof ModelServiceEmbedResponseSchema;
+  },
+  /**
+   * GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
+   *
+   * @generated from rpc numen.v1.ModelService.GetEmbeddingProfile
+   */
+  getEmbeddingProfile: {
+    methodKind: "unary";
+    input: typeof ModelServiceGetEmbeddingProfileRequestSchema;
+    output: typeof ModelServiceGetEmbeddingProfileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_model, 0);

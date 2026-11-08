@@ -21,7 +21,7 @@ type Provider struct {
 	mu        sync.Mutex
 	queued    map[string][]error
 	always    map[string]error
-	blocked   map[string]bool
+	blocked   map[string]chan struct{}
 	recorded  []Recorded
 	entered   chan string
 	IsUnknown bool
@@ -30,7 +30,7 @@ type Provider struct {
 // NewProvider creates a provider that answers every call.
 func NewProvider() *Provider {
 	return &Provider{
-		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]bool{}, entered: make(chan string, 256),
+		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, entered: make(chan string, 256),
 	}
 }
 
@@ -48,11 +48,11 @@ func (p *Provider) FailAlways(address string, err error) {
 	p.always[address] = err
 }
 
-// Block makes every call to the address wait until its context ends.
+// Block makes every call to the address wait until its context ends or Unblock is called.
 func (p *Provider) Block(address string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.blocked[address] = true
+	p.blocked[address] = make(chan struct{})
 }
 
 // Calls returns the calls received, in order.
@@ -81,7 +81,7 @@ func (p *Provider) receive(ctx context.Context, operation string, call connectio
 		recorded.Request = request[0]
 	}
 	p.recorded = append(p.recorded, recorded)
-	isBlocked := p.blocked[address]
+	block := p.blocked[address]
 	err := p.always[address]
 	if queue := p.queued[address]; err == nil && len(queue) > 0 {
 		err, p.queued[address] = queue[0], queue[1:]
@@ -91,9 +91,13 @@ func (p *Provider) receive(ctx context.Context, operation string, call connectio
 	case p.entered <- address:
 	default:
 	}
-	if isBlocked {
-		<-ctx.Done()
-		return ctx.Err()
+	if block != nil {
+		select {
+		case <-block:
+			return err
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 	return err
 }
@@ -161,9 +165,23 @@ func (p *Provider) ProbeEmbeddingWidth(ctx context.Context, call connectionport.
 // Entered receives the address of each call as the provider takes it.
 func (p *Provider) Entered() <-chan string { return p.entered }
 
-// Unblock lets the calls to the address answer again.
+// Unblock answers the calls waiting at the address and lets the next ones answer at once.
 func (p *Provider) Unblock(address string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	delete(p.blocked, address)
+	if block, isBlocked := p.blocked[address]; isBlocked {
+		close(block)
+		delete(p.blocked, address)
+	}
+}
+
+// Release answers the calls waiting at the address now and keeps the address blocked for
+// the calls that come later.
+func (p *Provider) Release(address string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if block, isBlocked := p.blocked[address]; isBlocked {
+		close(block)
+		p.blocked[address] = make(chan struct{})
+	}
 }

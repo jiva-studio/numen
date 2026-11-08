@@ -43,3 +43,15 @@ A provider checks the address it resolves to before it sends a key: the core che
 A plugin that needs a model does not call a provider. `connection.NewClient`, `NewClientFromEnv` or `NewClientFromVars` returns a `Client` with `Complete`, `Embed` and `GetEmbeddingProfile`. The request names no connection, no model and no key: the core takes the connections from the rows in the settings of the plugin, in the order the person set, and a plugin cannot use a connection that is not in its rows. The errors are `connection.ErrNoConnection` (no row serves the operation), `*connection.AllFailedError` and `*connection.RejectedError`; use `errors.Is` and `errors.As`.
 
 A plugin compiled into the core is called through the in-process pipe, as a plugin process is called over the loopback, and the contract names no transport.
+
+### Priority
+
+`CompleteRequest` and `EmbedRequest` carry a `Priority`: `connection.PriorityInteractive` for a person's action (a search, a check of a line) and `connection.PriorityBackground` for work nobody waits on (indexing). A request that sets none is background. `GetEmbeddingProfile` is background.
+
+### Queue of a connection
+
+A connection runs at most `parallelRequests` calls at once: the value stored on the connection, else the `default` of the field in the type, else no limit when the type declares none. Every plugin that uses the connection shares the limit. The calls over the limit wait in two lists, interactive and background, each in order of arrival; when a slot frees, the head of the interactive list goes first. A call waits at most 60 seconds when it is interactive and 10 minutes when it is background. A wait that ends is "try the next" with the reason `busy` and sets no cooldown, so the core goes to the next row. A call whose context ends leaves the queue at once; a running call that is cancelled frees its slot when the provider returns.
+
+### From TypeScript
+
+A plugin view gets `context.models`, a `ModelHost` with `complete`, `embed` and `getEmbeddingProfile`. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.

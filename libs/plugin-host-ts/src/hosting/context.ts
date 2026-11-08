@@ -286,11 +286,13 @@ function createWindowServices(
   const tasks = host.getTasks?.(pluginId)
   const backgroundTasks = host.getBackgroundTasks?.()
   const texts = host.getTexts?.(pluginId)
+  const models = host.getModels?.(pluginId)
   return {
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(backgroundTasks ? { backgroundTasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+    ...(models ? { models } : {}),
     ...createFrameServices(host),
   }
 }

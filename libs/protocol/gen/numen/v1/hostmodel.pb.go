@@ -21,6 +21,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+type Priority int32
+
+const (
+	Priority_PRIORITY_UNSPECIFIED Priority = 0
+	// PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+	Priority_PRIORITY_INTERACTIVE Priority = 1
+	// PRIORITY_BACKGROUND is a call made for work nobody waits on, such as indexing.
+	Priority_PRIORITY_BACKGROUND Priority = 2
+)
+
+// Enum value maps for Priority.
+var (
+	Priority_name = map[int32]string{
+		0: "PRIORITY_UNSPECIFIED",
+		1: "PRIORITY_INTERACTIVE",
+		2: "PRIORITY_BACKGROUND",
+	}
+	Priority_value = map[string]int32{
+		"PRIORITY_UNSPECIFIED": 0,
+		"PRIORITY_INTERACTIVE": 1,
+		"PRIORITY_BACKGROUND":  2,
+	}
+)
+
+func (x Priority) Enum() *Priority {
+	p := new(Priority)
+	*p = x
+	return p
+}
+
+func (x Priority) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Priority) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_hostmodel_proto_enumTypes[0].Descriptor()
+}
+
+func (Priority) Type() protoreflect.EnumType {
+	return &file_numen_v1_hostmodel_proto_enumTypes[0]
+}
+
+func (x Priority) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Priority.Descriptor instead.
+func (Priority) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{0}
+}
+
 // HostModelErrorCode is the reason a served call did not succeed. The zero value is a call that
 // succeeded.
 type HostModelErrorCode int32
@@ -62,11 +115,11 @@ func (x HostModelErrorCode) String() string {
 }
 
 func (HostModelErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_hostmodel_proto_enumTypes[0].Descriptor()
+	return file_numen_v1_hostmodel_proto_enumTypes[1].Descriptor()
 }
 
 func (HostModelErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_hostmodel_proto_enumTypes[0]
+	return &file_numen_v1_hostmodel_proto_enumTypes[1]
 }
 
 func (x HostModelErrorCode) Number() protoreflect.EnumNumber {
@@ -75,7 +128,7 @@ func (x HostModelErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostModelErrorCode.Descriptor instead.
 func (HostModelErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{1}
 }
 
 // HostModelFailure is one row that did not answer.
@@ -189,6 +242,7 @@ type HostModelServiceCompleteRequest struct {
 	Messages      []*HostModelMessage    `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
 	Temperature   *float64               `protobuf:"fixed64,2,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
 	MaxTokens     int32                  `protobuf:"varint,3,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Priority      Priority               `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -242,6 +296,13 @@ func (x *HostModelServiceCompleteRequest) GetMaxTokens() int32 {
 		return x.MaxTokens
 	}
 	return 0
+}
+
+func (x *HostModelServiceCompleteRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
 }
 
 type HostModelServiceCompleteResponse struct {
@@ -315,6 +376,7 @@ func (x *HostModelServiceCompleteResponse) GetFailures() []*HostModelFailure {
 type HostModelServiceEmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Texts         []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
+	Priority      Priority               `protobuf:"varint,2,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -354,6 +416,13 @@ func (x *HostModelServiceEmbedRequest) GetTexts() []string {
 		return x.Texts
 	}
 	return nil
+}
+
+func (x *HostModelServiceEmbedRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
 }
 
 type HostModelServiceEmbedResponse struct {
@@ -588,20 +657,22 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\":\n" +
 	"\x10HostModelMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\xaf\x01\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"\xdf\x01\n" +
 	"\x1fHostModelServiceCompleteRequest\x126\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1a.numen.v1.HostModelMessageR\bmessages\x12%\n" +
 	"\vtemperature\x18\x02 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
 	"\n" +
-	"max_tokens\x18\x03 \x01(\x05R\tmaxTokensB\x0e\n" +
+	"max_tokens\x18\x03 \x01(\x05R\tmaxTokens\x12.\n" +
+	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriorityB\x0e\n" +
 	"\f_temperature\"\xba\x01\n" +
 	" HostModelServiceCompleteResponse\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x122\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x126\n" +
-	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"4\n" +
+	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"d\n" +
 	"\x1cHostModelServiceEmbedRequest\x12\x14\n" +
-	"\x05texts\x18\x01 \x03(\tR\x05texts\"\xd4\x01\n" +
+	"\x05texts\x18\x01 \x03(\tR\x05texts\x12.\n" +
+	"\bpriority\x18\x02 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\"\xd4\x01\n" +
 	"\x1dHostModelServiceEmbedResponse\x12/\n" +
 	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\x122\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
@@ -622,7 +693,11 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"\x05error\x18\b \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\t \x01(\tR\x06detail\x126\n" +
 	"\bfailures\x18\n" +
-	" \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures*\xae\x01\n" +
+	" \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures*W\n" +
+	"\bPriority\x12\x18\n" +
+	"\x14PRIORITY_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14PRIORITY_INTERACTIVE\x10\x01\x12\x17\n" +
+	"\x13PRIORITY_BACKGROUND\x10\x02*\xae\x01\n" +
 	"\x12HostModelErrorCode\x12%\n" +
 	"!HOST_MODEL_ERROR_CODE_UNSPECIFIED\x10\x00\x12'\n" +
 	"#HOST_MODEL_ERROR_CODE_NO_CONNECTION\x10\x01\x12$\n" +
@@ -645,40 +720,43 @@ func file_numen_v1_hostmodel_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostmodel_proto_rawDescData
 }
 
-var file_numen_v1_hostmodel_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_hostmodel_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_hostmodel_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_hostmodel_proto_goTypes = []any{
-	(HostModelErrorCode)(0),                             // 0: numen.v1.HostModelErrorCode
-	(*HostModelFailure)(nil),                            // 1: numen.v1.HostModelFailure
-	(*HostModelMessage)(nil),                            // 2: numen.v1.HostModelMessage
-	(*HostModelServiceCompleteRequest)(nil),             // 3: numen.v1.HostModelServiceCompleteRequest
-	(*HostModelServiceCompleteResponse)(nil),            // 4: numen.v1.HostModelServiceCompleteResponse
-	(*HostModelServiceEmbedRequest)(nil),                // 5: numen.v1.HostModelServiceEmbedRequest
-	(*HostModelServiceEmbedResponse)(nil),               // 6: numen.v1.HostModelServiceEmbedResponse
-	(*HostModelServiceGetEmbeddingProfileRequest)(nil),  // 7: numen.v1.HostModelServiceGetEmbeddingProfileRequest
-	(*HostModelServiceGetEmbeddingProfileResponse)(nil), // 8: numen.v1.HostModelServiceGetEmbeddingProfileResponse
-	(*FloatVector)(nil),                                 // 9: numen.v1.FloatVector
+	(Priority)(0),                                       // 0: numen.v1.Priority
+	(HostModelErrorCode)(0),                             // 1: numen.v1.HostModelErrorCode
+	(*HostModelFailure)(nil),                            // 2: numen.v1.HostModelFailure
+	(*HostModelMessage)(nil),                            // 3: numen.v1.HostModelMessage
+	(*HostModelServiceCompleteRequest)(nil),             // 4: numen.v1.HostModelServiceCompleteRequest
+	(*HostModelServiceCompleteResponse)(nil),            // 5: numen.v1.HostModelServiceCompleteResponse
+	(*HostModelServiceEmbedRequest)(nil),                // 6: numen.v1.HostModelServiceEmbedRequest
+	(*HostModelServiceEmbedResponse)(nil),               // 7: numen.v1.HostModelServiceEmbedResponse
+	(*HostModelServiceGetEmbeddingProfileRequest)(nil),  // 8: numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	(*HostModelServiceGetEmbeddingProfileResponse)(nil), // 9: numen.v1.HostModelServiceGetEmbeddingProfileResponse
+	(*FloatVector)(nil),                                 // 10: numen.v1.FloatVector
 }
 var file_numen_v1_hostmodel_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.HostModelServiceCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
-	0,  // 1: numen.v1.HostModelServiceCompleteResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 2: numen.v1.HostModelServiceCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
-	9,  // 3: numen.v1.HostModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
-	0,  // 4: numen.v1.HostModelServiceEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 5: numen.v1.HostModelServiceEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
-	0,  // 6: numen.v1.HostModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 7: numen.v1.HostModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
-	3,  // 8: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelServiceCompleteRequest
-	5,  // 9: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelServiceEmbedRequest
-	7,  // 10: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelServiceGetEmbeddingProfileRequest
-	4,  // 11: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelServiceCompleteResponse
-	6,  // 12: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelServiceEmbedResponse
-	8,  // 13: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelServiceGetEmbeddingProfileResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	3,  // 0: numen.v1.HostModelServiceCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
+	0,  // 1: numen.v1.HostModelServiceCompleteRequest.priority:type_name -> numen.v1.Priority
+	1,  // 2: numen.v1.HostModelServiceCompleteResponse.error:type_name -> numen.v1.HostModelErrorCode
+	2,  // 3: numen.v1.HostModelServiceCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
+	0,  // 4: numen.v1.HostModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
+	10, // 5: numen.v1.HostModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	1,  // 6: numen.v1.HostModelServiceEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
+	2,  // 7: numen.v1.HostModelServiceEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
+	1,  // 8: numen.v1.HostModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
+	2,  // 9: numen.v1.HostModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
+	4,  // 10: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelServiceCompleteRequest
+	6,  // 11: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelServiceEmbedRequest
+	8,  // 12: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	5,  // 13: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelServiceCompleteResponse
+	7,  // 14: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelServiceEmbedResponse
+	9,  // 15: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelServiceGetEmbeddingProfileResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostmodel_proto_init() }
@@ -693,7 +771,7 @@ func file_numen_v1_hostmodel_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostmodel_proto_rawDesc), len(file_numen_v1_hostmodel_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,

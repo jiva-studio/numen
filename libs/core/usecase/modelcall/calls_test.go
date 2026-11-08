@@ -37,7 +37,7 @@ func newSetup(t *testing.T, operation string) *setup {
 	w.Rows.Set(consumerID, operation, modelcalltest.Row(one, "model-one"), modelcalltest.Row(two, "model-two"))
 	return &setup{
 		world: w, one: one, two: two,
-		calls: modelcall.NewCalls(w.Connections, w.Rows, w.Source, w.Clock, w.Notices),
+		calls: modelcall.NewCalls(w.Connections, w.Rows, w.Source, w.Clock, w.Waits.Wait, w.Notices),
 	}
 }
 
@@ -45,7 +45,7 @@ func (s *setup) complete(t *testing.T) (connectionport.CompleteResult, error) {
 	t.Helper()
 	return s.calls.Complete(t.Context(), consumerID, connectionport.CompleteRequest{
 		Messages: []connectionport.Message{{Role: "user", Text: "fix this"}},
-	})
+	}, connectionport.PriorityBackground)
 }
 
 func tryNext(reason connectionport.FailureReason, retryAfter time.Duration) error {
@@ -189,7 +189,7 @@ func TestARowSetAsideEarlierStillAppearsInTheErrorWithItsReason(t *testing.T) {
 func TestAPluginWithNoRowGetsNoConnection(t *testing.T) {
 	s := newSetup(t, "complete")
 
-	_, err := s.calls.Complete(t.Context(), "md.example.stranger", connectionport.CompleteRequest{})
+	_, err := s.calls.Complete(t.Context(), "md.example.stranger", connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 
 	if !errors.Is(err, connectionport.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)
@@ -214,11 +214,11 @@ func TestAPluginReachesOnlyTheConnectionsOfItsOwnRows(t *testing.T) {
 	s.world.Rows.Set("md.example.first", "complete", modelcalltest.Row(s.one, "m"))
 	s.world.Rows.Set("md.example.second", "complete", modelcalltest.Row(s.two, "m"))
 
-	first, err := s.calls.Complete(t.Context(), "md.example.first", connectionport.CompleteRequest{})
+	first, err := s.calls.Complete(t.Context(), "md.example.first", connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.calls.Complete(t.Context(), "md.example.second", connectionport.CompleteRequest{})
+	second, err := s.calls.Complete(t.Context(), "md.example.second", connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestAPluginReachesOnlyTheConnectionsOfItsOwnRows(t *testing.T) {
 	if first.Text != "answer from "+addressOne || second.Text != "answer from "+addressTwo {
 		t.Errorf("first = %q, second = %q", first.Text, second.Text)
 	}
-	if _, err := s.calls.Complete(t.Context(), "md.example.third", connectionport.CompleteRequest{}); !errors.Is(err, connectionport.ErrNoConnection) {
+	if _, err := s.calls.Complete(t.Context(), "md.example.third", connectionport.CompleteRequest{}, connectionport.PriorityBackground); !errors.Is(err, connectionport.ErrNoConnection) {
 		t.Errorf("a plugin with no row reached a connection: %v", err)
 	}
 }
@@ -334,7 +334,7 @@ func TestACallCancelledBeforeItStartsReachesNoProvider(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := s.calls.Complete(ctx, consumerID, connectionport.CompleteRequest{})
+	_, err := s.calls.Complete(ctx, consumerID, connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
@@ -350,7 +350,7 @@ func TestACallCancelledWhileTheProviderWorksReturnsTheCancellationAndSetsNothing
 	ctx, cancel := context.WithCancel(t.Context())
 	failed := make(chan error, 1)
 	go func() {
-		_, err := s.calls.Complete(ctx, consumerID, connectionport.CompleteRequest{})
+		_, err := s.calls.Complete(ctx, consumerID, connectionport.CompleteRequest{}, connectionport.PriorityBackground)
 		failed <- err
 	}()
 	<-s.world.Provider.Entered()
@@ -402,7 +402,7 @@ func TestARowWhoseTypeDoesNotHaveTheOperationIsSkippedWithTheReason(t *testing.T
 	completer := s.world.Add(t, modelcalltest.CompleterTypeID, "Completer", "https://completer.test/v1", "")
 	s.world.Rows.Set(consumerID, "embed", modelcalltest.Row(completer, "m"))
 
-	_, err := s.calls.Embed(t.Context(), consumerID, []string{"a"})
+	_, err := s.calls.Embed(t.Context(), consumerID, []string{"a"}, connectionport.PriorityBackground)
 
 	if err == nil || err.Error() != "Completer: this type cannot embed" {
 		t.Errorf("err = %v", err)
@@ -447,7 +447,7 @@ func TestEmbedReturnsTheVectorsOfTheFirstRowThatAnswers(t *testing.T) {
 	s := newSetup(t, "embed")
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
 
-	vectors, err := s.calls.Embed(t.Context(), consumerID, []string{"ab", "abcd"})
+	vectors, err := s.calls.Embed(t.Context(), consumerID, []string{"ab", "abcd"}, connectionport.PriorityBackground)
 
 	if err != nil || len(vectors) != 2 || vectors[1][0] != 4 {
 		t.Fatalf("Embed = %v, %v", vectors, err)
@@ -460,7 +460,7 @@ func TestEmbedReturnsTheVectorsOfTheFirstRowThatAnswers(t *testing.T) {
 func TestEmbedOfNoTextCallsNoProvider(t *testing.T) {
 	s := newSetup(t, "embed")
 
-	vectors, err := s.calls.Embed(t.Context(), consumerID, nil)
+	vectors, err := s.calls.Embed(t.Context(), consumerID, nil, connectionport.PriorityBackground)
 
 	if err != nil || len(vectors) != 0 || len(s.world.Provider.Calls()) != 0 {
 		t.Errorf("Embed = %v, %v, calls = %v", vectors, err, s.world.Provider.Calls())
@@ -506,7 +506,7 @@ func TestACompleteRequestReachesTheProviderWhole(t *testing.T) {
 
 	_, err := s.calls.Complete(t.Context(), consumerID, connectionport.CompleteRequest{
 		Messages: []connectionport.Message{{Role: "system", Text: "s"}, {Role: "user", Text: "u"}}, Temperature: &temperature, MaxTokens: 50,
-	})
+	}, connectionport.PriorityBackground)
 
 	if err != nil {
 		t.Fatal(err)

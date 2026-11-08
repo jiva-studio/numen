@@ -31,6 +31,7 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
+  ModelHost,
   VaultsHost,
   WindowHost,
   WorkspaceHost,
@@ -163,6 +164,7 @@ export interface PluginHostDeps {
   readonly getNoteBuffer?: () => NoteBuffer | undefined
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly getTexts?: (pluginId: string) => VaultTexts
+  readonly getModels?: (pluginId: string) => ModelHost
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
@@ -256,6 +258,7 @@ export interface PluginContextHost {
   getTasks?(pluginId: string): TaskHost | undefined
   getBackgroundTasks?(): BackgroundTaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
+  getModels?(pluginId: string): ModelHost | undefined
   getSlots?(): SlotHost | undefined
 }
 

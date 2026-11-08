@@ -66,6 +66,7 @@ type Runtime[H, V any] struct {
 	OpenSecretsFn            func() *secret.Secrets
 	OpenConnectionsFn        func() *connection.Connections
 	OpenModelListsFn         func() *modellist.Lists
+	OpenModelCallsFn         func() modelcallport.ModelCalls
 	SetModelCallsFn          func(notices modelcallport.Notices)
 	OpenRetryPluginFn        func() *settings.RetryPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
@@ -134,6 +135,14 @@ func (e Runtime[H, V]) OpenModelLists() *modellist.Lists {
 		return nil
 	}
 	return e.OpenModelListsFn()
+}
+
+// OpenModelCalls is the calls on models, nil where the assembly names none.
+func (e Runtime[H, V]) OpenModelCalls() modelcallport.ModelCalls {
+	if e.OpenModelCallsFn == nil {
+		return nil
+	}
+	return e.OpenModelCallsFn()
 }
 
 // SetModelCalls lets the plugins ask for the operations on models, and does nothing where the assembly

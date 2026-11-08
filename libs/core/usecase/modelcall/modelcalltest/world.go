@@ -21,6 +21,7 @@ const (
 	ServerTypeID      = ProviderPluginID + "/server"
 	CompleterTypeID   = ProviderPluginID + "/completer"
 	OtherServerTypeID = OtherPluginID + "/server"
+	LimitedTypeID     = ProviderPluginID + "/limited"
 )
 
 // Notice is one report of a connection set aside.
@@ -207,6 +208,7 @@ type World struct {
 	Provider    *Provider
 	Source      *Source
 	Notices     *Notices
+	Waits       *Waits
 	Clock       *Clock
 	Types       *fixedTypes
 	repository  *memoryRepository
@@ -218,6 +220,8 @@ type World struct {
 func New() *World {
 	address := manifest.ConnectionField{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
+	minimum, step := 1.0, 1.0
+	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
 	serverType := func(pluginID string) connectionport.Type {
 		return connectionport.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
@@ -230,9 +234,12 @@ func New() *World {
 			ID: "completer", Title: "Completer", Operations: []string{"complete"}, Fields: []manifest.ConnectionField{address, optionalKey},
 		}},
 		serverType(OtherPluginID),
+		{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
+			ID: "limited", Title: "Limited", Operations: []string{"complete", "embed"}, Fields: []manifest.ConnectionField{address, key, parallelRequests},
+		}},
 	}}
 	w := &World{
-		Keys: &Keys{Values: map[string]string{}}, Rows: &Rows{}, Provider: NewProvider(), Notices: &Notices{},
+		Keys: &Keys{Values: map[string]string{}}, Rows: &Rows{}, Provider: NewProvider(), Notices: &Notices{}, Waits: newWaits(),
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
@@ -338,3 +345,20 @@ func (NoUses) RemoveRows(string) error { return nil }
 
 // Refresh configures no plugin.
 func (NoUses) Refresh(context.Context, string) error { return nil }
+
+// AddLimited creates a connection of the type limited, which runs two calls at once unless the field
+// parallelRequests says otherwise. A parallelRequests of 0 leaves the field unset.
+func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests int) connection.Entry {
+	t.Helper()
+	fields := map[string]any{"baseUrl": address}
+	if parallelRequests > 0 {
+		fields[manifest.ConnectionParallelRequests] = float64(parallelRequests)
+	}
+	entry, err := w.Connections.Create.Execute(t.Context(), connection.CreateRequest{
+		TypeID: LimitedTypeID, Name: name, Fields: fields, Secrets: map[string]string{apiKeyField: "sk-" + name},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return entry
+}
