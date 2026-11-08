@@ -73,7 +73,8 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue(), newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	server := NewTextServer(files, texts, files.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	return texts, server, raw
 }
@@ -356,7 +357,8 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	srv := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
 
 	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)

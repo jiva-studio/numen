@@ -44,7 +44,7 @@ type TextServer struct {
 }
 
 // TextRequest names the file whose text layer is written, in the vault Vault names; empty is the
-// vault the host shows.
+// vault the host shows when the layer is asked for.
 type TextRequest struct {
 	Vault domain.VaultID
 	Path  string
@@ -111,8 +111,17 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 }
 
 // CreateText starts writing the text layer of a file as a version made from the file, and returns.
-// A file whose layer is being written already is not started again.
+// An empty vault is the vault the host shows when CreateText is called, and the layer is written
+// there whichever vault the host shows later. A file whose layer is being written already is not
+// started again.
 func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
+	if req.Vault == "" {
+		shown, err := s.files.GetVault(ctx)
+		if err != nil {
+			return fmt.Errorf("get the shown vault: %w", err)
+		}
+		req.Vault = shown.ID
+	}
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -163,10 +172,7 @@ func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Ta
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.files, s.texts, s.store
-	if req.Vault != "" {
-		files, texts, store = files.With(req.Vault), texts.With(req.Vault), store.With(req.Vault)
-	}
+	files, texts, store := s.files.With(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
 	read, err := s.readLayer(ctx, files, req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
 		return nil
