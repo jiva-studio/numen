@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	pathpkg "path"
 	"strings"
@@ -38,9 +39,6 @@ const (
 	mediaKey = "media"
 	pageKey  = "page"
 )
-
-// pluginScheme starts the address of a file in a plugin's store of the vault.
-const pluginScheme = "plugin://"
 
 var (
 	// ErrNotALink is a file that is not a link note holding a web address.
@@ -304,7 +302,8 @@ func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
 }
 
 func (l *Links) getAddress(name string) string {
-	return pluginScheme + l.host.PluginID + "/" + name
+	// The core resolves plugin://<plugin id>/<path> to the file at path in that plugin's store.
+	return (&url.URL{Scheme: "plugin", Host: l.host.PluginID, Path: "/" + name}).String()
 }
 
 func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {

@@ -248,7 +248,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	links.Wait()
 	cf.startedCh = nil
 	cf.blockCh = nil
-	if callErr != nil || !strings.Contains(ans.Message, "already being downloaded") {
+	if callErr != nil || !strings.HasPrefix(ans.Message, "Already downloading the media of ") {
 		t.Fatalf("app:link.downloadMedia(in progress) = (%+v, %v)", ans, callErr)
 	}
 

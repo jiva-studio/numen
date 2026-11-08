@@ -40,9 +40,9 @@ export const activate = (
       const facts = await links.getLink(target.path)
       return facts.ok && facts.value.isCopyable ? MEDIA.map((id) => ({ id, title: words[id] })) : []
     },
-    handler: async (note, argument) => {
-      if (!isMedia(argument)) return
-      const outcome = await links.copyMedia(note.path, argument)
+    handler: async (note, itemId) => {
+      if (!isMedia(itemId)) return
+      const outcome = await links.copyMedia(note.path, itemId)
       if (!outcome.ok) context.workspace?.showError(outcome.error)
     },
   })
