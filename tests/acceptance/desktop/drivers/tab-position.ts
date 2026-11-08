@@ -50,11 +50,13 @@ const leavePdfAt = async (page: Page, panel: Locator, file: string, target: numb
     .toContain(`"page":${target}`)
 }
 
-const moveToFirstPane = async (page: Page, file: string): Promise<void> => {
+const moveToFirstPane = async (page: Page, panel: Locator, file: string): Promise<void> => {
   const tabName = new RegExp('^' + getEscaped(getStem(file)), 'i')
   const panes = page.locator('section[data-workspace-pane]')
   const first = panes.first()
   if ((await first.getByRole('tab', { name: tabName }).count()) > 0) return
+  await expect(getCount(panel)).toHaveText(/^\d+ of \d+$/)
+  const [, total = ''] = /^\d+ of (\d+)$/.exec(await getCount(panel).innerText()) ?? []
   const from = await readBox(page.getByRole('tab', { name: tabName }))
   const to = await readBox(first)
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
@@ -62,6 +64,7 @@ const moveToFirstPane = async (page: Page, file: string): Promise<void> => {
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
   await page.mouse.up()
   await expect(first.getByRole('tab', { name: tabName })).toHaveCount(1)
+  await expect(getCount(panel)).toHaveText(new RegExp(`^\\d+ of (?!${total}$)\\d+$`))
 }
 
 const leaveBookAt = async (page: Page, panel: Locator, file: string, target: number): Promise<void> => {
@@ -91,7 +94,7 @@ export const openTabAt = async (page: Page, file: string, position: string, wher
   const kind = await readKind(panel, file, position)
   if (kind === 'PDF Reader') await leavePdfAt(page, panel, file, Number(where))
   else if (kind === 'EPUB Reader') {
-    await moveToFirstPane(page, file)
+    await moveToFirstPane(page, panel, file)
     await leaveBookAt(page, panel, file, Number(where))
   }
   else await leaveRecordingAt(page, panel, file, where)
