@@ -161,6 +161,18 @@
         "unshare"
       ]
     },
+    "tests/acceptance/desktop": {
+      "entry": [
+        "playwright.config.ts",
+        "eslint.config.js",
+        "scripts/*.mjs",
+        "steps/**/*.ts",
+        "support/*.ts"
+      ],
+      "project": [
+        "**/*.{ts,mjs,js}"
+      ]
+    },
     "plugins/*": {
       "entry": [
         "frontend/index.ts",

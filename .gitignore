@@ -54,3 +54,6 @@ refactoring-plan.md
 
 # Build output of the profile normalizer; pgo.sh runs it with go run.
 /apps/desktop/build/pgonorm/pgonorm
+
+# Scenarios of features/ as Playwright tests, written by bddgen.
+tests/acceptance/desktop/.features-gen/

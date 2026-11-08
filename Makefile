@@ -462,6 +462,7 @@ app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck fr
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
 	cd $(TESTS)/e2e/desktop && npm run lint
+	$(MAKE) app_desktop_acceptance_lint
 
 .PHONY: app_desktop_test
 app_desktop_test: lib_shell_build ## run desktop tests
@@ -479,6 +480,16 @@ app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
+
+.PHONY: app_desktop_acceptance
+app_desktop_acceptance: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the acceptance scenarios
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-debug ./cmd/numen
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
+
+.PHONY: app_desktop_acceptance_lint
+app_desktop_acceptance_lint: ## lint the acceptance scenarios, steps and driver
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:lint
 
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module
