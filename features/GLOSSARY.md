@@ -1,0 +1,488 @@
+# Glossary of the product
+
+This file lists the things that exist in Numen, the word a person reads for each, and the similar words that are wrong. A scenario in `features/` uses these words and no others. The canonical term is the word in the interface (`words.ts`, manifests, command titles), not the name in the code. Code names are in backticks. Where the interface uses two words for one thing, both are kept and the pair is in "Decisions for the owner".
+
+## The words that look alike
+
+- file, note, text: a file is any file in a vault; a note is a markdown file that Numen reads as a note; a text is what is written inside a note, or a text version made from a file.
+- vault, folder, workspace, window: a vault is a folder that is added to Numen; a folder is a directory inside a vault; the workspace is the tab layout inside a window; a window shows one vault.
+- tab, pane, panel, banner, popover: a tab is one page in the tab bar; a pane is one stack of tabs; a panel is a side area in the flashcards review (and the palette action panel); a banner is the bar inside a note tab; a popover is a small box opened from the status bar or from a link.
+- task, notice, message, notification: a task is a row in the task list for work or for a failure; a notice is a message from the core or a plugin that shows as a failed task; a message is a line in the agent conversation; "notification" is not a word of the interface.
+- link, wikilink, connection: a link joins two notes and is written in a note; a wikilink is `[[Note Title]]`; a connection is the pair of link records of two notes.
+- chunk, vector, passage: a chunk is a piece of text of the index; a vector is the numbers made for a chunk; a passage is a piece of text a search shows.
+- transcript, caption, recognition, proofreading: text made from speech, text from a video site, text read from a scan, and a cleaned text.
+- card, review card, card model, template, field: a card is written in a deck; a review card is a card with one template; a card model gives fields and templates.
+- plugin, provider, engine, tool: a plugin is an add-on; "Provider" is a setting name (see decisions); an engine is a plugin that does heavy work (speech, OCR, vectors); a tool is an action the agent calls.
+- remove, trash, delete, erase: remove moves a note or folder to the trash (and removes a vault from the list); "Move note to trash" is reversible; "Delete note permanently" is not; "Erase vault" moves the vault folder to the trash.
+
+## Vault and files
+
+### vault
+- Is: A folder of files that you add to Numen. A window shows one vault. The installation keeps one list of vaults for all windows.
+- States: `isMissing` (shown as "Missing"): nothing is at the path now; the vault stays on the list.
+- Actions: `app:vault.open` "Open vault", `vault.create` "Create vault", `vault.rename` "Rename vault", `vault.remove` "Remove vault from list", `vault.erase` "Erase vault".
+- Texts: "The folder is not deleted"; "The folder moves to the trash"; "Type the vault name to confirm"; "a vault with this name exists"; "the only vault cannot be removed"; "No vault open" (apps/desktop/editor/src/shared/words.ts, entities/vault/words.ts).
+- Not: not a "window" and not a "workspace". A folder cannot be added if it is inside a vault of the list or holds one.
+
+### vault switcher
+- Is: The list that opens from the vault name in the title bar, to change the vault of this window.
+- Texts: "Switch vault", "Search vaults", "No vault found", "Vaults", "Create vault", "Choose a folder" (editor/src/shared/words.ts).
+
+### folder
+- Is: A directory inside a vault. Listings show folders first, then files, each by name.
+- Actions: "New folder" in the file tree menu (new folder first gets the name "New folder"); `folder.create`.
+- Not: "Choose a folder" picks a folder on the computer to be a vault; it is not a folder of a vault.
+
+### file
+- Is: Any regular file in a vault: a note, a PDF, a recording. A note is a file; `SourceKind` is `note` or `file` (every other file).
+- Actions: `file.open`, `file.move`; "Not moved: a file with this name exists".
+- Not: the core says "source" for a file the index holds. A file that is not markdown opens in the tab of the plugin that handles its content type.
+
+### content type
+- Is: The kind of a file, like `text/markdown` or `audio/mpeg`. A plugin handles it as `default` (opens without asking) or `alternate` (on request).
+- Not: not a note type and not a tab kind.
+
+### trash
+- Is: Where a removed note or folder goes so that it can come back: the folder `.trash` of the vault, under the same path.
+- Actions: `note.trash` "Move note to trash"; `note.delete` "Delete note permanently"; a vault folder goes to the trash of the computer.
+- Texts: "no trash on this system" (entities/vault/words.ts).
+- Not: "delete" is not the default action; the default is trash.
+
+### file tree
+- Is: A side tab that lists all folders and files of the vault. Tab kind `files`, tab title "Files". Plugin "File Tree Explorer".
+- Actions: `tree.open` "Open file tree"; `tree.revealNote` "Show note in file tree".
+- Texts: "Files", "Vault files" (screen reader), "No files in this vault" (plugins/views-file-tree/frontend/words.ts).
+- Not: a row is one folder or one file of the tree (code `entry`); the tab is not the vault.
+
+### file tree menu
+- Is: The menu on a row of the tree (right click). The tab adds its entries, the window adds the rest.
+- Actions: "New" with "New note" and "New folder"; "Rename"; "Move note to trash".
+- Texts: "N files" (drag label); "Not moved, names already exist:" (plugins/views-file-tree/frontend/words.ts).
+
+## Notes and tabs
+
+### note
+- Is: A markdown file of a vault that Numen opens in a note tab. It has a path, a title, an id, frontmatter, headings, links and a body.
+- Actions: `note.open` "Open note", `note.openBeside` "Open note beside", `note.goTo` "Go to note", `note.create` "Create note", `note.rename` "Rename note", `note.copyPath` "Copy note path".
+- Texts: "No active note"; "Broken links in:" (editor/src/shared/words.ts).
+- Not: the conflict texts say "file" in one place and "note" in another (decision 1). The core says "source" (index side). A "document" is the PDF reader word; a "passage" is a piece of text found by search.
+
+### note title and filename
+- Is: The title is the name a note is shown by (the `title` key of the frontmatter, else the filename without `.md`). The filename is the name of the file.
+- Texts: setting "Sync title and filename": "Renaming one also renames the other." (libs/core/adapter/settings/app.json).
+
+### note type and frontmatter
+- Is: The frontmatter is the YAML block at the top of a note. Its `type` key tells the kind of note: none is an ordinary note; plugins add `deck`, `card-model`, `preset`, `link`.
+- States: unreadable frontmatter: `unreadable`, text "frontmatter unreadable"; "text cannot start with frontmatter" (`bodyUnwritable`).
+- Not: not a content type and not a tab kind.
+
+### note tab
+- Is: A tab of kind `note` (tab title "Note"; editor "Markdown Note Editor") that shows and edits one note. It saves by itself after a quiet time.
+- States: `loading`, `clean`, `unsaved` (also while `saving`), `stale` (file changed on disk; saving paused), `gone` (file removed from the vault; saving paused, text kept), `stuck` (an error blocks read or write).
+- Actions: `keepLocal` "Keep my version"; `takeFile` "Use disk version"; "Recreate it" (for `gone`).
+- Texts: "not a note", "not a text file", "note too large for the editor", "vault unreachable, note not saved" (editor/src/entities/note/model/buffer/words.ts).
+- Not: the editor is drawn by the `notes` plugin; the state machine is in the window.
+
+### file conflict
+- Is: The case where the file of an open note changed or vanished on disk. It is not an error and not a notice.
+- States: `stale`, `gone`.
+- Texts: "Saving paused: the file changed on disk."; "Saving paused: the note was removed from the vault. Your text is kept."; "Keep my version"; "Use disk version"; "Recreate it" (plugins/notes/frontend/words.ts).
+- Not: older copies in editor/src/entities/note/words.ts and buffer/words.ts differ in case ("recreate it", "saving paused: the note changed on disk").
+
+### conflict banner
+- Is: The bar at the top of a note tab (class `caution`, `role="alert"`) that shows the file conflict text and its buttons.
+- Actions: the three buttons above; "Dismiss banner" (aria label).
+- Not: not a notice, not a task, not a toast.
+
+### unsaved changes prompt
+- Is: A prompt at the bottom of the window when you quit and notes have a file conflict. One row per note.
+- Actions: `keep` "Keep my version", `take` "Use disk version", `later` "Later".
+- Texts: "Saving paused: the files of these notes changed on disk." (editor/src/shared/words.ts).
+
+### tab
+- Is: One page in a pane, with a title in the tab bar (the "strip"). It has a kind. Kinds: `note`, `settings`, and the kinds plugins give (Files, Plex, Agent, Deck, Card Model, Preset, Flashcards, EPUB Reader, PDF Reader, Audio Player, Record Audio, Link).
+- States: a mark beside the title: `unsaved`, `stale`, `gone`, `stuck`.
+- Actions: `app:tab.close` "Close tab"; open; move to another pane.
+- Not: a tab is not a note and not a file. The core saves the open tabs and the active one.
+
+### pane
+- Is: One stack of tabs of which one shows. The pane in focus is the focused pane; "beside" opens in a pane next to it.
+- Not: not "panel". The code says pane.
+
+### workspace
+- Is: The area of the window that holds all panes: a tree of splits. It opens with a main pane and, when asked, one aside pane.
+- Actions: drag a tab to a side of a pane (`left`, `right`, `top`, `bottom`, `center`) to split or move.
+- Not: not the vault and not the window.
+
+### tab link
+- Is: A group of tabs that follow each other (for example a text and its recording), also across windows (`TabLinkGroup`).
+- Not: no interface text found (open question).
+
+### plugin unavailable pane
+- Is: The page in a tab whose plugin is off, stopped, missing or incompatible.
+- Texts: "Plugin unavailable", "Plugin incompatible", "Plugin disabled", "Plugin not installed", "Plugin not running", "Starting the plugin for this tab…"; buttons "Enable <name>", "Install <name>", "Open Settings"; "Could not restore this tab" is another pane (editor/src/entities/tab/model/unavailableView.ts).
+
+### live preview
+- Is: A mode of the note editor that shows markdown as formatted text, except on the line you edit.
+- Texts: settings "Soft Wrap" (default on), "Line Numbers" (default off) (plugins/notes/manifest.json).
+
+## Window and status
+
+### window
+- Is: One app window with its own vault, tabs and tasks. Two kinds: the editor and the flashcards window. It holds a title bar, a workspace and a status bar.
+- Texts: `appName` "numen" (editor/src/shared/words.ts).
+- Not: not a vault; two windows can show two vaults.
+
+### title bar
+- Is: The bar at the top: the vault name (opens the vault switcher), action buttons that plugins place in the `titleBar` menu, window controls.
+- Texts: "More actions", "Minimise", "Maximise", "Restore", "Close" (libs/ui/shell/src/features/title-bar/lib/words.ts).
+
+### welcome screen
+- Is: The screen of a window that has no tab. It lists entry points and the vaults.
+- Texts: "Search the vault", "Show commands", "Create note", "Settings", "Vaults", "Current", "Missing", "Create vault", "Choose a folder", "No start note".
+
+### command palette
+- Is: The pop-up box where you type to find notes or run commands. Two entries: search the vault and show commands (Ctrl or Cmd plus P).
+- Texts: "Search the vault", "Show commands", "Type a command", "Search notes", "Actions", "Search actions", "No actions found", "Text search only: no embedding model set" (editor/src/shared/words.ts).
+- Not: not a "menu"; menus hold the same commands.
+
+### palette step
+- Is: One screen of the palette. A command may ask for several values, one step each: `commands`, `name`, `note`, `vault`, `choice`, `confirmation`, `retypedName`, `arguments`.
+- Texts: "Type the note name to confirm", "This cannot be undone", "Destroy", "Erase", "Keep vault", "Remove", "No changes".
+
+### command
+- Is: A named action with an id (`owner:object.action`, the window's own owner is `app`) and a title. It shows in the palette, menus and title bar. Plugins declare commands in the manifest.
+- Texts: groups "Note", "File", "General", "Settings", "Vault"; "<title>: done"; "Not saved: resolve the file conflict in its tab first".
+- Not: a tool of the agent is not a command.
+
+### status bar
+- Is: The thin bar at the bottom. On the left a summary of tasks; on the right the status views of plugins (index stats, update).
+- Texts: "Ready"; "<n> active"; "failed"; "Status Bar" (libs/ui/shell/src/features/status-bar/ui/StatusBar.vue).
+- Not: no text-only message line; "status corner" is an old name.
+
+### task
+- Is: One row in the task list: work the app does behind the window, or a failure to tell about. Work has progress (`completedCount` of `total`, counted in `items`, `bytes` or `seconds`).
+- States: `running`, `failed` (has an error), `cancelling`, `completed`, `notice`.
+- Actions: "Cancel task" (then "Cancelling"), "Retry task", "Dismiss", "Configure in settings".
+- Texts: titles "Indexing the vault", "Indexing", "Update index", "Read embedding model", "Import files", "Plugin stopped", "Downloading <dependency>"; "<Name> stopped: <reason>" (editor/src/shared/words.ts).
+- Not: three definitions in the code (decision 6).
+
+### task list
+- Is: The popover from the status bar that lists the tasks, newest first.
+- Texts: "Background Tasks"; "No active background tasks"; "Close" (libs/ui/shell/src/features/status-bar/ui/TaskPopover.vue).
+
+### notice
+- Is: A message of the window, the core or a plugin with a severity (`info`, `warning`, `error`). It has no screen of its own: a warning or an error shows as a failed task; `info` is dropped. Example: a bad value in `numen.json` is ignored with a notice titled "Read settings".
+- Texts: "Vault changes not watched", "Vault unreadable", "Themes unavailable", "Theme unreadable".
+- Not: not a toast, not a banner, not a "notification". The e2e spec says "the window shows no corner notices".
+
+### fatal start report
+- Is: The message shown when Numen cannot start.
+- Texts: "Numen can't start", "Numen can't read its settings", "Numen can't open its index", "The settings file is not valid JSON.", "This file is not a Numen index." (apps/desktop/app/fatal_report.go).
+
+## Search and index
+
+### search
+- Is: A search of the active vault. Two questions: names (titles of notes and headings) and passages (text). Modes `words`, `meaning`, `names`, `hybrid`.
+- Texts: result groups "Names", "Text", "Meaning"; "No results found"; "Search failed"; "Semantic index not built yet"; row actions "Open note", "Open note beside", "Open at this heading"; when nothing matches: "Create note", "Create as child", "Create as parent", "Create as jump" (editor/src/features/command-palette/words.ts).
+- Not: "Meaning" is the search by vectors; with no embedding model only text search runs.
+
+### passage
+- Is: A piece of text a search found, with the place it came from (path, page, chapter, line). In a reader it is the place a link or a highlight points to.
+- Not: a chunk is inside the index; a passage is what the person sees. A "quote" is the copied text.
+
+### index
+- Is: The cache Numen builds from a vault so it can search. It is rebuilt from the vaults if lost.
+- States: scan `is_ready`; `is_embedding` is false when there is no model (words only).
+- Texts: "Numen can't open its index"; "Update index".
+
+### chunk and vector
+- Is: A chunk is a piece of text the index cuts a note or file into. A vector is the numbers a model makes for a chunk, used by search by meaning.
+- Texts: "Pieces of text the index cuts the notes and files into" (plugins/tools-index-stats/frontend/words.ts).
+- Not: "embedding" is the act; a vector is the result.
+
+### index stats
+- Is: A status bar item that shows how many vectors the index holds, with a popover of numbers. Plugin "Index stats".
+- Texts: "Index stats", "vectors", "indexing"; rows "Vectors", "Chunks", "Waiting for a vector", "Notes and files", "Model", "Recipe", "Vector size", "Performance profile" ("Eco", "Balanced", "Maximum"), "Index file size".
+- Not: not a notification.
+
+### search relevance
+- Is: A setting for how close a note must be to your search to appear. Plugin "Search Relevance", settings view `floor`.
+- States: "Auto" or "Manual"; source "Calibrated on your vault", "Model profile", "Default", "Set by you"; "Not enough notes yet (needs ≥ 20)".
+- Actions: "Recalculate", "Check" a query.
+- Texts: "Relevance threshold", "Manual threshold", "Check a query" (plugins/tools-search-relevance/frontend/floor/words.ts).
+- Not: the code says `floor`; the interface says threshold and relevance.
+
+## Links and the graph
+
+### link (between notes)
+- Is: A connection from one note to another, written in a note. It has a role (`parent`, `child`, `jump`, `ref`, `attachment`), a description and an arrow. In the plex it is drawn as an edge.
+- States: `dangling` (matches no note), `ambiguous` (matches more than one note).
+- Actions: "Add link", "Remove link", "Add reverse direction"; "Done", "Cancel".
+- Texts: "Link description"; "No arrow"; "Arrow to <title>"; "The link between these notes will be removed."; "Links not created:" (plugins/views-plex-graph/frontend/words.ts).
+- Not: not the imported "link" (decision 11). The pair of records of two notes is a connection (`parent: B` in A and `child: A` in B).
+
+### wikilink
+- Is: A link written in the text of a note as `[[Note Title]]`.
+- Not: only the README of the notes plugin uses this word.
+
+### link inspector and quick link
+- Is: Two small popovers of the plex. The inspector edits the link between two notes. The quick link opens when you drag from a node to empty space, to pick or create the note to link.
+- Texts: "Note to link"; "Search or type note title…"; `Create "<title>"`; "No matching notes".
+
+### plex
+- Is: A picture of one note in the middle (the focus) and the notes joined to it, as boxes (nodes) and lines (edges). Tab kind `plex`, tab title "Plex", plugin "Plex Graph".
+- States: "Loading…".
+- Actions: `graph.open` "Open plex graph"; `graph.showNote` "Show note in plex"; click a node to move the focus; drag a line to link.
+- Texts: settings "Nest headings under notes", "Headings per note" (plugins/views-plex-graph/frontend/words.ts).
+- Not: "graph" and "map" (decision 4). A node is a note in the plex.
+
+### relation
+- Is: The place of a note compared to the focus note: `parent` (above), `child` (below), `jump` (left), `sibling` (right, derived, never written).
+- Actions: "Create child note", "Create parent note", "Create jump note". No "Create sibling note".
+- Texts: drop labels "as child", "as parent", "as jump".
+- Not: a role is what a link is for; a relation is where a note stands.
+
+### node menu
+- Is: The menu on a node of the plex.
+- Texts: "Open note", "Copy note path", "Create child note", "Create parent note", "Create jump note", "Rename note", "Move note to trash" (plugins/views-plex-graph/frontend/words.ts).
+
+## Reading
+
+### book
+- Is: An EPUB file read in a tab. Tab kind `reader:reader-epub`, tab title "EPUB Reader". It holds chapters, contents, pages, passages.
+- Actions: "Previous page", "Next page", "Zoom in", "Zoom out", "Show contents", "Hide contents".
+- Texts: "Pages", "Page", "N of M", "N pages left in chapter", "Loading…" (plugins/readers-epub/frontend/words.ts).
+- Not: for a PDF the code says "document".
+
+### chapter and contents
+- Is: A chapter is a part of a book named in the contents. The contents is the list of chapters that you click to go there.
+- Texts: "Contents"; "Find in contents"; "No table of contents."; "N pages left in chapter" (plugins/readers-epub/frontend/words.ts).
+- Not: "section" and "table of contents" (decisions 2 and 3).
+
+### page
+- Is: One screen of a book or one sheet of a PDF. A PDF page has a fixed number; the pages of a book depend on the text size.
+- Texts: "Page", "Pages" (the thumbnail list).
+
+### pdf document
+- Is: A PDF file read in a tab. Tab kind `reader:reader-pdf`, tab title "PDF Reader". May have a recognised text and a proofread text.
+- Actions: "Previous page", "Next page", "Zoom in", "Zoom out"; setting "Default Zoom" (`page`, `width`, `100%`).
+- Not: the user says "PDF"; the code says "document".
+
+### highlight
+- Is: A coloured mark on a passage of a book or PDF. A passage linked from a note is also marked.
+- Not: no highlight label in `words.ts` (open question).
+
+### recording
+- Is: An audio or video file played in a tab with its transcript. Tab kind `reader:media-player`, tab title "Audio Player".
+- States: "Audio playback not supported here."; "Recording failed to play."; "Loading stopped."; "Recording unreadable."; "Recording format not supported."; "Loading…".
+- Texts: plugins/views-media-player/frontend/words.ts.
+- Not: the recorder is another tab.
+
+### recorder
+- Is: A tab that records voice from the microphone and saves it into the vault. Tab kind `recording`, tab title "Record Audio". Command `recording.create` "Record audio".
+- States: `idle`, `recording`, `paused`, `stopped`.
+- Actions: "Start recording", "Pause recording", "Resume recording", "Stop recording", "Save audio recording", "New recording".
+
+### transcript
+- Is: The written words of a recording, with times. The current line follows the audio.
+- States: "No transcript yet."; "Transcribing…".
+- Actions: `transcript.create` "Transcribe recording" (button "Transcribe"); "Proofread"; `transcript.delete` "Delete transcript"; "Follow".
+- Texts: "Transcript" (plugins/views-media-player/frontend/words.ts); plugin "Audio/Video Transcription" (plugins/engines-transcription/manifest.json).
+- Not: not "subtitles"; the agent chat key `noTranscript` means "No messages yet".
+
+### text version
+- Is: A text made from a file by a plugin: a transcript, a recognition, an article, a proofread text. Shown and indexed when it is the live one.
+- Actions: "Transcribe recording", "Recognise text", "Proofread text", "Delete transcript", "Delete recognition", "Delete proofreading".
+- Not: the person reads the text, not the word "version" (open question).
+
+## Agent
+
+### agent
+- Is: The AI helper that answers questions about the vault and can edit notes. A provider plugin supplies it.
+- States: `reachable` or unreachable; no agent set up reads "No agent".
+- Texts: "Agent", "Agent unreachable.", "No agent", "No agent is set up.", "Open settings", "The agent returned no answer." (plugins/views-agent-chat/frontend/words.ts).
+- Not: manifests say "AI assistant"; the interface says "agent".
+
+### agent provider
+- Is: A plugin that connects one kind of AI program as an agent (capability `ai.agent.provider`): "Numen Agent", "Claude Code Agent", "OpenAI Codex Agent", "Antigravity Agent", "ACP Agents".
+- Texts: settings "Chat API", "Model", "Temperature", "Max Tokens", "Max Steps", "Executable Path", "Hooks & skills" (plugins/agents-*/manifest.json).
+- Not: not the setting "Provider" (decision 10).
+
+### agent tab
+- Is: The tab where a person chats with the agent. Tab kind `agent`, tab title "Agent", plugin Agent Chat.
+- Actions: `chat.open` "Open agent chat"; `note.ask` "Ask agent about note".
+- Texts: "No messages yet", "Thinking", "Stopped", "Not sent" (plugins/views-agent-chat/frontend/words.ts).
+
+### conversation, turn and tool call
+- Is: The conversation is the list of messages in an agent tab. A turn is one entry: `prompt` (the person), `response` (the agent), `doing` (a tool line). A tool call is a quiet line that shows a tool the agent runs, with its name (`note_search`).
+- States of a turn: `settled`, `arriving`, `failed`.
+- Not: the code also says thread, exchange, work line; the person reads "messages".
+
+### composer
+- Is: The field where the person writes to the agent, with the model and reasoning selectors and one round button.
+- Actions: "Send", "Stop the agent", "Open settings".
+- Texts: "Ask about the vault", "Write a message", "Model", "Search models", "Reasoning" (plugins/views-agent-chat/frontend/words.ts).
+- Not: "Thinking" is the wait line; "Reasoning" is the level.
+
+### agent tool and mcp server
+- Is: An agent tool is an action the agent calls (`note_read`, `note_write`, `library_search`, `link_add`). Two plugins give them: "Vault Knowledge Tools" and "Window Interaction Tools". The "Model Context Protocol Server" lets other AI apps use the open vault (settings "Port" 3333, "Token").
+- Not: a tool is not a command.
+
+## Cards
+
+### flashcards window
+- Is: The separate window where a person reviews cards. Title "numen" and "flashcards". It lists vaults, then decks and presets, then a session.
+- Texts: "Vaults", "Loading vaults…", "No plugin views.", "Appearance", "Choose a theme or mode" (apps/desktop/flashcards/src/shared/words.ts); "Counting the cards" for a vault without a count.
+- Not: the tab kind `flashcards.review` has the title "Flashcards".
+
+### deck
+- Is: A note of type `deck` that holds cards, grouped under sections. It names a preset ("Scheduled by"). Tab kind `deck`, tab title "Deck".
+- Actions: `deck.create` "Create deck" (argument "Title"); the conflict buttons of a note tab.
+- Texts: "Scheduled by", "Not a deck.", "This vault holds no deck.", "No preset set. Scheduled by the defaults." (plugins/views-flashcards-studio/frontend/cards/words.ts).
+- Not: a deck is a note, not a folder. Its conflict text says "file" (decision 1).
+
+### card
+- Is: One question and answer written in a deck. It has a card id, field values and a card model.
+- Actions: "Add a card", "Remove", "Reorder".
+- Texts: "Card", "Card model", "Nothing in it"; "No card model called X".
+- Not: what the review schedules is a review card.
+
+### review card
+- Is: One card with one template. A card model with two templates gives each card two review cards.
+- Not: the interface says "card"; "review card" is a code and docs name.
+
+### card model
+- Is: A note of type `card-model` that says which fields a card has and how it looks. Tab kind `card-model`.
+- Actions: `cardModel.create` "Create card model"; "Add a field", "Add a template".
+- Texts: "Fields", "Templates", "No fields yet", "A field needs a name", "That name is taken" (.../ui/cards/lib/card-model.ts).
+- Not: old name in code and stories: "cut" (decision 9). Not the AI "model".
+
+### template, field and section
+- Is: A template is one front and back of a card model (fields go in braces). A field is a named slot of a card model. A section is a named group of cards in a deck, written as a heading.
+- Texts: "Front", "Back", "Preview", "Insert"; "Add a section", "A section needs a name".
+- Not: in a preset, `Field` means a setting row.
+
+### preset
+- Is: A note of type `preset` that sets how many cards a day a deck gives and the goal. Tab kind `preset`.
+- Actions: `preset.create` "Create preset"; `preset.open` "Open preset".
+- Texts: "Goal" with "Minutes per day", "Retention", "Target date"; "New per day", "Reviews per day", "Budget unit", "Learned when", "Overdue share", "Load by weekday" (plugins/views-flashcards-studio/frontend/preset/words.ts).
+- Not: "load" is the share of the daily budget on a weekday.
+
+### stop reason
+- Is: The short reason a preset gives no cards today.
+- States: "no time budget", "no cards per day", "no target date", "target date <day> passed", "no load on <weekday>", "nothing due today", "daily limit reached", "no new cards".
+- Texts: "No cards scheduled: <reason>."
+
+### review session
+- Is: The screen where a person answers due cards one after another, with side panels "Source notes" and "Ask about this card".
+- Actions: "Show the answer" (space), answer 1 to 4, take back (u), leave (esc), "Back to the decks".
+- Texts: "N left", "N answered.", "Nothing left today.", "Done today" (.../review/pages/session/ui/Session.vue).
+
+### rating
+- Is: How well a card was recalled: "Again" (1), "Hard" (2), "Good" (3), "Easy" (4). Each button shows the time the card would wait.
+- Not: the frontend says `Grade`, the backend `Rating`, the person reads "answer" (decision 5).
+
+### schedule, due and heatmap
+- Is: The schedule is the next day a card is due, computed by FSRS from the answers. Due is a card ready today, and the count of such cards. The heatmap is a grid of days with the cards answered and the cards ahead.
+- Texts: setting "Day starts at" (default 04:00); "Counting the cards".
+- Not: "left" is what remains in a running session; "overdue" is due on an earlier day.
+
+## Importing and engines
+
+### imported link
+- Is: A note of type `link` that holds a web address and the text fetched from it. Made by plugin "Media Importer". Tab kind `link`, tab title "Link".
+- States: "Fetching the page…", "Copying the video…", "No text found at this link.", "The text of this link was deleted.", "Link unreadable".
+- Actions: `link.import` "Import from URL" (argument "The address"), "Download text again", "Download video", "Delete text", "Delete downloaded video".
+- Texts: "This note has no web address" (plugins/tools-media-importer/frontend/words.ts).
+- Not: not a link between notes and not Numen Link (sync).
+
+### link import
+- Is: A page gives article text; a video gives its captions as a transcript, plus an optional copy of the video. Needs yt-dlp and ffmpeg.
+- Texts: settings "Caption languages", "Automatic captions", "Maximum download size" (plugins/tools-media-importer/manifest.json).
+- Not: "captions" are the site's subtitles; a "transcript" is made from speech.
+
+### recognition
+- Is: Text read from a scanned PDF or an image. Plugin "Document OCR".
+- Actions: `recognition.create` "Recognise text"; `recognition.delete` "Delete recognition".
+- Not: "Recognise" is British (decision 8).
+
+### proofreading
+- Is: Cleaning of a transcript or scanned text with a language model, in batches of lines. Plugin "LLM Proofreading".
+- Actions: `proofreading.create` "Proofread text"; `proofreading.delete` "Delete proofreading".
+- Texts: settings "Provider", "Service URL", "Model", "Batch size", "Overlap", "In-flight requests", "Max edit distance" (plugins/tools-proofreading/manifest.json).
+
+### embedding provider
+- Is: Where texts are turned into vectors. Plugin "Vector Embeddings" (capability `embedding`).
+- Texts: setting "Provider": Local, OpenRouter, OpenAI, Custom service; "Model": "E5 small (default, CPU, 118 MB)", "Harrier 270M (better, 344 MB)", "BGE-M3 (large, 569 MB)" (plugins/engines-embeddings/manifest.json).
+
+## Settings and plugins
+
+### settings
+- Is: Values kept in the file `numen.json`, shown in a tab of kind `settings`, one per window. Pages: "System", "Secrets", a list of plugins.
+- Actions: `settings.open` "Open settings".
+- Texts: "System": "Theme, scale and filename sync."; "Theme", "Light or dark", "Interface size", "Reading size", "Window buttons", "Performance profile"; "Setting not saved:" (editor/src/pages/settings/words.ts, libs/core/adapter/settings/app.json).
+- Not: an invalid value is ignored with a notice; an invalid file stops the start.
+
+### secret
+- Is: A private value, such as an API key, kept on this machine. It is in groups; a plugin sees only the secrets it is allowed.
+- States: "Value is set", "No value yet", "Not saved. Press Enter to try again."
+- Actions: "Add secret", "Add group", "Rename group", "Delete group", "Delete secret", "Move up", "Move down".
+- Texts: columns "Name", "Value", "Used by" (editor/src/pages/settings/words.ts).
+- Not: a secret is not a setting.
+
+### plugin
+- Is: An add-on with a manifest. It gives commands, tab kinds, settings, status views, themes, note types or models.
+- States: badge "Enabled", "Disabled", "Stopped", "Not installed".
+- Actions: "Enable", "Disable", "Retry", "Install", "Configure", "Delete data", "Details", "All plugins".
+- Texts: "Search plugins…", "No plugins installed.", "No plugins found." (libs/plugin-manager/src/words.ts).
+- Not: a dependency is a program a plugin needs, not a plugin.
+
+### theme
+- Is: A set of colours for the windows. Plugin "Preset Themes" has twelve: Amber, Ayu, Catppuccin, Cobalt2, Dracula, GitHub, Gruvbox, Monokai, Nord, One Dark, Solarized, Tokyo Night.
+- Texts: "Built-in", "Custom", "Mode" with "System", "Light", "Dark" (apps/desktop/flashcards/src/shared/words.ts).
+- Not: the mode (light or dark) is not the theme.
+
+### update and release channel
+- Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Beta", "Custom".
+- Actions: "Download", "Release notes", "Dismiss".
+- Texts: "Update available", "Application update available", "Released on" (plugins/tools-updater/frontend/words.ts).
+
+## Decisions for the owner
+
+1. note and file. Menus, commands and the plex say "note" ("Move note to trash", "Rename note"). Conflict texts say "file" ("Saving paused: the file changed on disk."), the deck and card model tabs say "file" too, the "File" command group and the file tree say "file", and the note buffer words say "note". Recommend: "note" for a markdown note and every tab that edits one (a deck is a note), "file" only for a file that is not a note; the scenarios then use one word for one thing.
+2. chapter and section. Books say "chapter" ("N pages left in chapter"); stories of the book say "Book sections"; a deck has a "section" too. Recommend: "chapter" for books and "section" only for decks, so one word means one thing.
+3. contents and table of contents. The title is "Contents" and the empty text is "No table of contents."; a PDF has an "outline tree". Recommend: "Contents" for both, because it is the title a person sees.
+4. graph, plex and map. The command and plugin say "graph" ("Open plex graph", "Plex Graph"); the tab and its drawing say "Plex"; the README says "map". Recommend: "plex" for the tab and the picture, never "map".
+5. rating, grade and answer. The frontend says `Grade`, the backend `Rating`, the screen says "answer" ("N answered.") and shows Again, Hard, Good, Easy. Recommend: "answer" because the person reads it.
+6. task. The core defines a task with a kind `work` or `NOTICE`; the window defines `Task` (with `TaskState` including `notice`); the shell has `StatusBarTask` and another `Task` in `features/notices`. All show in one list. Recommend: "task" for work and "failed task" for a problem, and a single definition.
+7. notice, message, notification and banner. A notice shows as a failed task, "message" is also a line of the agent conversation, "banner" is the bar in a note tab, "notification" has no entity. Recommend: no scenario uses "notification"; "notice" only for the core message, "banner" only for the file conflict bar.
+8. Recognise and Minimise against the American rule. "Recognise text" (plugins/engines-ocr/manifest.json) and "Minimise", "Maximise" (title bar) are British. Recommend: "Recognize text", "Minimize", "Maximize", because the project rule is American spelling.
+9. card model and cut. The interface says "Card model"; code and stories say "cut" ("Cut by no card model"); the manifest title is "Card Model" and the words say "Card model". Recommend: "card model", one capital letter style: "Card model".
+10. Provider. "Provider" is a setting of proofreading (Agent, OpenRouter, OpenAI, Custom service), a setting of embeddings (Local, OpenRouter, OpenAI, Custom service), and "agent provider" is a plugin kind. Recommend: "agent provider" for plugins and "Provider" only inside its own settings; scenarios name the plugin.
+11. link. "Link" is a connection between two notes, a note of type `link` with a web address (tab title "Link"), and "Numen Link" (sync). Recommend: "link" for the connection between notes and "imported link" for the web address note.
+12. transcript, messages. The agent chat code uses "transcript" and "thread" for the conversation; the interface says "No messages yet". Recommend: "messages" and "conversation"; "transcript" only for a recording.
+13. agent and assistant. Manifests say "AI assistant"; the interface says "agent". Recommend: "agent".
+14. text version. The code and docs say "version"; the person reads the text. Recommend: "text" with the kind: "transcript", "recognition", "article".
+15. words, text and meaning. The search modes are `words`, `meaning`, `names`, `hybrid`; the result groups read "Names", "Text", "Meaning"; one message says "Semantic index". Recommend: "Names", "Text", "Meaning" as in the groups.
+16. remove, trash, delete and erase. A note "Move note to trash" and "Delete note permanently"; a vault "Remove vault from list" and "Erase vault"; the confirm buttons say "Destroy", "Erase", "Remove". Recommend: "remove" for the list, "trash" for reversible, "delete permanently" for the note, "erase" for the vault folder.
+17. relation, role and jump. A link has a role; a note in the plex has a relation; `jump` is only a name. Recommend: use "relation" for the plex and "role" for a stored link; describe a jump note as "jump note".
+18. threshold, relevance and floor. The code says `floor`; the interface says "Relevance threshold" and "Search relevance". Recommend: "relevance threshold".
+19. recording, Audio Player and Record Audio. The word "Recording" names the file, the player tab is "Audio Player" and the recorder tab is "Record Audio". Recommend: "recording" for the file, "player" and "recorder" for the tabs.
+20. theme and appearance. The settings say "Theme" and "Light or dark"; the flashcards window says "Appearance" and "Mode". Recommend: "theme" for colours and "mode" for light or dark.
+21. conflict button case. "Recreate it" in the notes plugin, "recreate it" in the editor entity. Recommend: "Recreate it".
+22. Files tab and file tree. The command is "Open file tree"; the tab title is "Files". Recommend: "file tree" for the feature and "Files" for the tab title.
+23. Pane, panel and popover. The code says pane for a stack of tabs; "panel" is used in flashcards ("Source notes", "Ask about this card"). Recommend: keep both, one meaning each.
+
+## Open questions
+
+1. What words does the interface use for a tab link group?
+2. Is "Live Preview" a setting? It is in the README of the notes plugin but not in plugins/notes/manifest.json.
+3. Does the interface show the word "version" for a text version anywhere?
+4. Is there a label for a highlight in the interface?
+5. Should a sibling note have a create command, or are siblings only derived?
+6. What are the exact day lines of the heatmap that the window passes in?
+7. Does "notification" exist anywhere in the interface for the person?
+8. Is "source" (README) the same as "Notes and files" (index stats)?
+9. Is the tab title "Markdown Note Editor" the title a person reads, or is it "Note"?
+10. Is a "document" (PDF code word) read anywhere by the person instead of "PDF"?
