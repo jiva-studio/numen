@@ -32,8 +32,6 @@ func NewFileMenu(versions *Versions, commands pluginport.PluginCommands, types c
 	return &FileMenu{versions: versions, commands: commands, types: types}, nil
 }
 
-// findLiveVersion is the live version of the file among its versions. The file is read and hashed
-// only when it has versions.
 func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
@@ -52,7 +50,6 @@ type VersionItem struct {
 	IsLive  bool
 }
 
-// getVersionValues gives the version variables of a when condition for one version of a file.
 func getVersionValues(target map[string]any, version domain.TextVersion, isLive bool) map[string]any {
 	values := maps.Clone(target)
 	values["version.kind"] = string(version.Kind)
@@ -61,7 +58,6 @@ func getVersionValues(target map[string]any, version domain.TextVersion, isLive 
 	return values
 }
 
-// listVersionItems is the versions of the file over which the condition holds, in their order.
 func listVersionItems(condition pluginport.PluginCondition, target map[string]any, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
 	var items []VersionItem
 	for _, version := range versions {

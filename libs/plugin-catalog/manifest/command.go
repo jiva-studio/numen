@@ -31,7 +31,6 @@ var manifestArgumentPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
 // The host files the command under the id of the plugin and this id.
 var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$`)
 
-// listCommandArgumentTypes returns the types a command argument may have.
 func listCommandArgumentTypes() []string {
 	return []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
 }
@@ -42,15 +41,12 @@ const CommandArgumentVersion = "version-id"
 
 // Command is one command a manifest declares, which the plugin's backend runs.
 type Command struct {
-	ID    string
-	Title string
-	Icon  string
-	// When is the CEL condition under which the command is available, as package when reads it;
-	// empty is always.
+	ID        string
+	Title     string
+	Icon      string
 	When      string
 	Arguments []CommandArgument
-	// Shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
-	Shortcut string
+	Shortcut  string
 }
 
 // CommandArgument is one argument a command takes.
@@ -71,7 +67,6 @@ func (c Command) GetArgument(name string) (CommandArgument, bool) {
 	return CommandArgument{}, false
 }
 
-// listCommandIssues checks the commands the manifest declares.
 func (m Manifest) listCommandIssues() []error {
 	var issues []error
 	observed := map[string]bool{}

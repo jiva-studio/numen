@@ -24,8 +24,6 @@ const playerPage = `<!doctype html>
 </body></html>
 `
 
-// writePage writes the page that frames the player of the video at the address into the folder under
-// the key, and returns its name; false where no player is known for the address.
 func writePage(ctx context.Context, store host.Store, key string, link address.URL) (string, bool, error) {
 	player, ok := address.GetPlayerURL(link)
 	if !ok {

@@ -51,19 +51,14 @@ export interface HostRegistry {
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
-  /** The handlers of shared commands the plugins registered, by `<plugin id>:<shared command id>`. */
   readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, Manifest>
-  /** The plugins that have had a context made, which is when their frontend starts to register. */
   readonly activated: { value: ReadonlySet<string> }
-  /** The plugins whose `activate` has not returned yet: their declared commands are not missing yet. */
   readonly starting?: { value: ReadonlySet<string> }
-  /** The plugins that were disposed and have had no context made since: their declared commands are not listed. */
   readonly disposed: Set<string>
-  /** The mismatches between a declaration and a handler already reported. */
   readonly reportedIssues: Set<string>
 }
 
@@ -109,13 +104,11 @@ export interface DisposalParts {
   readonly deps?: PluginHostDeps | undefined
 }
 
-/** Takes the listeners of the plugin out of the set. */
 function removePluginListeners<E>(listeners: Set<PluginListener<E>>, pluginId: string): void {
   for (const listener of [...listeners])
     if (listener.pluginId === pluginId) listeners.delete(listener)
 }
 
-/** A copy of the map of a reactive holder without the entries of one plugin, set back in the holder. */
 function removePluginItems<T extends { pluginId: string }>(
   holder: { value: ReadonlyMap<string, T> },
   pluginId: string,

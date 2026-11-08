@@ -15,7 +15,6 @@ const SHORT_BODY = 'Tide table'
 const LONG_BODY =
   'The ferry crosses the estuary at dawn with barley, salted fish and the post for the northern shores.'
 
-/** The title bar item that counts the vectors of the index. */
 const getItem = (page: Parameters<typeof openWorkspace>[0]): Locator =>
   page.locator('.index-stats__label')
 
@@ -24,19 +23,16 @@ const readVectors = async (item: Locator): Promise<number> => {
   return Number(text.replace('⬡', '').replace(/\D/g, ''))
 }
 
-/** Whether every chunk that can carry a vector carries one: the mark of the item does not pulse. */
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
   return /\d/.test(text) && (await item.locator('.index-stats__icon--indexing').count()) === 0
 }
 
-/** Waits until the index is embedded, and returns the number of vectors then. */
 const readSettledVectors = async (item: Locator): Promise<number> => {
   await expect.poll(() => isSettled(item), { timeout: 45_000 }).toBe(true)
   return readVectors(item)
 }
 
-/** The notes the index has read, from the nested Notes row of the popover of the title bar item. */
 const readNoteCount = async (popover: Locator): Promise<number> => {
   const row = popover.locator('.index-popover__row--nested', { hasText: 'Notes' })
   const text = (await row.textContent()) ?? ''

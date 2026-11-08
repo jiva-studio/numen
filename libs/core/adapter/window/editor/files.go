@@ -126,8 +126,6 @@ func (h *fileHandler) ListFileKinds(
 	return connect.NewResponse(out), nil
 }
 
-// newWireFileKind is what the vault holds at the path of one entry: for a note, its frontmatter and
-// the kind of tab it opens in.
 func (h *fileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
 	kind := &v1.FileKind{
 		Path:   one.Path,
@@ -266,8 +264,6 @@ func (h *fileHandler) removal(
 	return h.remove.Execute(ctx, v, path)
 }
 
-// newWireProperties is the frontmatter of a note as a Struct, read as JSON: a date becomes its text,
-// and a value JSON cannot hold leaves the frontmatter empty.
 func newWireProperties(properties map[string]any) *structpb.Struct {
 	raw, err := json.Marshal(properties)
 	if err != nil {

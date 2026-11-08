@@ -7,9 +7,7 @@ import type { BackgroundTask } from '@numen/plugin-sdk'
 export interface TaskSummary {
   readonly activeCount: number
   readonly failedCount: number
-  /** The average percent done of the active tasks that have a total; undefined for none. */
   readonly progress: number | undefined
-  /** No task is active and none failed. */
   readonly isIdle: boolean
 }
 

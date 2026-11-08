@@ -8,7 +8,6 @@ import type { SettingOwner } from './settingCommands'
 
 const APP_OWNER = 'app'
 
-/** The path of a setting in config, one part for each dot. */
 const getConfigPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [...owner.split('.'), ...key.split('.')]
 

@@ -100,7 +100,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	}
 }
 
-// runCommandOfPlugins runs a shared command through a handler, or a command a plugin declares.
 func runCommandOfPlugins(ctx context.Context, out io.Writer, deps Deps, rest []string) error {
 	if handlers := listSharedHandlers(deps, rest[0]); len(handlers) > 0 {
 		return runSharedCommand(ctx, out, deps, handlers, rest[1:])
@@ -111,7 +110,6 @@ func runCommandOfPlugins(ctx context.Context, out io.Writer, deps Deps, rest []s
 	return fmt.Errorf("unknown command %q", rest[0])
 }
 
-// writeUsage writes the usage text and the commands the enabled plugins declare.
 func writeUsage(out io.Writer, deps Deps) error {
 	r := newReporter(out)
 	r.Print(usage)
@@ -120,11 +118,6 @@ func writeUsage(out io.Writer, deps Deps) error {
 	return r.Err()
 }
 
-// parseInterspersed collects positional arguments wherever they appear.
-//
-// The standard flag package stops at the first non-flag argument, which makes
-// `vault add <path> --name x` silently drop the flag: the order people type is
-// not the order the parser expects.
 func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 	var positional []string
 	for {

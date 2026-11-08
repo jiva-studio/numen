@@ -59,9 +59,6 @@ func Decode(data []byte) (manifest.Manifest, error) {
 
 var errTrailingData = errors.New("unexpected data after the manifest")
 
-// canonicalize rewrites the JSON with each key once, the last occurrence winning, which is how
-// encoding/json reads a repeated key; the wire reader rejects a repeated key. Keys the schema does
-// not name by their JSON name are dropped and returned as paths, in the order of their location.
 func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="UseNumber preserves exact numeric tokens before protojson unmarshaling"
@@ -85,7 +82,6 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 
 var errSlotOrderShape = fmt.Errorf("%w: the order of an entry must be a number, not a string", manifest.ErrInvalidSlotEntry)
 
-// checkSlotOrders rejects an order written as a string, which the wire reader would read as a number.
 func checkSlotOrders(root any) error {
 	object, isObject := root.(map[string]any)
 	if !isObject {
@@ -279,7 +275,6 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 
 var errOptionShape = errors.New("options must be a list of values or of objects with a value")
 
-// newSettingOptions reads a list of options, each a bare string or an object of ManifestSettingOption.
 func newSettingOptions(list *structpb.ListValue) (manifest.SettingOptions, error) {
 	var options manifest.SettingOptions
 	for _, item := range list.GetValues() {
@@ -431,9 +426,6 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 	return out
 }
 
-// pruneUnknown removes from the decoded JSON value every key that the message does not name by its
-// JSON name, at every depth, and returns the path of each key removed. Values of the well-known
-// types are left as written, except the options of a setting.
 func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
 	object, ok := value.(map[string]any)
 	if !ok {
@@ -482,8 +474,6 @@ func pruneField(value any, field protoreflect.FieldDescriptor, path string, unkn
 	return unknown
 }
 
-// pruneEntry prunes one value of a field whose type is a message of the schema, or a list of the
-// options of a setting.
 func pruneEntry(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	message := field.Message()
 	if message == nil {
@@ -500,7 +490,6 @@ func pruneEntry(value any, field protoreflect.FieldDescriptor, path string, unkn
 
 const listValueName protoreflect.FullName = "google.protobuf.ListValue"
 
-// pruneOptionList prunes each option written as an object in a list of options.
 func pruneOptionList(value any, path string, unknown []string) []string {
 	items, ok := value.([]any)
 	if !ok {

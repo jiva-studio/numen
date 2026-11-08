@@ -73,11 +73,8 @@ export type LinkRole = ConnectionRole | 'ref' | 'attachment'
 
 // ConnectionSide is the record one note writes about the other in a connection.
 export interface ConnectionSide {
-  // What the person calls the relationship; empty when they call it nothing.
   readonly label: string
-  // What the record draws at the other note; null draws nothing.
   readonly marker: LinkMarker | null
-  // Why the link exists, in the person's words.
   readonly reason: string
 }
 
@@ -85,19 +82,14 @@ export interface ConnectionSide {
 export interface Connection {
   readonly first: string
   readonly second: string
-  // What the second note is to the first; null when neither note writes a record of a role a connection carries.
   readonly role: ConnectionRole | null
-  // The type of the records; empty for an ordinary link.
   readonly type: string
-  // The record the first note writes about the second; null where it writes none.
   readonly firstSide: ConnectionSide | null
-  // The record the second note writes about the first; null where it writes none.
   readonly secondSide: ConnectionSide | null
 }
 
 // RelationJoin is the record one note is made to write about another.
 export interface RelationJoin {
-  // What the other note is to the writing one.
   readonly role: ConnectionRole
   readonly type?: string
   readonly label?: string
@@ -107,24 +99,17 @@ export interface RelationJoin {
 
 // RelatedNoteRequest is a note to make joined to an existing one.
 export interface RelatedNoteRequest {
-  // The existing note.
   readonly from: string
-  // What the new note is to the existing one.
   readonly role: ConnectionRole
-  // What the new note is called; empty takes the lowest free "Untitled note N".
   readonly title?: string
-  // The type of the record the new note writes.
   readonly type?: string
-  // What the record the new note writes draws at the existing note.
   readonly marker?: LinkMarker
 }
 
 // Backlink is a link written in another note that points at a note.
 export interface Backlink {
   readonly from: NoteRef
-  // The role as written, relative to the note it is written in.
   readonly role: LinkRole | null
-  // The role of the writing note relative to the note asked about; null where the role has no counterpart.
   readonly sourceRole: LinkRole | null
   readonly type: string
   readonly reason: string
@@ -139,7 +124,6 @@ export type RelationError = ErrorCode | 'invalid' | 'cycle' | 'nameExhausted'
 // VaultRelations is what a plugin reads and writes of the relationships between notes. The core derives the
 // role each note writes and enforces the rules of the hierarchy.
 export interface VaultRelations {
-  // The roles a note can be created or joined in.
   readonly roles: readonly ConnectionRole[]
   // The relationship between two notes, restricted to the records of one type.
   getConnection(
@@ -173,7 +157,6 @@ export interface OpenFileOptions {
   readonly title?: string
   readonly placement?: FilePlacement
   readonly line?: number
-  // The place the reader of the file shows, such as the selector of a search hit.
   readonly selector?: Selector
 }
 
@@ -182,13 +165,10 @@ export type MessageWriter = (text: string, severity?: Severity) => void
 
 // WorkspaceHost is the window a plugin's tabs are drawn in.
 export interface WorkspaceHost {
-  // Whether the vault can be read; false while the window reports it unreadable.
   readonly isReady: Readonly<Ref<boolean>>
-  // The note the vault opens with, and empty where it names none.
   readonly openingPath: Readonly<Ref<string>>
   // The note the vault opens with, read from the vault again.
   readOpeningPath(): Promise<string>
-  // The vault paths being dragged, from any tab of the window.
   readonly draggedPaths: Readonly<Ref<readonly string[]>>
   setDraggedPaths(paths: readonly string[]): void
   openFile(path: string, options?: OpenFileOptions): void

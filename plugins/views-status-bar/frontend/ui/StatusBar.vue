@@ -12,7 +12,6 @@ import './statusBar.css'
 defineProps<{
   startEntries: readonly SlotItem[]
   endEntries: readonly SlotItem[]
-  /** The items a command lists, read as a menu with the command opens. */
   listItems: (command: string) => Promise<readonly CommandItem[]>
 }>()
 

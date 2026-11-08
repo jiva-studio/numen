@@ -9,14 +9,11 @@ import type { ItemListAnswer, ItemListRequest } from '@/entities/plugin'
 import type { FileKind } from '@/shared/model/fileTypes'
 
 export interface CommandItemListsDeps {
-  /** Lists the items of the commands over the file, one answer per command. */
   readonly listLists: (
     path: string,
     commands: readonly ItemListRequest[],
   ) => Promise<readonly ItemListAnswer[]>
-  /** Reads the kinds of the files. */
   readonly fileKinds: (paths: readonly string[]) => Promise<ReadonlyMap<string, FileKind>>
-  /** Runs the callback after the pending callbacks of the page; a macrotask by default. */
   readonly schedule?: (run: () => void) => void
 }
 
@@ -40,7 +37,6 @@ const scheduleTask = (run: () => void): void => {
   setTimeout(run, 0)
 }
 
-/** A list requested in a read: a promise and the functions that settle it. */
 function createPendingList(request: ItemListRequest): PendingList {
   let resolve: PendingList['resolve'] = () => undefined
   let reject: PendingList['reject'] = () => undefined
@@ -51,7 +47,6 @@ function createPendingList(request: ItemListRequest): PendingList {
   return { request, promise, resolve, reject }
 }
 
-/** The lists stored by file and command, and the version of each file they were read at. */
 function createListCache() {
   const lists = new Map<string, Map<string, readonly CommandItem[]>>()
   const versions = new Map<string, number>()
@@ -87,7 +82,6 @@ interface ListRead {
   readonly pending: readonly PendingList[]
 }
 
-/** Settles each list of the read with its answer: stored and resolved, or rejected with its error. */
 function settleLists(cache: ListCache, read: ListRead, answers: readonly ItemListAnswer[]): void {
   for (const one of read.pending) {
     const { pluginId, command } = one.request
@@ -101,7 +95,6 @@ function settleLists(cache: ListCache, read: ListRead, answers: readonly ItemLis
   }
 }
 
-/** Rejects each list of the read with the failure of its request. */
 function failLists(read: ListRead, error: unknown): void {
   for (const one of read.pending) {
     one.reject(error instanceof Error ? error : new Error(String(error)))

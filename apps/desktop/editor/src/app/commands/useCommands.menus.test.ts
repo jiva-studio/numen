@@ -78,7 +78,6 @@ const entry = (command: string, title: string): SlotCommand => ({
 
 const REEF: RunTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: '' }
 
-/** The slots of a window whose entries are those `getEntries` answers for a slot. */
 const createSlots = (getEntries: SlotHost['getEntries']): SlotHost => ({
   getEntries,
   watchEntries: () => ({ dispose: () => undefined }),

@@ -33,24 +33,17 @@ export function readSlotEntries(
 }
 
 export interface SlotCommandFinderDeps {
-  /** The commands the plugin host lists: those with a handler and those of a plugin still loading. */
   readonly getPluginCommands: () => readonly PluginPaletteCommand[]
-  /** The commands the plugins declare; undefined until the first list has loaded. */
   readonly getDeclaredCommands: () => readonly DeclaredCommand[] | undefined
-  /** The commands of the editor. */
   readonly getEditorCommands: () => readonly Pick<
     Command,
     'id' | 'text' | 'iconName' | 'when' | 'listItems'
   >[]
-  /** The handlers of shared commands the enabled plugins declare; none where absent. */
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
-  /** Whether the plugin command of the full id lists items; none where absent. */
   readonly hasPluginItems?: (command: string) => boolean
-  /** The values the when conditions of the commands read over the target of the slot. */
   readonly getWhenValues: (target: CommandTarget | undefined) => WhenValues
 }
 
-/** Whether the target is one file, which the items of a command are listed over. */
 const isOverFile = (target: CommandTarget | undefined): boolean =>
   target !== undefined && !target.isFolder && target.path !== ''
 

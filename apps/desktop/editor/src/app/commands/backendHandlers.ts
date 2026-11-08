@@ -7,9 +7,7 @@ import type { CommandItem, HandlerDeclaration, PluginHostDeps } from '@numen/plu
 import type { runDeclaredHandler } from '@/entities/plugin'
 
 export interface BackendHandlersDeps {
-  /** The handlers the core lists; undefined until the first list. */
   readonly getHandlers: () => readonly HandlerDeclaration[] | undefined
-  /** The items the command of the plugin offers over the file. */
   readonly list: (
     command: { readonly pluginId: string; readonly id: string },
     path: string,

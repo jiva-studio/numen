@@ -3,7 +3,6 @@ import { flushPromises } from '@vue/test-utils'
 import { MAC_BUTTONS_INSET } from '@numen/shell'
 import { getWindowEdge, useWindowFrame, type FrameRuntime } from './useWindowFrame'
 
-/** The Wails runtime of a window on a platform, with the calls it receives recorded. */
 function createRuntime(platform: 'windows' | 'mac' | 'linux', maximized = false) {
   const state = { maximized }
   const calls = {

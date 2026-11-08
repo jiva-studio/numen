@@ -43,14 +43,12 @@ const TARGETS: Record<string, RunTarget> = {
   plex: { path: '', title: '', isFolder: false, others: [], tab: 'plex' },
 }
 
-/** Slots of a window that hold the entries in the menu of a tab, for every tab but plex. */
 const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
   getEntries: (slot, target) =>
     slot === SLOT.tabStripContext && target?.tab !== 'plex' ? entries : [],
   watchEntries: () => ({ dispose: () => undefined }),
 })
 
-/** The commands of a window, recording each command run, its target and its argument. */
 const createCommands = () => {
   const runs: { command: string; target: RunTarget | undefined; argument?: string }[] = []
   return {

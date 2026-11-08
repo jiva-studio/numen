@@ -16,7 +16,6 @@ const manifest = JSON.parse(
   }
 }
 
-/** The entries the plugin places in the menu of a row of the file tree and in its submenu there. */
 const getMenuEntries = () =>
   (manifest.contributes.slots ?? []).filter(
     (one) => one.slot === 'fileTree.context' || one.slot === 'plex.relation',

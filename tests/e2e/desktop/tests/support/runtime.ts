@@ -6,7 +6,6 @@ import type { Page } from 'playwright/test'
 
 export type Platform = 'windows' | 'mac'
 
-/** A module in the place of /wails/runtime.js: the window state, and a list of the calls made. */
 const createRuntime = (platform: Platform): string => `
 const calls = (globalThis.__frameCalls ??= [])
 export const Window = {

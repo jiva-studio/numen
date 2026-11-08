@@ -48,14 +48,11 @@ type PersistHandler = pluginport.PluginPersistHandler
 
 // PluginStatus describes the enablement and runtime status of a plugin.
 type PluginStatus struct {
-	ID string `json:"id"`
-	// Dir is the directory of a plugin that failed discovery; such an entry has no ID.
-	Dir      string `json:"dir,omitempty"`
-	Enabled  bool   `json:"enabled"`
-	IsActive bool   `json:"isActive"`
-	// Failed reports that the last start of the plugin failed. The next use starts it again.
-	Failed bool `json:"failed"`
-	// FailureReason is the error of the last start, while it failed.
+	ID            string `json:"id"`
+	Dir           string `json:"dir,omitempty"`
+	Enabled       bool   `json:"enabled"`
+	IsActive      bool   `json:"isActive"`
+	Failed        bool   `json:"failed"`
 	FailureReason string `json:"failureReason,omitempty"`
 }
 
@@ -63,74 +60,64 @@ const settingEnabled = "enabled"
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu               sync.RWMutex
-	target           string
-	dirs             []string
-	plugins          map[string]manifest.Discovered
-	supervisors      map[string]*lifecycle.Supervisor
-	endpoints        map[string]transport.Endpoint
-	launcher         Launcher
-	safeMode         bool
-	vaultPath        string
-	bus              *eventbus.Bus
-	settings         map[string]map[string]any
-	performance      string
-	persistHandler   PersistHandler
-	evictTicker      *time.Ticker
-	evictDone        chan struct{}
-	evictWg          sync.WaitGroup
-	isEvictStopped   bool
-	isClosed         bool
-	stdinsMu         sync.Mutex
-	stdins           map[stdinKey]io.Closer
-	processLimits    process.Limits
-	activation       lifecycle.ActivationPolicy
-	onPluginFailed   func(pluginport.PluginFailure)
-	onFailureCleared func(pluginID string)
-	configWatchers   map[string]map[int]func()
-	nextWatcher      int
-	errorHandler     eventbus.ErrorHandler
-	onDisk           map[string]bool
-	discoverMu       sync.RWMutex
-	failedPlugins    []pluginport.PluginFailure
-	problems         []manifestjson.DiscoveryProblem
-	completer        completionport.Completer
-	vault            pluginport.PluginVault
-	texts            pluginport.PluginTexts
-	window           pluginport.PluginWindow
-	vaultList        pluginport.PluginVaultList
-	search           pluginport.PluginSearch
-	secretLocksMu    sync.Mutex
-	secretLocks      map[string]*sync.Mutex
-	keyStore         pluginport.KeyStore
-	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
-	// machine without a key store.
-	noKeyStoreOnce sync.Once
-	hostEndpoint   *hostendpoint.Endpoint
-	hostAddress    string
-	dependencies   pluginport.DependencyCatalog
-	work           pluginport.PluginWork
-	builtIns       map[string]builtInPlugin
-	contentTypes   contentTypeTable
-	typeCache      contentTypeCache
-	clock          machineport.Clock
-	storage        storageRoots
-	// listenersMu serializes the binding and closing of listener ports. It is locked before mu,
-	// never while mu is locked.
-	listenersMu sync.Mutex
-	// listeners maps each plugin to its bound listener ports by listener name.
-	listeners map[string]map[string]listenerBinding
-	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
-	listenerPorts map[string]map[string]int
-	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
-	// reported, until the plugin activates or its failure is cleared.
+	mu                     sync.RWMutex
+	target                 string
+	dirs                   []string
+	plugins                map[string]manifest.Discovered
+	supervisors            map[string]*lifecycle.Supervisor
+	endpoints              map[string]transport.Endpoint
+	launcher               Launcher
+	safeMode               bool
+	vaultPath              string
+	bus                    *eventbus.Bus
+	settings               map[string]map[string]any
+	performance            string
+	persistHandler         PersistHandler
+	evictTicker            *time.Ticker
+	evictDone              chan struct{}
+	evictWg                sync.WaitGroup
+	isEvictStopped         bool
+	isClosed               bool
+	stdinsMu               sync.Mutex
+	stdins                 map[stdinKey]io.Closer
+	processLimits          process.Limits
+	activation             lifecycle.ActivationPolicy
+	onPluginFailed         func(pluginport.PluginFailure)
+	onFailureCleared       func(pluginID string)
+	configWatchers         map[string]map[int]func()
+	nextWatcher            int
+	errorHandler           eventbus.ErrorHandler
+	onDisk                 map[string]bool
+	discoverMu             sync.RWMutex
+	failedPlugins          []pluginport.PluginFailure
+	problems               []manifestjson.DiscoveryProblem
+	completer              completionport.Completer
+	vault                  pluginport.PluginVault
+	texts                  pluginport.PluginTexts
+	window                 pluginport.PluginWindow
+	vaultList              pluginport.PluginVaultList
+	search                 pluginport.PluginSearch
+	secretLocksMu          sync.Mutex
+	secretLocks            map[string]*sync.Mutex
+	keyStore               pluginport.KeyStore
+	noKeyStoreOnce         sync.Once
+	hostEndpoint           *hostendpoint.Endpoint
+	hostAddress            string
+	dependencies           pluginport.DependencyCatalog
+	work                   pluginport.PluginWork
+	builtIns               map[string]builtInPlugin
+	contentTypes           contentTypeTable
+	typeCache              contentTypeCache
+	clock                  machineport.Clock
+	storage                storageRoots
+	listenersMu            sync.Mutex
+	listeners              map[string]map[string]listenerBinding
+	listenerPorts          map[string]map[string]int
 	reportedTargetFailures map[string]struct{}
-	// lookPath finds an executable on PATH.
-	lookPath func(string) (string, error)
-	// acpMu guards the ACP agents found on PATH. It is locked after mu, never before it.
-	acpMu           sync.Mutex
-	acpOptions      []pluginport.PluginSettingOption
-	isACPDiscovered bool
+	lookPath               func(string) (string, error)
+	acpMu                  sync.Mutex
+	acpOptions             []pluginport.PluginSettingOption
+	isACPDiscovered        bool
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -264,7 +251,6 @@ func (h *Host) getRunningPluginIDsLocked() []string {
 	return ids
 }
 
-// stopPlugin shuts one plugin down, whatever state it is in.
 func (h *Host) stopPlugin(ctx context.Context, pluginID string) error {
 	h.mu.Lock()
 	sup, ok := h.supervisors[pluginID]
@@ -284,7 +270,6 @@ func (h *Host) stopPlugin(ctx context.Context, pluginID string) error {
 	return nil
 }
 
-// teardownTarget stops the process of a target and closes its stdin pipe.
 func (h *Host) teardownTarget(ctx context.Context, target pluginTeardownTarget, gracePeriod time.Duration) error {
 	rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 	err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
@@ -357,9 +342,6 @@ func (h *Host) GetPlugins() []manifest.Discovered {
 	return h.getPluginsInOrderLocked()
 }
 
-// getPluginsInOrderLocked returns the registered plugins in the order of their
-// ids. Every lookup and listing of the host uses this order, so the first match
-// is the plugin with the lowest id.
 func (h *Host) getPluginsInOrderLocked() []manifest.Discovered {
 	result := make([]manifest.Discovered, 0, len(h.plugins))
 	for _, p := range h.plugins {
@@ -446,7 +428,6 @@ func (h *Host) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile,
 	return domain.NoteProfile{}, false
 }
 
-// getProfileOf is how the index keeps the notes of a declared type.
 func getProfileOf(declared pluginport.PluginNoteType) domain.NoteProfile {
 	return declared.GetProfile()
 }
@@ -542,8 +523,6 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *lifecy
 	return transport.Endpoint{Host: "", Port: 0, Token: ""}, false, nil
 }
 
-// dropEndpointOfStoppedPlugin forgets the endpoint, the work and the tasks of an ended process. The
-// supervisor runs it before it goes Dormant, so no replacement is running yet.
 func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.mu.Lock()
 	h.forgetEndpointLocked(pluginID)
@@ -552,13 +531,11 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.clearPluginTasks(pluginID)
 }
 
-// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported.
 func (h *Host) forgetEndpointLocked(pluginID string) {
 	delete(h.endpoints, pluginID)
 	delete(h.listenerPorts, pluginID)
 }
 
-// acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
 func (h *Host) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor) (transport.Endpoint, bool) {
 	endpoint := h.endpoints[pluginID]
 	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(h.clock.Now()) {
@@ -567,8 +544,6 @@ func (h *Host) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor) 
 	return endpoint, true
 }
 
-// failActivation returns a plugin whose activation failed to Dormant and records why, in the same step. The
-// next use of the plugin starts it again.
 func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor, cause error) {
 	h.mu.Lock()
 	if sup.GetState() != lifecycle.StateActivating {
@@ -593,8 +568,6 @@ func (h *Host) newPluginFailureLocked(pluginID string, sup *lifecycle.Supervisor
 	}
 }
 
-// deliverPluginFailures passes the plugins whose start failed since the
-// previous call to the failure callback, outside every lock.
 func (h *Host) deliverPluginFailures() {
 	h.mu.Lock()
 	failures := h.failedPlugins
@@ -610,7 +583,6 @@ func (h *Host) deliverPluginFailures() {
 	}
 }
 
-// settlePluginInState waits out or clears a state other than Dormant and reports whether EnsureActive is finished.
 func (h *Host) settlePluginInState(
 	ctx context.Context,
 	pluginID string,
@@ -639,7 +611,6 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (transport.End
 	return endpoint, err
 }
 
-// ensureActiveDuringDiscovery activates a plugin while holding off a discovery that could retire it.
 func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {
 	h.discoverMu.RLock()
 	defer h.discoverMu.RUnlock()
@@ -673,7 +644,6 @@ func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string)
 	}
 }
 
-// beginActivationLocked moves a dormant plugin to Activating.
 func (h *Host) beginActivationLocked(sup *lifecycle.Supervisor) {
 	sup.SetActivating()
 }
@@ -699,7 +669,6 @@ func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginI
 	h.closeStdin(pluginID, proc.Pid)
 }
 
-// killProcess kills a process and collects its exit status. A process that has already exited is not an error.
 func (h *Host) killProcess(proc *os.Process, pluginID string) {
 	if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
 		h.reportError(fmt.Errorf("kill plugin %s: %w", pluginID, err))
@@ -709,14 +678,12 @@ func (h *Host) killProcess(proc *os.Process, pluginID string) {
 	}
 }
 
-// closeResource closes c and reports a failure to the error handler. A resource that is already closed is not an error.
 func (h *Host) closeResource(name string, c io.Closer) {
 	if err := c.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
 		h.reportError(fmt.Errorf("close %s: %w", name, err))
 	}
 }
 
-// closeStdin closes and forgets the stdin pipe of one process generation of a plugin.
 func (h *Host) closeStdin(pluginID string, pid int) {
 	key := stdinKey{pluginID: pluginID, pid: pid}
 	h.stdinsMu.Lock()
@@ -728,7 +695,6 @@ func (h *Host) closeStdin(pluginID string, pid int) {
 	}
 }
 
-// waitForReady reads the handshake of a started process within the activation deadline.
 func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (transport.Handshake, error) {
 	h.mu.RLock()
 	timeout := h.activation.Timeout
@@ -966,7 +932,6 @@ func (h *Host) EvictIdle(ctx context.Context, threshold, gracePeriod time.Durati
 	return h.evictTargets(ctx, targets, gracePeriod)
 }
 
-// evictTargets stops the targets and returns the ids that stopped; a failed stop is reported to the error handler.
 func (h *Host) evictTargets(ctx context.Context, targets []pluginTeardownTarget, gracePeriod time.Duration) []string {
 	evicted := make([]string, 0, len(targets))
 	for _, target := range targets {
@@ -1038,8 +1003,6 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	return firstErr
 }
 
-// takeTeardownTargets marks the host closed and returns the plugins that are running,
-// forgetting their endpoints.
 func (h *Host) takeTeardownTargets() []pluginTeardownTarget {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -1059,7 +1022,6 @@ func (h *Host) takeTeardownTargets() []pluginTeardownTarget {
 	return targets
 }
 
-// closeAllStdins closes the stdin pipes of every plugin process generation and forgets them.
 func (h *Host) closeAllStdins() error {
 	h.stdinsMu.Lock()
 	stdins := h.stdins
@@ -1135,9 +1097,6 @@ func (h *Host) isPluginEnabled(pluginID string) bool {
 	return h.isPluginEnabledLocked(pluginID)
 }
 
-// isPluginEnabledLocked reads the stored and declared settings alone: the agents found on the machine,
-// which getPluginSettingsLocked adds by searching PATH, have no part in it, and a listing of the
-// commands asks this for every plugin and extension.
 func (h *Host) isPluginEnabledLocked(pluginID string) bool {
 	settings := maps.Clone(h.settings[pluginID])
 	if p, ok := h.plugins[pluginID]; ok {
@@ -1154,7 +1113,6 @@ func (h *Host) SetPluginEnabled(ctx context.Context, pluginID string, enabled bo
 	return h.SetPluginSetting(ctx, pluginID, settingEnabled, enabled)
 }
 
-// applyEnabledChange stops a plugin that was disabled and clears the failures of one that was enabled or disabled.
 func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value any) error {
 	enabled, ok := value.(bool)
 	if !ok {
@@ -1242,8 +1200,6 @@ func (h *Host) GetPluginSettings(pluginID string) map[string]any {
 	return h.getPluginSettingsLocked(pluginID)
 }
 
-// getPluginSettingsLocked returns the values in force of the settings of the plugin, the settings whose
-// condition fails left out.
 func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	rawStored := h.settings[pluginID]
 	result := maps.Clone(rawStored)
@@ -1263,8 +1219,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	return result
 }
 
-// addDiscoveredExecutable fills the executable path of an ACP plugin from the agents found
-// on the machine, where the user has stored none.
 func (h *Host) addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
 	if _, hasStored := stored[keyExecutablePath]; hasStored || !hasACPPathsSetting(manifest) {
 		return
@@ -1274,7 +1228,6 @@ func (h *Host) addDiscoveredExecutable(result, stored map[string]any, manifest p
 	}
 }
 
-// hasACPPathsSetting reports whether the manifest declares a setting that holds ACP agent executables.
 func hasACPPathsSetting(manifest pluginport.PluginManifest) bool {
 	return slices.ContainsFunc(manifest.Settings, isACPPathsSetting)
 }
@@ -1428,7 +1381,6 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
 
-// notifyPluginConfigLocked is NotifyPluginConfig for a caller holding lockSecrets(pluginID).
 func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
 	h.mu.RLock()
 	endpoint, hasEndpoint := h.endpoints[pluginID]
@@ -1504,9 +1456,6 @@ func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSett
 	return settings
 }
 
-// resolveSettings fills in the options, the visibility and the value in force of each setting under
-// the values in force, which are the stored values with the defaults, the options that follow
-// another setting and the conditions applied.
 func resolveSettings(declared manifest.Manifest, settings []pluginport.PluginSetting, values map[string]any) {
 	for index := range settings {
 		one, found := declared.GetSetting(settings[index].Key)
@@ -1559,9 +1508,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	return result
 }
 
-// resolveSettingDefaultAndOptions returns the default and the options of a setting as the window shows
-// them. The ACP agents found on the machine are the options of a setting that holds ACP agent
-// executables, and its default where the manifest gives none.
 func resolveSettingDefaultAndOptions(
 	s pluginport.PluginManifestSetting, discover func() []pluginport.PluginSettingOption,
 ) (any, pluginport.PluginSettingOptions) {
@@ -1604,13 +1550,10 @@ func getAcpExecutableCandidates() []acpExecutableCandidate {
 	}
 }
 
-// isACPPathsSetting reports whether a setting holds ACP agent executables: the executable path
-// setting that takes several paths. An agent plugin of one program declares a single path.
 func isACPPathsSetting(s pluginport.PluginManifestSetting) bool {
 	return s.Key == keyExecutablePath && s.Multiple
 }
 
-// joinOptionValues returns the values of the options, one per line.
 func joinOptionValues(options []pluginport.PluginSettingOption) string {
 	paths := make([]string, 0, len(options))
 	for _, option := range options {
@@ -1619,8 +1562,6 @@ func joinOptionValues(options []pluginport.PluginSettingOption) string {
 	return strings.Join(paths, "\n")
 }
 
-// getDiscoveredACPOptions returns the ACP agents found on PATH. PATH is searched on the first call and
-// on the first call after a setting changes.
 func (h *Host) getDiscoveredACPOptions() []pluginport.PluginSettingOption {
 	h.acpMu.Lock()
 	defer h.acpMu.Unlock()
@@ -1631,14 +1572,12 @@ func (h *Host) getDiscoveredACPOptions() []pluginport.PluginSettingOption {
 	return slices.Clone(h.acpOptions)
 }
 
-// forgetDiscoveredACPOptions makes the next read of the ACP agents search PATH again.
 func (h *Host) forgetDiscoveredACPOptions() {
 	h.acpMu.Lock()
 	h.isACPDiscovered = false
 	h.acpMu.Unlock()
 }
 
-// findACPOptions returns the ACP agent candidates that lookPath finds.
 func findACPOptions(lookPath func(string) (string, error)) []pluginport.PluginSettingOption {
 	var options []pluginport.PluginSettingOption
 	for _, candidate := range getAcpExecutableCandidates() {
@@ -1692,7 +1631,6 @@ func (h *Host) IsPluginSuspended(pluginID string) bool {
 	return ok && sup.GetActivationFailure() != nil
 }
 
-// getFailureLocked is why the last start of a plugin failed, and nil while it did not.
 func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 	sup, ok := h.supervisors[pluginID]
 	if !ok {
@@ -1706,8 +1644,6 @@ func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 	return &failure
 }
 
-// clearFailure forgets why the last start of a plugin failed and tells the cleared callback, where there was
-// a failure.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
 	h.mu.Lock()
 	delete(h.reportedTargetFailures, pluginID)
@@ -1751,15 +1687,12 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	return failure, nil
 }
 
-// getRequirements returns the dependencies the plugin is launched with under the settings in force.
 func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyRequirement {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))
 }
 
-// getActiveSecretNamesLocked returns the names of the secrets of the plugin whose condition holds
-// under the settings in force.
 func (h *Host) getActiveSecretNamesLocked(pluginID string) []string {
 	p, ok := h.plugins[pluginID]
 	if !ok {
@@ -1775,8 +1708,6 @@ func (h *Host) getActiveSecretNamesLocked(pluginID string) []string {
 	return names
 }
 
-// getRequirementIDsLocked returns the ids of the dependencies the plugin is launched with under the
-// settings in force. A plugin launched with others is stopped, and the next call launches it with them.
 func (h *Host) getRequirementIDsLocked(pluginID string) []string {
 	p, ok := h.plugins[pluginID]
 	if !ok {

@@ -22,29 +22,17 @@ var (
 // SlotEntry places one thing of the plugin in a slot of a window, or in a submenu a plugin declares.
 // Exactly one of Command, View and Submenu is set.
 type SlotEntry struct {
-	// Slot is a slot of the list of Slots, or the id of a submenu.
-	Slot string
-	// Command is the id the manifest declares the command under, or the full id of a command of
-	// another owner, such as app:settings.open. The owner of the slot draws it.
+	Slot    string
 	Command string
-	// View is the id the frontend registers the component under. The component draws itself.
-	View string
-	// Submenu is the id of the submenu the entry declares, which becomes a place of its own.
+	View    string
 	Submenu string
-	// Title is the title of a submenu.
-	Title string
-	// Icon is the kebab-case icon name of a submenu; empty for none.
-	Icon string
-	// Group names the entries a slot draws together; empty is the last group.
-	Group string
-	// Order sorts the entries of a group, lowest first; nil sorts after every order.
-	Order *int
-	// When is the condition over the target of the place under which the entry is drawn, a when
-	// clause of package when; empty is always.
-	When string
+	Title   string
+	Icon    string
+	Group   string
+	Order   *int
+	When    string
 }
 
-// getPlaced returns what the entry places, as its kind and id, such as command ledger.open.
 func (e SlotEntry) getPlaced() (kind, id string) {
 	switch {
 	case e.Command != "":
@@ -57,8 +45,6 @@ func (e SlotEntry) getPlaced() (kind, id string) {
 	return "", ""
 }
 
-// listSlotIssues checks the entries of contributes.slots. A slot outside the list may be the submenu of
-// another plugin, so it is checked once every manifest is read, not here.
 func (m Manifest) listSlotIssues() []error {
 	declared := map[string]bool{}
 	for _, command := range m.Contributes.Commands {
@@ -91,7 +77,6 @@ func (m Manifest) listSlotIssues() []error {
 	return issues
 }
 
-// listSlotEntryIssues checks one entry against the rules every entry follows.
 func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
 	var issues []error
 	if strings.TrimSpace(entry.Slot) == "" {
@@ -122,7 +107,6 @@ func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
 	return issues
 }
 
-// listSubmenuIssues checks the id, title and icon of a submenu an entry declares.
 func listSubmenuIssues(entry SlotEntry) []error {
 	var issues []error
 	switch {
@@ -140,7 +124,6 @@ func listSubmenuIssues(entry SlotEntry) []error {
 	return issues
 }
 
-// hasSlotViews reports whether the manifest places a view, which only a frontend registers.
 func (c Contributes) hasSlotViews() bool {
 	for _, entry := range c.Slots {
 		if entry.View != "" {

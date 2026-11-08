@@ -77,7 +77,6 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
   return { commands, issues: [...issues.values()] }
 }
 
-/** The handlers of plugins that are not disposed whose commands no manifest declares. */
 function listUndeclared(registry: HostRegistry, declaredIds: ReadonlySet<string>): CommandIssue[] {
   return [...registry.commands.value]
     .filter(([id, entry]) => !declaredIds.has(id) && !registry.disposed.has(entry.pluginId))

@@ -30,7 +30,6 @@ export interface VaultPort {
     paths: string[]
     shouldReload: boolean
     renamed: readonly PathRename[]
-    /** The files whose text versions changed: one was made or deleted, or became live or no longer live. */
     versionPaths?: string[]
   }>
   /**

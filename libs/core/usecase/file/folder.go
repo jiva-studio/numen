@@ -4,8 +4,7 @@ import "github.com/jiva-studio/numen/libs/notes/domain"
 
 // Folder is the entries of the vault with the type of each note among them, where an index provides it.
 type Folder struct {
-	Entries []domain.Entry
-	Types   map[string]domain.NoteType
-	// Properties is the frontmatter of each note by its path.
+	Entries    []domain.Entry
+	Types      map[string]domain.NoteType
 	Properties map[string]map[string]any
 }

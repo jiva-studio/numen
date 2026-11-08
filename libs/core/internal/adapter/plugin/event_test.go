@@ -63,7 +63,6 @@ func (r *eventRecorder) getEvents() []string {
 	return slices.Clone(r.events)
 }
 
-// servePlugin starts a plugin server answering Ping and, when recorder is set, taking events; it returns the port.
 func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -80,8 +79,6 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	return addr.Port
 }
 
-// newEventHost returns a host of the given plugins, each with a backend, running on the given ports.
-// The host is torn down before its processes are killed.
 func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
 	t.Helper()
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
@@ -219,7 +216,6 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	}
 }
 
-// readingType is a plugin that reads files of the type.
 func readingType(contentType domain.ContentType) pluginport.PluginManifest {
 	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Readers: []pluginport.PluginReader{
 		{ID: "reader", ContentTypes: []domain.ContentType{contentType}},

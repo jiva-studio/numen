@@ -32,7 +32,6 @@ export type WhenResult = 'true' | 'false' | 'unknown'
 
 /** A condition read once and evaluated over the values of many places. */
 export interface WhenCondition {
-  /** The variables it reads, sorted; the settings count as `config`. */
   readonly names: readonly string[]
   evaluate(values: WhenValues): boolean
   /**
@@ -54,7 +53,6 @@ const ENVIRONMENT = celEnv({
 
 const DECLARED = new Set<string>(WHEN_VARIABLES.map((one) => one.name))
 
-/** The value a variable has where the values do not give it. */
 const getDefault = (type: string): unknown => {
   if (type === 'bool') return false
   if (type === 'string') return ''
@@ -63,7 +61,6 @@ const getDefault = (type: string): unknown => {
 
 type Expr = ReturnType<typeof parse>['expr'] | undefined
 
-/** `target.isNote` for the selection of isNote on target; nothing for an expression of another kind. */
 function getQualifiedName(expr: Expr): string | undefined {
   const kind = expr?.exprKind
   if (kind?.case === 'identExpr') return kind.value.name
@@ -104,11 +101,9 @@ const MAPS: readonly string[] = WHEN_VARIABLES.filter((one) => one.type === 'map
   (one) => one.name,
 )
 
-/** The variable a qualified name reads: itself, or the map variable it selects a key of. */
 const getVariableName = (qualified: string): string =>
   MAPS.find((one) => qualified === one || qualified.startsWith(one + '.')) ?? qualified
 
-/** The variables the expression reads, each as declared, a key of a map as the map. */
 function collectNames(expr: Expr, names: Set<string>): void {
   const qualified = getQualifiedName(expr)
   if (qualified === undefined) {
@@ -118,7 +113,6 @@ function collectNames(expr: Expr, names: Set<string>): void {
   }
 }
 
-/** A plain object of settings as the map CEL selects keys of. */
 function toCelMap(value: unknown): unknown {
   if (value === null || typeof value !== 'object' || Array.isArray(value) || value instanceof Map) {
     return value

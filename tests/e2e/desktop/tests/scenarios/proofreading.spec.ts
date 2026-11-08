@@ -18,7 +18,6 @@ const MOCK_TRANSCRIPT = /Mock transcribed text/
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'
 
-/** Closes the palette: Escape leaves a pick list for the list of commands, and closes that list. */
 const closePalette = async (page: Page): Promise<void> => {
   const field = getPaletteField(page)
   for (let press = 0; press < 2 && (await field.isVisible()); press += 1) {
@@ -27,10 +26,6 @@ const closePalette = async (page: Page): Promise<void> => {
   await expect(field).toBeHidden()
 }
 
-/**
- * Waits until the pick list of deleting a proofreading offers the version a proofreading made of
- * the open file beside the one it was made from.
- */
 const expectProofreadVersion = async (page: Page): Promise<void> => {
   await expect(async () => {
     await closePalette(page)
@@ -40,7 +35,6 @@ const expectProofreadVersion = async (page: Page): Promise<void> => {
   await closePalette(page)
 }
 
-/** Proofreads the live text version of the open file, picked from the versions the command lists. */
 const proofreadLiveVersion = async (page: Page): Promise<void> => {
   await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
 }

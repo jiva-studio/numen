@@ -27,35 +27,23 @@ export interface PluginSupportDeps {
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
-  /**
-   * The platform the frame of the window reports, which plugins read as `context.app.platform`.
-   * Windows where none is given, as the frame reports without the Wails runtime.
-   */
   readonly getPlatform?: () => WindowPlatform
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
   readonly reportError?: (pluginId: string, error: unknown) => void
-  /** Reports a plugin whose frontend failed to load or activate; falls back to `reportError`. */
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
-  /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
   readonly services?: PluginServices
-  /** The window's one list of notices, which each plugin shows its own in. */
   readonly notices?: NoticeQueue
-  /** The commands the enabled plugins declare in their manifests. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
-  /** The handlers of shared commands the enabled plugins declare, and how their backends list and run them. */
   readonly handlers?: Pick<
     PluginHostDeps,
     'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'
   >
-  /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
-  /** Reports a view of a slot that another plugin, first by plugin id, draws. */
   readonly reportViewIssue?: (pluginId: string, message: string) => void
-  /** The entries of the slots of the window, how their commands are drawn and run, and their issues. */
   readonly slots?: Pick<
     PluginHostDeps,
     | 'getSlotEntries'
@@ -96,7 +84,6 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
-/** The services of the window a plugin context reads, as the window has made them. */
 function createServiceAccess(services: PluginServices | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
@@ -126,7 +113,6 @@ function createNoticeAccess(queue: NoticeQueue) {
   }
 }
 
-/** The commands and slot entries the plugins declare, and what the host reports about them. */
 function getHostDeclarations(deps: PluginSupportDeps) {
   return {
     ...deps.slots,

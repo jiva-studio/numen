@@ -16,7 +16,6 @@ const manifest = JSON.parse(
   }
 }
 
-/** The entries the plugin places in the menu of a row and in the submenu it declares there. */
 const getMenuEntries = () =>
   (manifest.contributes.slots ?? []).filter((one) => String(one.slot).startsWith('fileTree.'))
 

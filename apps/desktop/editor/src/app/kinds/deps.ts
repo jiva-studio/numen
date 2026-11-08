@@ -17,7 +17,6 @@ export interface WindowKindsDeps {
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
   editing: ReturnType<typeof createNoteEditors>
-  /** The reads and writes of notes the plugins make, in the order they make them. */
   pluginNotes: PluginNotes
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
@@ -26,8 +25,6 @@ export interface WindowKindsDeps {
   commandDeps: () => CommandDeps
   tabLinks?: TabLinksState
   tabSync?: ReturnType<typeof createTabSync>
-  /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   getPluginCommandIcon?: (id: string) => unknown
-  /** The commands the plugins declare over one note. */
   getNoteCommands: () => readonly MenuEntry[]
 }

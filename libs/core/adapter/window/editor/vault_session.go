@@ -176,7 +176,6 @@ type versionChangeReporter struct {
 	index *indexing.Session
 }
 
-// newVersionChangeReporter is the listener of the text versions of the vault the window shows.
 func newVersionChangeReporter(state *State, index *indexing.Session) versionChangeReporter {
 	return versionChangeReporter{state: state, index: index}
 }

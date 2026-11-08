@@ -19,7 +19,6 @@ const LONG_BODY = Array.from(
 
 const readNoteChunks = async (page: Page): Promise<number> => (await readNoteCounts(page)).chunks
 
-/** Waits until no chunk of the index waits for a vector, and returns the chunks of the notes then. */
 const readEmbeddedNoteChunks = async (page: Page): Promise<number> => {
   let chunks = 0
   await expect

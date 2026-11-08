@@ -22,8 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newMediaClient returns the media services of a window as a client accesses them, over a window whose
-// loopback socket is open.
 func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	t.Helper()
 	api, _ := openRecordingWindow(t, nil)
@@ -98,7 +96,6 @@ const (
 	pageBytes = "<!doctype html><iframe src=\"https://player.example/embed/1\"></iframe>"
 )
 
-// newStoreClient is the media of a window whose plugins keep the files in their stores.
 func newStoreClient(t *testing.T, files storedFiles) numenv1connect.MediaServiceClient {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})

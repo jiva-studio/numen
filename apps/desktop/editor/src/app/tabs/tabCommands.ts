@@ -39,7 +39,6 @@ export interface TabCommandsDeps {
   getKind(tab: TabId): string | undefined
   /** Whether a tab of this window can be linked. */
   isLinkable(tab: TabId): boolean
-  /** The id of this window, which no move goes to. */
   readonly windowId?: string
   /** Whether a tab is asking; an asking tab is not moved or detached. */
   isAsking(tab: TabId): boolean

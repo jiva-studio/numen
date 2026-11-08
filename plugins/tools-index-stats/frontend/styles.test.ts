@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest'
 
 const css = readFileSync(resolve(import.meta.dirname, 'styles.css'), 'utf8')
 
-/** The declarations of the first rule of the selector, by property. */
 const readRule = (selector: string): Map<string, string> => {
   const start = css.indexOf(`${selector} {`)
   const body = css.slice(css.indexOf('{', start) + 1, css.indexOf('}', start))

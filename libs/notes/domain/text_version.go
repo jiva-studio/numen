@@ -63,8 +63,6 @@ func (v TextVersion) IsFromFile() bool { return v.Source == "" && !v.IsFromPrope
 // IsFromProperty reports whether the version was made from a property of the note.
 func (v TextVersion) IsFromProperty() bool { return v.SourceProperty.Key != "" }
 
-// isPropertyHeld reports whether the frontmatter holds the property's key as
-// the string of its value.
 func (p TextSourceProperty) isPropertyHeld(properties map[string]any) bool {
 	value, isText := properties[p.Key].(string)
 	return isText && value == p.Value

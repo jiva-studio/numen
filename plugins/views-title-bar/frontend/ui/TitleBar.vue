@@ -36,19 +36,13 @@ const props = withDefaults(
   defineProps<{
     appName: string
     platform?: AppInfo['platform']
-    /** The setting `buttons` of the plugin: where the window buttons stand on Linux. */
     buttons?: ButtonsSetting
     isMaximized?: boolean
-    /** True while the window fills the screen; macOS then shows no system buttons. */
     isFullscreen?: boolean
     vaults?: VaultsState
-    /** The entries of `titleBar.commands`. */
     commands?: readonly SlotItem[]
-    /** The entries of `titleBar.status`. */
     status?: readonly SlotItem[]
-    /** Whether the window runs the command that creates a vault, drawn as the last row of the list. */
     canCreateVault?: boolean
-    /** The items a command lists, read as a menu with the command opens. */
     listItems?: (command: string) => Promise<readonly CommandItem[]>
   }>(),
   {

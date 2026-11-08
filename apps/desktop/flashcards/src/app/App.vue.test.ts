@@ -631,7 +631,6 @@ describe('the appearance palette', () => {
   })
 })
 
-/** A plugin that draws the title bar: its manifest declares the view, and its frontend registers it. */
 const createBarPlugin = (pluginId: string) => ({
   manifest: {
     id: pluginId,
@@ -670,7 +669,6 @@ const createBarPlugin = (pluginId: string) => ({
   },
 })
 
-/** The deps of a window whose plugins are the cards and the bar plugins given. */
 const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) => {
   const findPlugin = (url: string) => plugins.find((one) => url.includes(`/${one.manifest.id}/`))
   return {

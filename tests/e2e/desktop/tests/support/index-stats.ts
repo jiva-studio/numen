@@ -33,9 +33,7 @@ interface IndexStats {
 
 /** The counts of the notes in an answer of the index stats item. */
 export interface NoteCounts {
-  /** The chunks of the notes that can carry a vector. */
   readonly chunks: number
-  /** Whether no chunk of the index waits for a vector. */
   readonly isEmbedded: boolean
 }
 

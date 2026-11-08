@@ -8,7 +8,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
-/** A vault that returns the configured kinds and records the queries. */
 const vault = (stands: Record<string, FileKind> = {}) => {
   const request: (readonly string[])[] = []
   const core: FileOpenerDeps = {
@@ -25,7 +24,6 @@ const vault = (stands: Record<string, FileKind> = {}) => {
   return { core, requested: request }
 }
 
-/** A note of the type, which the core opens in the tab kind of the same name. */
 const note = (type: FileKind['type'], tabKind: string = type): FileKind => ({
   isNote: true,
   type,
@@ -34,7 +32,6 @@ const note = (type: FileKind['type'], tabKind: string = type): FileKind => ({
 
 const OTHER: FileKind = { isNote: false, type: 'note' }
 
-/** The editors, with a reader of `.md` beside the reader of `.bin`. */
 const editorsWithNotes = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors = editors(tabOpeners)
   tabOpeners.registerExtensionReader('md', (path, selector) =>
@@ -50,7 +47,6 @@ const unreachable: FileOpenerDeps = {
   },
 }
 
-/** The editors of three tab kinds and a reader of `.bin`, each writing down what it was given. */
 const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
   for (const type of ['note', 'sample', 'form'] as const) {

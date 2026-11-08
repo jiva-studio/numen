@@ -21,7 +21,6 @@ export interface DisplayWiring {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'handle'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
-  /** The item lists of the commands the window keeps, dropped for what changed. */
   itemLists: Pick<CommandItemLists, 'dropPaths' | 'dropAll'>
   writeMessage: MessageWriter
 }

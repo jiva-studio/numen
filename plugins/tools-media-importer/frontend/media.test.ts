@@ -13,7 +13,6 @@ const CLIP: CommandNote = {
   type: 'link',
 }
 
-/** The links of a vault whose one link publishes a video where isCopyable is set, and its copies. */
 function createLinks(isCopyable: boolean) {
   const copied: string[] = []
   const facts: LinkFacts = { url: 'https://videos.example/clip', isCopyable }

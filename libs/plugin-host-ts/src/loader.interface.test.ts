@@ -37,10 +37,6 @@ const createHost = () =>
     disposeAll: vi.fn(),
   }) satisfies LoaderHost
 
-/**
- * A loader over the invented plugins; `delays` holds the milliseconds each module takes to read, and
- * `activations` the milliseconds each activation takes.
- */
 const createLoader = (
   delays: Record<string, number> = {},
   activations: Record<string, number> = {},

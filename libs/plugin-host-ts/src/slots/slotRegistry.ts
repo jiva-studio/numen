@@ -23,17 +23,13 @@ import { parseWhen, type WhenCondition, type WhenValues } from '../when/when'
 export interface DeclaredSlotEntry {
   readonly pluginId: string
   readonly slot: string
-  /** The id the manifest declares the command under, or the full id of a command of another owner. */
   readonly command?: string | undefined
   readonly view?: string | undefined
   readonly submenu?: string | undefined
-  /** The title of a submenu. */
   readonly title?: string | undefined
-  /** The icon component of a submenu. */
   readonly icon?: unknown
   readonly group?: string | undefined
   readonly order?: number | undefined
-  /** The condition over the target of the place under which the entry is drawn; empty is always. */
   readonly when?: string | undefined
 }
 
@@ -42,31 +38,22 @@ export interface SlotCommandLook {
   readonly title: string
   readonly icon?: unknown
   readonly shortcut?: string | undefined
-  /** Whether the command lists items over the target; false where absent. */
   readonly hasItems?: boolean | undefined
 }
 
 export interface SlotRegistryDeps {
-  /** The entries of the enabled plugins and of the application; undefined until the first list has loaded. */
   readonly getEntries: () => readonly DeclaredSlotEntry[] | undefined
-  /** How the command of the full id is drawn over the target, and undefined while it is not available there. */
   readonly findCommand: (
     command: string,
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
-  /** The component the plugin registered for the view, and undefined while it has registered none. */
   readonly findView: (pluginId: string, view: string) => unknown
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
-  /**
-   * The values the when conditions of the entries read over the target: its target values, the window
-   * and the settings. Without it only the target values of the path are known.
-   */
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
 
-/** Compares two strings by code unit, which does not depend on the language of the person. */
 const compareText = (a: string, b: string): number => {
   if (a === b) return 0
   return a < b ? -1 : 1
@@ -78,7 +65,6 @@ interface Placed {
   readonly item: SlotItem
 }
 
-/** Orders two entries of one group by order, plugin id and key. */
 const compareInGroup = (a: Placed, b: Placed): number => {
   if (a.entry.order !== b.entry.order) {
     if (a.entry.order === undefined) return 1
@@ -88,7 +74,6 @@ const compareInGroup = (a: Placed, b: Placed): number => {
   return compareText(a.entry.pluginId, b.entry.pluginId) || compareText(a.item.key, b.item.key)
 }
 
-/** Orders two group names alphanumerically, the empty name last. */
 const compareGroups = (a: string, b: string): number => {
   if (a === b) return 0
   if (a === '') return 1
@@ -96,14 +81,9 @@ const compareGroups = (a: string, b: string): number => {
   return compareText(a, b)
 }
 
-/** Orders two entries of one slot: by group, then within the group. */
 const compareInSlot = (a: Placed, b: Placed): number =>
   compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
 
-/**
- * The placed entries with one row per command: a command that several plugins place in the slot, as
- * a shared command its handlers place, keeps the entry that comes first in the slot.
- */
 function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   const first = new Map<string, Placed>()
   for (const one of placed) {
@@ -114,11 +94,9 @@ function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
 }
 
-/** The full id of the command of an entry. */
 const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
   command.includes(':') ? command : formatCommandId(entry.pluginId, command)
 
-/** Lays out the placed entries: one row per command, groups in order, a separator between two of them. */
 function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   const groups = new Map<string, Placed[]>()
   for (const one of keepFirstOfEachCommand(placed)) {
@@ -133,7 +111,6 @@ function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   return items
 }
 
-/** The owner of each submenu, first by plugin id, and the plugins whose declaration comes second. */
 function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
   const owners = new Map<string, DeclaredSlotEntry>()
   const second: DeclaredSlotEntry[] = []
@@ -149,7 +126,6 @@ function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
   return { owners, second }
 }
 
-/** The submenus that hold themselves, each as the path of its cycle from its smallest id. */
 function findCycles(owners: ReadonlyMap<string, DeclaredSlotEntry>): string[][] {
   const cycles = new Map<string, string[]>()
   const visit = (id: string, path: readonly string[]): void => {
@@ -178,7 +154,6 @@ interface Declared {
   readonly inCycle: ReadonlySet<string>
 }
 
-/** Warns of the entries placed in a place that is neither a slot of the window nor a submenu. */
 function reportUnknownPlaces(
   entries: readonly DeclaredSlotEntry[],
   owners: ReadonlyMap<string, DeclaredSlotEntry>,
@@ -192,7 +167,6 @@ function reportUnknownPlaces(
   }
 }
 
-/** Reads the entries of every plugin as one, and reports what is wrong across them. */
 function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): Declared {
   const { owners, second } = findSubmenuOwners(entries)
   for (const one of second) {
@@ -213,7 +187,6 @@ function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): De
   return { entries, owners, inCycle: new Set(cycles.flat()) }
 }
 
-/** The command item of an entry, or undefined while the command is not available over the target. */
 function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
@@ -232,7 +205,6 @@ function toCommandItem(
   }
 }
 
-/** The view item of an entry, or undefined while its plugin has not registered the view. */
 function toViewItem(
   entry: DeclaredSlotEntry,
   view: string,
@@ -248,7 +220,6 @@ function toViewItem(
   }
 }
 
-/** The submenu item of an entry, or undefined where it draws nothing. */
 function toSubmenuItem(
   entry: DeclaredSlotEntry,
   submenu: string,

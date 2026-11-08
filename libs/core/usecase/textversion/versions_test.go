@@ -35,11 +35,10 @@ type scene struct {
 	ocr      *fakeProvider
 	fixer    *fakeProvider
 	files    map[string][]byte
-	// reads counts the reads and opens of vault files through the readers the versions were given.
-	reads   int
-	folders *memoryFiles
-	repo    *memoryVersions
-	byID    map[string]*fakeProvider
+	reads    int
+	folders  *memoryFiles
+	repo     *memoryVersions
+	byID     map[string]*fakeProvider
 }
 
 func newScene(t *testing.T) *scene {
@@ -82,7 +81,6 @@ func newScene(t *testing.T) *scene {
 
 func (s *scene) getContentHash() string { return domain.HashContent(s.files[scanPath]) }
 
-// getLive is the live version of the scan and its text.
 func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 	t.Helper()
 	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
@@ -99,7 +97,6 @@ func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 	return listing.Live, text.Text
 }
 
-// requireLive asserts which version is live and what its text is.
 func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersionID, wantText string) {
 	t.Helper()
 	id, text := s.getLive(t)
@@ -108,8 +105,6 @@ func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersion
 	}
 }
 
-// runEntry runs the command of the plugin: over the live version where it reads versions, and
-// over the file for any other plugin.
 func (s *scene) runEntry(t *testing.T, pluginID string) {
 	t.Helper()
 	var source domain.TextVersionID
@@ -121,7 +116,6 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 	}
 }
 
-// requestText runs the PDF reader over the scan.
 func (s *scene) requestText(t *testing.T) {
 	t.Helper()
 	s.runEntry(t, pdfReader)
@@ -347,8 +341,6 @@ const (
 	talkNote = "---\ntype: link\nurl: " + talkURL + "\ntitle: A talk\n---\nNotes on the talk.\n"
 )
 
-// putTalkVersion puts a version of the talk note made from its url property, with
-// the given key and text.
 func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersion {
 	t.Helper()
 	ctx := t.Context()
@@ -365,7 +357,6 @@ func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersio
 	return version
 }
 
-// getTalkLive is the live version of the talk note as it reads now, and empty where none is.
 func (s *scene) getTalkLive(t *testing.T) domain.TextVersionID {
 	t.Helper()
 	listing, err := s.versions.ListVersions(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))

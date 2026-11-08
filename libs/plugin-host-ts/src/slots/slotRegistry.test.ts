@@ -45,7 +45,6 @@ function setup(entries: readonly DeclaredSlotEntry[], overrides: Partial<SlotReg
   return { registry, list, reportIssue }
 }
 
-/** What an item is, in a few words a test compares. */
 const describeItem = (item: SlotItem): string => {
   if (item.kind === 'separator') return '|'
   if (item.kind === 'command') return item.command

@@ -5,10 +5,8 @@
 import { PLUGIN_START_LIMIT_MS } from './limits'
 
 export interface StartLimit {
-  /** Settles with 'expired' once the limit has passed. */
   readonly expired: Promise<'expired'>
   readonly isPassed: () => boolean
-  /** Stops the timer of a limit the start no longer needs. */
   readonly stop: () => void
 }
 

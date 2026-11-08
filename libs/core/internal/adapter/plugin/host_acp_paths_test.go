@@ -97,8 +97,6 @@ func TestACPAgentsFoundOnMachineAreSentToTheACPPluginOnly(t *testing.T) {
 	}
 }
 
-// countLookups empties the ACP agents the host found, makes it search PATH through a counter, and
-// returns the counter.
 func countLookups(host *Host) *atomic.Int32 {
 	host.forgetDiscoveredACPOptions()
 	count := &atomic.Int32{}

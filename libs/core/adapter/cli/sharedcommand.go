@@ -14,9 +14,6 @@ import (
 // pluginFlag is the flag that picks the plugin whose handler of a shared command runs.
 const pluginFlag = "plugin"
 
-// listSharedHandlers is the handlers of the shared command of the id that a plugin backend runs over
-// a file, in the order of the plugins' ids; none where the id is no shared command. A handler that
-// offers items is left out: the command line names no item.
 func listSharedHandlers(deps Deps, id string) []plugincommand.Entry {
 	if deps.PluginCommands == nil || !plugincommand.IsSharedCommand(id) {
 		return nil
@@ -26,8 +23,6 @@ func listSharedHandlers(deps Deps, id string) []plugincommand.Entry {
 	})
 }
 
-// listRunnableHandlers is every handler of a shared command that a plugin backend runs and that
-// offers no items.
 func listRunnableHandlers(deps Deps) []plugincommand.Entry {
 	list := deps.PluginCommands().List
 	handlers := slices.DeleteFunc(list.ExecuteHandlers(), func(one plugincommand.Entry) bool {
@@ -38,13 +33,10 @@ func listRunnableHandlers(deps Deps) []plugincommand.Entry {
 	})
 }
 
-// isOverFile reports whether a handler of the shared command runs over a file, so a run names one.
 func isOverFile(handlers []plugincommand.Entry) bool {
 	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return plugincommand.HasTargetVariable(one.Command) })
 }
 
-// getSharedCommandSynopsis is how a shared command is typed: its id, the vault, the file where a
-// handler runs over one, a flag for each argument, and the flag that picks the plugin.
 func getSharedCommandSynopsis(handlers []plugincommand.Entry) string {
 	declared := handlers[0].Command
 	for _, one := range handlers {
@@ -55,8 +47,6 @@ func getSharedCommandSynopsis(handlers []plugincommand.Entry) string {
 	return getPluginCommandSynopsis(declared) + " [--" + pluginFlag + " <id>]"
 }
 
-// writeSharedCommandUsage writes a line for each shared command the enabled plugins handle, and the
-// title and plugin of each of its handlers.
 func writeSharedCommandUsage(r *reporter, deps Deps) {
 	if deps.PluginCommands == nil {
 		return
@@ -81,9 +71,6 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 	}
 }
 
-// runSharedCommand runs a shared command over a vault through the handler of the plugin the flag
-// picks, or else the one handler whose condition holds over the file, with the arguments given as
-// flags, and writes the plugin's output.
 func runSharedCommand(
 	ctx context.Context, out io.Writer, deps Deps, handlers []plugincommand.Entry, args []string,
 ) (err error) {
@@ -131,7 +118,6 @@ func runSharedCommand(
 	return writeResult(out, result)
 }
 
-// pickHandler is the handler of the plugin picked, or else the one handler available over the path.
 func pickHandler(
 	handlers []plugincommand.Entry, picked, path string, isAvailable func(plugincommand.Entry) bool,
 ) (plugincommand.Entry, error) {

@@ -12,7 +12,6 @@ import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
 import type { CommandRun, PluginHostDeps } from './types'
 
-/** The note a place's target is, by the note type the place read. */
 const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: target.noteType ?? '' })
 
 /**

@@ -22,9 +22,7 @@ export interface WindowSlotsDeps {
     'slots' | 'commands' | 'handlers' | 'whenContext'
   >
   readonly hostHolder: { readonly current?: PluginHost }
-  /** Writes what is wrong with the slot entries of a plugin to its messages. */
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
-  /** The commands the window makes as it runs, such as those over a tab. */
   readonly getAppCommands?: () => readonly Command[]
 }
 

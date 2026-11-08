@@ -113,10 +113,6 @@ const UNUSED_CAPABILITIES = {
   emitFileSelect: () => undefined,
 } satisfies Partial<PluginContext>
 
-/**
- * The slots of the window over the manifests of its plugins. The window lists no commands, so only
- * the views of the entries are drawn.
- */
 function createWindowSlots(slotViews: SlotViewRegistry) {
   const manifests = shallowRef<ReadonlyMap<string, Manifest>>(new Map())
   const slots = createSlotRegistry({
@@ -138,7 +134,6 @@ function createWindowSlots(slotViews: SlotViewRegistry) {
   return { slots, track, forget }
 }
 
-/** Adds the view to the list, and takes it out again on dispose. */
 const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
   views.value = [...views.value, view]
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
@@ -151,14 +146,12 @@ export interface ShellServices {
   window?: WindowHost
 }
 
-/** The services the window has filled, as a context holds them. */
 const getFilledServices = ({ commands, vaults, window }: ShellServices) => ({
   ...(commands ? { commands } : {}),
   ...(vaults ? { vaults } : {}),
   ...(window ? { window } : {}),
 })
 
-/** Registers the view of the plugin in every slot its manifest places it in. */
 const registerInSlots = (
   slotViews: SlotViewRegistry,
   plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined },
@@ -171,7 +164,6 @@ const registerInSlots = (
   return { dispose: () => registrations.forEach((one) => one.dispose()) }
 }
 
-/** The build the plugins of the window read, on the platform `getPlatform` reports. */
 const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
   createAppInfo({
     version: import.meta.env.VITE_NUMEN_VERSION,

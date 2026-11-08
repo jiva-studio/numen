@@ -96,7 +96,6 @@ func runPluginCommand(
 	return writeResult(out, result)
 }
 
-// newArgumentFlags is a flag for each argument of the command, and the values they are given, by name.
 func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string]string) {
 	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -115,7 +114,6 @@ func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string
 	return fs, arguments
 }
 
-// writeResult writes the message of a command that ran and the file it opened.
 func writeResult(out io.Writer, result plugincommand.Result) error {
 	r := newReporter(out)
 	if result.Message != "" {

@@ -8,14 +8,12 @@ import { createWindowCommands } from './windowCommands'
 
 const NOTHING = { dispose: () => undefined }
 
-/** Vaults that list none, standing in for the vaults of the window. */
 const createMockVaultsHost = (): VaultsHost => ({
   getState: () => ({ vaults: [], current: null }),
   watch: () => NOTHING,
   switchTo: async () => undefined,
 })
 
-/** A window whose buttons do nothing. */
 const createMockWindowHost = (): WindowHost => ({
   getState: () => ({ isMaximized: false, isFullscreen: false }),
   watch: () => NOTHING,

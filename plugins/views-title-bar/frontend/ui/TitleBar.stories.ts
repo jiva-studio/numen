@@ -24,7 +24,6 @@ interface Knobs {
   onRunCommand: (command: string) => void
   canCreateVault: boolean
   onCreateVault: () => void
-  /** The width the window is drawn at. */
   width: string
 }
 
@@ -40,7 +39,6 @@ const SETTINGS = command('settings', { title: 'Open settings', icon: Settings })
 const THREE = [FILES, PLEX, separator(1), NEW_NOTE]
 const ALL = [FILES, PLEX, separator(1), NEW_NOTE, separator(2), SEARCH, SETTINGS]
 
-/** A view of the status slot: a label as wide as its text. */
 const createChip = (text: string): FunctionalComponent =>
   markRaw(() =>
     h('span', { 'data-chip': text, style: 'padding-inline: 8px; white-space: nowrap' }, text),

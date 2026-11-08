@@ -27,7 +27,6 @@ const createContext = () => {
   return { ctx, recorded, folders }
 }
 
-/** Activates the plugin and opens a files tab whose root folder has been read. */
 const openTab = async () => {
   const { ctx, recorded, folders } = createContext()
   activate(ctx)

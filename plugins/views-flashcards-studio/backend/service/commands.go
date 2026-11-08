@@ -51,10 +51,6 @@ func (b *Backend) Commands() (*command.Registry, error) {
 // errRowGone is a row the vault holds no file or folder at.
 var errRowGone = errors.New("no such file or folder")
 
-// getRowFolder is the folder a file made over a row of the file tree is filed in: the folder holding
-// the row where the row is a file of the vault, the row itself where the vault answers it as no file,
-// and the root of the vault where the command runs over no row. A row the vault does not hold is
-// errRowGone.
 func (b *Backend) getRowFolder(ctx context.Context, row string) (string, error) {
 	if row == "" {
 		return "", nil
@@ -74,8 +70,6 @@ func (b *Backend) getRowFolder(ctx context.Context, row string) (string, error) 
 	return "", nil
 }
 
-// newCreateRun makes the file under the title in the folder of the row it runs over, or at the root
-// of the vault the window shows, and answers it as the file to open.
 func (b *Backend) newCreateRun(
 	create func(context.Context, domain.Vault, cards.New) (cards.CreateNoteResult, error),
 ) command.Run {
@@ -97,7 +91,6 @@ func (b *Backend) newCreateRun(
 	}
 }
 
-// describeCreateError returns the reason a file was not created, in words for the user.
 func describeCreateError(code api.ErrorCode) string {
 	switch code {
 	case api.ErrorCodeAlreadyExists:

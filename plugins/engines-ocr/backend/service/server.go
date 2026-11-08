@@ -30,8 +30,6 @@ type recogniser interface {
 	Close() error
 }
 
-// newEngineOpener returns what opens the models of the configuration through the library, or the
-// mock where the host runs on mock models.
 func newEngineOpener(library *onnx.Library) engineFactory {
 	return func(ctx context.Context, cfg engine.Config) (recogniser, error) {
 		if os.Getenv(EnvMockML) == "true" {
@@ -54,10 +52,6 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 	return &engines{mu: sync.Mutex{}, cfg: cfg, factory: factory, engine: nil}
 }
 
-// updateConfig applies the settings received from the host. A resolution that is
-// not a positive number is ignored, as is a model the plugin does not provision.
-// The paths of a custom model are received only while the custom model is
-// selected, and are empty in every other case.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -99,8 +93,6 @@ func (e *engines) close() error {
 	return e.closeLocked()
 }
 
-// dropLocked closes the recogniser so the next page reopens it. A close failure
-// is written to standard error, the stream the host keeps for the plugin.
 func (e *engines) dropLocked() {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect engine state."
 	if err := e.closeLocked(); err != nil {
@@ -139,7 +131,6 @@ func Mount(s *server.Server) error {
 	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
 }
 
-// getConfig is the configuration the environment of the process names.
 func getConfig() engine.Config {
 	cfg := engine.Defaults()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
@@ -180,7 +171,6 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	return nil
 }
 
-// newCommands is the handlers the manifest declares.
 func newCommands(agentTools *Tools, h recognition.Host) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("app:file.createText", newRecogniseCommand(agentTools)); err != nil {
@@ -192,9 +182,6 @@ func newCommands(agentTools *Tools, h recognition.Host) (*command.Registry, erro
 	return commands, nil
 }
 
-// newRecogniseCommand starts the recognition of the file of the run in the background, as the tool
-// does, and answers once it is started. The task of the recognition shows how it ends. A file that is
-// not there fails the run before anything starts.
 func newRecogniseCommand(agentTools *Tools) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		if _, err := agentTools.recognitions.StatFile(ctx, "", req.Path); err != nil {

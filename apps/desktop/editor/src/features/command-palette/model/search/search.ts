@@ -109,13 +109,11 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  /** The entries of the menu of a result over its note. */
   readonly getMenu: (target: RunTarget) => readonly SlotItem[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
 
-/** The target the entries of the menu of a result run over: the note of the result. */
 const getNoteTarget = (path: string, title: string): RunTarget => ({
   path,
   title,
@@ -124,7 +122,6 @@ const getNoteTarget = (path: string, title: string): RunTarget => ({
   tab: '',
 })
 
-/** The entries of the menu of a passage of a note; a passage of a file that is no note has none. */
 const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] =>
   one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
 

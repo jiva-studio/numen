@@ -38,7 +38,6 @@ export interface TabMoverDeps {
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
-  /** The box of the pane that holds the tab; null while no drawn pane does. */
   readonly getPaneRect: (id: string) => PaneRect | null
 }
 

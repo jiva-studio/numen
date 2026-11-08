@@ -21,15 +21,11 @@ const WRITE_IDLE_MS = 800
 
 /** What the window hands one recording tab, beside the application and the path. */
 export interface TranscriptOptions {
-  /** The player the sound comes out of, which every recording of a window shares. */
   audioPlayer?: Player
-  /** How long the typing settles for before the words are written. */
   idleMs?: number
-  /** Whether this window can play a media type. */
   plays?: MediaTypeProbe
 }
 
-/** Request ordering: only the latest request may apply its result. */
 function createRequestGuard() {
   let latest = 0
   let isClosed = false

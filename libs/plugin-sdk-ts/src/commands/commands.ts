@@ -8,20 +8,12 @@ import type { Disposable } from '../types'
 // on, the file of a tab, the note of a search result or the note a plugin names. A run without
 // one, as from a bar, is over the file of the tab in front.
 export interface CommandTarget {
-  // The path of the file or folder; empty where there is none.
   readonly path: string
-  // What the target is called, such as the title of a note; empty where there is none.
   readonly title: string
   readonly isFolder: boolean
-  // The other paths selected together with the target, as in the file tree.
   readonly others: readonly string[]
-  // The id of the tab the command runs over, as in a tab menu; empty where there is none.
   readonly tab: string
-  // The type the vault files the note of the target as, which a place reads before it asks for the
-  // entries of its slot; empty or absent where the place has not read it or the target is no note.
   readonly noteType?: string
-  // The frontmatter of the note of the target by its keys, read with its note type, which conditions
-  // read as target.properties; absent where the place has not read it or the target is no note.
   readonly properties?: Readonly<Record<string, unknown>>
 }
 
@@ -30,8 +22,6 @@ export interface CommandTarget {
 export interface CommandItem {
   readonly id: string
   readonly title: string
-  // The plugin whose handler of a shared command offers the item, where the handlers offer items of
-  // their own. A place draws the items of one group together and a separator between two groups.
   readonly group?: string
 }
 

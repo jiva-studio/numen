@@ -11,16 +11,11 @@ import {
 import type { Command, CommandTarget } from '@/features/command-palette'
 
 interface CommandItemsDeps {
-  /** The commands of the window that may offer items. */
   readonly getAppCommands: () => readonly Command[]
   readonly pluginHost: Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
-  /** The target of the tab in front, which a command of the window runs over by default. */
   readonly getTarget: () => CommandTarget
-  /** Runs a command of the window with the argument picked. */
   readonly runApp: (id: string, target: CommandTarget, argument: string) => Promise<void>
-  /** Runs a plugin command with the argument picked. */
   readonly runPlugin: (id: string, target: RunTarget, argument: string) => Promise<void>
-  /** The target with the note type and properties of its file, which the handlers of a shared command read. */
   readonly readTarget?: (target: RunTarget) => Promise<RunTarget>
 }
 

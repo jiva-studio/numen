@@ -58,7 +58,6 @@ export interface CommandsDepsOptions {
   reload: () => void
   tabsHold?: TabsHold
   reached: Notes
-  /** The adapter that writes the row chosen in the step of the command of a setting. */
   settingPalette?: {
     getCommands: () => readonly Command[]
     choose: (command: string, item: string) => Promise<void>
@@ -69,27 +68,20 @@ export interface CommandsDepsOptions {
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
     getCommittedSetting?: (path: readonly string[]) => unknown
   }
-  /** Shows a note in the plugin that displays notes. */
   travel: (path: string) => Promise<void> | void
-  /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  /** The slots of the window, of which the palette draws the menu of a search result. */
   slots?: SlotHost
-  /** The commands of the window made as it runs, such as those over a tab. */
   getAppCommands?: () => readonly Command[]
-  /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
 }
 
-/** The menu of a search result: the entries of its slot over the note of the result. */
 const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
   getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
 })
 
-/** What a chosen result is over, replacing the tab and the note of the window. */
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   tab: '',
   kind: null,
@@ -100,7 +92,6 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
-/** The commands the palette lists beside its own table, as the window and its plugins make them. */
 const listExtraCommands = (
   options: CommandsDepsOptions,
   pluginEntries: readonly Command[],
@@ -141,10 +132,6 @@ export function createPaletteItems(
   })
 }
 
-/**
- * Runs the invocation and settles when it has run. An error the run would write is not written: the
- * run rejects with it, and the caller that awaits the run shows it.
- */
 async function runInvocationToEnd(invocation: CommandInvocation, deps: CommandDeps): Promise<void> {
   const errors: string[] = []
   const writeMessage: MessageWriter = (text, severity) => {
@@ -220,7 +207,6 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 }
 
-/** The palette of the commands, which lists the extra commands beside its own table. */
 function useWindowCommandPalette(
   options: CommandsDepsOptions,
   lists: PaletteLists,

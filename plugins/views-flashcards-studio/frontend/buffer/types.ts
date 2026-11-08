@@ -32,7 +32,6 @@ export interface OpenNote {
   readonly body: string
   readonly state: State
   readonly error: NoteErrorCode | null
-  /** A read of the file returned its body. Until then the tab takes no edit. */
   readonly isRead: boolean
 }
 

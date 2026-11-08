@@ -18,23 +18,16 @@ var (
 // Handler is the plugin's handler of a shared command of libs/protocol/commands.json. The code of the
 // plugin registers it under the full id of the command.
 type Handler struct {
-	// Command is the full id of the shared command, such as app:file.createText.
 	Command string
-	// Title is what a person reads the handler as.
-	Title string
-	// When is the condition over which targets the handler handles the command; empty is every target.
-	When string
+	Title   string
+	When    string
 }
 
 // Trigger runs the plugin's own handler of a shared command over the file of an event.
 type Trigger struct {
-	// On is an event of libs/protocol/events.json, such as file.added.
-	On string
-	// Command is the full id of the shared command whose handler of the plugin runs.
+	On      string
 	Command string
-	// When is the condition over the file and the settings under which the trigger runs; empty is
-	// every file.
-	When string
+	When    string
 }
 
 // GetHandler returns the plugin's handler of the shared command, and false where it has none.
@@ -47,8 +40,6 @@ func (m Manifest) GetHandler(command string) (Handler, bool) {
 	return Handler{}, false
 }
 
-// listHandlerIssues checks that each handler handles a shared command once, with a title and a
-// condition that can be read, from a part of the plugin that runs it.
 func (m Manifest) listHandlerIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -73,8 +64,6 @@ func (m Manifest) listHandlerIssues() []error {
 	return issues
 }
 
-// listTriggerIssues checks that each trigger runs on an event a handler of the plugin, under a
-// condition that can be read.
 func (m Manifest) listTriggerIssues() []error {
 	var issues []error
 	for _, declared := range m.Contributes.Triggers {

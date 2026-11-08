@@ -282,7 +282,6 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 	}
 }
 
-// runHandler runs the handler of the shared command the plugin registers under the id.
 func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
 	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.queue})
@@ -292,8 +291,6 @@ func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, e
 	return commands.RunCommand(t.Context(), req)
 }
 
-// runHandlerWithin runs the handler of the shared command and fails the test when it does not answer
-// within workDeadline.
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
 	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.finishing})

@@ -14,9 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// getPolicy is the policy a page of the window is served under: media and frames from the loopback
-// socket, and frames from the origins the enabled plugins declare, read at each request so a plugin
-// switched off frames nothing from the next page on.
 func (s *Services) getPolicy(played []string) string {
 	frames := append([]string(nil), played...)
 	if s.PluginServices != nil {
@@ -25,8 +22,6 @@ func (s *Services) getPolicy(played []string) string {
 	return csp.Sources{Media: played, Frames: frames}.Policy()
 }
 
-// pluginPagePolicy is the policy a plugin's page on the loopback socket is served under: its own
-// scripts, styles and pictures, and frames from the origins the plugin declares alone.
 func pluginPagePolicy(frames []string) string {
 	return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
 		"frame-src " + strings.Join(append([]string{"'self'"}, frames...), " ") +
@@ -53,14 +48,6 @@ func (l *Loopback) PluginFileAddress(vault domain.Vault, address file.Address, s
 		"?size=" + strconv.FormatInt(size, 10)
 }
 
-// servePluginFile serves a file of a plugin's store of a vault: rest is
-// <vault id>/<plugin id>/<path>, each escaped.
-//
-// The window loads from the toolkit's own scheme, and a browser sends no
-// Referer from a page with a non-http scheme; a video site that checks the
-// Referer rejects playback in a frame of such a page. A page served here has an
-// http origin, so the Referer is sent, and it frames only the origins its
-// plugin declares.
 func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest string) {
 	segments := strings.SplitN(rest, "/", 3)
 	if len(segments) != 3 {
@@ -111,7 +98,6 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 	http.ServeContent(w, r, path, time.Time{}, opened.Body)
 }
 
-// setPluginServices names the plugins whose frame origins the files of their stores are served with.
 func (l *Loopback) setPluginServices(plugins PluginServices) {
 	if l != nil && plugins != nil {
 		l.plugins.Store(&plugins)

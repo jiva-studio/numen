@@ -137,7 +137,6 @@ func getProofreadCommand() pluginport.PluginCommandEntry {
 	}}
 }
 
-// liveOfKinds holds over the live version when it is of one of the kinds.
 func liveOfKinds(kinds ...string) string {
 	return "version.isLive && version.kind in ['" + strings.Join(kinds, "', '") + "']"
 }

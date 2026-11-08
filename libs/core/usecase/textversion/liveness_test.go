@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// reportFilesChanged reports the paths as changed files and returns the paths the listener received.
 func (s *scene) reportFilesChanged(t *testing.T, paths ...string) []string {
 	t.Helper()
 	if err := s.versions.ReportFilesChanged(t.Context(), s.vault, paths); err != nil {

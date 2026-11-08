@@ -18,7 +18,6 @@ const isDisposable = (value: unknown): value is Disposable =>
   value !== null &&
   typeof (value as Partial<Disposable>).dispose === 'function'
 
-/** Whether a proxy may answer another value for the property: it is neither frozen nor fixed. */
 const isReplaceable = (target: object, key: string | symbol): boolean => {
   const descriptor = Reflect.getOwnPropertyDescriptor(target, key)
   return descriptor === undefined || descriptor.configurable || descriptor.writable === true
@@ -29,11 +28,9 @@ type Call = (...args: unknown[]) => unknown
 /** What the start keeps, and how it treats what it is handed. */
 interface Keeper {
   readonly isCancelled: () => boolean
-  /** Keeps a disposable the start was handed, or disposes it once the start is cancelled. */
   readonly keep: (value: unknown) => void
 }
 
-/** A function of the context or of a service whose disposable results are kept. */
 const wrapCall =
   (call: Call, owner: object, keeper: Keeper): Call =>
   (...args) => {
@@ -42,7 +39,6 @@ const wrapCall =
     return value
   }
 
-/** A service of the context, whose functions hand their disposables to the keeper. */
 function wrapService(service: object, keeper: Keeper): object {
   return new Proxy(service, {
     get(target, key) {
@@ -53,7 +49,6 @@ function wrapService(service: object, keeper: Keeper): object {
   })
 }
 
-/** The subscriptions of the context, whose pushed disposables are kept. */
 function wrapSubscriptions(subscriptions: Disposable[], keeper: Keeper): Disposable[] {
   return new Proxy(subscriptions, {
     get(target, key) {
@@ -69,11 +64,8 @@ function wrapSubscriptions(subscriptions: Disposable[], keeper: Keeper): Disposa
 /** The context of a plugin as one start hands it over, and the end of that start either way. */
 export interface StartScope {
   readonly wrapContext: (context: PluginContext) => PluginContext
-  /** Whether `cancel` has run and the start has not ended before it. */
   readonly isCancelled: () => boolean
-  /** Disposes what the start was handed and pushed; from then on each one is disposed as it comes. */
   readonly cancel: () => void
-  /** Ends the start: what it registered stays with the plugin, and nothing is kept any more. */
   readonly end: () => void
 }
 

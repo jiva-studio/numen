@@ -10,24 +10,15 @@ export type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
 // BackgroundTask is one piece of work the window lists.
 export interface BackgroundTask {
   readonly id: string
-  // What is being done, in the words it is shown by.
   readonly label: string
-  // What it is being done to; empty for nothing in particular.
   readonly about: string
   readonly state: BackgroundTaskState
-  // How much of the total is done; both 0 where there is no total.
   readonly done: number
   readonly total: number
-  // What the total counts, such as `files`; empty for items.
   readonly counting: string
-  // Why the task failed; empty while it has not.
   readonly error: string
-  // Whether `cancel` stops it.
   readonly canCancel: boolean
-  // Whether `retry` starts it again.
   readonly canRetry: boolean
-  // The words of the link that opens the settings of the plugin a failure names, and that plugin;
-  // empty where there is no link.
   readonly actionLabel: string
   readonly actionPluginId: string
 }

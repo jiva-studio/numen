@@ -182,7 +182,6 @@ const withoutCardModel: DeckProblem = {
   text: 'a card under no card model',
 }
 
-/** The button that adds a section, found by its text. */
 const findAddSection = (window: ReturnType<typeof mount>) =>
   window.findAll('button').find((one) => one.text() === 'Add a section')
 

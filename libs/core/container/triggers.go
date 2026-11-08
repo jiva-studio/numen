@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 )
 
-// openTriggers is the triggers of the enabled plugins over the files of a vault, which read the
-// settings as get reads them; nil where the installation runs no plugins.
 func (c Config) openTriggers(get *settings.Get) *trigger.Triggers {
 	if c.PluginHost == nil || c.SafeMode || get == nil {
 		return nil
@@ -34,12 +32,6 @@ func (c Config) openTriggers(get *settings.Get) *trigger.Triggers {
 // configAppOwner is the owner of the settings of the application in the settings file and in config.
 const configAppOwner = "app"
 
-// createTriggerConfig is the settings as when conditions read them under config, built as the window builds
-// it: each setting at config.app.<key> or config.<plugin id split at dots>.<key>, the key split at
-// dots, holding the value the settings file holds for its owner and key, or its declared default.
-// The file holds a key whole or split at dots into nested objects, as the sections of the app; a
-// member of the file that is no object, as the version `v`, holds no settings. A declared default
-// that is no JSON leaves the setting out.
 func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
 	var file map[string]any
 	if err := json.Unmarshal([]byte(settingsFile), &file); err != nil {
@@ -62,8 +54,6 @@ func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, pl
 	return config, nil
 }
 
-// findSettingValue returns the value of a key in the member of an owner, which holds none unless it
-// is an object: under the whole key, or through nested objects, one for each dot.
 func findSettingValue(owner any, key string) (any, bool) {
 	if values, isObject := owner.(map[string]any); isObject {
 		if value, found := values[key]; found {
@@ -85,7 +75,6 @@ func findSettingValue(owner any, key string) (any, bool) {
 	return current, true
 }
 
-// setConfigAt puts the value at the path of nested maps, making the maps on the way.
 func setConfigAt(config map[string]any, path []string, value any) {
 	level := config
 	for _, part := range path[:len(path)-1] {

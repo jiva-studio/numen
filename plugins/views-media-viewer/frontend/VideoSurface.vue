@@ -9,7 +9,6 @@ import type { Player } from './model/player'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   readonly player: Player
-  /** Whether this tab's video is the one the player holds. */
   readonly isShown: boolean
 }>()
 

@@ -30,7 +30,6 @@ func writeVersion(v domain.TextVersion) *v1.TextVersion {
 	}
 }
 
-// writeSourceProperty is a version's source property as the protocol carries it, and nil for none.
 func writeSourceProperty(p domain.TextSourceProperty) *v1.TextSourceProperty {
 	if p.Key == "" {
 		return nil

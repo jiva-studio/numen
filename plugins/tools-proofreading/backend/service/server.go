@@ -298,7 +298,6 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	return nil
 }
 
-// newCommands is the commands and the handlers the manifest declares.
 func newCommands(run *Proofreading, h Host) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {

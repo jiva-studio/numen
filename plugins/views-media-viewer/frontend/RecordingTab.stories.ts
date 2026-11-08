@@ -39,7 +39,6 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
   return [...cues, { text, from, to: from + 2_400 + text.length * 62 }]
 }, [])
 
-/** A recording that answers with these words, and whether a plugin creates its text. */
 const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordings => ({
   getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg', pageUrl: '' }),
   readTranscript: async () => cues,
@@ -55,7 +54,6 @@ const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordi
   },
 })
 
-/** The window's one player, standing at a moment of the recording and making no sound. */
 const createPlayer = (isPlaying: boolean): Player => ({
   url: ref(MEDIA),
   position: ref(NOW),
@@ -79,7 +77,6 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** The tab filling the pane a window gives it. */
 const render = (cues: readonly Cue[], canCreateText: boolean, isPlaying: boolean) => () => ({
   components: { RecordingTab },
   setup: () => ({

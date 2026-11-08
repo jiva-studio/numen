@@ -26,8 +26,7 @@ type Versions struct {
 
 	mu       sync.Mutex
 	listener textport.VersionListener
-	// lives is the live version last found for each file with versions; empty for none live.
-	lives map[liveKey]domain.TextVersionID
+	lives    map[liveKey]domain.TextVersionID
 }
 
 // NewVersions returns the versions use case. It takes the version repositories,
@@ -61,9 +60,6 @@ func (u *Versions) SetListener(listener textport.VersionListener) {
 	u.listener = listener
 }
 
-// reportChanged notifies the listener that the versions of a file changed, and records the live
-// version the file has now. A live version that cannot be found is not recorded, so the next change of
-// the file is reported.
 func (u *Versions) reportChanged(ctx context.Context, v domain.Vault, path string) {
 	if _, err := u.updateLive(ctx, v, path); err != nil {
 		u.mu.Lock()
@@ -73,7 +69,6 @@ func (u *Versions) reportChanged(ctx context.Context, v domain.Vault, path strin
 	u.notifyListener(v, path)
 }
 
-// notifyListener tells the listener that the versions of a file changed.
 func (u *Versions) notifyListener(v domain.Vault, path string) {
 	u.mu.Lock()
 	listener := u.listener
@@ -110,8 +105,6 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 	})
 }
 
-// saveVersion checks a version against its file and the other versions of its
-// path, and records it.
 func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.TextVersion, error) {
 	if err := checkVersionFields(version); err != nil {
 		return domain.TextVersion{}, err
@@ -147,7 +140,6 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	return version, nil
 }
 
-// checkVersionFields reports a version that lacks a path, key, kind or file.
 func checkVersionFields(version domain.TextVersion) error {
 	if version.Path == "" || version.Key == "" || version.Kind == "" || version.File == "" {
 		return fmt.Errorf("%w: path %q, key %q, kind %q, file %q",
@@ -156,8 +148,6 @@ func checkVersionFields(version domain.TextVersion) error {
 	return nil
 }
 
-// checkVersionSource reports a source that is the version itself or is no version of the path, and
-// a property root given with a source or a source hash.
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
 	if version.IsFromProperty() && (version.Source != "" || version.InputHash != "") {
 		return fmt.Errorf("%w: a version made from the property %s of %s has another source",
@@ -207,9 +197,6 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, conte
 	return listing, nil
 }
 
-// findLive is the live version among a file's versions: the newest one with a
-// valid chain whose file still has the hash it was recorded with. The note's
-// properties are read only when a version was made from one.
 func (u *Versions) findLive(
 	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
 ) (domain.TextVersion, bool, error) {

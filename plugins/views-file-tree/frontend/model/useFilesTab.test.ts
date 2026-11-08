@@ -40,14 +40,11 @@ const windowCommands = {
   getEntryIcon: () => ({}),
 }
 
-/** What a run of a command records: its id, the paths it is over and the title of the target. */
 const describeRun = (command: string, target: CommandTarget): string =>
   `runs ${command} ${[target.path, ...target.others].join(' ')} ${target.title}`
 
-/** Waits for the vault requests issued by a gesture to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A tab of that vault, recording everything it requested from the window. */
 const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const isDone: string[] = []
   const request: string[] = []

@@ -8,12 +8,10 @@ import type { SlotHost, SlotItem, SlotPlace } from '../slots/slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 
-/** Calls every handler of the set with the value. */
 function notifyAll<T>(handlers: Set<(value: T) => void>, value: T): void {
   for (const handler of handlers) handler(value)
 }
 
-/** Adds the handler, calls it with the value at once, and takes it out on dispose. */
 function watchWith<T>(
   handlers: Set<(value: T) => void>,
   handler: (value: T) => void,
@@ -150,7 +148,6 @@ export function createMockWindowHost(
 // MockTaskAction is one call on a background task a test reads back.
 export interface MockTaskAction {
   readonly action: 'cancel' | 'retry' | 'dismiss' | 'openSettings'
-  // The id of the task, or of the plugin for openSettings.
   readonly id: string
 }
 

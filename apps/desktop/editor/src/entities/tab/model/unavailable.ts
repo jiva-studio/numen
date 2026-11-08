@@ -12,16 +12,9 @@ export type UnavailableLookup =
 
 /** What a placeholder asks of the window: the catalog it reads and the changes it makes. */
 export interface UnavailableServices {
-  /** Names the plugin that provides the kind; without it every placeholder is generic. */
   readonly catalog?: PluginCatalog | undefined
-  /** Switches the plugin on; the plugin registers its kinds again and its tabs return. */
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
-  /**
-   * Whether the start of the plugin is going on; reactive. A tab of a kind its plugin has not
-   * registered yet waits while it is, until the plugin has started or failed.
-   */
   readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
-  /** Shows the plugin where the person installs or inspects it. */
   readonly openPlugin?: ((pluginId: string | undefined) => void) | undefined
 }
 
@@ -46,16 +39,13 @@ const placeholders = new WeakSet<AnyTabKind>()
 /** Whether a kind is the placeholder of a kind that is not registered. */
 export const isUnavailableKind = (kind: AnyTabKind): boolean => placeholders.has(kind)
 
-/** The last segment of a path, which names the tab of a file. */
 const getFileName = (path: string): string => path.split('/').pop() ?? path
 
-/** The title the catalog declares for the kind, or an empty text. */
 const getDeclaredTitle = (lookup: UnavailableLookup, kind: string): string =>
   lookup.status === 'found'
     ? (lookup.entry.contributes?.tabKinds.find((one) => one.kind === kind)?.title ?? '')
     : ''
 
-/** Starts the question of which plugin provides the kind and keeps the answer in the returned ref. */
 const startLookup = (kind: string, catalog: PluginCatalog | undefined) => {
   const lookup = shallowRef<UnavailableLookup>(
     catalog === undefined ? { status: 'missing' } : { status: 'pending' },

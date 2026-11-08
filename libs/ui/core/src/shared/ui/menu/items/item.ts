@@ -17,10 +17,6 @@ export interface MenuItem {
   readonly isDisabled?: boolean
   readonly group?: string
   readonly children?: readonly MenuItem[]
-  /**
-   * A component the row holds in place of the text. The text stays the name the row is
-   * announced and found by.
-   */
   readonly component?: Component
 }
 

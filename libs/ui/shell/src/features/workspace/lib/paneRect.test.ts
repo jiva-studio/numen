@@ -8,7 +8,6 @@ const WORKSPACE: Workspace = {
   focus: 'left',
 }
 
-/** Draws a pane element of that id whose box is the one given. */
 const drawPane = (id: string, box: { x: number; y: number; width: number; height: number }) => {
   const element = document.createElement('div')
   element.setAttribute('data-workspace-pane', id)

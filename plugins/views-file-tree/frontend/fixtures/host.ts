@@ -24,7 +24,6 @@ const CHAT = 'org.example.chat'
 /** The icon a command or an entry is drawn with, one made-up component for each. */
 const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
-/** A component a plugin draws itself in a row of the menu. */
 const Sketch = () => h('em', 'sketch')
 
 const command = (pluginId: string, id: string, title: string, icon?: unknown): SlotCommand => ({
@@ -89,9 +88,7 @@ export const renderDeps = {
 }
 
 export interface HostOptions {
-  /** The tabs linked to each files tab, by the identity of the files tab. */
   readonly linked?: Readonly<Record<string, boolean>>
-  /** What each folder holds. */
   readonly folders?: Readonly<Record<string, readonly VaultEntry[]>>
 }
 

@@ -178,7 +178,6 @@ func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry Entry, path 
 	return u.checkPath(ctx, v, entry.Command, Call{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
 }
 
-// checkCall reports the first way the call does not meet the declaration.
 func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	if err := u.checkPath(ctx, v, declared, call); err != nil {
 		return err
@@ -186,9 +185,6 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	return checkArguments(declared, call)
 }
 
-// checkPath reports whether the condition of the command holds over the path of the call. A condition
-// that does not name the target, or depends on what the core does not know (the window, the settings,
-// whether a path of no known type is a folder), lets the call through.
 func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	condition, err := pluginport.ParseCondition(declared.When)
 	if err != nil {
@@ -207,7 +203,6 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	return nil
 }
 
-// checkArguments reports the first argument that is undeclared, of the wrong type or missing.
 func checkArguments(declared Command, call Call) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
 		argument, isDeclared := declared.GetArgument(name)
@@ -238,7 +233,6 @@ func isOfType(argumentType, value string) bool {
 	return true
 }
 
-// normalizeArguments writes a boolean as true or false, however it was spelled.
 func normalizeArguments(declared Command, arguments map[string]string) map[string]string {
 	normalized := make(map[string]string, len(arguments))
 	for name, value := range arguments {
@@ -251,7 +245,6 @@ func normalizeArguments(declared Command, arguments map[string]string) map[strin
 	return normalized
 }
 
-// getContentType is the type of the file at the path, unknown where there is no table.
 func (u Run) getContentType(path string) domain.ContentType {
 	if u.types == nil {
 		return domain.UnknownContentType
@@ -259,8 +252,6 @@ func (u Run) getContentType(path string) domain.ContentType {
 	return u.types.GetContentType(path)
 }
 
-// readNote is the type and the frontmatter of the note at the path where the condition names either,
-// and none where it does not, where the vault has no readers, or where the note cannot be read.
 func (u Run) readNote(
 	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string,
 ) (domain.NoteType, map[string]any) {

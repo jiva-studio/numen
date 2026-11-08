@@ -33,7 +33,6 @@ type ListItems = (
   path: string,
 ) => Promise<readonly CommandItem[]>
 
-/** The items the command offers over the file, as the core lists them in a request of its own. */
 const listItemsOfOne: ListItems = async (command, path) => {
   const [answer] = await listDeclaredItemLists(path, [
     { pluginId: command.pluginId, command: command.id },
@@ -43,7 +42,6 @@ const listItemsOfOne: ListItems = async (command, path) => {
   return answer.result.value
 }
 
-/** What the palette files a command a plugin declares under: the plugin and the command's own id. */
 const getPluginCommandId = (pluginId: string, commandId: string): string =>
   formatCommandId(pluginId, commandId)
 
@@ -93,7 +91,6 @@ export function createDeclaredPaletteCommands(
   })
 }
 
-/** Whether two lists the core answered hold the same entries in the same order. */
 const isSameList = (
   current: readonly unknown[] | undefined,
   received: readonly unknown[],
@@ -104,11 +101,8 @@ export interface DeclaredCommandsDeps {
   readonly run?: typeof runDeclaredCommand
   readonly isListed?: (id: string) => boolean
   readonly hasBackend?: (pluginId: string) => boolean
-  /** The settings by their dotted keys, which the when conditions read as config. */
   readonly getConfig?: () => WhenSettings
-  /** The items a command offers over a file. */
   readonly listItems?: ListItems
-  /** Called when the commands or the handlers the core lists change. */
   readonly onCommandsChanged?: () => void
 }
 

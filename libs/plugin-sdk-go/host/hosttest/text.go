@@ -131,8 +131,6 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
-// isValidPut is whether a put names its path, key, kind and file, has at most one root, and names
-// as its Source another version of the file; the caller holds the lock.
 func (w *textWorld) isValidPut(params host.TextPut, version domain.TextVersion) bool {
 	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
 		return false
@@ -259,7 +257,6 @@ func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 }
 
-// readProperties is the frontmatter of the file at the path, as File put it.
 func (w *textWorld) readProperties(path string) map[string]any {
 	return notesmarkdown.Parse(notesdomain.FileStat{Path: path}, w.files[path]).Frontmatter
 }

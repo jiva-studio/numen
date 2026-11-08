@@ -31,10 +31,6 @@ const MANIFESTS: Record<string, unknown> = {
   [HARBOR]: { id: HARBOR, name: 'Harbor', version: '1.0.0', frontend: {} },
 }
 
-/**
- * A loader over the invented plugins; `activations` holds the milliseconds each activation takes,
- * and a plugin in `broken` throws from its activation. `disabled` plugins are off in the settings.
- */
 const createLoader = (
   activations: Record<string, number> = {},
   options: { broken?: readonly string[]; disabled?: readonly string[] } = {},

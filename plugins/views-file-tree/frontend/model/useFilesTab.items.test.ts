@@ -38,7 +38,6 @@ const entry = (path: string): Entry => ({
   type: 'note',
 })
 
-/** Waits for the choices the tab choiceRequests for. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {

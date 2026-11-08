@@ -71,7 +71,6 @@ type Clock interface {
 
 // Host is what the plugin works through the host.
 type Host struct {
-	// PluginID is the identity of the plugin, which the addresses of its files name.
 	PluginID string
 	Vault    host.Vault
 	Store    host.Store
@@ -151,7 +150,6 @@ func (l *Links) Read(ctx context.Context, path string) (Link, error) {
 	return readLink(ctx, l.host.Vault, path)
 }
 
-// readLink is the link note at a path of the vault.
 func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) {
 	if !strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension) {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
@@ -181,7 +179,6 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 	}
 }
 
-// getText is the value of a frontmatter key that holds text, and empty for any other.
 func getText(value any) string {
 	text, isText := value.(string)
 	if !isText {
@@ -190,7 +187,6 @@ func getText(value any) string {
 	return text
 }
 
-// getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
 // Create creates the link note of an address in a folder of a vault, named by the address. An empty
@@ -266,7 +262,6 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	return found, nil
 }
 
-// getVaultByID returns the vault of the identity, or the vault the host shows for an empty one.
 func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
 	if vault == "" {
 		return l.host.Vault
@@ -274,8 +269,6 @@ func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
 	return l.host.Vault.With(vault)
 }
 
-// getStoreByID returns the plugin's folder in the vault of the identity, or in the vault the host shows
-// for an empty one.
 func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
 	if vault == "" {
 		return l.host.Store
@@ -283,12 +276,10 @@ func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
 	return l.host.Store.With(vault)
 }
 
-// getAddress is the plugin:// address of a file of the plugin's folder.
 func (l *Links) getAddress(name string) string {
 	return pluginScheme + l.host.PluginID + "/" + name
 }
 
-// setAddress writes the address under the key of the note's frontmatter, empty where value is empty.
 func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {
 	vault := l.getVault(link)
 	raw, stat, err := vault.Read(ctx, link.Path)
@@ -310,13 +301,10 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 	return err
 }
 
-// getVault is the vault of the link.
 func (l *Links) getVault(link Link) host.Vault { return l.getVaultByID(link.Vault) }
 
-// getStore is the plugin's folder in the vault of the link.
 func (l *Links) getStore(link Link) host.Store { return l.getStoreByID(link.Vault) }
 
-// getTexts is the text versions of the vault of the link.
 func (l *Links) getTexts(link Link) host.Texts {
 	if link.Vault == "" {
 		return l.host.Texts
@@ -324,9 +312,6 @@ func (l *Links) getTexts(link Link) host.Texts {
 	return l.host.Texts.With(link.Vault)
 }
 
-// claim reserves the named work on a key of a link's vault for this run and
-// returns false when another run holds it. The same address in another vault is
-// separate work.
 func (l *Links) claim(work string, link Link, key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -344,8 +329,6 @@ func (l *Links) release(work string, link Link, key string) {
 	delete(l.running, getWorkName(work, link, key))
 }
 
-// getWorkName returns the name of the work on a key in the vault of a
-// link.
 func getWorkName(work string, link Link, key string) string {
 	return work + "\x00" + string(link.Vault) + "\x00" + key
 }
@@ -377,9 +360,6 @@ func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) 
 	})
 }
 
-// reportBackgroundError writes the failure of background work on a link to the standard error
-// stream of the plugin process. The failure is also shown as the task of the work. A work ended by
-// Close, and a work another run has, are not failures.
 func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
 	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
 		return
@@ -424,7 +404,6 @@ func (l *Links) StartTextFetch(ctx context.Context, link Link) error {
 	return nil
 }
 
-// beginTextFetch claims the text of a link for one run and shows its task.
 func (l *Links) beginTextFetch(ctx context.Context, link Link) (host.Task, error) {
 	if !l.claim("text", link, link.Key) {
 		return host.Task{}, ErrBeingFetched
@@ -437,7 +416,6 @@ func (l *Links) beginTextFetch(ctx context.Context, link Link) (host.Task, error
 	return task, nil
 }
 
-// endTextFetch fetches the text of a claimed link, ends its task and releases the claim.
 func (l *Links) endTextFetch(ctx context.Context, link Link, task host.Task) error {
 	defer l.release("text", link, link.Key)
 	err := l.fetchText(ctx, folder{store: l.getStore(link)}, link)
@@ -475,7 +453,6 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	return l.putVersion(ctx, link, rec.Kind)
 }
 
-// putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
 		Path: link.Path, Key: link.Key, SourceProperty: domain.TextSourceProperty{Key: urlKey, Value: link.URL},
@@ -516,8 +493,6 @@ func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Me
 	return 0, true, nil
 }
 
-// beginCopy claims the copy of a link for one run and shows its task. Where the media asked for are
-// already stored it releases the claim and returns their size and no task.
 func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
 	if !l.claim("copy", link, link.Key) {
 		return nil, 0, ErrBeingFetched
@@ -529,8 +504,6 @@ func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) 
 	return task, size, err
 }
 
-// prepareCopy points the note at a stored copy of the media asked for, or shows the task of the
-// copy. A stored copy of the other media is kept until the new copy is stored.
 func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
@@ -557,7 +530,6 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media
 	return &task, 0, nil
 }
 
-// endCopy copies the media of a claimed link, ends its task and releases the claim.
 func (l *Links) endCopy(ctx context.Context, link Link, media download.Media, task host.Task) (int64, error) {
 	defer l.release("copy", link, link.Key)
 	size, err := l.copy(ctx, l.fetcher(), l.settings(), link, media, task)
@@ -620,7 +592,6 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	return into.byteCount, folder{store: store}.deleteOtherCopies(ctx, link.Key, name)
 }
 
-// recordCopy writes down the file the copy of a link is kept in, and what media it holds.
 func (l *Links) recordCopy(ctx context.Context, link Link, name string, media download.Media) error {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
@@ -687,7 +658,6 @@ func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
 	return "", nil
 }
 
-// reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
@@ -695,7 +665,6 @@ func (l *Links) reportTask(ctx context.Context, task host.Task) {
 	}
 }
 
-// endTask takes a task out of the list, or leaves it shown with the error that ended the work.
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
@@ -751,7 +720,6 @@ func (w *storeWriter) send(chunk []byte) error {
 	return nil
 }
 
-// newLinkIn is the link note at a path of the vault, carrying the identity of the vault.
 func newLinkIn(ctx context.Context, vault host.Vault, path string, parsed address.URL, raw []byte) (Link, error) {
 	v, err := vault.GetVault(ctx)
 	if err != nil {

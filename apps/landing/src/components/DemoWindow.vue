@@ -1187,7 +1187,6 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.renameTreeEntry]: PenLine,
 }
 
-/** A command of the menu of a row, drawn by its title and the icon the demo keeps for it. */
 const createMenuCommand = (command: string, title: string): SlotCommand => ({
   kind: 'command',
   key: `demo/command/${command}`,
@@ -1318,7 +1317,6 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
   return result
 }
 
-/** The entries of the menu of a row of the tree, as the slot registry of a window resolves them. */
 function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
   const entry = fileTree.getEntryAt(target.path)
   const removeItem = createMenuCommand(
@@ -1359,7 +1357,6 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
   ]
 }
 
-/** Runs a command of the menu of a row over the row and the others selected with it. */
 async function runMenuCommand(command: string, target: RowTarget): Promise<void> {
   const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')

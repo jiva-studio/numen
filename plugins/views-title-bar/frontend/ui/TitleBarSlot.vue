@@ -12,15 +12,11 @@ import TitleBarMenuButton from './TitleBarMenuButton.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The name of the slot drawn. */
   name: string
   entries: readonly SlotItem[]
-  /** The fit key of an entry, which the bar measures and hides it by. */
   getKey: (entry: SlotItem) => string
-  /** The fit keys of the entries the bar does not draw. */
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
-  /** The items a command lists. */
   listItems: (command: string) => Promise<readonly CommandItem[]>
 }>()
 

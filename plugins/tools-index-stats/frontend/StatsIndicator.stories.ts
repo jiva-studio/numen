@@ -60,14 +60,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The sum of the colour channels, 0 for black and 765 for white; transparent reads as 0 with alpha 0. */
 const getShade = (colour: string): { shade: number; alpha: number } => {
   const channels = (colour.match(/[\d.]+/g) ?? []).map(Number)
   const [red = 0, green = 0, blue = 0, alpha = 1] = channels
   return { shade: red + green + blue, alpha }
 }
 
-/** Opens the popover and checks that it is inside the window, below the bar, on a solid ground. */
 const openAndMeasure: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
@@ -127,11 +125,9 @@ export const Embedded: Story = {
   },
 }
 
-/** The mark of the item, which is what pulses. */
 const getIcon = (canvasElement: HTMLElement): HTMLElement =>
   canvasElement.querySelector('.index-stats__icon') as HTMLElement
 
-/** Checks the item while chunks wait: the vectors alone, a green mark and a pulse that runs. */
 const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
@@ -145,7 +141,6 @@ const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(getComputedStyle(label).animationName).toBe('none')
 }
 
-/** Checks the item once the queue is empty: the mark is still and in the colour of the bar. */
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '13,100 vectors' })

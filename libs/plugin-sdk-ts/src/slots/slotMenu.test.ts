@@ -221,7 +221,6 @@ describe('the icon of a row', () => {
   })
 })
 
-/** The handlers of a read, each a mock, with the events that cancel it. */
 const createHandlers = () => ({
   onChange: vi.fn(),
   onShow: vi.fn(),
@@ -230,7 +229,6 @@ const createHandlers = () => ({
   events: new EventTarget(),
 })
 
-/** A keydown event of the key, as a page receives it. */
 const createKeyEvent = (key: string): Event => Object.assign(new Event('keydown'), { key })
 
 describe('readCommandItemLists', () => {

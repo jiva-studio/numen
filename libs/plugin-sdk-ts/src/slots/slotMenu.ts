@@ -16,7 +16,6 @@ export type CommandItemLists = ReadonlyMap<SlotEntryKey, readonly CommandItem[] 
 
 // SlotMenuWords is the text of the rows a place writes itself.
 export interface SlotMenuWords {
-  // The row of a submenu whose items are being read.
   readonly loadingText: string
 }
 
@@ -47,7 +46,6 @@ interface MenuParts {
   readonly icons: Map<string, unknown>
 }
 
-/** The row of a command with items, or null where the command is hidden. */
 function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): MenuItem | null {
   const list = parts.lists.get(entry.key)
   const row = { id: entry.key, text: entry.title, group }
@@ -125,7 +123,6 @@ export function createSlotMenu(
   }
 }
 
-/** The commands of the entries that offer items, inside submenus too. */
 const listItemCommands = (entries: readonly SlotItem[]): readonly SlotCommand[] =>
   entries.flatMap((entry) => {
     if (entry.kind === 'command') return entry.hasItems ? [entry] : []
@@ -137,19 +134,13 @@ export const MENU_HOLD_MS = 150
 
 // CommandItemListsHandlers receives what the read of the item lists of an opening menu reports.
 interface CommandItemListsHandlers {
-  // Receives the lists at once, every one null, and again as each list is read.
   readonly onChange: (lists: CommandItemLists) => void
-  // Called once, when every list is read or MENU_HOLD_MS has passed: the menu is drawn from then on.
   readonly onShow: () => void
-  // Called once, on Escape or a pointer press before the menu is drawn: the open is cancelled.
   readonly onCancel: () => void
-  // Receives the failure of a list, which is then empty.
   readonly onError?: (error: unknown) => void
-  // Where Escape and a pointer press are listened for; the document of the page by default.
   readonly events?: EventTarget
 }
 
-/** Calls onCancel on Escape or a pointer press; the returned function stops listening. */
 function listenForCancel(events: EventTarget | undefined, onCancel: () => void): () => void {
   const controller = new AbortController()
   const options = { capture: true, signal: controller.signal }

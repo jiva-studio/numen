@@ -262,8 +262,6 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 // handlerDeadline is how long a handler whose work runs as a task may take to answer.
 const handlerDeadline = 5 * time.Second
 
-// newConfiguredCommands is the plugin's commands over a vault holding the link note of an address
-// the fetcher answers, with the queue its tasks are shown on and the path of the note.
 func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Registry, *link.Links, *hosttest.Queue, string) {
 	t.Helper()
 	vault := hosttest.New("Mills")
@@ -288,7 +286,6 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	return commands, links, queue, made.OpenedPath
 }
 
-// runWithin runs the handler and fails the test when it does not answer within handlerDeadline.
 func runWithin(t *testing.T, commands *command.Registry, req command.Request) (command.Result, error) {
 	t.Helper()
 	type answer struct {
@@ -309,7 +306,6 @@ func runWithin(t *testing.T, commands *command.Registry, req command.Request) (c
 	}
 }
 
-// findTask returns the task of the id the queue shows.
 func findTask(queue *hosttest.Queue, id string) (host.Task, bool) {
 	for _, one := range queue.ListTasks() {
 		if one.ID == id {

@@ -83,11 +83,8 @@ type layer struct {
 	book *pdf.Book
 }
 
-// hasText reports whether the layer contains any text. A scan contains none.
 func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 
-// readLayer reads the file at a path of the vault. The document last read is kept while the file is
-// the same bytes.
 func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path string) (layer, error) {
 	raw, _, err := files.Read(ctx, path)
 	// gomutants:disable-next-line BRANCH_IF reason="vault read failure stops layer extraction"
@@ -138,8 +135,6 @@ func (s *TextServer) finish(key string) {
 	delete(s.running, key)
 }
 
-// writeLayer writes the text layer of a file in a turn of the queue. A failure stays shown as a task
-// until the layer is written again.
 func (s *TextServer) writeLayer(ctx context.Context, req TextRequest) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
@@ -159,8 +154,6 @@ func (s *TextServer) writeLayer(ctx context.Context, req TextRequest) {
 	}
 }
 
-// putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
-// a locked one and a scan have no text layer, and get no version.
 func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
@@ -198,7 +191,6 @@ func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Ta
 	return err
 }
 
-// getSegments is the text layer of every page of the file, cut pagesPerBatch pages at a time.
 func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	var segments []domain.TextSegment
 	pages := len(l.book.Pages)
@@ -223,9 +215,6 @@ func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	return segments, nil
 }
 
-// getLayerParts is the text of pages [first, last) as parts: each word with the rectangle it covers,
-// the runs between words with none, and an empty part opening each outline entry where it begins.
-// The boxes are the words of those pages, ascending by offset.
 func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) ([]domain.TextSegment, error) {
 	end := len(book.Text)
 	if last < len(book.Pages) {
@@ -259,8 +248,6 @@ type layerCut struct {
 	parts    []domain.TextSegment
 }
 
-// addPage cuts the text of one page, [from, to), at the words of the boxes on it, and returns the
-// boxes of the pages after it.
 func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.HighlightBox, error) {
 	pos := from
 	for len(boxes) > 0 && boxes[0].Page <= page {
@@ -284,7 +271,6 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.
 	return boxes, nil
 }
 
-// add is the text [from, to) on a page, split where an outline entry begins inside it.
 func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {

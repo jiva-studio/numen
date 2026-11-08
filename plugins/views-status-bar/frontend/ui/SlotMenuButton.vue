@@ -21,13 +21,10 @@ import { WORDS } from '../lib/entries'
 const props = withDefaults(
   defineProps<{
     entries: readonly SlotItem[]
-    /** What the button and its menu are called. */
     label: string
     icon?: unknown
     tooltip?: string
-    /** Whether the menu holds the items of the one command of the entries, without the row of the command. */
     isItemList?: boolean
-    /** The items a command lists. */
     listItems: (command: string) => Promise<readonly CommandItem[]>
   }>(),
   { isItemList: false },

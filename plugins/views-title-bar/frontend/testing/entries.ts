@@ -20,7 +20,6 @@ export const command = (id: string, extra: Partial<SlotCommand> = {}): SlotComma
   ...extra,
 })
 
-/** A view that draws the text given. */
 const createLabelView = (text: string): FunctionalComponent =>
   markRaw(() => h('span', { 'data-label-view': text }, text))
 

@@ -11,7 +11,6 @@ const MODIFIERS: Readonly<Record<string, { readonly mac: string; readonly other:
   option: { mac: 'Alt', other: 'Alt' },
 }
 
-/** A key name as a keyboard prints it: a letter in upper case, a word with a capital. */
 const formatKey = (key: string): string => key.charAt(0).toUpperCase() + key.slice(1)
 
 /** A shortcut such as `mod+shift+e` as the person reads it on the platform; empty for none. */

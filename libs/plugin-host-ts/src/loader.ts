@@ -171,7 +171,6 @@ interface Activation {
   readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-/** The plugins the window loads, whether the loader runs, and where the start of each plugin stands. */
 function createTracking(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
   const tracked = shallowRef<ReadonlySet<string>>(new Set())
   const isRunning = shallowRef(false)

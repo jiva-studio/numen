@@ -79,7 +79,6 @@ const passed = computed(
     >[],
 )
 
-/** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)

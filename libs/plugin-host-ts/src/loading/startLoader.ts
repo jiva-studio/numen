@@ -9,11 +9,8 @@ export interface StartLoaderDeps {
   readonly pluginIds: readonly string[]
   readonly listen: (id: string) => void
   readonly isEnabled: (id: string) => boolean
-  /** Reads the module of a plugin from the window. */
   readonly load: (id: string) => Promise<unknown>
-  /** Whether the plugin contributes to the interface, read from its manifest. */
   readonly isInterface: (id: string) => Promise<boolean>
-  /** Called once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
   readonly onInterfaceStarted: () => void
 }
 
@@ -27,7 +24,6 @@ type Loaded = { readonly limit: StartLimit } & (
 
 type Activate = (id: string, module?: unknown, limit?: StartLimit) => Promise<boolean>
 
-/** A plugin that has no frontend has no module, and nothing to activate. */
 const startPlugin = async (activate: Activate, id: string, one: Loaded): Promise<void> => {
   if (one.isRead && one.module === undefined) {
     one.limit.stop()
@@ -36,7 +32,6 @@ const startPlugin = async (activate: Activate, id: string, one: Loaded): Promise
   await activate(id, one.isRead ? one.module : undefined, one.limit)
 }
 
-/** What the read of a plugin gave within INTERFACE_WAIT_MS, or 'late' where it gave nothing yet. */
 async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<'late'>((resolve) => {
@@ -51,7 +46,6 @@ async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
   /* Stryker restore BlockStatement,CallExpression */
 }
 
-/** The read of a plugin, which settles with what it gave and never rejects. */
 const readPlugin = (deps: StartLoaderDeps, id: string): Promise<Loaded> => {
   const limit = createStartLimit()
   return deps.load(id).then(
@@ -61,11 +55,6 @@ const readPlugin = (deps: StartLoaderDeps, id: string): Promise<Loaded> => {
   )
 }
 
-/**
- * Reads the plugins of the list at once and activates them in its order, so each plugin registers
- * what it provides in the same order on every start. A plugin that is not read within
- * INTERFACE_WAIT_MS is passed over and activated when it is read; it holds back no other plugin.
- */
 async function startInOrder(deps: StartLoaderDeps, activate: Activate, ids: readonly string[]) {
   const loading = new Map<string, Promise<Loaded>>(ids.map((id) => [id, readPlugin(deps, id)]))
   // Stryker disable next-line ArrayDeclaration: Promise.all ignores resolved non-promise items when return value is unused

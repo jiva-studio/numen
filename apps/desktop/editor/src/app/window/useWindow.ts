@@ -80,9 +80,7 @@ interface WindowCommandsOptions {
   log: ReturnType<typeof createMessageLog>
   pluginHost: import('@numen/plugin-host').PluginHost
   declaredCommands: ReturnType<typeof useDeclaredCommands>
-  /** The slots of the window, read by the palette and the menu of a tab. */
   slots?: SlotHost | undefined
-  /** The commands of the window made as it runs, such as those over a tab. */
   getAppCommands: () => readonly Command[]
 }
 
@@ -123,21 +121,16 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: import('@numen/plugin-host').PluginLoader
-  /** Settles once the first list of the commands the plugins declare is held. */
   waitForDeclaredCommands: () => Promise<void>
-  /** True until every plugin the window starts has started or failed. */
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
-  /** Tab links session, started and closed with the window. */
   tabLinkSession: { start(): Promise<void>; close(): void }
-  /** Id of this window in the tab links of the core. */
   windowId: string
   /** Opens the tab of a detach and accepts it; runs in the background. */
   openDetachedTab(moved: MovedTab): void
 }
 
-/** Returns the tab of a pending detach, or null when the request fails or none is pending. */
 const readDetachedTab = async (windowId: string, tabId: string) => {
   try {
     return await core.readDetachedTab(windowId, tabId)
@@ -146,7 +139,6 @@ const readDetachedTab = async (windowId: string, tabId: string) => {
   }
 }
 
-/** The tabs the core stored for the vault, and none where the core cannot be queried. */
 const readSavedTabs = async () => {
   try {
     return await core.readOpenTabs()
@@ -225,7 +217,6 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-/** What the declared commands ask of the window: the commands the plugin host lists, and the plugins with a backend. */
 const getDeclaredCommandsDeps = (
   hostHolder: { current?: import('@numen/plugin-host').PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
@@ -238,7 +229,6 @@ const getDeclaredCommandsDeps = (
   getConfig: () => getWindowConfig(settingsHolder.current),
 })
 
-/** The settings of the window as the when conditions read them, config by dotted key. */
 const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
   settings
     ? getSettingsConfig([
@@ -251,7 +241,6 @@ const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =
       ])
     : {}
 
-/** What the window writes to the message log about a plugin, under the plugin's own writer. */
 function createPluginReports(
   log: ReturnType<typeof createMessageLog>,
   getPluginName: (pluginId: string) => string,
@@ -281,7 +270,6 @@ function createPluginReports(
   }
 }
 
-/** The handlers of shared commands the window runs in their plugins' backends. */
 const createWindowHandlers = (
   declaredCommands: ReturnType<typeof useDeclaredCommands>,
   writeMessage: (text: string, severity: 'info' | 'error') => void,
@@ -296,7 +284,6 @@ const createWindowHandlers = (
     openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
   })
 
-/** The commands the plugins declare, and the item lists of their commands, which the window keeps. */
 const createDeclaredParts = (
   hostHolder: { current?: import('@numen/plugin-host').PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
@@ -313,7 +300,6 @@ const createDeclaredParts = (
   return { itemLists, declaredCommands }
 }
 
-/** The type and the properties of the note at the path, which the menu of its tab is read over. */
 const createNoteKindReader = (itemLists: CommandItemLists) => async (path: string) => {
   const kind = (await itemLists.fileKinds([path])).get(path)
   return {
@@ -413,9 +399,7 @@ interface WindowContext {
   commands?: ReturnType<typeof useCommands>
   kinds?: ReturnType<typeof useWindowKinds>
   vaults?: ReturnType<typeof useVaults>
-  /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
   tabsHold?: TabsHold
-  /** The commands over a tab, made once the moves of the tabs are. */
   tabCommands?: TabCommands
 }
 
@@ -582,7 +566,6 @@ function isSecondaryWindow(): boolean {
 
 type WindowSettings = ReturnType<typeof useSettings>
 
-/** The tasks of the window, its messages and the notices of its plugins, as the plugins read them. */
 function createBackgroundTasks(
   base: WindowCore,
   window: WindowServices['window'],
@@ -604,10 +587,6 @@ function createBackgroundTasks(
   })
 }
 
-/**
- * Closes a tab; calls hold when the tab must stay open. Returns false when the tab stays open. The
- * core unlinks tabs missing from the tab report.
- */
 function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void): boolean => {
     if (!base.windowTabs.releaseTab(id)) {
@@ -619,7 +598,6 @@ function createTabCloser(base: WindowCore) {
   }
 }
 
-/** The tabs the vault placed, opened in the background; what fails is reported. */
 function openPlacedTabs(base: WindowCore) {
   return runInBackground(
     base.windowTabs.openPlacedTabs((kind, error) =>
@@ -635,7 +613,6 @@ interface WindowTabLinksDeps {
   readonly isHighlighted: Ref<boolean>
 }
 
-/** Creates the tab links session, reports the tabs whenever they change, and opens tabs sent from other windows. */
 function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -682,7 +659,6 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   }
 }
 
-/** Closes a secondary window after its last tab closes. */
 function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
   closeWindowWhenEmpty({
     isLayoutReady,
@@ -693,7 +669,6 @@ function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
   })
 }
 
-/** Detach, move and highlight requests of this window. */
 function createWindowTabMoves(
   base: WindowCore,
   editing: WindowServices['editing'],
@@ -731,7 +706,6 @@ function createWindowTabMoves(
   }
 }
 
-/** The commands of the window over a tab, registered for the palette and the menu of a tab. */
 function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof createWindowTabMoves>) {
   const { windowTabs, tabLinks } = base
   const tabCommands = createTabCommands({
@@ -748,17 +722,12 @@ function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof crea
   return tabCommands
 }
 
-/** Whether the window is drawn yet, why its workspace did not load, and the retry of the start. */
 const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   bootstrapFailure: bootstrap.failure,
   isStarted: bootstrap.isStarted,
   retryBootstrap: bootstrap.retry,
 })
 
-/**
- * The frame of the window, its slots and its commands, which its plugins and the menu of a tab read
- * and run, and the vaults and the window its plugins read.
- */
 function createWindowFrameServices(
   base: WindowCore,
   ctx: WindowContext,
@@ -811,13 +780,11 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
-/** The views plugins draw in the window itself: the title bar and the status bar. */
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })
 
-/** The open tabs of the window, written while `isWriting` is on. */
 const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
   useOpenTabs({
     core,

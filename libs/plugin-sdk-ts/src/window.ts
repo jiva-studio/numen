@@ -13,7 +13,6 @@ export interface VaultSummary {
 // VaultsState is the vaults the window can show and the one it shows.
 export interface VaultsState {
   readonly vaults: readonly VaultSummary[]
-  // The vault the window shows; null while it shows none.
   readonly current: VaultSummary | null
 }
 

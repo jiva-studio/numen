@@ -296,7 +296,6 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 	return app.Window.NewWithOptions(getMainWindowOptions(opened))
 }
 
-// getMainWindowOptions is the main window: its title is for the taskbar, the title bar is drawn by the page.
 func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
@@ -307,7 +306,6 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 	})
 }
 
-// getSecondaryWindowURL is the page of a window that opens with a torn-off tab.
 func getSecondaryWindowURL(tab editor.DetachedTab) string {
 	query := url.Values{"window": {"secondary"}}
 	if tab.ID != "" {
@@ -316,7 +314,6 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 	return "/?" + query.Encode()
 }
 
-// makeSecondaryWindow creates a new window displaying a torn-off tab at its position.
 func makeSecondaryWindow(
 	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
 ) *application.WebviewWindow {
@@ -329,8 +326,6 @@ const (
 	secondaryWindowHeight = 860
 )
 
-// getSecondaryWindowOptions is the window of a torn-off tab, placed where the tab was dropped
-// with the size of the pane it left.
 func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),

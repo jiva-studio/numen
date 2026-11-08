@@ -4,21 +4,17 @@ import type { SlotItem } from '@numen/plugin-sdk'
 export interface FitEntry {
   readonly key: string
   readonly kind: SlotItem['kind']
-  /** 0 while it is not measured. */
   readonly width: number
 }
 
 /** What the bar draws of its slots. */
 interface BarFit {
-  /** The keys of the entries the bar does not draw. */
   readonly hidden: ReadonlySet<string>
-  /** The keys of the commands and submenus in the menu button, in the order of the bar. */
   readonly overflow: readonly string[]
 }
 
 const isMovable = (entry: FitEntry): boolean => entry.kind === 'command' || entry.kind === 'submenu'
 
-/** The separators of a row that do not stand between two drawn entries, or follow another one. */
 function findLoneSeparators(row: readonly FitEntry[], hiddenKeys: ReadonlySet<string>): string[] {
   const lone: string[] = []
   let pending: FitEntry | null = null
@@ -36,7 +32,6 @@ function findLoneSeparators(row: readonly FitEntry[], hiddenKeys: ReadonlySet<st
   return lone
 }
 
-/** The keys not drawn: the hidden entries and the separators they leave without a neighbor. */
 function getHidden(rows: readonly (readonly FitEntry[])[], hiddenKeys: ReadonlySet<string>) {
   const all = new Set(hiddenKeys)
   for (const row of rows) for (const key of findLoneSeparators(row, hiddenKeys)) all.add(key)

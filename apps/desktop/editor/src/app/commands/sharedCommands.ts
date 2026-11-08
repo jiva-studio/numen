@@ -10,11 +10,9 @@ import {
 } from '@numen/plugin-host'
 import type { Command, CommandPrompt, CommandTarget } from '@/features/command-palette'
 
-/** Whether the target of the palette names a file, which the handlers of a shared command run over. */
 const isOverFile = (target: CommandTarget): boolean =>
   target.isReady && (target.file || target.path) !== ''
 
-/** The required arguments of a shared command, which the palette asks for one step each. */
 const getSharedPrompts = (id: string): readonly CommandPrompt[] =>
   (SHARED_COMMANDS.find((one) => one.id === id)?.arguments ?? [])
     .filter((one) => one.isRequired)

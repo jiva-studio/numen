@@ -26,7 +26,6 @@ export interface SettingsDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
-  /** The catalog the plugin list reads; without it the list shows the installed plugins only. */
   catalog?: PluginCatalog
 }
 
@@ -95,10 +94,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   }
 }
 
-/**
- * Follows the settings that change, whoever changes them: this window, another window, a plugin, the
- * palette, or a person editing the file. Each change is read again once.
- */
 function createChangeFollower(deps: {
   core: SettingsPort
   refresh: () => Promise<unknown>
@@ -140,7 +135,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const SHELL_APPEARANCE = ['app', 'appearance'] as const
 
-/** Shows a value of the appearance while its row is focused, and puts it back on leaving. */
 function createWindowPreview(
   appearance: ReturnType<typeof createWindowAppearance>,
 ): SettingPreview {

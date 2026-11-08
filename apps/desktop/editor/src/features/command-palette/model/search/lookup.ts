@@ -70,7 +70,6 @@ function createNoteActions(
   return { actions, actionIds: actions.map((one) => one.id) }
 }
 
-/** The actions of the commands among the entries; a view, a submenu and a separator offer none. */
 function createMenuActions(entries: readonly SlotItem[]): readonly PaletteAction[] {
   return entries.flatMap((one) =>
     one.kind === 'command' ? [{ id: one.command, text: one.title }] : [],

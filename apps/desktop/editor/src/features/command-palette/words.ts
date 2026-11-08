@@ -20,21 +20,13 @@ export const ANSWER_WORDS: AnswerWords = {
 
 /** The text shown for the outcome of carrying out a command. */
 export interface AnswerWords {
-  /** Message for each error code reported by the vault. */
   readonly errors: Record<ErrorCode, string>
-  /** Message for each error code reported by the vault list. */
   readonly vaultErrors: Record<VaultErrorCode, string>
-  /** What the machine's own folder picker is titled. */
   readonly folder: string
-  /** The links that reach nothing now, which nothing repairs. */
   readonly dangling: string
-  /** The vault opens with no note at all. */
   readonly nowhere: string
-  /** The note is awaiting a reply, and its file is not moved. */
   readonly unanswered: string
-  /** The note contains prose that has not been loaded, so nothing was written. */
   readonly stale: string
-  /** A name at the destination is taken, and the file stayed where it was. */
   readonly alreadyExists: string
 }
 
@@ -47,19 +39,15 @@ export interface RetypeWords {
 
 /** The words the step that confirms is drawn in. */
 export interface ConfirmWords {
-  /** The answer that changes nothing, and what it leaves. */
   readonly keeps: string
   readonly retainedNotice: string
-  /** The answer that does it, and what it leaves. */
   readonly action: string
   readonly detail: string
 }
 
 /** Everything the commands say in the window's voice. */
 export interface Words extends EmptyWords {
-  /** The commands, each in the words it is offered by. */
   readonly read: string
-  /** The action of a file that is no note, which opens in its reader. */
   readonly readDocument: string
   readonly beside: string
   readonly travel: string
@@ -72,78 +60,55 @@ export interface Words extends EmptyWords {
   readonly copy: string
   readonly newNote: string
   readonly close: string
-  /** Everything this installation is configured as, in a tab of its own. */
   readonly settings: string
   readonly find: string
-  /** The titles the commands over the settings tab and the search are offered under. */
   readonly openSettings: string
   readonly searchVault: string
-  /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
   readonly goto: string
-  /** The commands over the vaults this installation holds. */
   readonly openVault: string
   readonly newVault: string
   readonly renameVault: string
   readonly removeVault: string
   readonly eraseVault: string
-  /** The groups the commands are drawn in. */
   readonly noteGroupTitle: string
   readonly overFile: string
   readonly overWindow: string
   readonly overSettings?: string
   readonly overVault: string
-  /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   readonly noVault: string
   readonly noNote: string
   readonly command: string
   readonly typeCommand: string
-  /** A requested name, and the one item it offers. */
   readonly naming: string
   readonly typeName: string
   readonly callIt: string
-  /** A value requested by a command, and the two items its step offers. */
   readonly givesIt: string
   readonly leavesOut: string
-  /** A requested note, among the names in the vault. */
   readonly names: string
   readonly typeNote: string
-  /**
-   * One of a list the window holds: the field, and what Enter does. The groups
-   * such a list is drawn in are named by whatever holds it.
-   */
   readonly typeItems: string
   readonly chooses: string
-  /** A requested vault, among the vaults of the installation. */
   readonly vaults: string
   readonly typeVault: string
-  /** The two vaults the list draws and does not offer to choose. */
   readonly gone: string
-  /** The row a list of values opens on, which is the value in force. */
   readonly current: string
-  /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
-  /** How many files a command is over, where it is over several. */
   readonly several: (files: number) => string
   readonly answer: string
   readonly retainedNotice: string
-  /** The two answers over a vault, whose folder is left where it is. */
   readonly keepsVault: string
   readonly removeVaultAction: string
   readonly stays: string
-  /** The name retyped, which confirms a destructive action. */
   readonly exactly: string
   readonly typeBack: string
   readonly destroys: string
   readonly forever: string
-  /** The same, over a vault whose folder goes to the trash. */
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string
-  /** The note the vault could not find, offered as one to make. */
   readonly creating: string
   readonly creates: string
-  /** The relations it can be made in, off the note in front. */
   readonly asChild: string
   readonly asParent: string
   readonly asJump: string

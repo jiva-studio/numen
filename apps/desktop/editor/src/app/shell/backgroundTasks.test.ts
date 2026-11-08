@@ -32,7 +32,6 @@ const createDeps = (
   ...extra,
 })
 
-/** The list the host gives a watcher at once. */
 const readTasks = (
   host: ReturnType<typeof createBackgroundTaskHost>,
 ): readonly BackgroundTask[] => {

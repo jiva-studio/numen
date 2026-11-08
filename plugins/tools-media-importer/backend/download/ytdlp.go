@@ -209,7 +209,6 @@ const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 // soundFormat is the sound alone, in an MPEG-4 container where the site has one.
 const soundFormat = "bestaudio[acodec^=mp4a]/bestaudio"
 
-// getFormatArguments are the arguments that choose what a download of the media brings.
 func getFormatArguments(media Media) []string {
 	if media == MediaAudio {
 		return []string{"-f", soundFormat}

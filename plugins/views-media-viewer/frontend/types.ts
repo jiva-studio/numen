@@ -5,7 +5,6 @@ import type { Cue } from './lib/cues'
 export interface RecordingSource {
   readonly mediaUrl: string
   readonly mediaType: string
-  /** Where the page that frames the player is loaded from, while there is no media; empty otherwise. */
   readonly pageUrl: string
 }
 

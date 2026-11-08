@@ -21,10 +21,6 @@ const listCopies = (): string[] => listPluginFiles(IMPORTER).filter((name) => na
 
 const getLinkNote = (id: string): string => `https---www.youtube.com-watch-v=${id}.md`
 
-/**
- * Imports the address, which makes its link note alone, and waits for the note's tab, named `tab`,
- * in front.
- */
 const importAddress = async (page: Page, address: string, tab: RegExp): Promise<void> => {
   await runCommand(page, 'Import link', /^Import link/)
   await getPaletteField(page).fill(address)
@@ -34,11 +30,9 @@ const importAddress = async (page: Page, address: string, tab: RegExp): Promise<
   })
 }
 
-/** Fetches the text of the link note in front: the captions of a video. */
 const downloadText = (page: Page): Promise<void> =>
   runCommand(page, 'Download captions', /^Download captions$/)
 
-/** Downloads the video of the link note in front. */
 const downloadVideo = (page: Page): Promise<void> =>
   runCommandOverItem(page, 'Download media', /^Download media$/, /^Video$/)
 

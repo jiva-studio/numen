@@ -18,9 +18,7 @@ export type NoteType = string
 export interface FileKind {
   readonly isNote: boolean
   readonly type: NoteType
-  /** The kind of tab the note opens in; absent where no tab kind takes it. */
   readonly tabKind?: string
-  /** The frontmatter of a note by its keys; absent for a file that is no note or a note without any. */
   readonly properties?: Readonly<Record<string, unknown>>
 }
 

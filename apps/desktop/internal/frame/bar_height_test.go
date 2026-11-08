@@ -21,7 +21,6 @@ var (
 	ruleHeight  = regexp.MustCompile(`(?m)^\s*height:\s*(\d+)px;`)
 )
 
-// readPixels returns the pixels the pattern finds in the file, failing where it finds none.
 func readPixels(t *testing.T, file string, pattern *regexp.Regexp) int {
 	t.Helper()
 	css, err := os.ReadFile(filepath.FromSlash(file))

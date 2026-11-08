@@ -67,7 +67,6 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
   }
 }
 
-/** The relationships between notes: reading needs vault:read, and a write vault:write. */
 function guardRelations(
   relations: VaultRelations,
   requirePerm: (permission: string, operation: string) => void,
@@ -125,7 +124,6 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
   }
 }
 
-/** The texts of the vault: reading needs vault:read, and an edit vault:write. */
 function guardTexts(
   texts: VaultTexts,
   requirePerm: (permission: string, operation: string) => void,
@@ -142,13 +140,8 @@ function guardTexts(
   }
 }
 
-/** Whether a setting path is in the agent subtree of the settings. */
 const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
 
-/**
- * The agent of the window: asking it and naming vault files need vault:read, and
- * the settings it reads and writes are the ones under `app.agent`.
- */
 function guardAgent(
   agent: AgentHost,
   requirePerm: (permission: string, operation: string) => void,
@@ -202,7 +195,6 @@ type Services = Pick<
   'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'buffers'
 >
 
-/** A service the window made, guarded; nothing where the window made none. */
 function guardService<K extends keyof Services, S>(
   key: K,
   service: S | undefined,
@@ -236,7 +228,6 @@ const EDITOR_TARGET = 'desktop.editor'
 type Track = (disposable: Disposable) => Disposable
 type RequirePermission = (permission: string, operation: string) => void
 
-/** The registrations a plugin makes, each taken with the plugin's subscriptions. */
 function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
   return {
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
@@ -262,7 +253,6 @@ interface EventGuard {
   readonly add: Track
 }
 
-/** The settings and the vault events a plugin watches or raises, behind the permissions they need. */
 function createEvents(pluginId: string, host: PluginContextHost, guard: EventGuard) {
   const { requirePerm, add } = guard
   return {
@@ -288,10 +278,6 @@ function createEvents(pluginId: string, host: PluginContextHost, guard: EventGua
   }
 }
 
-/**
- * The services of the window that need no permission: its notices, tasks, background tasks and
- * texts.
- */
 function createWindowServices(
   pluginId: string,
   host: PluginContextHost,

@@ -35,9 +35,7 @@ export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
 export interface WindowFrame {
   readonly platform: Readonly<Ref<WindowPlatform>>
   readonly isMaximized: Readonly<Ref<boolean>>
-  /** True while the window fills the screen; macOS then shows no system buttons. */
   readonly isFullscreen: Readonly<Ref<boolean>>
-  /** The room the system buttons take in the top corners while no title bar is drawn. */
   readonly windowEdge: Readonly<Ref<WindowEdge>>
   minimizeWindow(): Promise<void>
   toggleMaximizeWindow(): Promise<void>
@@ -55,7 +53,6 @@ const loadRuntime: FrameRuntimeLoader = () => {
   return runtime
 }
 
-/** The platform the runtime reports; Windows where the page is served without the runtime. */
 function getPlatform(system: FrameRuntime['System']): WindowPlatform {
   if (system?.IsMac?.()) return 'darwin'
   return system?.IsLinux?.() ? 'linux' : 'windows'
@@ -70,7 +67,6 @@ export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): 
   return { leftInset: hasMacButtons ? MAC_BUTTONS_INSET : 0, rightInset: 0 }
 }
 
-/** A read of the window state that fails leaves the state as it was. */
 const ignoreFailure = (): undefined => undefined
 
 export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {

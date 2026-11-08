@@ -7,7 +7,6 @@ import { adoptPluginStyle, getPluginStyle, type StyleRoot } from '../styles'
 
 const styled = new WeakMap<object, Component>()
 
-/** Adds the stylesheet of the plugin where the element is drawn, and gives back its removal. */
 function addStyle(pluginId: string, element: HTMLElement): () => void {
   const release = adoptPluginStyle(pluginId, element.getRootNode() as StyleRoot)
   if (release) return release

@@ -33,8 +33,6 @@ func (u *Versions) ReportFilesChanged(ctx context.Context, v domain.Vault, paths
 	return errors.Join(failures...)
 }
 
-// updateLive finds the live version of the file and records it, reporting whether it differs from
-// the one recorded before. A file with no versions is recorded as having none, and is never changed.
 func (u *Versions) updateLive(ctx context.Context, v domain.Vault, path string) (bool, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
@@ -58,8 +56,6 @@ func (u *Versions) updateLive(ctx context.Context, v domain.Vault, path string) 
 	return !isKnown || previous != live, nil
 }
 
-// findCurrentLive is the id of the live version of the file as it reads now, and empty where none is
-// live. A file that cannot be read has no live version.
 func (u *Versions) findCurrentLive(
 	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion,
 ) (domain.TextVersionID, error) {

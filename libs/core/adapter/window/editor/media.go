@@ -52,8 +52,6 @@ func (h *mediaHandler) ResolveAddress(
 	}), nil
 }
 
-// resolvePluginFile is the address of a file in a plugin's store of the shown vault, which names the
-// size the file has now.
 func (h *mediaHandler) resolvePluginFile(
 	ctx context.Context, showing domain.Vault, address file.Address,
 ) (*connect.Response[v1.ResolveAddressResponse], error) {
@@ -74,7 +72,6 @@ func (h *mediaHandler) resolvePluginFile(
 	}), nil
 }
 
-// getMediaType is the content type a file is served as, and empty where nothing names one.
 func getMediaType(types *file.GetMediaType, path string) string {
 	if types == nil {
 		return ""

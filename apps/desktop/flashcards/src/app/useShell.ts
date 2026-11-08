@@ -64,7 +64,6 @@ function useVaults(list: () => Promise<readonly VaultRow[]>, onError: (text: str
   return { vaults, isListing }
 }
 
-/** The commands, the vaults and the window the plugins of the window read. */
 function fillServices(
   services: ShellServices,
   window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {

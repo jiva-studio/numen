@@ -45,14 +45,10 @@ const DURATION_POLLS = 40
 
 /** What plays a recording, as whatever draws the controls reads it. */
 export interface Player {
-  /** What is loaded now, and nothing where the window is silent. */
   readonly url: Readonly<Ref<string>>
-  /** Playback position in milliseconds. */
   readonly position: Readonly<Ref<number>>
-  /** Length in milliseconds, zero until the recording reports it. */
   readonly duration: Readonly<Ref<number>>
   readonly isPlaying: Readonly<Ref<boolean>>
-  /** Failure message for display. */
   readonly error: Readonly<Ref<string>>
 
   /** Load a recording, leaving whatever was loaded before it. */
@@ -81,15 +77,6 @@ const createVideoElement: MediaFactory = () => {
   return video
 }
 
-/**
- * Reports the length of the element's recording in milliseconds, zero while it is unknown, each
- * time it may have changed. Returns the function that reads it, for events a caller already
- * handles.
- *
- * WebKitGTK reports a VBR mp3 with no Xing header as 0 s long at durationchange and
- * loadedmetadata, then sets the estimated length without another durationchange. The length is
- * read again at each of these, and polled while it is still unknown.
- */
 function watchDuration(audio: HTMLMediaElement, onDuration: (ms: number) => void): () => void {
   let poll: ReturnType<typeof setInterval> | undefined
   const stopPoll = () => {
@@ -300,7 +287,6 @@ export const player: Player = createMediaPlayer()
 /** Reports whether a media type can be played. */
 export type MediaTypeProbe = (type: string) => boolean
 
-/** Queries the window for whether it can play a media type. */
 const probeWindow: MediaTypeProbe = (type) => {
   try {
     const mediaType = type === 'audio/vnd.wave' ? 'audio/wav' : type

@@ -5,7 +5,6 @@
 /** One link: the address its note holds and whether a video is published there. */
 export interface LinkFacts {
   readonly url: string
-  /** Whether a video is published at the address, so a copy of it can be made. */
   readonly isCopyable: boolean
 }
 

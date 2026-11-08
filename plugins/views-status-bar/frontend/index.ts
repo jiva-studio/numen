@@ -11,7 +11,6 @@ import StatusBar from './ui/StatusBar.vue'
 /** The id the manifest places the view of the bar under. */
 export const STATUS_BAR_VIEW = 'bar'
 
-/** The view of the slot: the bar over the entries of its two slots. */
 function createStatusBarView(context: PluginContext) {
   const { slots: host, commands } = context
   const reportError = (error: unknown): void =>

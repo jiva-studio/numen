@@ -28,7 +28,6 @@ import * as create from './create'
 
 export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
 
-/** Reports a failed background operation of the tab through the window's error display. */
 const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
   deps.showError(formatErrorMessage(error))
 }
@@ -79,7 +78,6 @@ function createFileMoves(list: FileTree, deps: FilesTabDeps) {
   return { move }
 }
 
-/** The entry for a path requested from a menu, and a non-note file where the tree has none. */
 const getMenuEntry = (list: FileTree, path: string): Entry =>
   list.getEntryAt(path) ?? {
     path,
@@ -89,14 +87,12 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
     type: NOTE_TYPE,
   }
 
-/** The target of a command over the path and the others selected with it. */
 const getPathTarget = (list: FileTree, path: string, others: readonly string[]): CommandTarget => {
   const entry = getMenuEntry(list, path)
   const target = { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
   return entry.isNote ? { ...target, noteType: entry.type } : target
 }
 
-/** The target of the menu opened on a row, or on the root where it was opened off every row. */
 const getMenuTarget = (
   list: FileTree,
   path: string | null,

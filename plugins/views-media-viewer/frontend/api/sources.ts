@@ -10,7 +10,6 @@ const NOTE_EXTENSION = '.md'
 
 const NOTHING: RecordingSource = { mediaUrl: '', mediaType: '', pageUrl: '' }
 
-/** The text of a property, and empty where it holds no text. */
 const readText = (properties: Readonly<Record<string, unknown>>, key: string): string => {
   const value = properties[key]
   return typeof value === 'string' ? value : ''

@@ -13,7 +13,6 @@ var ErrActivationAborted = errors.New("plugin activation aborted")
 // ActivationPolicy bounds how long one start of a plugin may take. A start that fails is not waited out: the
 // next use of the plugin starts it again.
 type ActivationPolicy struct {
-	// Timeout is the deadline for a started process to print its handshake.
 	Timeout time.Duration
 }
 

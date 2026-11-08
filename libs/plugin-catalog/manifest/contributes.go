@@ -21,50 +21,27 @@ var (
 
 // TabKind is a kind of tab the plugin's frontend registers.
 type TabKind struct {
-	// Kind is the id the frontend registers the kind under.
-	Kind string
-	// Title is the name of the kind that a tab of it is shown with.
+	Kind  string
 	Title string
-	// Icon is the kebab-case name of an icon of the application's icon set. Empty is a kind without one.
-	Icon string
-	// When is the condition over a note under which the note opens in a tab of this kind. Empty opens
-	// no note.
-	When string
-	// Rank orders the kinds whose condition holds over a note: a default kind before an alternate one.
-	Rank domain.HandlerRank
+	Icon  string
+	When  string
+	Rank  domain.HandlerRank
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
 type Contributes struct {
-	// TabKinds are the kinds of tab the plugin registers.
-	TabKinds []TabKind
-	// Feature names what the plugin provides, in the words a placeholder for an unavailable tab uses.
-	Feature string
-	// Category groups the plugin in lists. Empty is a plugin in no category.
-	Category string
-	// Themes are the stylesheets the plugin adds to the list of themes.
-	Themes []Theme
-	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
-	// registers it under.
-	Readers []Reader
-	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
-	// each. A note of a type no plugin declares is kept as an ordinary note is.
-	NoteTypes []NoteType
-	// FrameOrigins are the https origins the plugin's pages frame, such as a video site's player. The
-	// window's frame-src names them while the plugin is enabled.
+	TabKinds     []TabKind
+	Feature      string
+	Category     string
+	Themes       []Theme
+	Readers      []Reader
+	NoteTypes    []NoteType
 	FrameOrigins []string
-	// Commands are the commands the plugin declares, whichever part of the plugin runs them. The
-	// palette and the command line list them; a command is run by the frontend when the frontend
-	// registers a handler for it and by the backend otherwise.
-	Commands []Command
-	// Slots place the commands, views and submenus of the plugin in the slots of a window and in submenus.
-	Slots []SlotEntry
-	// Handlers are the plugin's handlers of shared commands.
-	Handlers []Handler
-	// Triggers run the plugin's own handlers over the files of events.
-	Triggers []Trigger
-	// Listeners are the TCP ports on 127.0.0.1 the host binds for the plugin while it is enabled.
-	Listeners []Listener
+	Commands     []Command
+	Slots        []SlotEntry
+	Handlers     []Handler
+	Triggers     []Trigger
+	Listeners    []Listener
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -92,9 +69,6 @@ func (c Contributes) ListTabKinds() []string {
 	return kinds
 }
 
-// listContributionIssues checks that each kind of tab has a unique id and a title, that the icons and
-// the category are written as the application names them, and that a plugin registering tabs or views
-// has a frontend to register them from.
 func (m Manifest) listContributionIssues() []error {
 	var issues []error
 	c := m.Contributes
@@ -115,7 +89,6 @@ func (m Manifest) listContributionIssues() []error {
 	return append(issues, m.listFrameIssues()...)
 }
 
-// listFrontendIssues checks that a plugin registering tabs or views has a frontend to register them from.
 func (m Manifest) listFrontendIssues() []error {
 	var issues []error
 	if len(m.Contributes.TabKinds) > 0 && !m.HasFrontend() {
@@ -127,8 +100,6 @@ func (m Manifest) listFrontendIssues() []error {
 	return issues
 }
 
-// listTabKindIssues checks that each kind of tab has a unique id, a title, an icon written as the application
-// names it, a rank and a condition that can be read.
 func listTabKindIssues(kinds []TabKind) []error {
 	var issues []error
 	observed := map[string]bool{}

@@ -115,9 +115,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
 
 /** What the window finds the icons of commands and files with. */
 export interface IconHostDeps {
-  /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   readonly getPluginCommandIcon?: (id: string) => unknown
-  /** The icon of the reader that opens a file that is no note. */
   readonly findFileIcon?: ((path: string) => Component | undefined) | undefined
 }
 

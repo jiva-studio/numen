@@ -14,7 +14,6 @@ func newHandlerRank(text string) domain.HandlerRank {
 	return domain.HandlerRank(text)
 }
 
-// newTabKindRank is the rank of a tab kind, default where the manifest names none.
 func newTabKindRank(text string) domain.HandlerRank {
 	if text == "" {
 		return domain.RankDefault

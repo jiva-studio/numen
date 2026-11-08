@@ -18,8 +18,6 @@ import (
 // repositoryPlugins is the plugins folder of the repository.
 const repositoryPlugins = "../../../../../../plugins"
 
-// newRepositoryHandler is the handler over the manifests of the repository's plugins, read by a plugin
-// host on the PATH of the machine, with no plugin started.
 func newRepositoryHandler(b *testing.B) *command.Handler {
 	b.Helper()
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)

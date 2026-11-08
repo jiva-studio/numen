@@ -83,15 +83,11 @@ type bookText struct {
 	segments []domain.TextSegment
 }
 
-// isUnreadable reports whether a failure to read a book is a file that holds no text to give: no
-// archive, no book in it, or a book whose text is locked.
 func isUnreadable(err error) bool {
 	return errors.Is(err, epub.ErrNotArchive) || errors.Is(err, epub.ErrNoContainer) ||
 		errors.Is(err, epub.ErrNoPackage) || errors.Is(err, epub.ErrEncrypted)
 }
 
-// readBook reads the book at a path of the vault. The book last read is kept while the file is the
-// same bytes.
 func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string) (bookText, error) {
 	raw, _, err := files.Read(ctx, path)
 	if err != nil {
@@ -147,8 +143,6 @@ func (s *TextServer) finish(key string) {
 	delete(s.running, key)
 }
 
-// writeText writes the text of a book in a turn of the queue. A failure stays shown as a task until
-// the text is written again.
 func (s *TextServer) writeText(ctx context.Context, req TextRequest) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
@@ -170,8 +164,6 @@ func (s *TextServer) writeText(ctx context.Context, req TextRequest) {
 	}
 }
 
-// putText reports the text of a book as a version made from the file. A file that is no book, a
-// locked book and a book with no text get no version.
 func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
@@ -206,10 +198,6 @@ func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Tas
 	return err
 }
 
-// getSegments is a book's text as segments: one from where each block element begins, cut again at
-// partBytes on whole characters, with an empty segment opening each named section where it begins.
-// The selector of each segment names the CFI of the character it begins at. The sections ascend by
-// offset.
 func getSegments(text string, sections []epub.Part, places epub.Places) ([]domain.TextSegment, error) {
 	cutter := segmentCut{text: text, sections: sections, blocks: places.Blocks}
 	var segments []domain.TextSegment
@@ -232,8 +220,6 @@ func getSegments(text string, sections []epub.Part, places epub.Places) ([]domai
 	}
 }
 
-// getSelector is the selector of the CFI of the character at an offset, and none where the book has
-// no text node.
 func getSelector(places epub.Places, offset int) (domain.Selector, error) {
 	place, ok := places.GetCFI(offset)
 	if !ok {
@@ -249,8 +235,6 @@ type segmentCut struct {
 	blocks   []int
 }
 
-// openAt passes the blocks beginning at or before an offset, and returns the titles of the sections
-// beginning there.
 func (c *segmentCut) openAt(from int) []string {
 	for len(c.blocks) > 0 && c.blocks[0] <= from {
 		c.blocks = c.blocks[1:]
@@ -263,8 +247,6 @@ func (c *segmentCut) openAt(from int) []string {
 	return titles
 }
 
-// getEnd is where the segment from an offset ends: at most partBytes on, and before the next block
-// or section begins.
 func (c *segmentCut) getEnd(from int) int {
 	to := getCutEnd(c.text, from)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="setting to = c.blocks[0] when equal is a no-op"
@@ -278,8 +260,6 @@ func (c *segmentCut) getEnd(from int) int {
 	return to
 }
 
-// getCutEnd is where a segment from an offset ends: partBytes on, moved back to the start of a
-// character.
 func getCutEnd(text string, from int) int {
 	end := min(from+partBytes, len(text))
 	to := end

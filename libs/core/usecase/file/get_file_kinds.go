@@ -54,7 +54,6 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	return Folder{Entries: entries, Types: types, Properties: properties}, nil
 }
 
-// readNotes reads the frontmatter of each note, and adds the type of each note the types leave out.
 func readNotes(
 	ctx context.Context, reader vaultport.VaultReader, entries []domain.Entry,
 	refs map[string]domain.FileStat, types *map[string]domain.NoteType,

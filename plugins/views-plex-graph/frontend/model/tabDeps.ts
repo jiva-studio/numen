@@ -15,7 +15,6 @@ import type { Nesting } from './nesting'
 /** The host services a plex tab is made from, and the plugin's nesting settings. */
 export interface PlexHost {
   readonly workspace: WorkspaceHost
-  /** The commands of the window, where the window offers them. */
   readonly commands?: CommandsHost
   readonly notes: VaultNotes
   readonly relations: VaultRelations

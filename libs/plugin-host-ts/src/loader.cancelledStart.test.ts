@@ -11,7 +11,6 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** A context whose services hand out disposables, each recorded under the name of the call. */
 function createRecordingContext(handed: Map<string, Disposable>): PluginContext {
   const hand = (name: string) => () => {
     const one = { dispose: vi.fn() }

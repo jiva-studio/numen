@@ -6,14 +6,11 @@ import { watch } from 'vue'
 import { PLUGIN_START_LIMIT_MS } from './limits'
 
 export interface PluginStartsDeps {
-  /** True between the start of the loader and its close. */
   readonly isRunning: { readonly value: boolean }
-  /** The plugins the window loads: those it tracks and those registered as modules. */
   readonly listPlugins: () => readonly string[]
   readonly isEnabled: (id: string) => boolean
   readonly activePlugins: { readonly value: ReadonlyMap<string, unknown> }
   readonly failures: { readonly value: ReadonlyMap<string, string> }
-  /** Whether the manifest of the plugin declares a kind of tab. */
   readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 

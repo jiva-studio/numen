@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// createSharedCommandDeps is a terminal over the notebook whose plugins handle the shared commands:
-// two handlers of app:file.createText over PDFs, one over recordings, and the importer of links.
 func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 	declared := &pluginCommands{handlers: []plugincommand.Entry{
 		{PluginID: "org.example.layers", Command: plugincommand.Command{

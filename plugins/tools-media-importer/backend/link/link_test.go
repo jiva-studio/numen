@@ -111,7 +111,6 @@ func (w *world) create(t *testing.T, address string) link.Link {
 	return made
 }
 
-// readProperty is the text the note at path holds under a frontmatter key, empty where it holds none.
 func (w *world) readProperty(t *testing.T, path, key string) string {
 	t.Helper()
 	content, _ := w.vault.Content(path)
@@ -123,7 +122,6 @@ func (w *world) readProperty(t *testing.T, path, key string) string {
 	return value
 }
 
-// readLiveText is the text of the live version of the note at path, empty where it has none.
 func (w *world) readLiveText(t *testing.T, path string) string {
 	t.Helper()
 	listing, err := w.texts.ListVersions(t.Context(), path)

@@ -88,8 +88,6 @@ func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 	}
 }
 
-// runHandlerWithin runs the handler of the shared command and fails the test when it does not answer
-// within workDeadline.
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
 	commands, err := newCommands(s.tools, recognition.Host{Vault: s.vault, Store: s.vault.Store(), Texts: s.texts, Queue: s.queue})
@@ -150,7 +148,6 @@ func TestCreateTextFailsTheTaskOfAFailedRecognition(t *testing.T) {
 	}
 }
 
-// hasFailedTask reports whether the queue shows the task of the id failed with a reason that holds the text.
 func hasFailedTask(queue *hosttest.Queue, id, text string) bool {
 	for _, one := range queue.ListTasks() {
 		if one.ID == id && strings.Contains(one.FailureReason, text) {

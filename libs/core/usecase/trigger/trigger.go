@@ -108,7 +108,6 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 	return errors.Join(failures...)
 }
 
-// writeRecord writes the record of the pass where the pass changed it.
 func (p *pass) writeRecord(ctx context.Context, record pluginport.TriggerRecord) error {
 	if !p.isChanged {
 		return nil
@@ -119,8 +118,6 @@ func (p *pass) writeRecord(ctx context.Context, record pluginport.TriggerRecord)
 	return nil
 }
 
-// readTriggers is the triggers of the enabled plugins whose condition, and the condition of whose
-// handler, can be read.
 func (u *Triggers) readTriggers() []trigger {
 	handlers := map[[2]string]string{}
 	for _, entry := range u.plugins.ListHandlers() {
@@ -177,7 +174,6 @@ type file struct {
 	readErr error
 }
 
-// runFile runs the triggers over one file and returns the failures of its runs.
 func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
 	p.found[stat.Path] = true
 	current, err := p.readFile(ctx, stat)
@@ -209,9 +205,6 @@ func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
 	return failures
 }
 
-// isDue reports whether a trigger runs over a file whose content it has not run over: one on
-// file.added where it has never run over the file, one on file.changed where it has run over another
-// content or the file is not new to the vault.
 func isDue(event string, hasRun, isNew bool) bool {
 	if event == pluginport.EventFileAdded {
 		return !hasRun
@@ -219,8 +212,6 @@ func isDue(event string, hasRun, isNew bool) bool {
 	return hasRun || !isNew
 }
 
-// readFile is the file with the hash of its content, hashed only where its size or its modification
-// time differ from what the record holds.
 func (p *pass) readFile(ctx context.Context, stat domain.FileStat) (*file, error) {
 	known, isKnown := p.state.Files[stat.Path]
 	if isKnown && known.Size == stat.Size && known.ModTime.Equal(stat.ModTime) {
@@ -235,7 +226,6 @@ func (p *pass) readFile(ctx context.Context, stat domain.FileStat) (*file, error
 	return &file{stat: stat, hash: hash, isNew: !isKnown}, nil
 }
 
-// hashFile is domain.HashReader of the file at the path, read as a stream.
 func (p *pass) hashFile(ctx context.Context, path string) (hash string, err error) {
 	content, err := p.reader.Open(ctx, path)
 	if err != nil {
@@ -247,13 +237,10 @@ func (p *pass) hashFile(ctx context.Context, path string) (hash string, err erro
 	return domain.HashReader(content)
 }
 
-// isTrue reports whether the condition is true over the file.
 func (p *pass) isTrue(ctx context.Context, current *file, condition pluginport.PluginCondition) bool {
 	return condition.Evaluate(p.getValues(ctx, current, condition)) == pluginport.ConditionTrue
 }
 
-// getValues is the values a condition reads over the file: the target, read from the note where the
-// condition names its type or its properties, and the settings as config.
 func (p *pass) getValues(ctx context.Context, current *file, condition pluginport.PluginCondition) map[string]any {
 	if current.values != nil {
 		return current.values
@@ -282,7 +269,6 @@ func (p *pass) getValues(ctx context.Context, current *file, condition pluginpor
 	return values
 }
 
-// forgetUnseen takes the files no longer in the vault out of the record, with the runs over them.
 func (p *pass) forgetUnseen() {
 	for path := range p.state.Files {
 		if !p.found[path] {
@@ -301,12 +287,10 @@ func (p *pass) forgetUnseen() {
 // runKeySeparator joins the parts of the key of a trigger's runs over a file; no part holds it.
 const runKeySeparator = "\x00"
 
-// getRunKey names the runs of a trigger over a file: its plugin, its event, its command and the path.
 func getRunKey(entry pluginport.PluginTriggerEntry, path string) string {
 	return strings.Join([]string{entry.PluginID, entry.Trigger.On, entry.Trigger.Command, path}, runKeySeparator)
 }
 
-// getRunPath is the path a key of runs names.
 func getRunPath(key string) string {
 	return key[strings.LastIndex(key, runKeySeparator)+1:]
 }

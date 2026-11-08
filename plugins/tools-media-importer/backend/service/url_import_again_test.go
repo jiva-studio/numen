@@ -55,8 +55,6 @@ func newRevisedFixture(t *testing.T) *importFixture {
 	return newRefetchFixture(t, nil)
 }
 
-// newRefetchFixture is newRevisedFixture whose fetches after the first fail with fetchErr where it
-// is set.
 func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	t.Helper()
 	release := make(chan struct{})

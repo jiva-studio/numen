@@ -9,13 +9,9 @@ import type { StripEdge } from '../lib/edges'
 export { NO_STRIP_EDGE } from '../lib/edges'
 
 export interface WorkspaceContext {
-  /** What the strip of the pane takes from the top of the window. */
   readonly getStripEdge: (pane: NodeId) => StripEdge
-  /** The tab an identity refers to, or undefined for an identity absent from the workspace. */
   readonly findTab: (id: TabId) => Tab | undefined
-  /** The pane a tab opens into. */
   readonly focus: NodeId
-  /** The minimum size at which a pane is worth drawing. */
   readonly minimum: number
   readonly choose: (tab: TabId) => void
   readonly close: (tab: TabId) => void

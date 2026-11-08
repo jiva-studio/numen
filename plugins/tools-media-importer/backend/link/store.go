@@ -46,11 +46,9 @@ type record struct {
 	Downloader string          `json:"downloader,omitempty"`
 	Kind       domain.TextKind `json:"kind,omitempty"`
 	Copy       string          `json:"copy,omitempty"`
-	// CopyMedia is what the copy holds, the video or the sound alone.
-	CopyMedia download.Media `json:"copyMedia,omitempty"`
+	CopyMedia  download.Media  `json:"copyMedia,omitempty"`
 }
 
-// getKind returns the text kind a fetch produced: captions, or the prose of an article.
 func getKind(fetched download.Text) domain.TextKind {
 	if len(fetched.Cues) > 0 {
 		return kindCaptions
@@ -58,8 +56,6 @@ func getKind(fetched download.Text) domain.TextKind {
 	return kindArticle
 }
 
-// getSegments is what was fetched as the segments of a text version: one segment to a caption, with
-// its span in seconds as its selector, or the prose whole.
 func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	if len(fetched.Cues) == 0 {
 		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}, nil
@@ -76,7 +72,6 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	return segments, nil
 }
 
-// writeText keeps the text under the key with its record.
 func (f folder) writeText(ctx context.Context, key string, segments []domain.TextSegment, rec record) error {
 	if err := host.WriteText(ctx, f.store, key+textExt, segments); err != nil {
 		return err
@@ -93,7 +88,6 @@ func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 	return f.store.Write(ctx, key+recordExt, raw)
 }
 
-// findRecord is the record kept under the key, and false where none is.
 func (f folder) findRecord(ctx context.Context, key string) (record, bool, error) {
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
@@ -107,13 +101,11 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 
-// readRecord is the record kept under the key, and the zero record where none is kept.
 func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	rec, _, err := f.findRecord(ctx, key)
 	return rec, err
 }
 
-// findCopy is the name and size of the copy kept under the key, and false where none is.
 func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool, error) {
 	files, err := f.store.List(ctx)
 	if err != nil {
@@ -128,13 +120,11 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
-// isCopyOf reports whether a file of the folder is the whole copy kept under the key.
 func isCopyOf(name, hash string) bool {
 	ext := path.Ext(name)
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
 }
 
-// isCopyExt reports whether a copy is kept in the container of the extension.
 func isCopyExt(ext string) bool {
 	switch ext {
 	case ".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac":
@@ -143,7 +133,6 @@ func isCopyExt(ext string) bool {
 	return false
 }
 
-// deleteCopy takes away the copy kept under the key, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	files, err := f.store.List(ctx)
 	if err != nil {
@@ -158,7 +147,6 @@ func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	return errors.Join(errs...)
 }
 
-// deleteOtherCopies takes away every whole copy kept under the key but the one in the named file.
 func (f folder) deleteOtherCopies(ctx context.Context, hash, name string) error {
 	files, err := f.store.List(ctx)
 	if err != nil {

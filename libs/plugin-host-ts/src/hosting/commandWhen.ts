@@ -8,7 +8,6 @@ export type CommandWhenDeps = Pick<PluginHostDeps, 'getContentTypes' | 'getWindo
 
 const conditions = new Map<string, WhenCondition | undefined>()
 
-/** The condition of the text, read once; undefined where it cannot be read. */
 const getCondition = (text: string): WhenCondition | undefined => {
   if (!conditions.has(text)) {
     const parsed = parseWhen(text)

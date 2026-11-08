@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { AddressSource } from '@numen/plugin-sdk'
 import { createSources } from './sources'
 
-/** Resolves an address to a loopback URL, typed by its extension. */
 const resolve = async (address: string): Promise<AddressSource> => ({
   url: `http://127.0.0.1:1/token/${address}`,
   mediaType: address.endsWith('.mp4')
@@ -12,7 +11,6 @@ const resolve = async (address: string): Promise<AddressSource> => ({
       : 'audio/mpeg',
 })
 
-/** The notes of a vault, each with its frontmatter. */
 const notesOf = (properties: Record<string, Record<string, unknown>>) => ({
   readProperties: async (path: string) => properties[path] ?? {},
 })

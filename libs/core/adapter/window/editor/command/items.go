@@ -44,7 +44,6 @@ func (h *Handler) ListCommandItems(
 	return connect.NewResponse(&v1.ListCommandItemsResponse{Lists: lists}), nil
 }
 
-// listItems lists the items one command offers over the path.
 func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID string) *v1.CommandItemList {
 	entry, found := h.findEntry(pluginID, commandID)
 	if !found {
@@ -67,8 +66,6 @@ func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID strin
 	return &v1.CommandItemList{Items: items}
 }
 
-// runWithArgument runs the command of a call that names an item, or a command with items, over the
-// version the argument names. It reports false for any other call, which runs as a plain command.
 func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, bool, error) {
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
 	hasItems := found && plugincommand.HasItems(entry.Command)
@@ -89,8 +86,6 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 	return result, true, err
 }
 
-// findEntry is the command of the id an enabled plugin declares, whichever part of it runs the command,
-// or its handler of the shared command of the id.
 func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool) {
 	var entries []plugincommand.Entry
 	if plugincommand.IsSharedCommand(command) {
@@ -106,7 +101,6 @@ func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool
 	return plugincommand.Entry{}, false
 }
 
-// getVersionTitle is what a person reads a version as: its kind, and whether it is the live one.
 func getVersionTitle(item textversion.VersionItem) string {
 	kind := item.Kind
 	if kind == "" {
@@ -118,7 +112,6 @@ func getVersionTitle(item textversion.VersionItem) string {
 	return kind
 }
 
-// newItemsFailure is a list of items that could not be made, with the code and message of the error.
 func newItemsFailure(err error) *v1.CommandItemList {
 	return &v1.CommandItemList{Error: getErrorCode(err), Message: err.Error()}
 }

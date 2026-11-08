@@ -17,8 +17,7 @@ import (
 // the vault's store.
 type TriggerRecords struct {
 	Options vaultconfig.Options
-	// Folder is the core's folder of the store.
-	Folder string
+	Folder  string
 }
 
 // triggerRecordName is the name of the record in the core's folder.

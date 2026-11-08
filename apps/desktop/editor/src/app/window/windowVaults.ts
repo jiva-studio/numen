@@ -18,7 +18,6 @@ import { COMMAND } from '@/shared/commandIds'
 
 interface WindowVaultsDeps {
   readonly vaultList: Readonly<Ref<VaultList>>
-  /** Shows a vault of the list in this window, as the welcome screen does, and reports a failure. */
   readonly openVault: (vault: VaultRef) => Promise<void>
 }
 

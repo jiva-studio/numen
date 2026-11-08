@@ -215,7 +215,6 @@ describe('a view', () => {
   })
 })
 
-/** The open menus, drawn at the end of the document. */
 const getMenus = (): HTMLElement[] => [
   ...document.body.querySelectorAll<HTMLElement>('[role="menu"]'),
 ]

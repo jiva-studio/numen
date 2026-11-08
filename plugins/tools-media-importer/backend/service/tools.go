@@ -96,14 +96,11 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	return out, nil
 }
 
-// fetchText fetches the text of the link note and writes the text the note has into out, the text it
-// had before where the fetch fails.
 func (t *Tools) fetchText(ctx context.Context, made link.Link, out *URLImportOutput) error {
 	fetchErr := t.links.FetchText(ctx, made)
 	return errors.Join(fetchErr, t.readText(ctx, made, out))
 }
 
-// readText writes the live text of the link note into out.
 func (t *Tools) readText(ctx context.Context, made link.Link, out *URLImportOutput) error {
 	text, err := t.links.ReadArticle(ctx, made)
 	if err != nil || text == "" {
@@ -117,8 +114,6 @@ func (t *Tools) readText(ctx context.Context, made link.Link, out *URLImportOutp
 	return nil
 }
 
-// startDownload downloads the video of the link note in the background where the address is
-// copyable, and writes the task id of the download or the reason none was started into out.
 func (t *Tools) startDownload(ctx context.Context, made link.Link, out *URLImportOutput) {
 	if !t.links.IsCopyable(made.Address) {
 		out.DownloadError = link.ErrNotCopyable.Error()

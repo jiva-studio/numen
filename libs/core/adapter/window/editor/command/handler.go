@@ -103,7 +103,6 @@ func getErrorCode(err error) v1.CommandErrorCode {
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 }
 
-// newWireCommand is a command as the schema carries it.
 func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
@@ -125,7 +124,6 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 	}
 }
 
-// newWireSlotEntry is a slot entry as the schema carries it.
 func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
 	entry := &v1.ManifestSlotEntry{
 		Slot:  one.Entry.Slot,
@@ -149,7 +147,6 @@ func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
 	return &v1.PluginSlotEntry{PluginId: one.PluginID, Entry: entry}
 }
 
-// clampToInt32 narrows an order to the 32 bits the schema carries.
 func clampToInt32(value int) int32 {
 	if value > math.MaxInt32 {
 		return math.MaxInt32

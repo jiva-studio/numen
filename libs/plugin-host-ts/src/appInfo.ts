@@ -12,7 +12,6 @@ export const DEV_VERSION = '0.0.0-dev'
 export interface AppInfoSource {
   readonly version?: string | undefined
   readonly build?: string | undefined
-  /** The platform the window runs on, as its Wails runtime reports it; read on each access. */
   readonly getPlatform: () => AppInfo['platform']
 }
 

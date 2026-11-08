@@ -39,40 +39,25 @@ type Services struct {
 	Agent     *wire.AgentHandler
 	Command   *command.Handler
 	Media     *mediaHandler
-	// Text serves the live text of a file and its edits to the views.
-	Text *texts.Handler
+	Text      *texts.Handler
 
-	// Themes are the stylesheets the window may apply. They belong to
-	// the installation, so they arrive here from whatever put the window
-	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
 
-	// PluginServices answers the calls for the services plugins serve to the windows.
 	PluginServices PluginServices
 
-	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
 
-	// Catalog answers which plugins the application has, which it could have, and which provides a
-	// kind of tab. A build put together without a catalog serves no CatalogService.
 	Catalog numenv1connect.CatalogServiceHandler
 
-	// openChoosePath makes the use case that puts the picker for a plugin's path setting in front of the
-	// person. Nil is a build that serves none.
 	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath
 
-	// getPluginDir returns the root directory of an installed plugin by ID, or false if not found.
 	getPluginDir func(id string) (string, bool)
 
-	// Playing is the socket that serves recording playback. A build without one
-	// returns no address, and the window reports that playback is unavailable.
 	Playing *Loopback
 
 	server *fileServer
 }
 
-// createServices is every handler of a window over this state, each holding
-// nothing yet that needs a vault.
 func createServices(state *State) *Services {
 	return &Services{
 		state:     state,
@@ -92,14 +77,11 @@ func createServices(state *State) *Services {
 	}
 }
 
-// openPlaying names the socket a recording is played from.
 func (s *Services) openPlaying(playing *Loopback) {
 	s.Playing = playing
 	s.Media.playing = playing
 }
 
-// readFiles binds the use cases that read the files of the vaults the readers open, the files of the
-// plugins' stores, and the content types files are served as.
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openPluginFile = openPluginFile
@@ -155,8 +137,6 @@ func (s *Services) GetPickFolder() *vaults.PickFolder {
 	return &pick
 }
 
-// newAgentHandler answers for the agent the panel's tasks go to. A task naming no folder is started
-// in the vault open in the window, and works it.
 func newAgentHandler(state *State) *wire.AgentHandler {
 	return &wire.AgentHandler{
 		GetRoot:        func() string { return state.GetCurrentVault().Path },

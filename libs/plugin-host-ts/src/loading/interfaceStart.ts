@@ -6,23 +6,17 @@
 import { INTERFACE_WAIT_MS } from './limits'
 
 export interface InterfaceStartDeps<Loaded> {
-  /** The enabled plugins, in the order they are activated. */
   readonly ids: readonly string[]
-  /** Whether the plugin has an entry in a window slot; false where the manifest cannot be read. */
   readonly isInterface: (id: string) => Promise<boolean>
   readonly load: (id: string) => Promise<Loaded>
-  /** Starts the plugin; never rejects. */
   readonly start: (id: string, loaded: Loaded) => Promise<void>
 }
 
 export interface InterfaceStart {
-  /** The plugins with no entry in a window slot, in their order. */
   readonly others: readonly string[]
-  /** Settles once every plugin of a window slot has started or failed, late ones included. */
   readonly started: Promise<void>
 }
 
-/** A promise that settles with 'late' after INTERFACE_WAIT_MS, and the cancel of its timer. */
 function createDeadline(): { readonly late: Promise<'late'>; readonly cancel: () => void } {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<'late'>((resolve) => {

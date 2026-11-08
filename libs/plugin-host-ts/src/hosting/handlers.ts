@@ -25,7 +25,6 @@ interface HandlerParts {
   readonly registry: HostRegistry
 }
 
-/** The handlers of the command whose condition holds over the note, in the order of the plugins' ids. */
 function listMatching({ deps, registry }: HandlerParts, command: string, note: CommandNote) {
   return (deps.getHandlerDeclarations?.() ?? [])
     .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
@@ -36,7 +35,6 @@ function listMatching({ deps, registry }: HandlerParts, command: string, note: C
 const findEntry = ({ registry }: HandlerParts, handler: HandlerDeclaration) =>
   registry.handlers.value.get(formatCommandId(handler.pluginId, handler.command))
 
-/** The items the handler offers of its own: those its frontend lists, or the core's for its backend. */
 async function listOwnItems(
   parts: HandlerParts,
   handler: HandlerDeclaration,
@@ -62,10 +60,6 @@ export interface SharedRun extends CommandRun {
   readonly note: CommandNote
 }
 
-/**
- * Runs the handler over the note with the argument: in its frontend, or else in its backend, which
- * takes the values of the arguments too.
- */
 async function runHandler(
   parts: HandlerParts,
   handler: HandlerDeclaration,
@@ -95,12 +89,6 @@ async function runHandler(
   }
 }
 
-/**
- * The items a shared command offers over the note: one for each handler whose condition holds, by
- * its plugin id and title; or, where those handlers offer items of their own, theirs in one list,
- * each in the group it gives or else in the group of its plugin. A handler that offers none of its
- * own is then an item of its own group.
- */
 async function listHandlerItems(
   parts: HandlerParts,
   command: string,
@@ -120,11 +108,6 @@ async function listHandlerItems(
   )
 }
 
-/**
- * Runs a shared command over the note. The argument names the item picked: a plugin id runs that
- * plugin's handler, `<plugin id>:<item id>` runs it with the item. Without one the command runs its
- * one handler whose condition holds. Reports whether a handler ran.
- */
 async function runSharedCommand(
   parts: HandlerParts,
   command: string,

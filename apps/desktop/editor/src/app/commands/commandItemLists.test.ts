@@ -14,7 +14,6 @@ const SCAN = 'scans/page.png'
 const TALK = 'talks/a.mp3'
 const ITEMS = [{ id: 'org.example.ears/ears', title: 'transcript (live)' }]
 
-/** Lets every pending callback and macrotask run. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const setUp = (kind: () => Promise<FileKind | undefined> = async () => undefined) => {

@@ -8,9 +8,7 @@ import type { CommandTarget } from '@/features/command-palette'
 import { getPaletteValues } from '@/shared/paletteValues'
 
 export interface WindowWhenContext {
-  /** The content type of a file by its extension, as the core lists it. */
   readonly getContentTypes: () => Readonly<Record<string, string>>
-  /** The settings by their dotted keys. */
   readonly getConfig: () => WhenSettings
 }
 

@@ -33,7 +33,6 @@ const getExtension = (path: string): string => {
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
 }
 
-/** The note variables of a target: the type and the frontmatter the place read, or none. */
 const getNoteValues = ({ type, properties }: TargetNote) => ({
   'target.noteType': type ?? '',
   'target.properties': properties ?? {},

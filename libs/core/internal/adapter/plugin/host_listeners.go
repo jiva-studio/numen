@@ -299,8 +299,6 @@ func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
 	sup.Release(h.clock.Now())
 }
 
-// recordActivationFailure records a failed activation of the plugin, and returns the failure. A plugin that
-// already has a failure keeps it, and nil is returned.
 func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
 	h.mu.Lock()
 	defer h.mu.Unlock()

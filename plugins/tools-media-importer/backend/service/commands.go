@@ -25,7 +25,6 @@ const (
 // argumentAddress is the argument of app:link.import that holds the web address.
 const argumentAddress = "address"
 
-// newCommands is the handlers the manifest declares.
 func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
@@ -43,7 +42,6 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 	return commands, nil
 }
 
-// newImportCommand makes the link note of an address in the root of the vault, and nothing else.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		made, err := links.Create(ctx, "", "", req.Arguments.GetString(argumentAddress))
@@ -54,8 +52,6 @@ func newImportCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDownloadTextCommand starts the fetch of the text of a link note and answers once its task is
-// shown. The task shows how the fetch ends.
 func newDownloadTextCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -69,8 +65,6 @@ func newDownloadTextCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDownloadCopyCommand starts the download of the video a link note points at and answers once
-// its task is shown. The task shows how the download ends.
 func newDownloadCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -91,7 +85,6 @@ func newDownloadCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDeleteCopyCommand deletes the media downloaded for a link note.
 func newDeleteCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -105,7 +98,6 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// describeSize returns a size in the unit a person reads it in.
 func describeSize(bytes int64) string {
 	if bytes < 1<<20 {
 		return fmt.Sprintf("%d bytes", bytes)

@@ -28,7 +28,6 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) pluginport.Plug
 	}
 }
 
-// getKinds is the tab kinds of an editor, a viewer and two plugins that both take decks.
 func getKinds() declared {
 	return declared{
 		entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault),

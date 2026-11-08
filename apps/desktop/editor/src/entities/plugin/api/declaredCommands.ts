@@ -57,13 +57,10 @@ export interface DeclaredSlot {
   readonly command?: string
   readonly view?: string
   readonly submenu?: string
-  /** The title of a submenu. */
   readonly title?: string
-  /** The Lucide name of the icon of a submenu. */
   readonly iconName?: string
   readonly group?: string
   readonly order?: number
-  /** The condition over the target of the place under which the entry is drawn. */
   readonly when?: string
 }
 
@@ -71,9 +68,7 @@ export interface DeclaredSlot {
 export interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
-  /** The content type of a file by its extension, lowercase and without the dot. */
   readonly contentTypes?: Readonly<Record<string, string>>
-  /** The handlers of shared commands the enabled plugins declare. */
   readonly handlers?: readonly HandlerDeclaration[]
 }
 
@@ -83,10 +78,8 @@ export interface DeclaredCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
   readonly when?: string
   readonly shortcut?: string
-  /** Set for a command that offers items, the text versions of a file it runs over. */
   readonly hasItems?: true
   readonly arguments: readonly DeclaredArgument[]
 }
@@ -127,13 +120,11 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
 
 const PLACED_KINDS = ['command', 'view', 'submenu'] as const
 
-/** What an entry places, as the field of its kind. */
 const readPlaced = (entry: WireSlotEntry['entry']) => {
   const kind = PLACED_KINDS.find((one) => one === entry?.placed.case)
   return kind && entry?.placed.value ? { [kind]: entry.placed.value } : {}
 }
 
-/** Where an entry goes among the others of its slot, and when it is drawn. */
 const readArrangement = (entry: WireSlotEntry['entry']) => ({
   ...(entry?.group ? { group: entry.group } : {}),
   ...(entry?.order === undefined ? {} : { order: entry.order }),
@@ -151,7 +142,6 @@ const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
   }
 }
 
-/** A handler of a shared command, with whether the core lists its items. */
 const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDeclaration => ({
   pluginId,
   command: handler?.command ?? '',

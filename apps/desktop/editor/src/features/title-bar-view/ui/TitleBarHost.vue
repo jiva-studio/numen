@@ -9,7 +9,6 @@ import { usePluginStyles } from '@/shared/model/usePluginStyles'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The view of the slot, or null while no plugin draws the bar. */
   view: DeclaredSlotView | null
 }>()
 

@@ -138,11 +138,10 @@ func (types) ListExtensions(domain.ContentType) []string { return nil }
 
 // plugins declares the triggers it is given and records each run.
 type plugins struct {
-	mu       sync.Mutex
-	triggers []pluginport.PluginTriggerEntry
-	ran      []string
-	failing  map[string]bool
-	// handlerWhen is the condition of the handler of each command, by its full id.
+	mu          sync.Mutex
+	triggers    []pluginport.PluginTriggerEntry
+	ran         []string
+	failing     map[string]bool
 	handlerWhen map[string]string
 }
 
@@ -228,28 +227,24 @@ func (s *scene) scan(t *testing.T) []string {
 	return s.plugins.take()
 }
 
-// getExtractOnAdd extracts the text of a PDF added.
 func getExtractOnAdd() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
 	}}
 }
 
-// getRecognizeWhenOn runs over every file added while a setting is on.
 func getRecognizeWhenOn() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
 	}}
 }
 
-// getRecheckOnChange reads a picture again when it changes.
 func getRecheckOnChange() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
 	}}
 }
 
-// getCaptionsOnLink downloads the captions of a link note that holds an address.
 func getCaptionsOnLink() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",

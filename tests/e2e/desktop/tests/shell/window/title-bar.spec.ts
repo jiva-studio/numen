@@ -10,7 +10,6 @@ import { readFrameCalls, serveRuntime } from '../../support/runtime.js'
  */
 const BAR_ID = 'md.numen.views.titleBar'
 
-/** The value of a custom property as the element computes it, inherited ones included. */
 const readProperty = (locator: Locator, name: string): Promise<string> =>
   locator.evaluate(
     (element, property) => getComputedStyle(element).getPropertyValue(property).trim(),

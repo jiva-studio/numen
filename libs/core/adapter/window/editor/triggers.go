@@ -8,9 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// runTriggers runs the triggers over the vault once, and again after each wake and each change of the
-// settings, until ctx ends. A plugin turned on or off is a change of the settings. Wakes that arrive
-// during a run make one run more.
 func runTriggers(
 	ctx context.Context, triggers *trigger.Triggers, v domain.Vault, wake <-chan struct{},
 	watch *settings.Watch, report func(error),
@@ -37,7 +34,6 @@ func runTriggers(
 	}
 }
 
-// signal wakes what waits on the channel, and leaves one wake pending where one is already.
 func signal(wake chan<- struct{}) {
 	select {
 	case wake <- struct{}{}:

@@ -41,15 +41,8 @@ type Loopback struct {
 	server  *http.Server
 	files   *fileServer
 	address string
-	// token authenticates requests. Any process on the machine can reach a loopback
-	// socket, and a vault holds user content; the token distinguishes this
-	// window's requests from others. It is generated for each run.
-	token string
-	// stopped is set when the socket stops serving for any reason other than the
-	// window closing. An address on a socket that has stopped serving is a recording
-	// that cannot play, with no reported cause.
+	token   string
 	stopped atomic.Bool
-	// plugins forwards the plugin route, once the window has its plugins.
 	plugins atomic.Pointer[PluginServices]
 }
 
@@ -69,7 +62,6 @@ func Listen(ctx context.Context, files *fileServer, stopped func(error)) (*Loopb
 	return back, nil
 }
 
-// newLoopback is the socket answering, whichever socket it is.
 func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
@@ -98,14 +90,6 @@ func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*
 	return back, nil
 }
 
-// getHandler serves one file of one vault.
-//
-// The vault is named in the address and not taken from the window: a tab keeps
-// playing while the window switches to another vault, and it plays the file it
-// opened.
-//
-// Reads go through the vault's own reader. That is the boundary every other
-// request crosses.
 func (l *Loopback) getHandler() http.Handler {
 	target := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -195,8 +179,6 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
 }
 
-// findVault is the vault an address names. The one the window shows is answered
-// without asking the list, which is every question but the first.
 func (h *fileServer) findVault(id string) (domain.Vault, bool) {
 	if showing := h.state.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true
@@ -211,8 +193,6 @@ func (h *fileServer) findVault(id string) (domain.Vault, bool) {
 	return one, true
 }
 
-// getPlayOrigins is where the window may play from, for the policy the page is served
-// under. A build that opened no socket names nowhere.
 func (l *Loopback) getPlayOrigins() []string {
 	if l == nil {
 		return nil

@@ -12,7 +12,6 @@ import SlotMenuButton from './SlotMenuButton.vue'
 defineProps<{
   place: string
   entries: readonly SlotItem[]
-  /** The items a command lists. */
   listItems: (command: string) => Promise<readonly CommandItem[]>
 }>()
 

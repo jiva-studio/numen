@@ -10,7 +10,6 @@ export interface ListItem {
   readonly text: string
   readonly detail?: string
   readonly group?: string
-  /** Whether a line is drawn above it, dividing it from the row before. */
   readonly hasSeparator?: boolean
 }
 

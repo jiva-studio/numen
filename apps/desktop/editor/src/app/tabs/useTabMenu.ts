@@ -22,7 +22,6 @@ import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'
 
 export interface TabMenuDeps {
-  /** The slots of the window; without them a tab has no menu. */
   readonly slots?: SlotHost | undefined
   /** Runs a command of an entry over the tab; with `argument`, the one picked. */
   runCommand?(command: string, target: RunTarget, argument?: string): Promise<void>
@@ -44,7 +43,6 @@ const NOTE_EXTENSION = '.md'
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: WORDS.loadingItems }
 
-/** The items of the commands of the open menu that offer them, read as the menu opens. */
 function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
   const lists = shallowRef<CommandItemLists>(new Map())
   let itemSubscription: Disposable | null = null
@@ -74,7 +72,6 @@ function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
   return { lists, read, stop }
 }
 
-/** The window a row stands for when it is an item of moving the tab; null for any other row. */
 const getMoveWindow = (tree: SlotMenu, id: string | null): string | null => {
   const pick = id === null ? undefined : tree.getPick(id)
   return pick?.command === COMMAND.moveTabToWindow ? (pick.argument ?? null) : null
@@ -86,7 +83,6 @@ export interface NoteKind {
   readonly properties?: Readonly<Record<string, unknown>>
 }
 
-/** The target of a tab with the type and properties of its note, where they are read; without them otherwise. */
 const readTypedTarget = async (
   target: RunTarget,
   readNoteKind: (path: string) => Promise<NoteKind>,

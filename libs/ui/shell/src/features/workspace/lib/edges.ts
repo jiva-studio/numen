@@ -14,15 +14,11 @@ export interface WindowEdge {
 }
 
 export interface TopPanes {
-  /** The panes whose top is the top of the workspace, in the order they are drawn. */
   readonly top: readonly NodeId[]
-  /** The pane in the top-left corner. */
   readonly left: NodeId
-  /** The pane in the top-right corner. */
   readonly right: NodeId
 }
 
-/** A branch whose children stand side by side gives each of them the top; a column, its first. */
 function collectTop(node: WorkspaceNode, axis: Orientation, depth: number, out: NodeId[]): void {
   if (node.kind === 'pane') {
     out.push(node.id)
@@ -47,11 +43,8 @@ function findCorner(
 
 /** What the strip of a pane takes from the top of the window. */
 export interface StripEdge {
-  /** Whether the free space of the strip moves the window. */
   readonly isDraggable: boolean
-  /** The room kept free at the left of the strip, in pixels. */
   readonly leftInset: number
-  /** The room kept free at the right of the strip, in pixels. */
   readonly rightInset: number
 }
 

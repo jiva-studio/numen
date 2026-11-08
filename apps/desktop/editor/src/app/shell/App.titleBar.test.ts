@@ -87,7 +87,6 @@ const createBar = (name: string, context: BarContext) =>
     },
   })
 
-/** Registers the bar of a plugin as the plugin's frontend does when it is activated. */
 const registerBar = async (pluginId: string, name = 'LedgerBar') => {
   const { contextHost } = hosts.current!
   const context = {

@@ -20,7 +20,6 @@ export interface DeclaredSlotView {
 }
 
 export interface SlotViewRegistryDeps {
-  /** Receives the plugin whose view a slot does not draw because another plugin holds the slot. */
   readonly reportIssue?: (pluginId: string, message: string) => void
 }
 
@@ -30,7 +29,6 @@ export interface SlotViewRegistry {
    * plugin; undefined while it has registered none.
    */
   findView(pluginId: string, view: string): unknown
-  /** Every registered view, in order of registration; reactive. */
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
   registerSlotView(pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
   /** The view a window slot draws, or null while no plugin registered one; reactive. */

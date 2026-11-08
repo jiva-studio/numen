@@ -62,7 +62,6 @@ func TestListCommands_ListsACommandWithItemsAndMarksIt(t *testing.T) {
 	}
 }
 
-// listItemsOfOne sends a request for the items of one command over the path and returns its one list.
 func listItemsOfOne(t *testing.T, handler *command.Handler, pluginID, commandID, path string) *v1.CommandItemList {
 	t.Helper()
 	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{

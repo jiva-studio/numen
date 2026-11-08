@@ -6,7 +6,6 @@ import { TITLE_BAR_HEIGHT } from './lib/sizes'
 
 const read = (file: string): string => readFileSync(resolve(import.meta.dirname, file), 'utf8')
 
-/** The declarations of the first rule of the selector in the stylesheet. */
 const readRule = (css: string, selector: string): string => {
   const start = css.indexOf(`${selector} {`)
   return start < 0 ? '' : css.slice(start, css.indexOf('}', start))

@@ -107,7 +107,6 @@ function createRegistrationBridge(
   }
 }
 
-/** The settings of a plugin, as the window holds them. */
 function createSettingBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
@@ -134,7 +133,6 @@ function createSettingBridge(
 
 type SharedBridge = 'registerSlotView' | 'registerView' | 'mountView'
 
-/** The views, status views and drops a plugin registers, which the shared registries hold. */
 function createSharedBridge(
   shared: SharedRegistries,
 ): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
@@ -148,7 +146,6 @@ function createSharedBridge(
   }
 }
 
-/** The tabs a plugin opens in the window. */
 function createTabBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'openTab' | 'navigateTab' | 'closeTab'> {
@@ -186,7 +183,6 @@ function createHostContextBridge(
   }
 }
 
-/** The host services a plugin context is given, as the window has made them. */
 function createServiceBridge(
   deps: PluginHostDeps,
 ): Pick<
@@ -241,7 +237,6 @@ function createHostRegistry(): HostRegistry {
   }
 }
 
-/** What the plugins registered, as lists. */
 function createRegisteredApi(registry: HostRegistry) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
@@ -260,7 +255,6 @@ function createRegisteredApi(registry: HostRegistry) {
   }
 }
 
-/** The contexts and manifests of the plugins. */
 function createContextApi(registry: HostRegistry, contextHost: PluginContextHost) {
   return {
     contextHost,

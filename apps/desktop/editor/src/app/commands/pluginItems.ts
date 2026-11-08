@@ -84,10 +84,6 @@ function createPluginItems(deps: PluginItemsDeps) {
 
 const isSharedCommand = (id: string): boolean => SHARED_COMMANDS.some((one) => one.id === id)
 
-/**
- * The handler a shared command lists as its one item: an item that is a handler has no group, and
- * one a handler offers of its own has the group of its plugin.
- */
 const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem | undefined => {
   const [only] = items ?? []
   return items?.length === 1 && only?.group === undefined ? only : undefined
@@ -95,9 +91,7 @@ const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem
 
 /** What the palette's lists are made of besides the plugin host. */
 interface PaletteParts {
-  /** The lists the window keeps for the commands without items of a plugin. */
   readonly paletteLists: PaletteLists
-  /** The target of the palette. */
   readonly getTarget: () => CommandTarget
   readonly runs: RunSupport
 }

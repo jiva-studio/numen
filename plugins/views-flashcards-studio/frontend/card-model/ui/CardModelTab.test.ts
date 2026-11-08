@@ -90,11 +90,9 @@ const twice: DeckProblem = {
   text: 'declared twice',
 }
 
-/** The button that adds a template, found by its text. */
 const findAddTemplate = (window: ReturnType<typeof mount>) =>
   window.findAll('button').find((one) => one.text() === 'Add a template')
 
-/** A window with one card model open on a read that answers as given, drawn. */
 const mountWithRead = async (readCardModel: Cards['readCardModel']) => {
   const core: Cards = {
     cardModels: async () => ({ cardModels: [], total: 0 }),

@@ -49,7 +49,6 @@ vi.mock('./commandDeps', () => ({
 
 const target = { path: 'a.md' } as unknown as CommandTarget
 
-/** What is in front of the palette: the note at the path, or none. */
 const inFront = (path: string, isReady = true) =>
   ({
     tab: '',

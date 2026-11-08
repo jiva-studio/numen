@@ -17,8 +17,6 @@ import (
 
 const pluginID = "md.numen.readers.epub"
 
-// newTextVault is a vault holding one file under name, the texts of that vault with the plugin
-// providing, and the plugin's text server.
 func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextServer) {
 	t.Helper()
 	files := hosttest.New("vault")
@@ -30,7 +28,6 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Text
 	return texts, server
 }
 
-// createText starts the text of a book and waits for it to be written.
 func createText(t *testing.T, server *TextServer, req TextRequest) {
 	t.Helper()
 	if err := server.CreateText(t.Context(), req); err != nil {
@@ -39,7 +36,6 @@ func createText(t *testing.T, server *TextServer, req TextRequest) {
 	server.Wait()
 }
 
-// readLive is the live version of a file and its whole text.
 func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionText {
 	t.Helper()
 	listing, err := texts.ListVersions(t.Context(), path)
@@ -237,7 +233,6 @@ func TestEachSegmentIsSelectedByTheCFIOfItsFirstCharacter(t *testing.T) {
 	}
 }
 
-// firstWord is the first word of a text, and empty for one with none.
 func firstWord(text string) string {
 	if words := strings.Fields(text); len(words) > 0 {
 		return words[0]

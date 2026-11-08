@@ -143,7 +143,6 @@ const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly C
 const getSettingPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
 
-/** The condition of the command of a setting and its availability under the settings as they stand. */
 function getSettingAvailability(
   owner: SettingOwner,
   setting: PluginSettingInfo,

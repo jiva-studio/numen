@@ -122,9 +122,6 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	return out, nil
 }
 
-// isRecording reports whether the extension of the file gives it an audio/* or video/* type, the
-// types the handler of app:file.createText in the manifest takes. The extensions are those
-// shared-mime-info maps to the two types; the plugin cannot read the MIME table of the host.
 func isRecording(file string) bool {
 	switch strings.ToLower(path.Ext(file)) {
 	case ".aac", ".ac3", ".aif", ".aifc", ".aiff", ".amr", ".ape", ".au", ".flac", ".m4a", ".m4b",

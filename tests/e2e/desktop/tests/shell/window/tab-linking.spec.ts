@@ -9,13 +9,11 @@ import {
   showInFiles,
 } from '../../support/layout.js'
 
-/** The paths of the note tabs the core keeps for the vault in the window, in their order. */
 const readNoteTabPaths = async (page: Page): Promise<string[]> =>
   (await readOpenTabs(page.request)).tabs
     .filter((one) => one.kind === 'note')
     .map((one) => one.path)
 
-/** Links the tab of that title to the note tab of that title, from the Link with tab submenu. */
 const linkTab = async (page: Page, from: string, to: string): Promise<void> => {
   await getTab(page, from).click({ button: 'right' })
   // The submenu opens over the item that opens it once the pointer reaches it.

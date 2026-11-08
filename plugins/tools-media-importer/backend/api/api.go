@@ -19,10 +19,8 @@ type GetLinkRequest struct {
 
 // GetLinkResponse holds the facts of one link.
 type GetLinkResponse struct {
-	// URL is the web address the note holds.
-	URL string `json:"url"`
-	// IsCopyable is whether a video is published at the address.
-	IsCopyable bool `json:"isCopyable"`
+	URL        string `json:"url"`
+	IsCopyable bool   `json:"isCopyable"`
 }
 
 // CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind

@@ -9,13 +9,9 @@ import type { CommandTarget } from '@/features/command-palette'
 
 interface WindowCommandsDeps {
   readonly getAppIds: () => readonly string[]
-  /** The ids of the commands the plugins of the window registered; reactive. */
   readonly getPluginIds: () => readonly string[]
-  /** Runs the command over the target; settles when the run ends and rejects with its error, which it writes nowhere. */
   readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<void>
-  /** The items a command offers over the target; none for a command of the window. */
   readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
-  /** Runs a command with the item picked as its argument. */
   readonly runWithArgument: (id: string, target: RunTarget, argument: string) => Promise<void>
   readonly getTarget: () => CommandTarget
 }

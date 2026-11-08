@@ -8,7 +8,6 @@ import type { VaultRow } from '@numen/shell'
 
 interface WindowVaultsDeps {
   readonly list: Readonly<Ref<readonly VaultRow[]>>
-  /** The vault of the tab the window shows; null while it shows the list. */
   readonly getTabVault: () => string | null
   readonly openTab: (vault: string) => void
 }

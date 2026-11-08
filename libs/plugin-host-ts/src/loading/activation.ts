@@ -23,7 +23,6 @@ export interface ActivateContext extends ResolveModuleContext {
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
-  /** The number of the latest start of each plugin, so a start cancelled at the limit takes back only its own. */
   readonly starts: Map<string, number>
 }
 
@@ -38,7 +37,6 @@ function setFailure(ctx: ActivateContext, pluginId: string, error: string | unde
   ctx.failures.value = next
 }
 
-/** Takes back what a plugin registered, for a start that failed. */
 function discardEntry(ctx: ActivateContext, pluginId: string): void {
   removePluginStyles(pluginId)
   ctx.host.disposePlugin(pluginId)
@@ -52,11 +50,9 @@ interface EntryStart {
   readonly module: unknown
   readonly number: number
   readonly limit: StartLimit
-  /** What the start registers through its context, taken back when it is cancelled. */
   readonly scope: StartScope
 }
 
-/** Activates the module the start has read, and marks the plugin active unless the limit has passed. */
 async function activateModule(
   ctx: ActivateContext,
   pluginId: string,
@@ -82,12 +78,6 @@ async function activateModule(
   return true
 }
 
-/**
- * Reads and activates the plugin with a context of its own. Once the start is cancelled the context
- * registers nothing, and a start that ends after the limit has passed takes back what it registered and
- * marks nothing, unless the plugin has been started again since. A module read after the limit is not
- * activated.
- */
 async function startEntry(
   ctx: ActivateContext,
   pluginId: string,

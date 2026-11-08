@@ -280,7 +280,6 @@ func DefaultFile() File {
 //go:embed plugins.json
 var defaultPlugins []byte
 
-// listPluginsOffByDefault returns the ids of the plugins that are off by default.
 func listPluginsOffByDefault() []string {
 	var declared struct {
 		Off []string `json:"off"`
@@ -291,8 +290,6 @@ func listPluginsOffByDefault() []string {
 	return declared.Off
 }
 
-// getDefaultPlugins returns the objects of the plugins the defaults name: each plugin that is off by
-// default, disabled.
 func getDefaultPlugins() map[string]map[string]any {
 	plugins := map[string]map[string]any{}
 	for _, id := range listPluginsOffByDefault() {
@@ -301,7 +298,6 @@ func getDefaultPlugins() map[string]map[string]any {
 	return plugins
 }
 
-// isDefaultPlugin reports whether the object of a plugin is the one the defaults give it.
 func isDefaultPlugin(id string, values map[string]any) bool {
 	return maps.EqualFunc(values, getDefaultPlugins()[id], func(a, b any) bool { return a == b })
 }

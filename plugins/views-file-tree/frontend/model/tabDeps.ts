@@ -19,9 +19,7 @@ export interface FileTreeHost {
   readonly workspace: WorkspaceHost
   readonly files: VaultFiles
   readonly drops?: DropHost
-  /** The slots of the window the menu of a row is drawn from, where the host offers them. */
   readonly slots?: SlotHost
-  /** The commands of the window and of the plugins, run over a row. */
   readonly commands?: CommandsHost
 }
 
