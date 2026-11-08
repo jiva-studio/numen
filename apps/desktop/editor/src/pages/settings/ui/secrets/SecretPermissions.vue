@@ -74,6 +74,7 @@ function onChoose(id: string): void {
     <SearchableListPopup
       v-if="anchor"
       :model-value="null"
+      @update:model-value="() => undefined"
       v-model:query="query"
       :items="items"
       :label="words.secretAllowedTo"
