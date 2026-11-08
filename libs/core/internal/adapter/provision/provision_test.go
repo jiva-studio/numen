@@ -345,7 +345,7 @@ func TestTheCacheFolderNamesKindIdVersionAndPlatform(t *testing.T) {
 	}
 }
 
-func TestARunContinuesAfterEveryCallerLeaves(t *testing.T) {
+func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
 	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}
