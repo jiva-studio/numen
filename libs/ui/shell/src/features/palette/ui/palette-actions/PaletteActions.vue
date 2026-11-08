@@ -131,7 +131,7 @@ function goTo(to: number): void {
 
 async function reveal(): Promise<void> {
   await nextTick()
-  actionRows.get(activeActionId.value)?.element?.scrollIntoView?.({ block: 'nearest' })
+  actionRows.get(activeActionId.value)?.element?.scrollIntoView({ block: 'nearest' })
 }
 
 function hold(action: string, row: unknown): void {

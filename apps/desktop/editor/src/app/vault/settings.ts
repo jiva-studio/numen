@@ -106,7 +106,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     min: s.min,
     max: s.max,
     step: s.step,
-    activeOptions: (s.activeOptions ?? []).map(readOption),
+    activeOptions: s.activeOptions.map(readOption),
     isShown: Boolean(s.isShown),
     value: readJson(s.valueJson),
   }
@@ -126,10 +126,10 @@ export const settingsCore: SettingsPort = {
         isDefault: one.isDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],
-        reasoningLevels: (one.reasoningLevels ?? []).map((l) => ({ name: l.name, title: l.title })),
+        reasoningLevels: one.reasoningLevels.map((l) => ({ name: l.name, title: l.title })),
         defaultReasoning: one.defaultReasoning,
       })),
-      plugins: (answer.plugins ?? []).map((p) => ({
+      plugins: answer.plugins.map((p) => ({
         id: p.id,
         name: p.name,
         version: p.version,
@@ -145,8 +145,8 @@ export const settingsCore: SettingsPort = {
         })),
         hasFrontend: p.hasFrontend,
         hasBackend: p.hasBackend,
-        readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
-        settingsViews: (p.settingsViews ?? []).map((one) => ({ id: one.id, title: one.title })),
+        readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
+        settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
         ...(p.failure
           ? {
               failure: {
@@ -156,12 +156,12 @@ export const settingsCore: SettingsPort = {
               },
             }
           : {}),
-        settings: (p.settings ?? []).map(readPluginSetting),
+        settings: p.settings.map(readPluginSetting),
       })),
-      app: (answer.app ?? []).map(readPluginSetting),
-      secretSections: readSecretSections(answer.secretSections ?? []),
-      secretMenus: readSecretMenus(answer.secretMenus ?? [], answer.secretSections ?? []),
-      credentialsPath: answer.credentialsPath ?? '',
+      app: answer.app.map(readPluginSetting),
+      secretSections: readSecretSections(answer.secretSections),
+      secretMenus: readSecretMenus(answer.secretMenus, answer.secretSections),
+      credentialsPath: answer.credentialsPath,
     } satisfies Configuration
   },
   updateSettings: async (edits) => {

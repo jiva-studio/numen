@@ -105,9 +105,9 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
   watch(
     [windowRadius, () => getTopEdge(platform.value, isFullscreen.value)],
     ([radius, edge]) => {
-      const root = globalThis.document?.documentElement
-      root?.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`)
-      root?.style.setProperty(WINDOW_EDGE_VARIABLE, `${edge}px`)
+      if (typeof document === 'undefined') return
+      document.documentElement.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`)
+      document.documentElement.style.setProperty(WINDOW_EDGE_VARIABLE, `${edge}px`)
     },
     { immediate: true },
   )

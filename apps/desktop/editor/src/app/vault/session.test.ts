@@ -202,7 +202,7 @@ describe('the streams a window follows', () => {
           about: '',
           completedCount: 0,
           total: 0,
-          counting: 'things',
+          counting: 'items',
           error: 'stopped',
           isUserStarted: false,
           pluginId: '',

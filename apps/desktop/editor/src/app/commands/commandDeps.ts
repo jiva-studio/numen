@@ -74,13 +74,12 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
-/* Stryker disable OptionalChaining,ConditionalExpression,LogicalOperator: guards partial windowTabs and reached mocks in unit tests */
 function tabMatchesPath(
   windowTab: ReturnType<ReturnType<typeof useWindowTabs>['getTab']>,
   path: string,
 ): boolean {
   if (!windowTab) return false
-  const openPath = windowTab.kind.getOpenTab?.(windowTab.state)?.path
+  const openPath = windowTab.kind.getOpenTab?.(windowTab.state).path
   if (openPath === path) return true
   const target = windowTab.kind.getTarget?.(windowTab.state)
   return target?.file === path || target?.path === path
@@ -90,7 +89,7 @@ function findActiveTabAt(
   windowTabs: ReturnType<typeof useWindowTabs>,
   path: string,
 ): string | null {
-  if (!path || !windowTabs?.tabs?.value || typeof windowTabs.getTab !== 'function') return null
+  if (!path) return null
   for (const tab of windowTabs.tabs.value) {
     if (tabMatchesPath(windowTabs.getTab(tab.id), path)) return tab.id
   }
@@ -105,15 +104,15 @@ export function createCommandNotes(
   reached: Notes,
   windowTabs: ReturnType<typeof useWindowTabs>,
 ): Notes {
-  const getTab = (id: string) => windowTabs?.getTab?.(id) ?? null
+  const getTab = (id: string) => windowTabs.getTab(id)
   return {
     ...reached,
-    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findActiveTabAt(windowTabs, path),
+    getTabAt: (path: string) => reached.getTabAt(path) ?? findActiveTabAt(windowTabs, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)
       if (path !== id) return path
       const tab = getTab(id)
-      return tab?.kind.getOpenTab?.(tab.state)?.path ?? id
+      return tab?.kind.getOpenTab?.(tab.state).path ?? id
     },
     asking: (id: string) => {
       const tab = getTab(id)
@@ -125,12 +124,11 @@ export function createCommandNotes(
       await tab?.kind.flushPending?.(tab.state)
     },
     close: (id: string) => {
-      reached?.close?.(id)
-      windowTabs?.requestClose?.(id)
+      reached.close(id)
+      windowTabs.requestClose(id)
     },
   }
 }
-/* Stryker restore OptionalChaining,ConditionalExpression,LogicalOperator */
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
   const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage, tabsHold } =

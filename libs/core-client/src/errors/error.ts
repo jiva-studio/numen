@@ -14,7 +14,7 @@ const UNEXPECTED = 'internal error'
  * produces; a code that nothing here produces gets a message that states only
  * what is known; a call cancelled by the caller has an empty message.
  */
-const TROUBLE: Record<Code, string> = {
+const TROUBLE: Partial<Record<Code, string>> = {
   [Code.Canceled]: '',
   [Code.Unknown]: 'Numen is not responding; retrying',
   [Code.InvalidArgument]: 'invalid request',
@@ -83,7 +83,7 @@ export const formatErrorMessage = (error: unknown): string => {
 /**
  * The message for each error code in the schema.
  */
-const ERROR_CODE_MESSAGES: Readonly<Record<number, string>> = {
+const ERROR_CODE_MESSAGES: Readonly<Partial<Record<number, string>>> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
   [ProtoErrorCode.NOT_FOUND]: 'note not in the vault',
   [ProtoErrorCode.NOT_A_NOTE]: 'not a note',

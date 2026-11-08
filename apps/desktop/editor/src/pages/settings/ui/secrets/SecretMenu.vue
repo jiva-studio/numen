@@ -29,7 +29,7 @@ function onOpen(event: MouseEvent): void {
   if (!(event.currentTarget instanceof HTMLElement)) return
   const box = measureRect(event.currentTarget)
   opener.value = event.currentTarget
-  anchor.value = { x: box?.right ?? 0, y: box?.bottom ?? 0, height: measureWindow().height }
+  anchor.value = { x: box.right, y: box.bottom, height: measureWindow().height }
 }
 
 function onClose(): void {

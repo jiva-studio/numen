@@ -39,7 +39,7 @@ const hold = (item: string, row: Element | ComponentPublicInstance | null): void
 }
 
 const reveal = (item: string): void => {
-  itemElements.get(item)?.scrollIntoView?.({ block: 'nearest' })
+  itemElements.get(item)?.scrollIntoView({ block: 'nearest' })
 }
 
 defineExpose({ reveal })

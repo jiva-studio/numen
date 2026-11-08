@@ -33,7 +33,7 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
     if (shownPath !== undefined) return shownPath
     const tab = windowTabs.getTab(tabId)
     if (!tab) return ''
-    return tab.kind.getOpenTab?.(tab.state)?.path || tab.kind.getTarget?.(tab.state)?.path || ''
+    return tab.kind.getOpenTab?.(tab.state).path || tab.kind.getTarget?.(tab.state).path || ''
   }
 
   /** Removes the echo of a tab and returns the path it expected, if any. */

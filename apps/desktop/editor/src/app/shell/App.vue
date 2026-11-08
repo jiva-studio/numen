@@ -79,8 +79,8 @@ const tabMenu = useWindowTabMenu({
 
 /* --------------------------------- Hooks ---------------------------------- */
 function onOpenSettings(event: Event): void {
-  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string }>).detail
-  if ((detail?.filter || detail?.pluginId) && openSettings) {
+  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string } | null>).detail
+  if (detail?.filter || detail?.pluginId) {
     openSettings(detail.pluginId, detail.filter)
     return
   }

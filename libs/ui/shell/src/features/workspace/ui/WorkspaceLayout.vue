@@ -85,11 +85,11 @@ function onChooseTab(tab: TabId): void {
 }
 
 function onCloseTab(tab: TabId): void {
-  let isPrevented = false
+  const veto = { isPrevented: false }
   emit('close', tab, () => {
-    isPrevented = true
+    veto.isPrevented = true
   })
-  if (isPrevented) return
+  if (veto.isPrevented) return
 
   workspace.value = closeTab(workspace.value, tab)
 }
