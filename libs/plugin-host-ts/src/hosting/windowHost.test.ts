@@ -1,25 +1,22 @@
 /**
- * The window the plugins of the editor run in: the state of its frame, and the window buttons,
+ * The window the plugins of a desktop window run in: the state of its frame, and the window buttons,
  * which go to the frame.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import type { WindowState } from '@numen/plugin-host'
-import { createWindowHost } from './windowHost'
-import type { WindowFrame } from './useWindowFrame'
+import type { WindowState } from '@numen/plugin-sdk'
+import { createWindowHost, type WindowControls } from './windowHost'
 
 function createFrame() {
   const isMaximized = ref(false)
   const isFullscreen = ref(false)
   const frame = {
-    platform: ref<'linux'>('linux'),
     isMaximized,
     isFullscreen,
-    windowEdge: ref({ leftInset: 0, rightInset: 0 }),
     minimizeWindow: vi.fn(async () => undefined),
     toggleMaximizeWindow: vi.fn(async () => undefined),
     closeWindow: vi.fn(async () => undefined),
-  } satisfies WindowFrame
+  } satisfies WindowControls
   return { frame, isMaximized, isFullscreen }
 }
 

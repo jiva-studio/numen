@@ -7,18 +7,17 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import {
   INTERFACE_WAIT_MS,
   createPluginLoader,
-  getPluginStyle,
+  createWindowHost,
+  usePluginStyles,
   type PluginLoaderDeps,
   type LinkClient,
 } from '@numen/plugin-host'
-import type { VaultRow } from '@numen/shell'
+import { useWindowFrame, type VaultRow, type WindowFrame } from '@numen/shell'
 import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost, type ShellServices } from './host'
-import { useWindowFrame, type WindowFrame } from './useWindowFrame'
-import { createWindowHost } from './windowHost'
 import { createWindowVaults } from './windowVaults'
 import { createWindowCommands } from './windowCommands'
 import { createWindowKeys } from './windowKeys'
@@ -157,14 +156,14 @@ export function useShell(deps: ShellDeps = {}) {
     ...loader.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
   ])
 
-  const style = computed(() => (front.value ? getPluginStyle(front.value.pluginId) : undefined))
+  usePluginStyles(() => (front.value ? [front.value] : []))
 
   return {
     front,
     tab,
     openTab,
     vaults: { list: vaults, isListing },
-    plugins: { style, failures, isLoading, isStarted, titleBarView },
+    plugins: { failures, isLoading, isStarted, titleBarView },
     notices,
     mountView,
     appearance,

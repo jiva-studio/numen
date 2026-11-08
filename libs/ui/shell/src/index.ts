@@ -37,3 +37,13 @@ export type { VaultRow, WelcomeAction } from './features/welcome'
  * and the room of the macOS buttons. The shell draws no bar and no window buttons.
  */
 export { MAC_BUTTONS_INSET, TITLE_BAR_HEIGHT } from './features/window-frame'
+
+/** The frame of the desktop window a page is drawn in, as both windows read it. */
+export { getWindowEdge, useWindowFrame } from './features/window-frame'
+export type {
+  FrameEdge,
+  FrameRuntime,
+  FrameRuntimeLoader,
+  WindowFrame,
+  WindowPlatform,
+} from './features/window-frame'

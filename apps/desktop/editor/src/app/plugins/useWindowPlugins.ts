@@ -19,7 +19,7 @@ import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
-import type { WindowPlatform } from '../window/useWindowFrame'
+import type { WindowPlatform } from '@numen/shell'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {

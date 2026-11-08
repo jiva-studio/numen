@@ -68,3 +68,5 @@ export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } fro
 export { getTargetValues } from './when/targetValues'
 export { createWhenReader, type WhenReader } from './when/whenReader'
 export { getWhenValues, type WhenValueParts } from './when/whenValues'
+export { createWindowHost, type WindowControls } from './hosting/windowHost'
+export { SlotViewHost, usePluginStyles } from './slot-views/slotViewHost'

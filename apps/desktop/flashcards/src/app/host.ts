@@ -31,7 +31,7 @@ import {
 } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { createNamedIcon } from '@numen/ui'
-import type { WindowPlatform } from './useWindowFrame'
+import type { WindowPlatform } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'

@@ -8,8 +8,8 @@ import type { Component } from 'vue'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { Palette } from '@numen/shell'
+import { SlotViewHost } from '@numen/plugin-host'
 import { LoadingIndicator } from '@numen/ui'
-import TitleBarHost from './TitleBarHost.vue'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'
 import { useShell, type ShellDeps } from './useShell'
@@ -24,11 +24,10 @@ const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell
 </script>
 
 <template>
-  <link v-if="plugins.style.value" rel="stylesheet" :href="plugins.style.value" />
   <!-- The window is drawn once the plugins have started or the wait for them has passed, so the
        layout does not move when the bar is drawn. -->
   <LoadingIndicator v-if="!plugins.isStarted.value" class="starting" :label="WORDS.appName" />
-  <TitleBarHost v-else :view="plugins.titleBarView.value" />
+  <SlotViewHost v-else :view="plugins.titleBarView.value" />
   <main
     v-if="plugins.isStarted.value"
     class="window"

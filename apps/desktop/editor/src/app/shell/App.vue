@@ -7,6 +7,7 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 import { WorkspaceLayout } from '@numen/shell'
+import { SlotViewHost } from '@numen/plugin-host'
 import { LoadingIndicator } from '@numen/ui'
 import { formatErrorMessage } from '@numen/core-client'
 import '@numen/ui/styles.css'
@@ -15,8 +16,6 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
-import { StatusBarHost } from '@/features/status-bar-view'
-import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
@@ -112,7 +111,7 @@ function onShowTab(id: string) {
   <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
 
   <main v-else :class="{ 'is-highlighted': isHighlighted }">
-    <TitleBarHost :view="titleBarView" />
+    <SlotViewHost :view="titleBarView" />
 
     <CoreFailureNotice :failure="failure" />
 
@@ -179,7 +178,7 @@ function onShowTab(id: string) {
       </template>
     </WorkspaceLayout>
 
-    <StatusBarHost :view="statusBarView" />
+    <SlotViewHost :view="statusBarView" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

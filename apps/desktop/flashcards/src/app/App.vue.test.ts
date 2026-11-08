@@ -174,7 +174,6 @@ describe('App', () => {
 
     expect(shell?.plugins.isLoading.value).toBe(false)
     expect(shell?.plugins.failures.value[0]).toContain('md.numen.missing:')
-    expect(shell?.plugins.style.value).toBeUndefined()
     expect(shell?.vaults.list.value).toStrictEqual([
       { id: 'roots', name: 'Roots', path: '/vaults/Roots' },
     ])
@@ -229,7 +228,9 @@ describe('App', () => {
     await flushPromises()
 
     expect(shellDefault?.plugins.failures.value[0]).toContain('md.numen.broken:')
-    expect(shellDefault?.plugins.style.value).toBe('/plugin/md.numen.closing/dist/styles.css')
+    expect(
+      document.head.querySelector('link[data-plugin-id="md.numen.closing"]')?.getAttribute('href'),
+    ).toBe('/plugin/md.numen.closing/dist/styles.css')
     await agentHost?.resolveLinks('[[Note]]', 'physics')
     expect(wire.resolveAddresses).toHaveBeenCalled()
 
