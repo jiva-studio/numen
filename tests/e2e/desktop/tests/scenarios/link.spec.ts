@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../support/test.js'
 import {
+  closeTab,
   getPaletteField,
   openWorkspace,
   runCommand,
@@ -74,6 +75,18 @@ test.describe('A link', () => {
 
     const passage = await waitForPassage(page, 'sluice gate', 'tidal-mills.numen.test')
     await expect(passage).toContainText(/sluice gate/i)
+  })
+
+  test('imported again opens the note the address already has', async ({ page, request }) => {
+    await openWorkspace(page)
+    await importAddress(page, `${ARTICLE_ADDRESS}?part=3`, /rance-part=3/)
+    const made = (await listFilePaths(request)).filter((one) => !before.includes(one))
+    await closeTab(page, /^Close .*rance-part=3/)
+    await expect(page.getByRole('tab', { name: /rance-part=3/ })).toHaveCount(0)
+
+    await importAddress(page, `${ARTICLE_ADDRESS}?part=3`, /rance-part=3/)
+
+    expect((await listFilePaths(request)).filter((one) => !before.includes(one))).toEqual(made)
   })
 
   test('keeps its article deleted once the person deletes it', async ({ page }) => {

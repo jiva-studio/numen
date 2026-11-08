@@ -15,10 +15,10 @@ const trueValue = "true"
 
 // The shared commands the plugin handles.
 const (
-	commandImport        = "app:link.import"
-	commandCreateText    = "app:file.createText"
-	commandDownloadMedia = "app:link.downloadMedia"
-	commandDeleteMedia   = "app:link.deleteMedia"
+	commandImport        = command.ImportLink
+	commandCreateText    = command.CreateText
+	commandDownloadMedia = command.DownloadMedia
+	commandDeleteMedia   = command.DeleteMedia
 )
 
 // argumentAddress is the argument of app:link.import that holds the web address.
@@ -42,11 +42,14 @@ func newCommands(links *link.Links) (*command.Registry, error) {
 
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		made, err := links.Create(ctx, "", "", req.Arguments.GetString(argumentAddress))
+		found, isFound, err := links.FindOrCreate(ctx, "", "", req.Arguments.GetString(argumentAddress))
 		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: made.Path + " is made", OpenedPath: made.Path}, nil
+		if isFound {
+			return command.Result{Message: "Opened " + found.Path, OpenedPath: found.Path}, nil
+		}
+		return command.Result{Message: "Created " + found.Path, OpenedPath: found.Path}, nil
 	}
 }
 
@@ -59,28 +62,43 @@ func newDownloadTextCommand(links *link.Links) command.Run {
 		if err := links.StartTextFetch(ctx, found); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("fetching the text of %s", req.Path), OpenedPath: ""}, nil
+		return command.Result{Message: "Fetching the text of " + req.Path, OpenedPath: ""}, nil
 	}
 }
 
 func newDownloadCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
+		media, err := getMedia(req.ItemID)
+		if err != nil {
+			return command.Result{}, err
+		}
 		found, err := links.Read(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		size, isStarted, err := links.StartMediaCopy(ctx, found, download.MediaVideo)
+		size, isStarted, err := links.StartMediaCopy(ctx, found, media)
 		if errors.Is(err, link.ErrBeingFetched) {
-			return command.Result{Message: fmt.Sprintf("the media of %s is already being downloaded", req.Path), OpenedPath: ""}, nil
+			return command.Result{Message: "Already downloading the media of " + req.Path, OpenedPath: ""}, nil
 		}
 		if err != nil {
 			return command.Result{}, err
 		}
 		if !isStarted {
-			return command.Result{Message: fmt.Sprintf("%s of media are downloaded", describeSize(size)), OpenedPath: ""}, nil
+			return command.Result{Message: fmt.Sprintf("Downloaded the media of %s (%s)", req.Path, describeSize(size)), OpenedPath: ""}, nil
 		}
-		return command.Result{Message: fmt.Sprintf("downloading the media of %s", req.Path), OpenedPath: ""}, nil
+		return command.Result{Message: "Downloading the media of " + req.Path, OpenedPath: ""}, nil
 	}
+}
+
+func getMedia(item string) (download.Media, error) {
+	switch download.Media(item) {
+	// A run with no item, as numen-cli makes, downloads the video.
+	case "", download.MediaVideo:
+		return download.MediaVideo, nil
+	case download.MediaAudio:
+		return download.MediaAudio, nil
+	}
+	return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
 }
 
 func newDeleteCopyCommand(links *link.Links) command.Run {
@@ -92,7 +110,7 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 		if err := links.DeleteCopy(ctx, found); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("the media of %s are deleted", req.Path), OpenedPath: ""}, nil
+		return command.Result{Message: "Deleted the media of " + req.Path, OpenedPath: ""}, nil
 	}
 }
 

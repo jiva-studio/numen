@@ -59,7 +59,7 @@ func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if made.OpenedPath == "" || made.Message != made.OpenedPath+" is made" {
+	if made.OpenedPath == "" || made.Message != "Created "+made.OpenedPath {
 		t.Fatalf("import answered %+v", made)
 	}
 	if hasCopy(t, store) {
@@ -108,6 +108,17 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 		}
 	}
 	return false
+}
+
+// Delete text is the core's command: the core deletes the version, and the plugin handles none.
+func TestTheImporterHandlesNoDeleteText(t *testing.T) {
+	commands, _ := newMockCommands(t)
+
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: "app:version.delete", Path: "Mills.md"})
+
+	if !errors.Is(err, command.ErrUnknownCommand) {
+		t.Fatalf("app:version.delete answered %v, want ErrUnknownCommand", err)
+	}
 }
 
 type configurableFetcher struct {
@@ -237,7 +248,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	links.Wait()
 	cf.startedCh = nil
 	cf.blockCh = nil
-	if callErr != nil || !strings.Contains(ans.Message, "already being downloaded") {
+	if callErr != nil || !strings.HasPrefix(ans.Message, "Already downloading the media of ") {
 		t.Fatalf("app:link.downloadMedia(in progress) = (%+v, %v)", ans, callErr)
 	}
 

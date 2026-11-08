@@ -21,7 +21,7 @@ func TestCopyOfTheVideoThatFailsKeepsTheSoundTheNotePlays(t *testing.T) {
 	}
 
 	if got := w.readProperty(t, made.Path, "media"); got == media {
-		if _, err := w.store.Read(t.Context(), made.Key+".m4a"); err != nil {
+		if _, err := w.store.Read(t.Context(), made.Key+".audio.m4a"); err != nil {
 			t.Errorf("the note holds media %q, and its file is gone: %v", got, err)
 		}
 	}

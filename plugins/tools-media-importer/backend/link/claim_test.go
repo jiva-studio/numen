@@ -19,7 +19,7 @@ import (
 )
 
 func TestTheSameAddressInAnotherVaultIsOtherWork(t *testing.T) {
-	l := &Links{running: map[string]bool{}}
+	l := &Links{running: map[string]chan struct{}{}}
 	physics := Link{Vault: "Physics", Key: "k1"}
 	chemistry := Link{Vault: "Chemistry", Key: "k1"}
 
@@ -259,15 +259,15 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	hs.writeErr = nil
 
 	hs.listErr = func(int) error { return boom }
-	if _, ok, err := f.findCopy(ctx, "h1"); !errors.Is(err, boom) || ok {
+	if _, ok, err := f.findCopy(ctx, "h1", download.MediaVideo); !errors.Is(err, boom) || ok {
 		t.Errorf("findCopy(error) = %v, %v", ok, err)
-	}
-	if err := f.deleteCopy(ctx, "h1"); !errors.Is(err, boom) {
-		t.Errorf("deleteCopy(list error) = %v", err)
+		if _, err := f.listCopies(ctx, "h1"); !errors.Is(err, boom) {
+			t.Errorf("listCopies(list error) = %v", err)
+		}
 	}
 	hs.listErr = nil
 
-	found, ok, err := f.findCopy(ctx, "h1")
+	found, ok, err := f.findCopy(ctx, "h1", download.MediaVideo)
 	if err != nil || ok || found != (host.StoreFile{}) {
 		t.Errorf("findCopy(empty) = %+v, %v, %v", found, ok, err)
 	}
@@ -281,32 +281,22 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if err := hs.Write(ctx, "h1.part", []byte("part")); err != nil {
 		t.Fatal(err)
 	}
-	if err := hs.Write(ctx, "h1.mp4", []byte("mp4")); err != nil {
+	if err := hs.Write(ctx, "h1.video.mp4", []byte("mp4")); err != nil {
 		t.Fatal(err)
 	}
-	found, ok, err = f.findCopy(ctx, "h1")
-	if err != nil || !ok || found.Name != "h1.mp4" || found.Size != 3 {
+	found, ok, err = f.findCopy(ctx, "h1", download.MediaVideo)
+	if err != nil || !ok || found.Name != "h1.video.mp4" || found.Size != 3 {
 		t.Errorf("findCopy(match) = %+v, %v, %v", found, ok, err)
 	}
-
-	hs.deleteErr = func(name string) error {
-		if name == "h1.part" {
-			return boom
-		}
-		return nil
-	}
-	if err := f.deleteCopy(ctx, "h1"); !errors.Is(err, boom) {
-		t.Errorf("deleteCopy(delete error) = %v", err)
-	}
-	hs.deleteErr = nil
-	if err := f.deleteCopy(ctx, "h1"); err != nil {
+	if err := hs.Write(ctx, "h1.audio.m4a", []byte("m4a")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := hs.Read(ctx, "h1.part"); !errors.Is(err, host.ErrNotExist) {
-		t.Errorf("h1.part still exists: %v", err)
+	if _, ok, err := f.findCopy(ctx, "h1", download.MediaAudio); err != nil || !ok {
+		t.Errorf("findCopy(audio) = %v, %v", ok, err)
 	}
-	if _, err := hs.Read(ctx, "000_other.txt"); err != nil {
-		t.Errorf("000_other.txt was deleted: %v", err)
+	names, err := f.listCopies(ctx, "h1")
+	if err != nil || len(names) != 2 {
+		t.Errorf("listCopies = %v, %v, want the video and the sound alone", names, err)
 	}
 }
 
@@ -599,26 +589,12 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	}
 	hs.renameErr = nil
 
-	hs.readErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(recordCopy readErr) = %v", err)
-	}
-	hs.readErr = nil
-	if err := hs.Delete(ctx, made.Key+".mp4"); err != nil {
-		t.Fatal(err)
-	}
-
 	hq.releaseErr = boom
 	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
-	if err := hs.Delete(ctx, made.Key+".mp4"); err != nil {
+	if err := hs.Delete(ctx, made.Key+".video.mp4"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -640,50 +616,16 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 
-	edited2 := made
-
-	// DeleteCopy error and record clearing paths.
+	// DeleteCopy fails where the folder cannot be listed, and deletes the copy no note refers to.
 	hs.listErr = func(int) error { return boom }
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
+	if err := l.DeleteCopy(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("DeleteCopy(listErr) = %v", err)
 	}
 	hs.listErr = nil
-
-	hs.readErr = func(name string) error {
-		if name == edited2.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
-		t.Errorf("DeleteCopy(findRecord err) = %v", err)
-	}
-	hs.readErr = nil
-
-	if err := hs.Write(ctx, edited2.Key+".mp4", []byte{1}); err != nil {
+	if err := l.DeleteCopy(ctx, made); err != nil {
 		t.Fatal(err)
 	}
-	hs.writeErr = func(name string) error {
-		if name == edited2.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
-		t.Errorf("DeleteCopy(writeRecord err) = %v", err)
-	}
-	hs.writeErr = nil
-
-	if err := l.DeleteCopy(ctx, edited2); err != nil {
-		t.Fatal(err)
-	}
-	rec, err = (folder{store: hs}).readRecord(ctx, edited2.Key)
-	if err != nil || rec.Copy != "" {
-		t.Errorf("record after DeleteCopy = %+v (%v), want empty Copy", rec, err)
-	}
-	// A second DeleteCopy when rec.Copy is already "" does not write record again.
-	hs.writeErr = func(string) error { return boom }
-	if err := l.DeleteCopy(ctx, edited2); err != nil {
-		t.Errorf("DeleteCopy(already empty Copy) = %v, want nil", err)
+	if _, err := hs.Read(ctx, made.Key+".video.mp4"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("the copy no note refers to is kept: %v", err)
 	}
 }

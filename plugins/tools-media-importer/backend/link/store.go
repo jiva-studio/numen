@@ -17,9 +17,11 @@ import (
 //
 //   - `<key>.jsonl` is the text, in the common format of text versions. The host deletes it with
 //     the version.
-//   - `<key>.json` records what fetched the text, what kind it is and which file holds the copy. A
-//     record whose text is gone marks a version the user deleted.
-//   - `<key>.part` is a copy arriving, and `<key><ext>` the copy whole.
+//   - `<key>.json` records what fetched the text and what kind it is. A record whose text is gone
+//     marks a version the user deleted.
+//   - `<key>.part` is a copy arriving, and `<key>.video<ext>` or `<key>.audio<ext>` a copy whole. One
+//     copy of each is kept per address, shared by the link notes of that address, and deleted
+//     once no link note refers to it.
 //   - `<key>.html` is the page that frames the player of the video.
 const (
 	textExt   = ".jsonl"
@@ -38,15 +40,13 @@ type folder struct {
 	store host.Store
 }
 
-// record is what fetched the text of a link, and the file its copy is kept in.
+// record is what fetched the text of a link.
 type record struct {
 	Address    string          `json:"address"`
 	Title      string          `json:"title,omitempty"`
 	Producer   string          `json:"producer,omitempty"`
 	Downloader string          `json:"downloader,omitempty"`
 	Kind       domain.TextKind `json:"kind,omitempty"`
-	Copy       string          `json:"copy,omitempty"`
-	CopyMedia  download.Media  `json:"copyMedia,omitempty"`
 }
 
 func getKind(fetched download.Text) domain.TextKind {
@@ -92,12 +92,12 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
 		// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero record"
-		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}, false, nil
+		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: ""}, false, nil
 	}
 	if err != nil {
 		return record{}, false, err
 	}
-	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}
+	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: ""}
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 
@@ -106,13 +106,13 @@ func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	return rec, err
 }
 
-func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool, error) {
+func (f folder) findCopy(ctx context.Context, key string, media download.Media) (host.StoreFile, bool, error) {
 	files, err := f.store.List(ctx)
 	if err != nil {
 		return host.StoreFile{}, false, err
 	}
 	for _, one := range files {
-		if isCopyOf(one.Name, hash) {
+		if isCopyOf(one.Name, key) && strings.TrimSuffix(one.Name, path.Ext(one.Name)) == key+"."+string(media) {
 			return one, true, nil
 		}
 	}
@@ -120,9 +120,31 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
-func isCopyOf(name, hash string) bool {
+func (f folder) listCopies(ctx context.Context, key string) ([]string, error) {
+	files, err := f.store.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, one := range files {
+		if isCopyOf(one.Name, key) {
+			names = append(names, one.Name)
+		}
+	}
+	return names, nil
+}
+
+func getCopyName(key string, media download.Media, ext string) string {
+	return key + "." + string(media) + ext
+}
+
+func isCopyOf(name, key string) bool {
 	ext := path.Ext(name)
-	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
+	switch strings.TrimSuffix(name, ext) {
+	case key + "." + string(download.MediaVideo), key + "." + string(download.MediaAudio):
+		return isCopyExt(strings.ToLower(ext))
+	}
+	return false
 }
 
 func isCopyExt(ext string) bool {
@@ -131,32 +153,4 @@ func isCopyExt(ext string) bool {
 		return true
 	}
 	return false
-}
-
-func (f folder) deleteCopy(ctx context.Context, hash string) error {
-	files, err := f.store.List(ctx)
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, one := range files {
-		if isCopyOf(one.Name, hash) || one.Name == hash+partExt {
-			errs = append(errs, f.store.Delete(ctx, one.Name))
-		}
-	}
-	return errors.Join(errs...)
-}
-
-func (f folder) deleteOtherCopies(ctx context.Context, hash, name string) error {
-	files, err := f.store.List(ctx)
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, one := range files {
-		if one.Name != name && isCopyOf(one.Name, hash) {
-			errs = append(errs, f.store.Delete(ctx, one.Name))
-		}
-	}
-	return errors.Join(errs...)
 }
