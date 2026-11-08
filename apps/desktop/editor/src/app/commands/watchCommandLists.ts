@@ -1,6 +1,7 @@
 /**
  * Loads the commands the plugins declare as the window starts and each time the palette opens.
  * They are read again when a plugin starts or stops, so the shortcuts of its commands follow it.
+ * The first arrival of the plugin list does not read them again.
  */
 import { watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
@@ -37,7 +38,9 @@ export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boole
           plugins.value
             .map((one) => `${one.id}:${one.isActive}:${isSwitchedOn(one.id, getCommittedSetting)}`)
             .join(),
-        loadDeclared,
+        (_now, before) => {
+          if (before !== '') loadDeclared()
+        },
       )
     }
   }

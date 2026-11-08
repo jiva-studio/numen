@@ -6,9 +6,11 @@ import type { DeclaredCommands } from './declaredCommands'
 
 const PLEX = 'org.example.plex'
 
-function setup() {
+function setup(
+  initial: readonly { id: string; isActive: boolean }[] = [{ id: PLEX, isActive: false }],
+) {
   const load = vi.fn(async () => undefined)
-  const plugins = ref([{ id: PLEX, isActive: false }])
+  const plugins = ref(initial)
   const settings = ref<Record<string, unknown>>({})
   const getCommittedSetting = (path: readonly string[]) => settings.value[path.join('.')]
   watchCommandLists(
@@ -42,6 +44,26 @@ describe('the lists of declared commands', () => {
 
   it('are read again when a plugin starts', async () => {
     const { load, plugins } = setup()
+
+    plugins.value = [{ id: PLEX, isActive: true }]
+    await nextTick()
+
+    expect(load).toHaveBeenCalledTimes(2)
+  })
+
+  it('are read once when the plugin list arrives after the window starts', async () => {
+    const { load, plugins } = setup([])
+
+    plugins.value = [{ id: PLEX, isActive: false }]
+    await nextTick()
+
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it('are read again when a plugin starts after the plugin list arrived', async () => {
+    const { load, plugins } = setup([])
+    plugins.value = [{ id: PLEX, isActive: false }]
+    await nextTick()
 
     plugins.value = [{ id: PLEX, isActive: true }]
     await nextTick()
