@@ -6,14 +6,12 @@ import type {
   AgentProviderRegistration,
   BufferHost,
   CommandRegistration,
-  ContextMenuRegistration,
   Disposable,
   DropRegistration,
   FileSelectEvent,
   PluginContext,
   ReaderRegistration,
   SettingsViewRegistration,
-  StatusViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
@@ -24,8 +22,8 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { createExternalOpener } from '../externalOpener'
+import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -53,15 +51,6 @@ function checkPermission(target: PermissionTarget, permission: string, operation
     )
   }
 }
-
-/** The commands of the window that change nothing in the vault. */
-const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
-  formatCommandId(APP_COMMAND_OWNER, 'note.open'),
-  formatCommandId(APP_COMMAND_OWNER, 'note.copyPath'),
-  formatCommandId(APP_COMMAND_OWNER, 'settings.open'),
-  formatCommandId('md.numen.views.plex.graph', 'graph.showNote'),
-  formatCommandId('md.numen.views.agent.chat', 'note.ask'),
-])
 
 function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
   return {
@@ -200,23 +189,6 @@ function guardBuffers(
   }
 }
 
-function guardWorkspace(
-  workspace: WorkspaceHost,
-  requireWrite: (operation: string) => void,
-): WorkspaceHost {
-  return {
-    ...workspace,
-    runCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
-      workspace.runCommand(id, target)
-    },
-    runPathCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runPathCommand ${id}`)
-      workspace.runPathCommand(id, target)
-    },
-  }
-}
-
 type Services = Pick<
   PluginContext,
   'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'buffers'
@@ -240,7 +212,7 @@ function guardServices(
 ): Services {
   const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
-    ...guardService('workspace', host.getWorkspace?.(), (one) => guardWorkspace(one, requireWrite)),
+    ...guardService('workspace', host.getWorkspace?.(), (one: WorkspaceHost) => one),
     ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
     ...guardService('relations', host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
     ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
@@ -260,13 +232,9 @@ function createRegistrations(pluginId: string, host: PluginContextHost, add: Tra
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
       add(host.registerSettingsView(pluginId, reg)),
-    registerStatusView: (reg: StatusViewRegistration) =>
-      add(host.registerStatusView(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerContextMenu: (reg: ContextMenuRegistration) =>
-      add(host.registerContextMenu(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
     registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
@@ -316,11 +284,14 @@ function createWindowServices(
 ) {
   const notices = host.getNotices?.(pluginId)
   const tasks = host.getTasks?.(pluginId)
+  const backgroundTasks = host.getBackgroundTasks?.()
   const texts = host.getTexts?.(pluginId)
   return {
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
+    ...(backgroundTasks ? { backgroundTasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+    ...createFrameServices(host),
   }
 }
 
@@ -344,6 +315,11 @@ export function createPluginContext(
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     ...createRegistrations(pluginId, host, add),
+    ...createSlotContext(
+      { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
+      host,
+      add,
+    ),
     drops: host.drops,
     ...createEvents(pluginId, host, { requirePerm, add }),
     openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
@@ -351,5 +327,16 @@ export function createPluginContext(
     closeTab: (id: string) => {
       host.closeTab?.(id)
     },
+  }
+}
+
+function createFrameServices(host: PluginContextHost) {
+  const commands = host.getCommands?.()
+  const vaults = host.getVaults?.()
+  const window = host.getWindow?.()
+  return {
+    ...(commands ? { commands } : {}),
+    ...(vaults ? { vaults } : {}),
+    ...(window ? { window } : {}),
   }
 }

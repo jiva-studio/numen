@@ -26,5 +26,13 @@ func writeVersion(v domain.TextVersion) *v1.TextVersion {
 		TextHash:         v.TextHash,
 		CreateTimeUnixMs: v.CreateTime.UnixMilli(),
 		File:             v.File,
+		SourceProperty:   writeSourceProperty(v.SourceProperty),
 	}
+}
+
+func writeSourceProperty(p domain.TextSourceProperty) *v1.TextSourceProperty {
+	if p.Key == "" {
+		return nil
+	}
+	return &v1.TextSourceProperty{Key: p.Key, Value: p.Value}
 }

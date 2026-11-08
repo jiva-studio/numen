@@ -20,14 +20,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
+	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -101,9 +107,9 @@ func (c Config) StopPlugins(ctx context.Context) error {
 // host they list none.
 func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
-		return plugincommand.NewCommands(nil, nil, nil)
+		return plugincommand.NewCommands(nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders)
+	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.VaultReaders, c.GetWhenConfig())
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -128,7 +134,7 @@ func (c Config) GetPluginServices() PluginServices {
 	return servicebridge.Open(c.PluginHost)
 }
 
-// GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
+// GetPluginRetrier starts again, on request from the window, a plugin whose last start failed.
 func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	return func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 		if c.PluginHost == nil {
@@ -138,7 +144,7 @@ func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*
 	}
 }
 
-// ReportPluginFailures keeps one task in the list for each plugin the host suspends, with the reason as its
+// ReportPluginFailures keeps one task in the list for each plugin whose last start failed, with the reason as its
 // error, and takes it out when the host forgets the failure.
 func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	if c.PluginHost == nil {
@@ -156,14 +162,22 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	})
 	c.PluginHost.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
+		c.signalPluginChanges()
 	})
 }
 
 // SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
 func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
+	c.OpenPluginWork(tasks, models)
+}
+
+// OpenPluginWork is SetPluginWork, and returns the work it set.
+func (c Config) OpenPluginWork(tasks *run.Tasks, models *run.Lock) *run.PluginWork {
+	work := run.NewPluginWork(models, tasks, c.GetPluginName)
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks, c.GetPluginName))
+		c.PluginHost.SetPluginWork(work)
 	}
+	return work
 }
 
 // GetPluginName returns the manifest name of pluginID, or pluginID if unknown.
@@ -388,4 +402,102 @@ func (c Config) SetSecretSource() {
 		List:  ledger.GetSecrets,
 		Prune: c.OpenSecrets().Prune.Execute,
 	})
+}
+
+func (c Config) signalPluginChanges() {
+	if c.PluginChanges != nil {
+		c.PluginChanges.Signal()
+	}
+}
+
+// WatchPluginChanges reports each time the plugin host applied a batch of settings, which enables,
+// disables and configures plugins, and each time it forgot the failure of a plugin, as after a retry
+// that succeeded. The returned function stops the reports.
+func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
+	if c.PluginChanges == nil {
+		return make(chan struct{}), func() {}
+	}
+	return c.PluginChanges.Subscribe()
+}
+
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
+// plugins. Where there is no plugin host there is none.
+func (c Config) OpenChooseTabKind() *tabkind.Choose {
+	if c.PluginHost == nil {
+		return nil
+	}
+	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, c.GetWhenConfig())
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return choose
+}
+
+// commandManifests lists what the manifests of the enabled plugins declare.
+type commandManifests interface {
+	ListCommands() []pluginport.PluginCommandEntry
+	ListSlots() []pluginport.PluginSlotEntry
+	ListHandlers() []pluginport.PluginCommandEntry
+	GetParts(pluginID string) pluginport.PluginParts
+}
+
+// commandRuns runs a command in the backend of its plugin.
+type commandRuns interface {
+	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+}
+
+// pluginCommands is the commands the manifests declare, listed from the manifests, and run in the
+// backends of their plugins.
+type pluginCommands struct {
+	commandManifests
+	commandRuns
+}
+
+func (c Config) openPluginCommands() pluginCommands {
+	if c.PluginHost == nil {
+		return pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
+	}
+	return pluginCommands{manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost)}
+}
+
+// OpenVersionItems is the versions of a file a command offers as its items, over the text versions
+// and the commands of the plugins. Without text versions there is none.
+func (c Config) OpenVersionItems() *textversion.VersionItems {
+	if c.TextVersions == nil {
+		return nil
+	}
+	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
+	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
+	if c.PluginHost != nil && !c.SafeMode {
+		commands, types = c.openPluginCommands(), c.PluginHost
+	}
+	run := plugincommand.NewCommands(commands, types, c.VaultReaders, c.GetWhenConfig()).Run
+	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return items
+}
+
+// OpenTriggers is the triggers of the manifests, run over the files of the vault. Without a plugin
+// host, text versions or outside safe mode there is none.
+func (c Config) OpenTriggers() *trigger.Triggers {
+	if c.PluginHost == nil || c.SafeMode || c.TextVersions == nil {
+		return nil
+	}
+	return trigger.NewTriggers(
+		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders, c.PluginHost,
+		c.TextVersions, c.GetWhenConfig(),
+	)
+}
+
+// GetWhenConfig is the settings a condition reads as config.
+func (c Config) GetWhenConfig() pluginport.WhenConfig {
+	settings := whenconfig.Settings{App: c.ListAppSettings}
+	if c.PluginHost != nil {
+		settings.Plugins = c.PluginHost.GetPluginInfos
+	}
+	return settings
 }

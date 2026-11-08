@@ -27,7 +27,17 @@ export function createDisplayOptions(deps: DisplayWiring) {
   const { editing, getCommands, getKinds, tabOpeners, windowTabs, getVaults, notifyPlugins } = deps
   const { writeMessage } = deps
   return {
-    onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
+    onVaultChanged: (
+      paths: readonly string[],
+      renamed: readonly PathRename[],
+      versionPaths: readonly string[] = [],
+    ) => {
+      const changed = [...new Set([...paths, ...versionPaths])]
+      // A change of the text versions alone changes no note.
+      if (paths.length === 0 && renamed.length === 0 && versionPaths.length > 0) {
+        notifyPlugins({ paths: changed, renamed })
+        return
+      }
       editing.notes.applyPathChanges(paths, renamed)
       // Every open tab on a moved or renamed file is navigated to the new path.
       for (const one of renamed) {
@@ -36,7 +46,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
         )
       }
       getCommands().commands.applyRenames(renamed)
-      notifyPlugins({ paths, renamed })
+      notifyPlugins({ paths: changed, renamed })
     },
     reportChange: editing.changes.reportChange,
     travelTo: (path: string) => getKinds().travel(path),

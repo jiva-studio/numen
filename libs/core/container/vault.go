@@ -6,7 +6,6 @@ import (
 	vaultwiring "github.com/jiva-studio/numen/libs/core/container/vault"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/playbackport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -191,9 +190,4 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 // the host.
 func (c Config) SetPluginTexts() {
 	c.vault().SetPluginTexts()
-}
-
-// Copies are the copies the enabled plugins keep of the vault's files in their store folders.
-func (c Config) Copies() playbackport.Copies {
-	return c.vault().Copies()
 }

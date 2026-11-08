@@ -1,5 +1,4 @@
-import { Bot } from '@lucide/vue'
-import { CONVERSATION, definePlugin, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
+import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import { ConversationView } from './conversation'
@@ -22,7 +21,12 @@ export function activate(context: PluginContext): void {
     throw new Error('an agent chat requires a window and an agent')
   }
   const chats = createAgentKind(
-    { workspace, agent, getReasoning: () => context.getSetting<string>('reasoning') ?? '' },
+    {
+      workspace,
+      agent,
+      ...(context.commands ? { commands: context.commands } : {}),
+      getReasoning: () => context.getSetting<string>('reasoning') ?? '',
+    },
     (deps) =>
       useAgentConversation(
         useConversation({
@@ -47,14 +51,6 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'note.ask',
     handler: (note) => askAbout(note.path),
-  })
-  context.registerContextMenu({
-    id: 'ask',
-    text: WORDS.askAbout,
-    group: 'agent',
-    target: NOTE_TARGET,
-    icon: Bot,
-    handler: (target) => askAbout(target.path),
   })
 }
 

@@ -201,16 +201,22 @@ func (h *noteHandler) GetNeighbourhood(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	tabKinds, err := h.listTabKinds(ctx, showing, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 
 	out := &v1.GetNeighbourhoodResponse{
-		Focus:     convertNoteToWire(found.Focus),
-		FocusType: convertNoteTypeToWire(types[found.Focus.Path]),
+		Focus:        convertNoteToWire(found.Focus),
+		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
+		FocusTabKind: tabKinds[found.Focus.Path],
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
 			Note:     convertNoteToWire(related.NoteRef),
 			Relation: convertRelationToWire(related.Relation),
 			Type:     convertNoteTypeToWire(types[related.Path]),
+			TabKind:  tabKinds[related.Path],
 		})
 	}
 	for _, connection := range found.Connections {
@@ -454,4 +460,11 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
 	}
+}
+
+func (h *noteHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+	if h.findTabKinds == nil {
+		return map[string]string{}, nil
+	}
+	return h.findTabKinds(ctx, v, paths)
 }

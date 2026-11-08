@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/media.proto
 
-// Where a player loads a file of the vault from.
+// Where a player or a frame loads a file from.
 
 package numenv1
 
@@ -23,28 +23,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GetMediaSourceRequest struct {
+type ResolveAddressRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file, as the vault holds it.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// A path of the vault, or plugin://<plugin id>/<path>.
+	Address       string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetMediaSourceRequest) Reset() {
-	*x = GetMediaSourceRequest{}
+func (x *ResolveAddressRequest) Reset() {
+	*x = ResolveAddressRequest{}
 	mi := &file_numen_v1_media_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetMediaSourceRequest) String() string {
+func (x *ResolveAddressRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetMediaSourceRequest) ProtoMessage() {}
+func (*ResolveAddressRequest) ProtoMessage() {}
 
-func (x *GetMediaSourceRequest) ProtoReflect() protoreflect.Message {
+func (x *ResolveAddressRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_media_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,44 +56,45 @@ func (x *GetMediaSourceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetMediaSourceRequest.ProtoReflect.Descriptor instead.
-func (*GetMediaSourceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResolveAddressRequest.ProtoReflect.Descriptor instead.
+func (*ResolveAddressRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_media_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetMediaSourceRequest) GetPath() string {
+func (x *ResolveAddressRequest) GetAddress() string {
 	if x != nil {
-		return x.Path
+		return x.Address
 	}
 	return ""
 }
 
-type GetMediaSourceResponse struct {
+type ResolveAddressResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// An http address on the loopback interface: a player in a window drawn from
-	// the toolkit's own scheme loads no media from that scheme. Empty where this
-	// build serves no files.
+	// the toolkit's own scheme loads no media from that scheme, and a page
+	// framed from that scheme sends no Referer. Empty where this build serves no
+	// files.
 	Src string `protobuf:"bytes,1,opt,name=src,proto3" json:"src,omitempty"`
-	// The media type (RFC 6838) of the bytes at src.
+	// The media type (RFC 6838) of the bytes at src. Empty where no type is known.
 	MediaType     string `protobuf:"bytes,2,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetMediaSourceResponse) Reset() {
-	*x = GetMediaSourceResponse{}
+func (x *ResolveAddressResponse) Reset() {
+	*x = ResolveAddressResponse{}
 	mi := &file_numen_v1_media_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetMediaSourceResponse) String() string {
+func (x *ResolveAddressResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetMediaSourceResponse) ProtoMessage() {}
+func (*ResolveAddressResponse) ProtoMessage() {}
 
-func (x *GetMediaSourceResponse) ProtoReflect() protoreflect.Message {
+func (x *ResolveAddressResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_media_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -105,121 +106,21 @@ func (x *GetMediaSourceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetMediaSourceResponse.ProtoReflect.Descriptor instead.
-func (*GetMediaSourceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResolveAddressResponse.ProtoReflect.Descriptor instead.
+func (*ResolveAddressResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_media_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetMediaSourceResponse) GetSrc() string {
+func (x *ResolveAddressResponse) GetSrc() string {
 	if x != nil {
 		return x.Src
 	}
 	return ""
 }
 
-func (x *GetMediaSourceResponse) GetMediaType() string {
+func (x *ResolveAddressResponse) GetMediaType() string {
 	if x != nil {
 		return x.MediaType
-	}
-	return ""
-}
-
-type GetPageSourceRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin that serves the page.
-	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// The page below the plugin's route, with its query: `embed?address=...`.
-	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetPageSourceRequest) Reset() {
-	*x = GetPageSourceRequest{}
-	mi := &file_numen_v1_media_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetPageSourceRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPageSourceRequest) ProtoMessage() {}
-
-func (x *GetPageSourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_media_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetPageSourceRequest.ProtoReflect.Descriptor instead.
-func (*GetPageSourceRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_media_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *GetPageSourceRequest) GetPluginId() string {
-	if x != nil {
-		return x.PluginId
-	}
-	return ""
-}
-
-func (x *GetPageSourceRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-type GetPageSourceResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The address of the page on the loopback interface. Empty where this build
-	// serves no files.
-	Src           string `protobuf:"bytes,1,opt,name=src,proto3" json:"src,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetPageSourceResponse) Reset() {
-	*x = GetPageSourceResponse{}
-	mi := &file_numen_v1_media_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetPageSourceResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPageSourceResponse) ProtoMessage() {}
-
-func (x *GetPageSourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_media_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetPageSourceResponse.ProtoReflect.Descriptor instead.
-func (*GetPageSourceResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_media_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *GetPageSourceResponse) GetSrc() string {
-	if x != nil {
-		return x.Src
 	}
 	return ""
 }
@@ -228,21 +129,15 @@ var File_numen_v1_media_proto protoreflect.FileDescriptor
 
 const file_numen_v1_media_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/media.proto\x12\bnumen.v1\"+\n" +
-	"\x15GetMediaSourceRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
-	"\x16GetMediaSourceResponse\x12\x10\n" +
+	"\x14numen/v1/media.proto\x12\bnumen.v1\"1\n" +
+	"\x15ResolveAddressRequest\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\"I\n" +
+	"\x16ResolveAddressResponse\x12\x10\n" +
 	"\x03src\x18\x01 \x01(\tR\x03src\x12\x1d\n" +
 	"\n" +
-	"media_type\x18\x02 \x01(\tR\tmediaType\"G\n" +
-	"\x14GetPageSourceRequest\x12\x1b\n" +
-	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\")\n" +
-	"\x15GetPageSourceResponse\x12\x10\n" +
-	"\x03src\x18\x01 \x01(\tR\x03src2\xb5\x01\n" +
+	"media_type\x18\x02 \x01(\tR\tmediaType2c\n" +
 	"\fMediaService\x12S\n" +
-	"\x0eGetMediaSource\x12\x1f.numen.v1.GetMediaSourceRequest\x1a .numen.v1.GetMediaSourceResponse\x12P\n" +
-	"\rGetPageSource\x12\x1e.numen.v1.GetPageSourceRequest\x1a\x1f.numen.v1.GetPageSourceResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0eResolveAddress\x12\x1f.numen.v1.ResolveAddressRequest\x1a .numen.v1.ResolveAddressResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_media_proto_rawDescOnce sync.Once
@@ -256,20 +151,16 @@ func file_numen_v1_media_proto_rawDescGZIP() []byte {
 	return file_numen_v1_media_proto_rawDescData
 }
 
-var file_numen_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_numen_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_numen_v1_media_proto_goTypes = []any{
-	(*GetMediaSourceRequest)(nil),  // 0: numen.v1.GetMediaSourceRequest
-	(*GetMediaSourceResponse)(nil), // 1: numen.v1.GetMediaSourceResponse
-	(*GetPageSourceRequest)(nil),   // 2: numen.v1.GetPageSourceRequest
-	(*GetPageSourceResponse)(nil),  // 3: numen.v1.GetPageSourceResponse
+	(*ResolveAddressRequest)(nil),  // 0: numen.v1.ResolveAddressRequest
+	(*ResolveAddressResponse)(nil), // 1: numen.v1.ResolveAddressResponse
 }
 var file_numen_v1_media_proto_depIdxs = []int32{
-	0, // 0: numen.v1.MediaService.GetMediaSource:input_type -> numen.v1.GetMediaSourceRequest
-	2, // 1: numen.v1.MediaService.GetPageSource:input_type -> numen.v1.GetPageSourceRequest
-	1, // 2: numen.v1.MediaService.GetMediaSource:output_type -> numen.v1.GetMediaSourceResponse
-	3, // 3: numen.v1.MediaService.GetPageSource:output_type -> numen.v1.GetPageSourceResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	0, // 0: numen.v1.MediaService.ResolveAddress:input_type -> numen.v1.ResolveAddressRequest
+	1, // 1: numen.v1.MediaService.ResolveAddress:output_type -> numen.v1.ResolveAddressResponse
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -286,7 +177,7 @@ func file_numen_v1_media_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_media_proto_rawDesc), len(file_numen_v1_media_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

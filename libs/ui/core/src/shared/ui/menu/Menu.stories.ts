@@ -6,7 +6,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { nextTick, onMounted, ref, type Component } from 'vue'
+import { defineComponent, h, nextTick, onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
 import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './items/item'
@@ -311,6 +311,33 @@ export const Icons: Story = {
   args: {
     items: [...ITEMS, { id: 'nothing', text: 'Drawn as nothing' }],
     icons: { open: FileText, child: CornerDownRight, copy: Copy },
+  },
+}
+
+/** A component a caller draws itself, standing in a row, at the top and inside a submenu. */
+const TideGauge = defineComponent({
+  name: 'TideGauge',
+  setup: () => () => h('span', { class: 'tide-gauge' }, '▲ 4.2 m'),
+})
+
+/** Rows that hold a component in place of their text, named and chosen by their item. */
+export const Components: Story = {
+  args: {
+    items: [
+      { id: 'open', text: 'Open' },
+      { id: 'tide', text: 'Tide', component: TideGauge },
+      {
+        id: 'more',
+        text: 'More',
+        children: [{ id: 'swell', text: 'Swell', component: TideGauge }],
+      },
+    ],
+  },
+  play: async ({ args }) => {
+    const tide = within(menuElement()!).getByRole('menuitem', { name: 'Tide' })
+    await expect(tide.querySelector('.tide-gauge')).not.toBeNull()
+    await userEvent.click(tide)
+    await expect(args.onChoose).toHaveBeenCalledWith('tide')
   },
 }
 
@@ -664,5 +691,34 @@ export const DiagonalMoveIntoSubmenu: Story = {
     const archiveRow = within(menus[1]!).getByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archiveRow)
     await expect(args.onChoose).toHaveBeenCalledWith('archive')
+  },
+}
+
+/** The keyboard and the pointer move one active row, so two rows are never lit. */
+export const OneActiveRow: Story = {
+  args: {
+    trigger: 'keyboard',
+    items: [
+      { id: 'open', text: 'Open' },
+      { id: 'captions', text: 'Download captions' },
+      { id: 'media', text: 'Download media' },
+    ],
+  },
+  play: async () => {
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getActive = () => menuElement()!.querySelectorAll('[data-active]')
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(getItem('Download captions')).toHaveAttribute('data-active')
+    await userEvent.hover(getItem('Download media'))
+    await userEvent.pointer({
+      target: getItem('Download media'),
+      coords: { clientX: 30, clientY: 30 },
+    })
+    await waitFor(() => expect(getItem('Download media')).toHaveAttribute('data-active'))
+    await expect(getActive()).toHaveLength(1)
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(getItem('Download captions')).toHaveAttribute('data-active')
+    await expect(getActive()).toHaveLength(1)
   },
 }

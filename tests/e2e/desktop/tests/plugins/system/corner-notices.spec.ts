@@ -55,14 +55,28 @@ test.describe('the window shows no corner notices', () => {
     test('is a failed task, not a notice', async ({ page, request }) => {
       const before = await listFilePaths(request)
       await openWorkspace(page)
-      await runCommand(page, 'Import from URL', /^Import from URL/)
+      await runCommand(page, 'Import link', /^Import link/)
       await getPaletteField(page).fill(MISSING_PAGE_ADDRESS)
       await page.keyboard.press('Enter')
-
-      const popover = await openTaskList(page)
-      await expect(popover).toContainText('its text was not fetched')
-      await expectNoCorner(page)
+      // Import link makes the link note alone; its text is fetched by a command over the note.
+      await expect(page.getByRole('tab', { name: /tide-tables/, selected: true })).toBeVisible({
+        timeout: 30_000,
+      })
       made.push(...(await listFilePaths(request)).filter((one) => !before.includes(one)))
+      await runCommand(page, 'Download captions', /^Download captions$/)
+
+      // The failed task of the fetch is the one entry of the failure: the window writes no error of
+      // its own for a run whose task started.
+      const popover = await openTaskList(page)
+      const failures = popover
+        .locator('.task-item')
+        .filter({ hasText: 'tide-tables answered 404 Not Found' })
+      await expect(failures).toHaveCount(1)
+      await expect(failures).toContainText('Fetching the text of a link')
+      await observeFor(page, 1_000)
+      await expect(failures).toHaveCount(1)
+      await expect(popover).not.toContainText('Numen is not responding')
+      await expectNoCorner(page)
     })
   })
 

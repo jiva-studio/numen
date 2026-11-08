@@ -28,7 +28,17 @@ export const filesCore: FilesCore = {
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
-      answer.kinds.map((one) => [one.path, { isNote: one.isNote, type: mapNoteType(one.type) }]),
+      answer.kinds.map((one) => [
+        one.path,
+        {
+          isNote: one.isNote,
+          type: mapNoteType(one.type),
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
+          ...(one.properties && Object.keys(one.properties).length > 0
+            ? { properties: one.properties }
+            : {}),
+        },
+      ]),
     )
   },
 }

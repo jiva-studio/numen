@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -94,19 +93,19 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			request.ShouldRebuildIndex = rebuild
 			return request.ReadWholeVault(ctx, db, embedder, v)
 		},
-		StartVaultFn:     cfg.startVault(db),
-		PluginServicesFn: cfg.GetPluginServices,
-		PluginCommandsFn: cfg.GetPluginCommands,
-		PluginCatalogFn:  cfg.getEditorCatalog,
-		AgentVal:         cfg.plugins().GetToolProvider(),
-		SetTextVersionListenerFn: func(listener textport.VersionListener) {
-			if cfg.TextVersions != nil {
-				cfg.TextVersions.SetListener(listener)
-			}
-		},
-		OpenFileMenuFn: cfg.vault().OpenFileMenu,
-		OpenProxyFn:    cfg.vault().OpenProxy,
-		GetMediaTypeFn: cfg.vault().GetMediaType,
+		StartVaultFn:             cfg.startVault(db),
+		PluginServicesFn:         cfg.GetPluginServices,
+		PluginCommandsFn:         cfg.GetPluginCommands,
+		OpenChooseTabKindFn:      cfg.OpenChooseTabKind,
+		PluginCatalogFn:          cfg.getEditorCatalog,
+		AgentVal:                 cfg.plugins().GetToolProvider(),
+		SetTextVersionListenerFn: cfg.vault().SetTextVersionListener,
+		ReportTextFilesChangedFn: cfg.vault().ReportTextFilesChanged,
+		OpenVersionItemsFn:       cfg.plugins().OpenVersionItems,
+		WatchPluginChangesFn:     cfg.WatchPluginChanges,
+		OpenTriggersFn:           cfg.plugins().OpenTriggers,
+		OpenPluginFileFn:         cfg.vault().OpenPluginFile,
+		GetMediaTypeFn:           cfg.vault().GetMediaType,
 		OpenChoosePluginPathFn: func(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 			return cfg.settings().OpenChoosePluginPath(dialog)
 		},

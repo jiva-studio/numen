@@ -2,6 +2,9 @@
 package domain
 
 import (
+	"path/filepath"
+	"strings"
+
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -26,6 +29,7 @@ type MoveResult = notesdomain.MoveResult
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
+type TextSourceProperty = notesdomain.TextSourceProperty
 type TextSegment = notesdomain.TextSegment
 
 // Selector locates a segment of a text version in its file, as a JSON object. The key page is the PDF
@@ -71,3 +75,9 @@ func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
 }
 
 func HashContent(raw []byte) string { return notesdomain.HashContent(raw) }
+
+// IsNotePath reports whether a vault path is a note: its extension is NoteExtension, in any case, as
+// target.isNote of a when condition holds it.
+func IsNotePath(path string) bool {
+	return strings.EqualFold(filepath.Ext(path), NoteExtension)
+}

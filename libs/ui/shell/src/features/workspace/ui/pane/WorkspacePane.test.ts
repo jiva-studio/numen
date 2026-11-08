@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { pane, type Tab } from '../../lib/node'
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
@@ -17,6 +17,7 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
       : { id, title: TITLES[id], ...(marks[id] === undefined ? {} : { mark: marks[id] }) },
   focus: 'main',
   minimum: 220,
+  getStripEdge: () => NO_STRIP_EDGE,
   choose: vi.fn(),
   close: vi.fn(),
   lift: vi.fn(),

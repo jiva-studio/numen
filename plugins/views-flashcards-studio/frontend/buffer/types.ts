@@ -32,6 +32,7 @@ export interface OpenNote {
   readonly body: string
   readonly state: State
   readonly error: NoteErrorCode | null
+  readonly isRead: boolean
 }
 
 export interface Notes {

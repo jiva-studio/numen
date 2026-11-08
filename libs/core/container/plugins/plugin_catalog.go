@@ -6,12 +6,14 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/localsource"
@@ -40,6 +42,9 @@ type Config struct {
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
 	BuildNotes            func(noteport.NoteQueries, noteport.LinkQueries, sourceport.SourceRepository, sourceport.SourceQueries, note.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
+	PluginChanges         *pluginchanges.Signals
+	TextVersions          *textversion.Versions
+	ListAppSettings       func() []pluginport.PluginSetting
 }
 
 // GetPluginCatalog is the catalog of the plugins on disk, the disabled ones too, and of the sources

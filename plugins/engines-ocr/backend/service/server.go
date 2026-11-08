@@ -152,46 +152,49 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
-	provider := recognition.NewProvider(recognitions)
-	commands := command.New()
-	if err := commands.Add("recognition.create", newRecogniseCommand(recognitions)); err != nil {
-		return err
-	}
-	if err := commands.Add("recognition.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
-		return err
-	}
 	agentTools := NewTools(recognitions)
+	commands, err := newCommands(agentTools)
+	if err != nil {
+		return err
+	}
 	registry, err := agentTools.Registry()
 	if err != nil {
 		return err
 	}
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { models.updateConfig(values) })
-	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
 		agentTools.Close()
-		provider.Close()
 		return models.close()
 	})
 	return nil
 }
 
-func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
+func newCommands(agentTools *Tools) (*command.Registry, error) {
+	commands := command.New()
+	if err := commands.Add(command.CreateText, newRecogniseCommand(agentTools)); err != nil {
+		return nil, err
+	}
+	return commands, nil
+}
+
+func newRecogniseCommand(agentTools *Tools) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path, IsUserStarted: true})
+		vault, err := agentTools.recognitions.GetVaultID(ctx, "")
 		if err != nil {
 			return command.Result{}, err
 		}
-		if res.IsEmpty {
-			return command.Result{
-				Message:    fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path),
-				OpenedPath: "",
-			}, nil
+		if _, err := agentTools.recognitions.StatFile(ctx, vault, req.Path); err != nil {
+			return command.Result{}, err
 		}
-		return command.Result{
-			Message:    fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path),
-			OpenedPath: "",
-		}, nil
+		state, err := agentTools.start(ctx, vault, req.Path)
+		if err != nil {
+			return command.Result{}, err
+		}
+		if state == stateRunning {
+			return command.Result{}, fmt.Errorf("%s: %w", req.Path, recognition.ErrAlreadyRecognising)
+		}
+		return command.Result{Message: "recognising " + req.Path, OpenedPath: ""}, nil
 	}
 }

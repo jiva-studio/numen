@@ -100,8 +100,14 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 
 	var running sync.WaitGroup
 
+	triggerPasses := newTriggerPasses()
+	checkTexts := func(paths []string) {
+		if err := made.ReportTextFilesChanged(ctx, v, paths); err != nil {
+			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
+		}
+	}
 	read, run, refresh, unwatched := made.StartVault(
-		ctx, v, rebuild, newChangeReporter(state, worker), newErrorReporter(state))
+		ctx, v, rebuild, newChangeReporter(state, worker, triggerPasses, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
@@ -118,6 +124,18 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 		session.Run(ctx, v, rebuild, read)
 	}()
 
+	if triggers := made.OpenTriggers(); triggers != nil {
+		running.Add(1)
+		go func() {
+			defer running.Done()
+			changes, stop := made.WatchPluginChanges()
+			defer stop()
+			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
+				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
+			})
+		}()
+	}
+
 	return refresh, running.Wait
 }
 
@@ -131,11 +149,19 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 	}
 }
 
-func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
+func newChangeReporter(
+	state *State, worker *indexing.Worker, triggers *triggerPasses, checkTexts func(paths []string),
+) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client shows every file in the vault, so an asset is reported as a note is.
 		changePaths := slices.Concat(paths, assets)
+		if reload {
+			triggers.requestAll()
+		} else {
+			triggers.requestPaths(changePaths)
+		}
 		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
+		checkTexts(changePaths)
 		worker.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {
 			// A book added to an open vault is read without a request.

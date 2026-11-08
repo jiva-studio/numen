@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path"
 	"slices"
 	"strings"
@@ -23,11 +24,13 @@ import (
 // revisedProse is what articleAddress publishes from the second fetch of its text on.
 const revisedProse = "The mill pond was dredged in spring, and the wheel now turns on both tides."
 
-// revisedSites is fakeSites whose article publishes revisedProse from the second fetch on.
+// revisedSites is fakeSites whose article publishes revisedProse from the second fetch on, or fails
+// with fetchErr where it is set.
 type revisedSites struct {
 	fakeSites
-	mu      sync.Mutex
-	fetches int
+	mu       sync.Mutex
+	fetches  int
+	fetchErr error
 }
 
 func (s *revisedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
@@ -38,6 +41,9 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.fetches++
+	if s.fetches > 1 && s.fetchErr != nil {
+		return download.Text{}, s.fetchErr
+	}
 	if s.fetches > 1 {
 		text.Prose = revisedProse
 	}
@@ -46,13 +52,18 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 
 func newRevisedFixture(t *testing.T) *importFixture {
 	t.Helper()
+	return newRefetchFixture(t, nil)
+}
+
+func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
+	t.Helper()
 	release := make(chan struct{})
 	close(release)
 	vault := hosttest.New("Mills")
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}}
+	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}, fetchErr: fetchErr}
 	hosted := link.Host{
 		Vault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}},
 		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
@@ -144,10 +155,9 @@ func TestURLImportOfSameAddressToSameFolderUpdatesLinkNote(t *testing.T) {
 	}
 }
 
-func TestURLImportOfSameAddressToOtherFolderCreatesSecondNote(t *testing.T) {
+func TestURLImportOfSameAddressToOtherFolderReturnsTheNoteItHas(t *testing.T) {
 	s := newUnblockedFixture(t)
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "reading"})
-	before, _ := s.vault.Content(first.Path)
 
 	res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "archive"})
 
@@ -155,19 +165,11 @@ func TestURLImportOfSameAddressToOtherFolderCreatesSecondNote(t *testing.T) {
 		t.Fatalf("url_import of %s into archive was rejected: %s", articleAddress, res.GetResult().GetText())
 	}
 	second := decodeImportAnswer(t, res)
-	if !strings.HasPrefix(second.Path, "archive/") || !second.HasText {
-		t.Errorf("url_import into archive returned %+v, want a note in archive with its text", second)
+	if second.Path != first.Path || !second.HasText {
+		t.Errorf("url_import into archive returned %+v, want the note %s with its text", second, first.Path)
 	}
-	notes := getLinkNotes(t, s.vault)
-	slices.Sort(notes)
-	if want := []string{second.Path, first.Path}; !slices.Equal(notes, want) {
-		t.Errorf("the vault has the link notes %v, want %v", notes, want)
-	}
-	if after, isKept := s.vault.Content(first.Path); !isKept || after != before {
-		t.Errorf("the first note %s reads %q, want it unchanged as %q", first.Path, after, before)
-	}
-	if !hasVersion(t, s.texts, second.Path) || !hasVersion(t, s.texts, first.Path) {
-		t.Errorf("the notes %s and %s do not both have a text version", first.Path, second.Path)
+	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{first.Path}) {
+		t.Errorf("the vault has the link notes %v, want %s alone", notes, first.Path)
 	}
 }
 
@@ -180,6 +182,7 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 			s := newUnblockedFixture(t)
 			probe := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "probe"})
 			targetPath := path.Join("desk", path.Base(probe.Path))
+			s.vault.Remove(probe.Path)
 			s.vault.File(targetPath, content)
 
 			res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "desk"})
@@ -194,5 +197,23 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 				t.Errorf("%s reads %q after the rejected import, want it unchanged as %q", targetPath, after, content)
 			}
 		})
+	}
+}
+
+func TestURLImportWhoseFetchFailsReportsTheTextTheNoteHas(t *testing.T) {
+	s := newRefetchFixture(t, errors.New("the site is down"))
+	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
+	if !first.HasText {
+		t.Fatalf("the first import returned %+v, want hasText", first)
+	}
+
+	second := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
+
+	if second.Error == "" {
+		t.Errorf("the import whose fetch failed returned no error: %+v", second)
+	}
+	text := readLiveText(t, s.texts, first.Path)
+	if !second.HasText || second.Bytes != len(text) || second.Title != first.Title {
+		t.Errorf("the import whose fetch failed returned %+v, want hasText, bytes %d and the title %q of the text the note has", second, len(text), first.Title)
 	}
 }

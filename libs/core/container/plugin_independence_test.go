@@ -1,7 +1,6 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 
 	"gopkg.in/yaml.v3"
 )

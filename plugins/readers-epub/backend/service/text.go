@@ -42,7 +42,12 @@ type TextServer struct {
 	running  map[string]context.CancelFunc
 }
 
-var _ host.TextProvider = (*TextServer)(nil)
+// TextRequest names the book whose text is written, in the vault Vault names; empty is the vault the
+// host shows when the text is requested.
+type TextRequest struct {
+	Vault domain.VaultID
+	Path  string
+}
 
 // NewTextServer is the texts of the books read through files, written into store and reported to
 // texts, each written in a turn of queue.
@@ -113,9 +118,18 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 	return read, nil
 }
 
-// CreateText starts writing the text of a book as a version made from the file, and returns. The
-// A book whose text is being written already is not started again.
-func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
+// CreateText starts writing the text of a book as a version made from the file, and returns. An
+// empty vault is the vault the host shows when CreateText is called, and the text is written there
+// whichever vault the host shows later. A book whose text is being written already is not started
+// again.
+func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
+	if req.Vault == "" {
+		shown, err := s.files.GetVault(ctx)
+		if err != nil {
+			return fmt.Errorf("get the shown vault: %w", err)
+		}
+		req.Vault = shown.ID
+	}
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,7 +152,7 @@ func (s *TextServer) finish(key string) {
 	delete(s.running, key)
 }
 
-func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
+func (s *TextServer) writeText(ctx context.Context, req TextRequest) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters and unit start at zero"
@@ -159,7 +173,7 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	}
 }
 
-func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
+func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
@@ -169,10 +183,7 @@ func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task ho
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.files, s.texts, s.store
-	if req.Vault != "" {
-		files, texts, store = files.With(req.Vault), texts.With(req.Vault), store.With(req.Vault)
-	}
+	files, texts, store := s.files.With(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
 	read, err := s.readBook(ctx, files, req.Path)
 	if isUnreadable(err) {
 		return nil

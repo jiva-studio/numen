@@ -16,7 +16,11 @@ const readNoteTabPaths = async (page: Page): Promise<string[]> =>
 
 const linkTab = async (page: Page, from: string, to: string): Promise<void> => {
   await getTab(page, from).click({ button: 'right' })
-  await page.getByRole('menuitem', { name: `${to} note` }).click()
+  // The submenu opens over the item that opens it once the pointer reaches it.
+  const linkItem = page.getByRole('menuitem', { name: 'Link with tab', exact: true })
+  await linkItem.focus()
+  await linkItem.press('ArrowRight')
+  await page.getByRole('menuitem', { name: to, exact: true }).click()
   await expect(page.getByRole('tab', { name: new RegExp(`^Linked tab ${from} `) })).toBeVisible()
 }
 
@@ -62,7 +66,7 @@ test.describe('Linked tabs', () => {
     await linkTab(page, 'Files', 'Weir notes')
 
     await getTab(page, 'Files').click({ button: 'right' })
-    await page.getByRole('menuitem', { name: /^Unlink tab/ }).click()
+    await page.getByRole('menuitem', { name: 'Unlink tab', exact: true }).click()
     await expect(getTab(page, 'Files')).toHaveAccessibleName('Files Close Files')
 
     await getTab(page, 'Files').click()

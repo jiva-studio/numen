@@ -5,6 +5,9 @@ import type { Component, ComputedRef, Ref } from 'vue'
 import type { MenuItem, MenuTrigger } from '@numen/ui'
 import type { PlexNeighbourhood, PlexHeading, PlexRelation, PlexDestination } from './plex'
 import type {
+  CommandItem,
+  CommandTarget,
+  SlotItem,
   Connection,
   ConnectionRole,
   NoteNeighbour,
@@ -39,6 +42,7 @@ export type Neighbour = NoteNeighbour
 export interface Neighbourhood {
   readonly focus: Focus
   readonly focusType: NoteType
+  readonly focusTabKind?: string
   readonly related: readonly Neighbour[]
   readonly connections: readonly Connection[]
 }
@@ -118,13 +122,14 @@ export interface PlexTabDeps {
   openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
   readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
-  runCommand(id: string, path: string, title: string): void
-  /** The commands the plugins declare over one note. */
-  getNoteCommands(): readonly { readonly id: string; readonly text: string }[]
-  /** The icon the window draws a command with, and nothing for one it draws none for. */
-  getCommandIcon(id: string): Component | null
+  /** The entries of the slot `plexGraph.context` over the note of a node. */
+  getMenuEntries(target: CommandTarget): readonly SlotItem[]
+  /** The items a command of the menu offers over the note of a node. */
+  listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
+  /** Runs a command of the menu over the note of a node; with `itemId`, the item picked. */
+  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
   /** The icon the window draws a type of note with. */
-  getNoteIcon(type: NoteType): Component | null
+  getNoteIcon(tabKind: string): Component | null
   readonly openingPath: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
   showMessage(text: string): void
@@ -144,7 +149,7 @@ export interface PlexViewState {
 }
 
 export interface PlexMenuState {
-  readonly menu: Ref<MenuRequest | null>
+  readonly menu: Readonly<Ref<MenuRequest | null>>
   readonly menuItems: ComputedRef<readonly MenuItem[]>
   getMenuIcon(id: string): Component | null
   /** The icon a node is drawn with, and nothing for an ordinary note. */

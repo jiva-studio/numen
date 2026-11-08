@@ -2,18 +2,21 @@ package editor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"path/filepath"
 	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -47,6 +50,7 @@ type fileHandler struct {
 	state            *State
 	getFolderEntries *file.GetFolderEntries
 	getFileKinds     *file.GetFileKinds
+	chooseTabKind    *tabkind.Choose
 	createFolder     *file.CreateFolder
 	move             *vaults.Move
 	remove           *note.Remove
@@ -69,6 +73,16 @@ func (h *fileHandler) ListFiles(
 		return nil, connect.NewError(getListCode(err), err)
 	}
 
+	var notes []string
+	for _, one := range listing.Entries {
+		if one.Kind == domain.KindNote {
+			notes = append(notes, one.Path)
+		}
+	}
+	tabKinds, err := h.listTabKinds(ctx, showing, notes)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
 		out.Entries = append(out.Entries, &v1.Entry{
@@ -77,13 +91,14 @@ func (h *fileHandler) ListFiles(
 			IsFolder: one.IsFolder,
 			IsNote:   one.Kind == domain.KindNote,
 			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
+			TabKind:  tabKinds[one.Path],
 		})
 	}
 	return connect.NewResponse(out), nil
 }
 
 // ListFileKinds returns what the vault holds at each of the given paths, so the
-// client opens each path in the editor made for it.
+// client opens each path in the editor made for it: a note in the kind of tab the core chooses for it.
 //
 // Whether a note exists is read from the vault and its type from the index, or
 // from the note itself when nothing has scanned it yet, so a file a plugin has
@@ -117,13 +132,24 @@ func (h *fileHandler) ListFileKinds(
 	}
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
-		out.Kinds = append(out.Kinds, &v1.FileKind{
-			Path:   one.Path,
-			IsNote: one.Kind == domain.KindNote,
-			Type:   convertNoteTypeToWire(listing.Types[one.Path]),
-		})
+		out.Kinds = append(out.Kinds, h.newWireFileKind(one, listing))
 	}
 	return connect.NewResponse(out), nil
+}
+
+func (h *fileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
+	kind := &v1.FileKind{
+		Path:   one.Path,
+		IsNote: one.Kind == domain.KindNote,
+		Type:   convertNoteTypeToWire(listing.Types[one.Path]),
+	}
+	if properties, isNote := listing.Properties[one.Path]; isNote {
+		kind.Properties = newWireProperties(properties)
+		if h.chooseTabKind != nil {
+			kind.TabKind = h.chooseTabKind.Execute(one.Path, listing.Types[one.Path], properties)
+		}
+	}
+	return kind
 }
 
 // CreateFolder puts an empty folder in the vault, with the folders above it.
@@ -247,4 +273,20 @@ func (h *fileHandler) removal(
 		return h.remove.Destroy(ctx, v, path)
 	}
 	return h.remove.Execute(ctx, v, path)
+}
+
+func newWireProperties(properties map[string]any) *structpb.Struct {
+	raw, err := json.Marshal(properties)
+	if err != nil {
+		return &structpb.Struct{}
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		return &structpb.Struct{}
+	}
+	wire, err := structpb.NewStruct(decoded)
+	if err != nil {
+		return &structpb.Struct{}
+	}
+	return wire
 }

@@ -103,13 +103,23 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
-  it('notifies each change of the vault, and where every note named went', async () => {
+  it('notifies each change of the vault, where every note named went, and the files whose text versions changed', async () => {
     request.watchVaultChanges.mockImplementation(async function* () {
-      yield { paths: ['Llama.md'], reload: true, renamed: [{ from: 'A.md', to: 'B.md' }] }
+      yield {
+        paths: ['Llama.md'],
+        reload: true,
+        renamed: [{ from: 'A.md', to: 'B.md' }],
+        versionPaths: ['talks/a.mp3'],
+      }
     })
 
     expect(await readAll(sessionCore.watchVaultChanges(signal))).toStrictEqual([
-      { paths: ['Llama.md'], shouldReload: true, renamed: [{ from: 'A.md', to: 'B.md' }] },
+      {
+        paths: ['Llama.md'],
+        shouldReload: true,
+        renamed: [{ from: 'A.md', to: 'B.md' }],
+        versionPaths: ['talks/a.mp3'],
+      },
     ])
     expect(request.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
   })
@@ -221,7 +231,7 @@ describe('the streams a window follows', () => {
 })
 
 describe('detaching a tab', () => {
-  it('sends DetachTab with the tab, its saved state and the rounded position', async () => {
+  it('sends DetachTab with the tab, its saved state and the rounded position and size', async () => {
     request.detachTab.mockResolvedValueOnce({ error: 0 })
     request.detachTab.mockResolvedValueOnce({ error: 2 })
     const tab = {
@@ -231,11 +241,13 @@ describe('detaching a tab', () => {
       title: 'Physics',
       state: '{"focus":"Kepler"}',
     }
-    expect(await sessionCore.detachTab(tab, { x: 100.6, y: 200.4 })).toStrictEqual({
+    expect(
+      await sessionCore.detachTab(tab, { x: 100.6, y: 200.4, width: 640.5, height: 479.6 }),
+    ).toStrictEqual({
       ok: true,
       value: undefined,
     })
-    expect(await sessionCore.detachTab(tab, { x: 0, y: 0 })).toStrictEqual({
+    expect(await sessionCore.detachTab(tab, { x: 0, y: 0, width: 0, height: 0 })).toStrictEqual({
       ok: false,
       error: 'timeout',
     })
@@ -244,6 +256,8 @@ describe('detaching a tab', () => {
       tab,
       x: 101,
       y: 200,
+      width: 641,
+      height: 480,
     })
   })
 })

@@ -67,7 +67,7 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	if err := decoder.Decode(&value); err != nil {
 		return nil, nil, err
 	}
-	if err := checkMenuOrders(value); err != nil {
+	if err := checkSlotOrders(value); err != nil {
 		return nil, nil, err
 	}
 	unknown = pruneUnknown(value, (&v1.Manifest{}).ProtoReflect().Descriptor(), "", nil)
@@ -80,9 +80,9 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	return canonical, unknown, err
 }
 
-var errMenuOrderShape = errors.New("the order of a menu entry must be a number, not a string")
+var errSlotOrderShape = fmt.Errorf("%w: the order of an entry must be a number, not a string", manifest.ErrInvalidSlotEntry)
 
-func checkMenuOrders(root any) error {
+func checkSlotOrders(root any) error {
 	object, isObject := root.(map[string]any)
 	if !isObject {
 		return nil
@@ -91,7 +91,7 @@ func checkMenuOrders(root any) error {
 	if !isObject {
 		return nil
 	}
-	entries, isList := contributes["menus"].([]any)
+	entries, isList := contributes["slots"].([]any)
 	if !isList {
 		return nil
 	}
@@ -101,28 +101,10 @@ func checkMenuOrders(root any) error {
 			continue
 		}
 		if text, isText := fields["order"].(string); isText {
-			return fmt.Errorf("%w: %q", errMenuOrderShape, text)
+			return fmt.Errorf("%w: %q", errSlotOrderShape, text)
 		}
 	}
 	return nil
-}
-
-func newMenus(wire []*v1.ManifestMenuEntry) []manifest.Menu {
-	var out []manifest.Menu
-	for _, one := range wire {
-		var order *int
-		if one.Order != nil {
-			value := int(one.GetOrder())
-			order = &value
-		}
-		out = append(out, manifest.Menu{
-			Location: one.GetLocation(),
-			Command:  one.GetCommand(),
-			Group:    one.GetGroup(),
-			Order:    order,
-		})
-	}
-	return out
 }
 
 func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
@@ -169,15 +151,13 @@ func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
 func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) {
 	var kinds []manifest.TabKind
 	for _, one := range wire.GetTabKinds() {
-		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
+		kinds = append(kinds, manifest.TabKind{
+			Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon(), When: one.GetWhen(), Rank: newTabKindRank(one.GetRank()),
+		})
 	}
 	var themes []manifest.Theme
 	for _, one := range wire.GetThemes() {
 		themes = append(themes, manifest.Theme{ID: one.GetId(), Name: one.GetName(), Appearance: one.GetAppearance(), File: one.GetFile()})
-	}
-	var views []manifest.StatusView
-	for _, one := range wire.GetStatusViews() {
-		views = append(views, manifest.StatusView{ID: one.GetId()})
 	}
 	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
 	if err != nil {
@@ -188,15 +168,39 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Feature:      wire.GetFeature(),
 		Category:     wire.GetCategory(),
 		Themes:       themes,
-		StatusViews:  views,
-		Handles:      newHandles(wire.GetHandles()),
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
 		Commands:     newCommands(wire.GetCommands()),
-		Menus:        newMenus(wire.GetMenus()),
+		Slots:        newSlots(wire.GetSlots()),
+		Handlers:     newHandlers(wire.GetHandlers()),
+		Triggers:     newTriggers(wire.GetTriggers()),
+		TextKinds:    newTextKinds(wire.GetTextKinds()),
 		Listeners:    newListeners(wire.GetListeners()),
 	}, nil
+}
+
+func newSlots(wire []*v1.ManifestSlotEntry) []manifest.SlotEntry {
+	var out []manifest.SlotEntry
+	for _, one := range wire {
+		var order *int
+		if one.Order != nil {
+			value := int(one.GetOrder())
+			order = &value
+		}
+		out = append(out, manifest.SlotEntry{
+			Slot:    one.GetSlot(),
+			Command: one.GetCommand(),
+			View:    one.GetView(),
+			Submenu: one.GetSubmenu(),
+			Title:   one.GetTitle(),
+			Icon:    one.GetIcon(),
+			Group:   one.GetGroup(),
+			Order:   order,
+			When:    one.GetWhen(),
+		})
+	}
+	return out
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {
@@ -278,7 +282,7 @@ func newSettingOptions(list *structpb.ListValue) (manifest.SettingOptions, error
 	for _, item := range list.GetValues() {
 		switch kind := item.GetKind().(type) {
 		case *structpb.Value_StringValue:
-			options = append(options, manifest.SettingOption{Value: kind.StringValue, Title: "", Detail: "", Dependencies: nil})
+			options = append(options, manifest.SettingOption{Value: kind.StringValue, Title: "", Detail: "", Dependencies: nil, When: ""})
 		case *structpb.Value_StructValue:
 			option, err := newSettingOption(kind.StructValue)
 			if err != nil {
@@ -307,6 +311,7 @@ func newSettingOption(object *structpb.Struct) (manifest.SettingOption, error) {
 		Title:        wire.GetTitle(),
 		Detail:       wire.GetDetail(),
 		Dependencies: wire.GetDependencies(),
+		When:         wire.GetWhen(),
 	}, nil
 }
 
@@ -368,24 +373,13 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
-			ID:           one.GetId(),
-			Title:        one.GetTitle(),
-			Icon:         one.GetIcon(),
-			ContentTypes: newContentTypes(one.GetContentTypes()),
-			NoteTypes:    one.GetNoteTypes(),
-			When:         newCommandWhen(one.GetWhen()),
-			Arguments:    newCommandArguments(one.GetArguments()),
-			Scope:        one.GetScope(),
-			Shortcut:     one.GetShortcut(),
+			ID:        one.GetId(),
+			Title:     one.GetTitle(),
+			Icon:      one.GetIcon(),
+			When:      one.GetWhen(),
+			Arguments: newCommandArguments(one.GetArguments()),
+			Shortcut:  one.GetShortcut(),
 		})
-	}
-	return out
-}
-
-func newCommandWhen(wire []*v1.ManifestContextCondition) []manifest.ContextCondition {
-	var out []manifest.ContextCondition
-	for _, one := range wire {
-		out = append(out, manifest.ContextCondition{Key: one.GetKey(), Is: one.GetIs()})
 	}
 	return out
 }
@@ -403,10 +397,26 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 	return out
 }
 
-func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
-	var out []manifest.Handle
+func newHandlers(wire []*v1.ManifestHandler) []manifest.Handler {
+	var out []manifest.Handler
 	for _, one := range wire {
-		out = append(out, manifest.Handle{Purpose: one.GetPurpose(), ContentTypes: newContentTypes(one.GetContentTypes()), NoteTypes: one.GetNoteTypes()})
+		out = append(out, manifest.Handler{Command: one.GetCommand(), Title: one.GetTitle(), When: one.GetWhen()})
+	}
+	return out
+}
+
+func newTriggers(wire []*v1.ManifestTrigger) []manifest.Trigger {
+	var out []manifest.Trigger
+	for _, one := range wire {
+		out = append(out, manifest.Trigger{Event: one.GetEvent(), Command: one.GetCommand(), When: one.GetWhen()})
+	}
+	return out
+}
+
+func newTextKinds(wire []*v1.ManifestTextKind) []manifest.TextKind {
+	var out []manifest.TextKind
+	for _, one := range wire {
+		out = append(out, manifest.TextKind{Kind: one.GetKind(), Title: one.GetTitle()})
 	}
 	return out
 }

@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
-import { registerNoteIcon } from '@/entities/note'
+import { registerTabKindIcon } from '@/entities/note'
 import {
   DEFAULT_PLUGIN_ENABLED,
   createAppInfo,
@@ -12,12 +12,14 @@ import {
   createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
+  type PluginHostDeps,
   type PluginLoader,
 } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
+import type { WindowPlatform } from '@numen/shell'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {
@@ -25,6 +27,7 @@ export interface PluginSupportDeps {
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  readonly getPlatform?: () => WindowPlatform
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
@@ -35,7 +38,21 @@ export interface PluginSupportDeps {
   readonly services?: PluginServices
   readonly notices?: NoticeQueue
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  readonly handlers?: Pick<
+    PluginHostDeps,
+    'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'
+  >
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  readonly reportViewIssue?: (pluginId: string, message: string) => void
+  readonly slots?: Pick<
+    PluginHostDeps,
+    | 'getSlotEntries'
+    | 'findSlotCommand'
+    | 'reportSlotIssue'
+    | 'getSlotWhenValues'
+    | 'getWindowValues'
+    | 'getContentTypes'
+  >
 }
 
 function createPluginSettingsAccessor(
@@ -67,10 +84,46 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
+function createServiceAccess(services: PluginServices | undefined) {
+  /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
+  return {
+    getWorkspace: () => services?.workspace,
+    getNotes: () => services?.notes,
+    getRelations: () => services?.relations,
+    getFiles: () => services?.files,
+    getAgent: () => services?.agent,
+    getCommands: () => services?.commands,
+    getVaults: () => services?.vaults,
+    getWindow: () => services?.window,
+    getBuffers: () => services?.buffers,
+    getNoteBuffer: () => services?.noteBuffer,
+    getTasks: (pluginId: string) => {
+      const list = services?.taskList
+      return list ? createPluginTasks(list, pluginId) : undefined
+    },
+    getBackgroundTasks: () => services?.backgroundTasks,
+  }
+  /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
+}
+
 function createNoticeAccess(queue: NoticeQueue) {
   return {
     getNotices: (pluginId: string) => createPluginNotices(queue, pluginId),
     clearNotices: (pluginId: string) => queue.clear(pluginId),
+  }
+}
+
+function getHostDeclarations(deps: PluginSupportDeps) {
+  return {
+    ...deps.slots,
+    ...deps.handlers,
+    ...(deps.getCommandDeclarations !== undefined
+      ? { getCommandDeclarations: deps.getCommandDeclarations }
+      : {}),
+    ...(deps.reportViewIssue !== undefined ? { reportViewIssue: deps.reportViewIssue } : {}),
+    ...(deps.reportCommandIssue !== undefined
+      ? { reportCommandIssue: deps.reportCommandIssue }
+      : {}),
   }
 }
 
@@ -90,12 +143,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
   const loaderHolder: { current?: PluginLoader } = {}
   const pluginHost = createPluginHost({
-    ...(deps.getCommandDeclarations !== undefined
-      ? { getCommandDeclarations: deps.getCommandDeclarations }
-      : {}),
-    ...(deps.reportCommandIssue !== undefined
-      ? { reportCommandIssue: deps.reportCommandIssue }
-      : {}),
+    ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
       settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,
@@ -107,13 +155,13 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
-      userAgent: navigator.userAgent,
+      getPlatform: deps.getPlatform ?? (() => 'windows'),
     }),
     openExternal: (url) => openExternalUrl(url),
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
       const unregisterKind = windowTabs.registerKind(kind)
-      const unregisterIcon = kind.icon ? registerNoteIcon(kind.kind, kind.icon) : () => undefined // No icon was registered.
+      const unregisterIcon = kind.icon ? registerTabKindIcon(kind.kind, kind.icon) : () => undefined
       return () => {
         unregisterKind()
         unregisterIcon()
@@ -135,18 +183,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    getWorkspace: () => deps.services?.workspace,
-    getNotes: () => deps.services?.notes,
-    getRelations: () => deps.services?.relations,
-    getFiles: () => deps.services?.files,
-    getAgent: () => deps.services?.agent,
-    getBuffers: () => deps.services?.buffers,
-    getNoteBuffer: () => deps.services?.noteBuffer,
+    ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
-    getTasks: (pluginId) => {
-      const list = deps.services?.taskList
-      return list ? createPluginTasks(list, pluginId) : undefined
-    },
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })

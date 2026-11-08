@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -11,17 +11,20 @@
       {
         "kind": "deck",
         "title": "Deck",
-        "icon": "layers"
+        "icon": "layers",
+        "when": "target.noteType == 'deck'"
       },
       {
         "kind": "card-model",
         "title": "Card Model",
-        "icon": "layout-template"
+        "icon": "layout-template",
+        "when": "target.noteType == 'card-model'"
       },
       {
         "kind": "preset",
         "title": "Preset",
-        "icon": "gauge"
+        "icon": "gauge",
+        "when": "target.noteType == 'preset'"
       },
       {
         "kind": "flashcards.review",
@@ -91,8 +94,32 @@
         "id": "preset.open",
         "title": "Open preset",
         "icon": "gauge",
-        "scope": "note"
+        "when": "target.isNote"
       }
+    ],
+    "slots": [
+      {
+        "slot": "fileTree.new",
+        "command": "deck.create",
+        "group": "1-cards",
+        "order": 10,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "cardModel.create",
+        "group": "1-cards",
+        "order": 20,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "preset.create",
+        "group": "1-cards",
+        "order": 30,
+        "when": "target.isFolder"
+      },
+      { "slot": "plexGraph.context", "command": "preset.open", "group": "1-note", "order": 40 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

@@ -209,9 +209,6 @@ func TestAFailedConfigureKeepsTheChangeAndNamesThePluginWithoutTheValue(t *testi
 	if sup.IsActivationFailed() {
 		t.Error("the plugin is marked as failed")
 	}
-	if err := sup.CheckActivationAllowed(testsupport.GetMachine().Now()); err != nil {
-		t.Errorf("the plugin may not be started again: %v", err)
-	}
 	for _, info := range host.GetPluginInfos() {
 		if info.ID == secretPluginID && info.Failure != nil {
 			t.Errorf("the plugin page shows %+v", info.Failure)

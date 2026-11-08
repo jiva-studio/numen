@@ -43,11 +43,8 @@ type Supervisor struct {
 	process          *os.Process
 	inProcess        bool
 	teardownBegun    bool
-	failures         int
 	failure          error
-	failed           bool
 	failedAt         time.Time
-	retryAt          time.Time
 	activationPolicy ActivationPolicy
 	lastActiveTime   time.Time
 	activeRefCount   int
@@ -72,11 +69,8 @@ func New(clock machineport.Clock) *Supervisor {
 		process:          nil,
 		inProcess:        false,
 		teardownBegun:    false,
-		failures:         0,
 		failure:          nil,
-		failed:           false,
 		failedAt:         time.Time{},
-		retryAt:          time.Time{},
 		activationPolicy: DefaultActivationPolicy(),
 		lastActiveTime:   time.Time{},
 		activeRefCount:   0,
@@ -91,7 +85,7 @@ func New(clock machineport.Clock) *Supervisor {
 	}
 }
 
-// SetActivationPolicy sets the retry and backoff policy applied when activation fails.
+// SetActivationPolicy sets the deadline of an activation.
 func (s *Supervisor) SetActivationPolicy(policy ActivationPolicy) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

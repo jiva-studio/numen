@@ -7,11 +7,12 @@
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
-import { Palette, TitleBar } from '@numen/shell'
+import { Palette } from '@numen/shell'
+import { SlotViewHost } from '@numen/plugin-host'
+import { LoadingIndicator } from '@numen/ui'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'
 import { useShell, type ShellDeps } from './useShell'
-import { useWindowFrame } from './useWindowFrame'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -20,21 +21,18 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
-const frame = useWindowFrame()
 </script>
 
 <template>
-  <link v-if="plugins.style.value" rel="stylesheet" :href="plugins.style.value" />
-  <TitleBar
-    :app-name="WORDS.appName"
-    :vault-name="WORDS.windowName"
-    :controls="frame.controls.value"
-    :is-maximised="frame.isMaximised.value"
-    @minimise="frame.minimise"
-    @toggle-maximise="frame.toggleMaximise"
-    @close="frame.close"
-  />
-  <main class="window">
+  <!-- The window is drawn once the plugins have started or the wait for them has passed, so the
+       layout does not move when the bar is drawn. -->
+  <LoadingIndicator v-if="!plugins.isStarted.value" class="starting" :label="WORDS.appName" />
+  <SlotViewHost v-else :view="plugins.titleBarView.value" />
+  <main
+    v-if="plugins.isStarted.value"
+    class="window"
+    :class="{ 'window--below-bar': plugins.titleBarView.value }"
+  >
     <component
       :is="tab.view.registration.component as Component"
       v-if="tab"
@@ -72,9 +70,17 @@ const frame = useWindowFrame()
 .window {
   display: flex;
   flex-direction: column;
-  block-size: calc(100vh - 2rem);
+  block-size: 100vh;
   box-sizing: border-box;
   padding: var(--numen-inset-wide);
   gap: var(--numen-inset);
+}
+
+.window--below-bar {
+  block-size: calc(100vh - var(--numen-title-bar-height));
+}
+
+.starting {
+  block-size: 100vh;
 }
 </style>

@@ -110,7 +110,7 @@ describe('command handlers', () => {
 
     const handled = host.handleShortcut(
       new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
-      async () => ({ path: '', title: '', type: 'note' }),
+      async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [], tab: '' }),
     )
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -135,14 +135,28 @@ describe('command handlers', () => {
     })
 
     await expect(
-      host.executeCommand('cmd.plugin:run', { path: '', title: '', type: 'note' }),
+      host.executeCommand('cmd.plugin:run', {
+        path: '',
+        title: '',
+        type: 'note',
+        isFolder: false,
+        others: [],
+        tab: '',
+      }),
     ).resolves.toBe(true)
     expect(onError).toHaveBeenCalledWith('cmd.plugin', fault)
   })
 })
 
 describe('a command over a note', () => {
-  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample' }
+  const NOTE = {
+    path: 'Animals.md',
+    title: 'Animals',
+    type: 'sample',
+    isFolder: false,
+    others: [],
+    tab: '',
+  }
 
   it('is offered as one over a note, and runs with the note it is given', async () => {
     const host = createPluginHost(
@@ -152,7 +166,7 @@ describe('a command over a note', () => {
             pluginId: 'cmd.plugin',
             id: 'summary',
             title: 'Open summary',
-            scope: 'note',
+            when: 'target.isNote',
           },
         ],
       }),
@@ -163,7 +177,7 @@ describe('a command over a note', () => {
     await host.executeCommand('cmd.plugin:summary', NOTE)
 
     expect(host.getPaletteCommands()).toStrictEqual([
-      { id: 'cmd.plugin:summary', title: 'Open summary', scope: 'note' },
+      { id: 'cmd.plugin:summary', title: 'Open summary', when: 'target.isNote' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
@@ -177,7 +191,7 @@ describe('a command over a note', () => {
             id: 'summary',
             title: 'Open summary',
             shortcut: 'ctrl+p',
-            scope: 'note',
+            when: 'target.isNote',
           },
         ],
       }),
@@ -186,7 +200,14 @@ describe('a command over a note', () => {
     host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
 
-    host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
+    host.handleShortcut(event, async () => ({
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    }))
     host.handleShortcut(event, async () => NOTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -235,7 +256,7 @@ describe('a tab kind component', () => {
     const onError = vi.fn()
 
     const deps = createDeps({
-      app: { version: '1.2.3', build: 9, platform: 'darwin' },
+      app: { name: 'numen', version: '1.2.3', build: 9, platform: 'darwin' },
       openExternal,
       navigateTab: navigateTab as never,
       closeTab,
@@ -246,7 +267,7 @@ describe('a tab kind component', () => {
           id: 'rich',
           title: 'Rich',
           shortcut: 'ctrl+b',
-          scope: 'note',
+          when: 'target.isNote',
           icon: 'star',
         },
       ],
@@ -265,7 +286,7 @@ describe('a tab kind component', () => {
     const ctx = host.createContext('reader.plugin')
     expect(host.createContext('reader.plugin')).toBe(ctx)
     expect(ctx.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.app).toEqual({ version: '1.2.3', build: 9, platform: 'darwin' })
+    expect(ctx.app).toEqual({ name: 'numen', version: '1.2.3', build: 9, platform: 'darwin' })
     expect(ctx.relations).toBeDefined()
     expect(ctx.files).toBeDefined()
     expect(ctx.agent).toBeDefined()
@@ -301,7 +322,7 @@ describe('a tab kind component', () => {
         id: 'reader.plugin:rich',
         title: 'Rich',
         shortcut: 'ctrl+b',
-        scope: 'note',
+        when: 'target.isNote',
         icon: 'star',
       },
     ])
@@ -334,7 +355,12 @@ describe('a tab kind component', () => {
       }),
     )
     const bareCtx = bareHost.createContext('bare')
-    expect(bareCtx.app).toEqual({ version: '0.0.0-dev', build: 0, platform: 'linux' })
+    expect(bareCtx.app).toEqual({
+      name: 'numen',
+      version: '0.0.0-dev',
+      build: 0,
+      platform: 'linux',
+    })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
       ok: false,
       error: 'Numen is not responding; retrying',
@@ -348,7 +374,14 @@ describe('a tab kind component', () => {
       },
     })
     await expect(
-      bareHost.executeCommand('bare:fail-quietly', { path: '', title: '', type: 'note' }),
+      bareHost.executeCommand('bare:fail-quietly', {
+        path: '',
+        title: '',
+        type: 'note',
+        isFolder: false,
+        others: [],
+        tab: '',
+      }),
     ).resolves.toBe(true)
   })
 })

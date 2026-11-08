@@ -90,21 +90,24 @@ function empty(cardModel: string) {
 
     <DeckScheduleBar :scheduled="scheduled" :choices="choices" @choose="onChooseSchedule" />
 
-    <DeckEditor
-      class="deck-tab__grid"
-      :cards="deckCards"
-      :sections="sections"
-      :card-models="cardModels"
-      :name="words.deck"
-      :wrong="validationErrors"
-      @add="onAddCard"
-      @remove="onRemoveCard"
-      @move="onMoveCard"
-      @write="onWriteCard"
-      @add-section="onAddSection"
-      @rename-section="onRenameSection"
-      @remove-section="onRemoveSection"
-    />
+    <!-- The editor takes no input until the file is read. -->
+    <fieldset class="deck-tab__body" :disabled="!note.isRead">
+      <DeckEditor
+        class="deck-tab__grid"
+        :cards="deckCards"
+        :sections="sections"
+        :card-models="cardModels"
+        :name="words.deck"
+        :wrong="validationErrors"
+        @add="onAddCard"
+        @remove="onRemoveCard"
+        @move="onMoveCard"
+        @write="onWriteCard"
+        @add-section="onAddSection"
+        @rename-section="onRenameSection"
+        @remove-section="onRemoveSection"
+      />
+    </fieldset>
   </div>
 </template>
 
@@ -114,6 +117,17 @@ function empty(cardModel: string) {
   flex-direction: column;
   block-size: 100%;
   min-block-size: 0;
+}
+
+.deck-tab__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .deck-tab__grid {

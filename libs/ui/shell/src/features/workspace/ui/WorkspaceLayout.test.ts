@@ -122,6 +122,73 @@ describe('a menu requested for on a tab', () => {
   })
 })
 
+describe('the menu of a tab', () => {
+  const MENU = {
+    tab: 'chat',
+    at: { x: 5, y: 6 },
+    items: [
+      { id: 'detach', text: 'Detach tab' },
+      { id: 'org.example.atlas/command/graph.showNote', text: 'Show note in plex', group: '1' },
+    ],
+  }
+
+  const getRows = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+
+  it('is drawn with the rows the caller gives, and nowhere while it gives none', async () => {
+    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    await nextTick()
+
+    expect(getRows().map((one) => one.textContent?.trim())).toStrictEqual([
+      'Detach tab',
+      'Show note in plex',
+    ])
+
+    await target.setProps({ tabMenu: null })
+    expect(getRows()).toStrictEqual([])
+    target.unmount()
+  })
+
+  it('emits the id of the chosen row with the id of its tab', async () => {
+    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    await nextTick()
+
+    getRows()[1]?.click()
+
+    expect(target.emitted('tab-menu-choose')).toStrictEqual([
+      ['chat', 'org.example.atlas/command/graph.showNote'],
+    ])
+    target.unmount()
+  })
+
+  it('emits the dismissal of the menu and the id of the highlighted row', async () => {
+    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    await nextTick()
+    const menu = target.findComponent({ name: 'Menu' })
+
+    menu.vm.$emit('dismiss')
+    menu.vm.$emit('highlight', 'detach')
+
+    expect(target.emitted('tab-menu-dismiss')).toHaveLength(1)
+    expect(target.emitted('tab-menu-highlight')).toStrictEqual([['detach']])
+    target.unmount()
+  })
+
+  it('draws the icon the caller draws for a row', async () => {
+    const target = mountWorkspace(
+      oneStack(),
+      { tabMenu: MENU },
+      {
+        'tab-menu-icon':
+          '<template #tab-menu-icon="{ id }"><i class="mark">{{ id }}</i></template>',
+      },
+    )
+    await nextTick()
+
+    expect(getRows()[0]?.querySelector('.mark')?.textContent).toBe('detach')
+    target.unmount()
+  })
+})
+
 describe('what a tab carries', () => {
   it('reaches the strip from the tabs the caller declared', () => {
     const target = mountWorkspace(oneStack(), {

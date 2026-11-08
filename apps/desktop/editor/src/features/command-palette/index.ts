@@ -10,9 +10,6 @@ export {
   findShortcutKeys,
 } from './lib/chords/chords'
 export { createCommands } from './lib/commands/table'
-export { createPathCommands } from './lib/commands/pathMenu'
-export type { MenuRow, PathContribution, PathItem } from './lib/commands/pathMenu'
-export { getNoteCommands } from './lib/commands/commands'
 export { createInvocation } from './lib/entries/invocation'
 export { createNotes } from './lib/notes/notes'
 export type { FileIcons } from './model/rowIcons'
@@ -28,6 +25,8 @@ export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
 export type {
   Command,
+  CommandInvocation,
+  CommandPrompt,
   CommandPlace,
   CommandsDeps,
   CommandTarget,

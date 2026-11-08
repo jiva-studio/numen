@@ -50,7 +50,7 @@ export const PLUGIN_TESTS = {
   'readers-pdf': ['scenarios/ocr-disabled.spec.ts', 'scenarios/recognition.spec.ts'],
   'tools-media-importer': ['scenarios/link.spec.ts'],
   'tools-proofreading': ['scenarios/proofreading.spec.ts'],
-  'views-media-player': ['scenarios/recording.spec.ts'],
+  'views-media-viewer': ['scenarios/recording.spec.ts'],
 }
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
@@ -145,7 +145,9 @@ export const getScopePaths = (scope) => {
   if (tokens.includes('all')) return undefined
   const named = tokens.filter((one) => one !== 'none')
   if (named.length === 0) return []
-  return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) => a.localeCompare(b))
+  return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) =>
+    a.localeCompare(b),
+  )
 }
 
 /** The jobs that run `paths` (every test when undefined): each engine split into shards of SHARD_SECONDS. */

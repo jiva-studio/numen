@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/manifest.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // PluginCommandService is what the backend of a plugin that declares commands
@@ -26,6 +28,10 @@ message RunCommandRequest {
   // decimal, a boolean as true or false. An optional argument left out is
   // absent.
   map<string, string> arguments = 3;
+
+  // The id of the item a person picked, for a command that offers its own
+  // items; empty for a run without a pick.
+  string item_id = 4;
 }
 
 message RunCommandResponse {
@@ -68,24 +74,43 @@ service CommandService {
   // RunPluginCommand runs one of them in the backend of the plugin that
   // declares it.
   rpc RunPluginCommand(RunPluginCommandRequest) returns (RunPluginCommandResponse);
+
+  // ListCommandItems lists the items each of the commands offers over a path:
+  // for a command whose when names version.*, the text versions of the file
+  // over which it holds. A command without items offers none.
+  rpc ListCommandItems(ListCommandItemsRequest) returns (ListCommandItemsResponse);
 }
 
 message ListCommandsRequest {}
 
 message ListCommandsResponse {
   repeated PluginCommand commands = 1;
-  // The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+  // The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
   // manifest.
-  repeated PluginMenu menus = 2;
+  repeated PluginSlotEntry slots = 2;
+  // The content type of a file by its extension, lowercase and without the dot, for every extension
+  // the core knows a type of. The window derives target.contentType from it.
+  map<string, string> content_type_by_extension = 3;
+  // The handlers of shared commands of every enabled plugin, in the order of the plugins' ids and
+  // then of each manifest.
+  repeated PluginHandler handlers = 4;
 }
 
-// PluginMenu is one entry of contributes.menus of a plugin.
-message PluginMenu {
+// PluginHandler is one entry of contributes.handlers of a plugin. A handler runs with
+// RunPluginCommand under the full id of its shared command, and lists its items with
+// ListCommandItems.
+message PluginHandler {
   string plugin_id = 1;
-  string location = 2;
-  string command = 3;
-  string group = 4;
-  optional int32 order = 5;
+  ManifestHandler handler = 2;
+  // has_items is set for a handler whose when names version.*: it offers the text versions of the
+  // file over which it holds.
+  bool has_items = 3;
+}
+
+// PluginSlotEntry is one entry of contributes.slots of a plugin.
+message PluginSlotEntry {
+  string plugin_id = 1;
+  ManifestSlotEntry entry = 2;
 }
 
 // PluginCommand is one command as a manifest declares it.
@@ -98,15 +123,6 @@ message PluginCommand {
   // What a person reads the command as.
   string title = 3;
 
-  // The content types of the files the command runs over, such as
-  // text/markdown or audio/*; */* is a file of any type. None is a command
-  // over no file.
-  repeated string content_types = 4;
-
-  // The extensions, lowercase and without the dot, that give a file one of
-  // those types, and * where the command runs over a file of any type.
-  repeated string extensions = 6;
-
   // The arguments, in the order a person is asked for them.
   repeated CommandArgument arguments = 5;
 
@@ -114,11 +130,16 @@ message PluginCommand {
   // the default plugin command icon.
   string icon = 7;
 
-  // scope is "note" for a command listed only while a note is in front.
-  string scope = 8;
+  // when is the CEL condition under which the command is available, as the manifest declares it.
+  string when = 10;
 
   // shortcut is the keystroke the plugin suggests for the command.
   string shortcut = 9;
+
+  // has_items is set for a command that offers items, which a place reads
+  // with ListCommandItems and runs with the id of the one picked as the
+  // item_id of RunPluginCommand.
+  bool has_items = 11;
 }
 
 // CommandArgument is one argument a command takes.
@@ -131,6 +152,11 @@ message CommandArgument {
   bool is_required = 3;
 }
 
+// RunPluginCommandRequest runs a command of a plugin or a plugin's handler of a
+// shared command. With no plugin_id it runs the application command
+// app:version.delete, which the core serves: it deletes the text version
+// item_id names, its record and its file, and reports the file in
+// WatchVaultChangesResponse.version_paths.
 message RunPluginCommandRequest {
   string plugin_id = 1;
 
@@ -140,6 +166,58 @@ message RunPluginCommandRequest {
   string path = 3;
 
   map<string, string> arguments = 4;
+
+  // The id of the item picked, for a command that offers items; empty for a
+  // run without a pick.
+  string item_id = 5;
+}
+
+message ListCommandItemsRequest {
+  // The file the items are listed over, relative to the vault the window
+  // shows.
+  string path = 1;
+
+  repeated PluginCommandId commands = 2;
+}
+
+// PluginCommandId is one command of a plugin: a command it declares, or its
+// handler of a shared command. With no plugin_id it is the application command
+// app:version.delete, whose items are every text version of the file.
+message PluginCommandId {
+  string plugin_id = 1;
+
+  string command = 2;
+}
+
+message ListCommandItemsResponse {
+  // One list for each command of the request, in the order of the request.
+  repeated CommandItemList lists = 1;
+}
+
+// CommandItemList is the items one command offers over the path of the
+// request.
+message CommandItemList {
+  string plugin_id = 1;
+
+  string command = 2;
+
+  repeated CommandItem items = 3;
+
+  // Set when the items could not be listed; the message then says why.
+  CommandErrorCode error = 4;
+
+  string message = 5;
+}
+
+// CommandItem is one item a command offers: the id the run takes as its
+// item_id, and what a person reads.
+message CommandItem {
+  string id = 1;
+
+  string title = 2;
+
+  // detail is a second, smaller line under the title. Empty for none.
+  string detail = 3;
 }
 
 message RunPluginCommandResponse {

@@ -4,34 +4,56 @@
   display: inline-flex;
   align-items: center;
   height: 100%;
+  padding-inline: calc(var(--numen-inset) / 4);
 }
 
+/* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
+   same in the three title bar chips; only the width follows the content. */
 .index-stats__trigger {
+  --chip-height: 20px;
+  --chip-text: 12px;
+  --chip-pad: 8px;
+  --chip-mark: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  height: 100%;
-  padding: 0 0.5rem;
-  background: transparent;
+  gap: calc(var(--chip-pad) / 2);
+  box-sizing: border-box;
+  height: var(--chip-height);
+  padding: 0 var(--chip-pad);
+  background: var(--numen-surface);
   border: none;
-  color: var(--numen-hushed);
+  border-radius: var(--numen-radius);
+  outline: none;
+  color: var(--numen-ink);
   font: inherit;
-  font-size: var(--numen-text-1);
+  font-size: var(--chip-text);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
   cursor: pointer;
-  border-radius: var(--numen-radius-tight);
+}
+
+.index-stats__icon {
+  flex: none;
+  width: var(--chip-mark);
+  color: var(--numen-hushed);
+  font-size: var(--chip-mark);
+  text-align: center;
+}
+
+.index-stats__figure {
+  min-width: 7ch;
+  text-align: end;
+  white-space: nowrap;
 }
 
 .index-stats__trigger:hover,
-.index-stats__trigger:focus-visible,
 .index-stats__trigger[aria-expanded='true'] {
-  background: var(--numen-raised);
-  color: var(--numen-ink);
+  background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
 }
 
 .index-popover {
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 4px);
   right: 0;
   display: flex;
   flex-direction: column;
@@ -127,25 +149,4 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--numen-ink);
-}
-
-/* While chunks wait for a vector the mark is green and pulses. The turn takes the motion
-   duration of the theme, so a motion of 0ms or a request for less motion leaves it solid green. */
-.index-stats__icon--indexing {
-  display: inline-block;
-  color: var(--numen-positive);
-  animation: index-stats-pulse calc(var(--numen-motion) * 8) ease-in-out infinite;
-}
-
-@keyframes index-stats-pulse {
-  50% {
-    opacity: 0.45;
-    transform: scale(0.88);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .index-stats__icon--indexing {
-    animation: none;
-  }
 }

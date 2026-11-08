@@ -344,17 +344,28 @@ describe('the pane while the catalog has not answered', () => {
   })
 })
 
-describe('the placeholder while the plugins start', () => {
-  it('says the plugin is starting, and then what the catalog says of it', async () => {
-    const arePluginsStarting = ref(true)
-    const view = await mountPane(createServices(notesOptions, { arePluginsStarting }))
+describe('the placeholder while its plugin starts', () => {
+  it('says the plugin is starting until its own plugin has started, and then what the catalog says of it', async () => {
+    const starting = ref<ReadonlySet<string>>(new Set(['sample.notes', 'sample.other']))
+    const view = await mountPane(
+      createServices(notesOptions, { isPluginStarting: (id) => starting.value.has(id) }),
+    )
 
     expect(view.find('[data-starting]').exists()).toBe(true)
     expect(view.text()).toContain('Starting the plugin')
     expect(view.text()).not.toContain('Plugin disabled')
 
-    arePluginsStarting.value = false
+    starting.value = new Set(['sample.other'])
     await flushPromises()
+
+    expect(view.find('[data-starting]').exists()).toBe(false)
+    expect(view.text()).toContain('Plugin disabled')
+  })
+
+  it('does not wait for other plugins that are still starting', async () => {
+    const view = await mountPane(
+      createServices(notesOptions, { isPluginStarting: (id) => id === 'sample.other' }),
+    )
 
     expect(view.find('[data-starting]').exists()).toBe(false)
     expect(view.text()).toContain('Plugin disabled')

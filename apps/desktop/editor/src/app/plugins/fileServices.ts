@@ -1,26 +1,18 @@
 /**
  * The files of the vault as a plugin's tabs are given them: the folders listed,
- * the files made and moved, and the window's commands over a row.
+ * the files made and moved, and the icons the window draws commands and entries with.
  */
 import type { Component } from 'vue'
-import { runInBackground } from '@numen/ui'
-import type {
-  ContextMenuRegistration,
-  ContextMenuTarget,
-  VaultFiles,
-  WorkspaceHost,
-} from '@numen/plugin-host'
+import type { VaultFiles, WorkspaceHost } from '@numen/plugin-host'
 import { getKnownErrorCode, asFailure } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
 import {
   ANSWER_WORDS,
   createInvocation,
-  createPathCommands,
   runInvocation,
   type CommandDeps,
   type CommandTarget,
-  type PathContribution,
 } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
 import { COMMAND } from '@/shared/commandIds'
@@ -121,86 +113,19 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   }
 }
 
-/** What the window's commands over a row are offered and run with. */
-export interface PathCommandDeps {
-  readonly getTarget: () => CommandTarget
-  readonly runCommand: (id: string, target: CommandTarget) => void
-  readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
-  readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
-  readonly reportError: (error: unknown) => void
-  readonly getFileMenuItems?: (path: string) => readonly PathContribution[]
-  readonly getContextMenuIcon?: (id: string) => unknown
+/** What the window finds the icons of commands and files with. */
+export interface IconHostDeps {
   readonly getPluginCommandIcon?: (id: string) => unknown
   readonly findFileIcon?: ((path: string) => Component | undefined) | undefined
 }
 
-/** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
-export function createPathCommandHost(
-  deps: PathCommandDeps,
-): Pick<WorkspaceHost, 'getPathCommands' | 'runPathCommand' | 'getCommandIcon' | 'getEntryIcon'> {
-  const {
-    getTarget,
-    runCommand,
-    getContextMenuItems,
-    runContextMenu,
-    getFileMenuItems,
-    getContextMenuIcon,
-    getPluginCommandIcon,
-    reportError,
-  } = deps
+/** The icons the window draws commands and the entries of the vault with. */
+export function createIconHost(
+  deps: IconHostDeps,
+): Pick<WorkspaceHost, 'getCommandIcon' | 'getEntryIcon'> {
   return {
-    getPathCommands: ({ entry, isSeveral }) => {
-      const target: ContextMenuTarget = {
-        path: entry.path,
-        name: entry.name,
-        isFolder: entry.isFolder,
-        isNote: entry.isNote,
-        isSeveral,
-      }
-      const contributions = [
-        ...(getContextMenuItems ? getContextMenuItems(target) : []),
-        ...(!isSeveral && !entry.isFolder && getFileMenuItems ? getFileMenuItems(entry.path) : []),
-      ]
-      return createPathCommands(entry, isSeveral, contributions)
-    },
-    runPathCommand: (id, { paths, name, isNote, isFolder }) => {
-      const path = paths[0] ?? ''
-      const target: ContextMenuTarget = {
-        path,
-        name,
-        isFolder,
-        isNote,
-        isSeveral: paths.length > 1,
-      }
-      if (runContextMenu) {
-        runInBackground(
-          runContextMenu(id, target).then((handled) => {
-            if (!handled) {
-              runCommand(id, {
-                ...getTarget(),
-                path,
-                title: name,
-                file: path,
-                others: paths.slice(1),
-              })
-            }
-          }),
-          reportError,
-        )
-        return
-      }
-      runCommand(id, {
-        ...getTarget(),
-        path,
-        title: name,
-        file: path,
-        others: paths.slice(1),
-      })
-    },
     getCommandIcon: (id) =>
-      ((getContextMenuIcon?.(id) ?? getPluginCommandIcon?.(id)) as Component | undefined) ??
-      findIcon(id) ??
-      null,
+      (deps.getPluginCommandIcon?.(id) as Component | undefined) ?? findIcon(id) ?? null,
     getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
 }

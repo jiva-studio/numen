@@ -63,6 +63,31 @@ describe('a change of the vault', () => {
   })
 })
 
+describe('a change of the text versions of a file', () => {
+  it('is passed to the plugins as a change of the file, and reads no note again', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged([], [], ['talks/b.mp3'])
+
+    expect(wiring.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
+      paths: ['talks/b.mp3'],
+      renamed: [],
+    })
+    expect(wiring.editing.notes.applyPathChanges).not.toHaveBeenCalled()
+  })
+
+  it('is passed to the plugins together with the files that changed', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged(['notes/a.md'], [], ['notes/a.md', 'talks/b.mp3'])
+
+    expect(wiring.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
+      paths: ['notes/a.md', 'talks/b.mp3'],
+      renamed: [],
+    })
+  })
+})
+
 describe('a tab requested from outside the window', () => {
   it('shows the tab with the id in the window tabs', () => {
     const { wiring } = createWiring(() => Promise.resolve())

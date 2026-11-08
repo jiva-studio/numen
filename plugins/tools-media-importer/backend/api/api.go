@@ -8,10 +8,7 @@ const Service = "md.numen.tools.media.importer"
 // Method names of the service.
 const (
 	MethodGetLink     = "GetLink"
-	MethodReadArticle = "ReadArticle"
-	MethodFetchText   = "FetchText"
-	MethodCopyVideo   = "CopyVideo"
-	MethodDeleteCopy  = "DeleteCopy"
+	MethodCopyMedia   = "CopyMedia"
 	MethodCreateLinks = "CreateLinks"
 )
 
@@ -22,47 +19,19 @@ type GetLinkRequest struct {
 
 // GetLinkResponse holds the facts of one link.
 type GetLinkResponse struct {
-	URL           string `json:"url"`
-	IsCopyable    bool   `json:"isCopyable"`
-	CopySize      int64  `json:"copySize"`
-	IsTextDeleted bool   `json:"isTextDeleted"`
-	EmbedPage     string `json:"embedPage"`
+	URL        string `json:"url"`
+	IsCopyable bool   `json:"isCopyable"`
 }
 
-// ReadArticleRequest requests the article text of the link note at Path.
-type ReadArticleRequest struct {
+// CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind
+// audio the sound alone.
+type CopyMediaRequest struct {
 	Path string `json:"path"`
+	Kind string `json:"kind"`
 }
 
-// ReadArticleResponse holds the article text.
-type ReadArticleResponse struct {
-	Text string `json:"text"`
-}
-
-// FetchTextRequest starts fetching the text of the link note at Path.
-type FetchTextRequest struct {
-	Path          string `json:"path"`
-	IsUserStarted bool   `json:"isUserStarted"`
-}
-
-// FetchTextResponse is the acknowledgement of a started fetch.
-type FetchTextResponse struct{}
-
-// CopyVideoRequest starts copying the video of the link note at Path.
-type CopyVideoRequest struct {
-	Path string `json:"path"`
-}
-
-// CopyVideoResponse is the acknowledgement of a started copy.
-type CopyVideoResponse struct{}
-
-// DeleteCopyRequest deletes the stored video copy of the link note at Path.
-type DeleteCopyRequest struct {
-	Path string `json:"path"`
-}
-
-// DeleteCopyResponse is the acknowledgement of a deleted copy.
-type DeleteCopyResponse struct{}
+// CopyMediaResponse is the acknowledgement of a started copy.
+type CopyMediaResponse struct{}
 
 // CreateLinksRequest creates a link note in Folder for each web address in URLs.
 type CreateLinksRequest struct {

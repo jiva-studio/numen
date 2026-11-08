@@ -1,6 +1,9 @@
 package pluginport
 
-import "github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+import (
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
+)
 
 // The manifest of a plugin, as the plugin catalog library reads and validates it.
 type (
@@ -10,14 +13,14 @@ type (
 	PluginBackend          = manifest.Backend
 	PluginCommand          = manifest.Command
 	PluginCommandArgument  = manifest.CommandArgument
-	PluginContextCondition = manifest.ContextCondition
-	PluginContext          = manifest.Context
+	PluginCondition        = when.Condition
+	PluginConditionResult  = when.Result
+	PluginConditions       = when.Conditions
 	PluginContributes      = manifest.Contributes
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
-	PluginHandle           = manifest.Handle
 	PluginReader           = manifest.Reader
 	PluginSecret           = manifest.Secret
 	PluginSettingsView     = manifest.SettingsView
@@ -41,10 +44,10 @@ const (
 	PermissionWindowFocus     = manifest.PermissionWindowFocus
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
 	RuntimeONNX               = "onnxruntime"
-	HandlePlaybackCopy        = "playback-copy"
-	HandleTextProvider        = "text-provider"
 	ActivationEventAll        = manifest.ActivationEventAll
-	ContextAnyValue           = manifest.ContextAnyValue
+	ConditionTrue             = when.True
+	ConditionFalse            = when.False
+	ConditionUnknown          = when.Unknown
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingTypeString         = manifest.SettingTypeString
 	SettingTypeEnum           = manifest.SettingTypeEnum
@@ -77,7 +80,6 @@ var (
 	ErrInvalidID              = manifest.ErrInvalidID
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
-	ErrInvalidHandle          = manifest.ErrInvalidHandle
 	ErrInvalidReader          = manifest.ErrInvalidReader
 	ErrInvalidSecret          = manifest.ErrInvalidSecret
 	ErrInvalidService         = manifest.ErrInvalidService
@@ -101,3 +103,23 @@ func NormalizePermission(permission string) string { return manifest.NormalizePe
 func PluginCapabilities() []string { return manifest.PluginCapabilities() }
 
 func PluginPermissions() []string { return manifest.PluginPermissions() }
+
+// NewConditions makes the reader of the when conditions of the manifests, which compiles each text
+// once; see package when.
+func NewConditions() *PluginConditions {
+	return when.NewConditions()
+}
+
+// IsSharedCommand reports whether the full id is a shared command of libs/protocol/commands.json.
+func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
+
+// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
+func GetSharedCommandArguments(id string) []PluginCommandArgument {
+	return manifest.GetSharedCommandArguments(id)
+}
+
+// The events of libs/protocol/events.json a trigger runs on.
+const (
+	EventFileAdded   = manifest.EventFileAdded
+	EventFileChanged = manifest.EventFileChanged
+)

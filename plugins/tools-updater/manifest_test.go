@@ -11,9 +11,10 @@ type manifestShape struct {
 	Permissions []string `json:"permissions"`
 	Services    []string `json:"services"`
 	Contributes struct {
-		StatusViews []struct {
-			ID string `json:"id"`
-		} `json:"statusViews"`
+		Slots []struct {
+			Slot string `json:"slot"`
+			View string `json:"view"`
+		} `json:"slots"`
 	} `json:"contributes"`
 	Settings []struct {
 		Key string `json:"key"`
@@ -30,7 +31,7 @@ func readManifest(t *testing.T) manifestShape {
 }
 
 // The plugin runs in the editor, asks the network for the release feed, and draws one view in the
-// status bar.
+// title bar.
 func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T) {
 	shape := readManifest(t)
 
@@ -43,8 +44,8 @@ func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T)
 	if !slices.Equal(shape.Services, []string{"md.numen.tools.updater"}) {
 		t.Errorf("services = %v", shape.Services)
 	}
-	if len(shape.Contributes.StatusViews) != 1 || shape.Contributes.StatusViews[0].ID != "update" {
-		t.Errorf("status views = %+v", shape.Contributes.StatusViews)
+	if len(shape.Contributes.Slots) != 1 || shape.Contributes.Slots[0].Slot != "titleBar.status" || shape.Contributes.Slots[0].View != "update" {
+		t.Errorf("slots = %+v", shape.Contributes.Slots)
 	}
 }
 

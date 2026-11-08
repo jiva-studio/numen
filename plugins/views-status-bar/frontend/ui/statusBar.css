@@ -1,0 +1,48 @@
+.status-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 1.375rem;
+  min-height: 1.375rem;
+  background: var(--numen-surface);
+  border-top: 1px solid var(--numen-rule);
+  color: var(--numen-ink);
+  font-size: var(--numen-text-1);
+  user-select: none;
+  z-index: 30;
+}
+
+.status-bar__slot {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.status-bar__slot--end {
+  margin-inline-start: auto;
+}
+
+.status-bar__gap {
+  inline-size: 0.5rem;
+}
+
+.status-bar__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 100%;
+  padding: 0 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--numen-radius-tight);
+  color: var(--numen-hushed);
+  font: inherit;
+  cursor: pointer;
+}
+
+.status-bar__entry:hover,
+.status-bar__entry:focus-visible,
+.status-bar__entry[aria-expanded='true'] {
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+}

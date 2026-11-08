@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
@@ -21,16 +21,21 @@
         "id": "chat.open",
         "title": "Open agent chat",
         "icon": "message-square",
-        "shortcut": "mod+shift+a"
+        "shortcut": "mod+shift+a",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "note.ask",
         "title": "Ask agent about note",
         "icon": "bot",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
-    "menus": [{ "location": "titleBar", "command": "chat.open", "group": "navigate", "order": 30 }]
+    "slots": [
+      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 },
+      { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 },
+      { "slot": "plexGraph.context", "command": "note.ask", "group": "1-note", "order": 20 }
+    ]
   },
   "permissions": ["vault:read"],
   "settings": [

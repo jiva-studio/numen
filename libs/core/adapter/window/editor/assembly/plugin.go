@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 )
 
 // PluginServices is where this window forwards the calls it receives for the services plugins serve.
@@ -32,6 +33,8 @@ type PluginCatalog = interface {
 type pluginSecretAssembly interface {
 	OpenSecrets() *secret.Secrets
 	GetPluginCommands() plugincommand.Commands
+	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
+	OpenChooseTabKind() *tabkind.Choose
 	// GetPluginCatalog is the catalog of plugins, and nil for an installation with none.
 	GetPluginCatalog() PluginCatalog
 }

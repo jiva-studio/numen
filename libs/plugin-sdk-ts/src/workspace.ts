@@ -36,6 +36,7 @@ export interface NoteNeighbour {
   readonly title: string
   readonly relation: NoteRelation
   readonly type: NoteType
+  readonly tabKind?: string
 }
 
 // NoteNeighbourhood is a note in focus, the notes joined to it, and one connection for every line drawn between
@@ -45,6 +46,7 @@ export interface NoteNeighbour {
 export interface NoteNeighbourhood {
   readonly focus: NoteRef
   readonly focusType: NoteType
+  readonly focusTabKind?: string
   readonly related: readonly NoteNeighbour[]
   readonly connections: readonly Connection[]
 }
@@ -60,6 +62,8 @@ export interface VaultNotes {
   read(path: string): Promise<{ readonly body: string; readonly error?: string }>
   // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
   write(path: string, body: string): Promise<void>
+  // The frontmatter of the note at the path by its keys, and empty for a path holding no note.
+  readProperties(path: string): Promise<Readonly<Record<string, unknown>>>
 }
 
 // ConnectionRole is what the second note of a connection is to the first: its parent, its child, or a jump.
@@ -176,10 +180,6 @@ export interface WorkspaceHost {
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean
-  // A command of the window, run over one note.
-  runCommand(id: string, target: NoteRef): void
-  // The commands the plugins declare over one note, in the words the palette offers them by.
-  getNoteCommands(): readonly MenuEntry[]
   // Sends a question to the agent and shows it to the user.
   ask(text: string): void
   showError(text: string): void
@@ -187,10 +187,6 @@ export interface WorkspaceHost {
   getMessageWriter(name: string): MessageWriter
   // The current day, with the day boundary set to the configured start hour.
   getToday(): string
-  // The window's commands over one row of the vault, in the order a menu draws them.
-  getPathCommands(row: PathMenuRow): readonly MenuEntry[]
-  // A command of the window, run over a file and the others selected with it.
-  runPathCommand(id: string, target: PathCommandTarget): void
   // The icon the window draws a command with, and nothing for a command it draws none for.
   getCommandIcon(id: string): Component | null
   // The icon the window draws an entry of the vault with: a folder open or shut, a note by its type.
@@ -203,31 +199,7 @@ export interface VaultEntry {
   readonly isFolder: boolean
   readonly isNote: boolean
   readonly type: NoteType
-}
-
-// MenuEntry is one item a menu offers, in the group it is drawn in.
-export interface MenuEntry {
-  readonly id: string
-  readonly text: string
-  readonly detail?: string
-  readonly group: string
-  readonly isDisabled?: boolean
-  readonly parentId?: string
-  readonly children?: readonly MenuEntry[]
-}
-
-// PathMenuRow is the vault row a menu is requested for.
-export interface PathMenuRow {
-  readonly entry: VaultEntry
-  readonly isSeveral: boolean
-}
-
-// PathCommandTarget is the file or folder a command runs over, and the others selected with it.
-export interface PathCommandTarget {
-  readonly paths: readonly string[]
-  readonly name: string
-  readonly isNote: boolean
-  readonly isFolder: boolean
+  readonly tabKind?: string
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.
@@ -262,7 +234,10 @@ export function getRenamedPath(renames: readonly PathRename[], path: string): st
   return renames.find((one) => one.from === path)?.to ?? ''
 }
 
-// isNotePath reports whether a vault path is a note: a markdown file, or a file name without an extension.
+// isNotePath reports whether a vault path is a note: a file whose extension is md, in any case. A
+// file name without an extension is no note, as the when vectors of libs/protocol/when.json derive it.
 export function isNotePath(path: string): boolean {
-  return path.endsWith('.md') || !getFileName(path).includes('.')
+  const name = getFileName(path)
+  const dot = name.lastIndexOf('.')
+  return dot > 0 && name.slice(dot + 1).toLowerCase() === 'md'
 }

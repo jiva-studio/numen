@@ -1,36 +1,34 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
+    "textKinds": [{ "kind": "recognition", "title": "Recognized text" }],
     "category": "engines",
-    "handles": [
+    "slots": [
       {
-        "purpose": "text-provider",
-        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
       }
     ],
-    "commands": [
+    "handlers": [
       {
-        "id": "recognition.create",
-        "title": "Recognise text",
-        "icon": "scan-text",
-        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
-      },
+        "command": "app:file.createText",
+        "title": "Recognize text",
+        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+      }
+    ],
+    "triggers": [
       {
-        "id": "recognition.delete",
-        "title": "Delete recognition",
-        "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.ocr"]
-          }
-        ]
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true && !target.versions.exists(v, v.kind == 'recognition' && v.isValid)"
       }
     ]
   },
@@ -134,7 +132,6 @@
   "backend": {
     "entrypoint": "bin/engines-ocr"
   },
-  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",
@@ -245,6 +242,13 @@
           "title": "600 dpi"
         }
       ]
+    },
+    {
+      "key": "recognizeAutomatically",
+      "type": "boolean",
+      "title": "Recognize automatically",
+      "description": "Recognize the text of every PDF and image in the vault that has none. A text removed with Delete text is recognized again",
+      "default": false
     }
   ]
 }

@@ -407,7 +407,7 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"activation event other than the wildcard", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"Run","title":"Run"}]}}`, "each in camelCase"},
-		{"command content type that is an extension", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","contentTypes":[".pdf"]}]}}`, "invalid content type"},
+		{"command condition that names no variable", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"note.run","title":"Run","when":"target.isRemote"}]}}`, `"note.run": when:`},
 		{"command argument of no type", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}}`, "invalid command argument"},
 	}
 	for _, tc := range cases {

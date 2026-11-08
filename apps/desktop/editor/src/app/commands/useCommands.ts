@@ -3,19 +3,22 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
+import { SLOT, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
   findChordCommand,
   runInvocation,
+  createInvocation,
   useCommandPalette,
   useSearch,
   ANSWER_WORDS,
   type Command,
   type CommandDeps,
+  type CommandInvocation,
   type CommandTarget,
   type ResultChoice,
+  type SearchMenuDeps,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -23,11 +26,12 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
-import { usePluginCommands } from './usePluginCommands'
+import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
+import { createItemLists } from './pluginItems'
+import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
-import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
@@ -46,7 +50,7 @@ export interface CommandsDepsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
-  kept: PaletteLists
+  paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
@@ -69,10 +73,15 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  menus?: Menus
+  slots?: SlotHost
+  getAppCommands?: () => readonly Command[]
   declaredCommands?: DeclaredCommands
-  fileMenuCommands?: FileMenuCommands
+  readCommandNote?: ReturnType<typeof createCommandNoteReader>
 }
+
+const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
+  getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
+})
 
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   tab: '',
@@ -84,28 +93,152 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
-export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
-  const { pluginHost } = options
+const listExtraCommands = (
+  options: CommandsDepsOptions,
+  pluginEntries: readonly Command[],
+): readonly Command[] => [
+  ...(options.getAppCommands?.() ?? []),
+  ...(options.settingPalette?.getCommands() ?? []),
+  ...(options.declaredCommands?.paletteCommands.value ?? []),
+  ...pluginEntries,
+]
 
-  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
-    core,
+function createPaletteItems(
+  options: Pick<
+    CommandsDepsOptions,
+    'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
+  >,
+  getCommandNote: ReturnType<typeof createCommandNoteReader>,
+  getCommandDeps: () => CommandDeps,
+) {
+  const { pluginHost } = options
+  return createCommandItems({
+    getAppCommands: () => [
+      ...(options.getAppCommands?.() ?? []),
+      ...(options.declaredCommands?.paletteCommands.value ?? []),
+    ],
     pluginHost,
+    getTarget: options.getTarget,
+    runApp: (id, target, itemId) =>
+      runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps()),
+    runPlugin: async (id, target, itemId) => {
+      const note = await getCommandNote(target)
+      await pluginHost?.executeCommand(id, note, { itemId, isAwaited: true })
+    },
+    readTarget: async (target) => {
+      const { type, properties } = await getCommandNote(target)
+      return { ...target, noteType: type, ...(properties ? { properties } : {}) }
+    },
+  })
+}
+
+async function runInvocationToEnd(invocation: CommandInvocation, deps: CommandDeps): Promise<void> {
+  const errors: string[] = []
+  const writeMessage: MessageWriter = (text, severity) => {
+    if (severity === 'error') errors.push(text)
+    else deps.writeMessage(text, severity)
+  }
+  await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
+  if (errors[0] !== undefined) throw new Error(errors[0])
+}
+
+/** What the runs of the window go through: the palettes, the plugin host and the deps of a command. */
+interface CommandRunnerParts {
+  readonly commands: ReturnType<typeof useCommandPalette>
+  readonly palette: { setOpen(isOpen: boolean): void }
+  readonly pluginHost: CommandsDepsOptions['pluginHost']
+  readonly getCommandNote: ReturnType<typeof createCommandNoteReader>
+  readonly getCommandDeps: () => CommandDeps
+  readonly writeMessage: MessageWriter
+}
+
+/** How a command is run: with the text typed for it, and whether its caller awaits it. */
+interface RunWay {
+  readonly input?: string | undefined
+  readonly isAwaited: boolean
+}
+
+/**
+ * The two runs of a command of the window. The run of the palette and the shortcuts writes its
+ * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
+ * writes nothing: it settles when the run ends and rejects with its error.
+ */
+export function createCommandRunner(parts: CommandRunnerParts) {
+  const { commands, palette, pluginHost, getCommandNote } = parts
+
+  /** The run of the command over the target, or the objection to it where it cannot start. */
+  const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
+    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
+      commands.setOpen(false)
+      return getCommandNote(target).then((note) =>
+        way.isAwaited
+          ? pluginHost.executeCommand(id, note, { isAwaited: true })
+          : pluginHost.executeCommand(id, note),
+      )
+    }
+    const invocation =
+      way.input === undefined
+        ? commands.startCommand(id, target)
+        : commands.startCommand(id, target, way.input)
+    if (invocation) {
+      const deps = parts.getCommandDeps()
+      return way.isAwaited
+        ? runInvocationToEnd(invocation, deps)
+        : runInvocation(invocation, deps, ANSWER_WORDS)
+    }
+    if (commands.open.value) {
+      palette.setOpen(false)
+      return Promise.resolve()
+    }
+    return commands.getObjection(id, target)
+  }
+
+  return {
+    runCommand: (id: string, target: CommandTarget, input?: string): void => {
+      const run = startRun(id, target, { input, isAwaited: false })
+      if (typeof run === 'string') parts.writeMessage(run, 'error')
+      else runInBackground(run, (error) => parts.writeMessage(formatErrorMessage(error), 'error'))
+    },
+    runCommandToEnd: async (id: string, target: CommandTarget): Promise<void> => {
+      const run = startRun(id, target, { isAwaited: true })
+      if (typeof run === 'string') throw new Error(run)
+      await run
+    },
+  }
+}
+
+function useWindowCommandPalette(
+  options: CommandsDepsOptions,
+  lists: PaletteLists,
+  listExtras: () => readonly Command[],
+) {
+  const { core, words, getTarget, knows, runs } = options
+  return useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, listExtras)
+}
+
+export function useCommands(options: CommandsDepsOptions) {
+  const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
+  const { pluginHost, declaredCommands } = options
+  const plugins = usePluginCommands(
+    options.readCommandNote ?? createCommandNoteReader(core),
+    pluginHost,
+    declaredCommands?.whenContext,
+    () => declaredCommands?.handlers.value,
   )
+  const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
     coverage,
-    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    menu: createSearchMenu(options.slots),
     getTarget,
   })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
-    ...(options.settingPalette?.getCommands() ?? []),
-    ...(options.declaredCommands?.paletteCommands.value ?? []),
-    ...(options.fileMenuCommands?.paletteCommands.value ?? []),
-    ...getPaletteEntries(),
-  ])
+  const items = createPaletteItems(options, getCommandNote, () => commandDeps)
+  const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
+  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
+  const commands = useWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
+  resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -115,33 +248,14 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
-  const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
-
-  const runCommand = (id: string, target: CommandTarget, input?: string) => {
-    if (pluginHost?.hasCommand(id)) {
-      commands.setOpen(false)
-      runInBackground(
-        getCommandNote(target.path, target.title).then((note) =>
-          pluginHost.executeCommand(id, note),
-        ),
-        reportError,
-      )
-      return
-    }
-    const invocation =
-      input === undefined
-        ? commands.startCommand(id, target)
-        : commands.startCommand(id, target, input)
-    if (invocation) {
-      runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), reportError)
-      return
-    }
-    if (commands.open.value) {
-      palette.setOpen(false)
-      return
-    }
-    writeMessage(commands.getObjection(id, target), 'error')
-  }
+  const { runCommand, runCommandToEnd } = createCommandRunner({
+    commands,
+    palette,
+    pluginHost,
+    getCommandNote,
+    getCommandDeps: () => commandDeps,
+    writeMessage,
+  })
 
   /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
   const runChoice = (choice: ResultChoice): void =>
@@ -154,7 +268,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
-    const getNote = () => getCommandNote(getTarget().path, getTarget().title)
+    const getNote = () => getCommandNote(getTarget())
     if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
@@ -167,10 +281,10 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     commandDeps,
+    pluginRuns: { items, runCommandToEnd },
     runCommand,
     runChoice,
     onKeyDown,
     pluginWays,
-    getNoteCommands,
   }
 }

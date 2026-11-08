@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -18,6 +17,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -53,6 +53,7 @@ type Config struct {
 	SettingEvents             *settingevents.Events
 	SecretGate                *secret.Gate
 	SubscribedHosts           *sync.Map
+	PluginChanges             *pluginchanges.Signals
 	ErrorHandler              func(error)
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentport.AgentProgram
@@ -234,20 +235,12 @@ func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOption
 	return options, true
 }
 
-// ListAppSettings returns the application settings declared for the current platform.
+// ListAppSettings returns the application settings declared.
 func (c Config) ListAppSettings() []pluginport.PluginSetting {
-	return c.ListAppSettingsOn(runtime.GOOS)
-}
-
-// ListAppSettingsOn returns the application settings declared for goos.
-func (c Config) ListAppSettingsOn(goos string) []pluginport.PluginSetting {
 	current := c.GetSettingsOrDefaults()
 	declared := settingsadapter.GetAppDeclaration()
 	entries := make([]pluginport.PluginSetting, 0, len(declared))
 	for _, one := range declared {
-		if !settingsadapter.IsAvailableOn(one.Key, goos) {
-			continue
-		}
 		options := one.Options
 		if one.OptionsFrom != "" {
 			options, _ = c.ListRegistryOptions(one.OptionsFrom)
@@ -412,6 +405,9 @@ func (c Config) RefreshPluginSecrets(ctx context.Context) error {
 // NotifyHost forwards a batch of changed settings to the plugin host.
 func (c Config) NotifyHost(batch []settingsport.Setting) {
 	NotifyPluginSettings(c.PluginHost, batch, c.handleError)
+	if c.PluginChanges != nil {
+		defer c.PluginChanges.Signal()
+	}
 	for _, one := range batch {
 		if slices.Equal(one.Path, []string{settingKeySecrets}) {
 			if err := c.RefreshPluginSecrets(context.Background()); err != nil {

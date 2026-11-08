@@ -54,6 +54,24 @@ func TestReadLiveTextReturnsTheVersionAndItsSegments(t *testing.T) {
 	}
 }
 
+func TestReadLiveTextReturnsTheNotePropertyOfTheVersion(t *testing.T) {
+	text := &fileText{isSet: true, live: domain.NewVersionText(
+		domain.TextVersion{
+			Path: "talk.md", PluginID: "p.link", Key: "link", Kind: "link",
+			SourceProperty: domain.TextSourceProperty{Key: "url", Value: "https://example.org/talk"},
+		},
+		[]domain.TextSegment{{Text: "Hello.\n"}},
+	)}
+	res, err := NewHandler(getVault(), text).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "talk.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	property := res.Msg.GetVersion().GetSourceProperty()
+	if property.GetKey() != "url" || property.GetValue() != "https://example.org/talk" {
+		t.Fatalf("got source property %v, want url = https://example.org/talk", property)
+	}
+}
+
 func TestReadLiveTextOfAFileWithoutOneIsEmpty(t *testing.T) {
 	res, err := NewHandler(getVault(), &fileText{}).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
 	if err != nil || res.Msg.GetVersion() != nil {

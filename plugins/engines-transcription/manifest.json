@@ -1,35 +1,34 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
+    "textKinds": [{ "kind": "transcript", "title": "Transcript" }],
     "category": "engines",
-    "handles": [
+    "slots": [
       {
-        "purpose": "text-provider"
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
       }
     ],
-    "commands": [
+    "handlers": [
       {
-        "id": "transcript.create",
-        "title": "Transcribe recording",
-        "icon": "audio-lines",
-        "contentTypes": ["audio/*", "video/*"]
-      },
+        "command": "app:file.createText",
+        "title": "Transcribe",
+        "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
+      }
+    ],
+    "triggers": [
       {
-        "id": "transcript.delete",
-        "title": "Delete transcript",
-        "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.transcription"]
-          }
-        ]
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true && !target.versions.exists(v, v.kind == 'transcript' && v.isValid)"
       }
     ]
   },
@@ -133,7 +132,6 @@
   "backend": {
     "entrypoint": "bin/engines-transcription"
   },
-  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",
@@ -167,6 +165,13 @@
       ],
       "palette": true,
       "icon": "audio-lines"
+    },
+    {
+      "key": "transcribeAutomatically",
+      "type": "boolean",
+      "title": "Transcribe automatically",
+      "description": "Transcribe every recording in the vault that has no transcript. A transcript removed with Delete text is made again",
+      "default": false
     }
   ]
 }

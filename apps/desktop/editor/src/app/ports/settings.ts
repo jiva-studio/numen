@@ -36,7 +36,7 @@ export interface SettingsPort {
   allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
   denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
   /**
-   * A plugin the host suspends, started once more. The answer is why it failed
+   * A plugin whose last start failed, started once more. The answer is why it failed
    * again, and empty where it started.
    */
   retryPlugin(pluginId: string): Promise<string>

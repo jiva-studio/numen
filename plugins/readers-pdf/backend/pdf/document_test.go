@@ -3,11 +3,12 @@ package pdf
 import (
 	"bytes"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"io"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 type recordingTimer struct {

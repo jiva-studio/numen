@@ -1,0 +1,37 @@
+{
+  "id": "md.numen.views.titleBar",
+  "name": "Title bar",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
+  "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "category": "views",
+    "slots": [{ "slot": "titleBar", "view": "bar" }]
+  },
+  "settings": [
+    {
+      "key": "buttons",
+      "type": "enum",
+      "title": "Window buttons",
+      "description": "Where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu.",
+      "default": "windows",
+      "options": [
+        { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." },
+        {
+          "value": "windows",
+          "title": "Right",
+          "detail": "Square buttons at the right, as on Windows.",
+          "when": "app.platform != 'darwin'"
+        },
+        {
+          "value": "none",
+          "title": "None",
+          "detail": "The bar draws no window buttons.",
+          "when": "app.platform != 'darwin'"
+        }
+      ]
+    }
+  ],
+  "frontend": {}
+}

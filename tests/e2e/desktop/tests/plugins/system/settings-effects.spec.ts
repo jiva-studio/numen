@@ -114,6 +114,8 @@ test.describe('Plugin settings take effect', () => {
     expect(await page.content()).not.toContain(value)
 
     await page.reload()
+    // The window draws once the plugins of its interface have started; a key pressed before is lost.
+    await expect(page.getByRole('tablist').first()).toBeVisible()
     await runCommand(page, 'Open settings', /^Open settings$/)
     const reloaded = page.getByRole('tabpanel', { name: /Settings/ })
     await reloaded.getByRole('button', { name: /^Secrets$/ }).click()

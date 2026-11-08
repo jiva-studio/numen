@@ -2,7 +2,7 @@
 //
 // Source: numen/v1/media.proto
 
-// Where a player loads a file of the vault from.
+// Where a player or a frame loads a file from.
 package numenv1connect
 
 import (
@@ -34,25 +34,17 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// MediaServiceGetMediaSourceProcedure is the fully-qualified name of the MediaService's
-	// GetMediaSource RPC.
-	MediaServiceGetMediaSourceProcedure = "/numen.v1.MediaService/GetMediaSource"
-	// MediaServiceGetPageSourceProcedure is the fully-qualified name of the MediaService's
-	// GetPageSource RPC.
-	MediaServiceGetPageSourceProcedure = "/numen.v1.MediaService/GetPageSource"
+	// MediaServiceResolveAddressProcedure is the fully-qualified name of the MediaService's
+	// ResolveAddress RPC.
+	MediaServiceResolveAddressProcedure = "/numen.v1.MediaService/ResolveAddress"
 )
 
 // MediaServiceClient is a client for the numen.v1.MediaService service.
 type MediaServiceClient interface {
-	// GetMediaSource returns where the bytes of a file are loaded from and the
-	// media type a player is told. A file a plugin keeps a copy of to play is
-	// loaded from the copy.
-	GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error)
-	// GetPageSource returns where a page a plugin serves below its route is
-	// loaded from in a frame: an http address on the loopback interface. A page
-	// of the toolkit's own scheme sends no Referer, and a site framed in a page
-	// served there is sent the origin of the loopback socket.
-	GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error)
+	// ResolveAddress returns the address the bytes of a file are loaded from and
+	// the media type of those bytes. An address is a path of the vault, or
+	// plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
+	ResolveAddress(context.Context, *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error)
 }
 
 // NewMediaServiceClient constructs a client for the numen.v1.MediaService service. By default, it
@@ -66,16 +58,10 @@ func NewMediaServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	mediaServiceMethods := v1.File_numen_v1_media_proto.Services().ByName("MediaService").Methods()
 	return &mediaServiceClient{
-		getMediaSource: connect.NewClient[v1.GetMediaSourceRequest, v1.GetMediaSourceResponse](
+		resolveAddress: connect.NewClient[v1.ResolveAddressRequest, v1.ResolveAddressResponse](
 			httpClient,
-			baseURL+MediaServiceGetMediaSourceProcedure,
-			connect.WithSchema(mediaServiceMethods.ByName("GetMediaSource")),
-			connect.WithClientOptions(opts...),
-		),
-		getPageSource: connect.NewClient[v1.GetPageSourceRequest, v1.GetPageSourceResponse](
-			httpClient,
-			baseURL+MediaServiceGetPageSourceProcedure,
-			connect.WithSchema(mediaServiceMethods.ByName("GetPageSource")),
+			baseURL+MediaServiceResolveAddressProcedure,
+			connect.WithSchema(mediaServiceMethods.ByName("ResolveAddress")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -83,31 +69,20 @@ func NewMediaServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // mediaServiceClient implements MediaServiceClient.
 type mediaServiceClient struct {
-	getMediaSource *connect.Client[v1.GetMediaSourceRequest, v1.GetMediaSourceResponse]
-	getPageSource  *connect.Client[v1.GetPageSourceRequest, v1.GetPageSourceResponse]
+	resolveAddress *connect.Client[v1.ResolveAddressRequest, v1.ResolveAddressResponse]
 }
 
-// GetMediaSource calls numen.v1.MediaService.GetMediaSource.
-func (c *mediaServiceClient) GetMediaSource(ctx context.Context, req *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error) {
-	return c.getMediaSource.CallUnary(ctx, req)
-}
-
-// GetPageSource calls numen.v1.MediaService.GetPageSource.
-func (c *mediaServiceClient) GetPageSource(ctx context.Context, req *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error) {
-	return c.getPageSource.CallUnary(ctx, req)
+// ResolveAddress calls numen.v1.MediaService.ResolveAddress.
+func (c *mediaServiceClient) ResolveAddress(ctx context.Context, req *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error) {
+	return c.resolveAddress.CallUnary(ctx, req)
 }
 
 // MediaServiceHandler is an implementation of the numen.v1.MediaService service.
 type MediaServiceHandler interface {
-	// GetMediaSource returns where the bytes of a file are loaded from and the
-	// media type a player is told. A file a plugin keeps a copy of to play is
-	// loaded from the copy.
-	GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error)
-	// GetPageSource returns where a page a plugin serves below its route is
-	// loaded from in a frame: an http address on the loopback interface. A page
-	// of the toolkit's own scheme sends no Referer, and a site framed in a page
-	// served there is sent the origin of the loopback socket.
-	GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error)
+	// ResolveAddress returns the address the bytes of a file are loaded from and
+	// the media type of those bytes. An address is a path of the vault, or
+	// plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
+	ResolveAddress(context.Context, *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error)
 }
 
 // NewMediaServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -117,24 +92,16 @@ type MediaServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewMediaServiceHandler(svc MediaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	mediaServiceMethods := v1.File_numen_v1_media_proto.Services().ByName("MediaService").Methods()
-	mediaServiceGetMediaSourceHandler := connect.NewUnaryHandler(
-		MediaServiceGetMediaSourceProcedure,
-		svc.GetMediaSource,
-		connect.WithSchema(mediaServiceMethods.ByName("GetMediaSource")),
-		connect.WithHandlerOptions(opts...),
-	)
-	mediaServiceGetPageSourceHandler := connect.NewUnaryHandler(
-		MediaServiceGetPageSourceProcedure,
-		svc.GetPageSource,
-		connect.WithSchema(mediaServiceMethods.ByName("GetPageSource")),
+	mediaServiceResolveAddressHandler := connect.NewUnaryHandler(
+		MediaServiceResolveAddressProcedure,
+		svc.ResolveAddress,
+		connect.WithSchema(mediaServiceMethods.ByName("ResolveAddress")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.MediaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case MediaServiceGetMediaSourceProcedure:
-			mediaServiceGetMediaSourceHandler.ServeHTTP(w, r)
-		case MediaServiceGetPageSourceProcedure:
-			mediaServiceGetPageSourceHandler.ServeHTTP(w, r)
+		case MediaServiceResolveAddressProcedure:
+			mediaServiceResolveAddressHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -144,10 +111,6 @@ func NewMediaServiceHandler(svc MediaServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedMediaServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedMediaServiceHandler struct{}
 
-func (UnimplementedMediaServiceHandler) GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.MediaService.GetMediaSource is not implemented"))
-}
-
-func (UnimplementedMediaServiceHandler) GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.MediaService.GetPageSource is not implemented"))
+func (UnimplementedMediaServiceHandler) ResolveAddress(context.Context, *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.MediaService.ResolveAddress is not implemented"))
 }

@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { AudioLines, File, FileText, Folder, FolderOpen, Layers } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
-import { registerNoteIcon } from '@/entities/note'
+import { registerTabKindIcon } from '@/entities/note'
 import { getEntryIcon } from './entryIcon'
 
 const entry = (overrides: Partial<Entry> = {}): Entry => ({
@@ -34,12 +34,19 @@ describe('the icon of an entry', () => {
     expect(getEntryIcon(entry({ isFolder: true, isNote: true }), false)).toBe(Folder)
   })
 
-  it('is drawn by the type of note for a note, as a plugin registers its icon', () => {
+  it('is drawn for a note by the tab kind the core chose to open it, as its plugin registers the icon', () => {
     expect(getEntryIcon(entry({ type: 'note' }), false)).toBe(FileText)
-    expect(getEntryIcon(entry({ type: 'sample' }), false)).toBe(FileText)
+    expect(getEntryIcon(entry({ type: 'link', tabKind: 'recording' }), false)).toBe(FileText)
 
-    const unregister = registerNoteIcon('sample', Layers)
-    expect(getEntryIcon(entry({ type: 'sample' }), false)).toBe(Layers)
+    const unregister = registerTabKindIcon('recording', AudioLines)
+    expect(getEntryIcon(entry({ type: 'link', tabKind: 'recording' }), false)).toBe(AudioLines)
+    unregister()
+  })
+
+  it('is not drawn by a tab kind whose name is the type of the note', () => {
+    const unregister = registerTabKindIcon('deck', Layers)
+
+    expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(FileText)
     unregister()
   })
 

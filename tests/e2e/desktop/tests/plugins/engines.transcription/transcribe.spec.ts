@@ -4,6 +4,7 @@ import {
   openVaultFile,
   openWorkspace,
   runCommand,
+  runCommandOverItem,
   waitForPassage,
 } from '../../support/workspace.js'
 import { copyVaultFile, deleteVaultFiles } from '../../support/media.js'
@@ -34,8 +35,8 @@ const expectPassageGone = async (
 }
 
 const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
-  await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
-  await page.locator('.status-bar__trigger').click()
+  await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+  await page.locator('.tasks-status__trigger').click()
   await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
   await page.keyboard.press('Escape')
 }
@@ -90,7 +91,7 @@ test.describe('the text versions of a file', () => {
     await waitForPassage(page, 'Mock transcribed', `assets/${deleted}`)
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Delete transcript', /^Delete transcript$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Transcript/)
 
     await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
@@ -110,13 +111,13 @@ test.describe('the text versions of a file', () => {
     for (const name of [control, deleted]) {
       await openWorkspace(page)
       await openVaultFile(page, 'assets', name)
-      await runCommand(page, 'Recognise', /^Recognise/)
+      await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
       await waitForPassage(page, MOCK_RECOGNISED_WORDS, `assets/${name}`)
       await page.keyboard.press('Escape')
       await expectNoRecognitionRunning(page, name)
     }
 
-    await runCommand(page, 'Delete recognition', /^Delete recognition$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Recognized text/)
 
     await expectPassageGone(page, MOCK_RECOGNISED_WORDS, `assets/${control}`, `assets/${deleted}`)
   })
@@ -126,12 +127,13 @@ test.describe('the text versions of a file', () => {
   }) => {
     const name = copyAsset('lecture.wav', 'harbour-proofread')
     let tab = await transcribe(page, name)
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
     await expect(tab.getByText(/Mock transcribed text.*\[proofread\]/)).toBeVisible({
       timeout: 90_000,
     })
 
-    await runCommand(page, 'Delete proofreading', /^Delete proofreading$/)
+    // The proofread version is the live one once it is made.
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Proofread text \(current\)$/)
 
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
     await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)

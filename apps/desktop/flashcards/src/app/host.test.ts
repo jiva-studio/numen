@@ -2,7 +2,25 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
 import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-host'
 import { createMockManifest } from '@numen/core-client/testing'
+import type { VaultsHost, WindowHost } from '@numen/plugin-host'
 import { createShellHost, TARGET } from './host'
+import { createWindowCommands } from './windowCommands'
+
+const NOTHING = { dispose: () => undefined }
+
+const createMockVaultsHost = (): VaultsHost => ({
+  getState: () => ({ vaults: [], current: null }),
+  watch: () => NOTHING,
+  switchTo: async () => undefined,
+})
+
+const createMockWindowHost = (): WindowHost => ({
+  getState: () => ({ isMaximized: false, isFullscreen: false }),
+  watch: () => NOTHING,
+  minimize: () => undefined,
+  toggleMaximize: () => undefined,
+  close: () => undefined,
+})
 
 const view = (kind: string, order?: number) => ({
   kind,
@@ -11,6 +29,25 @@ const view = (kind: string, order?: number) => ({
 })
 
 describe('createShellHost', () => {
+  it('gives a plugin the platform of the window, not the one the user agent names', () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+    })
+    let platform: 'windows' | 'darwin' = 'windows'
+    const { host } = createShellHost(undefined, {}, () => platform)
+    const context = host.createContext('md.numen.example')
+    vi.unstubAllGlobals()
+
+    expect(context.app.platform).toBe('windows')
+    platform = 'darwin'
+    expect(context.app.platform).toBe('darwin')
+  })
+
+  it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
+    expect(createShellHost().host.createContext('md.numen.example').app.platform).toBe('windows')
+  })
+
   it('activates a plugin in the window of the flashcards target', () => {
     const { host } = createShellHost()
 
@@ -54,6 +91,60 @@ describe('createShellHost', () => {
     host.disposePlugin('md.numen.unknown')
 
     expect(front.value?.registration.kind).toBe('fallback')
+  })
+
+  it('gives every plugin the commands, the vaults and the window the window offers', () => {
+    const services = {
+      commands: createWindowCommands(),
+      vaults: createMockVaultsHost(),
+      window: createMockWindowHost(),
+    }
+    const { host } = createShellHost(undefined, services)
+
+    const bar = host.createContext('org.example.ledger')
+    const cards = host.createContext('md.numen.cards')
+
+    expect(bar.vaults).toBe(services.vaults)
+    expect(cards.vaults).toBe(services.vaults)
+    expect(bar.window).toBe(services.window)
+    expect(cards.commands).toBe(services.commands)
+  })
+
+  it('gives a plugin the vaults and the window the window offers after the host was made', () => {
+    const services: Parameters<typeof createShellHost>[1] = {}
+    const { host } = createShellHost(undefined, services)
+    const vaults = createMockVaultsHost()
+    const window = createMockWindowHost()
+
+    Object.assign(services, { vaults, window })
+
+    expect(host.createContext('org.example.ledger').vaults).toBe(vaults)
+    expect(host.createContext('org.example.tide').window).toBe(window)
+  })
+
+  it('gives a plugin no vaults and no window where the window offers none', () => {
+    const context = createShellHost().host.createContext('org.example.ledger')
+
+    expect(context.vaults).toBeUndefined()
+    expect(context.window).toBeUndefined()
+  })
+
+  it('takes the bar of a plugin away once it is disposed, even if its subscriptions were cleared', () => {
+    const { host, titleBarView } = createShellHost()
+    const manifest = {
+      id: 'org.example.ledger',
+      name: 'Ledger bar',
+      version: '1.0.0',
+      contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
+    } as unknown as Parameters<typeof host.createContext>[1]
+    const context = host.createContext('org.example.ledger', manifest)
+    context.registerSlotView({ id: 'bar', component: {} })
+    context.subscriptions.length = 0
+    expect(titleBarView.value?.pluginId).toBe('org.example.ledger')
+
+    host.disposePlugin('org.example.ledger')
+
+    expect(titleBarView.value).toBeNull()
   })
 
   it('disposes all plugins and does not re-run disposed subscriptions on disposeAll', () => {
@@ -101,10 +192,8 @@ describe('createShellHost', () => {
 
     context.registerReader?.({} as never).dispose()
     context.registerCommand?.({} as never).dispose()
-    context.registerContextMenu?.({} as never).dispose()
     context.registerAgentProvider?.({} as never).dispose()
     context.registerSettingsView?.({} as never).dispose()
-    context.registerStatusView?.({} as never).dispose()
     expect(context.getSetting?.('key')).toBeUndefined()
     context.onSettingChange?.('key', () => undefined).dispose()
     context.onVaultChange?.(() => undefined).dispose()

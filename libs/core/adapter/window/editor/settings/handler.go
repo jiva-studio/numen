@@ -182,7 +182,7 @@ func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
-// RetryPlugin starts a plugin the host suspends once more. A plugin that fails
+// RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
 func (h *Handler) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
@@ -228,7 +228,7 @@ func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOpti
 }
 
 func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
-	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail}
+	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
 }
 
 func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {

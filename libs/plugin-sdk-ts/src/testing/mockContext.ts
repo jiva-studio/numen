@@ -3,19 +3,30 @@ import type {
   AppInfo,
   CommandNote,
   CommandRegistration,
-  ContextMenuRegistration,
   Disposable,
   FileSelectEvent,
   PluginContext,
   ReaderRegistration,
   SettingsViewRegistration,
-  StatusViewRegistration,
+  SlotViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '../types'
 import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
+import {
+  createMockBackgroundTaskHost,
+  createMockCommandsHost,
+  createMockSlotHost,
+  createMockVaultsHost,
+  createMockWindowHost,
+  type MockBackgroundTaskHost,
+  type MockCommandsHost,
+  type MockSlotHost,
+  type MockVaultsHost,
+  type MockWindowHost,
+} from './mockWindowHosts'
 
 // MockMountedView records one mountView call of a plugin under test, and whether its view was disposed.
 export interface MockMountedView {
@@ -28,13 +39,17 @@ export interface MockMountedView {
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
+  readonly commands: MockCommandsHost
+  readonly slots: MockSlotHost
+  readonly vaults: MockVaultsHost
+  readonly window: MockWindowHost
+  readonly backgroundTasks: MockBackgroundTaskHost
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
-  getRegisteredStatusViews(): StatusViewRegistration[]
+  getRegisteredSlotViews(): SlotViewRegistration[]
   getOpenedAddresses(): string[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
-  getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
@@ -78,9 +93,16 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
   })
 }
 
-const DEFAULT_APP: AppInfo = { version: '0.0.0-test', build: 1, platform: 'linux' }
+const DEFAULT_APP: AppInfo = { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' }
 
-const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note' }
+const EMPTY_NOTE: CommandNote = {
+  path: '',
+  title: '',
+  type: 'note',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 function isWebAddress(url: string): boolean {
   try {
@@ -124,11 +146,10 @@ export function createMockPluginContext(
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
-  const statusViews: StatusViewRegistration[] = []
+  const slotViews: SlotViewRegistration[] = []
   const openedAddresses: string[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
-  const contextMenus: ContextMenuRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
@@ -145,6 +166,11 @@ export function createMockPluginContext(
     subscriptions,
     app: init.app ?? DEFAULT_APP,
     ...getOptionalServices(init),
+    commands: createMockCommandsHost(),
+    slots: createMockSlotHost(),
+    vaults: createMockVaultsHost(),
+    window: createMockWindowHost(),
+    backgroundTasks: createMockBackgroundTaskHost(),
 
     openExternal(url: string): Promise<Result<null>> {
       if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))
@@ -160,8 +186,8 @@ export function createMockPluginContext(
       return registerInList(settingsViews, registration, subscriptions)
     },
 
-    registerStatusView(registration: StatusViewRegistration): Disposable {
-      return registerInList(statusViews, registration, subscriptions)
+    registerSlotView(registration: SlotViewRegistration): Disposable {
+      return registerInList(slotViews, registration, subscriptions)
     },
 
     registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
@@ -170,10 +196,6 @@ export function createMockPluginContext(
 
     registerCommand(registration: CommandRegistration): Disposable {
       return registerInList(commands, registration, subscriptions)
-    },
-
-    registerContextMenu(registration: ContextMenuRegistration): Disposable {
-      return registerInList(contextMenus, registration, subscriptions)
     },
 
     registerAgentProvider(registration: AgentProviderRegistration): Disposable {
@@ -268,8 +290,8 @@ export function createMockPluginContext(
       return [...settingsViews]
     },
 
-    getRegisteredStatusViews(): StatusViewRegistration[] {
-      return [...statusViews]
+    getRegisteredSlotViews(): SlotViewRegistration[] {
+      return [...slotViews]
     },
 
     getOpenedAddresses(): string[] {
@@ -282,10 +304,6 @@ export function createMockPluginContext(
 
     getRegisteredCommands(): CommandRegistration[] {
       return [...commands]
-    },
-
-    getRegisteredContextMenus(): ContextMenuRegistration[] {
-      return [...contextMenus]
     },
 
     getRegisteredAgentProviders(): AgentProviderRegistration[] {

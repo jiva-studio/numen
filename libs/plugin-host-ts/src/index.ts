@@ -5,6 +5,7 @@ export {
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
+export { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 export type { LoaderHost } from './host'
 export {
   adoptPluginStyle,
@@ -21,10 +22,13 @@ export {
 export { createViewRegistry, type ViewRegistry } from './views'
 export { createDropRegistry } from './drops'
 export {
-  createStatusViewRegistry,
-  type DeclaredStatusView,
-  type StatusViewRegistry,
-} from './statusViews'
+  createSlotViewRegistry,
+  findSlotView,
+  getDeclaredSlots,
+  type DeclaredSlotView,
+  type SlotViewManifest,
+  type SlotViewRegistry,
+} from './slot-views/slotViews'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,
@@ -48,17 +52,21 @@ export type {
   PluginHostDeps,
   PluginPaletteCommand,
   CommandDeclaration,
+  HandlerDeclaration,
+  BackendHandlerRun,
   TabActionHandler,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {
-  MENU_LOCATION,
-  compareEntries,
-  createMenus,
-  type CommandLook,
-  type MenuLocation,
-  type MenuPlacement,
-  type Menus,
-  type MenusDeps,
-  type PlacedCommand,
-} from './menus'
+  createSlotRegistry,
+  readManifestSlotEntries,
+  type DeclaredSlotEntry,
+  type SlotCommandLook,
+  type SlotRegistryDeps,
+} from './slots/slotRegistry'
+export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
+export { getTargetValues } from './when/targetValues'
+export { createWhenReader, type WhenReader } from './when/whenReader'
+export { getWhenValues, type WhenValueParts } from './when/whenValues'
+export { createWindowHost, type WindowControls } from './hosting/windowHost'
+export { SlotViewHost, usePluginStyles } from './slot-views/slotViewHost'

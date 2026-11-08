@@ -10,7 +10,7 @@ import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
-import { renderDeps } from '../fixtures/host'
+import { renderDeps, ROW_MENU } from '../fixtures/host'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
@@ -39,7 +39,9 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: () => undefined,
-    runCommand: () => undefined,
+    listItems: async () => [],
+    getMenuEntries: () => ROW_MENU,
+    runCommand: async () => undefined,
     movePath: async () => undefined,
     setDraggedPaths: () => undefined,
     createFolder: async () => undefined,
@@ -128,8 +130,8 @@ export const TheMenuOnARow: Story = {
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))
     const transcriptText = getMenuItems().map((one) => one.textContent?.trim())
-    await expect(transcriptText).toContain('Rename')
-    await expect(transcriptText).toContain('Move note to trash')
+    await expect(transcriptText).toContain('Rename file')
+    await expect(transcriptText).toContain('Move to trash')
 
     // The whole of it is on the screen, on every side.
     const menu = document.body.querySelector<HTMLElement>('[role="menu"]')!.getBoundingClientRect()

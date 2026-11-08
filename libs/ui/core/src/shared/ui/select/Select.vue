@@ -37,6 +37,7 @@ const items = computed<readonly MenuItem[]>(() =>
     text: one.text,
     ...(one.detail ? { detail: one.detail } : {}),
     ...(one.group ? { group: one.group } : {}),
+    ...(one.isDisabled ? { isDisabled: true } : {}),
   })),
 )
 

@@ -5,14 +5,18 @@ import (
 	"maps"
 	"slices"
 	"strconv"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
 )
 
-// SettingOption is one value an enum setting can hold.
+// SettingOption is one value an enum setting can hold. Its When is a condition over the variables of
+// when.json that the window evaluates; empty offers the option always.
 type SettingOption struct {
 	Value        string
 	Title        string
 	Detail       string
 	Dependencies []string
+	When         string
 }
 
 // GetTitle returns the title of the option, or its value where it has none.
@@ -206,14 +210,23 @@ func (m Manifest) listSettingLinkIssues() []error {
 		issues = append(issues, listConditionIssues("setting "+s.Key, s.When, declared)...)
 		for _, options := range m.getAllOptions(s) {
 			for _, option := range options {
-				for _, id := range option.Dependencies {
-					if !slices.ContainsFunc(m.Dependencies, func(req DependencyRequirement) bool { return req.ID == id }) {
-						issues = append(issues, fmt.Errorf("%w: %s option %q provisions %q, which the manifest does not declare", ErrInvalidSetting, s.Key, option.Value, id))
-					}
-				}
+				issues = append(issues, m.listOptionIssues(s, option)...)
 			}
 		}
 		declared[s.Key] = s
+	}
+	return issues
+}
+
+func (m Manifest) listOptionIssues(s Setting, option SettingOption) []error {
+	var issues []error
+	if _, err := when.Parse(option.When); err != nil {
+		issues = append(issues, fmt.Errorf("%w: %s option %q: when %q: %w", ErrInvalidSetting, s.Key, option.Value, option.When, err))
+	}
+	for _, id := range option.Dependencies {
+		if !slices.ContainsFunc(m.Dependencies, func(req DependencyRequirement) bool { return req.ID == id }) {
+			issues = append(issues, fmt.Errorf("%w: %s option %q provisions %q, which the manifest does not declare", ErrInvalidSetting, s.Key, option.Value, id))
+		}
 	}
 	return issues
 }

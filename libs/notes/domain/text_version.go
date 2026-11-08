@@ -23,33 +23,50 @@ func NewTextVersionID(pluginID, key string) TextVersionID {
 	return TextVersionID(pluginID + "/" + key)
 }
 
+// TextSourceProperty is a frontmatter property of a note that a text version
+// was made from: the key and its string value. The zero value is no property.
+type TextSourceProperty struct {
+	Key   string
+	Value string
+}
+
 // A TextVersion is the core's record of one text of a vault file: who made it,
 // from what, of which kind, and the file in the maker's plugin folder that
 // holds its segments.
 //
-// Source is empty for a version made from the file itself; for any other
-// version it names another version of the same file. InputHash is HashContent of the file for
-// the first, and the TextHash of the source version for the second, as both were
+// A version has one root. Source names another version of the same file, and
+// InputHash is the TextHash of that version. SourceProperty names a property of
+// the note, and InputHash is empty. With neither, the version is made from
+// the file, and InputHash is HashContent of the file. Hashes are as they were
 // when the version was made. File is the name of the version's file in the
 // folder of PluginID; TextHash is HashContent of that file's bytes when the version
 // was recorded.
 type TextVersion struct {
-	Path       string
-	PluginID   string
-	Key        string
-	Source     TextVersionID
-	Kind       TextKind
-	File       string
-	InputHash  string
-	TextHash   string
-	CreateTime time.Time
+	Path           string
+	PluginID       string
+	Key            string
+	Source         TextVersionID
+	SourceProperty TextSourceProperty
+	Kind           TextKind
+	File           string
+	InputHash      string
+	TextHash       string
+	CreateTime     time.Time
 }
 
 // GetID is the identity of the version among the versions of its file.
 func (v TextVersion) GetID() TextVersionID { return NewTextVersionID(v.PluginID, v.Key) }
 
 // IsFromFile reports whether the version was made from the file itself.
-func (v TextVersion) IsFromFile() bool { return v.Source == "" }
+func (v TextVersion) IsFromFile() bool { return v.Source == "" && !v.IsFromProperty() }
+
+// IsFromProperty reports whether the version was made from a property of the note.
+func (v TextVersion) IsFromProperty() bool { return v.SourceProperty.Key != "" }
+
+func (p TextSourceProperty) isPropertyHeld(properties map[string]any) bool {
+	value, isText := properties[p.Key].(string)
+	return isText && value == p.Value
+}
 
 // HashContent is the hash a file's content is compared by: SHA-256 of its
 // bytes, in lowercase hex.
@@ -67,11 +84,12 @@ func HashReader(r io.Reader) (string, error) {
 	return hex.EncodeToString(sum.Sum(nil)), nil
 }
 
-// IsChainValid reports whether every source in a version's chain, down to the
-// file, is still what it was when the version above it was made.
+// IsChainValid reports whether every source in a version's chain, down to its
+// root, is still what it was when the version above it was made.
 //
-// contentHash is HashContent of the file as it is now.
-func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string) bool {
+// contentHash is HashContent of the file as it is now, and properties is the
+// note's frontmatter as it is now.
+func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string, properties map[string]any) bool {
 	byID := make(map[TextVersionID]TextVersion, len(versions))
 	for _, v := range versions {
 		byID[v.GetID()] = v
@@ -83,6 +101,9 @@ func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string) 
 			return false
 		}
 		visited[id] = true
+		if v.IsFromProperty() {
+			return v.SourceProperty.isPropertyHeld(properties)
+		}
 		if v.IsFromFile() {
 			return v.InputHash == contentHash
 		}
@@ -100,7 +121,7 @@ func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string) 
 // a later CreateTime; of two made at one instant the later in the list is
 // newer. The plugin that made a version need not be enabled.
 func FindLiveVersion(
-	versions []TextVersion, contentHash string, isIntact func(TextVersion) bool,
+	versions []TextVersion, contentHash string, properties map[string]any, isIntact func(TextVersion) bool,
 ) (TextVersion, bool) {
 	order := make([]int, len(versions))
 	for i := range order {
@@ -113,7 +134,7 @@ func FindLiveVersion(
 		return cmp.Compare(b, a)
 	})
 	for _, i := range order {
-		if IsChainValid(versions, versions[i].GetID(), contentHash) && isIntact(versions[i]) {
+		if IsChainValid(versions, versions[i].GetID(), contentHash, properties) && isIntact(versions[i]) {
 			return versions[i], true
 		}
 	}

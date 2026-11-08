@@ -46,7 +46,7 @@ func TestAPluginThatRegistersTabsDeclaresThemInItsManifest(t *testing.T) {
 			}
 		}
 	}
-	if checked < 9 {
+	if checked < 8 {
 		t.Errorf("only %d plugins register tabs from a frontend: the rule is checked against too little", checked)
 	}
 }

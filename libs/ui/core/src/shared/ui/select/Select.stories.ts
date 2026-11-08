@@ -144,6 +144,32 @@ export const AValueNotAmongThem: Story = {
   },
 }
 
+/** A choice that cannot be chosen is drawn disabled. */
+export const ADisabledChoice: Story = {
+  args: { words: 'Left\nRight\nNone' },
+  render: (args) => ({
+    components: { Select },
+    setup: () => {
+      const current = ref('left')
+      const choices = [
+        { id: 'left', text: 'Left' },
+        { id: 'right', text: 'Right', isDisabled: true },
+        { id: 'none', text: 'None', isDisabled: true },
+      ]
+      return { args, current, choices }
+    },
+    template: '<Select v-model="current" :choices="choices" />',
+  }),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(control(canvasElement))
+    await expect(rows().map((one) => (one as HTMLButtonElement).disabled)).toEqual([
+      false,
+      true,
+      true,
+    ])
+  },
+}
+
 /** A disabled control. */
 export const Disabled: Story = { args: { isDisabled: true } }
 

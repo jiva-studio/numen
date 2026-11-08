@@ -451,7 +451,10 @@ type GetNeighbourhoodResponse struct {
 	// of them or not. A hierarchical connection has the parent as first and the
 	// child as second, and each side holds the label and the marker of the record
 	// written in that note.
-	Connections   []*Connection `protobuf:"bytes,4,rep,name=connections,proto3" json:"connections,omitempty"`
+	Connections []*Connection `protobuf:"bytes,4,rep,name=connections,proto3" json:"connections,omitempty"`
+	// The kind of tab the note in focus opens in, chosen as FileKind.tab_kind is.
+	// Empty where none holds.
+	FocusTabKind  string `protobuf:"bytes,5,opt,name=focus_tab_kind,json=focusTabKind,proto3" json:"focus_tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -514,6 +517,13 @@ func (x *GetNeighbourhoodResponse) GetConnections() []*Connection {
 	return nil
 }
 
+func (x *GetNeighbourhoodResponse) GetFocusTabKind() string {
+	if x != nil {
+		return x.FocusTabKind
+	}
+	return ""
+}
+
 // Neighbour is one note joined to the one in focus. The records that join notes
 // are in GetNeighbourhoodResponse.connections.
 type Neighbour struct {
@@ -522,7 +532,10 @@ type Neighbour struct {
 	Relation Relation               `protobuf:"varint,2,opt,name=relation,proto3,enum=numen.v1.Relation" json:"relation,omitempty"`
 	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
 	// Empty for an ordinary note.
-	Type          string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+	// where none holds.
+	TabKind       string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -574,6 +587,13 @@ func (x *Neighbour) GetRelation() Relation {
 func (x *Neighbour) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *Neighbour) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
 	}
 	return ""
 }
@@ -3032,17 +3052,19 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
 	"\x05_note\"-\n" +
 	"\x17GetNeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xc6\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xec\x01\n" +
 	"\x18GetNeighbourhoodResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x12\x1d\n" +
 	"\n" +
 	"focus_type\x18\x03 \x01(\tR\tfocusType\x126\n" +
-	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\"s\n" +
+	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\x12$\n" +
+	"\x0efocus_tab_kind\x18\x05 \x01(\tR\ffocusTabKind\"\x8e\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
 	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x12\n" +
-	"\x04type\x18\x06 \x01(\tR\x04type\"q\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\x12\x19\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\"q\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +

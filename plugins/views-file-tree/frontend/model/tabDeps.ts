@@ -5,7 +5,10 @@
 import {
   getFileStem,
   isNotePath,
+  SLOT,
   type DropHost,
+  type CommandsHost,
+  type SlotHost,
   type VaultFiles,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -16,6 +19,8 @@ export interface FileTreeHost {
   readonly workspace: WorkspaceHost
   readonly files: VaultFiles
   readonly drops?: DropHost
+  readonly slots?: SlotHost
+  readonly commands?: CommandsHost
 }
 
 /**
@@ -23,12 +28,12 @@ export interface FileTreeHost {
  * goes to the tabs linked to it first, titled by its file name without the extension.
  */
 export function createFilesTabDeps(
-  { workspace, files, drops }: FileTreeHost,
+  { workspace, files, drops, slots, commands }: FileTreeHost,
   id: string,
 ): FilesTabDeps {
   return {
-    openEntry: ({ path, name }) => {
-      if (isNotePath(path) && workspace.syncPath(id, path, getFileStem(name))) return
+    openEntry: ({ path, name, isNote }) => {
+      if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
       workspace.openFile(path, { title: name || path, placement: 'current' })
     },
     onSelectPath: (path, state) => {
@@ -37,8 +42,11 @@ export function createFilesTabDeps(
         workspace.syncPath(id, path, getFileStem(entry.name))
       }
     },
-    runCommand: (command, paths, { name, isNote, isFolder }) =>
-      workspace.runPathCommand(command, { paths, name, isNote, isFolder }),
+    getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
+    listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
+    runCommand: async (command, target, itemId) => {
+      await commands?.run(command, target, itemId)
+    },
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
     createFolder: (path) => files.createFolder(path),
@@ -46,8 +54,6 @@ export function createFilesTabDeps(
     canDropData: (types) => drops?.canDrop(types) ?? false,
     dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
     showError: (text) => workspace.showError(text),
-    getPathCommands: (row) => workspace.getPathCommands(row),
-    getCommandIcon: (command) => workspace.getCommandIcon(command),
     getEntryIcon: (entry, isOpen) => workspace.getEntryIcon(entry, isOpen),
   }
 }

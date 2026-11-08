@@ -56,6 +56,7 @@ func getIDs(t *testing.T, repo *version.Repository, path string) []domain.TextVe
 func TestSaveVersionKeepsTheOrderAndReplacesInPlace(t *testing.T) {
 	repo := openRepository(t)
 	first, second := newVersion("a.mp3", "p.one", "k"), newVersion("a.mp3", "p.two", "k")
+	first.SourceProperty, first.InputHash = domain.TextSourceProperty{Key: "url", Value: "https://example.com/talk"}, ""
 	second.Source = first.GetID()
 	save(t, repo, first, second)
 

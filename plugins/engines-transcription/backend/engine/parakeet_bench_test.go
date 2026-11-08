@@ -1,8 +1,9 @@
 package engine
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 )

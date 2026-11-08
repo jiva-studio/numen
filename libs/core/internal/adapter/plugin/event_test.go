@@ -217,7 +217,7 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 }
 
 func readingType(contentType domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
-		{Purpose: pluginport.HandleTextProvider, ContentTypes: []domain.ContentType{contentType}},
+	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Readers: []pluginport.PluginReader{
+		{ID: "reader", ContentTypes: []domain.ContentType{contentType}},
 	}}}
 }

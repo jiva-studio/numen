@@ -19,7 +19,7 @@ import (
 )
 
 func TestTheSameAddressInAnotherVaultIsOtherWork(t *testing.T) {
-	l := &Links{running: map[string]bool{}}
+	l := &Links{running: map[string]chan struct{}{}}
 	physics := Link{Vault: "Physics", Key: "k1"}
 	chemistry := Link{Vault: "Chemistry", Key: "k1"}
 
@@ -113,12 +113,8 @@ func (s *hookStore) Rename(ctx context.Context, from, to string) error {
 
 type hookTexts struct {
 	host.Texts
-	withVault    domain.VaultID
-	listErr      error
-	listOverride *host.TextListing
-	readErr      error
-	putErr       error
-	putCalls     int
+	withVault domain.VaultID
+	putErr    error
 }
 
 func (x *hookTexts) With(id domain.VaultID) host.Texts {
@@ -126,25 +122,7 @@ func (x *hookTexts) With(id domain.VaultID) host.Texts {
 	return x
 }
 
-func (x *hookTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
-	if x.listErr != nil {
-		return host.TextListing{}, x.listErr
-	}
-	if x.listOverride != nil {
-		return *x.listOverride, nil
-	}
-	return x.Texts.ListVersions(ctx, path)
-}
-
-func (x *hookTexts) ReadText(ctx context.Context, path string, version domain.TextVersionID, pageToken string) (host.TextPage, error) {
-	if x.readErr != nil {
-		return host.TextPage{}, x.readErr
-	}
-	return x.Texts.ReadText(ctx, path, version, pageToken)
-}
-
 func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
-	x.putCalls++
 	if x.putErr != nil {
 		return domain.TextVersion{}, x.putErr
 	}
@@ -231,7 +209,7 @@ func (f *stubFetcher) GetText(ctx context.Context, _ string, _ download.Preferre
 	return f.text, f.textErr
 }
 
-func (f *stubFetcher) Download(_ context.Context, _ string, into io.Writer) (download.Copy, error) {
+func (f *stubFetcher) Download(_ context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
 	f.downloads++
 	if len(f.copyBytes) > 0 {
 		if _, err := into.Write(f.copyBytes); err != nil {
@@ -264,9 +242,6 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if _, ok, err := f.findRecord(ctx, "k"); !errors.Is(err, boom) || ok {
 		t.Errorf("findRecord(error) = %v, %v", ok, err)
 	}
-	if kept, err := f.isKept(ctx, "k"); !errors.Is(err, boom) || kept {
-		t.Errorf("isKept(error) = %v, %v", kept, err)
-	}
 	hs.readErr = nil
 
 	if err := f.writeRecord(ctx, "k", record{Address: "https://a.example", Kind: kindArticle}); err != nil {
@@ -284,15 +259,15 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	hs.writeErr = nil
 
 	hs.listErr = func(int) error { return boom }
-	if _, ok, err := f.findCopy(ctx, "h1"); !errors.Is(err, boom) || ok {
+	if _, ok, err := f.findCopy(ctx, "h1", download.MediaVideo); !errors.Is(err, boom) || ok {
 		t.Errorf("findCopy(error) = %v, %v", ok, err)
-	}
-	if err := f.deleteCopy(ctx, "h1"); !errors.Is(err, boom) {
-		t.Errorf("deleteCopy(list error) = %v", err)
+		if _, err := f.listCopies(ctx, "h1"); !errors.Is(err, boom) {
+			t.Errorf("listCopies(list error) = %v", err)
+		}
 	}
 	hs.listErr = nil
 
-	found, ok, err := f.findCopy(ctx, "h1")
+	found, ok, err := f.findCopy(ctx, "h1", download.MediaVideo)
 	if err != nil || ok || found != (host.StoreFile{}) {
 		t.Errorf("findCopy(empty) = %+v, %v, %v", found, ok, err)
 	}
@@ -306,32 +281,22 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if err := hs.Write(ctx, "h1.part", []byte("part")); err != nil {
 		t.Fatal(err)
 	}
-	if err := hs.Write(ctx, "h1.mp4", []byte("mp4")); err != nil {
+	if err := hs.Write(ctx, "h1.video.mp4", []byte("mp4")); err != nil {
 		t.Fatal(err)
 	}
-	found, ok, err = f.findCopy(ctx, "h1")
-	if err != nil || !ok || found.Name != "h1.mp4" || found.Size != 3 {
+	found, ok, err = f.findCopy(ctx, "h1", download.MediaVideo)
+	if err != nil || !ok || found.Name != "h1.video.mp4" || found.Size != 3 {
 		t.Errorf("findCopy(match) = %+v, %v, %v", found, ok, err)
 	}
-
-	hs.deleteErr = func(name string) error {
-		if name == "h1.part" {
-			return boom
-		}
-		return nil
-	}
-	if err := f.deleteCopy(ctx, "h1"); !errors.Is(err, boom) {
-		t.Errorf("deleteCopy(delete error) = %v", err)
-	}
-	hs.deleteErr = nil
-	if err := f.deleteCopy(ctx, "h1"); err != nil {
+	if err := hs.Write(ctx, "h1.audio.m4a", []byte("m4a")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := hs.Read(ctx, "h1.part"); !errors.Is(err, host.ErrNotExist) {
-		t.Errorf("h1.part still exists: %v", err)
+	if _, ok, err := f.findCopy(ctx, "h1", download.MediaAudio); err != nil || !ok {
+		t.Errorf("findCopy(audio) = %v, %v", ok, err)
 	}
-	if _, err := hs.Read(ctx, "000_other.txt"); err != nil {
-		t.Errorf("000_other.txt was deleted: %v", err)
+	names, err := f.listCopies(ctx, "h1")
+	if err != nil || len(names) != 2 {
+		t.Errorf("listCopies = %v, %v, want the video and the sound alone", names, err)
 	}
 }
 
@@ -473,7 +438,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 			return download.Text{}, errors.New("close did not cancel context")
 		}
 	}
-	l.StartFetchText(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"}, true)
+	l.StartFetch(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"})
 	<-started
 	l.Close()
 	if !waited.Load() {
@@ -481,7 +446,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	}
 }
 
-func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
+func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	ctx := t.Context()
 	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
 	t.Cleanup(l.Close)
@@ -499,60 +464,45 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 
 	// Claim contention on FetchText and Copy.
 	l.claim("text", made, made.Key)
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, ErrBeingFetched) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, ErrBeingFetched) {
 		t.Errorf("FetchText while claimed = %v, want ErrBeingFetched", err)
 	}
 	l.release("text", made, made.Key)
 
-	l.claim("copy", made, made.Hash)
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrBeingFetched) || size != 0 {
+	l.claim("copy", made, made.Key)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrBeingFetched) || size != 0 {
 		t.Errorf("Copy while claimed = (%d, %v), want (0, ErrBeingFetched)", size, err)
 	}
-	l.release("copy", made, made.Hash)
+	l.release("copy", made, made.Key)
 
-	// reuseText error paths.
+	// readRecord error paths.
 	boom := errors.New("store failure")
-	hs.readErr = func(name string) error {
-		if name == made.Key+noneExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(isNone err) = %v, want %v", err, boom)
-	}
 	hs.readErr = func(name string) error {
 		if name == made.Key+recordExt {
 			return boom
 		}
 		return nil
 	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(readRecord err) = %v, want %v", err, boom)
-	}
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
-		t.Errorf("FetchText(user readRecord err) = %v, want %v", err, boom)
-	}
-	if deleted, err := l.IsTextDeleted(ctx, made); !errors.Is(err, boom) || deleted {
-		t.Errorf("IsTextDeleted(readRecord err) = (%v, %v)", deleted, err)
 	}
 	hs.readErr = nil
 
 	// FetchText when fetcher returns error, and when writeText fails.
 	sf.textErr = boom
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(fetcher err) = %v, want %v", err, boom)
 	}
 	sf.textErr = nil
 	hs.writeErr = func(string) error { return boom }
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(writeText err) = %v, want %v", err, boom)
 	}
 	hs.writeErr = nil
 
 	// Successful FetchText records downloader and reports initial task with 0/0 counts.
 	hq.tasks = nil
-	if err := l.FetchText(ctx, made, true); err != nil {
+	if err := l.FetchText(ctx, made); err != nil {
 		t.Fatal(err)
 	}
 	if len(hq.tasks) == 0 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 {
@@ -563,56 +513,6 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("record Downloader = %q (%v), want %q", rec.Downloader, err, "tool v2")
 	}
 
-	// reuseText when hasText fails, when ListVersions fails, and when version is already present after another version.
-	hs.readErr = func(name string) error {
-		if name == made.Key+textExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(hasText err) = %v, want %v", err, boom)
-	}
-	hs.readErr = nil
-
-	ht.listErr = boom
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(ListVersions err) = %v, want %v", err, boom)
-	}
-	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("ReadArticle(ListVersions err) = %v, want %v", err, boom)
-	}
-	ht.listErr = nil
-
-	// Put another version before the matching one and verify ensureVersion finds the matching one without calling PutVersion.
-	liveListing, err := ht.Texts.ListVersions(ctx, made.Path)
-	if err != nil || len(liveListing.Versions) != 1 {
-		t.Fatalf("ListVersions = %+v (%v)", liveListing, err)
-	}
-	ht.listOverride = &host.TextListing{
-		Live: liveListing.Live,
-		Versions: []domain.TextVersion{
-			{PluginID: "other-plugin", Key: "other", InputHash: "other-hash"},
-			liveListing.Versions[0],
-		},
-	}
-	ht.putCalls = 0
-	if err := l.FetchText(ctx, made, false); err != nil || ht.putCalls != 0 {
-		t.Errorf("FetchText(already current) err=%v, putCalls=%d", err, ht.putCalls)
-	}
-
-	// ReadArticle with non-live version first, and with ReadText error.
-	article, err := l.ReadArticle(ctx, made)
-	if err != nil || article != "body" {
-		t.Errorf("ReadArticle = %q (%v), want %q", article, err, "body")
-	}
-	ht.readErr = boom
-	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("ReadArticle(ReadText err) = %v, want %v", err, boom)
-	}
-	ht.readErr = nil
-	ht.listOverride = nil
-
 	// endTask with canceled context still finishes the task using an uncanceled context.
 	canceledCtx, cancel := context.WithCancel(ctx)
 	cancel()
@@ -621,118 +521,80 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("endTask finishCtx err = %v, want nil", hq.finishCtx)
 	}
 
-	// FindCopy error and edge paths.
+	// Copy fails where the folder cannot be listed.
 	hs.listErr = func(int) error { return boom }
-	if _, err := l.FindCopy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(list err) = %v, want %v", err, boom)
-	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("Copy(FindCopy err) = %v, want %v", err, boom)
-	}
-	hs.listErr = func(call int) error {
-		if call == 2 {
-			return boom
-		}
-		return nil
-	}
-	// rec.Copy is currently "", so FindCopy returns before the 2nd List call.
-	if size, err := l.FindCopy(ctx, made); err != nil || size != 0 {
-		t.Errorf("FindCopy(empty Copy) = (%d, %v), want (0, nil)", size, err)
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+		t.Errorf("Copy(list err) = %v, want %v", err, boom)
 	}
 	hs.listErr = nil
 
-	hs.readErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(readRecord err) = %v, want %v", err, boom)
-	}
-	hs.readErr = nil
-
 	// Copy error and boundary paths.
 	sf.canCopy = false
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrNotCopyable) || size != 0 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrNotCopyable) || size != 0 {
 		t.Errorf("Copy(not copyable) = (%d, %v)", size, err)
 	}
 	sf.canCopy = true
 
 	sf.metaErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(metaErr) = %v", err)
 	}
 	sf.metaErr = nil
 
 	*maxSize = 3
 	sf.meta = download.Metadata{Bytes: 4}
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 4 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 4 {
 		t.Errorf("Copy(too large meta) = (%d, %v), want (4, ErrTooLarge)", size, err)
 	}
 	*maxSize = 1
 	sf.meta = download.Metadata{Bytes: 2}
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 2 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 2 {
 		t.Errorf("Copy(meta 2 > limit 1) = (%d, %v), want (2, ErrTooLarge)", size, err)
 	}
 	*maxSize = 4
 	sf.meta = download.Metadata{Bytes: 4}
 
 	hq.enqueueErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(enqueueErr) = %v", err)
 	}
 	hq.enqueueErr = nil
 
 	hs.deleteErr = func(name string) error {
-		if name == made.Hash+partExt {
+		if name == made.Key+partExt {
 			return boom
 		}
 		return nil
 	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(delete part err) = %v", err)
 	}
 	hs.deleteErr = nil
 
 	hs.appendErr = func(string) error { return boom }
-	if size, err := l.Copy(ctx, made); !errors.Is(err, boom) || size != 0 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
 		t.Errorf("Copy(flush appendErr) = (%d, %v)", size, err)
 	}
 	hs.appendErr = nil
 
 	sf.copyRes = download.Copy{MediaType: "application/octet-stream", Extension: ".exe"}
-	if _, err := l.Copy(ctx, made); err == nil {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); err == nil {
 		t.Error("Copy(.exe) succeeded")
 	}
 	sf.copyRes = download.Copy{MediaType: "video/mp4", Extension: ".mp4"}
 
 	hs.renameErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(renameErr) = %v", err)
 	}
 	hs.renameErr = nil
 
-	hs.readErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("Copy(recordCopy readErr) = %v", err)
-	}
-	hs.readErr = nil
-	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
-		t.Fatal(err)
-	}
-
 	hq.releaseErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
-	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
+	if err := hs.Delete(ctx, made.Key+".video.mp4"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -742,103 +604,28 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	sf.copyBytes = []byte{0x7f}
 	sf.downloads = 0
 	hq.tasks = nil
-	size, err := l.Copy(ctx, made)
+	size, err := l.Copy(ctx, made, download.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 	if len(hq.tasks) < 2 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 || hq.tasks[1].CompletedCount != 1 || hq.tasks[1].TotalCount != 1 {
 		t.Errorf("Copy tasks = %+v", hq.tasks)
 	}
-	size, err = l.Copy(ctx, made)
+	size, err = l.Copy(ctx, made, download.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 
-	// FindCopy rename error, writeRecord error, and chained edits.
-	edited1 := Link{Vault: made.Vault, Path: made.Path, Address: made.Address, Key: made.Key, Hash: "hash-edit-1"}
-	hs.listCalls = 0
-	hs.listErr = func(call int) error {
-		if call == 2 {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(2nd list err) = %v", err)
-	}
-	hs.listErr = nil
-
-	hs.renameErr = boom
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(renameErr) = %v", err)
-	}
-	hs.renameErr = nil
-
-	hs.writeErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(writeRecord err) = %v", err)
-	}
-	hs.writeErr = nil
-
-	// Restore old file to test full chained rename across two edits.
-	if err := hs.Rename(ctx, "hash-edit-1.mp4", made.Hash+".mp4"); err != nil {
-		t.Fatal(err)
-	}
-	if size, err := l.FindCopy(ctx, edited1); err != nil || size != 1 {
-		t.Fatalf("FindCopy(edited1) = (%d, %v)", size, err)
-	}
-	edited2 := Link{Vault: made.Vault, Path: made.Path, Address: made.Address, Key: made.Key, Hash: "hash-edit-2"}
-	if size, err := l.FindCopy(ctx, edited2); err != nil || size != 1 {
-		t.Fatalf("FindCopy(edited2) = (%d, %v)", size, err)
-	}
-
-	// DeleteCopy error and record clearing paths.
+	// DeleteCopy fails where the folder cannot be listed, and deletes the copy no note refers to.
 	hs.listErr = func(int) error { return boom }
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
+	if err := l.DeleteCopy(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("DeleteCopy(listErr) = %v", err)
 	}
 	hs.listErr = nil
-
-	hs.readErr = func(name string) error {
-		if name == edited2.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
-		t.Errorf("DeleteCopy(findRecord err) = %v", err)
-	}
-	hs.readErr = nil
-
-	if err := hs.Write(ctx, edited2.Hash+".mp4", []byte{1}); err != nil {
+	if err := l.DeleteCopy(ctx, made); err != nil {
 		t.Fatal(err)
 	}
-	hs.writeErr = func(name string) error {
-		if name == edited2.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.DeleteCopy(ctx, edited2); !errors.Is(err, boom) {
-		t.Errorf("DeleteCopy(writeRecord err) = %v", err)
-	}
-	hs.writeErr = nil
-
-	if err := l.DeleteCopy(ctx, edited2); err != nil {
-		t.Fatal(err)
-	}
-	rec, err = (folder{store: hs}).readRecord(ctx, edited2.Key)
-	if err != nil || rec.Copy != "" {
-		t.Errorf("record after DeleteCopy = %+v (%v), want empty Copy", rec, err)
-	}
-	// A second DeleteCopy when rec.Copy is already "" does not write record again.
-	hs.writeErr = func(string) error { return boom }
-	if err := l.DeleteCopy(ctx, edited2); err != nil {
-		t.Errorf("DeleteCopy(already empty Copy) = %v, want nil", err)
+	if _, err := hs.Read(ctx, made.Key+".video.mp4"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("the copy no note refers to is kept: %v", err)
 	}
 }

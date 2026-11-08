@@ -1,21 +1,57 @@
 {
   "id": "md.numen.readers.pdf",
   "name": "PDF Reader",
-  "version": "2026.11.8",
+  "version": "2026.11.9",
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
-    "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
+    "textKinds": [{ "kind": "page-text", "title": "Text layer" }],
+    "tabKinds": [
+      {
+        "kind": "reader:reader-pdf",
+        "title": "PDF Reader",
+        "icon": "file-text"
+      }
+    ],
     "feature": "PDF documents",
     "category": "readers",
-    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/pdf"] }],
-    "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }]
+    "readers": [
+      {
+        "id": "reader-pdf",
+        "contentTypes": ["application/pdf"],
+        "rank": "default"
+      }
+    ],
+    "slots": [
+      {
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Extract text layer",
+        "when": "target.contentType == 'application/pdf'"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'page-text' && v.isValid)"
+      }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
   "services": ["md.numen.readers.pdf"],
-  "backend": { "entrypoint": "bin/readers-pdf" },
+  "backend": {
+    "entrypoint": "bin/readers-pdf"
+  },
   "frontend": {},
   "settings": [
     {

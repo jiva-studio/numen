@@ -3,7 +3,7 @@
  * Interactive landing-page simulation of the Numen desktop window, composed
  * from the real application components (`FilesTab`, `PlexGraphView`, `Editor`,
  * `Reader`, `RecordingTab`, `DeckTab`, `Agent`, `TabLinkIndicator`,
- * `TabLinkMenu`, `WorkspaceLayout`, `Palette`).
+ * `WorkspaceLayout`, `Palette`). The tab menu is a local `Menu` over the real link state.
  */
 import {
   computed,
@@ -32,13 +32,14 @@ import {
   FolderTree,
   Layers,
   Link,
+  Link2Off,
   PenLine,
   Plus,
   Trash2,
   Type,
   Waypoints,
 } from '@lucide/vue'
-import { keyChord, type PaletteKeys, type TextRange } from '@numen/ui'
+import { Menu, keyChord, type MenuItem, type PaletteKeys, type TextRange } from '@numen/ui'
 import {
   Palette,
   WorkspaceLayout,
@@ -64,8 +65,10 @@ import {
   NOTE_TYPE,
   isNotePath,
   type Connection,
-  type MenuEntry,
-  type PathMenuRow,
+  type SlotCommand,
+  type SlotItem,
+  type SlotSeparator,
+  type CommandTarget as RowTarget,
   type VaultEntry,
 } from '@numen/plugin-host'
 import {
@@ -86,15 +89,12 @@ import {
 import type { PlexRelation } from '@plugins/views-plex-graph/frontend/plex'
 import { Editor } from '@plugins/notes/frontend/editor'
 import { Reader } from '@plugins/readers-pdf/frontend/reader'
-import RecordingTab from '@plugins/views-media-player/frontend/RecordingTab.vue'
-import { DELETE_TRANSCRIPT, DEMO_COMMAND } from './demoCommands'
+import RecordingTab from '@plugins/views-media-viewer/frontend/RecordingTab.vue'
+import { DEMO_COMMAND } from './demoCommands'
 import UrlTab from './url-tab/UrlTab.vue'
-import type { Cue } from '@plugins/views-media-player/frontend/lib/cues'
-import { createAudioPlayer } from '@plugins/views-media-player/frontend/model/player'
-import type {
-  MenuEntry as MediaMenuEntry,
-  Recordings,
-} from '@plugins/views-media-player/frontend/types'
+import type { Cue } from '@plugins/views-media-viewer/frontend/lib/cues'
+import { createMediaPlayer } from '@plugins/views-media-viewer/frontend/model/player'
+import type { Recordings } from '@plugins/views-media-viewer/frontend/types'
 import DeckTab from '@plugins/views-flashcards-studio/frontend/deck/ui/DeckTab.vue'
 import { createMarks } from '@plugins/views-flashcards-studio/frontend/cards'
 import type { DeckTabState } from '@plugins/views-flashcards-studio/frontend/deck/types'
@@ -108,8 +108,8 @@ import type { AgentModelOption } from '@plugins/views-agent-chat/frontend/messag
 import type { Turn } from '@plugins/views-agent-chat/frontend/thread'
 import {
   TabLinkIndicator,
-  TabLinkMenu,
-  useTabLinkMenu,
+  getAllTabs,
+  getEligibleTabs,
   useTabLinks,
   type TabId,
   type TabLinkGroup,
@@ -497,7 +497,7 @@ const pdfPagesState = reactive<Record<string, number>>({
   'reading/Shannon 1948.pdf': PDF_DOCS['reading/Shannon 1948.pdf']!.firstPage,
 })
 
-/* ------------------- Real `RecordingTab` (Media Player) ------------------- */
+/* ------------------- Real `RecordingTab` (Media Viewer) ------------------- */
 const LECTURE_MEDIA_URL = '/lecture-4.mp3'
 
 const lectureCues = ref<Cue[]>([
@@ -562,18 +562,6 @@ const lectureCues = ref<Cue[]>([
     text: 'And yet there was but one woman to him, and that woman was the late Irene Adler, of dubious and questionable memory.',
   },
 ])
-
-const TRANSCRIBED_MENU: readonly MediaMenuEntry[] = [
-  {
-    pluginId: 'md.numen.engines.transcription',
-    pluginName: 'Transcription',
-    command: DELETE_TRANSCRIPT,
-    title: 'Delete transcript',
-    icon: '',
-    versionId: 'md.numen.engines.transcription/lecture-4',
-    isLive: true,
-  },
-]
 
 const YOUTUBE_EMBED_URL = 'https://www.youtube-nocookie.com/embed/kYXlvBiv9V4?enablejsapi=1&hl=en'
 const youtubeCues = ref<Cue[]>([
@@ -709,7 +697,7 @@ const youtubeCues = ref<Cue[]>([
   },
 ])
 
-const demoAudioPlayer = createAudioPlayer()
+const demoAudioPlayer = createMediaPlayer()
 
 function getCuesRefForPath(path: string) {
   return path === YOUTUBE_LINK_PATH ? youtubeCues : lectureCues
@@ -718,9 +706,10 @@ function getCuesRefForPath(path: string) {
 const demoRecordings: Recordings = {
   getSource: async (path) =>
     path === YOUTUBE_LINK_PATH
-      ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html' }
-      : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg' },
+      ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html', pageUrl: '' }
+      : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg', pageUrl: '' },
   readTranscript: async (path) => getCuesRefForPath(path).value,
+  readArticle: async () => '',
   writeTranscript: async (path, text) => {
     const targetCues = getCuesRefForPath(path)
     const paragraphs = text.split(/\n\n+/).filter(Boolean)
@@ -744,10 +733,8 @@ const demoRecordings: Recordings = {
     }
     return list[0]?.from ?? 0
   },
-  getMenu: async () => TRANSCRIBED_MENU,
-  runMenuEntry: async (path) => {
-    getCuesRefForPath(path).value = []
-  },
+  canCreateText: async () => false,
+  createText: async () => undefined,
   watchWork: (_path, onChange) => {
     onChange(false)
     return () => {}
@@ -1140,12 +1127,72 @@ const tabs = computed<readonly Tab[]>(() =>
   }),
 )
 
-const linkMenu = useTabLinkMenu({
-  tabLinks,
-  getTabs: () => tabs.value,
-  getKind: getKindOfTab,
-  isLinkable: isTabLinkable,
+const UNLINK_ITEM = '__unlink__'
+
+const menuTab = ref<string | null>(null)
+const menuAt = ref({ x: 0, y: 0 })
+
+const menuTabs = computed(() => getAllTabs(tabs.value, tabLinks.tabs))
+
+const menuEligibleTabs = computed(() =>
+  menuTab.value === null
+    ? []
+    : getEligibleTabs({
+        from: menuTab.value,
+        tabs: menuTabs.value,
+        getKind: getKindOfTab,
+        isLinkable: isTabLinkable,
+        getGroupOf: tabLinks.getGroupOf,
+      }),
+)
+
+const menuItems = computed<MenuItem[]>(() => {
+  const from = menuTab.value
+  if (from === null) return []
+  const items: MenuItem[] = []
+  if (tabLinks.getGroupOf(from) !== null) {
+    const titles = tabLinks
+      .getLinkedTargets(from)
+      .map((id) => menuTabs.value.find((tab) => tab.id === id)?.title ?? id)
+    items.push({
+      id: UNLINK_ITEM,
+      text: 'Unlink tab',
+      ...(titles.length > 0 ? { detail: `Linked with ${titles.join(', ')}` } : {}),
+    })
+  }
+  for (const tab of menuEligibleTabs.value) {
+    items.push({
+      id: tab.id,
+      text: tab.title || tab.kind,
+      detail: tab.kind,
+      group: 'Link with tab',
+    })
+  }
+  return items
 })
+
+function getMenuIcon(id: string): Component | null {
+  if (id === UNLINK_ITEM) return Link2Off
+  return menuEligibleTabs.value.some((tab) => tab.id === id) ? getTabIcon(id) : null
+}
+
+function openTabMenu(tabId: string, at: { x: number; y: number }) {
+  if (!isTabLinkable(tabId)) return
+  menuTab.value = tabId
+  menuAt.value = at
+}
+
+function closeTabMenu() {
+  menuTab.value = null
+}
+
+function onChooseTabMenu(id: string) {
+  const from = menuTab.value
+  if (from === null) return
+  if (id === UNLINK_ITEM) tabLinks.unlinkTab(from)
+  else tabLinks.linkTabs(from, id)
+  closeTabMenu()
+}
 
 let isSyncingTabs = false
 
@@ -1196,11 +1243,72 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.openFiles]: FolderTree,
   [DEMO_COMMAND.openAgent]: Bot,
   [DEMO_COMMAND.askAgent]: Bot,
-  new: Plus,
-  relation: Waypoints,
-  newNote: FilePlus,
-  newFolder: FolderPlus,
-  rename: PenLine,
+  [DEMO_COMMAND.newTreeNote]: FilePlus,
+  [DEMO_COMMAND.newTreeFolder]: FolderPlus,
+  [DEMO_COMMAND.renameTreeEntry]: PenLine,
+}
+
+const createMenuCommand = (command: string, title: string): SlotCommand => ({
+  kind: 'command',
+  key: `demo/command/${command}`,
+  pluginId: 'demo',
+  command,
+  title,
+  ...(COMMAND_ICONS[command] ? { icon: COMMAND_ICONS[command] } : {}),
+  shortcut: '',
+  hasItems: false,
+})
+
+const createMenuSeparator = (index: number): SlotSeparator => ({
+  kind: 'separator',
+  key: `demo/separator/${index}`,
+})
+
+/** The entries of the menu on a node of the plex. */
+const PLEX_MENU: readonly SlotItem[] = [
+  createMenuCommand(DEMO_COMMAND.openNote, 'Open note'),
+  createMenuSeparator(1),
+  createMenuCommand(DEMO_COMMAND.showNoteInPlex, 'Show note in plex'),
+  createMenuCommand(DEMO_COMMAND.revealNote, 'Show note in file tree'),
+  createMenuCommand(DEMO_COMMAND.askAgent, 'Ask agent about note'),
+  createMenuSeparator(2),
+  createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path'),
+  createMenuSeparator(3),
+  createMenuCommand(DEMO_COMMAND.createChildNote, 'Create child note'),
+  createMenuCommand(DEMO_COMMAND.createParentNote, 'Create parent note'),
+  createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
+  createMenuCommand(DEMO_COMMAND.renameNote, 'Rename note'),
+  createMenuSeparator(4),
+  createMenuCommand(DEMO_COMMAND.trashNote, 'Move note to trash'),
+]
+
+/** The New submenu the file tree declares, with what the tree makes. */
+const NEW_SUBMENU: SlotItem = {
+  kind: 'submenu',
+  key: 'demo/submenu/fileTree.new',
+  pluginId: 'demo',
+  submenu: 'fileTree.new',
+  title: 'New',
+  icon: Plus,
+  entries: [
+    createMenuCommand(DEMO_COMMAND.newTreeNote, 'Create note here'),
+    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
+  ],
+}
+
+/** The submenu of the relations the plex declares. */
+const RELATION_SUBMENU: SlotItem = {
+  kind: 'submenu',
+  key: 'demo/submenu/plex.relation',
+  pluginId: 'demo',
+  submenu: 'plex.relation',
+  title: 'Relation',
+  icon: Waypoints,
+  entries: [
+    createMenuCommand(DEMO_COMMAND.createChildNote, 'Create child note'),
+    createMenuCommand(DEMO_COMMAND.createParentNote, 'Create parent note'),
+    createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
+  ],
 }
 
 function listFolderEntries(folder: string): readonly VaultEntry[] {
@@ -1288,47 +1396,49 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
   return result
 }
 
-function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] {
-  const canRemoveEntry = Boolean(notesByPath[entry.path])
-  const removeItem: MenuEntry = {
-    id: DEMO_COMMAND.trashNote,
-    text: entry.isNote && !isSeveral ? 'Move note to trash' : 'Remove',
-    group: 'remove',
+function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
+  const entry = fileTree.getEntryAt(target.path)
+  const removeItem = createMenuCommand(
+    DEMO_COMMAND.trashNote,
+    entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
+  )
+  const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
+  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename file')
+  if (target.path === ROOT) return [NEW_SUBMENU]
+  if (target.others.length > 0) {
+    const selected = [target.path, ...target.others]
+    return selected.every((p) => Boolean(notesByPath[p])) ? [removeItem] : []
   }
-  const copyItem: MenuEntry = {
-    id: DEMO_COMMAND.copyNotePath,
-    text: 'Copy note path',
-    group: 'file',
-  }
-  if (isSeveral) {
-    const selected = fileTree.selectedPaths.value
-    const allRemovable = selected.length > 0 && selected.every((p) => Boolean(notesByPath[p]))
-    return allRemovable ? [removeItem] : []
-  }
-  if (entry.isFolder) return [copyItem]
-  if (entry.isNote) {
-    const items: MenuEntry[] = [{ id: DEMO_COMMAND.openNote, text: 'Open note', group: 'open' }]
-    if (notesByPath[entry.path]) {
-      items.push({ id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'open' })
-    }
-    items.push(
+  if (!entry || entry.isFolder) return [NEW_SUBMENU, renameItem, copyItem]
+  if (!entry.isNote) {
+    return [
+      createMenuCommand(DEMO_COMMAND.openNote, 'Open the file'),
+      createMenuSeparator(1),
+      NEW_SUBMENU,
+      renameItem,
       copyItem,
-      {
-        id: 'relation',
-        text: 'Relation',
-        group: 'relation',
-        children: [
-          { id: DEMO_COMMAND.createChildNote, text: 'Create child note', group: 'relation' },
-          { id: DEMO_COMMAND.createParentNote, text: 'Create parent note', group: 'relation' },
-          { id: DEMO_COMMAND.createJumpNote, text: 'Create jump note', group: 'relation' },
-        ],
-      },
-      { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'agent' },
-    )
-    if (canRemoveEntry) items.push(removeItem)
-    return items
+    ]
   }
-  return [{ id: DEMO_COMMAND.openNote, text: 'Open the file', group: 'open' }, copyItem]
+  return [
+    createMenuCommand(DEMO_COMMAND.openNote, 'Open note'),
+    ...(notesByPath[target.path]
+      ? [createMenuCommand(DEMO_COMMAND.showNoteInPlex, 'Show note in plex')]
+      : []),
+    createMenuSeparator(1),
+    NEW_SUBMENU,
+    renameItem,
+    copyItem,
+    createMenuSeparator(2),
+    RELATION_SUBMENU,
+    createMenuSeparator(3),
+    createMenuCommand(DEMO_COMMAND.askAgent, 'Ask agent about note'),
+    ...(notesByPath[target.path] ? [createMenuSeparator(4), removeItem] : []),
+  ]
+}
+
+async function runMenuCommand(command: string, target: RowTarget): Promise<void> {
+  const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
+  for (const p of paths) runVaultCommand(command, p, 'files')
 }
 
 const fileTree = createFileTree({
@@ -1401,17 +1511,8 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
       syncPathFromTab(FILES_TAB, path, entry.name)
     }
   },
-  runCommand: (command, paths) => {
-    if (command === DEMO_COMMAND.trashNote) {
-      for (const p of paths) {
-        runVaultCommand(command, p, 'files')
-      }
-      return
-    }
-    const first = paths[0]
-    if (!first) return
-    runVaultCommand(command, first, 'files')
-  },
+  getMenuEntries: (target) => getMenuEntriesForRow(target),
+  runCommand: (command, target) => runMenuCommand(command, target),
   movePath: async (from, to) => {
     if (notesByPath[from]) {
       rekeySingleNotePath(from, to)
@@ -1455,8 +1556,6 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
   canDropData: () => false,
   dropData: async () => [],
   showError: () => {},
-  getPathCommands: getPathCommandsForRow,
-  getCommandIcon: (id) => COMMAND_ICONS[id] ?? null,
   getEntryIcon: (entry, isOpen) => {
     if (entry.isFolder) return isOpen ? FolderOpen : Folder
     if (entry.type === 'deck') return Layers
@@ -1729,16 +1828,12 @@ const plexState = createPlexTab(plexView, {
     }
     return map
   },
-  runCommand: (command, path) => {
-    runVaultCommand(command, path, 'plex')
+  getMenuEntries: () => PLEX_MENU,
+  listItems: async () => [],
+  runCommand: async (command, target) => {
+    runVaultCommand(command, target.path, 'plex')
   },
-  getNoteCommands: () => [
-    { id: DEMO_COMMAND.revealNote, text: 'Show note in file tree', group: 'note' },
-    { id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'note' },
-    { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'note' },
-  ],
-  getCommandIcon: (id) => COMMAND_ICONS[id] ?? null,
-  getNoteIcon: (type) => (type === 'deck' ? Layers : FileText),
+  getNoteIcon: (tabKind) => (tabKind === 'deck' ? Layers : FileText),
   openingPath: ref('physics/Entropy.md'),
   readOpeningPath: async () => 'physics/Entropy.md',
   dragged: draggedPaths,
@@ -2189,7 +2284,7 @@ function onCloseWorkspaceTab(tabId: string) {
 }
 
 function onTabContextMenu(tabId: string, pos: { x: number; y: number }) {
-  linkMenu.open(tabId, pos)
+  openTabMenu(tabId, pos)
 }
 
 function onGoBookPage(pdfPath: string, targetPage: number) {
@@ -2403,7 +2498,14 @@ function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' |
 }
 
 function runVaultCommand(command: string, targetPath: string, source: 'files' | 'plex' = 'plex') {
-  if (command === DEMO_COMMAND.openNote) {
+  const folder = targetPath === ROOT ? null : targetPath
+  if (command === DEMO_COMMAND.newTreeNote) {
+    void filesState.createNote(folder)
+  } else if (command === DEMO_COMMAND.newTreeFolder) {
+    void filesState.createFolder(folder)
+  } else if (command === DEMO_COMMAND.renameTreeEntry) {
+    if (folder !== null) filesState.setRenamingPath(targetPath)
+  } else if (command === DEMO_COMMAND.openNote) {
     openVaultFile(targetPath, 'current')
   } else if (command === DEMO_COMMAND.openNoteBeside) {
     openVaultFile(targetPath, 'split')
@@ -2560,18 +2662,25 @@ function getTabIcon(id: string): Component | null {
       </template>
     </WorkspaceLayout>
 
-    <TabLinkMenu
-      v-if="linkMenu.tabId.value"
-      :tab-id="linkMenu.tabId.value"
-      :eligible-tabs="linkMenu.eligibleTabs.value"
-      :at="linkMenu.at.value"
-      :is-linked="linkMenu.isLinked.value"
-      :linked-target-title="linkMenu.linkedTargetTitle.value"
-      :get-tab-icon="getTabIcon"
-      @link="linkMenu.link"
-      @unlink="linkMenu.unlink"
-      @close="linkMenu.close"
-    />
+    <Menu
+      v-if="menuTab"
+      :items="menuItems"
+      :at="menuAt"
+      has-groups
+      is-open
+      @choose="onChooseTabMenu"
+      @dismiss="closeTabMenu"
+    >
+      <template #icon="{ id }">
+        <component
+          :is="getMenuIcon(id)"
+          v-if="getMenuIcon(id)"
+          class="tab-menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+      <template #silence>No open tabs to link with</template>
+    </Menu>
 
     <Palette
       v-if="activePanel"
@@ -2598,6 +2707,12 @@ function getTabIcon(id: string): Component | null {
 </template>
 
 <style scoped>
+.tab-menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.75;
+}
+
 .demo-window {
   position: relative;
   width: 100%;

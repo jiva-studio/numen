@@ -2,12 +2,13 @@ package container_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 

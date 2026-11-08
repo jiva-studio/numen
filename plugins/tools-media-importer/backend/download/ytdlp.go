@@ -206,17 +206,24 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cue
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (result Copy, err error) {
+// soundFormat is the sound alone, in an MPEG-4 container where the site has one.
+const soundFormat = "bestaudio[acodec^=mp4a]/bestaudio"
+
+func getFormatArguments(media Media) []string {
+	if media == MediaAudio {
+		return []string{"-f", soundFormat}
+	}
+	return []string{"-f", copyFormat, "--merge-output-format", "mp4"}
+}
+
+func (v *ytDLP) Download(ctx context.Context, target string, media Media, into io.Writer) (result Copy, err error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
 	}
 	defer func() { err = errors.Join(err, os.RemoveAll(folder)) }()
 
-	arguments := []string{
-		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
-		"-o", filepath.Join(folder, "copy.%(ext)s"),
-	}
+	arguments := append(getFormatArguments(media), "--no-playlist", "-o", filepath.Join(folder, "copy.%(ext)s"))
 	arguments = append(arguments, v.getTarget(target)...)
 	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)

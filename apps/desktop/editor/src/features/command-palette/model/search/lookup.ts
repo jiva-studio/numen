@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { PlacedCommand, Selector } from '@numen/plugin-host'
+import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
 import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
@@ -18,6 +18,7 @@ export interface NameMatch {
   line: number
   at: readonly TextRange[]
   type: NoteType
+  tabKind?: string
 }
 
 /** One passage: the text around a hit, and where it came from. */
@@ -26,6 +27,7 @@ export interface Passage {
   title: string
   isNote: boolean
   type: NoteType
+  tabKind?: string
   selector: Selector | null
   text: string
   start: number
@@ -34,9 +36,9 @@ export interface Passage {
   at: readonly TextRange[]
 }
 
-/** The entries plugins place in the menu of a search result, in the order they are drawn. */
+/** The entries of the slot of a search result, over the note of a result, in the order drawn. */
 export interface SearchMenuDeps {
-  getEntries(): readonly PlacedCommand[]
+  getEntries(target: RunTarget): readonly SlotItem[]
 }
 
 /**
@@ -50,6 +52,7 @@ export interface SearchHit {
   length: number
   actionIds: readonly string[]
   type: NoteType | null
+  tabKind?: string
   selector: Selector | null
   isCreation?: boolean
 }
@@ -70,8 +73,10 @@ function createNoteActions(
   return { actions, actionIds: actions.map((one) => one.id) }
 }
 
-function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
-  return entries.map((one) => ({ id: one.command, text: one.title }))
+function createMenuActions(entries: readonly SlotItem[]): readonly PaletteAction[] {
+  return entries.flatMap((one) =>
+    one.kind === 'command' ? [{ id: one.command, text: one.title }] : [],
+  )
 }
 
 /**
@@ -81,7 +86,7 @@ function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteA
 export function createNameItem(
   one: NameMatch,
   words: Words,
-  entries: readonly PlacedCommand[] = [],
+  entries: readonly SlotItem[] = [],
 ): SearchRow {
   const menu = createMenuActions(entries)
   const atHeading = createNoteActions(words.readAt, menu)
@@ -103,6 +108,7 @@ export function createNameItem(
           length: 0,
           actionIds: atHeading.actionIds,
           type: one.type,
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
         },
       }
@@ -121,6 +127,7 @@ export function createNameItem(
           length: 0,
           actionIds: byName.actionIds,
           type: one.type,
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
         },
       }
@@ -130,7 +137,7 @@ export function createPassageItem(
   group: string,
   one: Passage,
   words: Words,
-  entries: readonly PlacedCommand[] = [],
+  entries: readonly SlotItem[] = [],
 ): SearchRow {
   const note = createNoteActions(words.read, createMenuActions(entries))
   const document = [{ id: COMMAND.openFile, text: words.readDocument }]
@@ -150,6 +157,7 @@ export function createPassageItem(
       length: one.length,
       actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
       type: one.isNote ? one.type : null,
+      ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
       selector: one.isNote ? null : one.selector,
     },
   }

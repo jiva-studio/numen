@@ -3,7 +3,7 @@ import {
   getPaletteField,
   openVaultFile,
   openWorkspace,
-  runCommand,
+  runCommandOverItem,
   waitForPassage,
 } from '../support/workspace.js'
 
@@ -20,7 +20,7 @@ test.describe('A scanned document', () => {
     const tab = await openVaultFile(page, 'assets', 'regenerative-braking.pdf')
     await expect(tab.getByRole('img', { name: 'Page 1' })).toBeVisible()
 
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
 
     const passage = await waitForPassage(
       page,
@@ -35,13 +35,13 @@ test.describe('A scanned document', () => {
     await expect(reader.locator('.reader__highlight').first()).toBeVisible()
   })
 
-  test('is offered the recognise command of the OCR plugin once', async ({ page }) => {
+  test('is offered the shared command of creating text once', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'regenerative-braking.pdf')
 
     await page.keyboard.press('Control+p')
-    await getPaletteField(page).fill('Recognise')
+    await getPaletteField(page).fill('Create text')
 
-    await expect(page.getByRole('option', { name: /^Recognise text$/ })).toHaveCount(1)
+    await expect(page.getByRole('option', { name: /^Create text$/ })).toHaveCount(1)
   })
 })

@@ -1,4 +1,4 @@
-// Package vault wires vaults, opening, notes, text versions, index, open vaults and playback.
+// Package vault wires vaults, opening, notes, text versions, index and open vaults.
 package vault
 
 import (
@@ -25,7 +25,7 @@ import (
 // Vaults is what everything that acts on the vault list and vaults is called.
 type Vaults = vaultusecase.Scenarios
 
-// Config wires vaults, opening, notes, text versions, index, open vaults and playback.
+// Config wires vaults, opening, notes, text versions, index and open vaults.
 type Config struct {
 	IndexPath    string
 	RegistryPath string

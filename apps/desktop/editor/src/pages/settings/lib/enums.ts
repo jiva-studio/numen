@@ -4,6 +4,7 @@
  * the placement of secrets alongside the settings they belong to.
  */
 import type { SelectChoice } from '@numen/ui'
+import { createWhenReader } from '@numen/plugin-host'
 import type {
   PluginInfo,
   PluginSecret,
@@ -23,12 +24,19 @@ export interface EnumFields {
   getSecretsAfter(settingKey: string): readonly PluginSecret[]
 }
 
-/** Converts plugin setting options into select choices, preserving option detail. */
-export function toSelectChoices(options: readonly PluginSettingOption[]): readonly SelectChoice[] {
+/**
+ * Converts plugin setting options into select choices, preserving option detail. An option that
+ * is not offered is a disabled choice.
+ */
+export function toSelectChoices(
+  options: readonly PluginSettingOption[],
+  isAvailable: (option: PluginSettingOption) => boolean = () => true,
+): readonly SelectChoice[] {
   return options.map((one) => ({
     id: one.value,
     text: one.title || one.value,
     ...(one.detail ? { detail: one.detail } : {}),
+    ...(isAvailable(one) ? {} : { isDisabled: true }),
   }))
 }
 
@@ -81,12 +89,27 @@ export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,
   isRequested: (key: string) => boolean = () => false,
+  getPlatform: () => string = () => '',
 ): EnumFields {
+  const whenReader = createWhenReader()
+  /** An option with no condition, or one that cannot be read, is offered. */
+  const isAvailable = (option: PluginSettingOption): boolean =>
+    whenReader.getCondition(option.when)?.evaluate({ 'app.platform': getPlatform() }) ?? true
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
-  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting))
-  const getEnumValue = (setting: PluginSettingInfo) =>
-    toText(getValueInForce(setting, read, isRequested))
+  const getEnumChoices = (setting: PluginSettingInfo) =>
+    toSelectChoices(getEnumOptions(setting), isAvailable)
+  /**
+   * The value the select shows: the value in force, or the first offered option when the value in
+   * force is an option this platform does not offer. Showing it writes nothing.
+   */
+  const getEnumValue = (setting: PluginSettingInfo) => {
+    const value = toText(getValueInForce(setting, read, isRequested))
+    const options = getEnumOptions(setting)
+    const current = options.find((one) => one.value === value)
+    if (!current || isAvailable(current)) return value
+    return options.find(isAvailable)?.value ?? value
+  }
 
   const getShownSettings = () => getPlugin().settings.filter(isSettingShown)
 

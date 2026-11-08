@@ -1,16 +1,17 @@
 <script setup lang="ts">
 /**
- * The status bar indicator of a new release, and the popover with its details.
+ * The title bar indicator of a new release, and the popover with its details.
  */
-import { ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { Update } from './api/updater'
+import { getTooltip } from './model/tooltip'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
-import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
+  version: string
   update: Update | null
   platform: Platform
 }>()
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose)
 
@@ -59,16 +61,19 @@ function onDismiss() {
   <div v-if="update" ref="root" class="update-indicator">
     <button
       type="button"
+      tabindex="-1"
       class="update-indicator__trigger"
       :aria-expanded="isOpen"
-      :aria-label="words.indicatorLabel"
+      aria-haspopup="dialog"
+      :aria-label="tooltip"
+      :title="tooltip"
       @click="onToggle"
     >
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
 
     <UpdatePopover
-      v-if="isOpen"
+      v-if="isOpen && update"
       :update="update"
       :platform="platform"
       @close="onClose"

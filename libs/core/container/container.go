@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -83,6 +84,7 @@ type Resources struct {
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
 	secretGate      *secret.Gate
+	pluginChanges   *pluginchanges.Signals
 	subscribedHosts sync.Map
 }
 
@@ -93,6 +95,7 @@ func NewResources() *Resources {
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
+		pluginChanges: &pluginchanges.Signals{},
 		secretGate:    secret.NewGate(),
 	}
 }
@@ -113,7 +116,7 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &pluginchanges.Signals{}}
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -172,6 +175,7 @@ func (c Config) settings() settingswiring.Config {
 		SettingsFiles:    res.settingsFiles,
 		SettingEvents:    res.settingEvents,
 		SecretGate:       res.secretGate,
+		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
 		ErrorHandler:     c.handleError,
 		AgentProvider:    c.AgentProvider,
@@ -246,6 +250,9 @@ func (c Config) plugins() pluginswiring.Config {
 		KeyStore:              c.KeyStore,
 		SettingsFiles:         res.settingsFiles,
 		SecretGate:            res.secretGate,
+		PluginChanges:         res.pluginChanges,
+		TextVersions:          c.TextVersions,
+		ListAppSettings:       s.ListAppSettings,
 		Programs:              c.programs,
 		VaultReaders:          v.VaultReaders(),
 		VaultWriters:          v.VaultWriters(),

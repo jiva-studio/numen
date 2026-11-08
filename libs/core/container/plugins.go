@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 )
@@ -98,34 +99,46 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	if _, err := c.OpenPluginWork(ctx, db, v); err != nil {
+	_, work, err := c.openPluginWork(db, v)
+	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return c.GetPluginCommands().Run, db.Close, nil
+	return c.GetPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
 // OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
 // with no window, over the index given.
 func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
+	opened, _, err := c.openPluginWork(db, v)
+	return opened, err
+}
+
+func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func() error) func() error {
+	return func() error {
+		return errors.Join(work.WaitIdle(ctx), closeIndex())
+	}
+}
+
+func (c Config) openPluginWork(db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
 	c.SetPluginVaultPath(v.Path)
 	versions, err := c.NewTextVersions(db)
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
 	c.TextVersions = versions
 	registry, err := c.Registry()
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
 	pluginVault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
-	c.SetPluginWork(run.NewTasks(), &run.Lock{})
+	work := c.plugins().OpenPluginWork(run.NewTasks(), &run.Lock{})
 	c.SetPluginVault(pluginVault)
 	c.SetPluginTexts()
-	return c, nil
+	return c, work, nil
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
@@ -205,4 +218,17 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 // every task.
 func (c Config) GetSettingsAgent() agentport.Agent {
 	return c.plugins().GetSettingsAgent()
+}
+
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the
+// enabled plugins.
+func (c Config) OpenChooseTabKind() *tabkind.Choose {
+	return c.plugins().OpenChooseTabKind()
+}
+
+// WatchPluginChanges reports each time the plugin host applied a batch of settings, which enables,
+// disables and configures plugins, and each time it forgot the failure of a plugin, as after a retry
+// that succeeded. The returned function stops the reports.
+func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
+	return c.plugins().WatchPluginChanges()
 }

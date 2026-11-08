@@ -84,6 +84,10 @@ message WatchVaultChangesResponse {
   // The notes that were renamed by this application, each by where it was and
   // where it now is. A client showing one of them follows it there.
   repeated Move renamed = 3;
+
+  // Paths of the files whose text versions changed: a version was made or
+  // deleted, or became live or no longer live.
+  repeated string version_paths = 4;
 }
 
 // Move is a note that is no longer where it was. The bytes do not change on the

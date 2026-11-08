@@ -71,10 +71,6 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 	return c.settings().ModelsForProvider(c.agentProvider)
 }
 
-func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
-	return c.settings().ListAppSettingsOn(goos)
-}
-
 // SubscribeSettingChanges starts listening to the settings that change. See settingsport.ChangeSubscriber.
 func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()) {
 	return c.settings().SubscribeSettingChanges()

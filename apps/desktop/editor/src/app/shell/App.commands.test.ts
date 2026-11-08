@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { Layers, LayoutTemplate } from '@lucide/vue'
-import { registerNoteIcon } from '@/entities/note'
+import { registerTabKindIcon } from '@/entities/note'
 // The mocked modules stand before the plugins that reach them are imported.
 import {
   requests,
@@ -307,21 +307,24 @@ describe('a command requested for while the vault is being read', () => {
   it('carries the command out, and shows no corner card while the vault is being read', async () => {
     vaultState.isReady = false
     vaultState.opening = null
-    const window = await mountWindowWithPalette()
+    await mountWindowWithPalette()
 
     await pressNewNote()
     await type('Entropy')
     await press('Enter')
 
     expect(requests.made).toStrictEqual(['Entropy'])
-    expect(cards(window)).toStrictEqual([])
+    expect(cards()).toStrictEqual([])
   })
 })
 
 /** The window as rendered, driven like a user with nothing stubbed. */
 
 function drawPluginTypes(): void {
-  const unregister = [registerNoteIcon('sample', Layers), registerNoteIcon('form', LayoutTemplate)]
+  const unregister = [
+    registerTabKindIcon('sample', Layers),
+    registerTabKindIcon('form', LayoutTemplate),
+  ]
   onTestFinished(() => {
     for (const one of unregister) one()
   })
