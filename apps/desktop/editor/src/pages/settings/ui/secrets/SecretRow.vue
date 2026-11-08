@@ -79,7 +79,7 @@ function onChoose(id: string, opener: HTMLElement): void {
     <template #value>
       <SecretValueInput
         :label="words.secretValue(secret.name)"
-        :has-value="secret.hasValue"
+        :has-value="secret.hasValue === true"
         @commit="(value) => emit('write', value)"
       />
     </template>

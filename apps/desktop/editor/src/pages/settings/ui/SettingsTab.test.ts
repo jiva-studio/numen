@@ -122,6 +122,7 @@ const createTab = (
     renameSecret: vi.fn(),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    deleteSecretGroup: vi.fn(),
     moveSecret: vi.fn(),
     renameSecretGroup: vi.fn(),
     allowPluginSecret: vi.fn(),

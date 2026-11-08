@@ -22,6 +22,13 @@ export interface SettingsPort {
   writeSecret(id: string, value: string): Promise<void>
   /** A secret removed with its value and its permissions. */
   deleteSecret(id: string): Promise<void>
+  /** Every secret of a group removed with its values and its permissions. */
+  deleteSecretGroup(group: string): Promise<void>
+  /**
+   * For each secret id, whether its value is on this machine. The core reads the key store for
+   * each secret, so only the page of secrets asks.
+   */
+  listSecretStates(): Promise<ReadonlyMap<string, boolean>>
   /** A secret put before another one of its group; an empty `beforeId` puts it at the end. */
   moveSecret(id: string, beforeId: string): Promise<void>
   renameSecretGroup(group: string, name: string): Promise<void>

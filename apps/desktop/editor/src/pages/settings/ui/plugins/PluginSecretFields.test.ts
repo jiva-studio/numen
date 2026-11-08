@@ -9,7 +9,7 @@ import { getServiceInfo } from '@numen/core-client'
 import { mount } from '@vue/test-utils'
 import PluginDetail from './PluginDetail.vue'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
+import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
 import {
   click,
   dispose,
@@ -53,7 +53,10 @@ const MINE = secret('s00000005', 'Personal', 'travel')
 
 const mountDetail = (secrets = [WORK, HOME, CHAT, SPARE, MINE]) => {
   const initialPluginId = ref<string | null>(PLUGIN)
-  const installation = createInstallation({ plugins: ref([plugin]), secrets: ref(secrets) })
+  const installation = createInstallation({
+    plugins: ref([plugin]),
+    ...createSecretAnswer([plugin], secrets),
+  })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
     props: { state: { installation, initialPluginId } },
@@ -230,7 +233,10 @@ describe('the secret field of a declaration', () => {
 
 describe('the page of a plugin', () => {
   it('still mounts on its own with the secret fields of its declarations', () => {
-    const installation = createInstallation({ plugins: ref([plugin]), secrets: ref([WORK]) })
+    const installation = createInstallation({
+      plugins: ref([plugin]),
+      ...createSecretAnswer([plugin], [WORK]),
+    })
     const wrapper = mount(PluginDetail, {
       attachTo: document.body,
       props: { state: { installation }, plugin },

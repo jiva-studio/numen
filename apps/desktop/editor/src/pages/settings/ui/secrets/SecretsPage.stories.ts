@@ -7,6 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
+import { createSecretAnswer } from '@/testing/installation'
 import type { Installation } from '../../types'
 import SecretsPage from './SecretsPage.vue'
 
@@ -33,6 +34,7 @@ const createInstallation = (): Installation => ({
   renameSecret: () => undefined,
   writeSecret: () => undefined,
   deleteSecret: () => undefined,
+  deleteSecretGroup: () => undefined,
   moveSecret: () => undefined,
   renameSecretGroup: () => undefined,
   allowPluginSecret: () => undefined,
@@ -41,7 +43,7 @@ const createInstallation = (): Installation => ({
   choosePath: async () => '',
   file: ref('/numen.json'),
   plugins: ref(plugins),
-  secrets: ref([
+  ...createSecretAnswer(plugins, [
     {
       id: 's00000001',
       name: 'Work',
@@ -132,7 +134,7 @@ export const NewSecretLooksLikeSaved: Story = {
 const emptyInstallation = (): Installation => ({
   ...createInstallation(),
   plugins: ref([]),
-  secrets: ref([]),
+  ...createSecretAnswer([], []),
 })
 
 const renderEmpty = () => ({

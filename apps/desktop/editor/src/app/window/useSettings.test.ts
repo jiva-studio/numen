@@ -31,6 +31,8 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
     allowPluginSecret: vi.fn(async () => undefined),
     denyPluginSecret: vi.fn(async () => undefined),
     deleteSecret: vi.fn(async () => undefined),
+    deleteSecretGroup: vi.fn(async () => undefined),
+    listSecretStates: vi.fn(async () => new Map<string, boolean>()),
     retryPlugin: vi.fn(async () => ''),
     choosePluginPath: vi.fn(async () => ({ path: '/picked', isChosen: true, problem: '' })),
     getPluginData: vi.fn(async () => 5),

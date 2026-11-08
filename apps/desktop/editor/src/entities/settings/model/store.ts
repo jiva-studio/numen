@@ -10,7 +10,8 @@ import type {
   Model,
   PluginInfo,
   PluginSettingInfo,
-  Secret,
+  SecretMenu,
+  SecretSection,
   SettingEdit,
 } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -31,7 +32,8 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
     readonly app?: readonly PluginSettingInfo[] | undefined
-    readonly secrets?: readonly Secret[] | undefined
+    readonly secretSections?: readonly SecretSection[] | undefined
+    readonly secretMenus?: readonly SecretMenu[] | undefined
     readonly credentialsPath?: string | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
@@ -121,7 +123,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
-  const secrets = shallowRef<readonly Secret[]>([])
+  const secretSections = shallowRef<readonly SecretSection[]>([])
+  const secretMenus = shallowRef<readonly SecretMenu[]>([])
   const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
@@ -140,7 +143,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
-      secrets.value = answer.secrets ?? []
+      secretSections.value = answer.secretSections ?? []
+      secretMenus.value = answer.secretMenus ?? []
       credentialsPath.value = answer.credentialsPath ?? ''
     })
   }
@@ -197,7 +201,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     models,
     plugins,
     app,
-    secrets,
+    secretSections,
+    secretMenus,
     credentialsPath,
     start,
     getSetting,

@@ -28,7 +28,22 @@ export interface Secret {
   readonly name: string
   readonly group: string
   readonly allowed: readonly SecretPermission[]
-  readonly hasValue: boolean
+  readonly hasValue?: boolean
+}
+
+/** The secrets of one group in priority order, as the core orders the page of secrets. */
+export interface SecretSection {
+  readonly group: string
+  readonly isAsked: boolean
+  readonly secrets: readonly Secret[]
+}
+
+/** The secrets the menu of one secret declaration of a plugin offers, in order. */
+export interface SecretMenu {
+  readonly pluginId: string
+  readonly name: string
+  readonly group: string
+  readonly secrets: readonly Secret[]
 }
 
 /** One setting of the configuration file, and the JSON value to set. */
@@ -65,6 +80,7 @@ export interface Configuration {
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
-  readonly secrets?: readonly Secret[] | undefined
+  readonly secretSections?: readonly SecretSection[] | undefined
+  readonly secretMenus?: readonly SecretMenu[] | undefined
   readonly credentialsPath?: string | undefined
 }

@@ -13,6 +13,8 @@ const request = vi.hoisted(() => ({
   renameSecret: vi.fn(),
   writeSecret: vi.fn(),
   deleteSecret: vi.fn(),
+  deleteSecretGroup: vi.fn(),
+  listSecretStates: vi.fn(),
   moveSecret: vi.fn(),
   renameSecretGroup: vi.fn(),
   allowPluginSecret: vi.fn(),
@@ -73,7 +75,8 @@ describe('every setting', () => {
       ],
       plugins: [],
       app: [],
-      secrets: [],
+      secretSections: [],
+      secretMenus: [],
       credentialsPath: '',
     })
   })
@@ -211,22 +214,39 @@ describe('every setting', () => {
 })
 
 describe('the secrets', () => {
-  it('arrive in list order with their permissions, whether a value is on this machine, and the fallback file path', async () => {
+  it('arrive as the sections the core ordered, with their permissions, the menus by id, and the fallback file path', async () => {
     request.getSettings.mockResolvedValue(
       answer(
         {},
         {
-          secrets: [
+          secretSections: [
             {
-              id: 's0a1b2c3d',
-              name: 'Work',
               group: 'openrouter',
-              allowed: [
-                { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', extra: 1 },
+              isAsked: true,
+              secrets: [
+                {
+                  id: 's0a1b2c3d',
+                  name: 'Work',
+                  group: 'openrouter',
+                  allowed: [
+                    { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', extra: 1 },
+                  ],
+                },
               ],
-              hasValue: true,
             },
-            { id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [], hasValue: false },
+            {
+              group: 'work',
+              isAsked: false,
+              secrets: [{ id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }],
+            },
+          ],
+          secretMenus: [
+            {
+              pluginId: 'sample.plugin',
+              name: 'apiKey',
+              group: 'openrouter',
+              secretIds: ['s0a1b2c3d', 's0e5f6a7b'],
+            },
           ],
           credentialsPath: '/config/numen/credentials/credentials.json',
         },
@@ -235,15 +255,19 @@ describe('the secrets', () => {
 
     const got = await core.getSettings()
 
-    expect(got.secrets).toStrictEqual([
-      {
-        id: 's0a1b2c3d',
-        name: 'Work',
-        group: 'openrouter',
-        allowed: [{ pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' }],
-        hasValue: true,
-      },
-      { id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [], hasValue: false },
+    const work = {
+      id: 's0a1b2c3d',
+      name: 'Work',
+      group: 'openrouter',
+      allowed: [{ pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' }],
+    }
+    const home = { id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }
+    expect(got.secretSections).toStrictEqual([
+      { group: 'openrouter', isAsked: true, secrets: [work] },
+      { group: 'work', isAsked: false, secrets: [home] },
+    ])
+    expect(got.secretMenus).toStrictEqual([
+      { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', secrets: [work, home] },
     ])
     expect(got.credentialsPath).toBe('/config/numen/credentials/credentials.json')
   })
@@ -252,10 +276,33 @@ describe('the secrets', () => {
     request.getSettings.mockResolvedValue(
       answer(
         {},
-        { secrets: [{ id: 's0a1b2c3d', name: 'Work', group: 'g', allowed: [], hasValue: true }] },
+        {
+          secretSections: [
+            {
+              group: 'g',
+              isAsked: false,
+              secrets: [{ id: 's0a1b2c3d', name: 'Work', group: 'g', allowed: [] }],
+            },
+          ],
+        },
       ),
     )
     expect(JSON.stringify(await core.getSettings())).not.toMatch(/value-typed-once/)
+  })
+
+  it('have their states read by a call of their own', async () => {
+    request.listSecretStates.mockResolvedValue({
+      states: [
+        { id: 's0a1b2c3d', hasValue: true },
+        { id: 's0e5f6a7b', hasValue: false },
+      ],
+    })
+    expect(await core.listSecretStates()).toStrictEqual(
+      new Map([
+        ['s0a1b2c3d', true],
+        ['s0e5f6a7b', false],
+      ]),
+    )
   })
 })
 
@@ -280,6 +327,12 @@ describe('an operation on a secret', () => {
       { id: 's0a1b2c3d', value: 'value-typed-once' },
     ],
     ['deleteSecret', () => core.deleteSecret('s0a1b2c3d'), 'deleteSecret', { id: 's0a1b2c3d' }],
+    [
+      'deleteSecretGroup',
+      () => core.deleteSecretGroup('work'),
+      'deleteSecretGroup',
+      { group: 'work' },
+    ],
     [
       'moveSecret',
       () => core.moveSecret('s0a1b2c3d', 's0e5f6a7b'),

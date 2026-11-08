@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginInfo } from '@/testing/installation'
+import { createPluginInfo, createSecretAnswer } from '@/testing/installation'
 import {
-  createSecretSections,
+  createPageSections,
   getMenuSecrets,
   getSectionDeclarations,
   getDeclarations,
@@ -26,34 +26,65 @@ const secret = (id: string, name: string, group: string) => ({
   hasValue: true,
 })
 
-describe('the sections of the secrets', () => {
-  it('lists plugin groups by name, then person groups by name, and keeps a plugin group with no secret', () => {
-    const sections = createSecretSections(
-      [plugin],
-      [secret('s1', 'a', 'zeta'), secret('s2', 'b', 'alpha'), secret('s3', 'c', 'openrouter')],
-    )
+const WORK = secret('s1', 'Work', 'openrouter')
+const CHAT = secret('s2', 'Chat', 'openai')
+
+describe('the sections of the page', () => {
+  const core = createSecretAnswer(
+    [plugin],
+    [secret('s1', 'a', 'zeta'), secret('s2', 'b', 'alpha'), secret('s3', 'c', 'openrouter')],
+  )
+
+  it('keep the order the core gave and add the groups of the window after them', () => {
+    const sections = createPageSections(core.secretSections?.value ?? [], ['mine'], new Map())
     expect(sections.map((one) => [one.group, one.isAsked, one.secrets.length])).toStrictEqual([
       ['openai', true, 0],
       ['openrouter', true, 1],
       ['alpha', false, 1],
       ['zeta', false, 1],
+      ['mine', false, 0],
     ])
   })
 
-  it('order names by their bytes, uppercase before lowercase', () => {
-    const sections = createSecretSections(
+  it('get the state of each value, and none for a secret with no state', () => {
+    const sections = createPageSections(
+      core.secretSections?.value ?? [],
       [],
-      [secret('s1', 'a', 'a'), secret('s2', 'b', 'B'), secret('s3', 'c', 'ab')],
+      new Map([['s1', true]]),
     )
-    expect(sections.map((one) => one.group)).toStrictEqual(['B', 'a', 'ab'])
+    const secrets = sections.flatMap((one) => one.secrets)
+    expect(secrets.map((one) => [one.id, one.hasValue])).toStrictEqual([
+      ['s3', false],
+      ['s2', false],
+      ['s1', true],
+    ])
+  })
+
+  it('list a group of the window once, and not where the core has it', () => {
+    const sections = createPageSections(
+      core.secretSections?.value ?? [],
+      ['alpha', 'new', 'new'],
+      new Map(),
+    )
+    expect(sections.map((one) => one.group)).toStrictEqual([
+      'openai',
+      'openrouter',
+      'alpha',
+      'zeta',
+      'new',
+    ])
   })
 })
 
 describe('the menu of a declaration', () => {
-  const sections = createSecretSections(
+  const answer = createSecretAnswer(
     [plugin],
     [secret('s1', 'Work', 'openrouter'), secret('s2', 'Chat', 'openai'), secret('s3', 'Mine', 'x')],
   )
+  const sections = answer.secretSections?.value ?? []
+  const menus = [
+    { pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter', secrets: [WORK, CHAT] },
+  ]
   const declaration = (group: string): Declaration => ({
     pluginId: 'md.numen.sample',
     pluginName: 'Sample',
@@ -63,18 +94,15 @@ describe('the menu of a declaration', () => {
     description: '',
   })
 
-  it('puts the secrets of the declared group first', () => {
-    expect(
-      getMenuSecrets(sections, declaration('openrouter')).map((one) => one.name),
-    ).toStrictEqual(['Work', 'Chat', 'Mine'])
+  it('is the menu the core gave for the plugin, name and group, in its order', () => {
+    expect(getMenuSecrets(menus, declaration('openrouter')).map((one) => one.name)).toStrictEqual([
+      'Work',
+      'Chat',
+    ])
   })
 
-  it('keeps the order of the page for a declaration with no group', () => {
-    expect(getMenuSecrets(sections, declaration('')).map((one) => one.name)).toStrictEqual([
-      'Chat',
-      'Work',
-      'Mine',
-    ])
+  it('is empty for a declaration the core gave no menu for', () => {
+    expect(getMenuSecrets(menus, declaration(''))).toStrictEqual([])
   })
 
   it('reports whether the declared group has a secret', () => {
@@ -134,15 +162,5 @@ describe('the declarations of a section', () => {
     expect(
       getSectionDeclarations([...all].reverse(), 'openai').map((one) => one.description),
     ).toStrictEqual(['A token', 'Another key'])
-  })
-})
-
-describe('the sections with groups the person made and left empty', () => {
-  it('list them with the groups of the secrets, once', () => {
-    const sections = createSecretSections([], [secret('s1', 'a', 'beta')], ['alpha', 'beta'])
-    expect(sections.map((one) => [one.group, one.secrets.length])).toStrictEqual([
-      ['alpha', 0],
-      ['beta', 1],
-    ])
   })
 })

@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
-import { createSecretSections, getDeclaration } from '../../lib/secretSections'
+import { getDeclaration } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
 import { SecretField } from '../secret-field'
 
@@ -18,12 +18,8 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const sections = computed(() =>
-  createSecretSections(
-    installation.value.plugins?.value ?? [],
-    installation.value.secrets?.value ?? [],
-  ),
-)
+const sections = computed(() => installation.value.secretSections?.value ?? [])
+const menus = computed(() => installation.value.secretMenus?.value ?? [])
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(secret: PluginSecret, chosen: Secret, isAllowed: boolean): void {
   const { pluginId, name, group } = getDeclaration(props.plugin, secret)
@@ -46,6 +42,7 @@ function onOpenSecrets(): void {
     :detail="secret.description"
     :declaration="getDeclaration(plugin, secret)"
     :sections="sections"
+    :menus="menus"
     @toggle="(chosen, isAllowed) => onToggle(secret, chosen, isAllowed)"
     @open-secrets="onOpenSecrets"
   />

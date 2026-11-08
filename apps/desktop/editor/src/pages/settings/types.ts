@@ -7,7 +7,14 @@
  */
 import type { Ref } from 'vue'
 import type { CatalogEntry } from '@numen/core-client'
-import type { Model, PluginInfo, PluginSettingInfo, Secret, SettingEdit } from '@/entities/settings'
+import type {
+  Model,
+  PluginInfo,
+  PluginSettingInfo,
+  SecretMenu,
+  SecretSection,
+  SettingEdit,
+} from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
@@ -34,6 +41,7 @@ export interface Installation {
   renameSecret(id: string, name: string): void
   writeSecret(id: string, value: string): void
   deleteSecret(id: string): void
+  deleteSecretGroup(group: string): void
   /** Puts a secret before another one of its group, or at the end of the group where `beforeId` is empty. */
   moveSecret(id: string, beforeId: string): void
   renameSecretGroup(group: string, name: string): void
@@ -66,7 +74,11 @@ export interface Installation {
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
-  readonly secrets?: Readonly<Ref<readonly Secret[]>>
+  readonly secretSections?: Readonly<Ref<readonly SecretSection[]>>
+  readonly secretMenus?: Readonly<Ref<readonly SecretMenu[]>>
+  readonly secretStates?: Readonly<Ref<ReadonlyMap<string, boolean>>>
+  /** Reads which secrets have a value. Only the page of secrets calls it. */
+  loadSecretStates?(): Promise<void>
   readonly credentialsPath?: Readonly<Ref<string>>
   readonly file: Readonly<Ref<string>>
 }

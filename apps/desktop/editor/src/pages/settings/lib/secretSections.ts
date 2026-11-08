@@ -2,15 +2,16 @@
  * The page of secrets and the menu of a secret field, as plain data: the sections of the secrets
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
-import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
+import type {
+  PluginInfo,
+  PluginSecret,
+  Secret,
+  SecretMenu,
+  SecretSection,
+} from '@/entities/settings'
 import { WORDS } from '../words'
 
-/** The secrets of one group in priority order. */
-export interface SecretSection {
-  readonly group: string
-  readonly isAsked: boolean
-  readonly secrets: readonly Secret[]
-}
+export type { SecretSection }
 
 /** One secret a plugin declares, and so one permission a secret can grant. */
 export interface Declaration {
@@ -20,19 +21,6 @@ export interface Declaration {
   readonly group: string
   readonly title: string
   readonly description: string
-}
-
-const encoder = new TextEncoder()
-
-function compareNames(first: string, second: string): number {
-  const one = encoder.encode(first)
-  const other = encoder.encode(second)
-  const shared = Math.min(one.length, other.length)
-  for (let index = 0; index < shared; index++) {
-    const difference = (one[index] ?? 0) - (other[index] ?? 0)
-    if (difference !== 0) return difference
-  }
-  return one.length - other.length
 }
 
 /** The declaration of one secret of a plugin. */
@@ -53,28 +41,23 @@ export function getDeclarations(plugins: readonly PluginInfo[]): readonly Declar
 }
 
 /**
- * The sections of the page: the groups the installed plugins ask for by name, then the groups the
- * person made by name. A group the plugins ask for is a section while it has no secret. The
- * extra groups are groups the person made that hold no secret yet.
+ * The sections of the page of secrets: the sections the core ordered, then the groups the person
+ * made in this window that hold no secret yet, in the order they were added. Each secret gets
+ * the state of its value; a secret with no state yet has no value.
  */
-export function createSecretSections(
-  plugins: readonly PluginInfo[],
-  secrets: readonly Secret[],
-  extraGroups: readonly string[] = [],
+export function createPageSections(
+  sections: readonly SecretSection[],
+  localGroups: readonly string[],
+  states: ReadonlyMap<string, boolean>,
 ): readonly SecretSection[] {
-  const pluginGroups = new Set(
-    getDeclarations(plugins)
-      .map((one) => one.group)
-      .filter((one) => one !== ''),
-  )
-  const made = new Set(
-    [...secrets.map((one) => one.group), ...extraGroups].filter((one) => !pluginGroups.has(one)),
-  )
-  const sorted = (groups: ReadonlySet<string>): string[] => [...groups].sort(compareNames)
-  return [
-    ...sorted(pluginGroups).map((group) => ({ group, isAsked: true })),
-    ...sorted(made).map((group) => ({ group, isAsked: false })),
-  ].map((one) => ({ ...one, secrets: secrets.filter((secret) => secret.group === one.group) }))
+  const coreGroups = new Set(sections.map((one) => one.group))
+  const added = [...new Set(localGroups)]
+    .filter((group) => !coreGroups.has(group))
+    .map((group) => ({ group, isAsked: false, secrets: [] }))
+  return [...sections, ...added].map((one) => ({
+    ...one,
+    secrets: one.secrets.map((secret) => ({ ...secret, hasValue: states.get(secret.id) ?? false })),
+  }))
 }
 
 /**
@@ -101,16 +84,19 @@ export function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): 
 }
 
 /**
- * The secrets a declaration offers in its menu: those of the declared group first, then the others
- * in the order of the page. A declaration with no group has no group of its own.
+ * The secrets a declaration offers in its menu, in the order the core gave them.
  */
 export function getMenuSecrets(
-  sections: readonly SecretSection[],
+  menus: readonly SecretMenu[],
   declaration: Declaration,
 ): readonly Secret[] {
-  const own = sections.filter((one) => declaration.group !== '' && one.group === declaration.group)
-  const others = sections.filter((one) => !own.includes(one))
-  return [...own, ...others].flatMap((one) => one.secrets)
+  const menu = menus.find(
+    (one) =>
+      one.pluginId === declaration.pluginId &&
+      one.name === declaration.name &&
+      one.group === declaration.group,
+  )
+  return menu?.secrets ?? []
 }
 
 /** Whether the group of the declaration holds a secret. */

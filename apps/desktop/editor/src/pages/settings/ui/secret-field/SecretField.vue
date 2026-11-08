@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import { KeyRound } from '@lucide/vue'
 import { getServiceInfo } from '@numen/core-client'
 import { Button, MultiSelect, type SelectChoice } from '@numen/ui'
-import { isAllowed, type Secret } from '@/entities/settings'
+import { isAllowed, type Secret, type SecretMenu } from '@/entities/settings'
 import {
   getMenuSecrets,
   hasGroupSecrets,
@@ -26,6 +26,7 @@ const props = defineProps<{
   detail: string
   declaration: Declaration
   sections: readonly SecretSection[]
+  menus: readonly SecretMenu[]
 }>()
 
 const emit = defineEmits<{
@@ -34,7 +35,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const secrets = computed(() => getMenuSecrets(props.sections, props.declaration))
+const secrets = computed(() => getMenuSecrets(props.menus, props.declaration))
 const choices = computed<readonly SelectChoice[]>(() =>
   secrets.value.map((one) => ({
     id: one.id,

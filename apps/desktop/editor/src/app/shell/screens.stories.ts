@@ -167,6 +167,9 @@ const INSTALLATION: Installation = {
   writeSecret: () => {
     DONE.push('secret written')
   },
+  deleteSecretGroup: () => {
+    DONE.push('secret group deleted')
+  },
   deleteSecret: () => {
     DONE.push('secret deleted')
   },

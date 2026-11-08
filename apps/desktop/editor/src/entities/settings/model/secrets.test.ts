@@ -31,6 +31,14 @@ const createStore = (failure: string | null = null) => {
       calls.push(`delete ${id}`)
       return answer(undefined)
     },
+    deleteSecretGroup: (group) => {
+      calls.push(`delete group ${group}`)
+      return answer(undefined)
+    },
+    listSecretStates: () => {
+      calls.push('list states')
+      return answer(new Map([['s0a1b2c3d', true]]))
+    },
     moveSecret: (id, beforeId) => {
       calls.push(`move ${id} before [${beforeId}]`)
       return answer(undefined)
@@ -58,7 +66,7 @@ describe('a secret', () => {
   it('is created in a group with a name and a value, and the settings are read again', async () => {
     const { calls, notifier, refresh, store } = createStore()
     await store.createSecret('openrouter', 'Work', 'made-up-value')
-    expect(calls).toStrictEqual(['create openrouter Work made-up-value'])
+    expect(calls).toStrictEqual(['create openrouter Work made-up-value', 'list states'])
     expect(notifier).toHaveBeenCalledWith('')
     expect(refresh).toHaveBeenCalledOnce()
   })
@@ -73,13 +81,13 @@ describe('a secret', () => {
   it('gets a new value by its id', async () => {
     const { calls, store } = createStore()
     await store.writeSecret('s0a1b2c3d', 'made-up-value')
-    expect(calls).toStrictEqual(['write s0a1b2c3d made-up-value'])
+    expect(calls).toStrictEqual(['write s0a1b2c3d made-up-value', 'list states'])
   })
 
   it('is deleted by its id', async () => {
     const { calls, refresh, store } = createStore()
     await store.deleteSecret('s0a1b2c3d')
-    expect(calls).toStrictEqual(['delete s0a1b2c3d'])
+    expect(calls).toStrictEqual(['delete s0a1b2c3d', 'list states'])
     expect(refresh).toHaveBeenCalledOnce()
   })
 
@@ -141,7 +149,42 @@ describe('the permission of a plugin declaration to read a secret', () => {
   })
 })
 
+describe('the states of the values', () => {
+  it('are read after an operation that changes a value, and not after one that does not', async () => {
+    const { calls, store } = createStore()
+    await store.renameSecret('s0a1b2c3d', 'Office')
+    await store.moveSecret('s0a1b2c3d', '')
+    expect(calls).not.toContain('list states')
+    await store.writeSecret('s0a1b2c3d', 'made-up-value')
+    expect(calls).toContain('list states')
+    expect(store.states.value.get('s0a1b2c3d')).toBe(true)
+  })
+
+  it('are read on request', async () => {
+    const { calls, store } = createStore()
+    await store.loadStates()
+    expect(calls).toStrictEqual(['list states'])
+  })
+
+  it('stay as they were where the read fails, and the failure is shown', async () => {
+    const { notifier, store } = createStore('the keychain is locked')
+    await store.loadStates()
+    expect(store.states.value.size).toBe(0)
+    expect(notifier).toHaveBeenLastCalledWith(
+      expect.stringContaining('the keychain is locked'),
+      'error',
+    )
+  })
+})
+
 describe('a group of secrets', () => {
+  it('is deleted with its secrets in one call, and the settings and the states are read again', async () => {
+    const { calls, refresh, store } = createStore()
+    await store.deleteSecretGroup('work')
+    expect(calls).toStrictEqual(['delete group work', 'list states'])
+    expect(refresh).toHaveBeenCalledOnce()
+  })
+
   it('is renamed by its name', async () => {
     const { calls, refresh, store } = createStore()
     await store.renameSecretGroup('work', 'office')

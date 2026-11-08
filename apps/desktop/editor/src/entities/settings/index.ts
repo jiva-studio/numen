@@ -12,7 +12,9 @@ export type {
   PluginSettingCondition,
   PluginSecret,
   Secret,
+  SecretMenu,
   SecretPermission,
+  SecretSection,
 } from './lib/configuration'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'

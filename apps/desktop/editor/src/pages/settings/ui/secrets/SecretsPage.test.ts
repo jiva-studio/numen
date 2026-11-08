@@ -3,10 +3,10 @@
  * opened by `system`. The secrets, the plugins and every value here are invented.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
+import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
 import {
   addSecret,
   chooseGroupAction,
@@ -94,9 +94,10 @@ const mountPage = (
   secrets = [WORK, HOME, MINE],
   overrides: Parameters<typeof createInstallation>[0] = {},
 ) => {
+  const listed = overrides.plugins?.value ?? plugins
   const installation = createInstallation({
-    plugins: ref(plugins),
-    secrets: ref(secrets),
+    plugins: ref(listed),
+    ...createSecretAnswer(listed, secrets),
     ...overrides,
   })
   const wrapper = mount(SettingsTab, {
@@ -105,6 +106,14 @@ const mountPage = (
   })
   return { installation, wrapper }
 }
+
+const liveAnswer = (stored: Ref<ReturnType<typeof secret>[]>) => ({
+  secretSections: computed(() => createSecretAnswer([], stored.value).secretSections?.value ?? []),
+  secretMenus: ref([]),
+  secretStates: computed(
+    () => createSecretAnswer([], stored.value).secretStates?.value ?? new Map(),
+  ),
+})
 
 const mountBare = (
   secrets: ReturnType<typeof secret>[] = [],
@@ -373,6 +382,21 @@ describe('deleting a secret', () => {
     dispose(wrapper)
   })
 
+  it('reads the states of the values when the page opens', () => {
+    const { installation, wrapper } = mountPage()
+    expect(installation.loadSecretStates).toHaveBeenCalledOnce()
+    dispose(wrapper)
+  })
+
+  it('deletes a whole group with one call after the confirmation', async () => {
+    const { installation, wrapper } = mountPage()
+    await chooseGroupAction(/delete group/i, sectionOf('travel'))
+    await click(findButton(/^delete$/i, getDialog()))
+    expect(installation.deleteSecretGroup).toHaveBeenCalledExactlyOnceWith('travel')
+    expect(installation.deleteSecret).not.toHaveBeenCalled()
+    dispose(wrapper)
+  })
+
   it('deletes nothing when the confirmation is cancelled', async () => {
     const { installation, wrapper } = mountPage()
     await chooseRowAction(rowOf('Work'), /^delete$/i)
@@ -470,7 +494,7 @@ describe('adding a secret to a group', () => {
       stored.value = [...stored.value, secret('s00000009', name, group)]
       return 's00000009'
     })
-    const { wrapper } = mountPage(undefined, { secrets: stored, createSecret })
+    const { wrapper } = mountPage(undefined, { ...liveAnswer(stored), createSecret })
     await addSecret(sectionOf('OpenRouter'))
     await typeName(findNameInput('OpenRouter V1') as HTMLInputElement, 'Staging')
     await enterText(maskedInputs(rowOf('Staging'))[0] as HTMLInputElement, 'made-up-staging-value')
@@ -591,7 +615,7 @@ describe('a secret that fails to be created', () => {
         stored.value = [secret('s00000009', name, group)]
         return 's00000009'
       })
-    const { wrapper } = mountBare([], { createSecret, secrets: stored })
+    const { wrapper } = mountBare([], { createSecret, ...liveAnswer(stored) })
     await click(findButton(/add group/i))
     await typeGroup('Local Llama')
     const input = maskedInputs()[0] as HTMLInputElement

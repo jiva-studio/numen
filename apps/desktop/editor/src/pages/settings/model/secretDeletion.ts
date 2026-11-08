@@ -8,6 +8,7 @@ import { getDeletionIds, getDeletionText, type DeletionTarget } from '../lib/sec
 
 export function useSecretDeletion(
   deleteSecret: (id: string) => unknown,
+  deleteSecretGroup: (group: string) => unknown,
   getPlugins: () => readonly PluginInfo[],
 ) {
   const target = ref<DeletionTarget | null>(null)
@@ -35,7 +36,8 @@ export function useSecretDeletion(
   function confirm(): void {
     const current = target.value
     target.value = null
-    if (current) for (const id of getDeletionIds(current)) deleteSecret(id)
+    if (current?.kind === 'group') deleteSecretGroup(current.section.group)
+    else if (current) for (const id of getDeletionIds(current)) deleteSecret(id)
   }
 
   function cancel(): void {

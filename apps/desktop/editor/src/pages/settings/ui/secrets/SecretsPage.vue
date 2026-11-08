@@ -3,7 +3,7 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, ConfirmDialog } from '@numen/ui'
 import {
@@ -13,7 +13,7 @@ import {
   type Secret,
 } from '@/entities/settings'
 import {
-  createSecretSections,
+  createPageSections,
   getDeclarations,
   type Declaration,
   type SecretSection as SectionData,
@@ -40,18 +40,21 @@ const drafts = useSecretDrafts()
 const newGroup = ref('')
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
 const sections = computed(() =>
-  createSecretSections(
-    plugins.value,
-    installation.value.secrets?.value ?? [],
+  createPageSections(
+    installation.value.secretSections?.value ?? [],
     drafts.emptyGroups.value,
+    installation.value.secretStates?.value ?? new Map(),
   ),
 )
 const groups = computed(() => sections.value.map((one) => one.group))
 const declarations = computed(() => getDeclarations(plugins.value))
 const deletion = useSecretDeletion(
   (id) => installation.value.deleteSecret(id),
+  (group) => installation.value.deleteSecretGroup(group),
   () => plugins.value,
 )
+
+onMounted(() => installation.value.loadSecretStates?.())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {

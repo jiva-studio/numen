@@ -65,13 +65,17 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       )
       return promise
     },
-    secrets: rest.secrets,
+    secretSections: rest.secretSections,
+    secretMenus: rest.secretMenus,
+    secretStates: secrets.states,
+    loadSecretStates: () => secrets.loadStates(),
     credentialsPath: rest.credentialsPath,
     createSecret: (group: string, name: string, value: string) =>
       secrets.createSecret(group, name, value),
     renameSecret: (id: string, name: string) => secrets.renameSecret(id, name),
     writeSecret: (id: string, value: string) => secrets.writeSecret(id, value),
     deleteSecret: (id: string) => secrets.deleteSecret(id),
+    deleteSecretGroup: (group: string) => secrets.deleteSecretGroup(group),
     moveSecret: (id: string, beforeId: string) => secrets.moveSecret(id, beforeId),
     renameSecretGroup: (group: string, name: string) => secrets.renameSecretGroup(group, name),
     allowPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>

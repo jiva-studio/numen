@@ -3,6 +3,7 @@
  * allowed or denied to the declarations of the plugins, through the vault. A value goes to the
  * vault once and is not kept here.
  */
+import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import type { MessageWriter } from '@/shared/notices/messages'
 
@@ -17,6 +18,8 @@ export interface SecretDeps {
   renameSecret(id: string, name: string): Promise<void>
   writeSecret(id: string, value: string): Promise<void>
   deleteSecret(id: string): Promise<void>
+  deleteSecretGroup(group: string): Promise<void>
+  listSecretStates(): Promise<ReadonlyMap<string, boolean>>
   moveSecret(id: string, beforeId: string): Promise<void>
   renameSecretGroup(group: string, name: string): Promise<void>
   allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
@@ -33,8 +36,27 @@ export interface SecretOptions {
 }
 
 export function createSecretStore(core: SecretDeps, { words, notify, refresh }: SecretOptions) {
-  /** Runs an operation, shows why it failed, and reads the settings again. Resolves to its answer, or to the fallback where it failed. */
-  const run = async <T>(operation: () => Promise<T>, fallback: T): Promise<T> => {
+  /** Whether each secret has a value on this machine, as the core last reported it. */
+  const states = shallowRef<ReadonlyMap<string, boolean>>(new Map())
+
+  /** Reads which secrets have a value. A failed read keeps the states as they were. */
+  const loadStates = async (): Promise<void> => {
+    try {
+      states.value = await core.listSecretStates()
+    } catch (caughtError) {
+      notify(`${words.secretFailed} ${formatErrorMessage(caughtError)}`, 'error')
+    }
+  }
+
+  /**
+   * Runs an operation, shows why it failed, and reads the settings again, and the states where the
+   * operation changes a value. Resolves to its answer, or to the fallback where it failed.
+   */
+  const run = async <T>(
+    operation: () => Promise<T>,
+    fallback: T,
+    changesValue = false,
+  ): Promise<T> => {
     notify('')
     let answer = fallback
     try {
@@ -43,23 +65,28 @@ export function createSecretStore(core: SecretDeps, { words, notify, refresh }: 
       notify(`${words.secretFailed} ${formatErrorMessage(caughtError)}`, 'error')
     }
     await refresh()
+    if (changesValue) await loadStates()
     return answer
   }
 
-  const runVoid = (operation: () => Promise<void>): Promise<void> => run(operation, undefined)
+  const runVoid = (operation: () => Promise<void>, changesValue = false): Promise<void> =>
+    run(operation, undefined, changesValue)
 
   /** A secret created with its value. It resolves to its id, and to an empty text where nothing was created. An empty value creates nothing. */
   const createSecret = (group: string, name: string, value: string): Promise<string> =>
-    value === '' ? Promise.resolve('') : run(() => core.createSecret(group, name, value), '')
+    value === '' ? Promise.resolve('') : run(() => core.createSecret(group, name, value), '', true)
 
   const renameSecret = (id: string, name: string): Promise<void> =>
     runVoid(() => core.renameSecret(id, name))
 
   /** The value of a secret replaced. An empty value changes nothing. */
   const writeSecret = (id: string, value: string): Promise<void> =>
-    value === '' ? Promise.resolve() : runVoid(() => core.writeSecret(id, value))
+    value === '' ? Promise.resolve() : runVoid(() => core.writeSecret(id, value), true)
 
-  const deleteSecret = (id: string): Promise<void> => runVoid(() => core.deleteSecret(id))
+  const deleteSecret = (id: string): Promise<void> => runVoid(() => core.deleteSecret(id), true)
+
+  const deleteSecretGroup = (group: string): Promise<void> =>
+    runVoid(() => core.deleteSecretGroup(group), true)
 
   const moveSecret = (id: string, beforeId: string): Promise<void> =>
     runVoid(() => core.moveSecret(id, beforeId))
@@ -85,7 +112,10 @@ export function createSecretStore(core: SecretDeps, { words, notify, refresh }: 
     createSecret,
     renameSecret,
     writeSecret,
+    states,
+    loadStates,
     deleteSecret,
+    deleteSecretGroup,
     moveSecret,
     renameSecretGroup,
     allowPluginSecret,

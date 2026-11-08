@@ -2,7 +2,7 @@ package secret
 
 import "context"
 
-// State tells whether the value of one secret is on this machine.
+// State reports whether the value of one secret is on this machine.
 type State struct {
 	ID       string
 	HasValue bool

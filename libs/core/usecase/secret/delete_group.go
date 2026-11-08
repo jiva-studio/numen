@@ -18,19 +18,19 @@ func (u *DeleteGroup) Execute(ctx context.Context, group string) error {
 		var indexes []int
 		err := u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			removed, indexes = nil, nil
-			kept := make([]Secret, 0, len(list))
+			remaining := make([]Secret, 0, len(list))
 			for index, one := range list {
 				if one.Group == group {
 					removed = append(removed, one)
 					indexes = append(indexes, index)
 				} else {
-					kept = append(kept, one)
+					remaining = append(remaining, one)
 				}
 			}
 			if len(removed) == 0 {
 				return nil, newNotFoundError(group)
 			}
-			return kept, nil
+			return remaining, nil
 		})
 		if err != nil {
 			return nil, err
