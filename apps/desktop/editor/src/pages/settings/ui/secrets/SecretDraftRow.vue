@@ -19,6 +19,8 @@ import SecretValueInput from './SecretValueInput.vue'
 const props = defineProps<{
   name: string
   canDiscard: boolean
+  /** Whether the row shows its name, as the group holds more than one secret. */
+  hasName: boolean
   /** Creates the secret and resolves true when it was created; the field then keeps a failed value. */
   submit?: ((name: string, value: string) => Promise<boolean>) | undefined
 }>()
@@ -40,7 +42,7 @@ async function onSubmit(value: string): Promise<boolean> {
 </script>
 
 <template>
-  <SecretRowFrame>
+  <SecretRowFrame :has-name="hasName">
     <template #name>
       <SecretNameInput v-model="typedName" @cancel="typedName = name" />
     </template>

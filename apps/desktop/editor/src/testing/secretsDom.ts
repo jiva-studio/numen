@@ -106,18 +106,18 @@ export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
 export const findNameInput = (name: string, scope: ParentNode = root()): HTMLInputElement | null =>
   textInputs(scope).find((one) => one.value === name) ?? null
 
-/** The row of the secret with that name: the smallest element around its name input that holds a masked input. */
+/** The row of the secret with that name: the smallest element around its value field, which carries the name in its label. */
 export const rowOf = (name: string): HTMLElement => {
-  const input = findNameInput(name)
-  if (input === null) throw new Error(`no name input holding ${name} on the page`)
-  return ancestorWhere(input, (one) => maskedInputs(one).length > 0)
+  const input = maskedInputs().find((one) => one.getAttribute('aria-label') === `Value of ${name}`)
+  if (input === undefined) throw new Error(`no value field of ${name} on the page`)
+  return ancestorWhere(input, (one) => one.tagName === 'LI')
 }
 
-/** The section of the group with that name: the smallest element around the name that holds the group actions button. */
+/** The section of the group with that name: the smallest element around the name that holds the Add key button. */
 export const sectionOf = (group: string): HTMLElement => {
   const text = findText(group)
   if (text === null) throw new Error(`no text ${group} on the page`)
-  return ancestorWhere(text, (one) => findButtons(/group actions/i, one).length > 0)
+  return ancestorWhere(text, (one) => findButtons(/^add key$/i, one).length > 0)
 }
 
 /** The menu item whose text matches, in the menu drawn into the document. */
@@ -130,6 +130,11 @@ export const findMenuItem = (pattern: RegExp): HTMLElement => {
     )
   }
   return found[0] as HTMLElement
+}
+
+/** Clicks the Add key button of a card, or of the only card on the page. */
+export async function addKey(scope: ParentNode = root()): Promise<void> {
+  await click(findButton(/^add key$/i, scope))
 }
 
 /** Opens the group actions menu in a scope and chooses the item whose text matches. */

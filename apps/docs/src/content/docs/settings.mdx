@@ -40,12 +40,12 @@ The two sizes are multipliers over what was designed. The interface goes from **
 
 Each card is a group of keys for one service. A service a plugin asks for, such as OpenRouter or OpenAI, is titled with its name; a group you make has the name you give it.
 
-- **Add a key:** open the menu of the card and choose **Add secret**. The first key of a service is named after it, the next ones "OpenAI V1", "OpenAI V2" and so on. Type another name on the row if you like.
+- **Add a key:** choose **Add key** at the top right of the card. The first key of a service is named after it, the next ones "OpenAI V1", "OpenAI V2" and so on. A card with one key shows no name; once it has several, each row shows its name in the **Key** column and you can type another one.
 - **Enter the value:** paste it in the field and press Enter or click away. A stored key shows as dots and is never shown again; typing a new value replaces it.
 - **Choose who may use it:** in **Used by**, pick the plugins that may read the key.
 - **Change the order:** the menu (⋯) of a row has **Move up** and **Move down** where a group has several keys. The first key a plugin may use is the one it uses.
 - **Delete a key:** the menu of the row has **Delete**. The plugins that could read it are named before you confirm.
-- **Make your own group:** choose **Add group** under the cards, name it, and add its first key. The menu of your group can rename or delete it.
+- **Make your own group:** choose **Add group** under the cards, name it, and add its first key. The menu (⋯) next to **Add key** on your group can rename or delete it.
 
 Keys are stored in your system keychain. Where there is none, they are kept in a file in numen's settings folder that only you can read, and the page shows its path. They are never written to the settings file.
 

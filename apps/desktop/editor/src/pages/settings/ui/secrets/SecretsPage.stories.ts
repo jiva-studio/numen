@@ -114,8 +114,7 @@ export const DeletionAsksFirst: Story = {
 export const NewSecretLooksLikeSaved: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getAllByRole('button', { name: 'Group actions' })[0]!)
-    await userEvent.click(within(document.body).getByRole('menuitem', { name: 'Add secret' }))
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Add key' })[0]!)
     const rows = Array.from(canvasElement.querySelectorAll('li'))
     const draft = rows.find((one) => one.querySelector('button[title="Save a value first"]'))!
     const saved = rows.find((one) => one !== draft && one.querySelector('input[type="text"]'))!
@@ -162,8 +161,7 @@ export const AddsInATypedGroup: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Add group' }))
     await userEvent.type(canvas.getByLabelText('Name of the group'), 'Local Llama{Enter}')
-    await userEvent.click(canvas.getByRole('button', { name: 'Group actions' }))
-    await userEvent.click(within(document.body).getByRole('menuitem', { name: 'Add secret' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Add key' }))
     await expect(canvas.getByLabelText('Value of Local Llama')).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const row of canvasElement.querySelectorAll('li')) {

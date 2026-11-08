@@ -280,13 +280,13 @@ A secret is a value such as an API key. You enter it once, on the Secrets page, 
 
 The page has a card for each group, and a group collects the keys for one service. A group a plugin asks for is titled with the name of the service, such as OpenRouter or OpenAI, with a one-line description; a group you made has the name you gave it. The groups plugins ask for come first, ordered by name, then your own.
 
-- **Add a key.** Open the menu of the group card and choose Add secret. A new row appears with a name and an empty value. The first key of a group is named after the service, and further ones "OpenAI V1", "OpenAI V2" and on; in a group of your own the first key is named after the group. A group a plugin asks for shows one empty row at once, so you only paste the key.
-- **Name it.** Type in the name on the row. A name is at most 64 characters and unique inside its group.
+- **Add a key.** Choose Add key at the top right of the group card. A new row appears with an empty value. The first key of a group is named after the service, and further ones "OpenAI V1", "OpenAI V2" and on; in a group of your own the first key is named after the group. A group a plugin asks for shows one empty row at once, so you only paste the key.
+- **Name it.** A card with one key shows no name, and its key is named after the service. Once a card has several keys, each row shows its name in the Key column; type in it to change it. A name is at most 64 characters and unique inside its group.
 - **Enter the value.** Paste it in the masked field and press Enter or leave the field. A stored value shows as dots, and typing a new value replaces it. A value is never shown again.
 - **Choose who may use it.** The Used by field of the row lists the plugin declarations that may read the key; choose them in it, with a search by name. A key that no plugin may read shows "No plugins".
 - **Change the order.** In a group with several keys, the menu (⋯) of a row has Move up and Move down. The order is the priority: a plugin uses the first key it is allowed, and gets the new order at once. A key does not move to another group.
 - **Delete a key.** The menu of the row has Delete. It asks for confirmation, names the plugins that can read the key, and removes the value and the permissions.
-- **Make your own group.** Choose Add group under the cards, type the name, and add the first key. The menu of a group you made also has Rename group and Delete group, which removes its keys after a confirmation. A group a plugin asks for cannot be renamed or deleted. A group exists while it has a key or a plugin asks for it.
+- **Make your own group.** Choose Add group under the cards, type the name, and add the first key. Next to Add key, the card of a group you made has a menu (⋯) with Rename group and Delete group, which removes its keys after a confirmation. A group a plugin asks for cannot be renamed or deleted. A group exists while it has a key or a plugin asks for it.
 
 A key whose value is not on this machine, for example in a settings file copied from another one, shows as empty, and plugins read nothing from it.
 

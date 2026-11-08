@@ -1,13 +1,17 @@
 <script setup lang="ts">
 /**
- * The four columns every secret row has, saved or not yet created: the name, the value, the
- * plugins that may read it, and the actions.
+ * The columns every secret row has, saved or not yet created: the name, where the group holds more
+ * than one secret, the value, the plugins that may read it, and the actions.
  */
+defineProps<{
+  /** Whether the row has the name column. */
+  hasName: boolean
+}>()
 </script>
 
 <template>
-  <li class="secret-row">
-    <slot name="name" />
+  <li class="secret-row" :class="{ 'secret-row--named': hasName }">
+    <slot v-if="hasName" name="name" />
     <slot name="value" />
     <slot name="permissions" />
     <div class="secret-row__actions">
@@ -19,11 +23,15 @@
 <style scoped>
 .secret-row {
   display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr) 12rem var(--numen-action-size);
+  grid-template-columns: minmax(0, 1fr) 12rem var(--numen-action-size);
   align-items: center;
   gap: 0.5rem;
   padding-block: 0.375rem;
   list-style: none;
+}
+
+.secret-row--named {
+  grid-template-columns: 11rem minmax(0, 1fr) 12rem var(--numen-action-size);
 }
 
 .secret-row__actions {

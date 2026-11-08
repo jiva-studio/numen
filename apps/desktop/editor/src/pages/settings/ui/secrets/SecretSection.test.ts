@@ -4,7 +4,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import SecretSection from './SecretSection.vue'
-import { chooseGroupAction, click, findButton, findMenuItem } from '@/testing/secretsDom'
+import {
+  chooseGroupAction,
+  click,
+  findButton,
+  findButtons,
+  findMenuItem,
+} from '@/testing/secretsDom'
 
 const section = { group: 'harbour', isAsked: false, secrets: [] }
 
@@ -100,14 +106,21 @@ describe('the deletion of a group', () => {
     wrapper.unmount()
   })
 
-  it('offers only adding a secret in a group a plugin asks for', async () => {
+  it('offers only adding a key in a group a plugin asks for', () => {
     const wrapper = mountWith(true, [secret])
+    expect(findButton(/^add key$/i)).toBeTruthy()
+    expect(findButtons(/group actions/i)).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('offers renaming and deleting in the group menu, and nothing else', async () => {
+    const wrapper = mountWith(false, [secret])
     await click(findButton(/group actions/i))
     expect(
       Array.from(document.querySelectorAll('[role="menuitem"]')).map((one) =>
         one.textContent?.trim(),
       ),
-    ).toEqual(['Add secret'])
+    ).toEqual(['Rename group', 'Delete group'])
     wrapper.unmount()
   })
 
@@ -201,6 +214,63 @@ describe('the card of a well-known service', () => {
     const wrapper = mountGroup('openai')
     await chooseGroupAction(/rename group/i)
     expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('openai')
+    wrapper.unmount()
+  })
+})
+
+describe('the columns of a card', () => {
+  const key = (id: string, name: string) => ({
+    id,
+    name,
+    group: 'harbour',
+    allowed: [],
+    hasValue: true,
+  })
+  const mountKeys = (names: readonly string[], drafts: readonly string[] = []) =>
+    mount(SecretSection, {
+      attachTo: document.body,
+      props: {
+        section: {
+          group: 'harbour',
+          isAsked: false,
+          secrets: names.map((one, index) => key(`s${index}`, one)),
+        },
+        drafts,
+        declarations: [],
+        create: vi.fn(),
+      },
+    })
+
+  it('labels Value and Used by, without Key or a name input, over one key', () => {
+    const wrapper = mountKeys(['Work'])
+    const labels = Array.from(document.querySelectorAll('.secret-labels__text')).map(
+      (one) => one.textContent,
+    )
+    expect(labels).toEqual(['Value', 'Used by'])
+    expect(document.querySelector('input[type="text"]')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('labels Key and shows the names over several keys, once', () => {
+    const wrapper = mountKeys(['Work', 'Home'])
+    const labels = Array.from(document.querySelectorAll('.secret-labels__text')).map(
+      (one) => one.textContent,
+    )
+    expect(labels).toEqual(['Key', 'Value', 'Used by'])
+    expect(document.querySelectorAll('input[type="text"]')).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it('shows the names once a draft joins one saved key', () => {
+    const wrapper = mountKeys(['Work'], ['harbour V1'])
+    expect(document.querySelectorAll('input[type="text"]')).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it('emits add from the Add key button', async () => {
+    const wrapper = mountKeys(['Work'])
+    await click(findButton(/^add key$/i))
+    expect(wrapper.emitted('add')).toHaveLength(1)
     wrapper.unmount()
   })
 })

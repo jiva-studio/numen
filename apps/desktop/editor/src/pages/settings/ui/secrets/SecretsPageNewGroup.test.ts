@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import {
+  addKey,
   chooseGroupAction,
   click,
   dispose,
@@ -115,7 +116,7 @@ describe('the page of secrets with no group', () => {
     await typeGroup('Local Llama')
     expect(installation.renameSecretGroup).not.toHaveBeenCalled()
     expect(findText('Local Llama')?.tagName).toBe('H2')
-    await chooseGroupAction(/add secret/i)
+    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
@@ -140,7 +141,7 @@ describe('the page of secrets with no group', () => {
       secret('s00000001', '1', 'Local Llama'),
       secret('s00000002', 'Home', 'Local Llama'),
     ])
-    await chooseGroupAction(/add secret/i)
+    await addKey()
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(

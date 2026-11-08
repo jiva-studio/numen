@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One secret of a group as a row of four columns: its name as an input, the value
+ * One secret of a group as a row: its name as an input where the group holds more than one secret, the value
  * (dots as the placeholder while one is stored), the plugins that may read it, and the menu to move and delete it.
  */
 import { ref, watch } from 'vue'
@@ -20,6 +20,8 @@ const props = defineProps<{
   isLast: boolean
   /** Whether the group holds more than one secret, so that the order can change. */
   canMove: boolean
+  /** Whether the row shows its name, as the group holds more than one secret. */
+  hasName: boolean
   declarations: readonly Declaration[]
 }>()
 
@@ -51,7 +53,7 @@ function onCommitRename(): void {
 </script>
 
 <template>
-  <SecretRowFrame>
+  <SecretRowFrame :has-name="hasName">
     <template #name>
       <SecretNameInput
         v-model="draftName"

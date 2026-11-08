@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import {
+  addKey,
   chooseGroupAction,
   click,
   dispose,
@@ -15,7 +16,6 @@ import {
   findButton,
   findButtons,
   chooseRowAction,
-  findMenuItem,
   openRowMenu,
   findNameInput,
   findText,
@@ -289,7 +289,7 @@ describe('the page of secrets', () => {
   it('adds a secret with the next version as its name and stores it when a value is entered', async () => {
     const { installation, wrapper } = mountPage()
     const openrouter = sectionOf('OpenRouter')
-    await chooseGroupAction(/add secret/i, openrouter)
+    await addKey(openrouter)
     expect(findNameInput('OpenRouter V1')).not.toBeNull()
     await enterText(
       maskedInputs(rowOf('OpenRouter V1'))[0] as HTMLInputElement,
@@ -305,7 +305,7 @@ describe('the page of secrets', () => {
 
   it('creates a new secret under the name typed into its name input', async () => {
     const { installation, wrapper } = mountPage()
-    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
+    await addKey(sectionOf('OpenRouter'))
     await typeName(findNameInput('OpenRouter V1') as HTMLInputElement, 'Staging')
     await enterText(maskedInputs(rowOf('Staging'))[0] as HTMLInputElement, 'made-up-staging-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
@@ -318,7 +318,7 @@ describe('the page of secrets', () => {
 
   it('draws a new secret like a saved one, with its plugin list disabled until it exists', async () => {
     const { wrapper } = mountPage()
-    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
+    await addKey(sectionOf('OpenRouter'))
     const draft = rowOf('OpenRouter V1')
     const saved = rowOf('Work')
     expect(draft.className).toBe(saved.className)
@@ -335,7 +335,7 @@ describe('the page of secrets', () => {
 
   it('discards a new secret with its button', async () => {
     const { wrapper } = mountPage()
-    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
+    await addKey(sectionOf('OpenRouter'))
     await click(findButton(/discard/i, rowOf('OpenRouter V1')))
     expect(findNameInput('OpenRouter V1')).toBeNull()
     dispose(wrapper)
@@ -344,7 +344,7 @@ describe('the page of secrets', () => {
   it('names the second secret of a group with V1', async () => {
     const { wrapper } = mountPage()
     const travel = sectionOf('travel')
-    await chooseGroupAction(/add secret/i, travel)
+    await addKey(travel)
     expect(findNameInput('travel V1')).not.toBeNull()
     dispose(wrapper)
   })
@@ -353,10 +353,8 @@ describe('the page of secrets', () => {
     const { installation, wrapper } = mountPage()
     const travel = sectionOf('travel')
     const openrouter = sectionOf('OpenRouter')
-    await click(findButton(/group actions/i, openrouter))
-    expect(root().querySelectorAll('[role="menuitem"]')).toHaveLength(1)
-    expect(findMenuItem(/add secret/i)).toBeTruthy()
-    await click(findMenuItem(/add secret/i))
+    expect(findButtons(/group actions/i, openrouter)).toHaveLength(0)
+    await addKey(openrouter)
 
     await chooseGroupAction(/rename group/i, travel)
     const input = travel.querySelector('input[type="text"], input:not([type])') as HTMLInputElement
