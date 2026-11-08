@@ -161,11 +161,37 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 	}
 }
 
-func TestRunPluginCommand_RejectsAnItemNotListedAndAnArgumentToACommandWithoutItems(t *testing.T) {
+func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *testing.T) {
+	plugins := &runRecorded{}
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, fileTypes{}, nil), &versionItems{})
+
+	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
+		PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "beta",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || len(plugins.ran) != 1 || plugins.ran[0].ItemID != "beta" {
+		t.Errorf("got %v, ran %+v", res.Msg.GetError(), plugins.ran)
+	}
+}
+
+// runRecorded is conditionalCommands recording the runs that reach the plugins.
+type runRecorded struct {
+	conditionalCommands
+	ran []plugincommand.Call
+}
+
+func (p *runRecorded) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
+	p.ran = append(p.ran, call)
+	return plugincommand.Result{}, nil
+}
+
+func TestRunPluginCommand_RejectsAnItemNotListedAndARunWithoutAnItem(t *testing.T) {
 	for name, request := range map[string]*v1.RunPluginCommandRequest{
-		"an item not offered":     {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", ItemId: "org.example.ears/older"},
-		"no item":                 {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3"},
-		"a command without items": {PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "org.example.ears/ears"},
+		"an item not offered": {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3", ItemId: "org.example.ears/older"},
+		"no item":             {PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3"},
 	} {
 		items := &versionItems{}
 		res, err := newItemsHandler(items).RunPluginCommand(t.Context(), connect.NewRequest(request))

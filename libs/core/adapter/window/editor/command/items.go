@@ -70,10 +70,8 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
 	hasItems := found && plugincommand.HasItems(entry.Command)
 	switch {
-	case !hasItems && msg.GetItemId() == "":
-		return plugincommand.Result{}, false, nil
 	case !hasItems:
-		return plugincommand.Result{}, true, fmt.Errorf("%w: %s offers no item", plugincommand.ErrBadArguments, msg.GetCommand())
+		return plugincommand.Result{}, false, nil
 	case msg.GetItemId() == "":
 		return plugincommand.Result{}, true, fmt.Errorf("%w: %s runs over an item it offers", plugincommand.ErrBadArguments, msg.GetCommand())
 	case h.versions == nil:

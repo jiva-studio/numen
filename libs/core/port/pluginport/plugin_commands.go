@@ -33,6 +33,7 @@ type PluginCommandCall struct {
 	Command   string
 	Path      string
 	Arguments map[string]string
+	ItemID    string
 }
 
 // PluginCommandResult is the result of a command that ran.

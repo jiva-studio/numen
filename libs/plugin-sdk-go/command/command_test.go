@@ -173,3 +173,20 @@ func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 		t.Fatalf("got %v, want CodeCanceled", err)
 	}
 }
+
+func TestCommand_PassesTheItemPickedToTheRun(t *testing.T) {
+	registry := New()
+	var got Request
+	if err := registry.Add("download", func(_ context.Context, request Request) (Result, error) {
+		got = request
+		return Result{}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	run(t, registry, &v1.RunCommandRequest{Command: "download", Path: "talk.md", ItemId: "audio"})
+
+	if got.ItemID != "audio" || got.Path != "talk.md" {
+		t.Errorf("the run received %+v", got)
+	}
+}
