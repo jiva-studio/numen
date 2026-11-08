@@ -55,6 +55,20 @@ func TestCreateLinksOpensTheNoteOfAnAddressThatHasOne(t *testing.T) {
 	}
 }
 
+func TestCreateLinksReturnsThePathOfAnAddressDroppedTwiceOnce(t *testing.T) {
+	links, _, _ := newMockLinks(t)
+	service := linkServer{links: links}
+	got, err := service.createLinks(t.Context(), api.CreateLinksRequest{
+		Folder: "talks", URLs: []string{videoAddress, videoAddress},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Paths) != 1 || len(got.Failed) != 0 {
+		t.Errorf("drop = %+v, want one path and no failure", got)
+	}
+}
+
 func TestCreateLinksHandlesEachAddressOnItsOwn(t *testing.T) {
 	links, _, hosted := newMockLinks(t)
 	service := linkServer{links: links}

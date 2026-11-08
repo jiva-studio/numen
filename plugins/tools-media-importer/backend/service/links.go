@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -85,7 +86,9 @@ func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest)
 		if !isFound {
 			s.links.StartFetch(ctx, made)
 		}
-		out.Paths = append(out.Paths, made.Path)
+		if !slices.Contains(out.Paths, made.Path) {
+			out.Paths = append(out.Paths, made.Path)
+		}
 	}
 	return out, nil
 }
