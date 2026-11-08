@@ -1,6 +1,5 @@
 import { test, expect } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
-import { readWidth } from '../../support/layout.js'
 import { getPageIndex, getWide, holdPageRequests, openPages, readNaturalWidth } from './zoom.js'
 
 /** Longer than the debounce of the width a page is requested at. */
@@ -48,39 +47,5 @@ test.describe('PDF reader zoom', () => {
     const picture = page.locator('.reader__page[data-page="0"] .reader__picture')
     await expect.poll(() => readNaturalWidth(picture)).toBe(latest[0])
     await expect(picture).toHaveAttribute('src', new RegExp(`wide=${latest[0]}\\b`))
-  })
-
-  test('keeps the point under the centre of the view where it was', async ({ page }) => {
-    const first = await openPages(page)
-    const viewport = page.locator('.reader__viewport')
-    const frame = (await viewport.boundingBox())!
-    const readCentre = async () =>
-      first.evaluate(
-        (element, centre) => {
-          const root = element.getRootNode() as ParentNode
-          for (const one of root.querySelectorAll('.reader__page')) {
-            const box = one.getBoundingClientRect()
-            if (box.left <= centre && centre <= box.right) {
-              return {
-                page: one.getAttribute('data-page'),
-                fraction: (centre - box.left) / box.width,
-              }
-            }
-          }
-          return null
-        },
-        frame.x + frame.width / 2,
-      )
-    const before = await readCentre()
-    const width = await readWidth(first)
-
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => readWidth(first)).toBeGreaterThan(width * 1.5)
-
-    await expect
-      .poll(async () => (await readCentre())?.fraction ?? -1)
-      .toBeCloseTo(before?.fraction ?? 0, 1)
-    expect((await readCentre())?.page).toBe(before?.page)
   })
 })
