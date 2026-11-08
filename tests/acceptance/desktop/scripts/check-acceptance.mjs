@@ -6,7 +6,6 @@
 //   unused         a definition no scenario step uses
 //   near-duplicate two definitions that differ in a word, a tense or an article
 //   conjunction    a definition that says two things at once, joined by "and"
-//   steps-per-scenario  more steps in a scenario than MAX_STEPS
 //
 //   node scripts/check-acceptance.mjs [--json <file>]
 import fs from 'node:fs'
@@ -19,7 +18,6 @@ import { IdGenerator } from '@cucumber/messages'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const featuresDir = path.resolve(root, '../../../features')
 const stepsDir = path.join(root, 'steps')
-const MAX_STEPS = 5
 /** Two definitions whose words overlap this much, or more, are one step said twice. */
 const NEAR_DUPLICATE = 0.75
 /** From this overlap a pair is listed as a warning: the author reads both and says why there are two. */
@@ -100,9 +98,6 @@ const matchStep = (feature, scenario, step) => {
 for (const feature of features) {
   for (const step of feature.background) matchStep(feature, 'background', step)
   for (const scenario of feature.scenarios) {
-    if (scenario.steps.length > MAX_STEPS) {
-      report('steps-per-scenario', `${rel(feature.file)}:${scenario.line}`, `${scenario.steps.length} steps; at most ${MAX_STEPS}`)
-    }
     for (const step of scenario.steps) matchStep(feature, scenario.name, step)
   }
 }

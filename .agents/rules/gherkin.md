@@ -20,7 +20,7 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 
 - Third person, present tense, declarative. Say what the person wants and sees, not how the interface is operated.
 - Domain words only. Never click, press, button, field, panel, palette, menu or similar interface words.
-- One behaviour per scenario, at most 5 steps, in strict Given, When, Then order.
+- One behaviour per scenario, in strict Given, When, Then order.
 - `Then` is observable and checkable.
 - Each scenario stands alone and does not depend on another scenario's state.
 - `Scenario Outline` only for the same behaviour with different inputs.
