@@ -1,9 +1,10 @@
-package pluginport_test
+package whenconfig_test
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -18,7 +19,7 @@ func TestTheConfigOfAConditionIsTheResolvedValueOrTheDefaultOfEachSetting(t *tes
 		{Key: "pages", DefaultJSON: "3"},
 	}}}
 
-	got := pluginport.NewWhenConfig(app, plugins)
+	got := whenconfig.New(app, plugins)
 
 	want := map[string]any{
 		"app": map[string]any{"editor": map[string]any{"lineNumbers": true}, "theme": "dusk"},
