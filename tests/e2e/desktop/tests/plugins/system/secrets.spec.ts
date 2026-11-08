@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { test, expect, type Page } from '../../support/test.js'
+import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { startOwnServer, type InstalledPlugin, type OwnServer } from '../../support/server.js'
 import { runCommand } from '../../support/workspace.js'
 
@@ -164,6 +164,23 @@ const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']
   return settings
 }
 
+/** The row of the secret with that name inside a section or a page. */
+const rowOf = (scope: Locator, name: string): Locator =>
+  scope.getByRole('listitem').filter({ has: scope.getByLabel(`Value of ${name}`, { exact: true }) })
+
+/** Opens a list of choices of a multiple select, takes the choices by name and closes it. */
+const choose = async (page: Page, select: Locator, names: RegExp[]): Promise<void> => {
+  await select.click()
+  for (const name of names) await page.getByRole('option', { name }).click()
+  await page.keyboard.press('Escape')
+}
+
+/** Opens the menu of a secret row and takes the item. */
+const takeRowAction = async (page: Page, row: Locator, item: RegExp): Promise<void> => {
+  await row.getByRole('button', { name: 'Secret actions' }).click()
+  await page.getByRole('menuitem', { name: item }).click()
+}
+
 test.describe('Secrets shared between plugins', () => {
   let server: OwnServer
   let folder: string
@@ -191,18 +208,18 @@ test.describe('Secrets shared between plugins', () => {
     await reopen(page)
     const settings = await openSecretsPage(page)
     const section = settings.getByRole('region', { name: 'openrouter' })
-    await section.getByLabel('Default').fill(value)
-    await section.getByLabel('Default').press('Enter')
+    const field = section.getByLabel(/^Value of /)
+    await field.fill(value)
+    await field.press('Enter')
 
-    await section.getByRole('checkbox', { name: /Key read by Probe one/ }).check()
-    await section.getByRole('checkbox', { name: /Key read by Probe two/ }).check()
+    await choose(page, section.locator('[data-slot="select"]'), [/Probe one/, /Probe two/])
 
     for (const id of [ONE, TWO]) {
       await expect
         .poll(() => readReceived(logs[id] as string).map((one) => one.value))
         .toEqual([value])
     }
-    await expect(section.getByLabel('Default')).toHaveValue('')
+    await expect(section.getByLabel(/^Value of /)).toHaveValue('')
     expect(await page.content()).not.toContain(value)
     const answer = await callOn(page, 'GetSettings', {})
     expect(JSON.stringify(answer)).not.toContain(value)
@@ -222,8 +239,7 @@ test.describe('Secrets shared between plugins', () => {
 
     await reopen(page)
     const settings = await openSecretsPage(page)
-    const row = settings.getByRole('listitem').filter({ hasText: 'Bravo' })
-    await row.getByRole('button', { name: /move up/i }).click()
+    await takeRowAction(page, rowOf(settings, 'Bravo'), /^move up$/i)
 
     await expect.poll(readOrder).toEqual([second, first])
   })
@@ -237,8 +253,7 @@ test.describe('Secrets shared between plugins', () => {
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
     await settings.getByRole('button', { name: /Probe two/ }).click()
-    await settings.getByRole('button', { name: /choose/i }).click()
-    await page.getByRole('option', { name: 'Trip' }).click()
+    await choose(page, settings.locator('.settings__secret'), [/Trip/])
 
     await expect.poll(() => readReceived(logs[TWO] as string).map((one) => one.id)).toContain(trip)
     expect(await page.content()).not.toContain(value)
@@ -255,11 +270,7 @@ test.describe('Secrets shared between plugins', () => {
 
     await reopen(page)
     const settings = await openSecretsPage(page)
-    await settings
-      .getByRole('listitem')
-      .filter({ hasText: 'Doomed' })
-      .getByRole('button', { name: /delete/i })
-      .click()
+    await takeRowAction(page, rowOf(settings, 'Doomed'), /^delete/i)
     const confirmation = page.getByRole('alertdialog')
     await expect(confirmation).toContainText('Probe one')
     await confirmation.getByRole('button', { name: /delete/i }).click()

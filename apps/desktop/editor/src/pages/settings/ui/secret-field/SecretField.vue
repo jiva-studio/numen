@@ -87,10 +87,3 @@ function onSelect(next: readonly string[]): void {
     />
   </SettingRow>
 </template>
-
-<style scoped>
-.settings__secret {
-  inline-size: var(--settings-choice);
-  max-inline-size: 100%;
-}
-</style>

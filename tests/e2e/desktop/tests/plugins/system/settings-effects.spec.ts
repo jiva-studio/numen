@@ -92,14 +92,15 @@ test.describe('Plugin settings take effect', () => {
 
     await settings.getByRole('button', { name: /^Secrets$/ }).click()
     const section = settings.getByRole('region', { name: 'openai' })
-    await section.getByLabel('Default').fill(value)
-    await section.getByLabel('Default').press('Enter')
+    const field = section.getByLabel(/^Value of /)
+    await field.fill(value)
+    await field.press('Enter')
 
     await expect
       .poll(async () => (await readSecrets(page)).map((one) => one.name))
-      .toEqual(['Default'])
+      .toEqual(['OpenAI'])
     expect((await readSecrets(page))[0]).toMatchObject({ group: 'openai', hasValue: true })
-    await expect(section.getByLabel('Default')).toHaveValue('')
+    await expect(section.getByLabel(/^Value of /)).toHaveValue('')
     expect(await page.content()).not.toContain(value)
 
     await page.reload()
@@ -109,10 +110,10 @@ test.describe('Plugin settings take effect', () => {
     expect(await page.content()).not.toContain(value)
 
     await reloaded
-      .getByRole('listitem')
-      .filter({ hasText: 'Default' })
-      .getByRole('button', { name: /delete/i })
+      .getByRole('region', { name: 'openai' })
+      .getByRole('button', { name: 'Secret actions' })
       .click()
+    await page.getByRole('menuitem', { name: /^delete/i }).click()
     const confirmation = page.getByRole('alertdialog')
     await expect(confirmation).toBeVisible()
     await confirmation.getByRole('button', { name: /delete/i }).click()
