@@ -92,6 +92,7 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 	host := &recordingHost{PluginManager: container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))}
 	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: host})
 	cfg = cfg.SetSettings(container.DefaultSettings())
+	t.Cleanup(cfg.UnsubscribeHost)
 	return cfg, path, host
 }
 

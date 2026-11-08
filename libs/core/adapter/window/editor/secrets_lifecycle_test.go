@@ -84,7 +84,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg = cfg.SetSettings(loaded)
+	cfg = applySettings(t, cfg, loaded)
 
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
@@ -155,7 +155,7 @@ func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.K
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.SetSettings(loaded)
+	applySettings(t, cfg, loaded)
 	return host
 }
 
