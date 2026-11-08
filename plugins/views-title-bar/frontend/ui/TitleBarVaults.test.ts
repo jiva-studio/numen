@@ -81,15 +81,13 @@ describe('the title with vaults', () => {
 
     expect(drag(getTrigger(wrapper).element)).toBe('no-drag')
     expect(drag(wrapper.find('[data-title-bar]').element)).toBe('drag')
-    expect(wrapper.find('[data-title-fill]').exists()).toBe(true)
-    expect(drag(wrapper.find('[data-title-fill]').element)).toBe('')
+    expect(drag(wrapper.find('[data-title-bar-middle]').element)).toBe('')
   })
 
   it('is the plain title when the bar has no vaults', () => {
     for (const vaults of [null, { vaults: [], current: ORCHARD }, { ...VAULTS, current: null }]) {
       const wrapper = mountBar(vaults)
       expect(getTrigger(wrapper).element.tagName).toBe('SPAN')
-      expect(wrapper.find('[data-title-fill]').exists()).toBe(false)
     }
   })
 })
