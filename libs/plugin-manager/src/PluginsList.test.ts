@@ -104,14 +104,14 @@ describe('PluginsList', () => {
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.notes'], ['system']])
   })
 
-  it('shows a Secrets row without a description and emits secrets for it', async () => {
+  it('shows a Secrets row with a description and emits secrets for it', async () => {
     const wrapper = mountList()
 
     const row = wrapper.find('.secrets-row')
     await row.trigger('click')
 
     expect(row.find('.plugin-row__name').text()).toBe('Secrets')
-    expect(row.find('.plugin-row__description').exists()).toBe(false)
+    expect(row.find('.plugin-row__description').text()).toBe('API keys and tokens for plugins.')
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['secrets']])
   })
 

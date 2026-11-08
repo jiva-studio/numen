@@ -83,7 +83,7 @@ function isPluginEnabled(pluginId: string): boolean {
         v-if="showsSecrets"
         class="secrets-row"
         :name="words.secrets"
-        detail=""
+        :detail="words.secretsDetail"
         @select="onSelectSecrets"
       />
       <PluginRow
