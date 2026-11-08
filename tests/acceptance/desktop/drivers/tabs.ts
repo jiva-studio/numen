@@ -3,6 +3,7 @@ import { expect, type Locator } from 'playwright/test'
 import { getNoteTab, getTabName, revealTreeRow } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertSingleTab, getAddressTitle, getEscaped, getStem, getTitlePattern, parseReference } from './rules.js'
 import type { Scenario } from './scenario.js'
+import { expectTabHighlight } from './tab-highlight.js'
 import { expectTabAt, openTabAt } from './tab-position.js'
 
 export class TabDriver {
@@ -81,5 +82,9 @@ export class TabDriver {
 
   async expectAt(reference: string, name: string, position: string, where: string): Promise<void> {
     await expectTabAt(this.scenario.page, await this.scenario.getPath(reference, name), position, where)
+  }
+
+  async expectHighlight(reference: string, name: string, text: string): Promise<void> {
+    await expectTabHighlight(this.scenario.page, await this.scenario.getPath(reference, name), text)
   }
 }
