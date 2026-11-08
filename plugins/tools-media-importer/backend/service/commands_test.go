@@ -42,8 +42,8 @@ func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 
 func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *link.Links) {
 	t.Helper()
-	links, store, hosted := newMockLinks(t)
-	commands, err := newCommands(links, hosted)
+	links, store, _ := newMockLinks(t)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}

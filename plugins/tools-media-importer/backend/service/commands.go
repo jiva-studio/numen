@@ -24,7 +24,7 @@ const (
 // argumentAddress is the argument of app:link.import that holds the web address.
 const argumentAddress = "address"
 
-func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
+func newCommands(links *link.Links) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
 		commandImport:        newImportCommand(links),

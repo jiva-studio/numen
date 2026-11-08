@@ -118,7 +118,7 @@ func getLanguages(value string) []string {
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
 	links := link.New(hosted, f.getFetcher, f.getSettings)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
 	if err != nil {
 		return err
