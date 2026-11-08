@@ -12,6 +12,12 @@ const fixtures = import.meta.glob('../../testdata/api/*.json', {
 
 const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
 
+/** The backend sends the recipe of the vectors; the plugin shows none and its messages leave it out. */
+const withoutUnread = (message: unknown): unknown => {
+  const { recipe: _recipe, ...read } = message as Record<string, unknown>
+  return read
+}
+
 const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
   GetStats: {
     request: {},
@@ -41,7 +47,7 @@ describe('index stats service contract', () => {
   for (const [method, expected] of Object.entries(EXPECTED)) {
     it(`${method} fixtures equal the typed messages`, () => {
       expect(read(`${method}.request`)).toEqual(expected.request)
-      expect(read(`${method}.response`)).toEqual(expected.response)
+      expect(withoutUnread(read(`${method}.response`))).toEqual(expected.response)
     })
   }
 
