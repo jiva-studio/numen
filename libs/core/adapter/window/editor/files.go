@@ -73,6 +73,16 @@ func (h *fileHandler) ListFiles(
 		return nil, connect.NewError(getListCode(err), err)
 	}
 
+	var notes []string
+	for _, one := range listing.Entries {
+		if one.Kind == domain.KindNote {
+			notes = append(notes, one.Path)
+		}
+	}
+	tabKinds, err := h.listTabKinds(ctx, showing, notes)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
 		out.Entries = append(out.Entries, &v1.Entry{
@@ -81,6 +91,7 @@ func (h *fileHandler) ListFiles(
 			IsFolder: one.IsFolder,
 			IsNote:   one.Kind == domain.KindNote,
 			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
+			TabKind:  tabKinds[one.Path],
 		})
 	}
 	return connect.NewResponse(out), nil

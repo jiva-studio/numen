@@ -287,6 +287,8 @@ func createWindow(
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
 	services.File.chooseTabKind = made.OpenChooseTabKind()
+	services.Note.findTabKinds = services.File.listTabKinds
+	services.Search.ListTabKinds = services.File.listTabKinds
 	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
 
 	// The editor is open on one vault, and answers which as itself.

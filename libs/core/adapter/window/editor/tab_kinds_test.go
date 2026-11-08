@@ -1,11 +1,14 @@
 package editor_test
 
 import (
+	"maps"
 	"strings"
 	"testing"
 
+	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
@@ -56,3 +59,32 @@ func (notesOnly) GetContentType(path string) domain.ContentType {
 }
 
 func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"md"} }
+
+func TestAListingOfAFolderNamesTheKindOfTabEachNoteOpensIn(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{
+		"links/tide.md":  "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
+		"links/plain.md": "# Plain\n",
+		"links/map.png":  "pixels",
+	})
+	f.read(t)
+	choose, err := tabkind.NewChoose(tabKinds{
+		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", When: "has(target.properties.media)", Rank: domain.RankDefault}},
+	}, notesOnly{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.installation.Services.SetTabKindChoice(choose)
+
+	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: "links"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]string{}
+	for _, one := range answer.Msg.GetEntries() {
+		got[one.GetPath()] = one.GetTabKind()
+	}
+	if want := map[string]string{"links/tide.md": "media", "links/plain.md": "", "links/map.png": ""}; !maps.Equal(got, want) {
+		t.Errorf("tab kinds %v, want %v", got, want)
+	}
+}

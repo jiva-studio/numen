@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"context"
+
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -96,6 +98,7 @@ type noteHandler struct {
 
 	getOpeningNote *note.GetOpeningNote
 	getTypes       *note.GetTypes
+	findTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
 	getHeadings    *note.GetHeadings
 	resolveLinks   *note.ResolveLinks
 
