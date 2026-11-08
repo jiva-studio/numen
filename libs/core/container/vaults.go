@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
@@ -83,7 +84,7 @@ type Resources struct {
 	settingsFiles  *settings.Files
 	settingEvents  *settingevents.Events
 	hostSubscribed sync.Once
-	pluginChanges  *pluginChanges
+	pluginChanges  *pluginchanges.Signals
 }
 
 // NewResources returns the resources of one container.
@@ -93,7 +94,7 @@ func NewResources() *Resources {
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settings.NewFiles(),
 		settingEvents: settingevents.New(),
-		pluginChanges: &pluginChanges{},
+		pluginChanges: &pluginchanges.Signals{},
 	}
 }
 
@@ -113,5 +114,5 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, pluginChanges: &pluginChanges{}}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, pluginChanges: &pluginchanges.Signals{}}
 }

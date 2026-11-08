@@ -48,13 +48,6 @@ func (s *memoryVault) put(path, content string) {
 	s.times[path] = time.Unix(int64(1_700_000_000+len(s.times)*100+len(content)), 0)
 }
 
-func (s *memoryVault) remove(path string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.files, path)
-	delete(s.times, path)
-}
-
 func (s *memoryVault) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	s.mu.Lock()
 	paths := slices.Sorted(maps.Keys(s.files))
