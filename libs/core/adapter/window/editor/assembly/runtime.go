@@ -9,6 +9,8 @@ import (
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
@@ -63,6 +65,8 @@ type Runtime[H, V any] struct {
 	OpenWatchSettingsFn      func() *settings.Watch
 	OpenSecretsFn            func() *secret.Secrets
 	OpenConnectionsFn        func() *connection.Connections
+	OpenModelListsFn         func() *modellist.Lists
+	SetModelCallsFn          func(notices modelcallport.Notices)
 	OpenRetryPluginFn        func() *settings.RetryPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
 	SetPluginWorkFn          func(tasks *run.Tasks, models *run.Lock)
@@ -123,6 +127,23 @@ func (e Runtime[H, V]) OpenConnections() *connection.Connections {
 	}
 	return e.OpenConnectionsFn()
 }
+
+// OpenModelLists is the lists a provider gives, nil where the assembly names none.
+func (e Runtime[H, V]) OpenModelLists() *modellist.Lists {
+	if e.OpenModelListsFn == nil {
+		return nil
+	}
+	return e.OpenModelListsFn()
+}
+
+// SetModelCalls lets the plugins ask for the operations on models, and does nothing where the assembly
+// names none.
+func (e Runtime[H, V]) SetModelCalls(notices modelcallport.Notices) {
+	if e.SetModelCallsFn != nil {
+		e.SetModelCallsFn(notices)
+	}
+}
+
 func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
 func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
 func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {

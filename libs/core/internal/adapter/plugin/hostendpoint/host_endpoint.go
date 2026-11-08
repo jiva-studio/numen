@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -58,6 +59,8 @@ type workServices interface {
 // Services is what the host lends the plugins that call it.
 type Services interface {
 	GetCompleter() completionport.Completer
+	// GetModelCalls returns what carries out the operations on models, or nil when the host has none.
+	GetModelCalls() modelcallport.ModelCalls
 	GetPluginVault() pluginport.PluginVault
 	GetPluginTexts() pluginport.PluginTexts
 	GetDependencies() pluginport.DependencyCatalog
@@ -101,6 +104,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
+	mux.Handle(numenv1connect.NewHostModelServiceHandler(&modelEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))

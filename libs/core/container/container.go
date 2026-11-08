@@ -13,6 +13,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	connectionswiring "github.com/jiva-studio/numen/libs/core/container/connections"
+	modelcallswiring "github.com/jiva-studio/numen/libs/core/container/modelcalls"
 	pluginswiring "github.com/jiva-studio/numen/libs/core/container/plugins"
 	searchwiring "github.com/jiva-studio/numen/libs/core/container/search"
 	settingswiring "github.com/jiva-studio/numen/libs/core/container/settings"
@@ -28,6 +29,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
@@ -213,6 +216,22 @@ func (c Config) connections() connectionswiring.Config {
 // the installation has no plugin host.
 func (c Config) OpenConnections() *connection.Connections {
 	return c.connections().OpenConnections()
+}
+
+func (c Config) modelCalls() modelcallswiring.Config {
+	return modelcallswiring.Config{PluginHost: c.PluginHost, Connections: c.OpenConnections(), Clock: c.Clock()}
+}
+
+// OpenModelLists returns the models and reasoning levels a provider gives for a connection, or nil
+// where the installation has no plugin host.
+func (c Config) OpenModelLists() *modellist.Lists {
+	return c.modelCalls().OpenLists()
+}
+
+// SetModelCalls lets the plugins ask the host for the operations on models. notices tells the person
+// of a connection set aside.
+func (c Config) SetModelCalls(notices modelcallport.Notices) {
+	c.modelCalls().SetModelCalls(notices)
 }
 
 func (c Config) search() searchwiring.Config {

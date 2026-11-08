@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -100,6 +101,21 @@ func (h *Host) GetCompleter() completionport.Completer {
 	return h.completer
 }
 
+// SetModelCalls sets what carries out the operations plugins ask for on their connections. The host
+// endpoint starts serving when the first plugin launches after it is set.
+func (h *Host) SetModelCalls(calls modelcallport.ModelCalls) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.modelCalls = calls
+}
+
+// GetModelCalls returns what carries out the operations on models, or nil.
+func (h *Host) GetModelCalls() modelcallport.ModelCalls {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.modelCalls
+}
+
 // SetPluginSearch is the search index and the search floor the plugins work through the host.
 func (h *Host) SetPluginSearch(search pluginport.PluginSearch) {
 	h.mu.Lock()
@@ -120,7 +136,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil && h.search == nil) || h.isClosed {
+	if (h.completer == nil && h.modelCalls == nil && h.vault == nil && h.dependencies == nil && h.work == nil && h.search == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h)

@@ -8,6 +8,8 @@ import (
 
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
@@ -35,6 +37,8 @@ type pluginSecretAssembly interface {
 	OpenSecrets() *secret.Secrets
 	// OpenConnections is the use cases on the connections, and nil for an installation with no plugin host.
 	OpenConnections() *connection.Connections
+	// OpenModelLists is the models and reasoning levels of a connection, and nil for an installation with no plugin host.
+	OpenModelLists() *modellist.Lists
 	GetPluginCommands() plugincommand.Commands
 	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
 	OpenChooseTabKind() *tabkind.Choose
@@ -47,6 +51,9 @@ type pluginWorkAssembly interface {
 	OpenRetryPlugin() *settings.RetryPlugin
 	ReportPluginFailures(tasks *run.Tasks)
 	SetPluginWork(tasks *run.Tasks, models *run.Lock)
+	// SetModelCalls lets the plugins ask for the operations on models; notices tells the person of a
+	// connection set aside. An installation with no plugin host does nothing.
+	SetModelCalls(notices modelcallport.Notices)
 }
 
 // PluginAssembly is what this window requires to manage, access, and report on plugins.

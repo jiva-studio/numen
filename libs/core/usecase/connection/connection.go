@@ -51,11 +51,13 @@ type Entry struct {
 
 // Connections holds every use case on the list of connections.
 type Connections struct {
-	Create    *Create
-	Update    *Update
-	Delete    *Delete
-	List      *List
-	ListTypes *ListTypes
+	Create      *Create
+	Update      *Update
+	Delete      *Delete
+	List        *List
+	ListTypes   *ListTypes
+	Resolve     *Resolve
+	ReadSecrets *ReadSecrets
 }
 
 // NewConnections returns the use cases over the list, the registry of types and the key store.
@@ -67,11 +69,13 @@ func NewConnections(
 ) *Connections {
 	base := operation{repository: repository, types: types, keys: keys, gate: &sync.Mutex{}}
 	return &Connections{
-		Create:    &Create{operation: base, newID: newID},
-		Update:    &Update{operation: base},
-		Delete:    &Delete{operation: base},
-		List:      &List{operation: base},
-		ListTypes: &ListTypes{operation: base},
+		Create:      &Create{operation: base, newID: newID},
+		Update:      &Update{operation: base},
+		Delete:      &Delete{operation: base},
+		List:        &List{operation: base},
+		ListTypes:   &ListTypes{operation: base},
+		Resolve:     &Resolve{operation: base},
+		ReadSecrets: &ReadSecrets{operation: base},
 	}
 }
 

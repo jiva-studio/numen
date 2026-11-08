@@ -51,6 +51,8 @@ type Services struct {
 
 	Connection numenv1connect.ProviderConnectionServiceHandler
 
+	Model numenv1connect.ModelServiceHandler
+
 	Catalog numenv1connect.CatalogServiceHandler
 
 	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath
@@ -78,6 +80,7 @@ func createServices(state *State) *Services {
 		Text:       texts.NewHandler(state, nil),
 		Plugin:     numenv1connect.UnimplementedPluginServiceHandler{},
 		Connection: numenv1connect.UnimplementedProviderConnectionServiceHandler{},
+		Model:      numenv1connect.UnimplementedModelServiceHandler{},
 		server:     &fileServer{state: state},
 	}
 }

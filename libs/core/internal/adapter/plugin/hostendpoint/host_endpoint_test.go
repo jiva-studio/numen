@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -25,18 +26,19 @@ import (
 // callers is a host that resolves the plugins registered with it and answers
 // with the completer it was given.
 type callers struct {
-	mu        sync.Mutex
-	plugins   map[string]string
-	allowed   map[string]bool
-	completer completionport.Completer
-	checked   []string
-	vault     pluginport.PluginVault
-	texts     pluginport.PluginTexts
-	search    pluginport.PluginSearch
-	work      pluginport.PluginWork
-	tools     PluginTools
-	acquired  map[string]int
-	releases  chan string
+	mu         sync.Mutex
+	plugins    map[string]string
+	allowed    map[string]bool
+	completer  completionport.Completer
+	checked    []string
+	vault      pluginport.PluginVault
+	modelCalls connectionport.ModelCalls
+	texts      pluginport.PluginTexts
+	search     pluginport.PluginSearch
+	work       pluginport.PluginWork
+	tools      PluginTools
+	acquired   map[string]int
+	releases   chan string
 }
 
 func (c *callers) GetPluginIDByToken(token string) (string, bool) {
@@ -55,6 +57,8 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 }
 
 func (c *callers) GetCompleter() completionport.Completer { return c.completer }
+
+func (c *callers) GetModelCalls() connectionport.ModelCalls { return c.modelCalls }
 
 func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 

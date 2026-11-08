@@ -1,0 +1,108 @@
+package modelcall_test
+
+import (
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcalltest"
+)
+
+func TestThePersonIsToldWhenARowIsSetAsideAndTheNextOneAnswers(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
+
+	if _, err := s.complete(t); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []modelcalltest.Notice{{ConnectionID: s.one.ID, ConnectionName: "First", Reason: connectionport.FailureReasonPaymentRequired}}
+	if got := s.world.Notices.List(); !slices.Equal(got, want) {
+		t.Errorf("notices = %v, want %v", got, want)
+	}
+}
+
+func TestThePersonIsToldOnceForEachConnectionAndReason(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonRateLimited, 0))
+
+	for range 3 {
+		if _, err := s.complete(t); err != nil {
+			t.Fatal(err)
+		}
+		s.world.Clock.Advance(2 * time.Minute)
+	}
+
+	if got := len(s.world.Notices.List()); got != 1 {
+		t.Errorf("notices = %v, want one", s.world.Notices.List())
+	}
+}
+
+func TestAnotherReasonOfTheSameConnectionIsToldAgain(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonRateLimited, 0))
+	_, _ = s.complete(t)
+	s.world.Clock.Advance(2 * time.Minute)
+	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
+	_, _ = s.complete(t)
+
+	got := s.world.Notices.List()
+
+	if len(got) != 2 || got[0].Reason != connectionport.FailureReasonRateLimited || got[1].Reason != connectionport.FailureReasonPaymentRequired {
+		t.Errorf("notices = %v", got)
+	}
+}
+
+func TestAnEditedConnectionIsToldAgain(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonKeyRejected, 0))
+	_, _ = s.complete(t)
+	s.world.Edit(t, s.one, "First, new key")
+	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonKeyRejected, 0))
+
+	_, _ = s.complete(t)
+
+	if got := len(s.world.Notices.List()); got != 2 {
+		t.Errorf("notices = %v, want one for each revision", s.world.Notices.List())
+	}
+}
+
+func TestThePersonIsNotToldWhenEveryRowFails(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
+	s.world.Provider.FailAlways(addressTwo, tryNext(connectionport.FailureReasonPaymentRequired, 0))
+
+	_, _ = s.complete(t)
+
+	if got := s.world.Notices.List(); len(got) != 0 {
+		t.Errorf("notices = %v, want none: the plugin got the error", got)
+	}
+}
+
+func TestThePersonIsNotToldAboutARowThatWasOnlySkipped(t *testing.T) {
+	s := newSetup(t, "complete")
+	delete(s.world.Keys.Values, connection.GetEntryName(s.one.ID, "apiKey"))
+
+	result, err := s.complete(t)
+
+	if err != nil || result.Text != "answer from "+addressTwo {
+		t.Fatalf("Complete = %v, %v", result, err)
+	}
+
+	if got := s.world.Notices.List(); len(got) != 0 {
+		t.Errorf("notices = %v, want none for a row whose key is missing", got)
+	}
+}
+
+func TestThePersonIsNotToldAboutAStop(t *testing.T) {
+	s := newSetup(t, "complete")
+	s.world.Provider.Fail(addressOne, stop(connectionport.FailureReasonBadRequest))
+
+	_, _ = s.complete(t)
+
+	if got := s.world.Notices.List(); len(got) != 0 {
+		t.Errorf("notices = %v", got)
+	}
+}

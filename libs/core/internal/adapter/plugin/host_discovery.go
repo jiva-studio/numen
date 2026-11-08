@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
@@ -39,11 +41,15 @@ func (h *Host) discoverPlugins() error {
 	h.problems = problems
 	h.installed = all
 	h.hasScanned = true
+	discovered, refused := h.refuseBuiltInProviderIDsLocked(discovered)
 	stalePlugins := h.registerDiscoveredLocked(discovered)
 	h.mu.Unlock()
 
 	for _, problem := range problems {
 		h.reportError(problem.Err)
+	}
+	for _, err := range refused {
+		h.reportError(err)
 	}
 	for _, id := range stalePlugins {
 		h.retirePlugin(id)
@@ -122,4 +128,23 @@ func (h *Host) retirePlugin(pluginID string) {
 	if _, registered := h.plugins[pluginID]; !registered {
 		delete(h.supervisors, pluginID)
 	}
+}
+
+var errProviderIDTaken = errors.New("a built-in plugin of this id provides connection types")
+
+// refuseBuiltInProviderIDsLocked leaves out the plugins found on disk under the id of a built-in plugin
+// that provides connection types, because the keys of a connection go to the plugin that provides its
+// type. It returns the plugins to register and the refusals.
+func (h *Host) refuseBuiltInProviderIDsLocked(discovered []manifest.Discovered) ([]manifest.Discovered, []error) {
+	var kept []manifest.Discovered
+	var refused []error
+	for _, p := range discovered {
+		builtIn, isBuiltIn := h.getBuiltInLocked(p.Manifest.ID)
+		if isBuiltIn && len(builtIn.plugin.Manifest.Contributes.ConnectionTypes) > 0 {
+			refused = append(refused, fmt.Errorf("%w: refused the plugin in %s", errProviderIDTaken, p.Dir))
+			continue
+		}
+		kept = append(kept, p)
+	}
+	return kept, refused
 }

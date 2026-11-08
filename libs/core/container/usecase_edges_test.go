@@ -24,6 +24,8 @@ func getUseCaseEdges() map[string][]string {
 		"indexing":      nil,
 		"completion":    nil,
 		"connection":    nil,
+		"modelcall":     {"connection"},
+		"modellist":     {"connection"},
 		"plugincommand": nil,
 		"plugintheme":   nil,
 		"textversion":   nil,

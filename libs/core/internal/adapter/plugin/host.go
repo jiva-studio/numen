@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
@@ -93,6 +94,7 @@ type Host struct {
 	installed              []manifest.Discovered
 	hasScanned             bool
 	completer              completionport.Completer
+	modelCalls             modelcallport.ModelCalls
 	vault                  pluginport.PluginVault
 	texts                  pluginport.PluginTexts
 	window                 pluginport.PluginWindow
