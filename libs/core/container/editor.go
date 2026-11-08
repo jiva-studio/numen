@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
@@ -102,17 +101,13 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			request.ShouldRebuildIndex = rebuild
 			return request.ReadWholeVault(ctx, db, embedder, v)
 		},
-		StartVaultFn:     cfg.startVault(db),
-		PluginServicesFn: cfg.GetPluginServices,
-		PluginCommandsFn: cfg.GetPluginCommands,
-		TabKindChoiceFn:  cfg.GetTabKindChoice,
-		PluginCatalogFn:  cfg.getEditorCatalog,
-		AgentVal:         cfg.getToolProvider(),
-		SetTextVersionListenerFn: func(listener textport.VersionListener) {
-			if cfg.TextVersions != nil {
-				cfg.TextVersions.SetListener(listener)
-			}
-		},
+		StartVaultFn:             cfg.startVault(db),
+		PluginServicesFn:         cfg.GetPluginServices,
+		PluginCommandsFn:         cfg.GetPluginCommands,
+		TabKindChoiceFn:          cfg.GetTabKindChoice,
+		PluginCatalogFn:          cfg.getEditorCatalog,
+		AgentVal:                 cfg.getToolProvider(),
+		SetTextVersionListenerFn: cfg.setTextVersionListener,
 		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
 		OpenFileMenuFn:           cfg.openFileMenu,
 		OpenTriggersFn: func() *trigger.Triggers {

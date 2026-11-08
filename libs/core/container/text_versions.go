@@ -68,6 +68,14 @@ func (c Config) openPluginData() *textversion.PluginData {
 	return data
 }
 
+// setTextVersionListener sets the listener of the text versions; a configuration with no text versions
+// has none to set.
+func (c Config) setTextVersionListener(listener textport.VersionListener) {
+	if c.TextVersions != nil {
+		c.TextVersions.SetListener(listener)
+	}
+}
+
 // reportTextFilesChanged reports each changed file of the vault whose live text version changed; a
 // configuration with no text versions reports none.
 func (c Config) reportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
