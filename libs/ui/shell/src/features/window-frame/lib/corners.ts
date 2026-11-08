@@ -1,4 +1,5 @@
-import type { WindowPlatform } from '../model/useWindowFrame'
+/** The operating system of the window, as `runtime.GOOS` names it. */
+export type WindowPlatform = 'darwin' | 'windows' | 'linux'
 
 /**
  * The corner radius of a macOS window with a hidden title bar before macOS 26, in points. Every

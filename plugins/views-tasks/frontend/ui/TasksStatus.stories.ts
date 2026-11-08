@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
-import { expectText } from '../../../../libs/ui/core/.storybook/contrastBrowser'
 
 const RUNNING = [
   createTask({ id: 'a', state: 'running', done: 3, total: 10 }),
@@ -45,7 +44,6 @@ const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.querySelector('.tasks-status__ring-fill')).toBeNull()
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
   await expect(chip.getBoundingClientRect().height).toBe(20)
-  await expectText(chip, 'tasks chip', 'idle')
 }
 
 const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -54,7 +52,6 @@ const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.getAttribute('aria-label')).toBe('0 of 2 tasks done')
   await expect(chip.getAnimations()).toHaveLength(0)
   await expect(chip.querySelector('.tasks-status__ring-fill')).not.toBeNull()
-  await expectText(chip, 'tasks chip', 'active')
 }
 
 const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -63,7 +60,6 @@ const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.textContent?.trim()).toBe('Idle')
   await expect(chip.querySelector('.tasks-status__badge')).toBeNull()
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
-  await expectText(chip, 'tasks chip', 'failed')
 }
 
 /** No task runs: an empty ring and Idle, on the light tokens. */

@@ -211,7 +211,7 @@ main.is-highlighted::after {
   inset: 0;
   z-index: var(--numen-lift-menu);
   border: 3px solid var(--numen-accent);
-  border-radius: var(--numen-window-radius, 0);
+  border-radius: var(--numen-window-radius);
   pointer-events: none;
 }
 

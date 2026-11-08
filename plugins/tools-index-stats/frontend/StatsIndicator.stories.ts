@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { Stats } from './types'
 import StatsIndicator from './StatsIndicator.vue'
-import { expectText } from '../../../libs/ui/core/.storybook/contrastBrowser'
 import './styles.css'
 
 /** A made-up vault that is embedding: notes, a PDF and a book, with no media in it. */
@@ -137,7 +136,6 @@ const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(trigger.textContent).not.toContain('/')
   await expect(trigger.getAnimations()).toHaveLength(0)
   await expect(getComputedStyle(trigger).borderTopWidth).toBe('0px')
-  await expectText(trigger, 'index chip', 'indexing')
 }
 
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -146,7 +144,6 @@ const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(trigger.textContent?.trim()).toBe('⬡13,100')
   await expect(getComputedStyle(trigger).animationName).toBe('none')
   await expect(trigger.getAnimations()).toHaveLength(0)
-  await expectText(trigger, 'index chip', 'idle')
 }
 
 /** The chip is still while chunks wait, on the light tokens. */

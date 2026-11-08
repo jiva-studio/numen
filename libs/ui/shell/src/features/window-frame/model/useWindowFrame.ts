@@ -11,11 +11,9 @@ import {
   readMajorVersion,
   WINDOW_EDGE_VARIABLE,
   WINDOW_RADIUS_VARIABLE,
+  type WindowPlatform,
 } from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
-
-/** The operating system of the window, as `runtime.GOOS` names it. */
-export type WindowPlatform = 'darwin' | 'windows' | 'linux'
 
 /** The path the window serves its Wails runtime module at. */
 const RUNTIME_PATH = '/wails/runtime.js'

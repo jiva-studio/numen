@@ -10,7 +10,7 @@
 
 .window-controls {
   position: relative;
-  top: var(--numen-window-edge, 0px);
+  top: var(--numen-window-edge);
   z-index: 1;
   display: flex;
   flex: none;

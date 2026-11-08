@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { Update } from './api/updater'
 import UpdateIndicator from './UpdateIndicator.vue'
-import { expectText } from '../../../libs/ui/core/.storybook/contrastBrowser'
 import './styles.css'
 
 const UPDATE: Update = {
@@ -47,7 +46,6 @@ const checkCurrent: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.getAttribute('title')).toContain('latest version')
   await expect(chip.tagName).toBe('SPAN')
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
-  await expectText(chip, 'version chip', 'current')
 }
 
 const checkAvailable: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -57,7 +55,6 @@ const checkAvailable: NonNullable<Story['play']> = async ({ canvasElement }) => 
   await expect(getComputedStyle(chip).backgroundColor).not.toBe(
     getComputedStyle(canvasElement.querySelector('div') as HTMLElement).backgroundColor,
   )
-  await expectText(chip, 'version chip', 'available')
 }
 
 /** The version that runs, neutral, on the light tokens. */

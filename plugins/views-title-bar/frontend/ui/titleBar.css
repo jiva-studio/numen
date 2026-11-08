@@ -23,14 +23,14 @@
    columns keep clear of them with padding. */
 .title-bar__start {
   position: relative;
-  top: var(--numen-window-edge, 0px);
+  top: var(--numen-window-edge);
   display: grid;
   grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
   align-items: center;
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
-  margin-inline: calc(-1 * var(--title-bar-lead, 0px)) calc(-1 * var(--title-bar-trail, 0px));
+  margin-inline: calc(-1 * var(--title-bar-lead)) calc(-1 * var(--title-bar-trail));
 }
 
 .title-bar__lead,
@@ -41,12 +41,12 @@
 }
 
 .title-bar__lead {
-  padding-inline-start: var(--title-bar-lead, 0px);
+  padding-inline-start: var(--title-bar-lead);
 }
 
 .title-bar__trail {
   justify-content: flex-end;
-  padding-inline-end: max(var(--title-bar-trail, 0px), var(--title-bar-corner-inset, 0px));
+  padding-inline-end: max(var(--title-bar-trail), var(--title-bar-corner-inset));
 }
 
 .title-bar__middle {
