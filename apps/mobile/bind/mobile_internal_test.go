@@ -302,7 +302,7 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 
 func getFailureLines(output string) []string {
 	var failure []string
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		if strings.HasPrefix(line, "numen:") && !isProgressLine(line) {
 			failure = append(failure, line)
 		}
@@ -481,7 +481,7 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 		},
 	} {
 		items := map[string]bool{}
-		for _, one := range strings.Split(head.Get(name), ", ") {
+		for one := range strings.SplitSeq(head.Get(name), ", ") {
 			items[one] = true
 		}
 		for _, one := range wanted {
@@ -587,7 +587,7 @@ func TestStart_ErrorsOnUnreadableVaultList(t *testing.T) {
 }
 
 func countOpenFiles() int {
-	for fd := 0; fd < 4096; fd++ {
+	for fd := range 4096 {
 		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno != 0 {
 			return fd
 		}
@@ -608,7 +608,7 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 		}
 	}
 	t.Cleanup(restore)
-	for extra := 0; extra < 200; extra++ {
+	for extra := range 200 {
 		dir := t.TempDir()
 		limit := before
 		limit.Cur = uint64(countOpenFiles() + extra)
@@ -643,16 +643,16 @@ func TestStop_CancelsCoreContext(t *testing.T) {
 	startIn(t, core, t.TempDir())
 	core.mu.Lock()
 	cancel := core.running.stop
-	cancelled := false
+	canceled := false
 	core.running.stop = func() {
-		cancelled = true
+		canceled = true
 		cancel()
 	}
 	core.mu.Unlock()
 	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
-	if !cancelled {
+	if !canceled {
 		t.Error("stopping left what the core runs under standing")
 	}
 }
@@ -685,7 +685,7 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	}
 	closeErr := errors.New("the listener will not close")
 	accepted := make(chan struct{})
-	stubborn := &http.Server{}
+	stubborn := &http.Server{ReadHeaderTimeout: time.Minute}
 	go func() {
 		if err := stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Error(err)
@@ -763,7 +763,7 @@ func getListenersOf(t *testing.T, server *http.Server) []net.Listener {
 	t.Helper()
 	elem := reflect.ValueOf(server).Elem()
 	lockField := elem.FieldByName("mu")
-	lock, isMutex := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
+	lock, isMutex := reflect.TypeAssert[*sync.Mutex](reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())))
 	if !isMutex {
 		t.Fatal("the lock of the server is not a sync.Mutex")
 	}

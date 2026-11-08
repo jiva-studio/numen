@@ -16,10 +16,10 @@ import (
 func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
 	t.Parallel()
 
-	if got, want := (note.MissingSpan{}).Error(), "no part of this span is in the note"; got != want {
+	if got, want := (note.MissingSpanError{}).Error(), "no part of this span is in the note"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
-	got := note.MissingSpan{Matched: "the wrath", Instead: "the calm"}.Error()
+	got := note.MissingSpanError{Matched: "the wrath", Instead: "the calm"}.Error()
 	want := `this span is not in the note; it holds "the calm" where the span has "the wrath…"`
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -29,7 +29,7 @@ func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
 func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 	t.Parallel()
 
-	got := note.AmbiguousSpan{Places: 3}.Error()
+	got := note.AmbiguousSpanError{Places: 3}.Error()
 	want := "this span is in 3 places; take in enough of what is around one of them to tell it from the others"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -56,9 +56,8 @@ func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.FileStat{})
-	var nowhere note.MissingSpan
-	if !errors.As(err, &nowhere) {
-		t.Fatalf("want MissingSpan, got %v", err)
+	if !errors.As(err, new(note.MissingSpanError)) {
+		t.Fatalf("want MissingSpanError, got %v", err)
 	}
 }
 
@@ -197,9 +196,9 @@ func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 			c := openChanging(t, map[string]string{"Aggressor.md": tc.note})
 
 			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.FileStat{})
-			var nowhere note.MissingSpan
+			var nowhere note.MissingSpanError
 			if !errors.As(err, &nowhere) {
-				t.Fatalf("want MissingSpan, got %v", err)
+				t.Fatalf("want MissingSpanError, got %v", err)
 			}
 			if nowhere.Matched != tc.matched || nowhere.Instead != tc.instead {
 				t.Errorf("matched %q and instead %q, want %q and %q",
@@ -214,7 +213,7 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{})
-	var nowhere note.MissingSpan
+	var nowhere note.MissingSpanError
 	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
 		t.Errorf("want the rejection to name the text, got %v", err)
 	}
@@ -246,9 +245,9 @@ func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "x\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.FileStat{})
-	var nowhere note.MissingSpan
+	var nowhere note.MissingSpanError
 	if !errors.As(err, &nowhere) {
-		t.Fatalf("want MissingSpan, got %v", err)
+		t.Fatalf("want MissingSpanError, got %v", err)
 	}
 	if nowhere.Matched != "x" || nowhere.Instead != "x\n" {
 		t.Errorf("matched %q and instead %q", nowhere.Matched, nowhere.Instead)

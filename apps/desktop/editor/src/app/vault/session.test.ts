@@ -124,7 +124,7 @@ describe('the streams a window follows', () => {
     expect(request.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
   })
 
-  it('follows the focus, and lets go of it on the signal', () => {
+  it('follows the focus, and releases it on the signal', () => {
     const focus = (async function* () {
       yield* []
     })()

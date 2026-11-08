@@ -12,7 +12,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** One observer that was made, what it was given and whether it was let go. */
+/** One observer that was made, what it was given and whether it was released. */
 interface Watcher {
   readonly tell: ResizeObserverCallback
   readonly observed: Element[]
@@ -59,7 +59,7 @@ const viewElement = (clientWidth: number, clientHeight: number): HTMLElement => 
 }
 
 describe('an element watched for the size it takes', () => {
-  it('is told every size it takes', () => {
+  it('receives every size it takes', () => {
     const watchers = stubResizeObserver()
     const took = createSizes()
     const element = viewElement(0, 0)
@@ -75,7 +75,7 @@ describe('an element watched for the size it takes', () => {
     ])
   })
 
-  it('is told nothing of a box with no width or no height', () => {
+  it('receives nothing of a box with no width or no height', () => {
     const watchers = stubResizeObserver()
     const took = createSizes()
 
@@ -108,7 +108,7 @@ describe('an element watched for the size it takes', () => {
 })
 
 describe('an element watched for the room it takes up whole', () => {
-  it('is told the border box of every size it takes', () => {
+  it('receives the border box of every size it takes', () => {
     const watchers = stubResizeObserver()
     const took = createSizes()
     const element = viewElement(0, 0)
@@ -120,7 +120,7 @@ describe('an element watched for the room it takes up whole', () => {
     expect(took).toHaveBeenCalledExactlyOnceWith({ width: 150, height: 90 })
   })
 
-  it('is told what the element measures where the observer gives no border box', () => {
+  it('receives what the element measures where the observer gives no border box', () => {
     const watchers = stubResizeObserver()
     const took = createSizes()
     const element = document.createElement('div')
@@ -133,7 +133,7 @@ describe('an element watched for the room it takes up whole', () => {
     expect(took).toHaveBeenCalledExactlyOnceWith({ width: 70, height: 40 })
   })
 
-  it('is told what the element measures where the observer reports nothing', () => {
+  it('receives what the element measures where the observer reports nothing', () => {
     const watchers = stubResizeObserver()
     const took = createSizes()
     const element = document.createElement('div')
@@ -164,7 +164,7 @@ describe('an element watched for the room it takes up whole', () => {
 })
 
 describe('the room of the window', () => {
-  it('is told now, and again at every resize', () => {
+  it('is notified now, and again at every resize', () => {
     const took = createSizes()
     const stop = browserViewport.watchFreeSpace(took)
 
@@ -181,7 +181,7 @@ describe('the room of the window', () => {
     stop()
   })
 
-  it('is told nothing once the watching is stopped', () => {
+  it('receives nothing once the watching is stopped', () => {
     const took = createSizes()
     browserViewport.watchFreeSpace(took)()
     took.mockClear()
@@ -288,7 +288,7 @@ describe('the room of one element of a component', () => {
     expect(one.errors).toStrictEqual([])
   })
 
-  it('stops watching when the component goes', () => {
+  it('stops watching when the component is unmounted', () => {
     const watchers = stubResizeObserver()
     const one = mountViewport(viewElement(200, 100))
 

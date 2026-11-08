@@ -79,7 +79,7 @@ func getHandwritten() map[string]string {
 // contains a card with no card id.
 const typedManually = "---\ntype: deck\nlinks:\n" +
 	"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
-	"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+	"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 	"\n### Meaning\n\nCompost made of fallen leaves alone\n" +
 	"\n## Yaffle\n\n[[Term]]\n\n### Word\n\nYaffle\n" +
 	"\n### Meaning\n\nA green woodpecker\n"
@@ -119,7 +119,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 // A question about the presets of a vault this installation does not hold is
 // rejected, and nothing is read for it.
-func TestAQuestionAboutThePresetsOfAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAQuestionAboutThePresetsOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, getPointed())
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),
@@ -199,15 +199,13 @@ func getPresetted() map[string]string {
 	}
 }
 
-func newPresetName(preset string) *string { return &preset }
-
 // The window draws a tile per preset, and pressing one opens a session over the
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	handler, target := newAPI(t, getPresetted())
 	v := target[0]
 
 	out, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
-		Vault: string(v.ID), Preset: newPresetName("Steady.md"),
+		Vault: string(v.ID), Preset: new("Steady.md"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +228,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	v := target[0]
 
 	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
-		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: newPresetName("Steady.md"),
+		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: new("Steady.md"),
 	})
 	if codeOf(err) != server.CodeInvalidArgument {
 		t.Fatalf("a deck and a preset together were answered with %v", err)
@@ -308,7 +306,7 @@ func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
 	v := target[0]
 
 	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
-		Vault: string(v.ID), Preset: newPresetName("Lonely.md"),
+		Vault: string(v.ID), Preset: new("Lonely.md"),
 	})
 	if codeOf(err) != server.CodeFailedPrecondition {
 		t.Fatalf("a preset nothing points at was answered with %v", err)

@@ -20,12 +20,12 @@ const contract = "../../../../../libs/ui/core/src/shared/tokens/tokens.css"
 type valueKind int
 
 const (
-	colour valueKind = iota
+	color valueKind = iota
 	length
 	shadow
 )
 
-func (t valueKind) String() string { return [...]string{"a colour", "a length", "a shadow"}[t] }
+func (t valueKind) String() string { return [...]string{"a color", "a length", "a shadow"}[t] }
 
 type declaration struct {
 	property string
@@ -53,8 +53,8 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 	}
 }
 
-// A token takes a colour, a length, or an elevation, which combines lengths and
-// a colour in one value. A preset that sets a token uses the shape that token
+// A token takes a color, a length, or an elevation, which combines lengths and
+// a color in one value. A preset that sets a token uses the shape that token
 // takes.
 func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	sets := getThemeFields(t)
@@ -76,13 +76,13 @@ const presetsPlugin = "../../../../../plugins/themes-presets"
 
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
-	catalogue := createThemeFolder(t)
+	catalog := createThemeFolder(t)
 	texts := map[string]string{}
-	for _, one := range catalogue.Themes() {
+	for _, one := range catalog.Themes() {
 		if one.Origin != theme.Preset {
 			continue
 		}
-		text, err := catalogue.Text(one.Name)
+		text, err := catalog.Text(one.Name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,7 +153,7 @@ func resolveToken(value string, tokens map[string]string) string {
 func getValueKind(value string) valueKind {
 	switch {
 	case isColour(value):
-		return colour
+		return color
 	case isLength(value):
 		return length
 	default:
@@ -163,7 +163,7 @@ func getValueKind(value string) valueKind {
 
 func hasValueKind(value string, want valueKind) bool {
 	switch want {
-	case colour:
+	case color:
 		return isColour(value)
 	case length:
 		return isLength(value)

@@ -47,7 +47,7 @@ describe('opening and closing', () => {
     expect(calls).toStrictEqual([])
   })
 
-  it('lets go of the window and forgets the keyboard as it closes', async () => {
+  it('releases the window and forgets the keyboard as it closes', async () => {
     const { isOpen, calls } = create(true)
     await nextTick()
     calls.length = 0
@@ -100,7 +100,7 @@ describe('opening and closing', () => {
     expect(focus).not.toHaveBeenCalled()
   })
 
-  it('lets go of the window when it goes while still open', async () => {
+  it('releases the window when it is removed while still open', async () => {
     const { calls, wrapper } = create(true)
     await nextTick()
     calls.length = 0

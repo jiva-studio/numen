@@ -46,7 +46,7 @@ export const ListToolsResponseSchema: GenMessage<ListToolsResponse> = /*@__PURE_
   messageDesc(file_numen_v1_tools, 1);
 
 /**
- * PluginTool is one tool as an agent is told of it.
+ * PluginTool is one tool as an agent receives it.
  *
  * @generated from message numen.v1.PluginTool
  */

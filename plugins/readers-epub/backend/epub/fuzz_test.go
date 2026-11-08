@@ -3,6 +3,7 @@ package epub_test
 import (
 	"bytes"
 	"errors"
+	"maps"
 	"strings"
 	"testing"
 
@@ -177,7 +178,7 @@ func FuzzRead(f *testing.F) {
 			}
 			pos = page.Offset
 			if !oneLine(page.Label) {
-				t.Fatalf("a page is labelled %q, which is not one line of a label", page.Label)
+				t.Fatalf("a page is labeled %q, which is not one line of a label", page.Label)
 			}
 		}
 
@@ -232,9 +233,7 @@ func hasPart(parts []epub.Part, title string, offset int) bool {
 
 func clone(parts map[string][]byte) map[string][]byte {
 	made := make(map[string][]byte, len(parts))
-	for name, raw := range parts {
-		made[name] = raw
-	}
+	maps.Copy(made, parts)
 	return made
 }
 

@@ -11,7 +11,7 @@ var ErrClosing = errors.New("this vault is closing")
 
 // Inflight is the writes taken and not yet finished.
 //
-// What is counted is the writing itself, and not the answer travelling back to
+// What is counted is the writing itself, and not the answer traveling back to
 // the client. The database closes once nothing is being written.
 type Inflight struct {
 	mu       sync.Mutex

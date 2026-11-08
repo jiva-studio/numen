@@ -96,8 +96,14 @@ func (c Config) settingsFile() (string, error) {
 	return c.settings().SettingsFile()
 }
 
-// Themes provides the themes the window can use: the catalogue of themes, and
+// Themes provides the themes the window can use: the catalog of themes, and
 // the settings file that stores the selection.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return c.settings().Themes(say)
+}
+
+// UnsubscribeHost stops the plugin host from receiving setting changes. It returns after the batch
+// being delivered has been handled.
+func (c Config) UnsubscribeHost() {
+	c.settings().UnsubscribeHost()
 }

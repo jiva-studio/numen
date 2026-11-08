@@ -47,14 +47,14 @@ type ReplaceResult struct {
 	IsPlain  bool
 }
 
-// MissingSpan is a span that is not in the note, and where a copy of it stopped
+// MissingSpanError is a span that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
-type MissingSpan struct {
+type MissingSpanError struct {
 	Matched string
 	Instead string
 }
 
-func (e MissingSpan) Error() string {
+func (e MissingSpanError) Error() string {
 	if e.Matched == "" {
 		return "no part of this span is in the note"
 	}
@@ -62,13 +62,13 @@ func (e MissingSpan) Error() string {
 		e.Instead, e.Matched+"…")
 }
 
-// AmbiguousSpan is a span standing in more than one place, which is a
+// AmbiguousSpanError is a span standing in more than one place, which is a
 // span that does not say which of them was meant.
-type AmbiguousSpan struct {
+type AmbiguousSpanError struct {
 	Places int
 }
 
-func (e AmbiguousSpan) Error() string {
+func (e AmbiguousSpanError) Error() string {
 	return fmt.Sprintf("this span is in %d places; take in enough of what is around "+
 		"one of them to tell it from the others", e.Places)
 }
@@ -78,7 +78,7 @@ func (e AmbiguousSpan) Error() string {
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
 // FileStat is what the caller believes is on disk. A note that has changed
-// since it was read is left alone and port.ErrStale comes back.
+// since it was read is left alone and port.ErrStale is returned.
 func (u Replace) Execute(
 	ctx context.Context, v domain.Vault, path, current, becomes string, stat domain.FileStat,
 ) (result ReplaceResult, err error) {
@@ -98,13 +98,13 @@ func (u Replace) Execute(
 
 		where, plainly := markdown.FindRanges(body, current)
 		if len(where) > 1 {
-			return AmbiguousSpan{Places: len(where)}
+			return AmbiguousSpanError{Places: len(where)}
 		}
 		if len(where) == 0 {
 			if becomes != "" && strings.Contains(body, becomes) {
 				return ErrAlreadyWritten
 			}
-			return newMissingSpan(body, current)
+			return newMissingSpanError(body, current)
 		}
 
 		span := where[0]
@@ -138,7 +138,7 @@ func (u Replace) Execute(
 	return isDone, nil
 }
 
-func newMissingSpan(body, state string) MissingSpan {
+func newMissingSpanError(body, state string) MissingSpanError {
 	var ends []int
 	for pos := 0; pos < len(state); {
 		_, width := utf8.DecodeRuneInString(state[pos:])
@@ -155,11 +155,11 @@ func newMissingSpan(body, state string) MissingSpan {
 		return false
 	})
 	if count == 0 {
-		return MissingSpan{}
+		return MissingSpanError{}
 	}
 	end := min(first.Start+len(state), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return MissingSpan{Matched: state[:ends[count-1]], Instead: body[first.Start:end]}
+	return MissingSpanError{Matched: state[:ends[count-1]], Instead: body[first.Start:end]}
 }

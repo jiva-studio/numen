@@ -20,26 +20,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
-// configureCallTimeout is how long the host waits for one Configure call.
 const configureCallTimeout = 3 * time.Second
 
-// secretHost is what secretDelivery reads from the host that owns it.
 type secretHost struct {
 	getConfigSnapshot func(pluginID string) (configSnapshot, bool, error)
 	listPluginIDs     func() []string
 	reportError       func(err error)
 }
 
-// secretDelivery gives the plugins their secrets: it keeps what each plugin was last given and
-// sends Configure when that changes. The lock makes the rounds of sends one at a time and is held
-// for the sends only, never while a secret is written.
-//
-// A list counts as held only after a send that succeeded with every value read. After any other
-// outcome the plugin is forgotten and the next refresh sends again. The one exception is a plugin
-// that answered with an error of its own: that list is kept in rejected, and a refresh does not send
-// it again until the list changes, an operation names the plugin or the process restarts. A send cut
-// short by the context of the caller, a cancel or a timeout, says nothing about the plugin and is
-// never kept as rejected.
 type secretDelivery struct {
 	host                   secretHost
 	lock                   chan struct{}
@@ -150,11 +138,9 @@ func (d *secretDelivery) refresh(ctx context.Context, forced []string) error {
 		if d.isAwaitingFirstConfigure(id) {
 			continue
 		}
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			failures[i] = d.refreshPlugin(ctx, id)
-		}()
+		})
 	}
 	group.Wait()
 	return errors.Join(failures...)
@@ -199,15 +185,15 @@ func (d *secretDelivery) isDue(pluginID, signature string) bool {
 
 // allowedList is one declaration of a plugin with the secrets allowed to it, in the order they are sent.
 type allowedList struct {
-	declaration manifest.Secret
-	secrets     []secret.Secret
+	declaration manifest.SecretDeclaration
+	secrets     []pluginport.Secret
 }
 
 func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, error) {
 	if len(snapshot.declared) == 0 {
 		return nil, nil
 	}
-	var list []secret.Secret
+	var list []pluginport.Secret
 	var listErr error
 	if snapshot.source.List != nil {
 		if list, listErr = snapshot.source.List(); listErr != nil {
@@ -220,7 +206,7 @@ func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, er
 	for _, declaration := range snapshot.declared {
 		lists = append(lists, allowedList{
 			declaration: declaration,
-			secrets: secret.ListAllowed(page, secret.Permission{
+			secrets: secret.ListAllowed(page, pluginport.DeclarationKey{
 				Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
 			}),
 		})
@@ -241,7 +227,7 @@ func readEntries(ctx context.Context, snapshot configSnapshot, lists []allowedLi
 	return entries, failures
 }
 
-func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []secret.Secret) ([]*v1.SecretValue, error) {
+func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []pluginport.Secret) ([]*v1.SecretValue, error) {
 	values := make([]*v1.SecretValue, 0, len(secrets))
 	for _, one := range secrets {
 		if store == nil {

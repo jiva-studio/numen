@@ -21,7 +21,7 @@ func Normalise(text string) string {
 
 func lineEnding(raw []byte) string {
 	crlf := false
-	for pos := 0; pos < len(raw); pos++ {
+	for pos := range raw {
 		switch raw[pos] {
 		case '\n':
 			if pos == 0 || raw[pos-1] != '\r' {

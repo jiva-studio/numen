@@ -67,7 +67,7 @@ describe('detach', () => {
     expect(getActive(detach(createStack('a'), 'c'))).toBe('a')
   })
 
-  it('shows the next tab along when the shown one goes', () => {
+  it('shows the next tab along when the shown one is removed', () => {
     expect(getActive(detach(createStack('b'), 'b'))).toBe('c')
   })
 
@@ -75,7 +75,7 @@ describe('detach', () => {
     expect(getActive(detach(createStack('c'), 'c'))).toBe('b')
   })
 
-  it('shows nothing when the last tab goes', () => {
+  it('shows nothing when the last tab is removed', () => {
     const lone = split('root', [pane('main', ['a']), stack('other', 'x')])
     expect(paneById(detach(lone, 'a'), 'main')?.active).toBeNull()
   })

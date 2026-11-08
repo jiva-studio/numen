@@ -67,7 +67,7 @@ const getNode = (plex: ReturnType<typeof mountPlex>, relation: string) => {
 
 const findDragged = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
 
-describe('letting go of something dragged in', () => {
+describe('dropping something dragged in', () => {
   it('joins it to the focus in the relation the drag went towards', async () => {
     const plex = mountPlex()
     await letGo(plex, 600, 40)
@@ -113,14 +113,14 @@ describe('letting go of something dragged in', () => {
     expect(plex.emitted('link')).toBeUndefined()
   })
 
-  it('joins nothing let go past the edge of the plex', async () => {
+  it('joins nothing dropped past the edge of the plex', async () => {
     const plex = mountPlex()
     await letGo(plex, 600, 1400)
 
     expect(plex.emitted('bring')).toBeUndefined()
   })
 
-  it('joins nothing let go without standing clear of the focus', async () => {
+  it('joins nothing dropped without standing clear of the focus', async () => {
     const plex = mountPlex()
     await letGo(plex, 600, 405)
     expect(plex.emitted('bring')).toBeUndefined()
@@ -153,7 +153,7 @@ describe('letting go of something dragged in', () => {
     expect(findDragged(plex).exists()).toBe(false)
   })
 
-  it('joins them before whoever is dragging them hears the same release', async () => {
+  it('joins them before whoever is dragging them receives the same release', async () => {
     // The drag source also handles the release and ends the drag as soon as it
     // receives one. The plex must have responded by then.
     const plex = mountPlex({ dragged: [] })
@@ -226,7 +226,7 @@ describe('while something is being dragged over the plex', () => {
     expect(findDragged(plex).get('.plex__title-text').text()).toBe('as parent')
   })
 
-  it('draws nothing where letting go would come to nothing', async () => {
+  it('draws nothing where dropping would come to nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
@@ -264,7 +264,7 @@ describe('while something is being dragged over the plex', () => {
     expect(findDragged(plex).exists()).toBe(false)
   })
 
-  it('draws a shape nobody can reach: it is not a node of the picture yet', async () => {
+  it('draws a shape no pointer can reach: it is not a node of the picture yet', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
@@ -329,7 +329,7 @@ describe('what a drag leaves on the window', () => {
     expect(listeners()).toStrictEqual([])
   })
 
-  it('is nothing once the plex has gone', () => {
+  it('is nothing once the plex is disposed', () => {
     const listeners = spyOnWindowListeners()
     const plex = mountPlex()
     plex.unmount()

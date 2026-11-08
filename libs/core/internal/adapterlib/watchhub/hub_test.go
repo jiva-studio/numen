@@ -29,6 +29,7 @@ type fakeSystem struct {
 }
 
 func newFakeSystem(t *testing.T) *fakeSystem {
+	t.Helper()
 	return &fakeSystem{t: t, watched: make(map[chan<- notify.EventInfo]string)}
 }
 
@@ -152,7 +153,7 @@ func TestAFolderInsideAFollowedTreeSharesItsWatch(t *testing.T) {
 }
 
 // A tree followed over a folder already followed takes its watch over: the inner watch stops before
-// the tree's is placed, and its follower goes on hearing from the tree's.
+// the tree's is placed, and its follower continues to receive from the tree's.
 func TestAWatchOverAnInnerWatchServesItsFollower(t *testing.T) {
 	dirs := makeTree(t, "themes")
 	system := newFakeSystem(t)

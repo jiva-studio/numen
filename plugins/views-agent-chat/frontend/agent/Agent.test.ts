@@ -76,7 +76,7 @@ describe('a question sent', () => {
 })
 
 describe('a conversation read further up', () => {
-  it('stays where it is read while an answer arrives', async () => {
+  it('keeps its read position while an answer arrives', async () => {
     const one = createAgent([createRequested('1'), createResponded('2'), createRequested('3')])
     await one.reads(0)
 

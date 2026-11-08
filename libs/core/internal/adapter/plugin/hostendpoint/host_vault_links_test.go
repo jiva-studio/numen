@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -73,12 +74,7 @@ func (l *linkingVault) write(from string) (domain.FileStat, error) {
 }
 
 func (l *linkingVault) hasLink(from string, to domain.Address) bool {
-	for _, one := range l.links[from] {
-		if one == to {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(l.links[from], to)
 }
 
 func (l *linkingVault) AddLinks(_ context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {

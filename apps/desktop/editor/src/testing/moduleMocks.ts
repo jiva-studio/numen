@@ -8,6 +8,10 @@
 import { vi } from 'vitest'
 import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-host'
 import { declared, mockVaultState, pendingStream } from './answers'
+import type * as SettingsModule from '@/entities/settings'
+import type * as DeclaredCommandsModule from '@/entities/plugin/api/declaredCommands'
+import type * as PluginModule from '@/entities/plugin'
+import type * as BackgroundTasksModule from '@/app/shell/backgroundTasks'
 
 vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
@@ -15,17 +19,18 @@ vi.mock('@/app/plugins/agentPort', () => ({
 
 const themesResponse = {
   themes: {
-    getAppearance: async () => ({
-      themes: [
-        { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-        { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
-      ],
-      applied: mockVaultState.applied,
-      mode: mockVaultState.mode,
-      sizes: mockVaultState.sizes,
-      bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
-    }),
-    readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
+    getAppearance: () =>
+      Promise.resolve({
+        themes: [
+          { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+          { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
+        ],
+        applied: mockVaultState.applied,
+        mode: mockVaultState.mode,
+        sizes: mockVaultState.sizes,
+        bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
+      }),
+    readTheme: (name: string) => Promise.resolve(`:root { --numen-surface: ${name} }`),
     watchThemes: pendingStream,
   },
 }
@@ -33,23 +38,24 @@ const themesResponse = {
 vi.mock('@/entities/settings/api/theme', () => themesResponse)
 
 vi.mock('@/entities/settings', async (original) => ({
-  ...(await original<typeof import('@/entities/settings')>()),
+  ...(await original<typeof SettingsModule>()),
   ...themesResponse,
 }))
 
 // The window is shown with the plugins `declared` names; none declares a command to begin with.
 const declaredCommandsResponse = {
-  listDeclaredCommands: async () => ({ commands: declared.commands, slots: declared.slots }),
-  runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
+  listDeclaredCommands: () =>
+    Promise.resolve({ commands: declared.commands, slots: declared.slots }),
+  runDeclaredCommand: () => Promise.resolve({ ok: false as const, error: 'no plugin declares it' }),
 }
 
 vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({
-  ...(await original<typeof import('@/entities/plugin/api/declaredCommands')>()),
+  ...(await original<typeof DeclaredCommandsModule>()),
   ...declaredCommandsResponse,
 }))
 
 vi.mock('@/entities/plugin', async (original) => ({
-  ...(await original<typeof import('@/entities/plugin')>()),
+  ...(await original<typeof PluginModule>()),
   ...declaredCommandsResponse,
 }))
 
@@ -57,7 +63,7 @@ vi.mock('@/entities/plugin', async (original) => ({
 const windowTasks = vi.hoisted(() => ({ current: undefined as BackgroundTaskHost | undefined }))
 
 vi.mock('@/app/shell/backgroundTasks', async (original) => {
-  const module = await original<typeof import('@/app/shell/backgroundTasks')>()
+  const module = await original<typeof BackgroundTasksModule>()
   return {
     ...module,
     createBackgroundTaskHost: (deps: Parameters<typeof module.createBackgroundTaskHost>[0]) =>

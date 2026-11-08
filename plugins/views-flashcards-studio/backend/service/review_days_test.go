@@ -14,7 +14,7 @@ func getCounting() review.Day {
 	return review.Day{Starts: review.DayStartTime}
 }
 
-// What a vault was answered on comes back a day at a time, oldest first,
+// What a vault was answered on is returned a day at a time, oldest first,
 // because what draws it draws it along a line of time.
 func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
@@ -127,7 +127,7 @@ func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
 
 // The days are drawn along a line of time, so they are passed along one,
 // whatever order they were counted in.
-func TestTheDaysComeBackOldestFirst(t *testing.T) {
+func TestTheDaysAreReturnedOldestFirst(t *testing.T) {
 	response := sortReviewDays([]*api.ReviewDay{
 		{Day: "2026-08-30"},
 		{Day: "2026-07-01"},
@@ -145,7 +145,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold fails.
-func TestAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t)
 
 	_, err := handler.ListReviewDays(t.Context(),

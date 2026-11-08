@@ -6,6 +6,7 @@
  * the stored settings.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import type { Model } from '../lib/configuration'
 import { createSettingsStore, getSettingAt, type SettingsStoreDeps } from './store'
 
@@ -32,7 +33,7 @@ const createStore = (text: string, failure: string | null = null) => {
     getSettings: () => Promise.resolve({ written: text, path: '/numen.json', models: MODELS }),
     updateSettings: (response) => {
       request.push(response)
-      return failure ? Promise.reject(new Error(failure)) : Promise.resolve()
+      return failure ? Promise.reject(createLostConnection(failure)) : Promise.resolve()
     },
   }
   const response = vi.fn()
@@ -272,7 +273,7 @@ describe('a setting written twice in quick succession', () => {
     expect(retainedState.getCommittedSetting(settingPath)).toBe(true)
   })
 
-  it('does not take a read that answers after a newer one', async () => {
+  it('does not accept a read that answers after a newer one', async () => {
     const vault = createBlockedVault()
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 

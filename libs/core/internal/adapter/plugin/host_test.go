@@ -361,11 +361,9 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	endpoints := make([]transport.Endpoint, numGoroutines)
 	errs := make([]error, numGoroutines)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		endpoints[0], errs[0] = host.EnsureActive(t.Context(), "test.concurrent")
-	}()
+	})
 
 	<-launchStarted
 
@@ -441,11 +439,9 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	var slowEndpoint transport.Endpoint
 	var slowErr error
 
-	slowWg.Add(1)
-	go func() {
-		defer slowWg.Done()
+	slowWg.Go(func() {
 		slowEndpoint, slowErr = host.EnsureActive(t.Context(), "plugin.slow")
-	}()
+	})
 
 	<-slowStarted
 
@@ -506,11 +502,9 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	var wg sync.WaitGroup
 	errs := make([]error, numGoroutines)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		_, errs[0] = host.EnsureActive(t.Context(), "test.fail")
-	}()
+	})
 
 	<-launchStarted
 
@@ -566,11 +560,9 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	var activeEp transport.Endpoint
 	var activeErr error
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		activeEp, activeErr = host.EnsureActive(t.Context(), "test.cancel")
-	}()
+	})
 
 	<-launchStarted
 
@@ -959,9 +951,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	var evictions atomic.Int32
 	stop := make(chan struct{})
 	var evictor sync.WaitGroup
-	evictor.Add(1)
-	go func() {
-		defer evictor.Done()
+	evictor.Go(func() {
 		for {
 			select {
 			case <-stop:
@@ -970,7 +960,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 				evictions.Add(int32(len(host.EvictIdle(t.Context(), 0, 20*time.Millisecond))))
 			}
 		}
-	}()
+	})
 	var stopOnce sync.Once
 	stopEvictor := func() {
 		stopOnce.Do(func() { close(stop) })

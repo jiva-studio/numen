@@ -56,7 +56,7 @@ describe('a plex tab as it opens', () => {
     expect(state.view.here.value).toBe('Opening.md')
   })
 
-  it('remains where it was told to, whatever the vault opens with', async () => {
+  it('keeps the position it is configured with, whatever the vault opens with', async () => {
     const { state } = await window({ opening: 'Opening.md' }).openTab('Told.md')
 
     expect(state.view.here.value).toBe('Told.md')

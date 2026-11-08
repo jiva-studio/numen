@@ -22,7 +22,7 @@ type (
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
 	PluginReader           = manifest.Reader
-	PluginSecret           = manifest.Secret
+	SecretDeclaration      = manifest.SecretDeclaration
 	PluginSettingsView     = manifest.SettingsView
 	PluginSettingCondition = manifest.Condition
 	PluginSettingOption    = manifest.SettingOption

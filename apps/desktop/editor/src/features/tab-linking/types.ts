@@ -49,7 +49,7 @@ export interface TabLinksState {
   readonly windows: readonly TabWindow[]
   linkTabs(sourceTabId: TabId, targetTabId: TabId): void
   unlinkTab(tabId: TabId): void
-  getGroupOf(tabId: TabId): TabLinkGroup | null
+  getGroupOf(this: void, tabId: TabId): TabLinkGroup | null
   getLinkedTargets(tabId: TabId): readonly TabId[]
   /** Replaces the groups and tabs with a snapshot from the core. */
   applySnapshot(snapshot: TabLinksSnapshot): void

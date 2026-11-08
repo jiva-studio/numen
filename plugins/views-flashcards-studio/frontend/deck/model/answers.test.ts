@@ -17,7 +17,7 @@ describe('the title of a deck file', () => {
     expect(answers.getTitle('cards/Animals.md')).toBe('Animals.md')
   })
 
-  it('is the title a read came back with', () => {
+  it('is the title a read returned', () => {
     const answers = createDeckAnswers()
 
     answers.recordRead('Animals.md', readItem('Beasts'))
@@ -34,7 +34,7 @@ describe('the title of a deck file', () => {
     expect(answers.getTitle('Animals.md')).toBe('Beasts')
   })
 
-  it('is the title the window was told before any read answered', () => {
+  it('is the title the window was given before any read returned', () => {
     const answers = createDeckAnswers()
 
     answers.setTitle('Animals.md', 'Told')
@@ -97,7 +97,7 @@ describe('a file that moved', () => {
     expect(answers.getTitle('New.md')).toBe('Beasts')
   })
 
-  it('carries a title that was told, where no read answered', () => {
+  it('carries a title that was given, where no read returned', () => {
     const answers = createDeckAnswers()
     answers.setTitle('Old.md', 'Told')
 

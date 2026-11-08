@@ -72,7 +72,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			continue
 		}
 		if !domain.IsKnownRole(role) {
-			// The list of roles is closed, so an unknown one has no behaviour.
+			// The list of roles is closed, so an unknown one has no behavior.
 			// It is reported as a problem.
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue

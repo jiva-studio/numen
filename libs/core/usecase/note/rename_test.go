@@ -608,7 +608,7 @@ func isGone(t *testing.T, c changing, path string) bool {
 // another file, and a rename onto it leaves the note as it was.
 func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 	t.Parallel()
-	const old = "---\ntitle: rust\n---\nOxidised iron.\n"
+	const old = "---\ntitle: rust\n---\nOxidized iron.\n"
 	const other = "# Rust\n\nA programming language.\n"
 	c := openChanging(t, map[string]string{"rust.md": old, "Rust.md": other})
 	// Where the filesystem ignores case, the two names are one file, containing whichever was written last.

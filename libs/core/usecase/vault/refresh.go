@@ -272,7 +272,7 @@ func (u Refresh) statNote(
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
 	case ref.Kind != domain.KindNote:
-		// The vault holds it, so its row stays where it is. Reading it is the
+		// The vault holds it, so its row keeps its position. Reading it is the
 		// business of whatever extracts its text.
 		res.Assets = append(res.Assets, path)
 	default:

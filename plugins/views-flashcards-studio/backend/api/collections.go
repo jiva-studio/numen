@@ -43,7 +43,7 @@ func fillSlice(v reflect.Value) {
 		return
 	}
 	if v.IsNil() {
-		// gomutants:disable-next-line INTEGER_INCREMENT reason="Zero-length slice capacity hint does not affect observable behaviour."
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="Zero-length slice capacity hint does not affect observable behavior."
 		v.Set(reflect.MakeSlice(v.Type(), 0, 0))
 		return
 	}

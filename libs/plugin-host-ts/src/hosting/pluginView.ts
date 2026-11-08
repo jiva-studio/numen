@@ -25,7 +25,7 @@ function isAsyncComponent(
     'render' in comp ||
     'props' in comp ||
     '__name' in comp ||
-    (comp as { length?: number }).length! > 0
+    ((comp as { length?: number }).length ?? 0) > 0
   )
 }
 
@@ -33,7 +33,7 @@ export function resolvePluginComponent(rawComponent: unknown): Component | null 
   if (!rawComponent) return null
   const comp =
     typeof rawComponent === 'object' && 'default' in rawComponent
-      ? (rawComponent as { default: unknown }).default
+      ? rawComponent.default
       : rawComponent
   if (!comp) return null
   if (isAsyncComponent(comp)) {
@@ -45,7 +45,7 @@ export function resolvePluginComponent(rawComponent: unknown): Component | null 
 export function extractTitleValue(title: unknown): string {
   if (typeof title === 'string') return title
   if (typeof title === 'object' && title !== null && 'value' in title) {
-    return String((title as { value: unknown }).value)
+    return String(title.value)
   }
   return ''
 }

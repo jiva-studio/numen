@@ -20,13 +20,11 @@ func checkObject(raw []byte) error {
 }
 
 func describeErrorLocation(err error) string {
-	var syntax *json.SyntaxError
-	if errors.As(err, &syntax) {
+	if syntax, ok := errors.AsType[*json.SyntaxError](err); ok {
 		return fmt.Sprintf("invalid JSON at byte %d", syntax.Offset)
 	}
 
-	var kind *json.UnmarshalTypeError
-	if errors.As(err, &kind) {
+	if kind, ok := errors.AsType[*json.UnmarshalTypeError](err); ok {
 		if kind.Field != "" {
 			return fmt.Sprintf("%s has the wrong type at byte %d", kind.Field, kind.Offset)
 		}

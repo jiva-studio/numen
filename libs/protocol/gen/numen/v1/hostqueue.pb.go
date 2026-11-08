@@ -80,7 +80,7 @@ func (WorkState) EnumDescriptor() ([]byte, []int) {
 
 type EnqueueWorkRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set for work a person started. It runs before work nobody asked for.
+	// Set for work a person started. It runs before work no person asked for.
 	IsUserStarted bool `protobuf:"varint,1,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

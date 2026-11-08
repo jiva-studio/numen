@@ -20,8 +20,8 @@ import (
 
 func getNotes() map[string]string {
 	return map[string]string{
-		"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
-		"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
+		"Leaf mould.md":  "# Leaf mold\n\nCompost made of fallen leaves alone.\n",
+		"garden/Beds.md": "# Beds\n\n[[Leaf mold]] goes on in autumn.\n",
 	}
 }
 

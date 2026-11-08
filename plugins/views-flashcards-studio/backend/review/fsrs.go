@@ -36,7 +36,7 @@ func NewFSRS() FSRS {
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
-// NewFSRSAt is the scheduler asking for this share of the cards to come back
+// NewFSRSAt is the scheduler asking for this share of the cards to be recalled
 // when they come round. A share outside what a preset may hold is brought to
 // the nearest end of it.
 func NewFSRSAt(retention float64) FSRS {
@@ -98,7 +98,7 @@ func (f FSRS) Next(s Schedule, now time.Time, r Rating) Schedule {
 // Endings is where the two endings leave a review card.
 //
 // A review card this scheduler has put into review is settled at every rating by
-// one reckoning of how likely it was to come back, so both endings are worked
+// one reckoning of how likely it was to be recalled, so both endings are worked
 // out from that one reckoning.
 func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
 	one := f.readAtAnswer(s, now)

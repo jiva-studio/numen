@@ -48,7 +48,7 @@ describe('a files tab', () => {
     expect(kind.identity).toBeUndefined()
   })
 
-  it('opens on the root of the vault, and reveals nothing where it was told nothing', () => {
+  it('opens on the root of the vault, and reveals nothing where it is given nothing', () => {
     const { tree, openFolder, revealPath } = createTreeOf()
 
     openTab(createKindOver(tree).kind)
@@ -119,7 +119,7 @@ describe('a path selected in a files tab', () => {
     expect(recorded.synced).toStrictEqual([])
   })
 
-  it('stops following the selection once the tab is gone', async () => {
+  it('stops following the selection once the tab is closed', async () => {
     const { tree, selectedPaths, entries } = createTreeOf()
     entries.set('notes/a.md', note('notes/a.md'))
     const { kind, recorded } = createKindOver(tree)

@@ -32,7 +32,7 @@ export interface SessionClient {
   undoReview(params: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
-/** What opening a session comes back with. */
+/** What opening a session returns. */
 export interface SessionStart {
   run: string
   cards: readonly {

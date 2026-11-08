@@ -146,33 +146,34 @@ func (f *fakeChat) getPieces(reply message) []string {
 	return append(events, "[DONE]")
 }
 
-func writeEvents(t testing.TB, w http.ResponseWriter, data []string) {
+func writeEvents(tb testing.TB, w http.ResponseWriter, data []string) {
+	tb.Helper()
 	w.Header().Set("Content-Type", "text/event-stream")
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		t.Error("the response writer does not flush")
+		tb.Error("the response writer does not flush")
 		return
 	}
 	for _, one := range data {
 		if _, err := fmt.Fprintf(w, "data: %s\n\n", one); err != nil {
-			t.Error(err)
+			tb.Error(err)
 			return
 		}
 		flusher.Flush()
 	}
 }
 
-func encodeJSON(t testing.TB, w io.Writer, value any) {
-	t.Helper()
+func encodeJSON(tb testing.TB, w io.Writer, value any) {
+	tb.Helper()
 	if err := json.NewEncoder(w).Encode(value); err != nil {
-		t.Errorf("encode the response: %v", err)
+		tb.Errorf("encode the response: %v", err)
 	}
 }
 
-func decodeJSON(t testing.TB, r io.Reader, target any) {
-	t.Helper()
+func decodeJSON(tb testing.TB, r io.Reader, target any) {
+	tb.Helper()
 	if err := json.NewDecoder(r).Decode(target); err != nil {
-		t.Errorf("decode the request: %v", err)
+		tb.Errorf("decode the request: %v", err)
 	}
 }
 
@@ -189,7 +190,7 @@ func newCallReply(id, tool, args string) message {
 }
 
 func newTextReply(text string) message {
-	return message{Role: "assistant", Content: newText(text)}
+	return message{Role: "assistant", Content: new(text)}
 }
 
 // fakeVault is a tool server with two tools, behind the token, that keeps the arguments of every

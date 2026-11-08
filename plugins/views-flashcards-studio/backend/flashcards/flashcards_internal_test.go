@@ -1003,7 +1003,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected countPointingDecks error in ProjectCurve.Execute, got %v", err)
 	}
 
-	// Cancelled context triggers run.Curve error at line 155.
+	// Canceled context triggers run.Curve error at line 155.
 	ctxCancel, cancel := context.WithCancel(ctx)
 	cancel()
 	schedEnv := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, presets)
@@ -1184,11 +1184,11 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected 30 notes and Unread=0, got len=%d Unread=%d", len(gotThirty.Notes), gotThirty.Unread)
 	}
 	if gotThirty.Notes[1].Body != "prose" {
-		t.Fatalf("expected second neighbour body read after dangling first neighbour, got %q", gotThirty.Notes[1].Body)
+		t.Fatalf("expected second neighbor body read after dangling first neighbor, got %q", gotThirty.Notes[1].Body)
 	}
 
 	// Test getNeighbours duplicate backlinks & seen link, scheme Note vs Name vs http, and getNeighbourTitle missing note.
-	neighbours := getNeighbours(v, "decks/A.md", note.Links{
+	neighbors := getNeighbours(v, "decks/A.md", note.Links{
 		Links: []domain.ResolvedLink{
 			{Link: domain.Link{Target: domain.Address{Scheme: "https", Value: "example.com"}}},
 			{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "N1.md"}}, To: "N1.md", ToVault: v.ID},
@@ -1201,10 +1201,10 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 			{Link: domain.Link{Label: "after"}, From: "N3.md"},
 		},
 	})
-	if len(neighbours) != 3 || neighbours[0].Path != "N1.md" || neighbours[1].Path != "N2.md" || neighbours[1].Label != "first" || neighbours[2].Path != "N3.md" {
-		t.Fatalf("unexpected getNeighbours deduplication: %+v", neighbours)
+	if len(neighbors) != 3 || neighbors[0].Path != "N1.md" || neighbors[1].Path != "N2.md" || neighbors[1].Label != "first" || neighbors[2].Path != "N3.md" {
+		t.Fatalf("unexpected getNeighbours deduplication: %+v", neighbors)
 	}
-	if _, ok := getNeighbourTitle(Neighbour{Path: "Gone.md"}, map[string]domain.NoteRef{}, map[string]domain.NoteType{}); ok {
+	if _, ok := getNeighbourTitle(Neighbor{Path: "Gone.md"}, map[string]domain.NoteRef{}, map[string]domain.NoteType{}); ok {
 		t.Fatal("expected missing note in index to not be included")
 	}
 

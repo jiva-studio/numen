@@ -23,7 +23,7 @@ const Editor = "editor"
 var ErrAnotherWindow = errors.New("that is another window")
 
 // ErrNoCancellableTask is a cancel naming a task that is not listed or cannot
-// be cancelled.
+// be canceled.
 var ErrNoCancellableTask = errors.New("no cancellable task has that id")
 
 // A Reason is a human-readable cause for a degraded window state, written by the
@@ -62,7 +62,7 @@ type Window struct {
 
 // Again is the interval at which a stream resends its last message while nothing
 // has changed.
-// The request context is cancelled when the window closes, not when a page
+// The request context is canceled when the window closes, not when a page
 // reloads, so a handler detects a gone client only through a failed write.
 const Again = time.Second
 

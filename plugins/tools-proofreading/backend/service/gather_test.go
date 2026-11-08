@@ -22,7 +22,7 @@ func makeLine(pos int) Line {
 		"",
 		"the ferry left at noone",
 		"and the sea was calm",
-		"we spoke of the harbour lites",
+		"we spoke of the harbor lites",
 		"until the fog came in",
 		"and the bell began to ring",
 	}[pos]}
@@ -40,7 +40,7 @@ func narrow() Batch {
 
 func TestACorrectionReachesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 	replies := map[int]string{
-		0: "3|we spoke of the harbour lights",
+		0: "3|we spoke of the harbor lights",
 		1: "3|we spoke of the harbor lite",
 	}
 
@@ -52,7 +52,7 @@ func TestACorrectionReachesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 		if len(placed) != 1 {
 			t.Fatalf("%v put right, want line 3 alone", placed)
 		}
-		if placed[3].Text != "we spoke of the harbour lights" {
+		if placed[3].Text != "we spoke of the harbor lights" {
 			t.Errorf("line 3 says %q, want the batch that saw the four lines after it", placed[3].Text)
 		}
 	}
@@ -62,7 +62,7 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 	early := Batch{Number: 0, Lines: []Line{makeLine(1), makeLine(2), makeLine(3)}}
 	late := Batch{Number: 1, Lines: []Line{makeLine(2), makeLine(3)}}
 	replies := map[int]string{
-		0: "3|we spoke of the harbour lights",
+		0: "3|we spoke of the harbor lights",
 		1: "3|we spoke of the harbor lite",
 	}
 
@@ -74,7 +74,7 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 
 func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 	replies := map[int]string{
-		0: "3|the " + Opens + "3" + Closes + " harbour lights",
+		0: "3|the " + Opens + "3" + Closes + " harbor lights",
 		1: "3|we spoke of the harbor lite\n4|until the fogg came in",
 	}
 
@@ -88,7 +88,7 @@ func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 }
 
 func TestGatherReplies_KeepsUncoveredLinesUnchanged(t *testing.T) {
-	replies := map[int]string{0: "3|we spoke of the harbour lights"}
+	replies := map[int]string{0: "3|we spoke of the harbor lights"}
 
 	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
 	for _, item := range []int{1, 2, 4, 5} {
@@ -99,18 +99,18 @@ func TestGatherReplies_KeepsUncoveredLinesUnchanged(t *testing.T) {
 }
 
 func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
-	replies := map[int]string{1: "3|we spoke of the harbour lights\n4|fog"}
+	replies := map[int]string{1: "3|we spoke of the harbor lights\n4|fog"}
 
 	placed, _ := gatherReplies([]Batch{narrow()}, replies, MaxEditDistance)
 	if _, named := placed[4]; named {
 		t.Errorf("line 4 was put right to %q, whose letters moved too far", placed[4].Text)
 	}
-	if placed[3].Text != "we spoke of the harbour lights" {
+	if placed[3].Text != "we spoke of the harbor lights" {
 		t.Errorf("line 3 says %q, want the correction that stayed put", placed[3].Text)
 	}
 }
 
-func TestABatchNothingCameBackAboutInsertsNothingRight(t *testing.T) {
+func TestABatchNothingReturnedAboutInsertsNothingRight(t *testing.T) {
 	if placed, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(placed) != 0 {
 		t.Errorf("a batch with no reply put %v right", placed)
 	}
@@ -176,7 +176,7 @@ func coveredOnce(t *testing.T, lines map[int]Line) {
 func TestGatherReplies_LongerRunReplacesSingleCorrection(t *testing.T) {
 	replies := map[int]string{
 		0: "4|until the fog came in.",
-		1: "3-4|We spoke of the harbour lights until the fog came in.",
+		1: "3-4|We spoke of the harbor lights until the fog came in.",
 	}
 	single, run := joinable(0, 3, 5), joinable(1, 2, 5)
 
@@ -192,8 +192,8 @@ func TestGatherReplies_LongerRunReplacesSingleCorrection(t *testing.T) {
 
 func TestTwoRunsSharingALineAreNotBothCached(t *testing.T) {
 	replies := map[int]string{
-		0: "2-3|And the sea was calm, we spoke of the harbour lights.",
-		1: "3-4|We spoke of the harbour lights until the fog came in.",
+		0: "2-3|And the sea was calm, we spoke of the harbor lights.",
+		1: "3-4|We spoke of the harbor lights until the fog came in.",
 	}
 	earlier, later := joinable(0, 1, 4), joinable(1, 3, 5)
 

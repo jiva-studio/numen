@@ -86,7 +86,7 @@ func TestAMoveIsReportedToTheWatch(t *testing.T) {
 	}
 }
 
-const animal = "---\ntype: form\ntitle: The animal\ncolour: brown\n---\n\n## Layout\n\nname\n"
+const animal = "---\ntype: form\ntitle: The animal\ncolor: brown\n---\n\n## Layout\n\nname\n"
 
 func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 	ctx := t.Context()

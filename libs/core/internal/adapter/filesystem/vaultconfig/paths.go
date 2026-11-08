@@ -11,7 +11,7 @@ import (
 )
 
 // ErrOutside is the core's sentinel, so a caller that never names this package
-// still recognises it.
+// still recognizes it.
 var ErrOutside = vaultport.ErrOutside
 
 // ErrNotANote is returned for a path inside the vault that the vault does not hold
@@ -82,7 +82,7 @@ func CleanPath(path string) (string, error) {
 }
 
 func hasReservedDeviceName(clean string) bool {
-	for _, element := range strings.Split(clean, "/") {
+	for element := range strings.SplitSeq(clean, "/") {
 		name := strings.TrimRight(element, " .")
 		if dot := strings.IndexByte(name, '.'); dot >= 0 {
 			name = strings.TrimRight(name[:dot], " ")

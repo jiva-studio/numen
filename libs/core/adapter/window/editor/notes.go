@@ -212,7 +212,7 @@ func (h *noteHandler) GetNeighbourhood(
 		FocusTabKind: tabKinds[found.Focus.Path],
 	}
 	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.Neighbour{
+		out.Related = append(out.Related, &v1.Neighbor{
 			Note:     convertNoteToWire(related.NoteRef),
 			Relation: convertRelationToWire(related.Relation),
 			Type:     convertNoteTypeToWire(types[related.Path]),

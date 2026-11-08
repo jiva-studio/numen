@@ -262,7 +262,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 // A goal, a rule and a count that the schema does not name convert as
 // unspecified.
 //
-// A note names them in its own words, and a word the reader does not recognise
+// A note names them in its own words, and a word the reader does not recognize
 // leaves the field at its default.
 func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 	if got := ConvertGoalToWire(review.Goal("sideways")); got != api.GoalUnspecified {

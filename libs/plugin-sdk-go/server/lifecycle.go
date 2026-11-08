@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"maps"
 	"sync"
 )
 
@@ -80,9 +81,7 @@ func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]s
 	if s.config == nil {
 		s.config = make(map[string]string)
 	}
-	for k, v := range values {
-		s.config[k] = v
-	}
+	maps.Copy(s.config, values)
 	callback := s.onConfigure
 	s.mu.Unlock()
 
@@ -132,9 +131,7 @@ func (s *LifecycleServer) AllConfigs() map[string]string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	res := make(map[string]string, len(s.config))
-	for k, v := range s.config {
-		res[k] = v
-	}
+	maps.Copy(res, s.config)
 	return res
 }
 

@@ -34,7 +34,7 @@ func newStudiedNotes(cards int) map[string]string {
 			"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\n---\n\n# Sanskrit\n",
 		"decks/Roots.md": deck,
 		"decks/Other.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nLeaves\n",
 	}
 }
 
@@ -285,7 +285,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	}
 }
 
-// A date paces what it holds, so no day of the range is out of reach and the
+// A date paces its contents, so no day of the range is out of reach and the
 // material is through by the day the preset aims at. The card counts learned
 // beside the date take no part in it.
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {
@@ -1341,12 +1341,13 @@ func (r closingReader) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 // A deck that could not be read contributes no review card, and a request that
-// was cancelled read none of them. A curve over no cards is not the answer to
+// was canceled read none of them. A curve over no cards is not the answer to
 // what the preset holds.
 func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
 
 	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
 	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), clock.NewFake(getNoon()))
@@ -1354,7 +1355,7 @@ func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)
 	if !errors.Is(err, context.Canceled) {
-		t.Errorf("a curve drawn after the request was cancelled gave %+v, %v", got, err)
+		t.Errorf("a curve drawn after the request was canceled gave %+v, %v", got, err)
 	}
 }
 

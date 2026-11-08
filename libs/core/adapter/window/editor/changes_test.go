@@ -313,7 +313,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Closing joins the passes still running and lets go of the index, and the
+	// Closing joins the passes still running and releases the index, and the
 	// folder the index is in is taken away after this.
 	testsupport.CloseAfter(t, installation)
 
@@ -745,7 +745,7 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
-	// A cancelled close waits for the user's answer, and that wait is not
+	// A canceled close waits for the user's answer, and that wait is not
 	// bounded by the timeout.
 	reply := make(chan bool, 1)
 	go func() { reply <- f.installation.WaitForFlush(t.Context()) }()
@@ -1069,7 +1069,7 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 	}
 }
 
-// A number the setting does not take is not written, and the settings are left
+// A number the setting does not accept is not written, and the settings are left
 // as they are.
 func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 	f := opening(t, nil, nil, true)
@@ -1404,7 +1404,7 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
 		"Animals.md": "---\ntype: sample\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
-		"Animal.md": "---\ntype: form\ntitle: Animal\ncolour: brown\n---\n\n" +
+		"Animal.md": "---\ntype: form\ntitle: Animal\ncolor: brown\n---\n\n" +
 			"## Layout\n\n### Header\n\nan animal\n\n### Footer\n\nheight\n",
 	})
 

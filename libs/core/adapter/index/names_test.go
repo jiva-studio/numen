@@ -1,6 +1,7 @@
 package index
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -41,8 +42,8 @@ func describeMatch(m domain.NameMatch) string {
 	runes := []rune(text)
 	// The runs come in order and do not overlap, so they are put in from the
 	// end and no offset moves before it is used.
-	for pos := len(m.Ranges) - 1; pos >= 0; pos-- {
-		span := m.Ranges[pos]
+	for _, span := range slices.Backward(m.Ranges) {
+
 		runes = append(runes[:span.Start],
 			append([]rune("["+string(runes[span.Start:span.End])+"]"), runes[span.End:]...)...)
 	}

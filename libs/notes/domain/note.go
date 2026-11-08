@@ -2,7 +2,7 @@ package domain
 
 // Note is a parsed markdown file. Frontmatter is kept as it was found: the
 // application owns a closed set of keys and preserves everything else verbatim,
-// so the parser is not allowed to normalise or drop what it does not recognise.
+// so the parser is not allowed to normalise or drop what it does not recognize.
 type Note struct {
 	FileStat FileStat
 	Title    string

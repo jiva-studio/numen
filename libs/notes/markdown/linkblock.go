@@ -26,7 +26,7 @@ func isOwnedKey(key string) bool {
 
 // entry is one record of the `links:` block: its content and the bytes it occupies.
 //
-// An entry is changed by replacing its own span only, so neighbouring entries,
+// An entry is changed by replacing its own span only, so neighboring entries,
 // including ones the parser could not interpret, unknown keys, and user comments,
 // survive a write unchanged.
 type entry struct {
@@ -88,15 +88,10 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 		} else {
 			linked = offsetLine(lines, end) - 1
 		}
-		last := d.endLine(lines, item, items.Column)
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to linked leaves last unchanged"
-		if last > linked {
-			last = linked
-		}
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to itemLine leaves last unchanged"
-		if last < itemLine {
-			last = itemLine
-		}
+		last := min(
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to linked leaves last unchanged"
+			d.endLine(lines, item, items.Column), linked)
+		last = max(last, itemLine)
 		entries = append(entries, entry{
 			link:       linkOf(item),
 			start:      lines[itemLine-1],
@@ -164,8 +159,8 @@ func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
 	if len(found) == 0 {
 		return d.appendEntry(b, link)
 	}
-	for i := len(found) - 1; i >= 0; i-- {
-		e := found[i]
+	for i, e := range slices.Backward(found) {
+
 		if i > 0 {
 			d.splice(e.start, e.end, nil)
 			continue
@@ -220,8 +215,8 @@ func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 	}
 
 	removed, keptCount := 0, 0
-	for i := len(b.entries) - 1; i >= 0; i-- {
-		e := b.entries[i]
+	for _, e := range slices.Backward(b.entries) {
+
 		if !matches(e.link) {
 			keptCount++
 			continue
@@ -255,8 +250,8 @@ func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 }
 
 func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {
-	for idx := len(carrying) - 1; idx >= 0; idx-- {
-		e := b.entries[carrying[idx]]
+	for idx, c := range slices.Backward(carrying) {
+		e := b.entries[c]
 		if idx > 0 || to.Value == "" {
 			d.splice(e.start, e.end, nil)
 			continue
@@ -346,8 +341,8 @@ type linkEdit struct {
 
 func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Link) ([]linkEdit, error) {
 	var edits []linkEdit
-	for i := len(b.entries) - 1; i >= 0; i-- {
-		e := b.entries[i]
+	for _, e := range slices.Backward(b.entries) {
+
 		if e.link.Target != to {
 			continue
 		}
@@ -397,8 +392,8 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 	}
 
 	moved := 0
-	for i := len(b.entries) - 1; i >= 0; i-- {
-		e := b.entries[i]
+	for _, e := range slices.Backward(b.entries) {
+
 		if e.link.Target != from || !e.isReadable || !e.isOwned {
 			continue
 		}

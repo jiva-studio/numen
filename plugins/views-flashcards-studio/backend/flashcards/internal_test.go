@@ -135,7 +135,7 @@ func (a answering) ReadLog(context.Context, string) ([]byte, error) {
 // A run file that cannot be opened is one skipped run of the log. The answers in
 // every other file remain valid, so a schedule is computed from them and reports
 // how many runs it skipped.
-func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
+func TestARunThatMayNotBeOpenedIsOneSkippedRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrPermission}}
 
 	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Run: "run"})

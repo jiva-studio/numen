@@ -10,18 +10,25 @@ func SourceErrors(err error) []*SourceError {
 	return found
 }
 
+type joinedErrors interface{ Unwrap() []error }
+
+type sourceFailure interface{ getSourceError() *SourceError }
+
+func (e *SourceError) getSourceError() *SourceError { return e }
+
 func collectSourceErrors(err error, found *[]*SourceError) {
-	switch wrapped := err.(type) {
-	// gomutants:disable-next-line BRANCH_CASE reason="errors.Unwrap(nil) returns nil in default branch"
-	case nil:
+	if err == nil {
 		return
-	case *SourceError:
-		*found = append(*found, wrapped)
-	case interface{ Unwrap() []error }:
-		for _, inner := range wrapped.Unwrap() {
+	}
+	if failure, ok := err.(sourceFailure); ok {
+		*found = append(*found, failure.getSourceError())
+		return
+	}
+	if joined, ok := err.(joinedErrors); ok {
+		for _, inner := range joined.Unwrap() {
 			collectSourceErrors(inner, found)
 		}
-	default:
-		collectSourceErrors(errors.Unwrap(err), found)
+		return
 	}
+	collectSourceErrors(errors.Unwrap(err), found)
 }

@@ -78,7 +78,7 @@ test.describe('a file open in an editor of cards, removed from the tree', () => 
     ['deck', 'cards/empty-deck.md', '.deck'],
     ['card-model', 'cards/fieldless-card-model.md', '.card-model-tab'],
   ] as const) {
-    test(`lets go of the tab holding a ${what}`, async ({ page }) => {
+    test(`releases the tab holding a ${what}`, async ({ page }) => {
       await openWorkspace(page)
       await page.getByRole('tab', { name: /^Files/ }).click()
       const folder = page.locator('[data-tree-row="cards"]')

@@ -20,13 +20,11 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 
 	var walks sync.WaitGroup
 	for range 8 {
-		walks.Add(1)
-		go func() {
-			defer walks.Done()
+		walks.Go(func() {
 			if err := vaults.IndexVault(t.Context(), v); err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	walks.Wait()
 
@@ -83,7 +81,7 @@ func getOpenVaultsSamples() map[string]string {
 		"Term.md": "---\ntype: form\n---\n" +
 			"\n## Layout\n\n### Header\n\nWord\n\n### Footer\n\nMeaning\n",
 		"samples/Words.md": "---\ntype: sample\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 	}
 }

@@ -166,7 +166,7 @@ describe('a box opening under the attention', () => {
     expect(open.value).toBe(0)
   })
 
-  it('lets go of a wait its scope outlives', async () => {
+  it('releases a wait its scope outlives', async () => {
     const on = ref<string | null>(null)
     const { open, world, stop } = createExpansion(() => on.value)
 

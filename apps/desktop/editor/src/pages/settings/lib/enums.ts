@@ -7,7 +7,7 @@ import type { SelectChoice } from '@numen/ui'
 import { createWhenReader } from '@numen/plugin-host'
 import type {
   PluginInfo,
-  PluginSecret,
+  SecretDeclaration,
   PluginSettingInfo,
   PluginSettingOption,
 } from '@/entities/settings'
@@ -16,12 +16,12 @@ import type {
 export type ReadPluginSetting = (key: string) => unknown
 
 export interface EnumFields {
-  getEnumOptions(setting: PluginSettingInfo): readonly PluginSettingOption[]
-  getEnumChoices(setting: PluginSettingInfo): readonly SelectChoice[]
-  getEnumValue(setting: PluginSettingInfo): string
-  getShownSettings(): readonly PluginSettingInfo[]
-  getTopSecrets(): readonly PluginSecret[]
-  getSecretsAfter(settingKey: string): readonly PluginSecret[]
+  getEnumOptions(this: void, setting: PluginSettingInfo): readonly PluginSettingOption[]
+  getEnumChoices(this: void, setting: PluginSettingInfo): readonly SelectChoice[]
+  getEnumValue(this: void, setting: PluginSettingInfo): string
+  getShownSettings(this: void): readonly PluginSettingInfo[]
+  getTopSecrets(this: void): readonly SecretDeclaration[]
+  getSecretsAfter(this: void, settingKey: string): readonly SecretDeclaration[]
 }
 
 /**
@@ -45,11 +45,7 @@ const toText = (value: unknown): string => {
   return typeof value === 'string' ? value : JSON.stringify(value)
 }
 
-/**
- * The value in force of a setting: the one the core resolved, else what the file holds, else the
- * default. A value requested and not yet in the declaration is shown as requested, so a control
- * shows the value the person set from the request until the declaration carries it.
- */
+/** Returns the active value of a setting, falling back to the stored or default value. */
 export function getValueInForce(
   setting: PluginSettingInfo,
   read: ReadPluginSetting,
@@ -65,7 +61,7 @@ export const isSettingShown = (setting: PluginSettingInfo): boolean => setting.i
 /** Whether the condition of a secret holds under the values in force of the settings it reads. */
 export function isSecretShown(
   plugin: PluginInfo,
-  secret: PluginSecret,
+  secret: SecretDeclaration,
   read: ReadPluginSetting,
   isRequested: (key: string) => boolean = () => false,
 ): boolean {
@@ -75,7 +71,10 @@ export function isSecretShown(
   return secret.when.is.includes(toText(getValueInForce(parent, read, isRequested)))
 }
 
-function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>): string | null {
+function findSecretAnchor(
+  secret: SecretDeclaration,
+  shownKeys: ReadonlySet<string>,
+): string | null {
   if (secret.when?.setting && shownKeys.has(secret.when.setting)) {
     return secret.when.setting
   }

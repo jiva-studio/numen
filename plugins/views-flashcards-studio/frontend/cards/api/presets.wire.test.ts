@@ -107,7 +107,7 @@ describe('how far each setting goes', () => {
 })
 
 describe('the presets of a vault', () => {
-  it('come back as what each is called and at its current position', async () => {
+  it('are returned as what each is called and at its current position', async () => {
     replyWith({ presets: [{ path: 'Daily.md', title: 'Daily' }] })
 
     expect(await presets.list()).toEqual([{ path: 'Daily.md', title: 'Daily' }])

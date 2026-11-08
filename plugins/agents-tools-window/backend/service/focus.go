@@ -17,7 +17,7 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_focus",
 		Title: "Focus a note",
-		Description: "Make a note the current note of the window; the neighbourhood view is centred " +
+		Description: "Make a note the current note of the window; the neighborhood view is centered " +
 			"on it. Call it only when the user asked to be taken to a note. Talking about one is " +
 			"not asking, and neither is editing one: the call changes what the window shows. It " +
 			"returns no note content: read the note for its content.",

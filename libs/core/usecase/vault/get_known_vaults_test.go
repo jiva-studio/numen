@@ -147,7 +147,7 @@ func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 
 // Nothing is current when the list has never been opened and no vault is
 // specified as being worked.
-func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
+func TestAListWithNoOpenedVaultHasNoCurrentVault(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 

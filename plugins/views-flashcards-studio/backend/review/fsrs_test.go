@@ -15,7 +15,7 @@ import (
 
 // The four ratings order the next due day: the better the rating, the later the
 // card is due.
-func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
+func TestTheBetterACardWasRecalledTheLongerItIsLeft(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
 
@@ -35,8 +35,8 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	}
 }
 
-// A card that did not come back at all is a lapse, and it is counted.
-func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
+// A card that was not recalled at all is a lapse, and it is counted.
+func TestACardThatWasNotRecalledIsALapse(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
 
@@ -102,12 +102,10 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 		ends[round] = make([]review.Schedule, len(cards))
 		fell[round] = make([]review.Schedule, len(cards))
 		for i, c := range cards {
-			together.Add(1)
-			go func() {
-				defer together.Done()
+			together.Go(func() {
 				pos[round][i] = delta.Next(c, when, review.Good)
 				ends[round][i], fell[round][i] = delta.Endings(c, when)
-			}()
+			})
 		}
 	}
 	together.Wait()
@@ -140,6 +138,7 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 	}
 
 	assertFinitePositive := func(t *testing.T, label string, got float64) {
+		t.Helper()
 		if math.IsNaN(got) || math.IsInf(got, 0) || got <= 0 {
 			t.Errorf("%s left stability %v, want a finite positive number", label, got)
 		}

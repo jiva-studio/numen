@@ -40,7 +40,7 @@ func createFakeAppearances(t *testing.T, appearance theme.Appearance) *fakeAppea
 	t.Helper()
 	appearances := &fakeAppearances{appearance: appearance}
 	appearances.service = &theme.Service{
-		Catalogue:            createThemeFolder(t),
+		Catalog:              createThemeFolder(t),
 		Settings:             appearances,
 		InterfaceScaleBounds: theme.Bounds{Min: 0.8, Max: 2},
 		TextScaleBounds:      theme.Bounds{Min: 0.8, Max: 1.75},
@@ -70,8 +70,8 @@ func (d *fakeAppearances) choose(t *testing.T, name string, mode v1.Mode) string
 func TestTheListReturnsWhatIsAppliedAndWhichHalfItIsReadAs(t *testing.T) {
 	night := theme.PluginName(pluginID, "night")
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: night, Mode: appearance.Dark})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
-	writeTheme(t, fakeSettings.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(createFakePlugins())
+	writeTheme(t, fakeSettings.service.Catalog, "mine.css", ":root { --numen-surface: #000000 }")
 
 	answer := fakeSettings.themes(t)
 	if answer.GetApplied() != night || answer.GetMode() != v1.Mode_MODE_DARK {
@@ -100,8 +100,8 @@ func TestTheListReturnsWhatIsAppliedAndWhichHalfItIsReadAs(t *testing.T) {
 
 func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
-	writeTheme(t, fakeSettings.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
+	fakeSettings.service.Catalog = fakeSettings.service.Catalog.WithPlugins(createFakePlugins())
+	writeTheme(t, fakeSettings.service.Catalog, "kept.css", ":root { --numen-surface: #123456 }")
 
 	for name, want := range map[string]string{
 		"mine:kept":                         "#123456",
@@ -137,7 +137,7 @@ func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	writeTheme(t, fakeSettings.service.Catalogue, "nord.css", ":root {}")
+	writeTheme(t, fakeSettings.service.Catalog, "nord.css", ":root {}")
 	if failed := fakeSettings.choose(t, "mine:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("failed: %s", failed)
 	}
@@ -191,7 +191,7 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	})
 
 	scale := 1.75
-	writeTheme(t, fakeSettings.service.Catalogue, "nord.css", ":root {}")
+	writeTheme(t, fakeSettings.service.Catalog, "nord.css", ":root {}")
 	answer, err := fakeSettings.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           "mine:nord",
 		Mode:           v1.Mode_MODE_DARK,
@@ -280,7 +280,7 @@ func TestThemes_WritingAFoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
 
 // A build with no settings behind it still lists what it ships.
 func TestThemes_NoSettingsUsesDefaultPalette(t *testing.T) {
-	service := &theme.Service{Catalogue: createThemeFolder(t)}
+	service := &theme.Service{Catalog: createThemeFolder(t)}
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)

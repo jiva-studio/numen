@@ -355,11 +355,13 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 		spoil func(t *testing.T, v domain.Vault)
 	}{
 		{"the folder is gone", func(t *testing.T, v domain.Vault) {
+			t.Helper()
 			if err := os.RemoveAll(v.Path); err != nil {
 				t.Fatal(err)
 			}
 		}},
 		{"the folder is no longer that vault", func(t *testing.T, v domain.Vault) {
+			t.Helper()
 			if err := os.RemoveAll(filepath.Join(v.Path, vaultconfig.DefaultServiceDir)); err != nil {
 				t.Fatal(err)
 			}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -94,9 +95,7 @@ func makePathsArguments(t *testing.T, n int, extra map[string]any) string {
 		paths[i] = fmt.Sprintf("Rocks/Pebble %d.md", i)
 	}
 	arguments := map[string]any{"paths": paths}
-	for k, value := range extra {
-		arguments[k] = value
-	}
+	maps.Copy(arguments, extra)
 	raw, err := json.Marshal(arguments)
 	if err != nil {
 		t.Fatal(err)

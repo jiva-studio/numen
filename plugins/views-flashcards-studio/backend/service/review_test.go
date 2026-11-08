@@ -28,7 +28,7 @@ func getDeck() map[string]string {
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"decks/Words.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 	}
 }
@@ -46,18 +46,18 @@ func getOther() map[string]string {
 // API is the review as these tests ask it.
 type API = reviewHandler
 
-func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
-	t.Helper()
-	handler, target, _ := newAPIOn(t, notes...)
+func newAPI(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
+	tb.Helper()
+	handler, target, _ := newAPIOn(tb, notes...)
 	return handler, target
 }
 
-func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, vaulttest.Installation) {
-	t.Helper()
+func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, vaulttest.Installation) {
+	tb.Helper()
 	installation := vaulttest.NewInstallation()
 	target := make([]domain.Vault, 0, len(notes))
 	for _, one := range notes {
-		target = append(target, installation.Add(t, one))
+		target = append(target, installation.Add(tb, one))
 	}
 	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()})
 	return &reviewHandler{Backend: backend}, target, installation
@@ -252,7 +252,7 @@ func findVaultCount(t *testing.T, resp *api.WatchCardsDueResponse, id string) *a
 	return nil
 }
 
-// An answer is written to the run's own file, and the identifier it comes back
+// An answer is written to the run's own file, and the identifier it is returned
 // with is what taking it back names.
 func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
@@ -361,7 +361,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold fails.
-func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAQuestionAboutAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t)
 	_, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: "nothing"})
@@ -415,7 +415,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 		"Term.md": getDeck()["Term.md"],
 		// The card carries no card id, so the deck is written to give it one.
 		"decks/Own.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
+			"\n## Leaf mold\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nLeaves\n",
 	})
 	v := target[0]
 
@@ -452,7 +452,7 @@ func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	handwritten := map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"decks/Own.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
+			"\n## Leaf mold\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nLeaves\n",
 	}
 	handler, target := newAPI(t, handwritten)
 	pos := filepath.Join(target[0].Path, "decks", "Own.md")
@@ -478,7 +478,7 @@ func getPointed() map[string]string {
 			"new_a_day: 8\nreviews_a_day: 45\n---\n\n# Sanskrit\n",
 		"decks/Words.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 	}
 }
@@ -546,7 +546,7 @@ func getTwoPresets() map[string]string {
 			"\n## kr ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nkr\n\n### Meaning\n\nto do\n",
 		"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: Mantras\n    role: ref\n    type: preset\n---\n" +
-			"\n## one ^m4n5b6v7c8\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n" +
+			"\n## one ^m4n5b6v7c8\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na meter\n" +
 			"\n## two ^q1w2e3r4t5\n\n[[Term]]\n\n### Word\n\nmaha\n\n### Meaning\n\ngreat\n" +
 			"\n## three ^y6u7i8o9p0\n\n[[Term]]\n\n### Word\n\nsanti\n\n### Meaning\n\npeace\n",
 	}
@@ -868,7 +868,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		}
 
 		sessionResp, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
-			Vault: string(v.ID), Preset: newPresetName(one.Preset),
+			Vault: string(v.ID), Preset: new(one.Preset),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1080,7 +1080,7 @@ type sessionCounts struct{ total, due, unbegun int }
 func session(t *testing.T, handler *API, v domain.Vault, preset string) sessionCounts {
 	t.Helper()
 	out, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
-		Vault: string(v.ID), Preset: newPresetName(preset),
+		Vault: string(v.ID), Preset: new(preset),
 	})
 	if err != nil {
 		t.Fatal(err)

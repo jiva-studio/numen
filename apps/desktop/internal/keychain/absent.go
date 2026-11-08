@@ -11,8 +11,7 @@ func isKeychainAbsent(err error) bool {
 	if errors.Is(err, keyring.ErrUnsupportedPlatform) {
 		return true
 	}
-	var busErr dbus.Error
-	if errors.As(err, &busErr) {
+	if busErr, ok := errors.AsType[dbus.Error](err); ok {
 		switch busErr.Name {
 		case "org.freedesktop.DBus.Error.ServiceUnknown",
 			"org.freedesktop.DBus.Error.NameHasNoOwner",

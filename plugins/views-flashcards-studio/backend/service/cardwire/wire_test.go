@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-func ptr(n int32) *int32 { return &n }
-
 func requireEqual(t *testing.T, got, want any) {
 	t.Helper()
 	api.FillCollections(got)
@@ -49,7 +47,7 @@ func TestACardModelGoesOutWithItsTemplatesAndProblems(t *testing.T) {
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []*api.Problem{{Kind: api.ProblemKindCardModelWithoutFields, Template: ptr(1), Field: "Front", Text: "d"}},
+		Problems: []*api.Problem{{Kind: api.ProblemKindCardModelWithoutFields, Template: new(int32(1)), Field: "Front", Text: "d"}},
 	})
 }
 
@@ -85,7 +83,7 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 		Decks: []string{"a.md"}, Cards: 7, At: pos,
 		NotWritten: []*api.UnwrittenDeck{
 			{Path: "x.md", Problem: &api.Problem{Kind: api.ProblemKindFieldDeclaredTwice}},
-			{Path: "y.md", Problem: &api.Problem{Kind: api.ProblemKindCardModelWithoutFields, Card: ptr(2)}},
+			{Path: "y.md", Problem: &api.Problem{Kind: api.ProblemKindCardModelWithoutFields, Card: new(int32(2))}},
 		},
 	})
 }
@@ -106,7 +104,7 @@ func TestADeckGoesOutWithItsSectionsCardsAndValues(t *testing.T) {
 		Cards: []*api.Card{
 			{Heading: "h1", CardID: "m1", CardModelLink: "basic", CardModelPath: "card-models/basic.md", Preamble: "c1",
 				Values: []*api.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
-			{Heading: "h2", SectionIndex: ptr(1), CardModelLink: "other", Values: []*api.Value{}},
+			{Heading: "h2", SectionIndex: new(int32(1)), CardModelLink: "other", Values: []*api.Value{}},
 		},
 	})
 }
@@ -123,7 +121,7 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []*api.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []*api.Card{
-			{Heading: "h1", CardID: "m1", SectionIndex: ptr(1), CardModelLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardID: "m1", SectionIndex: new(int32(1)), CardModelLink: "basic", Preamble: "c1",
 				Values: []*api.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2"},
 		},
@@ -183,7 +181,7 @@ func TestASectionIsAnIndexOrNothing(t *testing.T) {
 	if sectionOf(nil) != format.NoSection {
 		t.Error("an absent index came in as a section")
 	}
-	if got := sectionOf(ptr(0)); got != 0 {
+	if got := sectionOf(new(int32(0))); got != 0 {
 		t.Errorf("index 0 came in as %d", got)
 	}
 }

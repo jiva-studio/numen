@@ -112,7 +112,7 @@ func sortLines(lines map[int]Line) []Line {
 
 func splitRows(reply string) []string {
 	var rows []string
-	for _, row := range strings.Split(stripFence(reply), "\n") {
+	for row := range strings.SplitSeq(stripFence(reply), "\n") {
 		if row = strings.TrimSpace(row); row != "" {
 			rows = append(rows, row)
 		}

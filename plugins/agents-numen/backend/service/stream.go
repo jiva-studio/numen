@@ -229,7 +229,7 @@ func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) 
 func (r *streamedReply) getMessage() message {
 	reply := message{Role: "assistant", Content: nil, ToolCalls: nil, ToolCallID: ""}
 	if r.text.Len() > 0 {
-		reply.Content = newText(r.text.String())
+		reply.Content = new(r.text.String())
 	}
 	for _, call := range r.calls {
 		if call.ID != "" || call.Function.Name != "" {

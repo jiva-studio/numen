@@ -41,8 +41,8 @@ func parseSimpleToml(content string) *CodexConfig {
 		Model:      "",
 		MCPServers: make(map[string]any),
 	}
-	lines := strings.Split(content, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(content, "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		// gomutants:disable-next-line INVERT_LOGICAL,REMOVE_CONDITIONAL,BRANCH_IF reason="Comments start with # and empty lines contain no = separator, so falling through to SplitN produces no model key match."
 		if strings.HasPrefix(line, "#") || line == "" {

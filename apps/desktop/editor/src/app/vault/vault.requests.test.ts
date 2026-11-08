@@ -210,7 +210,7 @@ describe('a note followed', () => {
     expect(requestLog.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
   })
 
-  it('has the opening note requested of nobody in particular', async () => {
+  it('has the opening note requested of no particular caller', async () => {
     requestLog.getOpeningNote.mockResolvedValue({})
     expect(await core.getInitialOpenPath()).toBeNull()
     expect(requestLog.getOpeningNote.mock.calls.at(-1)?.[0]).toEqual({})

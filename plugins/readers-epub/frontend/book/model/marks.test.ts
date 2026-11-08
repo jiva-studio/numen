@@ -159,7 +159,7 @@ describe('the runs marked', () => {
     ).toStrictEqual([[HIGHLIGHT], [OTHER_HIGHLIGHT, 'gh']])
   })
 
-  it('are taken back when the book goes', () => {
+  it('are removed when the book is disposed', () => {
     const { wrapper, props } = setUp(createPaper(MARKUP))
 
     wrapper.unmount()

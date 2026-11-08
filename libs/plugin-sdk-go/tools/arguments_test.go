@@ -90,9 +90,9 @@ func TestNoArgumentsForRequiredArgumentAreRejectedNamingIt(t *testing.T) {
 func TestUndeclaredArgumentIsRejectedNamingIt(t *testing.T) {
 	registry, runs := newShelvingRegistry(t)
 
-	res := invoke(t, registry, "shelve_book", []byte(`{"title":"Ferns of the valley","colour":"green"}`))
+	res := invoke(t, registry, "shelve_book", []byte(`{"title":"Ferns of the valley","color":"green"}`))
 
-	assertRefusedNaming(t, res, runs, "colour")
+	assertRefusedNaming(t, res, runs, "color")
 }
 
 func TestValidArgumentsRunTheTool(t *testing.T) {

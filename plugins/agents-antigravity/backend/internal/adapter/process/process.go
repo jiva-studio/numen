@@ -11,7 +11,7 @@ import (
 const waitDelay = 2 * time.Second
 
 // Supervise puts the command in a process group of its own, and ends the whole group when the
-// command's context is cancelled.
+// command's context is canceled.
 func Supervise(cmd *exec.Cmd) {
 	detach(cmd)
 	cmd.Cancel = func() error { return kill(cmd) }

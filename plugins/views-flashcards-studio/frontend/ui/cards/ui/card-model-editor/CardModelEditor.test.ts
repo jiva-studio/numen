@@ -7,7 +7,7 @@
  *
  * The negatives are here: the first field has no handle and no way to go, a
  * name that objects does not rename, a name abandoned does not rename, and a
- * field let go where it was does not move.
+ * field dropped where it was does not move.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -125,7 +125,7 @@ describe('Card model, the fields', () => {
     expect(target.emitted('remove-field')).toBeUndefined()
   })
 
-  it('does not move where a field is let go above the first', async () => {
+  it('does not move where a field is dropped above the first', async () => {
     const target = mountCardModel()
     await dragTo(target, 'Weight', 'Name')
     expect(target.emitted('move-field')).toBeUndefined()
@@ -231,19 +231,19 @@ describe('Card model, the fields', () => {
     expect(target.emitted('remove-field')).toEqual([['Weight']])
   })
 
-  it('emits a field let go before another below the first', async () => {
+  it('emits a field dropped before another below the first', async () => {
     const target = mountCardModel()
     await dragTo(target, 'Weight', 'Height')
     expect(target.emitted('move-field')).toEqual([['Weight', 'Height']])
   })
 
-  it('emits a field let go past the last of them', async () => {
+  it('emits a field dropped past the last of them', async () => {
     const target = mountCardModel()
     await dragTo(target, 'Height', null)
     expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
-  it('emits a field let go on the rule the list is added by', async () => {
+  it('emits a field dropped on the rule the list is added by', async () => {
     const target = mountCardModel()
     await getRow(target, 'Height').get('[data-grip]').trigger('dragstart')
     const rule = target.findAll('section')[0]?.get('.divider')
@@ -252,7 +252,7 @@ describe('Card model, the fields', () => {
     expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
-  it('emits a field let go anywhere else in the part the fields stand in', async () => {
+  it('emits a field dropped anywhere else in the part the fields stand in', async () => {
     const target = mountCardModel()
     await getRow(target, 'Height').get('[data-grip]').trigger('dragstart')
     const heading = target.get('.card-model__heading')
@@ -261,20 +261,20 @@ describe('Card model, the fields', () => {
     expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
-  it('does not move where a field is let go at its current position', async () => {
+  it('does not move where a field is dropped at its current position', async () => {
     const target = mountCardModel()
     await dragTo(target, 'Height', 'Height')
     expect(target.emitted('move-field')).toBeUndefined()
   })
 
-  it('does not move where a drag ends with the field let go nowhere', async () => {
+  it('does not move where a drag ends with the field dropped nowhere', async () => {
     const target = mountCardModel()
     await dragOff(target, 'Weight', null)
     expect(target.emitted('move-field')).toBeUndefined()
     expect(getRow(target, 'Weight').attributes('data-dragged')).toBeUndefined()
   })
 
-  it('does not move where a drag over another field ends with it let go nowhere', async () => {
+  it('does not move where a drag over another field ends with it dropped nowhere', async () => {
     const target = mountCardModel()
     await dragOff(target, 'Weight', 'Height')
     expect(target.emitted('move-field')).toBeUndefined()
@@ -517,7 +517,7 @@ describe('Card model, the templates', () => {
 
     const getTemplate = (editor: Editor, id: string) => editor.get(`[data-template="${id}"]`)
 
-    /** A template picked up by its strip and let go over another, or over the tail. */
+    /** A template picked up by its strip and dropped over another, or over the tail. */
     const drag = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       await getTemplate(editor, id).get('.card-header').trigger('dragstart')
       const overElement = onto === null ? editor.findAll('section')[1] : getTemplate(editor, onto)
@@ -525,13 +525,13 @@ describe('Card model, the templates', () => {
       await overElement?.trigger('drop')
     }
 
-    it('emits a template let go before another', async () => {
+    it('emits a template dropped before another', async () => {
       const editor = mountCardModel({ templates: THREE })
       await drag(editor, 'three', 'one')
       expect(editor.emitted('move-template')).toEqual([['three', 'one']])
     })
 
-    it('emits a template let go past the last of them', async () => {
+    it('emits a template dropped past the last of them', async () => {
       const editor = mountCardModel({ templates: THREE })
       await drag(editor, 'one', null)
       expect(editor.emitted('move-template')).toEqual([['one', null]])
@@ -549,13 +549,13 @@ describe('Card model, the templates', () => {
       expect(editor.emitted('move-template')).toEqual([['two', 'one']])
     })
 
-    it('does not move where a template is let go at its current position', async () => {
+    it('does not move where a template is dropped at its current position', async () => {
       const editor = mountCardModel({ templates: THREE })
       await drag(editor, 'two', 'two')
       expect(editor.emitted('move-template')).toBeUndefined()
     })
 
-    /** A template picked up and the drag ended without it being let go anywhere. */
+    /** A template picked up and the drag ended without it being dropped anywhere. */
     const dragOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       const header = getTemplate(editor, id).get('.card-header')
       await header.trigger('dragstart')
@@ -563,14 +563,14 @@ describe('Card model, the templates', () => {
       await header.trigger('dragend')
     }
 
-    it('does not move where a drag ends with the template let go nowhere', async () => {
+    it('does not move where a drag ends with the template dropped nowhere', async () => {
       const editor = mountCardModel({ templates: THREE })
       await dragOff(editor, 'two', null)
       expect(editor.emitted('move-template')).toBeUndefined()
       expect(getTemplate(editor, 'two').attributes('data-dragged')).toBeUndefined()
     })
 
-    it('does not move where a drag over another template ends with it let go nowhere', async () => {
+    it('does not move where a drag over another template ends with it dropped nowhere', async () => {
       const editor = mountCardModel({ templates: THREE })
       await dragOff(editor, 'two', 'one')
       expect(editor.emitted('move-template')).toBeUndefined()

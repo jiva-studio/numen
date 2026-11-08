@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -193,11 +194,9 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 		return 0, 0, false
 	}
 
-	last := d.endLine(lines, node.Content[keyIdx+1], node.Content[keyIdx].Column)
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="assigning keyLine when last equals keyLine leaves last unchanged"
-	if last < keyLine {
-		last = keyLine
-	}
+	last := max(
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="assigning keyLine when last equals keyLine leaves last unchanged"
+		d.endLine(lines, node.Content[keyIdx+1], node.Content[keyIdx].Column), keyLine)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to the bound leaves last unchanged"
 	if keyIdx+2 < len(node.Content) && last > node.Content[keyIdx+2].Line-1 {
 		last = node.Content[keyIdx+2].Line - 1
@@ -270,7 +269,7 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(d.front, &doc); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrUnreadable, err)
+		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 	if len(doc.Content) == 0 {
 		return nil, nil
@@ -334,12 +333,7 @@ func hasAnchor(node *yaml.Node) bool {
 	if node.Anchor != "" || node.Kind == yaml.AliasNode {
 		return true
 	}
-	for _, child := range node.Content {
-		if hasAnchor(child) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(node.Content, hasAnchor)
 }
 
 // ErrUnterminated is a note that opens a frontmatter block and never closes it.
@@ -362,10 +356,5 @@ func hasFlowStyle(node *yaml.Node) bool {
 	if isFlowCollection(node) {
 		return true
 	}
-	for _, child := range node.Content {
-		if hasFlowStyle(child) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(node.Content, hasFlowStyle)
 }

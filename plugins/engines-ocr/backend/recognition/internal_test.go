@@ -52,7 +52,7 @@ func (s *stubRecogniser) GetRecognitionModel() Model {
 	return Model{Layout: "layout", Recogniser: "rec", DPI: 72, From: "stub"}
 }
 
-func (s *stubRecogniser) Recognise(ctx context.Context, page image.Image) ([]Block, error) {
+func (s *stubRecogniser) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
 	if s.fn != nil {
 		return s.fn(ctx, page)
 	}
@@ -294,7 +294,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 
 	rec := &record{Path: "books/scan.pdf", InputHash: "h1", Recipe: "r1", PageCount: 9}
-	task := &host.Task{ID: "recognise:books/scan.pdf"}
+	task := &host.Task{ID: "recognize:books/scan.pdf"}
 	err = r.readPages(t.Context(), pageReading{
 		doc:        stubDocument{pages: 9},
 		recogniser: recEngine,
@@ -340,8 +340,8 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	err = r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 1}, recogniser: &stubRecogniser{err: recSentinel}, dpi: 72, store: s, task: &host.Task{},
 	}, &record{Path: "books/scan.pdf", PageCount: 1})
-	if !errors.Is(err, recSentinel) || !strings.Contains(err.Error(), "recognise page 1 of books/scan.pdf") {
-		t.Fatalf("readPages recognise error = %v", err)
+	if !errors.Is(err, recSentinel) || !strings.Contains(err.Error(), "recognize page 1 of books/scan.pdf") {
+		t.Fatalf("readPages recognize error = %v", err)
 	}
 
 	sWriteErr := &stubStore{Store: v.Store(), writeErr: errors.New("store write failed")}
@@ -418,7 +418,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = rReportFail.Recognise(t.Context(), Request{Path: "refused.png"})
+	_, err = rReportFail.Recognize(t.Context(), Request{Path: "refused.png"})
 	if !errors.Is(err, readSentinel) || !errors.Is(err, reportSentinel) {
 		t.Fatalf("expected joined read and report error, got %v", err)
 	}
@@ -426,8 +426,9 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 		t.Fatalf("unexpected initial task report: %+v", qReportFail.reported)
 	}
 
-	// 2. Cancelled context skips failure ReportTask, runs FinishTask, and returns recognition result and error.
+	// 2. Canceled context skips failure ReportTask, runs FinishTask, and returns recognition result and error.
 	cancelCtx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
 	qCancel := &stubQueue{onRelease: cancel, releaseErr: context.Canceled, finishErr: errors.New("finish ignored when recognition failed")}
 	rCancel, err := New(Host{Vault: v, Store: v.Store(), Texts: texts, Queue: qCancel}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
@@ -435,11 +436,11 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rCancel.Recognise(cancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
-		t.Fatalf("cancelled recognition returned %+v, %v; want Pages=1 and context.Canceled", res, err)
+	if res, err := rCancel.Recognize(cancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
+		t.Fatalf("canceled recognition returned %+v, %v; want Pages=1 and context.Canceled", res, err)
 	}
 	if len(qCancel.finished) != 1 {
-		t.Fatalf("cancelled recognition finished %v, want 1 FinishTask call", qCancel.finished)
+		t.Fatalf("canceled recognition finished %v, want 1 FinishTask call", qCancel.finished)
 	}
 
 	// 3. FinishTask error returned with non-zero Result when recognition succeeds.
@@ -451,7 +452,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rFinishErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
+	if res, err := rFinishErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
 		t.Fatalf("FinishTask error returned %+v, %v", res, err)
 	}
 
@@ -463,7 +464,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 6. readRecord error in Recognise.
+	// 6. readRecord error in Recognize.
 	storeReadSentinel := errors.New("store read failed")
 	rStoreErr, err := New(
 		Host{Vault: v, Store: &stubStore{Store: v.Store(), readErr: storeReadSentinel}, Texts: texts, Queue: qOK},
@@ -472,17 +473,17 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rStoreErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, storeReadSentinel) {
+	if _, err := rStoreErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, storeReadSentinel) {
 		t.Fatalf("readRecord error returned %v", err)
 	}
 
-	// 7. Corrupt document open error in Recognise.
+	// 7. Corrupt document open error in Recognize.
 	v.File("corrupt.png", "not-a-png")
-	if _, err := rOK.Recognise(t.Context(), Request{Path: "corrupt.png"}); err == nil {
+	if _, err := rOK.Recognize(t.Context(), Request{Path: "corrupt.png"}); err == nil {
 		t.Fatal("corrupt image succeeded")
 	}
 
-	// 8. EnqueueWork error in Recognise.
+	// 8. EnqueueWork error in Recognize.
 	enqueueSentinel := errors.New("queue full")
 	rEnqueueErr, err := New(
 		Host{Vault: v, Store: v.Store(), Texts: texts, Queue: &stubQueue{enqueueErr: enqueueSentinel}},
@@ -491,11 +492,11 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rEnqueueErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, enqueueSentinel) {
+	if _, err := rEnqueueErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, enqueueSentinel) {
 		t.Fatalf("EnqueueWork error returned %v", err)
 	}
 
-	// 9. Recogniser open error in Recognise.
+	// 9. Recogniser open error in Recognize.
 	openSentinel := errors.New("open failed")
 	rOpenErr, err := New(
 		Host{Vault: v, Store: v.Store(), Texts: texts, Queue: qOK},
@@ -504,7 +505,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rOpenErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, openSentinel) {
+	if _, err := rOpenErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, openSentinel) {
 		t.Fatalf("open error returned %v", err)
 	}
 
@@ -519,7 +520,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
+	if res, err := rReleaseErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release error returned %+v, %v", res, err)
 	}
 
@@ -532,7 +533,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseAndReportErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
+	if res, err := rReleaseAndReportErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release + report error returned %+v, %v", res, err)
 	}
 }

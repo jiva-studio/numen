@@ -17,7 +17,7 @@ const MaxBytes = edit.MaxBytes
 type ReadOutcome = edit.ReadOutcome
 
 const (
-	// Ok is the body coming back.
+	// Ok is the returned body.
 	Ok = edit.Ok
 	// Missing is a path with no file behind it.
 	Missing = edit.Missing

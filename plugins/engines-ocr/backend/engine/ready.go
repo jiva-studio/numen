@@ -4,7 +4,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
-// Ready reports whether everything needed to recognise a page is on this
+// Ready reports whether everything needed to recognize a page is on this
 // machine.
 func Ready(library *onnx.Library, cfg Config) bool {
 	if !library.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
@@ -16,7 +16,7 @@ func Ready(library *onnx.Library, cfg Config) bool {
 	if _, err := locateModel(cfg.Detect.Path, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", cfg.Dir); err != nil {
 		return false
 	}
-	if _, err := locateModel(cfg.Recognise.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir); err != nil {
+	if _, err := locateModel(cfg.Recognize.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir); err != nil {
 		return false
 	}
 	return true

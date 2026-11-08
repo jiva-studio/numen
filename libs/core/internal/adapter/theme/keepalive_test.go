@@ -43,7 +43,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		t.Fatal("the stream never reached the handler")
 	}
 
-	// The page is gone, and nothing cancelled the context the handler holds.
+	// The page is gone, and nothing canceled the context the handler holds.
 	server.CloseClientConnections()
 
 	select {
@@ -66,7 +66,7 @@ func isWatchingFolder() bool {
 	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {
 		return false
 	}
-	return strings.Contains(stacks.String(), "theme.Catalogue.debounce")
+	return strings.Contains(stacks.String(), "theme.Catalog.debounce")
 }
 
 func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struct{}) http.Handler {

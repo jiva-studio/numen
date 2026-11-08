@@ -1,5 +1,6 @@
 /** Command execution against a window double. */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
 import { createInvocation } from '../../lib/entries/invocation'
@@ -8,7 +9,7 @@ import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../../types'
 import { commands, flushTab, registerCommand, runInvocation } from './handlers'
-import { asFailure, asValue } from '@numen/core-client'
+import { ReportedError, asFailure, asValue } from '@numen/core-client'
 import type { Movement } from '@/entities/file'
 import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/entities/note'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
@@ -427,7 +428,7 @@ describe('a note renamed', () => {
 })
 
 describe('a note removed', () => {
-  it('has nothing on its way to its file before the file goes', async () => {
+  it('has nothing on its way to its file before the file is removed', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.trash', front()), one.on)
@@ -484,7 +485,7 @@ describe('a note removed', () => {
     expect(one.actions.some((step) => step.startsWith('leave'))).toBe(false)
   })
 
-  it('lets go of the tab that was reading it', async () => {
+  it('releases the tab that was reading it', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
@@ -602,7 +603,7 @@ describe('a file filed somewhere else', () => {
     )
   })
 
-  it('stays where it is while its tab is waiting on the person', async () => {
+  it('keeps its position while its tab is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
@@ -611,7 +612,7 @@ describe('a file filed somewhere else', () => {
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 
-  it('stays where it is where something of that name is filed there', async () => {
+  it('keeps its position where something of that name is filed there', async () => {
     const one = window({ movement: { ok: false, error: 'alreadyExists' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
@@ -741,7 +742,7 @@ describe('a command over the vault', () => {
 })
 
 describe('what the window is requested about a note', () => {
-  it('has its path put on the clipboard', async () => {
+  it('has its path copied to the clipboard', async () => {
     const one = window()
 
     await carry(createInvocation('app:note.copyPath', front()), one.on)
@@ -902,7 +903,7 @@ describe('nothing to carry out', () => {
     const one = window()
     const broken: CommandDeps = {
       ...one.on,
-      files: { ...one.on.files, remove: async () => Promise.reject(new Error('gone')) },
+      files: { ...one.on.files, remove: async () => Promise.reject(createLostConnection('gone')) },
     }
 
     await runInvocation(createInvocation('app:note.trash', front()), broken, words)
@@ -1155,14 +1156,14 @@ describe('the command of a setting', () => {
     expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
   })
 
-  it('reports the reason a write is rejected as a message of the window', async () => {
+  it('shows the text of a ReportedError from a setting write as an error notice', async () => {
     const one = window()
     const failing: CommandDeps = {
       ...one.on,
       settings: {
         ...one.on.settings,
         chooseSetting: async () => {
-          throw new Error('value out of range')
+          throw new ReportedError('value out of range')
         },
       },
     }
@@ -1170,6 +1171,24 @@ describe('the command of a setting', () => {
     await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
 
     expect(one.notices).toStrictEqual(['value out of range'])
+    expect(one.severities).toStrictEqual(['error'])
+  })
+
+  it('shows the generic text for a setting write that rejects with a plain Error', async () => {
+    const one = window()
+    const failing: CommandDeps = {
+      ...one.on,
+      settings: {
+        ...one.on.settings,
+        chooseSetting: async () => {
+          throw new Error('settings.json: EACCES')
+        },
+      },
+    }
+
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
+
+    expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
     expect(one.severities).toStrictEqual(['error'])
   })
 })

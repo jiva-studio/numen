@@ -24,7 +24,7 @@ const MostRead = 16000
 type ReadOutcome string
 
 const (
-	// Ok is the text coming back.
+	// Ok is the returned text.
 	Ok ReadOutcome = "ok"
 	// Missing is a path with no file behind it.
 	Missing ReadOutcome = "missing"
@@ -82,7 +82,7 @@ func (u Read) Execute(
 	}
 	defer closeAndJoin(&err, file)
 
-	// A listing of the folder above is the vault saying what it holds there.
+	// A listing of the folder above is the vault saying its contents there.
 	target, err := getReadOutcome(ctx, reader, path)
 	if err != nil {
 		return ReadResult{}, err

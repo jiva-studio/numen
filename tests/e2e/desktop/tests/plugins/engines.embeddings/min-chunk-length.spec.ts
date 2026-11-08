@@ -83,7 +83,7 @@ test.describe('The smallest piece of text to index for meaning', () => {
       SHORT_BODY,
     )
     notes.push(shortPath)
-    // The short note is read into the index, and the count stays where it was.
+    // The short note is read into the index, and the count keeps its value.
     await expect
       .poll(() => readNoteCount(popover), { timeout: 45_000 })
       .toBeGreaterThan(notesBefore)

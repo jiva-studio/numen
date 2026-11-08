@@ -92,7 +92,7 @@ func TestQueueClientKeepsTheTurnUntilRelease(t *testing.T) {
 	}
 	select {
 	case <-turn.WatchWaiting():
-		t.Fatal("signalled work behind the turn before the host reported any")
+		t.Fatal("signaled work behind the turn before the host reported any")
 	default:
 	}
 

@@ -102,7 +102,7 @@ describe('a change on its way', () => {
     ])
   })
 
-  it('is drawn for nobody while there is no change', () => {
+  it('is not drawn while there is no change', () => {
     expect(getDrawn(createMarkedState(DOC, null))).toEqual([])
   })
 
@@ -391,7 +391,7 @@ describe('the clock that steps the showing', () => {
     expect(world.cancelled).toEqual([])
   })
 
-  it('gives back the frame it is waiting for when the view goes', () => {
+  it('releases the frame it is waiting for when the view is destroyed', () => {
     const { world, view } = open(ARRIVED, WORDS)
     expect(world.getWaiting()).toBe(1)
 

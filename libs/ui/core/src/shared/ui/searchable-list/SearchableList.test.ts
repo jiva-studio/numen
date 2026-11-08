@@ -92,7 +92,7 @@ describe('the rows', () => {
     expect(list.get('[data-numen-searchable-list]').attributes('aria-busy')).toBe('true')
   })
 
-  it('stay where they are while an answer is awaited', async () => {
+  it('keep their position while an answer is awaited', async () => {
     const list = mountList()
     await list.setProps({ isPending: true })
     expect(getOptions(list)).toHaveLength(3)

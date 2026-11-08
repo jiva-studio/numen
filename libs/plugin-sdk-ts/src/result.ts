@@ -9,11 +9,11 @@
 /** What went wrong, where a caller names no words of its own. */
 type Failure = string
 
-/** The answer to a call that can fail: what came back, or why nothing did. */
+/** The answer to a call that can fail: what was returned, or why nothing did. */
 export type Result<T, E = Failure> =
   { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E }
 
-/** The answer of a call that came back with something. */
+/** The answer of a call that returned something. */
 export const asValue = <T>(value: T): Result<T, never> => ({ ok: true, value })
 
 /** The answer of a call that did not. */

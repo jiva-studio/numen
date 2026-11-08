@@ -51,21 +51,21 @@ func CopyVault(t *testing.T) string {
 
 // NewVault writes a vault with the given notes and gives it an identity, for
 // tests that need a second vault whose content is nothing like the fixture's.
-func NewVault(t testing.TB, notes map[string]string) domain.Vault {
-	t.Helper()
-	root := TempDir(t)
+func NewVault(tb testing.TB, notes map[string]string) domain.Vault {
+	tb.Helper()
+	root := TempDir(tb)
 	for name, body := range notes {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 	}
 	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, GetEpoch())
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: filepath.Base(root), Path: root}
 }

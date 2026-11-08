@@ -319,7 +319,7 @@ func (x *ListToolsResponse) GetTools() []*PluginTool {
 	return nil
 }
 
-// PluginTool is one tool as an agent is told of it.
+// PluginTool is one tool as an agent receives it.
 type PluginTool struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name an agent calls the tool by.

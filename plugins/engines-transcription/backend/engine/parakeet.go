@@ -155,7 +155,7 @@ func openSession(library *onnx.Library, engine *ort.Engine, path string, threads
 	return onnx.NewSession(engine, path, options)
 }
 
-// Close lets go of the models this transcriber loaded. The runtime they ran on
+// Close releases the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.
 func (t *Transcriber) Close() error {
 	for _, session := range []*ort.Session{t.encoder, t.decoder, t.joiner, t.segmenter} {

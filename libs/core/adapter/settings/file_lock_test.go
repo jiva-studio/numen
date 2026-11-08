@@ -65,11 +65,9 @@ func TestTwoWritersOfOneFileEachKeepEveryKeyOfTheOther(t *testing.T) {
 	errs := make([]error, 2)
 	// Two roots share no Files, as two processes do not.
 	for i, name := range []string{"a", "b"} {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			errs[i] = writeKeysInLoop(settings.NewFiles(), path, name)
-		}()
+		})
 	}
 	group.Wait()
 	for _, err := range errs {
@@ -92,13 +90,11 @@ func TestTwoProcessesWritingDifferentKeysInALoopKeepBothWrites(t *testing.T) {
 	outputs := make([][]byte, 2)
 	errs := make([]error, 2)
 	for i, name := range []string{"a", "b"} {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			cmd := exec.CommandContext(t.Context(), exe, "-test.run=^TestTheWriterProcessWritesKeysInALoop$")
 			cmd.Env = append(os.Environ(), writerPathEnv+"="+path, writerNameEnv+"="+name)
 			outputs[i], errs[i] = cmd.CombinedOutput()
-		}()
+		})
 	}
 	group.Wait()
 	for i, err := range errs {

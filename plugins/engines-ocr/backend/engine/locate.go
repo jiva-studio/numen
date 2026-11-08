@@ -20,7 +20,7 @@ const EnvDir = "NUMEN_MODELS_DIR"
 type paths struct {
 	layout    string
 	detect    string
-	recognise string
+	recognize string
 	from      string
 }
 
@@ -81,15 +81,15 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("detect model: %w", err)
 	}
-	recognise, err := locateModel(cfg.Recognise.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
+	recognize, err := locateModel(cfg.Recognize.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
 	if err != nil {
-		return nil, "", paths{}, fmt.Errorf("recognise model: %w", err)
+		return nil, "", paths{}, fmt.Errorf("recognize model: %w", err)
 	}
 
 	found := paths{
 		layout:    layout,
 		detect:    detect,
-		recognise: recognise,
+		recognize: recognize,
 		from:      "provisioned",
 	}
 	if cfg.Dir != "" {

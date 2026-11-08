@@ -25,7 +25,7 @@ func TestRenameField_ReturnsCardModelStateOnDeckListError(t *testing.T) {
 	}
 }
 
-// A rename whose context is cancelled has still written the card model, and
+// A rename whose context is canceled has still written the card model, and
 // returns its current state.
 func TestARenameWhoseContextEndsReturnsWhatTheCardModelExistsAt(t *testing.T) {
 	vs := newVaults(t)

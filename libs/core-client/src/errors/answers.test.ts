@@ -2,7 +2,7 @@
  * The file an answer came out of, and what an error is called.
  *
  * The window carries the file as one string and never reads into it, so the
- * only thing that matters about it is that the parts come back out as they went
+ * only thing that matters about it is that the parts are returned as they went
  * in — a path with spaces in it included.
  */
 import { describe, expect, it } from 'vitest'

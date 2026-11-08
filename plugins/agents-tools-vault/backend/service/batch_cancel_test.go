@@ -14,7 +14,7 @@ import (
 )
 
 // cancelledBatchVault is the geology vault whose host returns a move or a removal as a call that was
-// cancelled after the first note: the first note is changed, every other is not attempted.
+// canceled after the first note: the first note is changed, every other is not attempted.
 type cancelledBatchVault struct {
 	*hosttest.Vault
 }
@@ -31,7 +31,7 @@ func (c cancelledBatchVault) MoveNotes(ctx context.Context, paths []string, fold
 		}
 		out = append(out, host.NoteMove{
 			Move: domain.MoveResult{From: from},
-			Err:  fmt.Errorf("the call was cancelled before %s was moved: %w", from, host.ErrNotAttempted),
+			Err:  fmt.Errorf("the call was canceled before %s was moved: %w", from, host.ErrNotAttempted),
 		})
 	}
 	return out, nil
@@ -46,7 +46,7 @@ func (c cancelledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([
 		}
 		out = append(out, host.NoteRemoval{
 			Path: target,
-			Err:  fmt.Errorf("the call was cancelled before %s was removed: %w", target, host.ErrNotAttempted),
+			Err:  fmt.Errorf("the call was canceled before %s was removed: %w", target, host.ErrNotAttempted),
 		})
 	}
 	return out, nil
@@ -76,7 +76,7 @@ func TestCancelledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	}
 	for i, from := range []string{"Rocks/Granite.md", "Fossils.md"} {
 		got := out.Results[i+1]
-		want := "the call was cancelled before " + from + " was moved"
+		want := "the call was canceled before " + from + " was moved"
 		if got.From != from || got.Path != "" || !strings.Contains(got.Error, want) {
 			t.Errorf("entry %d is %+v, want %s not moved with an error containing %q", i+1, got, from, want)
 		}
@@ -97,7 +97,7 @@ func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	}
 	for i, target := range []string{"Rocks/Granite.md", "Rocks/Basalt.md"} {
 		got := out.Results[i+1]
-		want := "the call was cancelled before " + target + " was removed"
+		want := "the call was canceled before " + target + " was removed"
 		if got.Path != target || got.TrashPath != "" || !strings.Contains(got.Error, want) {
 			t.Errorf("entry %d is %+v, want %s not removed with an error containing %q", i+1, got, target, want)
 		}

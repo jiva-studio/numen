@@ -1,6 +1,10 @@
 package secret
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+)
 
 // Listing is the secrets as the window shows them: the sections of the page in order, the menu of
 // every declaration, and where the values are kept when it is a file. No value and no flag about
@@ -25,7 +29,7 @@ func (u *List) Execute() (Listing, error) {
 	}
 	declarations := u.plugins.ListDeclarations()
 	listing := Listing{Sections: ListSections(list, ListAskedGroups(declarations))}
-	var seen []Permission
+	var seen []pluginport.DeclarationKey
 	for _, one := range declarations {
 		if slices.Contains(seen, one) {
 			continue

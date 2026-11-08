@@ -155,7 +155,7 @@ describe('a node requested for on its own', () => {
 })
 
 describe('the handle', () => {
-  it('is not there until a pointer is, and goes when it leaves', async () => {
+  it('is not there until a pointer is, and ends when it exits', async () => {
     const node = mountNode()
     expect(node.find('.plex__handle').exists()).toBe(false)
 
@@ -255,7 +255,7 @@ describe('a node that is not there yet', () => {
     expect(ghost.attributes('tabindex')).toBe('-1')
   })
 
-  it('is told to nobody: it has no name, and is not something to press', () => {
+  it('is not announced to anyone: it has no name, and is not something to press', () => {
     const ghost = mountGhost()
     expect(ghost.attributes('aria-hidden')).toBe('true')
     expect(ghost.attributes('aria-label')).toBeUndefined()
@@ -383,7 +383,7 @@ describe('a box with more of its title to show', () => {
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(200 0)')
   })
 
-  it('is drawn where the widening was told to put it', async () => {
+  it('is drawn where the widening places it', async () => {
     const node = await rest(mountWide({ width: 400, offset: -60 }))
     expect(getBox(node)).toStrictEqual({ width: 400, x: -260 })
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
@@ -598,7 +598,7 @@ describe('the headings a node hangs', () => {
     expect(mounted.node.find('.plex__heading').exists()).toBe(false)
   })
 
-  it('is nothing a screen reader is told about, the palette being the way there', async () => {
+  it('is nothing a screen reader announces, the palette being the way there', async () => {
     const node = await rest(mountInside(headings(2)))
     expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
   })

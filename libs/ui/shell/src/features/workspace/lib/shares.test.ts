@@ -1,4 +1,4 @@
-/** Shares come back summing to one, whatever went in, and no children take none. */
+/** Shares sum to one, whatever went in, and no children take none. */
 import { describe, expect, it } from 'vitest'
 import { atLeast, even, fit, insert } from './shares'
 

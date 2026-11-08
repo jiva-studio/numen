@@ -249,7 +249,9 @@ func TestFileIsReadableByAHuman(t *testing.T) {
 	var parsed struct {
 		V      int `json:"v"`
 		Vaults []struct {
-			ID, Name, Path string
+			ID   string `json:"id"`
+			Name string `json:"name"`
+			Path string `json:"path"`
 		} `json:"vaults"`
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {

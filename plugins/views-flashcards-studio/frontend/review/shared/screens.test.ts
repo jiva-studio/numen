@@ -22,7 +22,7 @@ describe('going to a screen', () => {
     expect(three().on.value).toBe('list')
   })
 
-  it('lets go of everything the screens after it hold', () => {
+  it('releases everything the screens after it hold', () => {
     const { dropped, goTo, on } = three()
 
     goTo('one')
@@ -41,7 +41,7 @@ describe('going to a screen', () => {
     expect(dropped).toStrictEqual(['one'])
   })
 
-  it('lets go of nothing going further in', () => {
+  it('releases nothing going further in', () => {
     const { dropped, goTo } = three()
 
     goTo('rows')

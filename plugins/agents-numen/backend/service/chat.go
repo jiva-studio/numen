@@ -91,8 +91,6 @@ type chat struct {
 	maxTokens   *int
 }
 
-func newText(text string) *string { return &text }
-
 func (c chat) send(ctx context.Context, model string, effort effort, messages []message, tools []functionTool) (message, string, error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err

@@ -8,13 +8,13 @@ import type { NoteContents } from '../../lib/note'
 export type { NoteContents }
 
 /**
- * What a read came back with: the contents, or the code of why there are none.
+ * What a read returned: the contents, or the code of why there are none.
  * A file that is not there is `notFound`.
  */
 export type NoteResult = Result<NoteContents, string>
 
 /**
- * What a write came back with. A file that changed under the writer is
+ * What a write returned. A file that changed under the writer is
  * `changed`, and nothing was written to it.
  */
 export type WriteResult = Result<NoteContents, string>
@@ -45,7 +45,7 @@ export interface ConflictWords {
 export interface OpenNotesOptions {
   limits?: typeof DEFAULT_WRITE_LIMITS
   /** Called when a note on screen is replaced by the content of its file. */
-  onReplaced?(path: string): void
+  onReplaced?(this: void, path: string): void
   /** When it is now. */
-  now?(): number
+  now?(this: void): number
 }

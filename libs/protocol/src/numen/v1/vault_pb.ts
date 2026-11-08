@@ -139,7 +139,7 @@ export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
   embeddedCount: bigint;
 
   /**
-   * Embedding says whether anything is going to turn the spans into vectors.
+   * Embedding reports whether anything is going to turn the spans into vectors.
    * False for an installation with no model, where the vault is searched by its
    * words alone.
    *

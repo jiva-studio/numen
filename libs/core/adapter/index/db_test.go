@@ -41,9 +41,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	release := make(chan struct{})
 
 	for i := range conns {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			conn, err := db.read.Conn(ctx)
 			if err != nil {
 				t.Error(err)
@@ -65,7 +63,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 			// Hold the connection so the next goroutine is forced to open a new
 			// one and not reusing this one.
 			<-release
-		}()
+		})
 	}
 	// Give every goroutine time to take a distinct connection.
 	for range conns {
@@ -137,7 +135,7 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 }
 
 // Fitting the coarse index to another width leaves what was made standing, and
-// a width that comes back is filled from it.
+// a width that is returned is filled from it.
 //
 // A vector of the old width is not comparable with a query of the new one, and
 // is kept by the text it was bought for.

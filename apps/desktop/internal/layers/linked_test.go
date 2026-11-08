@@ -33,8 +33,7 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	listing.Dir = "../../"
 	items, err := listing.Output()
 	if err != nil {
-		var ran *exec.ExitError
-		if errors.As(err, &ran) {
+		if ran, ok := errors.AsType[*exec.ExitError](err); ok {
 			t.Fatalf("go list: %v: %s", err, ran.Stderr)
 		}
 		t.Fatalf("go list: %v", err)
@@ -44,8 +43,8 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	decoder := json.NewDecoder(bytes.NewReader(items))
 	for {
 		var pkg struct {
-			ImportPath string
-			Deps       []string
+			ImportPath string   `json:"ImportPath"`
+			Deps       []string `json:"Deps"`
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {

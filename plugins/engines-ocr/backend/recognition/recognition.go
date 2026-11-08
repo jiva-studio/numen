@@ -56,7 +56,7 @@ type Block struct {
 // Recogniser reads the blocks of one page drawn as an image.
 type Recogniser interface {
 	GetRecognitionModel() Model
-	Recognise(ctx context.Context, page image.Image) ([]Block, error)
+	Recognize(ctx context.Context, page image.Image) ([]Block, error)
 }
 
 // Host is what a recognition works through: the vault the file is read from, the plugin's folder
@@ -68,8 +68,8 @@ type Host struct {
 	Queue host.Queue
 }
 
-// ErrAlreadyRecognising is returned for a file another run is recognising.
-var ErrAlreadyRecognising = errors.New("the file is already being recognised")
+// ErrAlreadyRecognising is returned for a file another run is recognizing.
+var ErrAlreadyRecognising = errors.New("the file is already being recognized")
 
 // Recognition reads files with the recogniser it opens. One run at a time locks a file of a vault.
 type Recognition struct {
@@ -98,7 +98,7 @@ func (r *Recognition) SetCompilationCache(cache wazero.CompilationCache) {
 	r.documents.SetCompilationCache(cache)
 }
 
-// Request is one file to recognise. Vault is the vault that contains it, and is
+// Request is one file to recognize. Vault is the vault that contains it, and is
 // empty for the vault the host currently shows.
 type Request struct {
 	Vault domain.VaultID
@@ -112,11 +112,11 @@ type Result struct {
 	IsEmpty bool
 }
 
-// Recognise reads the file and stores its text version. A failure is shown as a task until
-// the file is recognised again, and so is a file from which nothing is read. A failure of a file
-// that is no longer in the vault ends the task instead, because nothing can recognise that file
+// Recognize reads the file and stores its text version. A failure is shown as a task until
+// the file is recognized again, and so is a file from which nothing is read. A failure of a file
+// that is no longer in the vault ends the task instead, because nothing can recognize that file
 // again. For a file another run has locked, it returns ErrAlreadyRecognising.
-func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
+func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error) {
 	req, key, err := r.claim(ctx, req)
 	if err != nil {
 		return Result{}, err
@@ -125,7 +125,7 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 	return r.runRecognition(ctx, req)
 }
 
-// Start claims the file and recognises it in the background under ctx, and returns false when
+// Start claims the file and recognizes it in the background under ctx, and returns false when
 // another run has locked the file. An empty vault is the vault the host shows when Start is called,
 // and the run reads and writes only that vault. The channel is closed when the run ends.
 func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
@@ -144,7 +144,7 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 		_, err := r.runRecognition(ctx, req)
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
 		if err != nil && ctx.Err() == nil {
-			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
+			fmt.Fprintf(os.Stderr, "engines-ocr: recognize %s: %v\n", req.Path, err)
 		}
 	}()
 	return runEnd, true, nil
@@ -234,10 +234,10 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: GetTaskID(req.Path), Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
+		ID: GetTaskID(req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
-	res, err := r.recognise(ctx, on, req, &task)
+	res, err := r.recognize(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
 		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
@@ -256,7 +256,7 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 }
 
 // GetTaskID returns the id of the recognition of a file in the list of tasks.
-func GetTaskID(filePath string) string { return "recognise:" + filePath }
+func GetTaskID(filePath string) string { return "recognize:" + filePath }
 
 // StatFile returns the metadata of a file of a vault. An empty vault ID means the vault the host shows.
 func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
@@ -279,7 +279,7 @@ type reach struct {
 	texts host.Texts
 }
 
-func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
+func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
 	raw, _, err := on.vault.Read(ctx, req.Path)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
@@ -297,7 +297,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	defer func() { err = errors.Join(err, doc.Close()) }()
 	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
-		return Result{}, fmt.Errorf("wait for a turn to recognise %s: %w", req.Path, err)
+		return Result{}, fmt.Errorf("wait for a turn to recognize %s: %w", req.Path, err)
 	}
 	defer func() { err = errors.Join(err, turn.Release()) }()
 	recogniser, err := r.open(ctx)
@@ -340,9 +340,9 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 		if err != nil {
 			return err
 		}
-		blocks, err := on.recogniser.Recognise(ctx, page)
+		blocks, err := on.recogniser.Recognize(ctx, page)
 		if err != nil {
-			return fmt.Errorf("recognise page %d of %s: %w", index+1, rec.Path, err)
+			return fmt.Errorf("recognize page %d of %s: %w", index+1, rec.Path, err)
 		}
 		rec.Pages = append(rec.Pages, newPage(page.Bounds(), blocks))
 		if (index+1)%batch == 0 {

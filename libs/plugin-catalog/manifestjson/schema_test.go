@@ -150,7 +150,7 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 }
 
 func listModelFields(kind reflect.Type, visited map[reflect.Type]bool) []string {
-	for kind.Kind() == reflect.Slice || kind.Kind() == reflect.Ptr {
+	for kind.Kind() == reflect.Slice || kind.Kind() == reflect.Pointer {
 		kind = kind.Elem()
 	}
 	if kind.Kind() != reflect.Struct || visited[kind] || kind.PkgPath() == "" {
@@ -158,8 +158,7 @@ func listModelFields(kind reflect.Type, visited map[reflect.Type]bool) []string 
 	}
 	visited[kind] = true
 	var names []string
-	for i := range kind.NumField() {
-		field := kind.Field(i)
+	for field := range kind.Fields() {
 		names = append(names, kind.Name()+"."+field.Name)
 		names = append(names, listModelFields(field.Type, visited)...)
 	}
@@ -180,7 +179,7 @@ func collectSetValues(value reflect.Value, set map[string]bool) {
 		for i := range value.Len() {
 			collectSetValues(value.Index(i), set)
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if !value.IsNil() {
 			collectSetValues(value.Elem(), set)
 		}

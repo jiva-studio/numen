@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -637,10 +638,8 @@ func writeLibraryDir(t *testing.T) string {
 
 func refuse(paths ...string) func(string) error {
 	return func(pos string) error {
-		for _, rejected := range paths {
-			if pos == rejected {
-				return errors.New("serves no API 23")
-			}
+		if slices.Contains(paths, pos) {
+			return errors.New("serves no API 23")
 		}
 		return nil
 	}

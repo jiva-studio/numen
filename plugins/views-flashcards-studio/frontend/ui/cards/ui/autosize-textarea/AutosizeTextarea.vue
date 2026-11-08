@@ -34,7 +34,7 @@ const ownId = useId()
 const box = useTemplateRef<HTMLTextAreaElement>('box')
 
 defineExpose({
-  /** The box itself, for a caller that puts the caret somewhere in what it holds. */
+  /** The box itself, for a caller that puts the caret somewhere in its contents. */
   box,
 })
 </script>

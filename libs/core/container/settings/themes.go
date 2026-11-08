@@ -11,14 +11,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// Themes provides the themes the window can use: the catalogue of themes, and
-// the settings file that stores the selection. The catalogue offers the themes
+// Themes provides the themes the window can use: the catalog of themes, and
+// the settings file that stores the selection. The catalog offers the themes
 // of the enabled plugins of the plugin host, when the config has one.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	catalogue, err := c.getCatalogue()
+	catalog, err := c.getCatalogue()
 	scales := theme.NewScales(c.InterfaceScale, c.TextScale)
 	return &theme.Service{
-		Catalogue: catalogue,
+		Catalog: catalog,
 		Settings: theme.NewAppearances(
 			func() (theme.Appearance, error) { return c.readAppearance(scales) },
 			func(choice theme.Appearance) error { return c.writeAppearance(choice, scales) },
@@ -43,15 +43,15 @@ func CheckTextScale(name string, scale float64) error {
 	return settingsadapter.GetTextScaleBounds().Check(name, scale)
 }
 
-func (c Config) getCatalogue() (theme.Catalogue, error) {
-	catalogue, err := c.openCatalogue()
+func (c Config) getCatalogue() (theme.Catalog, error) {
+	catalog, err := c.openCatalogue()
 	if c.PluginHost != nil {
-		catalogue = catalogue.WithPlugins(themebridge.Open(c.PluginHost))
+		catalog = catalog.WithPlugins(themebridge.Open(c.PluginHost))
 	}
-	return catalogue, err
+	return catalog, err
 }
 
-func (c Config) openCatalogue() (theme.Catalogue, error) {
+func (c Config) openCatalogue() (theme.Catalog, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath, c.Watches)
 	}

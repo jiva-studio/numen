@@ -123,7 +123,7 @@ func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
 	if string(defaults) != `{"use":null}` {
 		t.Errorf("the defaults are written as %s", defaults)
 	}
-	none, err := json.Marshal(settings.Agent{Use: settings.UseProgram("")})
+	none, err := json.Marshal(settings.Agent{Use: new("")})
 	if err != nil {
 		t.Fatal(err)
 	}

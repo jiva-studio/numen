@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -290,7 +291,7 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 	notes := map[string]string{
 		"Term.md": getVault()["Term.md"],
 		"decks/Words.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nCompost\n",
+			"\n## Leaf mold\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nCompost\n",
 	}
 	s := openVault(t, notes)
 	reviewCards := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
@@ -318,7 +319,7 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 	}
 }
 
-func TestTheCardsComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
+func TestTheCardsAreReturnedInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{"Term.md": getVault()["Term.md"]}
 	var paths []string
@@ -426,7 +427,7 @@ func getScheduled() map[string]string {
 			"\n## Root ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n",
 		"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
-			"\n## Gayatri ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n",
+			"\n## Gayatri ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na meter\n",
 		"decks/Terms.md": "---\ntype: deck\n---\n" +
 			"\n## Term ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nsutra\n\n### Meaning\n\na thread\n",
 	}
@@ -516,9 +517,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()
 	files := make(map[string]string, len(getScheduled())+1)
-	for path, raw := range getScheduled() {
-		files[path] = raw
-	}
+	maps.Copy(files, getScheduled())
 	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
 	s := openVault(t, files)
 
@@ -570,7 +569,7 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 }
 
 // Answers are counted per deck as well as per preset, so a deck without answers
-// today does not take the count of another deck on the same preset.
+// today does not accept the count of another deck on the same preset.
 func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getScheduled())
@@ -771,7 +770,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 
 	want := map[string]flashcards.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
-		// as likely to come back as a card gets.
+		// as likely to be recalled as a card gets.
 		"decks/One.md": {Deck: "decks/One.md", ReviewCards: 3, Learned: 1},
 		"decks/Two.md": {Deck: "decks/Two.md", ReviewCards: 2, Learned: 1},
 		// The defaults count by an interval of three weeks, which a card
@@ -871,8 +870,8 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 func TestCountAnswers_GroupsByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognize"}
 
 	yesterday := vaulttest.GetEpoch().AddDate(0, 0, -1)
 	past := s.run(t, yesterday)
@@ -925,7 +924,7 @@ func TestCountAnswers_EmptyVaultHasNoDays(t *testing.T) {
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	first := s.run(t, vaulttest.GetEpoch().AddDate(0, 0, -1))
 	if _, err := first.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -961,8 +960,8 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognize"}
 
 	record := s.run(t, vaulttest.GetEpoch())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -994,7 +993,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1055,7 +1054,7 @@ func spaces(n int) []byte {
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	// Answered easily, so it is days away and not minutes.
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Easy, 0); err != nil {
@@ -1139,7 +1138,7 @@ func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tal
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1163,7 +1162,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1184,7 +1183,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1206,7 +1205,7 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1230,7 +1229,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 func TestACardDueTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	// Answered again, so it is due again within minutes and is due today.
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Again, 0); err != nil {
@@ -1252,7 +1251,7 @@ func TestACardDueTodayIsNotStillToCome(t *testing.T) {
 func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	now := vaulttest.GetEpoch()
 	yesterday, twoDaysAgo := now.AddDate(0, 0, -1), now.AddDate(0, 0, -2)
 	for _, item := range []time.Time{twoDaysAgo, yesterday, now} {
@@ -1330,7 +1329,7 @@ func TestADeckSavedWithNoIndexUpdateIsNotNamed(t *testing.T) {
 	if len(assigned.Unwritten) != 0 {
 		t.Fatalf("the deck was written and is named as unwritten: %v", assigned.Unwritten)
 	}
-	if target := read(t, s.vault, "decks/Own.md"); !strings.Contains(target, "## Leaf mould ^") {
+	if target := read(t, s.vault, "decks/Own.md"); !strings.Contains(target, "## Leaf mold ^") {
 		t.Errorf("the deck carries no card id: %q", target)
 	}
 
@@ -1375,7 +1374,7 @@ func reading(
 	), add
 }
 
-func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
+func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighborhood {
 	t.Helper()
 	u, add := reading(t)
 	return getNeighbourhood(t, u, add(notes), deck)
@@ -1383,7 +1382,7 @@ func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flash
 
 func getNeighbourhood(
 	t *testing.T, u flashcards.ShowNeighbourhood, v domain.Vault, deck string,
-) flashcards.Neighbourhood {
+) flashcards.Neighborhood {
 	t.Helper()
 	out, err := u.Execute(t.Context(), v, deck)
 	if err != nil {
@@ -1392,7 +1391,7 @@ func getNeighbourhood(
 	return out
 }
 
-func getWrittenLinks(j flashcards.Neighbourhood) []string {
+func getWrittenLinks(j flashcards.Neighborhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Written)
@@ -1400,7 +1399,7 @@ func getWrittenLinks(j flashcards.Neighbourhood) []string {
 	return out
 }
 
-func paths(j flashcards.Neighbourhood) []string {
+func paths(j flashcards.Neighborhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Path)
@@ -1683,7 +1682,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 	if len(j.Notes) != 2 {
 		t.Fatalf("joined to %v", paths(j))
 	}
-	byPath := map[string]flashcards.Neighbour{}
+	byPath := map[string]flashcards.Neighbor{}
 	for _, one := range j.Notes {
 		byPath[one.Path] = one
 	}

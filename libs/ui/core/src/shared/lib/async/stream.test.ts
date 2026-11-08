@@ -40,7 +40,7 @@ describe('a stream that ends', () => {
     expect(one.waits).toStrictEqual([AGAIN, AGAIN, AGAIN])
   })
 
-  it('waits as long as it was told to', async () => {
+  it('waits as long as it was configured to', async () => {
     const one = window(1)
 
     await one.follows(createStream('a change'), vi.fn(), 50)
@@ -164,7 +164,7 @@ describe('what a follower holds for one reading of a stream', () => {
 })
 
 describe('a window that closes while a stream is read', () => {
-  it('waits for nothing and lets go of nothing once it closed on an item', async () => {
+  it('waits for nothing and releases nothing once it closed on an item', async () => {
     let open = true
     const waits: number[] = []
     const resets: number[] = []

@@ -48,10 +48,33 @@ const CARRIES = new Set<Code>([
   Code.Unimplemented,
 ])
 
+const REPORTED = 'ReportedError'
+
+/**
+ * An error whose message is shown as it is.
+ * Other errors carry backend or platform text and are shown by their code.
+ */
+export class ReportedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = REPORTED
+  }
+}
+
+const isReportedError = (error: unknown): error is { readonly message: string } =>
+  typeof error === 'object' &&
+  error !== null &&
+  'name' in error &&
+  error.name === REPORTED &&
+  'message' in error &&
+  typeof error.message === 'string'
+
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
 export const formatErrorMessage = (error: unknown): string => {
+  const reported = isReportedError(error) ? error.message.trim() : ''
+  if (reported) return reported
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
@@ -60,7 +83,7 @@ export const formatErrorMessage = (error: unknown): string => {
 /**
  * The message for each error code in the schema.
  */
-const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
+const ERROR_CODE_MESSAGES: Readonly<Record<number, string>> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
   [ProtoErrorCode.NOT_FOUND]: 'note not in the vault',
   [ProtoErrorCode.NOT_A_NOTE]: 'not a note',
@@ -71,8 +94,8 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.ALREADY_EXISTS]: 'a file with this name exists',
   [ProtoErrorCode.INVALID_NAME]: 'invalid note name',
   [ProtoErrorCode.CONFLICT]: 'not saved: the note changed on disk',
-}
+} satisfies Record<ProtoErrorCode, string>
 
 /** The message for one error code; empty when there was no error. */
 export const formatErrorCodeMessage = (errorCode: number | undefined): string =>
-  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode as ProtoErrorCode] ?? UNEXPECTED)
+  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode] ?? UNEXPECTED)

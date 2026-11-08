@@ -32,7 +32,7 @@ export interface OpenTab {
   readonly place?: TabPlace
 }
 
-/** A tab kind: what it holds, its title, and how it releases its state. */
+/** A tab kind: its contents, its title, and how it releases its state. */
 export interface TabKind<TabState, K extends string = string> {
   readonly kind: K
   readonly pluginId?: string
@@ -69,10 +69,10 @@ export interface TabKind<TabState, K extends string = string> {
    */
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** The target of a command issued against one of its tabs. */
-  getTarget?(state: TabState): TabTarget
+  getTarget?(this: void, state: TabState): TabTarget
   getOpenTab?(state: TabState): OpenTab
   /**
-   * The tab lets go of what it held. False keeps it on screen: what it holds
+   * The tab releases what it held. False keeps it on screen: its contents
    * has something to finish, and closes the tab itself once it has.
    */
   onClose?(state: TabState, id: string): boolean
@@ -85,7 +85,7 @@ export interface TabKind<TabState, K extends string = string> {
    * The tab moves to a path a tab linked to it moved to. A kind that declares
    * it can be linked.
    */
-  navigate?(state: TabState, path: string, title: string): void | Promise<void>
+  navigate?(this: void, state: TabState, path: string, title: string): void | Promise<void>
   readonly isTool?: boolean
   isAsking?(state: TabState): boolean
   /** Writes what the tab holds out to its file; answers once nothing is on its way. */

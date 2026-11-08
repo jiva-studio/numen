@@ -141,7 +141,7 @@
   --numen-inset: 0.5rem;
   --numen-inset-wide: 0.75rem;
 
-  /* The air at the edge of a box, between what it holds and the line round it. */
+  /* The air at the edge of a box, between its contents and the line round it. */
   --numen-box-air: 0.625rem;
 
   /* The corner of a box drawn in the page: a button, an item in a list, a
@@ -157,7 +157,7 @@
   /* The halo that keeps an edge label legible where it crosses its own line. */
   --numen-edge-label-halo: 0.1875rem;
 
-  /* A panel floats: rounded on every side, with what it holds clear of the
+  /* A panel floats: rounded on every side, with its contents clear of the
      curve. */
   --numen-radius-panel: 0.75rem;
   --numen-panel-padding: 0.75rem;

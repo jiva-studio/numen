@@ -28,7 +28,7 @@ export interface Budget {
   minutes: number
 }
 
-/** One preset, the decks it schedules, and what it holds today. */
+/** One preset, the decks it schedules, and its contents today. */
 export interface Preset {
   readonly path: string
   readonly name: string

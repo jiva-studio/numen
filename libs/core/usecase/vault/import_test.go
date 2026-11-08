@@ -40,7 +40,7 @@ func readArrived(t *testing.T, root, path string) string {
 
 // Files dropped onto a folder are copied into it, whatever their kind, and the
 // source files stay in place.
-func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
+func TestFilesAreBroughtIntoTheFolderTheyWereReleasedOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})

@@ -195,7 +195,7 @@ describe('giving a day a level', () => {
 
   // A chip that cannot be toggled is pressed like any other and emits nothing.
   // It keeps keyboard focus, so the week can still be read while it is disabled.
-  it('offers nothing while nobody may turn them, and says so on every chip', async () => {
+  it('offers nothing while no one may turn them, and says so on every chip', async () => {
     const row = mountChips({ isDisabled: true })
     const chips = row.findAll('button')
     expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(Array(7).fill('true'))

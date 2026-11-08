@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"maps"
+	"slices"
 	"testing"
 
 	"pgregory.net/rapid"
@@ -153,11 +154,8 @@ func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 		for key, target := range after {
 			survived := 0
 			for _, row := range target {
-				for _, already := range before[key] {
-					if row == already {
-						survived++
-						break
-					}
+				if slices.Contains(before[key], row) {
+					survived++
 				}
 			}
 			if want := min(len(before[key]), len(target)); survived != want {

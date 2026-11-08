@@ -16,6 +16,6 @@ export const WORDS = {
   folder: 'New folder',
   /** How many rows are being dragged, shown at the pointer while they are. */
   dragging: (files: number) => `${files} files`,
-  /** The rows that stayed where they were, because the folder holds those names. */
+  /** The rows that kept their positions, because the folder holds those names. */
   taken: 'Not moved, names already exist:',
 }

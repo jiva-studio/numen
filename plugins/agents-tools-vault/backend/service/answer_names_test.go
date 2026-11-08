@@ -536,8 +536,8 @@ func TestLibraryReadDescriptionNamesRecognitionAndTranscription(t *testing.T) {
 		if strings.Contains(description, "names the tool") {
 			t.Errorf("the description of library_read is %q, want no error that names a tool", description)
 		}
-		if !strings.Contains(description, "recognised") || !strings.Contains(description, "transcribed") {
-			t.Errorf("the description of library_read is %q, want the file recognised or transcribed first", description)
+		if !strings.Contains(description, "recognized") || !strings.Contains(description, "transcribed") {
+			t.Errorf("the description of library_read is %q, want the file recognized or transcribed first", description)
 		}
 	}
 }

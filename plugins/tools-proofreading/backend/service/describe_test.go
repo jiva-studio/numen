@@ -16,7 +16,7 @@ func makeLines(response ...string) []Line {
 
 func getListedWords(t *testing.T, about string) string {
 	t.Helper()
-	for _, line := range strings.Split(about, "\n") {
+	for line := range strings.SplitSeq(about, "\n") {
 		if response, items := strings.CutPrefix(line, "Words recurring through it, as the machine transcribed them: "); items {
 			return response
 		}

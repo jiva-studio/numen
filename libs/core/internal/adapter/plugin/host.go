@@ -951,9 +951,7 @@ func (h *Host) evictTargets(ctx context.Context, targets []pluginTeardownTarget,
 }
 
 func (h *Host) startEvictLoop() {
-	h.evictWg.Add(1)
-	go func() {
-		defer h.evictWg.Done()
+	h.evictWg.Go(func() {
 		for {
 			select {
 			case <-h.evictDone:
@@ -964,7 +962,7 @@ func (h *Host) startEvictLoop() {
 				cancel()
 			}
 		}
-	}()
+	})
 }
 
 func (h *Host) stopEvictLoop() {
@@ -1082,9 +1080,7 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		if _, ok := h.settings[pluginID]; !ok {
 			h.settings[pluginID] = make(map[string]any)
 		}
-		for k, v := range cfg {
-			h.settings[pluginID][k] = v
-		}
+		maps.Copy(h.settings[pluginID], cfg)
 	}
 	h.mu.Unlock()
 	h.fillGeneratedSettings()
@@ -1372,7 +1368,7 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	declared   []manifest.Secret
+	declared   []manifest.SecretDeclaration
 	requested  []string
 	store      pluginport.KeyStore
 	source     pluginport.SecretSource
@@ -1408,12 +1404,12 @@ func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) 
 	}, true, nil
 }
 
-func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.Secret {
+func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.SecretDeclaration {
 	p, ok := h.plugins[pluginID]
 	if !ok {
 		return nil
 	}
-	var active []manifest.Secret
+	var active []manifest.SecretDeclaration
 	for _, declaration := range p.Manifest.Secrets {
 		if p.Manifest.IsSecretActive(declaration, values) {
 			active = append(active, declaration)

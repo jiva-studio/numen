@@ -100,10 +100,10 @@ export interface ReadPreset {
   readonly bounds: SettingsBounds
 }
 
-/** What reading a preset came back with. */
+/** What reading a preset returned. */
 export type PresetReadResult = Result<ReadPreset, ErrorCode>
 
-/** What writing a preset came back with. */
+/** What writing a preset returned. */
 export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** Where a preset was filed, or why none was made. */

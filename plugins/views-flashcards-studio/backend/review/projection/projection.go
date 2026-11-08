@@ -34,12 +34,12 @@ type Projection struct {
 	Through     []float64
 }
 
-// RetentionByDay is the share of the material that comes back at the end of a
+// RetentionByDay is the share of the material that is recalled at the end of a
 // day, for the days a run reports retention for. A day without a report has no
 // share, and GetShare reports that.
 type RetentionByDay struct{ on map[int]float64 }
 
-// GetShare is the share of the material that came back at the end of this day
+// GetShare is the share of the material that was recalled at the end of this day
 // of the run, counting the day the run opens as none, and whether the run
 // answers for that day.
 func (r RetentionByDay) GetShare(day int) (float64, bool) {
@@ -50,7 +50,7 @@ func (r RetentionByDay) GetShare(day int) (float64, bool) {
 // Days is every day this answers for, in order.
 func (r RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(r.on)) }
 
-func (r *RetentionByDay) add(day int, share float64) {
+func addRetention(r *RetentionByDay, day int, share float64) {
 	if r.on == nil {
 		r.on = make(map[int]float64)
 	}
@@ -136,12 +136,12 @@ func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 }
 
 // learnedCount tracks how much of the material is learned and how much of it
-// comes back, at the close of a day.
+// is recalled, at the close of a day.
 //
 // Under an interval rule, learned is a property of a review card's schedule: the
 // count is carried from day to day and recomputed only for review cards that the
 // day answered. Under a recall-chance rule, learned is a property of the instant,
-// and is read from the same value as the share that comes back.
+// and is read from the same value as the share that is recalled.
 type learnedCount struct {
 	preset    Preset
 	isCarried bool

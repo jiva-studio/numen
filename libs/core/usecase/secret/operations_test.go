@@ -13,11 +13,11 @@ import (
 )
 
 // ledger is a list of secrets held in memory.
-type ledger struct{ list []secret.Secret }
+type ledger struct{ list []pluginport.Secret }
 
-func (l *ledger) GetSecrets() ([]secret.Secret, error) { return slices.Clone(l.list), nil }
+func (l *ledger) GetSecrets() ([]pluginport.Secret, error) { return slices.Clone(l.list), nil }
 
-func (l *ledger) ChangeSecrets(change func([]secret.Secret) ([]secret.Secret, error)) error {
+func (l *ledger) ChangeSecrets(change func([]pluginport.Secret) ([]pluginport.Secret, error)) error {
 	updated, err := change(slices.Clone(l.list))
 	if err != nil {
 		return err
@@ -29,11 +29,11 @@ func (l *ledger) ChangeSecrets(change func([]secret.Secret) ([]secret.Secret, er
 // plugins is a host that declares the given declarations and records the readers an operation names.
 type plugins struct {
 	mu       sync.Mutex
-	declared []secret.Permission
+	declared []pluginport.DeclarationKey
 	readers  []string
 }
 
-func (p *plugins) ListDeclarations() []secret.Permission { return p.declared }
+func (p *plugins) ListDeclarations() []pluginport.DeclarationKey { return p.declared }
 
 func (p *plugins) Refresh(_ context.Context, forced ...string) error {
 	p.mu.Lock()
@@ -62,12 +62,12 @@ func (k keys) DeleteKey(_ context.Context, name string) error {
 	return nil
 }
 
-func getAlphaKey() secret.Permission {
-	return secret.Permission{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
+func getAlphaKey() pluginport.DeclarationKey {
+	return pluginport.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
 }
 
-func getBetaKey() secret.Permission {
-	return secret.Permission{Plugin: "md.numen.beta", Name: "apiKey"}
+func getBetaKey() pluginport.DeclarationKey {
+	return pluginport.DeclarationKey{Plugin: "md.numen.beta", Name: "apiKey"}
 }
 
 type fixture struct {
@@ -77,8 +77,8 @@ type fixture struct {
 	secrets *secret.Secrets
 }
 
-func newFixture(list ...secret.Secret) fixture {
-	f := fixture{ledger: &ledger{list: list}, plugins: &plugins{declared: []secret.Permission{getAlphaKey(), getBetaKey()}}, keys: keys{}}
+func newFixture(list ...pluginport.Secret) fixture {
+	f := fixture{ledger: &ledger{list: list}, plugins: &plugins{declared: []pluginport.DeclarationKey{getAlphaKey(), getBetaKey()}}, keys: keys{}}
 	counter := 0
 	newID := func() (string, error) {
 		counter++
@@ -88,8 +88,8 @@ func newFixture(list ...secret.Secret) fixture {
 	return f
 }
 
-func TestCreateAddsTheSecretAtTheEndOfTheListWithItsValueInTheStore(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
+func TestCreateAppendsSecretAndStoresValue(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
 
 	id, err := f.secrets.Create.Execute(t.Context(), "openrouter", "Work", "value-one")
 	if err != nil {
@@ -106,8 +106,8 @@ func TestCreateAddsTheSecretAtTheEndOfTheListWithItsValueInTheStore(t *testing.T
 	}
 }
 
-func TestCreateRefusesABadRequestBeforeAnyWrite(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
+func TestCreateRejectsInvalidRequestBeforeWrite(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
 	for what, call := range map[string]func() error{
 		"an empty group": func() error { _, err := f.secrets.Create.Execute(t.Context(), "", "N", "v"); return err },
 		"an empty name":  func() error { _, err := f.secrets.Create.Execute(t.Context(), "g", "", "v"); return err },
@@ -128,14 +128,13 @@ func TestCreateRefusesABadRequestBeforeAnyWrite(t *testing.T) {
 	}
 }
 
-// failingStore refuses to write.
 type failingStore struct{ keys }
 
 var errLocked = errors.New("the keychain is locked")
 
 func (failingStore) SetKey(context.Context, string, string) error { return errLocked }
 
-func TestCreateWithAFailingStoreIsAKeyStoreErrorWithoutTheValueAndWritesNoEntry(t *testing.T) {
+func TestCreateWithFailingStoreRedactsValueAndSkipsWrite(t *testing.T) {
 	f := newFixture()
 	f.secrets = secret.NewSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil, nil)
 
@@ -149,7 +148,7 @@ func TestCreateWithAFailingStoreIsAKeyStoreErrorWithoutTheValueAndWritesNoEntry(
 }
 
 func TestWriteNamesTheReadersOfTheSecretOnce(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Work", Group: "openrouter", Allowed: []secret.Permission{
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Work", Group: "openrouter", Allowed: []pluginport.DeclarationKey{
 		getAlphaKey(), {Plugin: "md.numen.alpha", Name: "other"}, getBetaKey(),
 	}})
 	if err := f.secrets.Write.Execute(t.Context(), "s00000001", "value-new"); err != nil {
@@ -168,8 +167,8 @@ func TestWriteNamesTheReadersOfTheSecretOnce(t *testing.T) {
 
 func TestRenameKeepsTheIdPermissionsAndValue(t *testing.T) {
 	f := newFixture(
-		secret.Secret{ID: "s00000001", Name: "Work", Group: "g", Allowed: []secret.Permission{getAlphaKey()}},
-		secret.Secret{ID: "s00000002", Name: "Home", Group: "g"},
+		pluginport.Secret{ID: "s00000001", Name: "Work", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
+		pluginport.Secret{ID: "s00000002", Name: "Home", Group: "g"},
 	)
 	f.keys["secret/s00000001"] = "v"
 	if err := f.secrets.Rename.Execute(t.Context(), "s00000001", "Office"); err != nil {
@@ -183,8 +182,8 @@ func TestRenameKeepsTheIdPermissionsAndValue(t *testing.T) {
 	}
 }
 
-func TestDeleteRemovesTheEntryThenTheValueAndToleratesAMissingValue(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Work", Group: "g"})
+func TestDeleteRemovesEntryAndToleratesMissingValue(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Work", Group: "g"})
 	if err := f.secrets.Delete.Execute(t.Context(), "s00000001"); err != nil {
 		t.Fatalf("a delete with no value in the store: %v", err)
 	}
@@ -198,8 +197,8 @@ func TestDeleteRemovesTheEntryThenTheValueAndToleratesAMissingValue(t *testing.T
 
 func TestMoveStaysInsideTheGroup(t *testing.T) {
 	f := newFixture(
-		secret.Secret{ID: "s00000001", Group: "a"}, secret.Secret{ID: "s00000002", Group: "b"},
-		secret.Secret{ID: "s00000003", Group: "a"}, secret.Secret{ID: "s00000004", Group: "a"},
+		pluginport.Secret{ID: "s00000001", Group: "a"}, pluginport.Secret{ID: "s00000002", Group: "b"},
+		pluginport.Secret{ID: "s00000003", Group: "a"}, pluginport.Secret{ID: "s00000004", Group: "a"},
 	)
 	if err := f.secrets.Move.Execute(t.Context(), "s00000004", "s00000001"); err != nil {
 		t.Fatal(err)
@@ -221,10 +220,10 @@ func TestMoveStaysInsideTheGroup(t *testing.T) {
 	}
 }
 
-func TestRenameGroupMovesEverySecretAndRefusesTakenAndAskedForNames(t *testing.T) {
+func TestRenameGroupUpdatesSecretsAndValidatesTargetName(t *testing.T) {
 	f := newFixture(
-		secret.Secret{ID: "s00000001", Name: "A", Group: "work"}, secret.Secret{ID: "s00000002", Name: "B", Group: "work"},
-		secret.Secret{ID: "s00000003", Name: "C", Group: "home"},
+		pluginport.Secret{ID: "s00000001", Name: "A", Group: "work"}, pluginport.Secret{ID: "s00000002", Name: "B", Group: "work"},
+		pluginport.Secret{ID: "s00000003", Name: "C", Group: "home"},
 	)
 	if err := f.secrets.RenameGroup.Execute(t.Context(), "work", "office"); err != nil {
 		t.Fatal(err)
@@ -246,7 +245,7 @@ func TestRenameGroupMovesEverySecretAndRefusesTakenAndAskedForNames(t *testing.T
 }
 
 func TestAllowAndDenyAreIdempotentAndAllowChecksTheDeclaration(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Work", Group: "openrouter"})
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Work", Group: "openrouter"})
 	for range 2 {
 		if err := f.secrets.Allow.Execute(t.Context(), "s00000001", getAlphaKey()); err != nil {
 			t.Fatal(err)
@@ -255,7 +254,7 @@ func TestAllowAndDenyAreIdempotentAndAllowChecksTheDeclaration(t *testing.T) {
 	if got := f.ledger.list[0].Allowed; len(got) != 1 || got[0] != getAlphaKey() {
 		t.Errorf("allowed = %v", got)
 	}
-	absent := secret.Permission{Plugin: "md.numen.alpha", Name: "apiKey", Group: "mistral"}
+	absent := pluginport.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "mistral"}
 	if err := f.secrets.Allow.Execute(t.Context(), "s00000001", absent); !errors.Is(err, secret.ErrInvalid) {
 		t.Errorf("an undeclared permission gave %v", err)
 	}
@@ -273,9 +272,9 @@ func TestAllowAndDenyAreIdempotentAndAllowChecksTheDeclaration(t *testing.T) {
 }
 
 func TestPruneKeepsTheDeclaredPermissionsAndDropsTheRest(t *testing.T) {
-	removed := secret.Permission{Plugin: "md.numen.removed", Name: "apiKey"}
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Work", Group: "g", Allowed: []secret.Permission{getAlphaKey(), removed}})
-	if err := f.secrets.Prune.Execute([]secret.Permission{getAlphaKey()}); err != nil {
+	removed := pluginport.DeclarationKey{Plugin: "md.numen.removed", Name: "apiKey"}
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Work", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey(), removed}})
+	if err := f.secrets.Prune.Execute([]pluginport.DeclarationKey{getAlphaKey()}); err != nil {
 		t.Fatal(err)
 	}
 	if got := f.ledger.list[0].Allowed; len(got) != 1 || got[0] != getAlphaKey() {
@@ -283,15 +282,14 @@ func TestPruneKeepsTheDeclaredPermissionsAndDropsTheRest(t *testing.T) {
 	}
 }
 
-// undeletableStore refuses to delete.
 type undeletableStore struct{ keys }
 
 func (undeletableStore) DeleteKey(context.Context, string) error { return errLocked }
 
-func TestDeleteWithAFailingStoreRestoresTheEntryWithItsPermissionsAndNamesNoReader(t *testing.T) {
-	list := []secret.Secret{
+func TestDeleteWithFailingStoreRestoresEntryAndSkipsRefresh(t *testing.T) {
+	list := []pluginport.Secret{
 		{ID: "s00000001", Name: "First", Group: "g"},
-		{ID: "s00000002", Name: "Work", Group: "g", Allowed: []secret.Permission{getAlphaKey()}},
+		{ID: "s00000002", Name: "Work", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
 		{ID: "s00000003", Name: "Last", Group: "g"},
 	}
 	f := newFixture(list...)
@@ -302,7 +300,7 @@ func TestDeleteWithAFailingStoreRestoresTheEntryWithItsPermissionsAndNamesNoRead
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
 		t.Errorf("error = %v", err)
 	}
-	if !slices.EqualFunc(f.ledger.list, list, func(a, b secret.Secret) bool {
+	if !slices.EqualFunc(f.ledger.list, list, func(a, b pluginport.Secret) bool {
 		return a.ID == b.ID && slices.Equal(a.Allowed, b.Allowed)
 	}) {
 		t.Errorf("list = %v, want %v", f.ledger.list, list)

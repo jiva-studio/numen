@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"io"
 	"math/rand"
 	"runtime"
@@ -97,15 +98,15 @@ func writeGranules(random *rand.Rand, main *bitWriter) {
 	}
 }
 
-func decodeMP3Whole(t testing.TB, raw []byte) []float32 {
-	t.Helper()
+func decodeMP3Whole(tb testing.TB, raw []byte) []float32 {
+	tb.Helper()
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	body, err := io.ReadAll(decoder)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	stereo := make([]float32, len(body)/2)
 	for i := range stereo {
@@ -207,7 +208,7 @@ func peakHeap(run func()) int {
 }
 
 // A recording is segmented from an mp3 as it is from any other container, and
-// the context is honoured on the way.
+// the context is honored on the way.
 func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -216,7 +217,7 @@ func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := resample.Convert(ctx, sound, rate, signal.SampleRate, 0); err != context.Canceled {
-		t.Errorf("resampling under a cancelled context returned %v", err)
+	if _, err := resample.Convert(ctx, sound, rate, signal.SampleRate, 0); !errors.Is(err, context.Canceled) {
+		t.Errorf("resampling under a canceled context returned %v", err)
 	}
 }

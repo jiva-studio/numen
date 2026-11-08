@@ -26,6 +26,7 @@ type SchemaEnum interface {
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+		t.Helper()
 		if !reading(one) {
 			t.Errorf("%s reaches nothing on the way in", value.Name())
 		}
@@ -39,6 +40,7 @@ func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
 	t.Helper()
 	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+		t.Helper()
 		was, named := from[one]
 		if !named {
 			t.Errorf("%s is written from nothing", value.Name())
@@ -50,12 +52,13 @@ func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func
 	})
 }
 
-// RoundTrip fails for every value of the enum that does not come back as
+// RoundTrip fails for every value of the enum that is not returned as
 // itself. A value the reading does not name lands on its default, and the
 // writing sends that default back in its place.
 func RoundTrip[E SchemaEnum, C any](t *testing.T, reading func(E) C, writing func(C) E) {
 	t.Helper()
 	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+		t.Helper()
 		if got := writing(reading(one)); got != one {
 			t.Errorf("%s comes back as %v", value.Name(), got)
 		}

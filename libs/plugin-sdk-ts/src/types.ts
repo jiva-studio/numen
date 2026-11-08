@@ -121,35 +121,35 @@ export interface TabKindRegistration<State = unknown> {
   component: unknown
   title?: string
   actions?: Record<string, (targetPath: string, ...args: unknown[]) => unknown>
-  onClose?(state: State, id: string): boolean
+  onClose?(this: void, state: State, id: string): boolean
   // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope. `saved` is
   // what getState returned for the tab before a restart, and absent for a new tab.
   open?(targetPath: string, id: string, saved?: unknown): State
   // The JSON value the window keeps for the tab and passes to open after a restart.
-  getState?(state: State): unknown
-  getTitle?(state: State): string
+  getState?(this: void, state: State): unknown
+  getTitle?(this: void, state: State): string
   // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
-  identity?(targetPath: string): string
-  onShow?(state: State, id: string): void
+  identity?(this: void, targetPath: string): string
+  onShow?(this: void, state: State, id: string): void
   // The tab is handed text meant for it, such as a question the window puts to it.
-  receiveText?(state: State, text: string): void
+  receiveText?(this: void, state: State, text: string): void
   // A key struck while the tab is in front, answered with whether the tab took it.
-  onKeyPress?(state: State, event: KeyboardEvent): boolean
-  getTarget?(state: State): TabTarget
+  onKeyPress?(this: void, state: State, event: KeyboardEvent): boolean
+  getTarget?(this: void, state: State): TabTarget
   // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
-  getOpenTab?(state: State): { readonly path: string; readonly place?: TabPlace }
+  getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: TabPlace }
   // The window is going; what the tab holds is released without asking.
-  onDestroy?(state: State, id: string): void
+  onDestroy?(this: void, state: State, id: string): void
   // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.
-  navigate?(state: State, path: string, title: string): void | Promise<void>
+  navigate?(this: void, state: State, path: string, title: string): void | Promise<void>
   isTool?: boolean
   // The one word its tabs carry beside their title, and nothing where a tab carries none.
-  getMark?(state: State): string | undefined
-  isAsking?(state: State): boolean
+  getMark?(this: void, state: State): string | undefined
+  isAsking?(this: void, state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
-  flushPending?(state: State): Promise<void>
+  flushPending?(this: void, state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
-  createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
+  createFile?(this: void, folder: string, name: string): Promise<Result<{ path: string }, string>>
   icon?: unknown
   placement?: TabPlacement
 }

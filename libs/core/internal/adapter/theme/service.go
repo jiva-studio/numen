@@ -48,12 +48,12 @@ type Appearances interface {
 
 // Service answers what a client may ask about themes.
 //
-// The catalogue is the files, and Settings is where a choice out of them is
+// The catalog is the files, and Settings is where a choice out of them is
 // kept. A build with no settings behind it offers what it ships and writes
 // nothing.
 type Service struct {
-	Catalogue Catalogue
-	Settings  Appearances
+	Catalog  Catalog
+	Settings Appearances
 
 	InterfaceScaleBounds, TextScaleBounds Bounds
 
@@ -66,14 +66,14 @@ func (s *Service) ListThemes(
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
 	current := s.getAppearance()
-	applied, missing := s.Catalogue.GetApplied(current.ThemeName)
+	applied, missing := s.Catalog.GetApplied(current.ThemeName)
 	if missing != "" {
 		s.warn(fmt.Sprintf("Theme not found: %s. Applied: %s", missing, applied))
 	} else {
 		s.warn("")
 	}
 
-	themes := s.Catalogue.Themes()
+	themes := s.Catalog.Themes()
 	items := make([]*v1.Theme, 0, len(themes))
 	for _, one := range themes {
 		items = append(items, &v1.Theme{
@@ -106,7 +106,7 @@ func (s *Service) ReadTheme(
 	_ context.Context,
 	req *connect.Request[v1.ReadThemeRequest],
 ) (*connect.Response[v1.ReadThemeResponse], error) {
-	text, err := s.Catalogue.Text(req.Msg.GetName())
+	text, err := s.Catalog.Text(req.Msg.GetName())
 	if errors.Is(err, ErrNoTheme) || errors.Is(err, ErrNoFolder) {
 		return connect.NewResponse(&v1.ReadThemeResponse{}), nil
 	}
@@ -127,7 +127,7 @@ func (s *Service) WriteAppearance(
 	}
 
 	name := req.Msg.GetName()
-	if _, err := s.Catalogue.Text(name); err != nil {
+	if _, err := s.Catalog.Text(name); err != nil {
 		return respond(err.Error())
 	}
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
@@ -163,15 +163,15 @@ func (s *Service) WatchThemes(
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 
-	changed, err := s.Catalogue.Watch(watching, s.DebounceDelay)
-	if errors.Is(err, ErrNoFolder) && s.Catalogue.HasPlugins() {
+	changed, err := s.Catalog.Watch(watching, s.DebounceDelay)
+	if errors.Is(err, ErrNoFolder) && s.Catalog.HasPlugins() {
 		changed, err = nil, nil
 	}
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
 
-	previous := s.Catalogue.ListPluginThemeNames()
+	previous := s.Catalog.ListPluginThemeNames()
 
 	// Empty keepalive responses make a write to a disconnected client fail. The
 	// request context belongs to the process and does not reflect whether the page
@@ -184,7 +184,7 @@ func (s *Service) WatchThemes(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			current := s.Catalogue.ListPluginThemeNames()
+			current := s.Catalog.ListPluginThemeNames()
 			response := &v1.WatchThemesResponse{Names: listDifference(previous, current)}
 			previous = current
 			if err := stream.Send(response); err != nil {

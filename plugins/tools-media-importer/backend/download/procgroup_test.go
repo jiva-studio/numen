@@ -52,7 +52,7 @@ func spawningScript(t *testing.T) program {
 	return program{command: []string{pos}}
 }
 
-// Cancelling a run ends the process the tool started as well as the tool, and
+// Canceling a run ends the process the tool started as well as the tool, and
 // the call returns without waiting for either to finish by itself.
 func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 	folder := t.TempDir()
@@ -79,16 +79,16 @@ func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 	select {
 	case err := <-returned:
 		if !errors.Is(err, context.Canceled) {
-			t.Errorf("a cancelled run answered %v", err)
+			t.Errorf("a canceled run answered %v", err)
 		}
 	case <-time.After(30 * time.Second):
-		t.Fatal("a cancelled run did not return")
+		t.Fatal("a canceled run did not return")
 	}
 	waitFor(t, "the child ending", func() bool { return !isAlive(child) })
 }
 
 // A folder the tool's child was writing in can be removed once the run is
-// cancelled.
+// canceled.
 func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	folder := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -97,7 +97,7 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		if _, err := run(ctx, spawningScript(t), nil, folder); err == nil {
-			t.Error("a cancelled run reported no error")
+			t.Error("a canceled run reported no error")
 		}
 	}()
 	waitFor(t, "the tool starting its child", func() bool {
@@ -145,7 +145,7 @@ func TestSetProcessGroupSetsWaitDelay(t *testing.T) {
 	}
 }
 
-// Cancelling a process that has already finished reports that it is done.
+// Canceling a process that has already finished reports that it is done.
 func TestSetProcessGroup_CancelFinishedProcess(t *testing.T) {
 	cmd := exec.CommandContext(t.Context(), "true")
 	setProcessGroup(cmd)
@@ -154,6 +154,6 @@ func TestSetProcessGroup_CancelFinishedProcess(t *testing.T) {
 	}
 	err := cmd.Cancel()
 	if !errors.Is(err, os.ErrProcessDone) {
-		t.Errorf("cancelling finished process answered %v, want %v", err, os.ErrProcessDone)
+		t.Errorf("canceling finished process answered %v, want %v", err, os.ErrProcessDone)
 	}
 }

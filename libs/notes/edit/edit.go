@@ -77,7 +77,7 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	if e.Index == nil {
 		return content, nil
 	}
-	// The file is written, so the index follows it even when the caller has gone.
+	// The file is written, so the index follows it even when the caller is canceled.
 	return content, WrapIndexOutdated(e.Index(context.WithoutCancel(ctx), v, []string{path}), path)
 }
 

@@ -1,5 +1,5 @@
 /**
- * The settings tab, and what it holds.
+ * The settings tab, and its contents.
  *
  * It holds nothing of its own: the window already keeps every setting it can
  * write, and this is a second way to the same values. A row here and the
@@ -19,7 +19,7 @@ import type {
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
   /**
-   * names one can be set to, and settings written where they stand.
+   * names one can be set to, and settings written in place.
    */
   getSetting(at: readonly string[]): unknown
   /** A setting as the vault last answered it, never a value asked for and not yet answered. */

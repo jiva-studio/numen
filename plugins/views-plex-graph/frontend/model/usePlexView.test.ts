@@ -77,7 +77,7 @@ describe('a plex whose first answer is stale', () => {
 })
 
 describe('two questions in flight', () => {
-  it('keeps the answer to the last one requested, however they come back', async () => {
+  it('keeps the answer to the last one requested, however they are returned', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
@@ -117,7 +117,7 @@ describe('a question in flight', () => {
 })
 
 describe('a note that moved while a question was in flight', () => {
-  it('lets go of the answer about where it was', async () => {
+  it('releases the answer about where it was', async () => {
     let release: () => void = () => undefined
     let pendingGate: Promise<void> | null = null
     const plex = usePlexView(
@@ -159,7 +159,7 @@ describe('a note that moved while a question was in flight', () => {
 })
 
 describe('the note in focus goes away', () => {
-  it('says so, keeps what it is showing, and can come back to it', async () => {
+  it('says so, keeps what it is showing, and can return to it', async () => {
     let holds = true
     const plex = usePlexView(
       fake(async (path) => (holds ? answer(path) : createEmptyNeighbourhood())),

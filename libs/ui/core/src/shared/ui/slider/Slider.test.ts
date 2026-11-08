@@ -37,7 +37,7 @@ const handle = (control: ReturnType<typeof mountSlider>) => control.get('[role="
 const getEmitted = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
-describe('what a screen reader is told', () => {
+describe('what a screen reader receives', () => {
   it('is one handle standing at a value, between the two ends', async () => {
     const control = mountSlider()
     await nextTick()
@@ -121,7 +121,7 @@ describe('moving the handle', () => {
     expect(getEmitted(control)).toEqual([50, 40, 50])
   })
 
-  it('passes nothing on while nobody may move it', async () => {
+  it('passes nothing on while it cannot be moved', async () => {
     const control = mountSlider({ isDisabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     expect(getEmitted(control)).toEqual([])

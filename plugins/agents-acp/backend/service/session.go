@@ -282,8 +282,8 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	switch reply.StopReason {
 	case "rejected":
 		return "", fmt.Errorf("%s rejected the prompt", s.program)
-	case "cancelled":
-		return "", fmt.Errorf("%s cancelled the turn", s.program)
+	case "canceled":
+		return "", fmt.Errorf("%s canceled the turn", s.program)
 	}
 	return strings.TrimSpace(s.answer.String()), nil
 }

@@ -10,7 +10,7 @@ import (
 
 // NoteLinks is what one note is joined to: what it points at, and what points
 // at it. Both halves together, because looking at one without the other is how
-// a graph gets misread — a note with no outgoing links may still be the centre
+// a graph gets misread — a note with no outgoing links may still be the center
 // of the vault.
 type NoteLinks struct {
 	Links     []domain.ResolvedLink

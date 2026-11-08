@@ -43,7 +43,7 @@ describe('the mock tab window', () => {
     await expect(createMockTabWindow().openTab('nothing')).rejects.toThrow('nothing')
   })
 
-  it('lets go of a tab the kind lets go of', async () => {
+  it('releases a tab the kind releases', async () => {
     const window = createMockTabWindow()
     register(window)
     const id = await window.openTab('sample', 'a.md')

@@ -48,7 +48,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
-// A vault the index already holds is rendered from what it holds, so re-indexing
+// A vault the index already holds is rendered from its contents, so re-indexing
 // it is displayed only once it has lasted. An instant walk is not reported.
 func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	target := domain.Vault{ID: "member", Name: "Member"}
@@ -214,7 +214,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 	})
 }
 
-// A vault read wakes everyone waiting to hear that something moved.
+// A vault read wakes every waiter notified of a move.
 func TestAVaultReadWakesTheListeners(t *testing.T) {
 	api := newAPI(t)
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })

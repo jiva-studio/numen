@@ -55,8 +55,8 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 }
 
 func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr string, err error) {
-	var answer, aside bytes.Buffer
 	t.Helper()
+	var answer, aside bytes.Buffer
 	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Deps { return deps })
 	return answer.String(), aside.String(), err
 }
@@ -162,7 +162,7 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 	}
 }
 
-func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
+func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search

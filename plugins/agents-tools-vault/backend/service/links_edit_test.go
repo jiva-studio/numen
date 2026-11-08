@@ -108,7 +108,7 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	jump, ok := findLink(links, "Granite", domain.RoleJump)
 	if !ok || jump.Label != "cousin" || jump.Why != "both are igneous" {
-		t.Errorf("links of Rocks/Basalt.md = %+v, want a jump to Granite labelled cousin with its note", links)
+		t.Errorf("links of Rocks/Basalt.md = %+v, want a jump to Granite labeled cousin with its note", links)
 	}
 	if parent, ok := findLink(links, "Minerals", domain.RoleParent); !ok || parent.Type != "source" {
 		t.Errorf("links of Rocks/Basalt.md = %+v, want a parent link to Minerals of type source", links)
@@ -339,7 +339,7 @@ func TestLinkUpdateChangesTheLabelAndKeepsTheRoleLeftOut(t *testing.T) {
 	}
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	if parent, ok := findLink(links, "Minerals", domain.RoleParent); !ok || parent.Label != "made of" {
-		t.Errorf("links = %+v, want the parent link to Minerals labelled made of", links)
+		t.Errorf("links = %+v, want the parent link to Minerals labeled made of", links)
 	}
 	if len(links) != 3 {
 		t.Errorf("got %d links, want 3: %+v", len(links), links)

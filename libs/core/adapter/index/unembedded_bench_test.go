@@ -149,7 +149,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 // BenchmarkChunkIdentity is the conversion alone, once per chunk each way.
 func BenchmarkChunkIdentity(b *testing.B) {
 	b.Run("Name", func(b *testing.B) {
-		// b.Loop keeps the calls in its body from being optimised away.
+		// b.Loop keeps the calls in its body from being optimized away.
 		for i := 0; b.Loop(); i++ {
 			chunk.ID(int64(i))
 		}

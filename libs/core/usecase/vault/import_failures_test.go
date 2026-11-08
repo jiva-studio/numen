@@ -119,7 +119,7 @@ func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	}
 }
 
-// A drop that was cancelled ends, and nothing is reported as a file that failed.
+// A drop that was canceled ends, and nothing is reported as a file that failed.
 func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
@@ -132,11 +132,11 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if len(brought.Errors) != 0 || len(brought.Imported) != 0 {
-		t.Errorf("a cancelled drop came to %+v", brought)
+		t.Errorf("a canceled drop came to %+v", brought)
 	}
 }
 
-// A drop cancelled while a folder is being read leaves what is under it
+// A drop canceled while a folder is being read leaves what is under it
 // outside.
 func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	isolateHome(t)
@@ -155,7 +155,7 @@ func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	}
 	for _, name := range []string{"Cover.png", "Kelvin.md"} {
 		if _, err := os.Stat(filepath.Join(v.Path, "scans", name)); err == nil {
-			t.Errorf("%s arrived after the drop was cancelled", name)
+			t.Errorf("%s arrived after the drop was canceled", name)
 		}
 	}
 	if len(brought.Errors) != 2 {
@@ -287,7 +287,7 @@ func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 	return d.VaultWriter.Import(context.WithoutCancel(ctx), to, r)
 }
 
-// Files under a folder are not brought once the drop is cancelled, whatever the
+// Files under a folder are not brought once the drop is canceled, whatever the
 // vault would do with them.
 func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	isolateHome(t)
@@ -306,7 +306,7 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	}
 }
 
-// A drop cancelled after one handle ended keeps what that one brought, and the
+// A drop canceled after one handle ended keeps what that one brought, and the
 // rest is not tried.
 func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	isolateHome(t)

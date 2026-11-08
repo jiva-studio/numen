@@ -1,7 +1,7 @@
 /**
  *
  * The negatives are here: it is announced as nothing, it draws no line of its
- * own as an element, and it takes no name away from what it holds.
+ * own as an element, and it takes no name away from its contents.
  */
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
@@ -14,13 +14,13 @@ const mountDivider = (inside: string) =>
   })
 
 describe('Divider', () => {
-  it('remains what it holds in its middle, and nothing else', () => {
+  it('remains its contents in its middle, and nothing else', () => {
     const divider = mountDivider('Add a field')
     expect(divider.element.children).toHaveLength(1)
     expect(divider.get('button').text()).toBe('Add a field')
   })
 
-  it('is announced as nothing, so nothing is returned around what it holds', () => {
+  it('is announced as nothing, so nothing is returned around its contents', () => {
     const divider = mountDivider('Add a field')
     expect(divider.attributes('role')).toBe('presentation')
     expect(divider.attributes('aria-orientation')).toBeUndefined()
@@ -32,11 +32,11 @@ describe('Divider', () => {
     expect(divider.findAll('hr')).toHaveLength(0)
   })
 
-  it('remains what it holds in its middle where it is requested for nothing else', () => {
+  it('remains its contents in its middle where it is requested for nothing else', () => {
     expect(mountDivider('Add a field').attributes('data-at')).toBe('middle')
   })
 
-  it('leads with what it holds where it is requested to', () => {
+  it('leads with its contents where it is requested to', () => {
     const divider = mount(Divider, {
       props: { at: 'start' },
       slots: { default: h('button', { type: 'button' }, 'Turn') },
@@ -45,7 +45,7 @@ describe('Divider', () => {
     expect(divider.get('button').text()).toBe('Turn')
   })
 
-  it('leaves what it holds a button of its own, under its own name', () => {
+  it('leaves its contents a button of its own, under its own name', () => {
     const divider = mountDivider('Add a template')
     const button = divider.get('button')
     expect(button.attributes('role')).toBeUndefined()

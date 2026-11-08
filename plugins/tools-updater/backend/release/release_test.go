@@ -68,8 +68,7 @@ func TestReadAcceptsTheBuildAsNumberOrText(t *testing.T) {
 
 func TestReadFailsOnTextThatIsNoJSON(t *testing.T) {
 	_, err := release.Read([]byte("<html>"))
-	var syntaxErr *json.SyntaxError
-	if !errors.As(err, &syntaxErr) {
+	if !errors.As(err, new(*json.SyntaxError)) {
 		t.Errorf("Read error = %v, want SyntaxError", err)
 	}
 }

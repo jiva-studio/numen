@@ -11,7 +11,7 @@ export const WORDS = {
   of: (page: number, pages: number) => `${page} of ${pages}`,
   /** How much of the chapter in front is still to come. */
   left: (pages: number) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,
-  /** The book is being read, and what it holds is not known yet. */
+  /** The book is being read, and its contents are not known yet. */
   loading: 'Loading…',
   contents: 'Contents',
   find: 'Find in contents',

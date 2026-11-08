@@ -498,7 +498,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 
 func TestARecutStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path and
-	// share no word, so a row that came from the wrong vault is recognisable and
+	// share no word, so a row that came from the wrong vault is recognizable and
 	// a cut that reached across would take the other vault's chunks with it.
 	db := openDB(t)
 	model := embedder{seed: 0x33}
@@ -613,7 +613,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path, are cut
 	// into sections of the same shape, and share no word of prose, so a chunk that
-	// arrived from the wrong vault is recognisable and a cut that reached across
+	// arrived from the wrong vault is recognizable and a cut that reached across
 	// would take the other vault's chunks with it.
 	db := openDB(t)
 	model := embedder{seed: 0x33}

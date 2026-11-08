@@ -3,6 +3,7 @@ package format
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -390,12 +391,12 @@ func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to st
 	}
 
 	// Backwards, because a splice moves every byte after it.
-	for i := len(heads) - 1; i >= 0; i-- {
+	for _, head := range slices.Backward(heads) {
 		line := headingLine(FieldLevel, oneLine(to))
-		if heads[i].from < len(body) {
+		if head.from < len(body) {
 			line += "\n"
 		}
-		if err := f.doc.SpliceBody(heads[i].head, heads[i].from, line); err != nil {
+		if err := f.doc.SpliceBody(head.head, head.from, line); err != nil {
 			return 0, err
 		}
 	}

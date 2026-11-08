@@ -111,8 +111,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 }
 
 func getFatalReport(cfg container.Config, why error) fatalReport {
-	var outside *settings.OutsideBounds
-	if errors.As(why, &outside) {
+	if outside, ok := errors.AsType[*settings.OutsideBoundsError](why); ok {
 		return getSizeFatalReport(cfg, outside)
 	}
 
@@ -123,8 +122,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
-	var unknown *container.UnknownVaultError
-	if errors.As(why, &unknown) {
+	if unknown, ok := errors.AsType[*container.UnknownVaultError](why); ok {
 		return fatalReport{
 			Heading:  startingAtAll,
 			Sentence: "Vault not found: " + unknown.Name,
@@ -154,7 +152,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	}
 }
 
-func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
+func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBoundsError) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Min, outside.Max)
 	content := fmt.Sprint(outside.Number)
 

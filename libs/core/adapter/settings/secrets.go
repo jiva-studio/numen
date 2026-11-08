@@ -54,7 +54,7 @@ func (f *File) readSecrets(raw json.RawMessage) {
 func newSecret(entry secretEntry) pluginport.Secret {
 	secret := pluginport.Secret{ID: entry.ID, Name: entry.Name, Group: entry.Group}
 	for _, one := range entry.Allowed {
-		secret.Allowed = append(secret.Allowed, pluginport.SecretPermission(one))
+		secret.Allowed = append(secret.Allowed, pluginport.DeclarationKey(one))
 	}
 	return secret
 }
@@ -75,7 +75,7 @@ func newSecretEntries(secrets []pluginport.Secret) []secretEntry {
 // declaration isDeclared does not know. A secret is invalid when its id, name or group has the
 // wrong shape, its id repeats, or its name repeats inside its group. Each one adds a notice and the
 // bytes of the file on disk are not touched.
-func (f *File) DropInvalidSecrets(isDeclared func(pluginport.SecretPermission) bool) {
+func (f *File) DropInvalidSecrets(isDeclared func(pluginport.DeclarationKey) bool) {
 	var kept []pluginport.Secret
 	seenIDs := map[string]bool{}
 	seenNames := map[[2]string]bool{}
@@ -108,8 +108,8 @@ func getSecretIssue(secret pluginport.Secret, seenIDs map[string]bool, seenNames
 	return ""
 }
 
-func (f *File) keepDeclared(secret pluginport.Secret, isDeclared func(pluginport.SecretPermission) bool) []pluginport.SecretPermission {
-	var kept []pluginport.SecretPermission
+func (f *File) keepDeclared(secret pluginport.Secret, isDeclared func(pluginport.DeclarationKey) bool) []pluginport.DeclarationKey {
+	var kept []pluginport.DeclarationKey
 	for _, one := range secret.Allowed {
 		switch {
 		case !isDeclared(one):
@@ -162,7 +162,7 @@ func normalize(secrets []pluginport.Secret) []pluginport.Secret {
 	out := make([]pluginport.Secret, 0, len(secrets))
 	for _, secret := range secrets {
 		if secret.Allowed == nil {
-			secret.Allowed = []pluginport.SecretPermission{}
+			secret.Allowed = []pluginport.DeclarationKey{}
 		}
 		out = append(out, secret)
 	}
@@ -170,7 +170,7 @@ func normalize(secrets []pluginport.Secret) []pluginport.Secret {
 }
 
 // WriteSecretsJSON is the secrets section as the file lays it out.
-func (f File) WriteSecretsJSON() (string, error) {
+func (f *File) WriteSecretsJSON() (string, error) {
 	content, err := json.Marshal(newSecretEntries(f.Secrets))
 	if err != nil {
 		return "", err

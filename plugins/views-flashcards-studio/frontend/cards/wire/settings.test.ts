@@ -60,7 +60,7 @@ describe('the settings of a preset', () => {
     expect(formatSettings({ ...DEFAULT_SETTINGS, hasEvenLoad: false }).hasEvenLoad).toBe(false)
   })
 
-  it('come back unchanged from the message they are written to', () => {
+  it('are returned unchanged from the message they are written to', () => {
     const settings: Settings = {
       ...DEFAULT_SETTINGS,
       goal: 'date',

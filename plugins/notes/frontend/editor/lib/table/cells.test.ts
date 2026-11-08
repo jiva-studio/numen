@@ -271,7 +271,7 @@ describe('the keys in a cell', () => {
       expect(document.activeElement).toBe(getCell(frame, 1, 1))
     })
 
-    it('stays where it is in the last row', () => {
+    it('keeps its position in the last row', () => {
       const { frame } = draw()
       const last = getCell(frame, 1, 0)
       last.focus()

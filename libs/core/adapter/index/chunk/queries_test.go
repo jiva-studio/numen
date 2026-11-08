@@ -278,7 +278,7 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 	}
 }
 
-func TestFingerprintsOfAVaultTheIndexNeverHeardOfAreAnEmptyMap(t *testing.T) {
+func TestFingerprintsOfAVaultTheIndexHasNeverReceivedAreAnEmptyMap(t *testing.T) {
 	got, err := openIndex(t).ChunkQueries().GetFileStats(t.Context(), nobody, "note")
 	if err != nil {
 		t.Fatal(err)

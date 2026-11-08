@@ -11,7 +11,7 @@ import { WORDS as words } from '../words'
 const props = defineProps<{ state: PresetTabState }>()
 
 // --- State ---
-// The tab's state outlives this component, so what it holds is bound once here
+// The tab's state outlives this component, so its value is bound once here
 // and the template unwraps it.
 const { hasExternalChange, problems, errorMessage } = props.state
 

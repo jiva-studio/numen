@@ -34,7 +34,7 @@ type reviewHandler struct {
 }
 
 // sessions is the run open on each vault, by the vault's identity. One session to a vault: opening
-// another lets go of the one before it, and the file that one wrote is never appended to again.
+// another releases the one before it, and the file that one wrote is never appended to again.
 type sessions struct {
 	mu  sync.Mutex
 	run map[domain.VaultID]*flashcards.LogWriter
@@ -114,7 +114,7 @@ func (h *reviewHandler) WatchCardsDue(
 
 	// Counting four vaults reads four vaults, and nothing else signals this
 	// handler that its client has gone: the request context belongs to the process
-	// and is not cancelled when a page is reloaded during the stream.
+	// and is not canceled when a page is reloaded during the stream.
 	// A failed write is the only signal, so the list is sent again periodically
 	// while nothing has been counted, and a repeated reload does not
 	// leave two sets of counters reading the vault.
@@ -157,15 +157,13 @@ func (h *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-c
 				running.Wait()
 				return
 			}
-			running.Add(1)
-			go func() {
-				defer running.Done()
+			running.Go(func() {
 				defer func() { <-room }()
 				select {
 				case counted <- h.countVault(ctx, v):
 				case <-ctx.Done():
 				}
-			}()
+			})
 		}
 		running.Wait()
 	}()
@@ -314,7 +312,7 @@ func newWireIntervals(ahead map[review.Rating]time.Duration) *api.Intervals {
 	}
 }
 
-// RecordReview writes down how a card came back.
+// RecordReview writes down how a card was recalled.
 func (h *reviewHandler) RecordReview(
 	ctx context.Context, req *api.RecordReviewRequest,
 ) (*api.RecordReviewResponse, error) {
@@ -464,7 +462,7 @@ func (h *reviewHandler) GetDeckNeighbourhood(
 	if err != nil {
 		return nil, err
 	}
-	joined, err := h.scenarios().neighbourhood.Execute(ctx, v, req.Deck)
+	joined, err := h.scenarios().neighborhood.Execute(ctx, v, req.Deck)
 	if err != nil {
 		return nil, newError(server.CodeInternal, err)
 	}

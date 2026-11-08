@@ -123,7 +123,7 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 	return row
 }
 
-// Uninterrupted returns ctx with its error when ctx is done, otherwise a context not cancelled while the statement runs.
+// Uninterrupted returns ctx with its error when ctx is done, otherwise a context not canceled while the statement runs.
 // The driver answers cancellation by interrupting the connection, and an
 // interrupted prepare in the vec0 table leaves a nil statement that it then
 // clears, which ends the process. A write transaction still rolls back on

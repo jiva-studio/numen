@@ -21,11 +21,11 @@ import (
 func getJoined() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
-		"Mould.md": "---\ntype: note\n---\n" +
-			"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
+		"Mold.md": "---\ntype: note\n---\n" +
+			"\n# Leaf mold\n\nLeaves left in a heap for two winters, and nothing else.\n",
 		"decks/Words.md": "---\ntype: deck\n---\n" +
-			"\nFrom [[Mould]].\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\nFrom [[Mold]].\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 	}
 }
@@ -58,7 +58,7 @@ func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 
 	// The index still resolves the link; the file behind it is gone. This is the
 	// ordinary case of a note deleted since the last scan.
-	if err := os.Remove(filepath.Join(v.Path, "Mould.md")); err != nil {
+	if err := os.Remove(filepath.Join(v.Path, "Mold.md")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -71,7 +71,7 @@ func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 
 	var found *api.DeckNeighbour
 	for _, one := range out.Notes {
-		if one.Path == "Mould.md" {
+		if one.Path == "Mold.md" {
 			found = one
 		}
 	}
@@ -99,8 +99,8 @@ func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.R
 func getBacklinked() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
-		"Mould.md": "---\ntype: note\n---\n" +
-			"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
+		"Mold.md": "---\ntype: note\n---\n" +
+			"\n# Leaf mold\n\nLeaves left in a heap for two winters, and nothing else.\n",
 		"Mention.md": "---\ntype: note\n---\n" +
 			"\n# Mention\n\nSee [[Words]] for the cards.\n",
 		"decks/Words.md": getJoined()["decks/Words.md"],
@@ -108,10 +108,10 @@ func getBacklinked() map[string]string {
 }
 
 // The index being out of reach is an internal failure and not an empty
-// neighbourhood.
+// neighborhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	handler, target := newAPI(t, getJoined())
-	handler.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
+	handler.scenarios().neighborhood = flashcards.NewShowNeighbourhood(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(handler.ports.Readers))
 
 	_, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
@@ -141,7 +141,7 @@ func TestGetDeckNeighbourhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
 		}
 		pointed[one.Path] = one.IsPointedAt
 	}
-	if is, found := pointed["Mould.md"]; !found || !is {
+	if is, found := pointed["Mold.md"]; !found || !is {
 		t.Errorf("the note the deck points at came back as %v (found %v)", is, found)
 	}
 	if is, found := pointed["Mention.md"]; !found || is {

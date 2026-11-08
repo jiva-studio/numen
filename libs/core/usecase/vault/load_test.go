@@ -2,6 +2,8 @@ package vault_test
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -93,6 +95,7 @@ func TestLoad(t *testing.T) {
 }
 
 func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
+	t.Helper()
 	const (
 		readers  = 4
 		duration = 15 * time.Second
@@ -101,25 +104,21 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 	defer cancel()
 
 	var writing sync.WaitGroup
-	writing.Add(1)
-	go func() {
-		defer writing.Done()
+	writing.Go(func() {
 		for ctx.Err() == nil {
 			if err := touchEverything(v.Path); err != nil {
 				return
 			}
 			if _, err := scan.Execute(ctx, v); err != nil {
-				return // cancelled
+				return // canceled
 			}
 		}
-	}()
+	})
 
 	var readWg sync.WaitGroup
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
-		readWg.Add(1)
-		go func() {
-			defer readWg.Done()
+		readWg.Go(func() {
 			queries := db.Passages()
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
@@ -129,7 +128,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 				}
 				latencies[i] = append(latencies[i], testsupport.GetMachine().Now().Sub(started))
 			}
-		}()
+		})
 	}
 	readWg.Wait()
 	cancel()
@@ -151,13 +150,18 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		all[len(all)-1].Round(time.Millisecond))
 }
 
-func touchEverything(root string) error {
+func touchEverything(root string) (err error) {
 	pos := testsupport.GetMachine().Now()
-	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+	scope, err := os.OpenRoot(root)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, scope.Close()) }()
+	return fs.WalkDir(scope.FS(), ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		return os.Chtimes(p, pos, pos)
+		return scope.Chtimes(p, pos, pos)
 	})
 }
 

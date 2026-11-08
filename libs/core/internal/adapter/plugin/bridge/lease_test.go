@@ -41,6 +41,6 @@ func TestOpenPluginSortsTheFailureToActivate(t *testing.T) {
 
 	_, _, err = Open(t.Context(), refusingHost{err: context.Canceled}, "md.numen.a", numenv1connect.NewEmbeddingServiceClient)
 	if !errors.Is(err, context.Canceled) || errors.Is(err, completionport.ErrUnavailable) {
-		t.Errorf("a cancelled activation is %v, want the cancellation alone", err)
+		t.Errorf("a canceled activation is %v, want the cancellation alone", err)
 	}
 }

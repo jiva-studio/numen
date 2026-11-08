@@ -21,8 +21,10 @@ export function createWindowVaults(deps: WindowVaultsDeps): VaultsHost {
   return {
     getState: () => state.value,
     watch: (handler) => ({ dispose: watch(state, handler, { immediate: true }) }),
-    switchTo: async (id) => {
-      if (deps.list.value.some((one) => one.id === id)) deps.openTab(id)
-    },
+    switchTo: (id) =>
+      new Promise((resolve) => {
+        if (deps.list.value.some((one) => one.id === id)) deps.openTab(id)
+        resolve()
+      }),
   }
 }

@@ -23,7 +23,7 @@ service SettingsService {
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
 
   // WriteSettings writes settings into that file. The file is patched as an
-  // object, so every key a person typed stays where it was, and a file the
+  // object, so every key a person typed keeps its position, and a file the
   // settings could not be read out of again is not written at all.
   rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
 
@@ -64,7 +64,7 @@ service SettingsService {
   rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 
   // ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
-  // of type file or folder, and writes the path they chose. A path the setting does not take is not
+  // of type file or folder, and writes the path they chose. A path the setting does not accept is not
   // written, and the answer says why.
   rpc ChoosePluginPath(ChoosePluginPathRequest) returns (ChoosePluginPathResponse);
 
@@ -132,7 +132,7 @@ message Model {
   string title = 3;
   string group = 4;
 
-  // Set on the model an installation nobody has configured runs on.
+  // Set on the model an installation with no configuration runs on.
   bool is_default = 5;
 
   // What choosing it writes. One model is several keys where the model decides
@@ -197,7 +197,7 @@ message Secret {
   string id = 1;
   string name = 2;
   string group = 3;
-  repeated SecretPermission allowed = 4;
+  repeated DeclarationKey allowed = 4;
   reserved 5;
 }
 
@@ -220,8 +220,8 @@ message SecretMenu {
   repeated string secret_ids = 4;
 }
 
-// SecretPermission is one declaration of a plugin that may read a secret.
-message SecretPermission {
+// DeclarationKey identifies one secret declaration of a plugin.
+message DeclarationKey {
   string plugin_id = 1;
   string name = 2;
   // The group of the declaration, empty for none.
@@ -330,7 +330,7 @@ message ChoosePluginPathResponse {
   string path = 1;
   // Set when the person chose a path.
   bool is_chosen = 2;
-  // Why the setting does not take the path, in words a person reads. Empty where it was written.
+  // Why the setting does not accept the path, in words a person reads. Empty where it was written.
   string problem = 3;
 }
 

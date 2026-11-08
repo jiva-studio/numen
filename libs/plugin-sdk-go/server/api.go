@@ -60,8 +60,7 @@ func (e *APIError) Error() string {
 }
 
 func toAPIError(err error) *APIError {
-	var failure *APIError
-	if errors.As(err, &failure) {
+	if failure, ok := errors.AsType[*APIError](err); ok {
 		return failure
 	}
 	return NewAPIError(CodeInternal, err.Error())

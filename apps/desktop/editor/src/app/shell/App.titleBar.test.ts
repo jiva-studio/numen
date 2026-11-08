@@ -8,6 +8,8 @@ import { WorkspaceLayout } from '@numen/shell'
 import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-host'
 import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
 import { COMMAND } from '@/shared/commandIds'
+import type * as ShellModule from '@numen/shell'
+import type * as UseWindowPluginsModule from '../plugins/useWindowPlugins'
 
 const frame = vi.hoisted(() => ({
   platform: 'windows' as 'windows' | 'darwin',
@@ -20,7 +22,7 @@ const frame = vi.hoisted(() => ({
 
 vi.mock('@numen/shell', async (importOriginal) => {
   const { computed } = await import('vue')
-  const shell = await importOriginal<typeof import('@numen/shell')>()
+  const shell = await importOriginal<typeof ShellModule>()
   const { MAC_BUTTONS_INSET } = shell
   return {
     ...shell,
@@ -43,7 +45,7 @@ vi.mock('@numen/shell', async (importOriginal) => {
 const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
 
 vi.mock('../plugins/useWindowPlugins', async (original) => {
-  const module = await original<typeof import('../plugins/useWindowPlugins')>()
+  const module = await original<typeof UseWindowPluginsModule>()
   return {
     ...module,
     createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {

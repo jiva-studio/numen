@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -125,32 +124,6 @@ func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
 		if heard[i].Load() == 0 {
 			t.Errorf("caller %d heard no progress", i)
 		}
-	}
-}
-
-func TestARunContinuesWhileACallerRemainsAndStopsWhenAllLeave(t *testing.T) {
-	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
-	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}
-	ctx, cancel := context.WithCancel(t.Context())
-	errs := make(chan error, 1)
-	go func() {
-		_, err := registry.Provision(ctx, req, nil)
-		errs <- err
-	}()
-	for !registry.flights.isRunning(getFlightKey(req)) {
-		time.Sleep(time.Millisecond)
-	}
-	cancel()
-	if err := <-errs; !errors.Is(err, context.Canceled) {
-		t.Fatalf("err = %v, want canceled", err)
-	}
-	deadline := testsupport.GetMachine().Now().Add(2 * time.Second)
-	for registry.flights.isRunning(getFlightKey(req)) && testsupport.GetMachine().Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	if registry.flights.isRunning(getFlightKey(req)) {
-		t.Error("the run kept going after every caller left")
 	}
 }
 
@@ -369,5 +342,37 @@ func TestTheCacheFolderNamesKindIdVersionAndPlatform(t *testing.T) {
 	}
 	if getDependencyDir("/r", "model", "..", "") == filepath.Join("/r", "model", "..") {
 		t.Error("a parent folder id escaped the root")
+	}
+}
+
+func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
+	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
+	registry := NewRegistry(provisioner)
+	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}
+	ctx, cancel := context.WithCancel(t.Context())
+	errs := make(chan error, 1)
+	go func() {
+		_, err := registry.Provision(ctx, req, nil)
+		errs <- err
+	}()
+	for !registry.flights.isRunning(getFlightKey(req)) {
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	if err := <-errs; !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want canceled", err)
+	}
+	if !registry.flights.isRunning(getFlightKey(req)) {
+		t.Fatal("the run ended when its only caller left")
+	}
+
+	close(provisioner.gate)
+	resolved, err := registry.Provision(t.Context(), req, nil)
+
+	if err != nil || resolved.ID != "m" {
+		t.Errorf("a later caller got %+v, %v, want the finished run", resolved, err)
+	}
+	if got := provisioner.calls.Load(); got != 1 {
+		t.Errorf("the provisioner ran %d times, want 1", got)
 	}
 }

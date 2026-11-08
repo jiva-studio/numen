@@ -24,7 +24,7 @@ const (
 	histogramBins = 20
 )
 
-// Statistics summarises the similarities between queries and passages that are
+// Statistics summarizes the similarities between queries and passages that are
 // not about them.
 type Statistics struct {
 	Median    float64

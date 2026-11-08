@@ -148,15 +148,20 @@ export const destroyIndexedNote = async (
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
-  const vault = getVaultPath()
-  const trash = path.join(vault, '.trash')
-  if (!fs.existsSync(trash)) return []
-  return fs
-    .readdirSync(trash, { recursive: true, encoding: 'utf8' })
-    .filter((one) => path.basename(one) === name)
-    .map((one) => path.posix.join('.trash', one.split(path.sep).join('/')))
-}
+export const findTrashed = (request: APIRequestContext, name: string): Promise<string[]> =>
+  new Promise((resolve) => {
+    const trash = path.join(getVaultPath(), '.trash')
+    if (!fs.existsSync(trash)) {
+      resolve([])
+      return
+    }
+    resolve(
+      fs
+        .readdirSync(trash, { recursive: true, encoding: 'utf8' })
+        .filter((one) => path.basename(one) === name)
+        .map((one) => path.posix.join('.trash', one.split(path.sep).join('/'))),
+    )
+  })
 
 /** Takes the files of the vault's trash named `name` off the disk. */
 export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
@@ -217,10 +222,10 @@ export const listVaults = async (request: APIRequestContext): Promise<Vault[]> =
 }
 
 /** The text of a file of the vault as it is on disk, frontmatter included. */
-export const readVaultFile = async (
-  request: APIRequestContext,
-  notePath: string,
-): Promise<string> => fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8')
+export const readVaultFile = (request: APIRequestContext, notePath: string): Promise<string> =>
+  new Promise((resolve) => {
+    resolve(fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8'))
+  })
 
 /** Adds a folder of this machine to the installation's vaults, and gives back the vault. */
 export const addVault = async (
@@ -331,10 +336,12 @@ export const typeAtEnd = async (page: Page, text: Locator, typed: string): Promi
 }
 
 /** Puts text into a file of the vault as another program would, frontmatter included. */
-export const writeVaultFile = async (
+export const writeVaultFile = (
   request: APIRequestContext,
   filePath: string,
   content: string,
-): Promise<void> => {
-  fs.writeFileSync(path.join(getVaultPath(), filePath), content)
-}
+): Promise<void> =>
+  new Promise((resolve) => {
+    fs.writeFileSync(path.join(getVaultPath(), filePath), content)
+    resolve()
+  })

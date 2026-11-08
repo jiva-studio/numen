@@ -22,7 +22,7 @@ const mountSegmentedControl = (props: Partial<SegmentedControlProps> = {}) =>
 const getEmitted = (control: ReturnType<typeof mountSegmentedControl>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
-describe('what a screen reader is told', () => {
+describe('what a screen reader receives', () => {
   it('is a set of choices, one of them in force', () => {
     const control = mountSegmentedControl()
     expect(control.get('[role="radiogroup"]')).toBeTruthy()
@@ -72,13 +72,13 @@ describe('choosing', () => {
     expect(getEmitted(control).at(-1)).toBe('small')
   })
 
-  it('is left where it is on Home and End while nobody may turn it', async () => {
+  it('is left where it is on Home and End while it cannot be turned', async () => {
     const control = mountSegmentedControl({ modelValue: 'medium', isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'End' })
     expect(getEmitted(control)).toEqual([])
   })
 
-  it('passes nothing on while nobody may turn it', async () => {
+  it('passes nothing on while it cannot be turned', async () => {
     const control = mountSegmentedControl({ isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(getEmitted(control)).toEqual([])

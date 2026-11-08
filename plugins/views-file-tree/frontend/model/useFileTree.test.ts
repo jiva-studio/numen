@@ -2,6 +2,7 @@
  * Tests for createFileTree state and tree operations.
  */
 import { describe, expect, it } from 'vitest'
+import { createLostConnection } from '@numen/plugin-sdk/testing'
 import { watch } from 'vue'
 import type { Entry } from '../types'
 import type { ListingRow } from '../types'
@@ -128,7 +129,7 @@ describe('the tree as it opens', () => {
 })
 
 describe('a folder opened', () => {
-  it('is read, and what it holds is drawn inside it', async () => {
+  it('is read, and its contents are drawn inside it', async () => {
     const { core } = vault()
     const list = createFileTree(core)
     await list.openFolder(ROOT)
@@ -280,7 +281,7 @@ describe('a change the vault reports', () => {
   })
 })
 
-describe('the window coming back to the front', () => {
+describe('the window returning to the front', () => {
   it('reads every open folder, and turns up what nothing reported', async () => {
     const { core, puts } = vault()
     const list = createFileTree(core)
@@ -343,7 +344,7 @@ describe('a folder that could not be read', () => {
   it('is returned in the tab, and the tree remains as it was', async () => {
     const list = createFileTree({
       list: async () => {
-        throw new Error('the vault is not there')
+        throw createLostConnection('the vault is not there')
       },
     })
 

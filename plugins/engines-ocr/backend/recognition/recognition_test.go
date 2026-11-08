@@ -64,7 +64,7 @@ func (p *pages) GetRecognitionModel() recognition.Model {
 	return recognition.Model{Layout: "layout", Recogniser: "lines", DPI: 72, From: "a test"}
 }
 
-func (p *pages) Recognise(_ context.Context, page image.Image) ([]recognition.Block, error) {
+func (p *pages) Recognize(_ context.Context, page image.Image) ([]recognition.Block, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pageCount++
@@ -191,9 +191,9 @@ func (s *scene) readLive(t *testing.T, path string) domain.VersionText {
 func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	s := newScene(t)
 
-	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 	if err != nil || res.Pages != 2 || res.IsEmpty {
-		t.Fatalf("recognised %+v (%v), want two pages", res, err)
+		t.Fatalf("recognized %+v (%v), want two pages", res, err)
 	}
 	text := s.readLive(t, "books/scan.pdf")
 	if text.Version().Kind != "recognition" || text.Version().Key != recognition.VersionKey {
@@ -222,7 +222,7 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 func TestRecogniseReadsAPDFWithATextLayer(t *testing.T) {
 	s := newScene(t)
 
-	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf"})
+	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/layer.pdf"})
 	if err != nil || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
 		t.Fatalf("a PDF with a layer: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
 	}
@@ -231,7 +231,7 @@ func TestRecogniseReadsAPDFWithATextLayer(t *testing.T) {
 func TestRecogniseReadsARecognisedFileAgain(t *testing.T) {
 	s := newScene(t)
 	for range 2 {
-		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+		if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -256,7 +256,7 @@ func (s *scene) getStoreNames(t *testing.T) []string {
 func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
 	s := newScene(t)
 
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -268,17 +268,17 @@ func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
 
 func TestRecogniseReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
 	s := newScene(t)
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.texts.RemoveVersion(t.Context(), "books/scan.pdf", recognition.VersionKey); err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
 	if err != nil || s.recogniser.getPageCount() != 4 {
-		t.Fatalf("recognised %+v (%v) after %d pages, want the file read again", res, err, s.recogniser.getPageCount())
+		t.Fatalf("recognized %+v (%v) after %d pages, want the file read again", res, err, s.recogniser.getPageCount())
 	}
 }
 
@@ -292,10 +292,10 @@ func TestRecogniseResumesFromTheProgressRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
 	if err != nil || res.Pages != 2 || s.recogniser.getPageCount() != 1 {
-		t.Fatalf("recognised %+v (%v) after %d pages, want only the second page read", res, err, s.recogniser.getPageCount())
+		t.Fatalf("recognized %+v (%v) after %d pages, want only the second page read", res, err, s.recogniser.getPageCount())
 	}
 	if text := s.readLive(t, "books/scan.pdf"); !strings.HasPrefix(text.Text, "kept from before\n\nHeading") {
 		t.Errorf("the text reads %q, want the kept page first", text.Text)
@@ -309,10 +309,10 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.says = ""
 
-	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
 	if err != nil || !res.IsEmpty {
-		t.Fatalf("recognised %+v (%v), want nothing", res, err)
+		t.Fatalf("recognized %+v (%v), want nothing", res, err)
 	}
 	listing, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
 	if err != nil {
@@ -338,8 +338,8 @@ func TestRecogniseFailureReportsTaskError(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.err = errors.New("the model ran out of memory")
 
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err == nil {
-		t.Fatal("a recogniser that failed recognised the file")
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err == nil {
+		t.Fatal("a recogniser that failed recognized the file")
 	}
 	tasks := s.queue.ListTasks()
 	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "out of memory") || !tasks[0].IsUserStarted {
@@ -347,17 +347,17 @@ func TestRecogniseFailureReportsTaskError(t *testing.T) {
 	}
 
 	s.recogniser.err = nil
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
-		t.Errorf("tasks %+v after the file was recognised", tasks)
+		t.Errorf("tasks %+v after the file was recognized", tasks)
 	}
 }
 
 func TestRecogniseMissingFileFails(t *testing.T) {
 	s := newScene(t)
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file that is not there answered %v", err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
@@ -369,7 +369,7 @@ func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.onRecognise = func() { s.vault.Remove("books/scan.pdf") }
 
-	_, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	_, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
 	if !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file deleted during its recognition answered %v", err)
@@ -394,7 +394,7 @@ func TestNewRequiresHostAndRecogniser(t *testing.T) {
 		}
 	}
 	if _, err := recognition.New(full, nil); err == nil {
-		t.Error("a recognition was made with nothing to recognise with")
+		t.Error("a recognition was made with nothing to recognize with")
 	}
 }
 
@@ -411,7 +411,7 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"}); err != nil {
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 

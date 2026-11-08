@@ -21,14 +21,14 @@ import (
 // written in the place of the other is visible.
 const dimensions = 32
 
-func cutBooks(t testing.TB, index *indexfake.Store, shelf *indexfake.Library, v domain.Vault) []indexfake.Chunk {
-	t.Helper()
-	if _, err := (newExtract(indexfake.Vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {
-		t.Fatal(err)
+func cutBooks(tb testing.TB, index *indexfake.Store, shelf *indexfake.Library, v domain.Vault) []indexfake.Chunk {
+	tb.Helper()
+	if _, err := (newExtract(indexfake.Vaults{v.ID: shelf}, index, index)).Execute(tb.Context(), v); err != nil {
+		tb.Fatal(err)
 	}
 	small := index.GetSmallChunks(v.ID)
 	if len(small) == 0 {
-		t.Fatal("the book was not cut into anything that carries a vector")
+		tb.Fatal("the book was not cut into anything that carries a vector")
 	}
 	return small
 }
@@ -53,7 +53,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(stopCtx, indexfake.GetFirst()); err == nil {
-		t.Fatal("a cancelled context did not stop the run")
+		t.Fatal("a canceled context did not stop the run")
 	}
 
 	part := len(index.Vectors)
@@ -190,6 +190,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			name:    "the file is gone",
 			replace: func(_ *testing.T, shelf *indexfake.Library) { delete(shelf.Files, bookPath) },
 			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
@@ -201,6 +202,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 				shelf.Put(bookPath, domain.KindFile, []byte("not an archive"), 2)
 			},
 			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
@@ -209,9 +211,11 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		{
 			name: "the file holds another text now, and the version the chunks were cut from is gone",
 			replace: func(t *testing.T, shelf *indexfake.Library) {
+				t.Helper()
 				shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 20)), 2)
 			},
 			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
@@ -478,7 +482,7 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	}
 }
 
-// holdingEmbedder embeds every text except those of a source it is told to
+// holdingEmbedder embeds every text except those of a source it is configured to
 // hold: a call with one blocks until its context ends.
 type holdingEmbedder struct {
 	*embedder
@@ -528,7 +532,7 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 		pathB = "library/b.epub"
 		pathC = "library/c.epub"
 	)
-	third := []string{"harbour", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
+	third := []string{"harbor", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(pathA, domain.KindFile, indexfake.CreateBook(t, "A", indexfake.GetWords(indexfake.GetLatin(), 300)), 300)
 	shelf.Put(pathB, domain.KindFile, indexfake.CreateBook(t, "B", indexfake.GetWords(indexfake.GetSanskrit(), 300)), 200)
@@ -617,7 +621,7 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 	}
 }
 
-// A batch whose send is cancelled leaves the reports: they name only a source still in flight,
+// A batch whose send is canceled leaves the reports: they name only a source still in flight,
 // and none when an earlier batch finished while the send waited.
 func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	const (

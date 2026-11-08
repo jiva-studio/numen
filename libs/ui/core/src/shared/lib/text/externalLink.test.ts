@@ -74,7 +74,7 @@ describe('a press on a link', () => {
     expect(openLink).toHaveBeenCalledWith('mailto:someone@example.com')
   })
 
-  it('takes the window nowhere and passes nobody an address it cannot open', () => {
+  it('takes the window nowhere and passes no caller an address it cannot open', () => {
     for (const href of ['note://01J8', 'javascript:alert(1)', 'data:text/html,<h1>x']) {
       const { openLink, prevented } = pressLink(href)
       expect(prevented).toBe(true)

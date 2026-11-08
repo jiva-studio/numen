@@ -72,6 +72,7 @@ func readCourierToken(t *testing.T, path string) any {
 func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 	for name, write := range map[string]func(t *testing.T, cfg container.Config, path string){
 		"one write of both settings": func(t *testing.T, cfg container.Config, _ string) {
+			t.Helper()
 			if err := cfg.GetSettingsWriter()([]settingsport.Setting{
 				{Path: []string{courierPlugin, "enabled"}, JSON: `true`},
 				{Path: []string{courierPlugin, "token"}, JSON: `"` + courierToken + `"`},
@@ -80,6 +81,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 			}
 		},
 		"an edit of numen.json by hand": func(t *testing.T, _ container.Config, path string) {
+			t.Helper()
 			body := `{"` + courierPlugin + `":{"enabled":true,"token":"` + courierToken + `"}}`
 			if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 				t.Fatal(err)

@@ -12,9 +12,9 @@ import (
 )
 
 // The vec0 table prepares its own statements on the connection's first write to
-// it. Cancelling the context interrupts the connection, and a prepare that is
+// it. Canceling the context interrupts the connection, and a prepare that is
 // interrupted leaves vec0 with a nil statement that it then clears, which
-// crashes the process. A save cancelled at any moment must return an error and
+// crashes the process. A save canceled at any moment must return an error and
 // leave the process alive.
 func TestSavingVectorsCancelledAtAnyMomentDoesNotCrash(t *testing.T) {
 	for i := range 40 {
@@ -37,7 +37,7 @@ func TestSavingVectorsCancelledAtAnyMomentDoesNotCrash(t *testing.T) {
 				cancel()
 			}()
 
-			// Finishing, being cancelled, or finding the transaction rolled back by the cancellation are all fine; the process surviving is the point.
+			// Finishing, being canceled, or finding the transaction rolled back by the cancellation are all fine; the process surviving is the point.
 			if err := s.db.Chunks().SaveVectorsInBatches(ctx, vectors, 7); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, sql.ErrTxDone) {
 				t.Error(err)
 			}

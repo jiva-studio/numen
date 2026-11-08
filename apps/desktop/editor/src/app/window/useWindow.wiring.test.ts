@@ -3,9 +3,11 @@
  * the window answers about the tab in front.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { getNamedIcon } from '@/shared/icons'
 import { ref } from 'vue'
 import { useWindow } from './useWindow'
+import type * as UseOpenTabsModule from '../tabs/useOpenTabs'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
@@ -70,7 +72,7 @@ vi.mock('./useSettings', () => ({
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
 vi.mock('../tabs/useOpenTabs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../tabs/useOpenTabs')>()
+  const actual = await importOriginal<typeof UseOpenTabsModule>()
   return {
     ...actual,
     useOpenTabs: (args: unknown) => {
@@ -345,7 +347,7 @@ describe('the parts of the window', () => {
     expect(h.args.commands.writeMessage).toBe(h.f.writer)
   })
 
-  it('are told the paths that changed, in every editor and in the commands', async () => {
+  it('receive the paths that changed, in every editor and in the commands', async () => {
     useWindow()
     const paths = ['a.md']
     const renamedItems = new Map([['a.md', 'b.md']])
@@ -675,10 +677,10 @@ describe('the services a plugin is given', () => {
 
     // createTabSync & watchPluginSettings & useOpenTabs error callbacks
     h.f.writer.mockClear()
-    h.args.tabSync.onError(new Error('tab sync err'))
+    h.args.tabSync.onError(createLostConnection('tab sync err'))
     expect(h.f.writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error')
 
-    h.args.watchPlugins.onError(new Error('watch plugins err'))
+    h.args.watchPlugins.onError(createLostConnection('watch plugins err'))
     expect(h.f.writer).toHaveBeenCalledWith(
       'Plugins were not tracked: Numen is not responding; retrying',
       'error',
@@ -686,7 +688,7 @@ describe('the services a plugin is given', () => {
 
     expect(h.args.openTabs.isWriting.value).toBe(false)
     expect(window.isLayoutReady.value).toBe(false)
-    h.args.openTabs.reportError(new Error('save tabs err'))
+    h.args.openTabs.reportError(createLostConnection('save tabs err'))
     expect(h.f.writer).toHaveBeenCalledWith(
       'The open tabs were not saved: Numen is not responding; retrying',
       'error',
@@ -715,7 +717,7 @@ describe('the services a plugin is given', () => {
     expect(h.args.backgroundTasks.tasks.value).toEqual([{ id: 'task:1' }, { id: 'notice:1' }])
     await h.args.backgroundTasks.cancelTask('task:1')
     expect(h.core.cancelTask).toHaveBeenCalledWith('task:1')
-    h.args.backgroundTasks.reportCancelError(new Error('cancel failed'))
+    h.args.backgroundTasks.reportCancelError(createLostConnection('cancel failed'))
     expect(h.f.writer).toHaveBeenCalledWith(
       'The task was not cancelled: Numen is not responding; retrying',
       'error',
@@ -731,7 +733,7 @@ describe('the services a plugin is given', () => {
 
     h.f.windowTabs.openPlacedTabs.mockImplementationOnce(
       async (onErr: (kind: string, err: unknown) => void) => {
-        onErr('graph', new Error('graph failed'))
+        onErr('graph', createLostConnection('graph failed'))
       },
     )
     window.openCurrentVault()
@@ -741,7 +743,7 @@ describe('the services a plugin is given', () => {
       'error',
     )
 
-    h.f.windowTabs.openPlacedTabs.mockRejectedValueOnce(new Error('all tabs failed'))
+    h.f.windowTabs.openPlacedTabs.mockRejectedValueOnce(createLostConnection('all tabs failed'))
     window.openCurrentVault()
     await new Promise((r) => setTimeout(r, 10))
     expect(h.f.writer).toHaveBeenCalledWith(
@@ -764,13 +766,13 @@ describe('the services a plugin is given', () => {
     await h.args.bootstrap.closePlugins()
     expect(h.f.pluginLoader.close).toHaveBeenCalledOnce()
 
-    h.args.bootstrap.reportError(new Error('boot failed'))
+    h.args.bootstrap.reportError(createLostConnection('boot failed'))
     expect(h.f.writer).toHaveBeenCalledWith(
       'The window did not start cleanly: Numen is not responding; retrying',
       'error',
     )
 
-    h.f.editing.fileFlush.start.mockRejectedValueOnce(new Error('flush died'))
+    h.f.editing.fileFlush.start.mockRejectedValueOnce(createLostConnection('flush died'))
     h.args.bootstrap.startEditing()
     await new Promise((r) => setTimeout(r, 10))
     expect(h.f.writer).toHaveBeenCalledWith(
@@ -884,7 +886,7 @@ describe('tab links wiring', () => {
   it('reports an error when the core rejects a link', () => {
     useWindow()
 
-    h.args.tabLinks.onError(new Error('refused'))
+    h.args.tabLinks.onError(createLostConnection('refused'))
 
     expect(h.f.writer).toHaveBeenCalledWith(
       'The tabs were not linked: Numen is not responding; retrying',

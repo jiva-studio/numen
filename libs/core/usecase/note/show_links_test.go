@@ -84,7 +84,7 @@ func TestTheFolderTheLinkWasSavedInDecidesIt(t *testing.T) {
 	// ambiguity: the rule picked it, not a tie-break.
 	db, v := newIndexedVault(t, map[string]string{
 		"projects/source.md":  "Points at [[Entropy]].\n",
-		"projects/Entropy.md": "# The neighbour\n",
+		"projects/Entropy.md": "# The neighbor\n",
 		"archive/Entropy.md":  "# The stranger\n",
 	})
 

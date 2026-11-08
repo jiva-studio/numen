@@ -1,6 +1,10 @@
 package secret
 
-import "context"
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+)
 
 // Rename changes the name of a secret. Its id, value and permissions stay.
 type Rename struct{ operation }
@@ -11,7 +15,7 @@ func (u *Rename) Execute(ctx context.Context, id, name string) error {
 		return err
 	}
 	return u.apply(ctx, func() ([]string, error) {
-		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
+		return nil, u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
 			index := getIndex(list, id)
 			if index < 0 {
 				return nil, newNotFoundError(id)

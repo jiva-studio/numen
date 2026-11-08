@@ -96,8 +96,7 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 
 	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
-	var ce *connect.Error
-	if !errors.As(err, &ce) {
+	if !errors.As(err, new(*connect.Error)) {
 		t.Fatalf("got %v, want a connect error", err)
 	}
 }

@@ -27,17 +27,17 @@ export function createMockVaultTexts(pluginId = 'org.example.view'): MockVaultTe
     setLive(version, segments) {
       live.set(version.path, { version, segments })
     },
-    async readLiveText(path) {
-      return live.get(path) ?? null
+    readLiveText(path) {
+      return Promise.resolve(live.get(path) ?? null)
     },
-    async createEdit(
+    createEdit(
       path: string,
       sourceVersionId: TextVersionId,
       segments: readonly TextSegment[],
     ): Promise<Result<TextVersion, TextErrorCode>> {
       const current = live.get(path)
       if (current?.version.id !== sourceVersionId) {
-        return { ok: false, error: 'missing' }
+        return Promise.resolve({ ok: false, error: 'missing' })
       }
       count++
       const key = `edit-${count}`
@@ -53,7 +53,7 @@ export function createMockVaultTexts(pluginId = 'org.example.view'): MockVaultTe
       }
       live.set(path, { version, segments })
       edits.push({ path, version })
-      return { ok: true, value: version }
+      return Promise.resolve({ ok: true, value: version })
     },
   }
 }

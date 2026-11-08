@@ -45,9 +45,10 @@ export function createMockCommandsHost(initial: readonly string[] = []): MockCom
   return {
     getIds: () => ids,
     watch: (handler) => watchWith(watchers, handler, ids),
-    listItems: async (command) => items.get(command) ?? [],
-    run: async (command, target, itemId) => {
+    listItems: (command) => Promise.resolve(items.get(command) ?? []),
+    run: (command, target, itemId) => {
       runs.push({ command, target, itemId })
+      return Promise.resolve()
     },
     setItems: (command, next) => {
       items.set(command, next)
@@ -99,8 +100,9 @@ export function createMockVaultsHost(
   return {
     getState: () => state,
     watch: (handler) => watchWith(watchers, handler, state),
-    switchTo: async (id) => {
+    switchTo: (id) => {
       switches.push(id)
+      return Promise.resolve()
     },
     setState: (next) => {
       state = next
@@ -165,8 +167,9 @@ export function createMockBackgroundTaskHost(
   const actions: MockTaskAction[] = []
   return {
     watch: (handler) => watchWith(watchers, handler, tasks),
-    cancel: async (id) => {
+    cancel: (id) => {
       actions.push({ action: 'cancel', id })
+      return Promise.resolve()
     },
     retry: (id) => {
       actions.push({ action: 'retry', id })

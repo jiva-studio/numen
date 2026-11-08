@@ -17,7 +17,7 @@ const eventTimeout = 3 * time.Second
 var ErrEventRefused = errors.New("plugin rejected the event")
 
 // DeliverPluginEvent hands an event to a running plugin and returns errEventRefused when the plugin
-// answers with an error. A plugin that does not serve numen.v1.PluginEventService does not take
+// answers with an error. A plugin that does not serve numen.v1.PluginEventService does not accept
 // events, and delivery to it succeeds.
 func DeliverPluginEvent(ctx context.Context, endpoint Endpoint, event string) error {
 	client := numenv1connect.NewPluginEventServiceClient(

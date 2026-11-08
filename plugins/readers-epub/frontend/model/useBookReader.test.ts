@@ -1,7 +1,9 @@
 /**
  * One book as its tab reads it.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createApi } from '@numen/plugin-sdk'
+import { createBooks } from '../api/wire'
 import {
   getContents,
   getDocumentAtOffset,
@@ -201,7 +203,7 @@ describe('a book opened', () => {
     expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
   })
 
-  it('stays where it is for a CFI that names no place in the book', async () => {
+  it('keeps its position for a CFI that names no place in the book', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -556,7 +558,7 @@ describe('a book tab closed before the book lands', () => {
 })
 
 describe('a book tab closed after the book landed', () => {
-  it('lets go of its contents and stays where it stood', async () => {
+  it('releases its contents and keeps its position', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
     await settle()
@@ -581,5 +583,49 @@ describe('what is returned of a book that will not open', () => {
     await readItem.goToOffset(0)
 
     expect(response).toStrictEqual(['error'])
+  })
+})
+
+describe('a book the books service fails to read', () => {
+  const openWithAnswer = async (answer: typeof fetch): Promise<string> => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    try {
+      const api = createApi('md.numen.readers.epub', {
+        origin: 'http://core.invalid',
+        fetch: answer,
+      })
+      const readItem = useBookReader(createBooks(api), 'library/Broken.epub')
+      const going = readItem.goToOffset(400)
+      await vi.runAllTimersAsync()
+      await going
+      return recordedEvents.join(' ')
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('shows the generic text for an internal error from the backend', async () => {
+    const message = await openWithAnswer(
+      async () =>
+        new Response(
+          JSON.stringify({
+            code: 'internal',
+            message: 'open /Users/someone/Vault/library/Broken.epub: permission denied',
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } },
+        ),
+    )
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('/Users/someone')
+  })
+
+  it('shows the generic text for a fetch that fails before it reaches the core', async () => {
+    const message = await openWithAnswer(async () => {
+      throw new TypeError('Load failed')
+    })
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('Load failed')
   })
 })

@@ -109,7 +109,7 @@ func ParseHandshake(line string) (handshake Handshake, ok bool, err error) {
 		return Handshake{}, false, nil
 	}
 	handshake = Handshake{Port: 0, Listeners: map[string]int{}}
-	for _, part := range strings.Fields(cleanLine) {
+	for part := range strings.FieldsSeq(cleanLine) {
 		if rest, isListener := strings.CutPrefix(part, listenerTokenPrefix); isListener {
 			if err := addListenerToken(handshake.Listeners, rest); err != nil {
 				return Handshake{}, true, fmt.Errorf("%w: %q: %w", errMalformedListenerToken, part, err)

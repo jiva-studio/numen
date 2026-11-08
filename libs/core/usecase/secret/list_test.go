@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
@@ -21,7 +22,7 @@ func (s forbiddenStore) GetKey(_ context.Context, name string) (string, error) {
 }
 
 func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Here", Group: "g"})
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	f.secrets = secret.NewSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func() string { return "/credentials.json" }, nil)
 
 	listing, err := f.secrets.List.Execute()
@@ -33,10 +34,10 @@ func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
 	}
 }
 
-func TestListReturnsTheSectionsInPageOrderAndOneMenuForEachDeclaration(t *testing.T) {
+func TestListReturnsSectionsInPageOrderAndMenus(t *testing.T) {
 	f := newFixture(
-		secret.Secret{ID: "s00000001", Name: "Mine", Group: "home"},
-		secret.Secret{ID: "s00000002", Name: "Work", Group: "openrouter"},
+		pluginport.Secret{ID: "s00000001", Name: "Mine", Group: "home"},
+		pluginport.Secret{ID: "s00000002", Name: "Work", Group: "openrouter"},
 	)
 	listing, err := f.secrets.List.Execute()
 	if err != nil {
@@ -63,8 +64,8 @@ func TestListReturnsTheSectionsInPageOrderAndOneMenuForEachDeclaration(t *testin
 	}
 }
 
-func TestListStatesReportsWhetherAValueIsOnThisMachineAndNeverTheValue(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Here", Group: "g"}, secret.Secret{ID: "s00000002", Name: "Away", Group: "g"})
+func TestListStatesReportsValuePresence(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"}, pluginport.Secret{ID: "s00000002", Name: "Away", Group: "g"})
 	f.keys["secret/s00000001"] = "value-that-must-stay-secret"
 
 	states, err := f.secrets.ListStates.Execute(t.Context())
@@ -78,7 +79,7 @@ func TestListStatesReportsWhetherAValueIsOnThisMachineAndNeverTheValue(t *testin
 }
 
 func TestListStatesFailsOnACancelledContext(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Here", Group: "g"})
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := f.secrets.ListStates.Execute(ctx); !errors.Is(err, context.Canceled) {

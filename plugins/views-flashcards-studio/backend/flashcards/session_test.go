@@ -85,7 +85,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.isEven)),
 			"decks/On.md": deckOf("On", 60, 0),
 		})
-		// Every review card put into review long ago, so each comes back in days
+		// Every review card put into review long ago, so each is recalled in days
 		// and the placement has a window to move it in.
 		for _, days := range []int{40, 25} {
 			run := s.run(t, getSaturday().AddDate(0, 0, -days))
@@ -1843,13 +1843,13 @@ const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
 
 func deckAt(pos int) string { return fmt.Sprintf("decks/D%d.md", pos) }
 
-func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
-	t.Helper()
+func newDeckVault(tb testing.TB, front string, decks ...int) vaulted {
+	tb.Helper()
 	files := map[string]string{"Term.md": term, "Steady.md": preset(front)}
 	for item, cards := range decks {
 		files[deckAt(item)] = deckOf("Steady", cards, item*1000)
 	}
-	return openVault(t, files)
+	return openVault(tb, files)
 }
 
 func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {

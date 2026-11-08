@@ -11,11 +11,12 @@ import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../mod
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '../types'
 import CommandPalette from './CommandPalette.vue'
+import type * as HandlersModule from '../model/handlers/handlers'
 
 const h = vi.hoisted(() => ({ runInvocation: vi.fn(() => Promise.resolve()) }))
 
 vi.mock('../model/handlers/handlers', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../model/handlers/handlers')>()),
+  ...(await importOriginal<typeof HandlersModule>()),
   runInvocation: h.runInvocation,
 }))
 

@@ -56,7 +56,7 @@ func writeFixture(t *testing.T, path, content string) {
 func TestStatReportsTheInodeOfTheFile(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
-	writeFixture(t, target, "%PDF chart of the harbour")
+	writeFixture(t, target, "%PDF chart of the harbor")
 
 	stat := statFixture(t, root)
 	if want := domain.FileID(getInode(t, target)); stat.FileID != want || want == 0 {
@@ -67,11 +67,11 @@ func TestStatReportsTheInodeOfTheFile(t *testing.T) {
 func TestAFileReplacedAtTheSamePathHasAnotherFileID(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
-	writeFixture(t, target, "%PDF chart of the harbour")
+	writeFixture(t, target, "%PDF chart of the harbor")
 	before := statFixture(t, root)
 
 	replacement := filepath.Join(root, "library", "chart.pdf.new")
-	writeFixture(t, replacement, "%PDF chart of the harbour")
+	writeFixture(t, replacement, "%PDF chart of the harbor")
 	if err := os.Rename(replacement, target); err != nil {
 		t.Fatal(err)
 	}

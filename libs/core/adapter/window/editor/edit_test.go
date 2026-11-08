@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -390,11 +391,9 @@ func TestEditLoad(t *testing.T) {
 	durationCh := make(chan time.Duration, 1)
 	go func() {
 		for what := range line {
-			for _, p := range what.paths {
-				if p == path {
-					durationCh <- testsupport.GetMachine().Now().Sub(saving)
-					return
-				}
+			if slices.Contains(what.paths, path) {
+				durationCh <- testsupport.GetMachine().Now().Sub(saving)
+				return
 			}
 			if what.shouldReload {
 				durationCh <- testsupport.GetMachine().Now().Sub(saving)

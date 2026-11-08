@@ -31,11 +31,9 @@ func TestMoveToTrashFromManyGoroutines(t *testing.T) {
 	var wg sync.WaitGroup
 	failures := make([]error, callers)
 	for i, pos := range folders {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			failures[i] = moveToTrash(pos, time.Time{})
-		}()
+		})
 	}
 	wg.Wait()
 

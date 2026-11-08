@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/mewkiz/flac"
@@ -125,7 +126,7 @@ func parseWav(raw []byte) (riffWave, error) {
 
 		switch kind {
 		case "fmt ":
-			if err := out.readFormat(body); err != nil {
+			if err := readWaveFormat(&out, body); err != nil {
 				return out, err
 			}
 			observed = true
@@ -145,7 +146,7 @@ func parseWav(raw []byte) (riffWave, error) {
 	return out, nil
 }
 
-func (w *riffWave) readFormat(body []byte) error {
+func readWaveFormat(w *riffWave, body []byte) error {
 	if len(body) < 16 {
 		return fmt.Errorf("the wav recording's header is %d bytes", len(body))
 	}
@@ -173,7 +174,7 @@ func (w riffWave) readSound() ([]float32, error) {
 		readInt16(out, w.samples[:count*2])
 		return out, nil
 	}
-	for i := 0; i < count; i++ {
+	for i := range count {
 		value, err := w.readSample(w.samples[i*width : (i+1)*width])
 		if err != nil {
 			return nil, err
@@ -218,8 +219,8 @@ func readInt16(out []float32, raw []byte) {
 
 func readSigned(raw []byte) int64 {
 	var out int64
-	for i := len(raw) - 1; i >= 0; i-- {
-		out = out<<8 | int64(raw[i])
+	for _, r := range slices.Backward(raw) {
+		out = out<<8 | int64(r)
 	}
 	if raw[len(raw)-1]&0x80 != 0 {
 		out -= int64(1) << (8 * len(raw))
@@ -274,7 +275,7 @@ func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	out := make([]float32, 0, stream.Info.NSamples)
 	for {
 		frame, err := stream.ParseNext()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -298,7 +299,7 @@ func mono(interleaved []float32, channels int) []float32 {
 	out := interleaved[:len(interleaved)/channels]
 	for i := range out {
 		var sum float32
-		for c := 0; c < channels; c++ {
+		for c := range channels {
 			sum += interleaved[i*channels+c]
 		}
 		out[i] = sum / float32(channels)

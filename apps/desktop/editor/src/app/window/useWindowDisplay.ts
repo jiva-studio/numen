@@ -20,29 +20,30 @@ import { createWindowStreams } from './useWindowStreams'
  */
 /** What the window passes for reading a vault, alongside the vault itself. */
 export interface DisplayOptions {
-  wait?(ms: number): Promise<unknown>
+  wait?(this: void, ms: number): Promise<unknown>
   /**
    * Receives vault change notifications, and is awaited. A change carrying no
    * paths is empty: everything showing the vault reads again.
    */
   onVaultChanged?(
+    this: void,
     paths: readonly string[],
     renamed?: readonly PathRename[],
     versionPaths?: readonly string[],
   ): void | Promise<void>
   /** Receives notifications of a change to a note while it is being created. */
-  reportChange?(response: NoteEdit): void
+  reportChange?(this: void, response: NoteEdit): void
   /** Shows a note to the user, requested from outside the window. */
-  travelTo?(path: string): void | Promise<void>
+  travelTo?(this: void, path: string): void | Promise<void>
   /**
    * Opens a document at spans of its own text, in the tab it is read in. The
    * first span is brought into view.
    */
-  openFileAt?(path: string, spans: readonly TextRange[]): void
+  openFileAt?(this: void, path: string, spans: readonly TextRange[]): void
   /** Activates the open tab with the id, on a request from outside the window. */
-  activateTab?(id: string): void
+  activateTab?(this: void, id: string): void
   /** What draws the page again, once another vault is under this window. */
-  reload?(): void
+  reload?(this: void): void
 }
 
 function useDisplayState() {
