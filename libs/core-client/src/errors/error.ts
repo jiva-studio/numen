@@ -54,13 +54,13 @@ const CARRIES = new Set<Code>([
 export const formatErrorMessage = (error: unknown): string => {
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
-  return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
+  return carried || TROUBLE[fault.code]
 }
 
 /**
  * The message for each error code in the schema.
  */
-const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
+const ERROR_CODE_MESSAGES: Partial<Record<number, string>> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
   [ProtoErrorCode.NOT_FOUND]: 'note not in the vault',
   [ProtoErrorCode.NOT_A_NOTE]: 'not a note',
@@ -75,4 +75,4 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
 
 /** The message for one error code; empty when there was no error. */
 export const formatErrorCodeMessage = (errorCode: number | undefined): string =>
-  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode as ProtoErrorCode] ?? UNEXPECTED)
+  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode] ?? UNEXPECTED)

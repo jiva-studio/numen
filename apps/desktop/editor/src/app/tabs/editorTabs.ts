@@ -8,7 +8,7 @@ export function findEditorTabAt(
 ): string | null {
   for (const tab of windowTabs.tabs.value) {
     const open = windowTabs.getTab(tab.id)
-    if (open?.kind.flushPending && open.kind.getOpenTab?.(open.state)?.path === path) return tab.id
+    if (open?.kind.flushPending && open.kind.getOpenTab?.(open.state).path === path) return tab.id
   }
   return null
 }

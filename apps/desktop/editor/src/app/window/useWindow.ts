@@ -594,7 +594,7 @@ function createTabCloser(base: WindowCore) {
       hold?.()
       return false
     }
-    if (!hold) base.windowTabs.finishClose?.(id)
+    if (!hold) base.windowTabs.finishClose(id)
     return true
   }
 }

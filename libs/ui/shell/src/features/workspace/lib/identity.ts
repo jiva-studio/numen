@@ -13,7 +13,7 @@ export interface Randomness {
 }
 
 export const browserRandomness: Randomness = {
-  uuid: () => (typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : null),
+  uuid: () => (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : null),
 }
 
 /**

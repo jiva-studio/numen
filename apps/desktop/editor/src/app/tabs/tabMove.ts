@@ -54,7 +54,7 @@ export function createTabMover(deps: TabMoverDeps) {
     return {
       id,
       kind: one.kind.kind,
-      path: one.kind.getOpenTab?.(one.state)?.path ?? '',
+      path: one.kind.getOpenTab?.(one.state).path ?? '',
       title: deps.windowTabs.tabs.value.find((tab) => tab.id === id)?.title ?? '',
       state: formatSavedState(one.kind.getState?.(one.state)),
     }

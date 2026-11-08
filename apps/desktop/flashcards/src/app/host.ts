@@ -221,7 +221,7 @@ export function createShellHost(
         return view
       },
       closeTab: (id) => closeTab(id),
-      hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
+      hasPermission: (permission) => manifest?.permissions.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),
       ...getFilledServices(services),

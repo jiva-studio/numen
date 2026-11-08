@@ -20,5 +20,6 @@ const noBoxes = (): DOMRectList => {
   return rects
 }
 
+Element.prototype.scrollIntoView = () => undefined
 Range.prototype.getBoundingClientRect = createEmptyRect
 Range.prototype.getClientRects = noBoxes

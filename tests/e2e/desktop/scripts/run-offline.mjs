@@ -77,7 +77,7 @@ const isOffline = () => {
       'run-offline: cannot open a network namespace with `unshare -rn` and `ip`.\n' +
         'Install util-linux and iproute2, and allow unprivileged user namespaces ' +
         '(on Ubuntu: sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0).\n' +
-        (probe.stderr ?? probe.error?.message ?? ''),
+        (probe.error?.message ?? probe.stderr),
     )
     process.exit(1)
   }
@@ -130,7 +130,7 @@ const runLabelled = (label, playwrightArgs, env) =>
 const getFlag = (name) => {
   const index = args.findIndex((arg) => arg === name || arg.startsWith(`${name}=`))
   if (index < 0) return undefined
-  const [, inline] = args[index].split('=')
+  const inline = args[index].split('=').at(1)
   const value = inline ?? args[index + 1]
   args.splice(index, inline === undefined ? 2 : 1)
   return value

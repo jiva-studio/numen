@@ -13,6 +13,10 @@ export interface Viewport {
 
 const stopNothing = (): void => undefined
 
+const getFirstBorderBox = (
+  sizes: readonly ResizeObserverSize[] | undefined,
+): ResizeObserverSize | undefined => sizes?.[0]
+
 export const browserViewport: Viewport = {
   watch: (of, took) => {
     if (typeof ResizeObserver === 'undefined') return stopNothing
@@ -31,7 +35,7 @@ export const browserViewport: Viewport = {
     if (typeof ResizeObserver === 'undefined') return stopNothing
 
     const observer = new ResizeObserver(([entry]) => {
-      const box = entry?.borderBoxSize?.[0]
+      const box = getFirstBorderBox(entry?.borderBoxSize)
       took({
         width: box?.inlineSize ?? of.offsetWidth,
         height: box?.blockSize ?? of.offsetHeight,
