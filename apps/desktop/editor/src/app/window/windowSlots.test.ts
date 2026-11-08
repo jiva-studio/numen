@@ -28,6 +28,7 @@ const command = (pluginId: string, id: string, title: string): DeclaredCommand =
 const COMMANDS = [
   command(TIDE, 'tide.open', 'Open tide'),
   command(TIDE, 'tide.add', 'Add tide'),
+  { ...command(TIDE, 'tide.vault', 'Open vault view'), when: 'window.isVaultOpen' },
   command(HARBOR, 'harbor.open', 'Open harbor'),
   { ...command(HARBOR, 'harbor.moor', 'Moor link'), when: "target.noteType == 'link'" },
   command(HARBOR, 'harbor.dock', 'Dock'),
@@ -90,7 +91,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     findCommand: slots.hostDeps.findSlotCommand,
     findView: () => undefined,
   })
-  return { registry, hostDeps: slots.hostDeps }
+  return { registry, hostDeps: slots.hostDeps, windowValues: slots.windowValues }
 }
 
 const describeItems = (items: readonly SlotItem[]) =>
@@ -124,6 +125,42 @@ describe('the buttons of the title bar', () => {
     const [first] = registry.getEntries(SLOT.titleBarCommands)
 
     expect(first).toMatchObject({ kind: 'command', title: 'Open tide' })
+  })
+})
+
+describe('the buttons of the title bar while no vault is open', () => {
+  const placed: DeclaredSlot[] = [
+    { pluginId: TIDE, slot: SLOT.titleBarCommands, command: 'tide.vault', group: 'navigate' },
+  ]
+  const setVault = (windowValues: ReturnType<typeof setup>['windowValues'], isOpen: boolean) => {
+    windowValues.current = () => ({ 'window.isVaultOpen': isOpen })
+  }
+
+  it('are none, the settings button too', () => {
+    const { registry, windowValues } = setup(placed)
+    setVault(windowValues, false)
+
+    expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([])
+  })
+
+  it('appear when a vault is open', () => {
+    const { registry, windowValues } = setup(placed)
+    setVault(windowValues, true)
+
+    expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([
+      `${TIDE}:tide.vault`,
+      '|',
+      'app:settings.open',
+    ])
+  })
+
+  it('leave the command of the settings available to the palette and the shortcut', () => {
+    const { hostDeps, windowValues } = setup(placed)
+    setVault(windowValues, false)
+
+    expect(hostDeps.findSlotCommand('app:settings.open', undefined)).toMatchObject({
+      title: expect.any(String),
+    })
   })
 })
 
