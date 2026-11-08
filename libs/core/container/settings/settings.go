@@ -94,8 +94,10 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 	if c.PluginHost != nil {
 		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
 		target.DropInvalidSecrets(c.IsSecretDeclared)
+		target.DropInvalidConnections()
 	} else {
 		target.DropInvalidSecrets(func(pluginport.DeclarationKey) bool { return true })
+		target.DropInvalidConnections()
 	}
 	return target, nil
 }
@@ -326,6 +328,8 @@ const hostFieldEnabled = "enabled"
 
 const settingKeySecrets = "secrets"
 
+const settingKeyConnections = "connections"
+
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
 	values := settingevents.Values{}
 	var failures []error
@@ -352,6 +356,14 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 			failures = append(failures, err)
 		} else {
 			values[settingevents.JoinPath([]string{settingKeySecrets})] = content
+		}
+	}
+	if len(target.Connections) > 0 {
+		content, err := target.WriteConnectionsJSON()
+		if err != nil {
+			failures = append(failures, err)
+		} else {
+			values[settingevents.JoinPath([]string{settingKeyConnections})] = content
 		}
 	}
 	return values, errors.Join(failures...)
