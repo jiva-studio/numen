@@ -90,3 +90,9 @@ function onChoose(id: string): void {
     @dismiss="onClose"
   />
 </template>
+
+<style scoped>
+.secret-action {
+  border-radius: var(--numen-radius);
+}
+</style>
