@@ -11,6 +11,7 @@ import {
   createSecretSections,
   getDeclarations,
   getNewGroupName,
+  getFirstSecretName,
   getNextSecretName,
   type Declaration,
   type SecretSection as SectionData,
@@ -54,7 +55,10 @@ const deletion = useSecretDeletion(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
-  drafts.value = [...drafts.value, { group, name: getNextSecretName(getNamesInGroup(group)) }]
+  drafts.value = [
+    ...drafts.value,
+    { group, name: getNextSecretName(group, getNamesInGroup(group)) },
+  ]
 }
 
 function onAddGroup(): void {
@@ -109,7 +113,7 @@ function getNamesInGroup(group: string): readonly string[] {
   const section = sections.value.find((one) => one.group === group)
   return [
     ...(section?.secrets.map((one) => one.name) ?? []),
-    ...(section?.isAsked && section.secrets.length === 0 ? [words.secretDefault] : []),
+    ...(section?.isAsked && section.secrets.length === 0 ? [getFirstSecretName(group)] : []),
     ...getDraftNames(group),
   ]
 }

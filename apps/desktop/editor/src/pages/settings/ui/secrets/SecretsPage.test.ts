@@ -123,10 +123,10 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('shows a group a plugin asks for with no secret as one empty secret named Default', () => {
+  it('shows a group a plugin asks for with no secret as one empty secret named after its service', () => {
     const { wrapper } = mountPage()
     const openai = findText('OpenAI') as HTMLElement
-    const fallback = findText('Default') as HTMLElement
+    const fallback = rowOf('OpenAI')
     expect(fallback).not.toBeNull()
     expect(positionOf(fallback)).toBeGreaterThan(positionOf(openai))
     expect(positionOf(fallback)).toBeLessThan(positionOf(findText('OpenRouter') as HTMLElement))
@@ -135,11 +135,11 @@ describe('the page of secrets', () => {
 
   it('stores the empty secret under its group on the first entry of a value', async () => {
     const { installation, wrapper } = mountPage()
-    const input = maskedInputs(rowOf('Default'))[0] as HTMLInputElement
+    const input = maskedInputs(rowOf('OpenAI'))[0] as HTMLInputElement
     await enterText(input, 'made-up-first-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'openai',
-      'Default',
+      'OpenAI',
       'made-up-first-value',
     )
     dispose(wrapper)
@@ -272,26 +272,29 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('adds a secret with the next number as its name and stores it when a value is entered', async () => {
+  it('adds a secret with the next version as its name and stores it when a value is entered', async () => {
     const { installation, wrapper } = mountPage()
     const openrouter = sectionOf('OpenRouter')
     await click(findButton(/add/i, openrouter))
-    const draft = findText('3') as HTMLElement
+    const draft = findText('OpenRouter V1') as HTMLElement
     expect(draft).not.toBeNull()
-    await enterText(maskedInputs(rowOf('3'))[0] as HTMLInputElement, 'made-up-third-value')
+    await enterText(
+      maskedInputs(rowOf('OpenRouter V1'))[0] as HTMLInputElement,
+      'made-up-added-value',
+    )
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'openrouter',
-      '3',
-      'made-up-third-value',
+      'OpenRouter V1',
+      'made-up-added-value',
     )
     dispose(wrapper)
   })
 
-  it('names the second secret of a group 2', async () => {
+  it('names the second secret of a group with V1', async () => {
     const { wrapper } = mountPage()
     const travel = sectionOf('travel')
     await click(findButton(/add/i, travel))
-    expect(findText('2')).not.toBeNull()
+    expect(findText('travel V1')).not.toBeNull()
     dispose(wrapper)
   })
 
@@ -344,7 +347,7 @@ describe('the page of secrets', () => {
 
   it('shows no value after it is entered', async () => {
     const { installation, wrapper } = mountPage()
-    const input = maskedInputs(rowOf('Default'))[0] as HTMLInputElement
+    const input = maskedInputs(rowOf('OpenAI'))[0] as HTMLInputElement
     await enterText(input, 'made-up-value-that-must-not-stay')
 
     expect(installation.createSecret).toHaveBeenCalledOnce()

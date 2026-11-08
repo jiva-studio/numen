@@ -33,7 +33,7 @@ describe('the section of a group', () => {
     await input.setValue('a-made-up-key')
     await input.trigger('keydown', { key: 'Enter' })
     await flushPromises()
-    expect(create).toHaveBeenCalledWith('Default', 'a-made-up-key')
+    expect(create).toHaveBeenCalledWith('harbour', 'a-made-up-key')
     wrapper.unmount()
   })
 

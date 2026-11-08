@@ -65,7 +65,7 @@ afterEach(() => {
 })
 
 describe('the name of the first secret in a group the person types', () => {
-  it('is Default', async () => {
+  it('is the name of the group', async () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add group/i))
     await typeGroup('Local Llama')
@@ -73,36 +73,36 @@ describe('the name of the first secret in a group the person types', () => {
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      'Default',
+      'Local Llama',
       'made-up-llama-value',
     )
     dispose(wrapper)
   })
 
-  it('is followed by 2 in a group that has Default', async () => {
-    const { installation, wrapper } = mountPage([secret('s00000001', 'Default', 'Local Llama')])
+  it('is followed by V1 in a group that has the first', async () => {
+    const { installation, wrapper } = mountPage([secret('s00000001', 'Local Llama', 'Local Llama')])
     await click(findButton(/add secret/i))
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      '2',
+      'Local Llama V1',
       'made-up-second-value',
     )
     dispose(wrapper)
   })
 
-  it('is followed by 3 in a group that has Default and 2', async () => {
+  it('is followed by V2 in a group that has the first and V1', async () => {
     const { installation, wrapper } = mountPage([
-      secret('s00000001', 'Default', 'Local Llama'),
-      secret('s00000002', '2', 'Local Llama'),
+      secret('s00000001', 'Local Llama', 'Local Llama'),
+      secret('s00000002', 'Local Llama V1', 'Local Llama'),
     ])
     await click(findButton(/add secret/i))
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-third-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      '3',
+      'Local Llama V2',
       'made-up-third-value',
     )
     dispose(wrapper)
@@ -145,7 +145,7 @@ describe('a group name of more than 64 characters', () => {
 
     expect(installation.createSecret).toHaveBeenCalledWith(
       'g'.repeat(64),
-      'Default',
+      'g'.repeat(64),
       'made-up-value',
     )
     dispose(wrapper)
@@ -155,12 +155,18 @@ describe('a group name of more than 64 characters', () => {
 describe('a secret that fails to be created from the control that adds a secret to a group', () => {
   it('keeps the typed value in the field', async () => {
     const createSecret = vi.fn(async () => '')
-    const { wrapper } = mountPage([secret('s00000001', 'Default', 'Local Llama')], { createSecret })
+    const { wrapper } = mountPage([secret('s00000001', 'Local Llama', 'Local Llama')], {
+      createSecret,
+    })
     await click(findButtons(/add secret/i)[0] as HTMLElement)
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-section-value')
 
-    expect(createSecret).toHaveBeenCalledWith('Local Llama', '2', 'made-up-section-value')
+    expect(createSecret).toHaveBeenCalledWith(
+      'Local Llama',
+      'Local Llama V1',
+      'made-up-section-value',
+    )
     const after = maskedInputs()
     expect((after[after.length - 1] as HTMLInputElement).value).toBe('made-up-section-value')
     dispose(wrapper)
@@ -175,7 +181,7 @@ describe('the name of a group the person types', () => {
     await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
-    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
+    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'abc', 'made-up-value')
     dispose(wrapper)
   })
 
@@ -186,7 +192,7 @@ describe('the name of a group the person types', () => {
     await click(findButton(/add secret/i))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
-    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')
+    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', '﻿abc', 'made-up-value')
     dispose(wrapper)
   })
 })

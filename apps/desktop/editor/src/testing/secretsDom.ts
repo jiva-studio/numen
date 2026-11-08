@@ -32,8 +32,8 @@ export const findButton = (pattern: RegExp, scope: ParentNode = root()): HTMLEle
   return found[0] as HTMLElement
 }
 
-/** The smallest element in a scope that holds the text. */
-export const findText = (text: string | RegExp, scope: ParentNode = root()): HTMLElement | null => {
+/** Every smallest element in a scope that holds the text, in document order. */
+export const findTexts = (text: string | RegExp, scope: ParentNode = root()): HTMLElement[] => {
   const matches = (element: Element): boolean => {
     const own = Array.from(element.childNodes)
       .filter((node) => node.nodeType === Node.TEXT_NODE)
@@ -43,8 +43,12 @@ export const findText = (text: string | RegExp, scope: ParentNode = root()): HTM
       .trim()
     return typeof text === 'string' ? own === text : text.test(own)
   }
-  return Array.from(scope.querySelectorAll<HTMLElement>('*')).find(matches) ?? null
+  return Array.from(scope.querySelectorAll<HTMLElement>('*')).filter(matches)
 }
+
+/** The first smallest element in a scope that holds the text. */
+export const findText = (text: string | RegExp, scope: ParentNode = root()): HTMLElement | null =>
+  findTexts(text, scope)[0] ?? null
 
 /** The position of an element in the document, for the order two elements appear in. */
 export const positionOf = (element: Element): number =>
@@ -86,10 +90,13 @@ const ancestorWhere = (
   throw new Error(`no ancestor of <${element.tagName}> ${nameOf(element)} satisfies the test`)
 }
 
-/** The row of the secret with that name: the smallest element around the name that holds a delete button or a masked input. */
+/**
+ * The row of the secret with that name: the smallest element around the name that holds a delete
+ * button or a masked input. The last match is taken, as a heading of the same text comes first.
+ */
 export const rowOf = (name: string): HTMLElement => {
-  const text = findText(name)
-  if (text === null) throw new Error(`no text ${name} on the page`)
+  const text = findTexts(name).at(-1)
+  if (text === undefined) throw new Error(`no text ${name} on the page`)
   return ancestorWhere(
     text,
     (one) => findButtons(/delete/i, one).length > 0 || maskedInputs(one).length > 0,

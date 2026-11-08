@@ -2,6 +2,7 @@
  * The page of secrets and the menu of a secret field, as plain data: the sections of the secrets
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
+import { getServiceInfo } from '@numen/core-client'
 import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
 import { WORDS } from '../words'
 
@@ -118,14 +119,24 @@ export function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): 
 }
 
 /**
- * The name a new secret of a group gets: Default in a group with no secret, else the next number
- * after those already there, the first one not in use.
+ * The name the first secret of a group gets: the name of its service, or Default for a group no
+ * service is known by.
  */
-export function getNextSecretName(namesInGroup: readonly string[]): string {
-  if (namesInGroup.length === 0) return 'Default'
-  let number = namesInGroup.length + 1
-  while (namesInGroup.includes(String(number))) number++
-  return String(number)
+export function getFirstSecretName(group: string): string {
+  const title = group === '' ? '' : getServiceInfo(group).title
+  return title === '' ? WORDS.secretDefault : title
+}
+
+/**
+ * The name a new secret of a group gets: the name of the service in a group with no secret, else
+ * the name with V1, V2 and on, the first one not in use.
+ */
+export function getNextSecretName(group: string, namesInGroup: readonly string[]): string {
+  const first = getFirstSecretName(group)
+  if (namesInGroup.length === 0) return first
+  let number = 1
+  while (namesInGroup.includes(`${first} V${number}`)) number++
+  return `${first} V${number}`
 }
 
 /**

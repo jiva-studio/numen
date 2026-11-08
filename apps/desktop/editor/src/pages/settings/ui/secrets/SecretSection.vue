@@ -9,6 +9,7 @@ import { getServiceInfo } from '@numen/core-client'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
+  getFirstSecretName,
   getSectionDeclarations,
   type Declaration,
   type SecretSection,
@@ -46,6 +47,7 @@ const emit = defineEmits<{
 const isRenaming = ref(false)
 const draftName = ref('')
 const isTooLong = ref(false)
+const firstName = computed(() => getFirstSecretName(props.section.group))
 const info = computed(() => getServiceInfo(props.section.group))
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 const headingId = useId()
@@ -147,9 +149,9 @@ function onMoveDown(index: number): void {
     <ul class="secret-section__secrets">
       <SecretDraftRow
         v-if="section.isAsked && section.secrets.length === 0"
-        :name="words.secretDefault"
+        :name="firstName"
         :can-discard="false"
-        :submit="(value) => create(words.secretDefault, value)"
+        :submit="(value) => create(firstName, value)"
       />
       <SecretRow
         v-for="(secret, index) in section.secrets"
