@@ -45,9 +45,7 @@ export interface WindowFrame {
   readonly isMaximized: Readonly<Ref<boolean>>
   readonly isFullscreen: Readonly<Ref<boolean>>
   readonly windowEdge: Readonly<Ref<FrameEdge>>
-  /** The major version of macOS; undefined off macOS or while it is not read. */
   readonly macVersion: Readonly<Ref<number | undefined>>
-  /** The corner radius of the window in points, also set as `--numen-window-radius` on the root. */
   readonly windowRadius: Readonly<Ref<number>>
   minimizeWindow(): Promise<void>
   toggleMaximizeWindow(): Promise<void>
@@ -81,7 +79,6 @@ export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): 
 
 const ignoreFailure = (): undefined => undefined
 
-/** The major version of macOS the runtime reports; undefined when it cannot be read. */
 async function readMacVersion(system: FrameRuntime['System']): Promise<number | undefined> {
   try {
     return readMajorVersion((await system?.Environment?.())?.OSInfo?.Version)
