@@ -792,7 +792,7 @@ describe('an enum whose value is not offered on this platform', () => {
     const shown = wrapper.find('[data-testid="setting-buttons"]').text()
     await select.find('button').trigger('click')
     await flushPromises()
-    const checked = [...document.body.querySelectorAll('[aria-checked="true"]')].map((one) =>
+    const checked = [...document.body.querySelectorAll('[role="menuitemradio"][aria-checked="true"]')].map((one) =>
       one.textContent?.trim(),
     )
     wrapper.unmount()
