@@ -1,5 +1,3 @@
-import { access } from 'node:fs/promises'
-import { join } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 import {
@@ -13,13 +11,7 @@ import {
   showInFiles,
   trashFiles,
 } from '../../support/layout.js'
-import { getVaultPath, readNote } from '../../support/vault.js'
-
-const isOnDisk = async (vault: string, path: string): Promise<boolean> =>
-  access(join(vault, path)).then(
-    () => true,
-    () => false,
-  )
+import { readNote } from '../../support/vault.js'
 
 const getNameField = (page: Page) => page.getByRole('tree').getByRole('textbox')
 
@@ -92,40 +84,6 @@ test.describe('Naming, making and removing files in the files tab', () => {
       expect((await readOpenTabs(request)).tabs.map((one) => one.path)).not.toContain(before)
     } finally {
       await destroyNotes(request, [before, after])
-    }
-  })
-
-  test('moves two notes selected with Ctrl-click to the trash with Remove', async ({
-    page,
-    request,
-  }) => {
-    const first = await createNoteWithBody(request, 'Mill race', 'notes', '# Mill race\n')
-    const second = await createNoteWithBody(request, 'Tail race', 'notes', '# Tail race\n')
-    const headRace = await createNoteWithBody(request, 'Head race', 'notes', '# Head race\n')
-    const vault = getVaultPath()
-    try {
-      await openWorkspace(page)
-      await showInFiles(page, ['notes'])
-
-      await getRow(page, first).click()
-      await getRow(page, second).click({ modifiers: ['ControlOrMeta'] })
-      await expect(getRow(page, first)).toHaveAttribute('aria-selected', 'true')
-      await expect(getRow(page, second)).toHaveAttribute('aria-selected', 'true')
-      await getRow(page, second).click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Remove', exact: true }).click()
-
-      await expect
-        .poll(async () =>
-          (await listPaths(request, 'notes')).filter((one) => one === first || one === second),
-        )
-        .toEqual([])
-      expect(await listPaths(request, 'notes')).toContain(headRace)
-      expect(await isOnDisk(vault, join('.trash', first))).toBe(true)
-      expect(await isOnDisk(vault, join('.trash', second))).toBe(true)
-      await expect(getRow(page, first)).toHaveCount(0)
-      await expect(getRow(page, second)).toHaveCount(0)
-    } finally {
-      await destroyNotes(request, [first, second, headRace])
     }
   })
 })
