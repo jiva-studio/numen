@@ -115,31 +115,6 @@ func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
 	return pluginport.DiscoveredPlugin{Manifest: manifest}
 }
 
-func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
-	host := &commandHost{
-		plugins: []pluginport.DiscoveredPlugin{
-			declaring("md.numen.a", "first", "second"),
-			declaring("md.numen.b", "third"),
-			declaring("md.numen.c", "fourth"),
-		},
-		disabled: map[string]bool{"md.numen.b": true},
-	}
-
-	entries := Open(host).ListCommands()
-
-	var ids []string
-	for _, one := range entries {
-		ids = append(ids, one.PluginID+"/"+one.Command.ID)
-	}
-	want := []string{"md.numen.a/first", "md.numen.a/second", "md.numen.c/fourth"}
-	if len(ids) != len(want) || ids[0] != want[0] || ids[1] != want[1] || ids[2] != want[2] {
-		t.Errorf("got %v, want %v", ids, want)
-	}
-	if host.acquired != 0 {
-		t.Errorf("listing started %d plugins", host.acquired)
-	}
-}
-
 func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{

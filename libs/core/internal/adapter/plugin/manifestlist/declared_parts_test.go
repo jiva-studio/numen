@@ -1,4 +1,4 @@
-package commandbridge
+package manifestlist
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 	command := []manifest.Command{{ID: "tree.open", Title: "Open file tree"}}
-	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Commands: command}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.job", Backend: manifest.Backend{Entrypoint: "bin/job"}, Contributes: manifest.Contributes{Commands: command}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.empty", Contributes: manifest.Contributes{Commands: command}}},
@@ -31,12 +31,12 @@ func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 }
 
 // suspendedHost reports every plugin it holds as suspended after a failed start.
-type suspendedHost struct{ *commandHost }
+type suspendedHost struct{ *manifestHost }
 
 func (h suspendedHost) IsPluginSuspended(string) bool { return true }
 
 func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
-	host := suspendedHost{&commandHost{plugins: []pluginport.DiscoveredPlugin{
+	host := suspendedHost{&manifestHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}}},
 	}}}
 
@@ -48,7 +48,7 @@ func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 }
 
 func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
-	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}}},
 	}}

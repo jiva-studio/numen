@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -186,10 +187,10 @@ func (c Config) openVersionItems() *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	var commands pluginport.PluginCommands = commandbridge.NoCommands{}
+	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
+		commands, types = c.openPluginCommands(), c.PluginHost
 	}
 	run := plugincommand.NewCommands(commands, types, c.VaultReaders(), c.getWhenConfig()).Run
 	menu, err := textversion.NewVersionItems(c.TextVersions, run, types)

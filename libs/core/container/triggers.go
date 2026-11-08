@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 )
@@ -11,7 +11,7 @@ func (c Config) openTriggers() *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(
-		commandbridge.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders(), c.PluginHost,
+		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders(), c.PluginHost,
 		c.TextVersions, c.getWhenConfig(),
 	)
 }

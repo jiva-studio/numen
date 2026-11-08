@@ -11,8 +11,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -81,7 +81,7 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders(), c.getWhenConfig())
+	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.VaultReaders(), c.getWhenConfig())
 }
 
 // OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
@@ -90,7 +90,7 @@ func (c Config) OpenChooseTabKind() *tabkind.Choose {
 	if c.PluginHost == nil {
 		return nil
 	}
-	choose, err := tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
+	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
 	if err != nil {
 		c.handleError(err)
 		return nil
