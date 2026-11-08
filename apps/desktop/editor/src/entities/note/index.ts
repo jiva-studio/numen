@@ -1,5 +1,5 @@
 /** A note of the vault: what it holds, who it is joined to, and the tab it is open in. */
-export { getNoteIcon, registerNoteIcon } from './model/icons'
+export { getNoteIcon, registerTabKindIcon } from './model/icons'
 export type {
   Neighbourhood,
   NewNote,

@@ -488,19 +488,24 @@ describe('what a row is drawn as', () => {
 
     vault.names[0]?.answer([
       createNameMatch(),
-      createNameMatch({ path: 'samples/words.md', title: 'Words to learn', type: 'sample' }),
-      createNameMatch({ path: 'forms/animal.md', title: 'Animal', type: 'form' }),
-      createNameMatch({ path: 'sheets/daily.md', title: 'Every day', type: 'sheet' }),
+      createNameMatch({
+        path: 'samples/words.md',
+        title: 'Words to learn',
+        type: 'sample',
+        tabKind: 'sample',
+      }),
+      createNameMatch({ path: 'forms/animal.md', title: 'Animal', type: 'form', tabKind: 'form' }),
+      createNameMatch({
+        path: 'sheets/daily.md',
+        title: 'Every day',
+        type: 'sheet',
+        tabKind: 'sheet',
+      }),
     ])
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findNoteType(one.id))).toEqual([
-      'note',
-      'sample',
-      'form',
-      'sheet',
-    ])
+    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['', 'sample', 'form', 'sheet'])
   })
 
   it('draws a heading as the note it remains in', async () => {
@@ -518,12 +523,13 @@ describe('what a row is drawn as', () => {
         heading: 'Entropy',
         line: 12,
         type: 'sample',
+        tabKind: 'sample',
       }),
     ])
     await flushPromises()
 
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
-    expect(palette.findNoteType(item.id)).toBe('sample')
+    expect(palette.findTabKind(item.id)).toBe('sample')
   })
 
   it('draws a passage as the note it was read out of', async () => {
@@ -535,7 +541,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     vault.mode('words')?.answer([
-      passage({ path: 'sheets/daily.md', type: 'sheet' }),
+      passage({ path: 'sheets/daily.md', type: 'sheet', tabKind: 'sheet' }),
       passage({
         path: 'library/mahabharata.epub',
         title: '',
@@ -547,7 +553,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findNoteType(one.id))).toEqual(['sheet', null])
+    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['sheet', null])
   })
 
   it('names the file of a passage read out of a file that is no note', async () => {
@@ -585,7 +591,7 @@ describe('what a row is drawn as', () => {
 
     vault.names[0]?.answer([
       createNameMatch(),
-      createNameMatch({ path: 'samples/words.md', type: 'sample' }),
+      createNameMatch({ path: 'samples/words.md', type: 'sample', tabKind: 'sample' }),
     ])
     await flushPromises()
 
@@ -598,7 +604,7 @@ describe('what a row is drawn as', () => {
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
     })
-    expect(palette.findNoteType('notes/entropy.md')).toBeNull()
+    expect(palette.findTabKind('notes/entropy.md')).toBeNull()
     expect(palette.findHitFile('notes/entropy.md')).toBeNull()
   })
 })

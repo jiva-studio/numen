@@ -18,6 +18,7 @@ export interface NameMatch {
   line: number
   at: readonly TextRange[]
   type: NoteType
+  tabKind?: string
 }
 
 /** One passage: the text around a hit, and where it came from. */
@@ -26,6 +27,7 @@ export interface Passage {
   title: string
   isNote: boolean
   type: NoteType
+  tabKind?: string
   selector: Selector | null
   text: string
   start: number
@@ -50,6 +52,7 @@ export interface SearchHit {
   length: number
   actionIds: readonly string[]
   type: NoteType | null
+  tabKind?: string
   selector: Selector | null
   isCreation?: boolean
 }
@@ -105,6 +108,7 @@ export function createNameItem(
           length: 0,
           actionIds: atHeading.actionIds,
           type: one.type,
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
         },
       }
@@ -123,6 +127,7 @@ export function createNameItem(
           length: 0,
           actionIds: byName.actionIds,
           type: one.type,
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
         },
       }

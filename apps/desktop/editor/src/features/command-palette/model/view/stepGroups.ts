@@ -7,7 +7,6 @@
  * steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
-import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { StepRow } from '../../types'
@@ -194,8 +193,10 @@ export function createStepGroups(state: ViewState) {
   const { words, lists, found, known, showing, isWorking, failureMessage } = state
   const { getStepTitle, getStepLabel } = state
 
-  const findNoteType = (id: string): NoteType | null =>
-    found.value.find((one) => one.path === id)?.type ?? null
+  const findTabKind = (id: string): string | null => {
+    const note = found.value.find((one) => one.path === id)
+    return note ? (note.tabKind ?? '') : null
+  }
 
   const getPickingGroup = (step: PendingStep, text: string): PaletteGroup =>
     createPickingGroup(step, found.value, text, {
@@ -235,7 +236,7 @@ export function createStepGroups(state: ViewState) {
       getConfirmGroup(step, text, words, getStepLabel(step)),
     getExactlyGroup: (step: PendingStep, text: string) =>
       getExactlyGroup(step, text, words, getStepTitle(step)),
-    findNoteType,
+    findTabKind,
     getVaultAside: (one: Vault) => getVaultAside(one, showing.value, words),
   }
 }

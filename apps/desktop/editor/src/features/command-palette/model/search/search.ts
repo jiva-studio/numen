@@ -6,7 +6,6 @@ import type { PaletteGroup } from '@numen/shell'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
-import type { NoteType } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
@@ -254,7 +253,11 @@ async function executeSearchQuery(
 }
 
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
-  const findNoteType = (item: string): NoteType | null => getHits().get(item)?.type ?? null
+  /** The tab kind of the note a hit is in; null for a hit in a file that is no note, or no hit. */
+  const findTabKind = (item: string): string | null => {
+    const hit = getHits().get(item)
+    return hit && hit.type !== null ? (hit.tabKind ?? '') : null
+  }
 
   /** The path of a hit in a file that is no note, and null for a note. */
   const findHitFile = (item: string): string | null => {
@@ -262,7 +265,7 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
     return searchHit && searchHit.type === null ? searchHit.path : null
   }
 
-  return { findNoteType, findHitFile }
+  return { findTabKind, findHitFile }
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {

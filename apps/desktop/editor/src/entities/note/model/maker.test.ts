@@ -10,7 +10,7 @@ import { asFailure, asValue } from '@numen/core-client'
 import type { RelatedNoteRequest, RelationError } from '@numen/plugin-host'
 
 import { createNoteWriter, type NoteMaker } from './maker'
-import { getNoteIcon, registerNoteIcon } from './icons'
+import { getNoteIcon, registerTabKindIcon } from './icons'
 import type { NewNote } from '@/entities/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
@@ -135,12 +135,12 @@ describe('making a note under a name a person gave it', () => {
   })
 })
 
-describe('registerNoteIcon', () => {
+describe('registerTabKindIcon', () => {
   it('keeps the newer icon when an older disposer runs late', () => {
     const first = { name: 'FirstIcon' }
     const second = { name: 'SecondIcon' }
-    const disposeFirst = registerNoteIcon('sample', first)
-    const disposeSecond = registerNoteIcon('sample', second)
+    const disposeFirst = registerTabKindIcon('sample', first)
+    const disposeSecond = registerTabKindIcon('sample', second)
 
     disposeFirst()
     expect(getNoteIcon('sample')).toBe(second)

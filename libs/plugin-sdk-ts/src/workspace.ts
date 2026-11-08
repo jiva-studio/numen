@@ -197,6 +197,7 @@ export interface VaultEntry {
   readonly isFolder: boolean
   readonly isNote: boolean
   readonly type: NoteType
+  readonly tabKind?: string
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

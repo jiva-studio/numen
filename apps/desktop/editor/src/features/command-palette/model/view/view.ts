@@ -98,5 +98,5 @@ export function getPaletteView(state: ViewState) {
     return [steps.getExactlyGroup(step, text)]
   }
 
-  return { createGroups, findNoteType: steps.findNoteType, getVaultAside: steps.getVaultAside }
+  return { createGroups, findTabKind: steps.findTabKind, getVaultAside: steps.getVaultAside }
 }

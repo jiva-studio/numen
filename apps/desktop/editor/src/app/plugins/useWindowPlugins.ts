@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
-import { registerNoteIcon } from '@/entities/note'
+import { registerTabKindIcon } from '@/entities/note'
 import {
   DEFAULT_PLUGIN_ENABLED,
   createAppInfo,
@@ -161,7 +161,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
       const unregisterKind = windowTabs.registerKind(kind)
-      const unregisterIcon = kind.icon ? registerNoteIcon(kind.kind, kind.icon) : () => undefined // No icon was registered.
+      const unregisterIcon = kind.icon ? registerTabKindIcon(kind.kind, kind.icon) : () => undefined
       return () => {
         unregisterKind()
         unregisterIcon()

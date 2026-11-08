@@ -277,11 +277,11 @@ describe('findRowIcon', () => {
   it('resolves command and note icons when commands palette is open', () => {
     const commands = {
       open: ref(true),
-      findNoteType: (id: string) => (id === 'n1' ? 'sample' : null),
+      findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
       findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
     } as unknown as Commands
     const search = {
-      findNoteType: () => 'form',
+      findTabKind: () => 'form',
       findHitFile: () => 'doc.pdf',
     } as unknown as SearchState
 
@@ -293,11 +293,11 @@ describe('findRowIcon', () => {
   it('resolves create-note, search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
       open: ref(false),
-      findNoteType: () => 'sample',
+      findTabKind: () => 'sample',
       findCommandIcon: () => customIcon,
     } as unknown as Commands
     const search = {
-      findNoteType: (id: string) => (id === 'hit-note' ? 'sheet' : null),
+      findTabKind: (id: string) => (id === 'hit-note' ? 'sheet' : null),
       findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
     } as unknown as SearchState
 
@@ -316,8 +316,8 @@ describe('the icon of the command that opens a document', () => {
   })
 
   it('is the icon of the command the row of a document offers', () => {
-    const commands = { open: ref(true), findNoteType: () => null, findCommandIcon: () => null }
-    const search = { findNoteType: () => null, findHitFile: () => null }
+    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const search = { findTabKind: () => null, findHitFile: () => null }
 
     expect(
       findRowIcon(

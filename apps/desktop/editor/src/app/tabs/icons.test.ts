@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { COMMAND } from '@/shared/commandIds'
 import { findIcon, getNamedIcon } from '@/shared/icons'
-import { getNoteIcon, registerNoteIcon } from '@/entities/note'
+import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
 import { createCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
@@ -49,18 +49,17 @@ describe('the icon a command is drawn with', () => {
   })
 })
 
-// One mark to a type.
-describe('the icon of a type of note', () => {
-  it('is the icon of a note for a type no plugin draws', () => {
-    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
+describe('the icon of a note', () => {
+  it('is the icon of a note for a tab kind no plugin draws, and for none', () => {
+    expect(getNoteIcon('sample')).toBe(getNoteIcon(undefined))
   })
 
-  it('is the icon a plugin registers for its type, until the plugin lets go of it', () => {
+  it('is the icon a plugin registers for the tab kind that opens the note, until it lets go of it', () => {
     const icon = {}
-    const unregister = registerNoteIcon('sample', icon)
+    const unregister = registerTabKindIcon('sample', icon)
     expect(getNoteIcon('sample')).toBe(icon)
 
     unregister()
-    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
+    expect(getNoteIcon('sample')).toBe(getNoteIcon(undefined))
   })
 })

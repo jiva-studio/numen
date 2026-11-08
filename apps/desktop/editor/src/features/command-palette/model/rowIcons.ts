@@ -20,12 +20,12 @@ export function findRowIcon(
   findFileIcon?: (path: string) => Component | undefined,
 ) {
   if (commands.open.value) {
-    const picked = commands.findNoteType(id)
-    return picked ? getNoteIcon(picked) : (commands.findCommandIcon(id) ?? findIcon(id))
+    const picked = commands.findTabKind(id)
+    return picked === null ? (commands.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)
   }
   if (id === CREATE_NOTE_ROW) return findIcon(COMMAND.createNote)
-  const type = search.findNoteType(id)
-  if (type) return getNoteIcon(type)
+  const tabKind = search.findTabKind(id)
+  if (tabKind !== null) return getNoteIcon(tabKind)
   const file = search.findHitFile(id)
   return file ? (findFileIcon?.(file) ?? File) : null
 }
