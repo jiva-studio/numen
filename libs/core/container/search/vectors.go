@@ -27,7 +27,7 @@ func (c Config) EmbedderReady() bool {
 // An installation with no embedding plugin enabled has neither, and no error:
 // search answers on the words of the full-text index alone.
 func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	embedder, closeEmbedder, err := c.openEmbedder(ctx, NewModelReadReporter(tasks))
+	embedder, closeEmbedder, err := c.OpenEmbedder(ctx, NewModelReadReporter(tasks))
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
 	}
@@ -37,7 +37,7 @@ func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, aski
 // Embedder is the embedding plugin that produces the vectors of a vault. It is
 // nil when no embedding plugin is enabled.
 func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
-	return c.openEmbedder(ctx, nil)
+	return c.OpenEmbedder(ctx, nil)
 }
 
 // readingTheModel is the ID of the task that reports a read of the embedding model that failed.
@@ -53,7 +53,11 @@ func NewModelReadReporter(tasks *run.Tasks) func(error) {
 	}
 }
 
-func (c Config) openEmbedder(ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
+// OpenEmbedder opens the active embedding plugin when available.
+func (c Config) OpenEmbedder(ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
+	if c.ResolvePlugin == nil {
+		return nil, func() error { return nil }, nil
+	}
 	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, completionport.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
@@ -68,11 +72,12 @@ func (c Config) openEmbedder(ctx context.Context, onReadError func(error)) (embe
 	if onReadError != nil {
 		opened.OnModelReadError(onReadError)
 	}
-	followChunkTokens(c.Chunks, opened, opened.OnModelChange)
+	FollowChunkTokens(c.Chunks, opened, opened.OnModelChange)
 	return opened, opened.Close, nil
 }
 
-func followChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
+// FollowChunkTokens updates cell whenever embedder reports a new chunk token limit.
+func FollowChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
 	cell.Set(embedder.GetModel().ChunkTokens)
 	onChange(func() { cell.Set(embedder.GetModel().ChunkTokens) })
 }

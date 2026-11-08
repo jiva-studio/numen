@@ -78,12 +78,12 @@ type Config struct {
 // folder watches and the access to the settings file. An application builds one with
 // NewResources and names it in its Config.
 type Resources struct {
-	vaultLocks     *vaultwriter.Locks
-	watches        *vaultwatch.Hub
-	settingsFiles  *settingsadapter.Files
-	settingEvents  *settingevents.Events
-	secretGate     *secret.Gate
-	hostSubscribed sync.Once
+	vaultLocks      *vaultwriter.Locks
+	watches         *vaultwatch.Hub
+	settingsFiles   *settingsadapter.Files
+	settingEvents   *settingevents.Events
+	secretGate      *secret.Gate
+	subscribedHosts sync.Map
 }
 
 // NewResources returns the resources of one container.
@@ -172,7 +172,7 @@ func (c Config) settings() settingswiring.Config {
 		SettingsFiles:    res.settingsFiles,
 		SettingEvents:    res.settingEvents,
 		SecretGate:       res.secretGate,
-		HostSubscribed:   &res.hostSubscribed,
+		SubscribedHosts:  &res.subscribedHosts,
 		ErrorHandler:     c.handleError,
 		AgentProvider:    c.AgentProvider,
 		GetAgentPrograms: c.plugins().GetAgentPrograms,

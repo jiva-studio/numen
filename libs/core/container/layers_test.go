@@ -1123,6 +1123,8 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		// The core imports no adapter and no package that assembles one.
 		{"usecase/note", "internal/adapter/trash", true},
 		{"usecase/note", "container", true},
+		{"usecase/note", "container/vault", true},
+		{"usecase/note", "containerized", false},
 		{"usecase/note", "port", false},
 		{"internal/adapterlib/wire", "adapter/window/editor", true},
 		{"internal/adapterlib/wire", "container", true},

@@ -73,11 +73,13 @@ func (c Config) HasPlugin(capability string) bool {
 	return err == nil
 }
 
-// SetSafeMode updates safe mode on the plugin host when present.
-func (c Config) SetSafeMode(enabled bool) {
+// SetSafeMode updates safe mode on c and on the plugin host when present.
+func (c Config) SetSafeMode(enabled bool) Config {
+	c.SafeMode = enabled
 	if c.PluginHost != nil {
 		c.PluginHost.SetSafeMode(enabled)
 	}
+	return c
 }
 
 // SetPluginVaultPath is the vault the plugins' paths are inside.
@@ -166,6 +168,9 @@ func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 
 // GetPluginName returns the manifest name of pluginID, or pluginID if unknown.
 func (c Config) GetPluginName(pluginID string) string {
+	if c.PluginHost == nil {
+		return pluginID
+	}
 	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}
@@ -341,7 +346,8 @@ type credentialsLocator interface {
 	GetCredentialsPath(ctx context.Context) string
 }
 
-func (c Config) openSecretLedger() *settingsadapter.SecretLedger {
+// OpenSecretLedger opens the secret ledger backed by the settings file.
+func (c Config) OpenSecretLedger() *settingsadapter.SecretLedger {
 	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
 }
 
@@ -351,10 +357,11 @@ func (c Config) OpenSecrets() *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
-	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.SecretGate)
+	return secret.NewSecrets(c.OpenSecretLedger(), c.KeyStore, plugins, NewSecretID, c.GetCredentialsPath, c.SecretGate)
 }
 
-func (c Config) getCredentialsPath() string {
+// GetCredentialsPath returns the credentials file path when the key store uses a file.
+func (c Config) GetCredentialsPath() string {
 	locator, isLocator := c.KeyStore.(credentialsLocator)
 	if !isLocator {
 		return ""
@@ -362,7 +369,8 @@ func (c Config) getCredentialsPath() string {
 	return locator.GetCredentialsPath(context.Background())
 }
 
-func newSecretID() (string, error) {
+// NewSecretID generates a random identifier for a stored secret.
+func NewSecretID() (string, error) {
 	var random [4]byte
 	if _, err := rand.Read(random[:]); err != nil {
 		return "", fmt.Errorf("read random bytes for the id of a secret: %w", err)
@@ -375,7 +383,7 @@ func (c Config) SetSecretSource() {
 	if c.PluginHost == nil {
 		return
 	}
-	ledger := c.openSecretLedger()
+	ledger := c.OpenSecretLedger()
 	c.PluginHost.SetSecretSource(pluginport.SecretSource{
 		List:  ledger.GetSecrets,
 		Prune: c.OpenSecrets().Prune.Execute,

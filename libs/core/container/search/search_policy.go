@@ -13,7 +13,7 @@ import (
 // NewFloorPolicy is the floor a search by meaning applies under the model of an embedder: the floor
 // stored for the vault, else the model's hint, else search.DefaultFloor.
 func (c Config) NewFloorPolicy(db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(embedder), errorHandler)
+	return searchusecase.NewFloorPolicy(db.SearchFloors(), GetFloorHint(embedder), errorHandler)
 }
 
 // SetPluginSearch lends the plugins the search index, the model that fills it and the floors of the
@@ -34,7 +34,8 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 	})
 }
 
-func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
+// GetFloorHint returns the similarity floor hint reported by embedder.
+func GetFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
 	advisor, ok := embedder.(embeddingport.FloorAdvisor)
 	if !ok {
 		return nil

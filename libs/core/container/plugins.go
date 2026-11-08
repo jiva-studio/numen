@@ -72,8 +72,7 @@ func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, erro
 
 // SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
 func (c Config) SetSafeMode(enabled bool) Config {
-	c.SafeMode = enabled
-	c.plugins().SetSafeMode(enabled)
+	c.SafeMode = c.plugins().SetSafeMode(enabled).SafeMode
 	return c
 }
 

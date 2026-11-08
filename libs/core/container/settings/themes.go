@@ -110,7 +110,7 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 		}
 		writing = append(writing, settingsport.Setting{Path: one.path, JSON: string(encoded)})
 	}
-	if err := c.writeSettings(writing); err != nil {
+	if err := c.WriteSettings(writing); err != nil {
 		return err
 	}
 	scales.ClearSizes(selectedVal)

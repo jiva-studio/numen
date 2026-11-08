@@ -19,7 +19,7 @@ func (c Config) NewSearch(db *vault.Index, asking embeddingport.Embedder, errorH
 // the index open for asking alone. Its floor is the model's own, then
 // search.DefaultFloor.
 func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	policy := searchusecase.NewFloorPolicy(nil, getFloorHint(asking), nil)
+	policy := searchusecase.NewFloorPolicy(nil, GetFloorHint(asking), nil)
 	return searchusecase.New(passages, c.VaultReaders, c.TextReaders, asking, errorHandler).
 		WithExtractors(c.ResolvedCompute.Workers).
 		WithFloorSource(policy.GetFloor)

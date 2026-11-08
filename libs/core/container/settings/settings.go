@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"slices"
 	"strings"
@@ -51,7 +52,7 @@ type Config struct {
 	SettingsFiles             *settingsadapter.Files
 	SettingEvents             *settingevents.Events
 	SecretGate                *secret.Gate
-	HostSubscribed            *sync.Once
+	SubscribedHosts           *sync.Map
 	ErrorHandler              func(error)
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentport.AgentProgram
@@ -90,8 +91,8 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 		return Settings{}, err
 	}
 	if c.PluginHost != nil {
-		target.DropInvalid(c.getDeclarations(), c.getRegistries())
-		target.DropInvalidSecrets(c.isSecretDeclared)
+		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
+		target.DropInvalidSecrets(c.IsSecretDeclared)
 	} else {
 		target.DropInvalidSecrets(func(pluginport.SecretPermission) bool { return true })
 	}
@@ -143,7 +144,7 @@ func (c Config) ConfigurePluginHost(s Settings) {
 	if c.SetCompleter != nil {
 		c.SetCompleter()
 	}
-	c.subscribeHost()
+	c.SubscribeHost()
 }
 
 // Plugins returns a function that lists the discovered plugins and their
@@ -176,11 +177,12 @@ func (c Config) ModelsForProvider(provider agentport.AgentProvider) func() []set
 		if c.GetAgentPrograms != nil {
 			programs = c.GetAgentPrograms(provider, target.Agent)
 		}
-		return prefixModels(settingsadapter.OwnerApp, settingsadapter.AgentModels(AgentAt, target.Agent, programs))
+		return PrefixModels(settingsadapter.OwnerApp, settingsadapter.AgentModels(AgentAt, target.Agent, programs))
 	}
 }
 
-func prefixModels(owner string, models []settingsport.Model) []settingsport.Model {
+// PrefixModels prepends owner to the path of each model and its writes.
+func PrefixModels(owner string, models []settingsport.Model) []settingsport.Model {
 	for place := range models {
 		models[place].Path = append([]string{owner}, models[place].Path...)
 		for index := range models[place].Writes {
@@ -190,7 +192,8 @@ func prefixModels(owner string, models []settingsport.Model) []settingsport.Mode
 	return models
 }
 
-func (c Config) getDeclarations() settingsadapter.Declarations {
+// GetDeclarations returns the setting declarations for the app and plugins.
+func (c Config) GetDeclarations() settingsadapter.Declarations {
 	return func(owner string) ([]pluginport.PluginManifestSetting, bool) {
 		if owner == settingsadapter.OwnerApp {
 			return settingsadapter.GetAppDeclaration(), true
@@ -203,9 +206,10 @@ func (c Config) getDeclarations() settingsadapter.Declarations {
 	}
 }
 
-func (c Config) getRegistries() settingsadapter.Registries {
+// GetRegistries returns the option values for a named setting registry.
+func (c Config) GetRegistries() settingsadapter.Registries {
 	return func(name string) ([]string, bool) {
-		options, found := c.listRegistryOptions(name)
+		options, found := c.ListRegistryOptions(name)
 		names := make([]string, 0, len(options))
 		for _, one := range options {
 			names = append(names, one.Value)
@@ -214,7 +218,8 @@ func (c Config) getRegistries() settingsadapter.Registries {
 	}
 }
 
-func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
+// ListRegistryOptions returns the options for the named registry when known.
+func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
 	if name != settingsadapter.RegistryThemes {
 		return nil, false
 	}
@@ -245,7 +250,7 @@ func (c Config) ListAppSettingsOn(goos string) []pluginport.PluginSetting {
 		}
 		options := one.Options
 		if one.OptionsFrom != "" {
-			options, _ = c.listRegistryOptions(one.OptionsFrom)
+			options, _ = c.ListRegistryOptions(one.OptionsFrom)
 		}
 		defaultJSON := ""
 		if encoded, err := json.Marshal(one.Default); err == nil && one.Default != nil {
@@ -326,7 +331,7 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 // stored value for it is enabled.
 const hostFieldEnabled = "enabled"
 
-func secretsPath() []string { return []string{"secrets"} }
+const settingKeySecrets = "secrets"
 
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
 	values := settingevents.Values{}
@@ -353,7 +358,7 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 		if err != nil {
 			failures = append(failures, err)
 		} else {
-			values[settingevents.JoinPath(secretsPath())] = content
+			values[settingevents.JoinPath([]string{settingKeySecrets})] = content
 		}
 	}
 	return values, errors.Join(failures...)
@@ -377,21 +382,26 @@ func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]
 	add([]string{plugin.ID, hostFieldEnabled}, enabled)
 }
 
-func (c Config) subscribeHost() {
-	if c.SettingEvents == nil || c.PluginHost == nil || c.HostSubscribed == nil {
+// SubscribeHost subscribes the plugin host to setting change events once per host.
+func (c Config) SubscribeHost() {
+	if c.SettingEvents == nil || c.PluginHost == nil {
 		return
 	}
-	c.HostSubscribed.Do(func() {
-		changes, _ := c.SubscribeSettingChanges()
-		go func() {
-			for batch := range changes {
-				c.tellHost(batch)
-			}
-		}()
-	})
+	if c.SubscribedHosts != nil && reflect.TypeOf(c.PluginHost).Comparable() {
+		if _, isSubscribed := c.SubscribedHosts.LoadOrStore(c.PluginHost, struct{}{}); isSubscribed {
+			return
+		}
+	}
+	changes, _ := c.SubscribeSettingChanges()
+	go func() {
+		for batch := range changes {
+			c.NotifyHost(batch)
+		}
+	}()
 }
 
-func (c Config) refreshPluginSecrets(ctx context.Context) error {
+// RefreshPluginSecrets refreshes the plugin host under the secret gate.
+func (c Config) RefreshPluginSecrets(ctx context.Context) error {
 	if err := c.SecretGate.Enter(ctx); err != nil {
 		return err
 	}
@@ -399,16 +409,17 @@ func (c Config) refreshPluginSecrets(ctx context.Context) error {
 	return c.PluginHost.Refresh(ctx)
 }
 
-func (c Config) tellHost(batch []settingsport.Setting) {
-	notifyPluginSettings(c.PluginHost, batch, c.handleError)
+// NotifyHost forwards a batch of changed settings to the plugin host.
+func (c Config) NotifyHost(batch []settingsport.Setting) {
+	NotifyPluginSettings(c.PluginHost, batch, c.handleError)
 	for _, one := range batch {
-		if slices.Equal(one.Path, secretsPath()) {
-			if err := c.refreshPluginSecrets(context.Background()); err != nil {
+		if slices.Equal(one.Path, []string{settingKeySecrets}) {
+			if err := c.RefreshPluginSecrets(context.Background()); err != nil {
 				c.handleError(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
 			}
 			continue
 		}
-		if !slices.Equal(one.Path, profilePath()) {
+		if !slices.Equal(one.Path, []string{settingsadapter.OwnerApp, "performance", "profile"}) {
 			continue
 		}
 		var profile string
@@ -420,9 +431,8 @@ func (c Config) tellHost(batch []settingsport.Setting) {
 	}
 }
 
-func profilePath() []string { return []string{settingsadapter.OwnerApp, "performance", "profile"} }
-
-func (c Config) isSecretDeclared(permission pluginport.SecretPermission) bool {
+// IsSecretDeclared reports whether the plugin host declares permission.
+func (c Config) IsSecretDeclared(permission pluginport.SecretPermission) bool {
 	return slices.Contains(c.PluginHost.ListDeclarations(), permission)
 }
 
@@ -456,10 +466,11 @@ func (c Config) ReadSettings() func() (string, string, error) {
 // GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
 // setting-changed event receive the settings whose value changed.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
-	return c.writeSettings
+	return c.WriteSettings
 }
 
-func (c Config) writeSettings(entries []settingsport.Setting) error {
+// WriteSettings validates and writes entries to the settings file.
+func (c Config) WriteSettings(entries []settingsport.Setting) error {
 	target := make([]settingsadapter.Setting, 0, len(entries))
 	for _, one := range entries {
 		var value json.RawMessage
@@ -468,7 +479,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 		}
 		target = append(target, settingsadapter.Setting{At: one.Path, Written: value})
 	}
-	if err := c.checkWrites(entries); err != nil {
+	if err := c.CheckWrites(entries); err != nil {
 		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
 	}
 	path, err := c.SettingsFile()
@@ -483,9 +494,10 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	return nil
 }
 
-func (c Config) checkWrites(entries []settingsport.Setting) error {
-	declarations := c.getDeclarations()
-	registries := c.getRegistries()
+// CheckWrites validates entries against the declared settings and registries.
+func (c Config) CheckWrites(entries []settingsport.Setting) error {
+	declarations := c.GetDeclarations()
+	registries := c.GetRegistries()
 	for _, one := range entries {
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err != nil {
@@ -494,7 +506,7 @@ func (c Config) checkWrites(entries []settingsport.Setting) error {
 		if err := settingsadapter.CheckWrite(declarations, registries, one.Path, val); err != nil {
 			return err
 		}
-		if c.PluginHost != nil && isPluginSetting(one.Path) {
+		if c.PluginHost != nil && IsPluginSetting(one.Path) {
 			if err := c.PluginHost.CheckPluginSetting(one.Path[0], one.Path[1], val); err != nil {
 				return err
 			}
@@ -503,11 +515,13 @@ func (c Config) checkWrites(entries []settingsport.Setting) error {
 	return nil
 }
 
-func isPluginSetting(path []string) bool {
+// IsPluginSetting reports whether path names a plugin setting.
+func IsPluginSetting(path []string) bool {
 	return len(path) == 2 && path[0] != settingsadapter.OwnerApp
 }
 
-func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
+// NotifyPluginSettings updates the plugin host for each plugin setting in entries.
+func NotifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
 	if host == nil {
 		return
 	}
@@ -521,7 +535,7 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 		slices.DeleteFunc(slices.Clone(entries), func(one settingsport.Setting) bool { return !isEnabledEntry(one) }),
 	)
 	for _, one := range ordered {
-		if !isPluginSetting(one.Path) {
+		if !IsPluginSetting(one.Path) {
 			continue
 		}
 		var val any
