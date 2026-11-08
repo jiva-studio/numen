@@ -127,6 +127,24 @@ func openRows(t *testing.T, rows string) settings.File {
 	return cfg
 }
 
+func listRowsInForce(t *testing.T, cfg settings.File) []map[string]any {
+	t.Helper()
+	got, _ := cfg.GetValue(rowsPluginID, "connections")
+	list, isList := got.([]any)
+	if !isList {
+		t.Fatalf("the rows in force are %v, want a list", got)
+	}
+	rows := make([]map[string]any, 0, len(list))
+	for _, one := range list {
+		row, isRow := one.(map[string]any)
+		if !isRow {
+			t.Fatalf("a row in force is %v, want an object", one)
+		}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
 func TestOnlyTheRowsThatFailOnReadAreLeftOutWithANotice(t *testing.T) {
 	cfg := openRows(t, `[
 		{"connection":"c1f0a9e20","model":"a"},
@@ -136,16 +154,12 @@ func TestOnlyTheRowsThatFailOnReadAreLeftOutWithANotice(t *testing.T) {
 		{"connection":"c77b01d40","model":"d"}
 	]`)
 
-	got, _ := cfg.GetValue(rowsPluginID, "connections")
-	rows, _ := got.([]any)
+	rows := listRowsInForce(t, cfg)
 	if len(rows) != 2 {
-		t.Fatalf("rows in force = %v, want the first and the last", got)
+		t.Fatalf("rows in force = %v, want the first and the last", rows)
 	}
-	if first, _ := rows[0].(map[string]any); first["model"] != "a" {
-		t.Errorf("first row = %v", rows[0])
-	}
-	if last, _ := rows[1].(map[string]any); last["model"] != "d" {
-		t.Errorf("last row = %v", rows[1])
+	if rows[0]["model"] != "a" || rows[1]["model"] != "d" {
+		t.Errorf("rows in force = %v", rows)
 	}
 	if !hasNotice(cfg.Notices, rowsPluginID, "connections", "c00000000") {
 		t.Errorf("no notice names the row of the missing connection: %q", cfg.Notices)
@@ -162,9 +176,8 @@ func TestRowsBeyondMaxAreLeftOutOnRead(t *testing.T) {
 		{"connection":"c1f0a9e20","model":"c"}
 	]`)
 
-	got, _ := cfg.GetValue(rowsPluginID, "connections")
-	if rows, _ := got.([]any); len(rows) != 2 {
-		t.Errorf("rows in force = %v, want the first 2", got)
+	if rows := listRowsInForce(t, cfg); len(rows) != 2 {
+		t.Errorf("rows in force = %v, want the first 2", rows)
 	}
 }
 

@@ -9,20 +9,23 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 )
 
-var (
-	proofreading = connectionport.Use{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operation: "complete"}
-	embeddings   = connectionport.Use{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}
-)
+func proofreading() connectionport.Use {
+	return connectionport.Use{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operation: "complete"}
+}
+
+func embeddings() connectionport.Use {
+	return connectionport.Use{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}
+}
 
 func TestListReturnsTheUsesOfEachConnection(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
 	home := f.createCompatible(t, "Ollama", "http://localhost:11434/v1", "")
-	f.uses.use(work.ID, proofreading, embeddings)
+	f.uses.use(work.ID, proofreading(), embeddings())
 
 	entries := f.listEntries(t)
 
-	if !slices.Equal(entries[0].Uses, []connectionport.Use{proofreading, embeddings}) {
+	if !slices.Equal(entries[0].Uses, []connectionport.Use{proofreading(), embeddings()}) {
 		t.Errorf("uses of %s = %v", work.Name, entries[0].Uses)
 	}
 	if len(entries[1].Uses) != 0 {
@@ -33,14 +36,14 @@ func TestListReturnsTheUsesOfEachConnection(t *testing.T) {
 func TestDeleteRemovesTheRowsThatNameTheConnectionAndReturnsWhereTheyWere(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
-	f.uses.use(work.ID, proofreading, embeddings)
+	f.uses.use(work.ID, proofreading(), embeddings())
 
 	removed, err := f.connection.Delete.Execute(t.Context(), work.ID)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(removed, []connectionport.Use{proofreading, embeddings}) {
+	if !slices.Equal(removed, []connectionport.Use{proofreading(), embeddings()}) {
 		t.Errorf("removed uses = %v", removed)
 	}
 	if !slices.Equal(f.uses.removed, []string{work.ID}) {
@@ -61,7 +64,7 @@ func TestDeleteOfAnUnknownConnectionRemovesNoRows(t *testing.T) {
 func TestDeleteRemovesNoRowsWhenASecretCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
-	f.uses.use(work.ID, proofreading)
+	f.uses.use(work.ID, proofreading())
 	f.connection = connection.NewConnections(f.repository, f.types, &failingDelete{memoryKeys: f.keys}, f.uses, nil)
 
 	_, err := f.connection.Delete.Execute(t.Context(), work.ID)
@@ -74,7 +77,7 @@ func TestDeleteRemovesNoRowsWhenASecretCannotBeRemoved(t *testing.T) {
 func TestDeleteReportsRowsThatCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
-	f.uses.use(work.ID, proofreading)
+	f.uses.use(work.ID, proofreading())
 	f.uses.failRemove = errDisk
 
 	removed, err := f.connection.Delete.Execute(t.Context(), work.ID)
@@ -82,7 +85,7 @@ func TestDeleteReportsRowsThatCannotBeRemoved(t *testing.T) {
 	if !errors.Is(err, errDisk) {
 		t.Errorf("err = %v, want the failure to write the rows", err)
 	}
-	if !slices.Equal(removed, []connectionport.Use{proofreading}) {
+	if !slices.Equal(removed, []connectionport.Use{proofreading()}) {
 		t.Errorf("removed uses = %v, want the settings that still name the connection", removed)
 	}
 }

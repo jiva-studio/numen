@@ -1,7 +1,6 @@
 package container_test
 
 import (
-	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -125,7 +124,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _, host := openRowsInstallation(t)
 	cfg.SetModelCalls(noNotices{})
 
-	_, err := host.calls.Complete(context.Background(), rowsPlugin, connectionport.CompleteRequest{})
+	_, err := host.calls.Complete(t.Context(), rowsPlugin, connectionport.CompleteRequest{})
 
 	var failed *connectionport.AllFailedError
 	if !errors.As(err, &failed) {
@@ -145,7 +144,7 @@ func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _, host := openRowsInstallation(t)
 	cfg.SetModelCalls(noNotices{})
 
-	_, err := host.calls.Complete(context.Background(), "md.numen.sample.other", connectionport.CompleteRequest{})
+	_, err := host.calls.Complete(t.Context(), "md.numen.sample.other", connectionport.CompleteRequest{})
 
 	if !errors.Is(err, connectionport.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)
