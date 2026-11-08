@@ -34,6 +34,7 @@
       {
         "id": "graph.createNote",
         "title": "New note",
+        "icon": "file-plus",
         "when": "target.isRoot"
       }
     ],
