@@ -78,7 +78,20 @@ type Limits struct {
 }
 ```
 
-Exported fields of `libs/plugin-sdk-go` and the properties of `libs/plugin-sdk-ts` keep their comments, because plugin authors read them in the SDK documentation. Exported fields of `libs/core/adapter/settings` and `libs/core/usecase/completion` keep theirs, because `apps/docs/tools/manual.mjs` writes them into the settings reference of the manual.
+A Go type whose field comments are documentation for someone else carries a marker line at the end of its doc comment, and its exported fields keep their comments:
+
+```go
+// Spec describes a tool: its name, its purpose and where it is offered.
+//
+//numen:api
+type Spec struct {
+	// Name is the name the agent calls the tool by.
+	Name string
+}
+```
+
+- `//numen:api`: a type of the plugin SDK; plugin authors read the field comments in the SDK documentation.
+- `//numen:settings`: a settings type; `apps/docs/tools/manual.mjs` writes the field comments into the settings reference and refuses a settings type without the marker.
 
 `tools/lint-comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
 

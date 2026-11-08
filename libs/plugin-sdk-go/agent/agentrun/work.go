@@ -8,6 +8,8 @@ import (
 
 // Work is one task being worked: the responses it reports, the reader producing them, and what
 // stops it.
+//
+//numen:api
 type Work struct {
 	// Output is where the reader writes the responses. The reader closes it when it is done.
 	Output chan *Response

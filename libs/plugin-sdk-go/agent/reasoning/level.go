@@ -6,6 +6,8 @@ import (
 )
 
 // Level is one depth of reasoning.
+//
+//numen:api
 type Level struct {
 	// Name is the identifier by which a task requests the level.
 	Name string
@@ -14,6 +16,8 @@ type Level struct {
 }
 
 // Model is one model a program offers.
+//
+//numen:api
 type Model struct {
 	Name  string
 	Title string

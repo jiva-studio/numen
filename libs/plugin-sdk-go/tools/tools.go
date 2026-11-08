@@ -60,6 +60,8 @@ const (
 )
 
 // Spec describes a tool: its name, its purpose and where it is offered.
+//
+//numen:api
 type Spec struct {
 	// Name is what an agent calls the tool by.
 	Name string
@@ -378,6 +380,8 @@ type ToolInfo struct {
 }
 
 // Hints are the MCP annotations of a tool.
+//
+//numen:api
 type Hints struct {
 	// ReadOnly is a tool that changes nothing.
 	ReadOnly bool

@@ -27,6 +27,8 @@ type Range struct {
 
 // ToolCall is a tool call as shown to the user. One call is reported more than once while its
 // arguments arrive.
+//
+//numen:api
 type ToolCall struct {
 	// Tool is the name of the tool, or its title where the vault declared one.
 	Tool string

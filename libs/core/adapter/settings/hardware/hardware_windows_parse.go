@@ -10,10 +10,8 @@ import (
 
 // windowsCore is one physical core reported by GetLogicalProcessorInformationEx.
 type windowsCore struct {
-	// EfficiencyClass is higher for cores that favour performance.
 	EfficiencyClass int
-	// LogicalCPUs is the number of hardware threads of the core.
-	LogicalCPUs int
+	LogicalCPUs     int
 }
 
 const (

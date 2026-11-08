@@ -23,6 +23,8 @@ const (
 )
 
 // ModelInfo describes the embedding model served by the plugin.
+//
+//numen:api
 type ModelInfo struct {
 	Name        string
 	Dimensions  int32

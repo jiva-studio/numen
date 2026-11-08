@@ -37,6 +37,8 @@ type ToolStore interface {
 }
 
 // Request is a task given to an agent.
+//
+//numen:api
 type Request struct {
 	// Prompt is what the person wrote.
 	Prompt string
@@ -170,6 +172,8 @@ func (*ModelStartedStep) isStep() {}
 func (*EditProgressStep) isStep() {}
 
 // EditProgress is a change to a note, as far as the call writing it has arrived.
+//
+//numen:api
 type EditProgress struct {
 	// Call is the name the agent gave the call making the change.
 	Call string
@@ -182,12 +186,16 @@ type EditProgress struct {
 }
 
 // State is whether an agent can be reached.
+//
+//numen:api
 type State struct {
 	// Unreachable is set when no agent can be reached. It says why, in the person's own words.
 	Unreachable string
 }
 
 // ProgramCommand is the command line the installation set for one program.
+//
+//numen:api
 type ProgramCommand struct {
 	// Program is the program, by the name it is listed under.
 	Program string
@@ -195,6 +203,8 @@ type ProgramCommand struct {
 }
 
 // Program is one program a provider runs.
+//
+//numen:api
 type Program struct {
 	// Name is the name a task asks for the program by, and the settings keep its section under.
 	Name string

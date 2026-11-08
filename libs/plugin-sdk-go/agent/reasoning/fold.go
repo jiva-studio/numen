@@ -10,6 +10,8 @@ type Listed struct {
 
 // Family is a model the user can choose, with the reasoning depths it supports.
 // A model listed with no depth in its title is a family with no levels.
+//
+//numen:api
 type Family struct {
 	// Name is the name tasks use to request the model.
 	Name  string

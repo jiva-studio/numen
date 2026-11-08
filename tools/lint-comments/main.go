@@ -2,10 +2,12 @@
 // functions. It reads the paths of the files to check from standard input, one per line; with
 // -fix it removes those comments and rewrites the files.
 //
-// Exported fields of libs/plugin-sdk-go keep their comments: plugin authors read them in the
-// package documentation. Exported fields of the settings packages keep theirs too:
-// apps/docs/tools/manual.mjs writes them into the settings reference of the manual.
-// Directive lines (//go:, //export, gomutants, Deprecated:) are never reported.
+// The exported fields of a type whose doc comment carries a marker line keep their comments:
+//
+//	//numen:settings  apps/docs/tools/manual.mjs writes the field comments into the settings reference
+//	//numen:api       plugin authors read the field comments in the SDK documentation
+//
+// Directive lines (//go:, //export, //numen:, gomutants, Deprecated:) are never reported.
 package main
 
 import (
@@ -22,11 +24,9 @@ import (
 	"strings"
 )
 
-// documentedFields are the packages whose exported field comments are read as documentation:
-// the plugin SDK and the packages listed in PACKAGES of apps/docs/tools/manual.mjs.
-var documentedFields = regexp.MustCompile(`(^|/)libs/(plugin-sdk-go/.*|core/adapter/settings/.*|core/usecase/completion/[^/]*)\.go$`)
+var directive = regexp.MustCompile(`^//(go:|lint:|numen:|export |line |extern |\s*gomutants:|\s*Deprecated:)`)
 
-var directive = regexp.MustCompile(`^//(go:|lint:|export |line |extern |\s*gomutants:|\s*Deprecated:)`)
+var documentedMarker = regexp.MustCompile(`^//numen:(settings|api)$`)
 
 // Finding is one comment the rule rejects.
 type Finding struct {
@@ -87,7 +87,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 	if ast.IsGenerated(file) {
 		return nil, src, nil
 	}
-	documented := documentedFields.MatchString(path) && !strings.HasSuffix(path, "_test.go")
+	documented := getDocumentedStructs(file)
 	var findings []Finding
 	var cuts []span
 	report := func(group *ast.CommentGroup, message string) {
@@ -110,7 +110,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		switch x := n.(type) {
 		case *ast.StructType:
 			for _, field := range x.Fields.List {
-				if documented && len(field.Names) > 0 && field.Names[0].IsExported() {
+				if documented[x] && len(field.Names) > 0 && field.Names[0].IsExported() {
 					continue
 				}
 				message := "comment on a struct field; the name and type state what the field holds"
@@ -135,6 +135,46 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		return nil, src, fmt.Errorf("format after removing comments: %w", err)
 	}
 	return findings, fixed, nil
+}
+
+func getDocumentedStructs(file *ast.File) map[*ast.StructType]bool {
+	documented := map[*ast.StructType]bool{}
+	for _, decl := range file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			structType, ok := typeSpec.Type.(*ast.StructType)
+			if !ok {
+				continue
+			}
+			doc := typeSpec.Doc
+			if doc == nil && len(gen.Specs) == 1 {
+				doc = gen.Doc
+			}
+			if hasMarker(doc) {
+				documented[structType] = true
+			}
+		}
+	}
+	return documented
+}
+
+func hasMarker(doc *ast.CommentGroup) bool {
+	if doc == nil {
+		return false
+	}
+	for _, c := range doc.List {
+		if documentedMarker.MatchString(c.Text) {
+			return true
+		}
+	}
+	return false
 }
 
 type span struct{ from, to int }

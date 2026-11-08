@@ -37,16 +37,6 @@ describe('properties', () => {
     assert.deepEqual(lines('apps/desktop/editor/src/A.vue', text), [3])
   })
 
-  it('keeps the property comments of the TypeScript plugin SDK', () => {
-    assert.deepEqual(
-      lines(
-        'libs/plugin-sdk-ts/src/a.ts',
-        'interface A {\n  /** Shown to the user. */\n  title: string\n}\n',
-      ),
-      [],
-    )
-  })
-
   it('keeps directives and @deprecated', () => {
     const text = [
       'interface A {',

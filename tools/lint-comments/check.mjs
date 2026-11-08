@@ -7,9 +7,9 @@
 //   node tools/lint-comments/check.mjs a.ts b.go  the files named
 //   add --fix to remove the reported comments instead of failing
 //
-// Exported fields of libs/plugin-sdk-go and the properties of libs/plugin-sdk-ts keep their
-// comments: plugin authors read them in the SDK documentation. Directives (eslint, @ts-, Stryker,
-// istanbul, prettier), section banners and @deprecated are never reported.
+// Directives (eslint, @ts-, Stryker, istanbul, prettier), section banners and @deprecated are
+// never reported. Go types that are documentation for someone else carry a marker line instead
+// (see main.go).
 
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -44,7 +44,6 @@ function getScriptBlocks(file, text) {
 export function findScriptComments(file, text) {
   if (isGenerated(text)) return []
   const ts = require('typescript')
-  const sdk = `/${file}`.includes('/libs/plugin-sdk-ts/') && !/\.(test|spec|stories)\./.test(file)
   const findings = []
   const seen = new Set()
   for (const { offset, content } of getScriptBlocks(file, text)) {
@@ -76,7 +75,7 @@ export function findScriptComments(file, text) {
     const isExported = (node) => (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export) !== 0
     const nameOf = (node) => node.name?.getText(source) ?? 'member'
     const visit = (node) => {
-      if ((ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) && !sdk) {
+      if (ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) {
         report(
           node,
           `comment on property ${nameOf(node)}; the name and type state what it holds`,

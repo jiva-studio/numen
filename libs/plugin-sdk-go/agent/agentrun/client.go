@@ -11,6 +11,8 @@ import (
 )
 
 // Client calls an agent service.
+//
+//numen:api
 type Client struct {
 	// Header is sent with every call.
 	Header http.Header

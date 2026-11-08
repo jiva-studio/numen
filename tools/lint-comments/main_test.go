@@ -34,14 +34,19 @@ func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
 	}
 }
 
-func TestCheckKeepsExportedFieldCommentsOfThePluginSDK(t *testing.T) {
-	src := "package sdk\n\ntype Spec struct {\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n"
-	findings, _, err := Check("libs/plugin-sdk-go/tools/spec.go", []byte(src))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(findings) != 1 || findings[0].Line != 6 {
-		t.Fatalf("findings = %+v, want only the unexported field on line 6", findings)
+func TestCheckKeepsExportedFieldCommentsOfAMarkedType(t *testing.T) {
+	for _, marker := range []string{"//numen:settings", "//numen:api"} {
+		src := "package p\n\n// Spec describes a tool.\n//\n" + marker + "\ntype Spec struct {\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n\n// Other is not marked.\ntype Other struct {\n\t// Name is the name.\n\tName string\n}\n"
+		findings, fixed, err := Check("p.go", []byte(src))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(findings) != 2 || findings[0].Line != 9 || findings[1].Line != 15 {
+			t.Fatalf("%s: findings = %+v, want the unexported field on line 9 and the unmarked type on line 15", marker, findings)
+		}
+		if !strings.Contains(string(fixed), marker+"\ntype Spec") || !strings.Contains(string(fixed), "Name is shown to the user") {
+			t.Fatalf("%s: fixed =\n%s", marker, fixed)
+		}
 	}
 }
 
@@ -64,25 +69,5 @@ func TestCheckSkipsGeneratedFiles(t *testing.T) {
 	}
 	if len(findings) != 0 {
 		t.Fatalf("findings = %+v, want none", findings)
-	}
-}
-
-func TestCheckKeepsExportedFieldCommentsOfTheSettingsPackages(t *testing.T) {
-	src := "package settings\n\ntype Agent struct {\n\t// Use names the program the panel uses.\n\tUse string `json:\"use\"`\n\t// cache is filled on first use.\n\tcache string\n}\n"
-	for _, path := range []string{"libs/core/adapter/settings/agent.go", "libs/core/adapter/settings/hardware/hw.go", "libs/core/usecase/completion/router.go"} {
-		findings, _, err := Check(path, []byte(src))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(findings) != 1 || findings[0].Line != 6 {
-			t.Fatalf("%s: findings = %+v, want only the unexported field on line 6", path, findings)
-		}
-	}
-	findings, _, err := Check("libs/core/usecase/completion/inner/x.go", []byte(src))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(findings) != 2 {
-		t.Fatalf("subpackage of completion: findings = %+v, want both fields", findings)
 	}
 }

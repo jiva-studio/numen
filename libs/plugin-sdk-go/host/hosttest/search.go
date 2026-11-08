@@ -18,6 +18,8 @@ import (
 const defaultSearchFloor = 0.30
 
 // SearchModel is the embedding model the host uses, as the fake reports it.
+//
+//numen:api
 type SearchModel struct {
 	Name   string
 	Recipe string
