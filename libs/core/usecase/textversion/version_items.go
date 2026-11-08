@@ -134,10 +134,8 @@ func (u *VersionItems) RunVersionItem(
 	})
 }
 
-// The errors of a menu entry the file's menu does not hold, for a driving adapter.
+// The errors of the version items, for a driving adapter.
 var (
-	ErrNoText            = textport.ErrNoText
-	ErrNotTextPlugin     = textport.ErrNotTextPlugin
-	ErrInvalidVersion    = textport.ErrInvalidVersion
-	ErrSourceNotAccepted = textport.ErrSourceNotAccepted
+	ErrNoText         = textport.ErrNoText
+	ErrInvalidVersion = textport.ErrInvalidVersion
 )

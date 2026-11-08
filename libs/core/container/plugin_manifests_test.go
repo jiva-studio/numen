@@ -3,7 +3,6 @@ package container
 import (
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -13,6 +12,10 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 
@@ -393,20 +396,20 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 }
 
 func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
-	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
+	scans := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
 		{Key: "language"}, {Key: "dpi"},
 	}}
-	if got := listUnreadSettings(manifest, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
+	if got := listUnreadSettings(scans, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
 		t.Errorf("settings that are read are found unread: %v", got)
 	}
-	if got := listUnreadSettings(manifest, []string{`values["language"]`}); !slices.Equal(got, []string{"dpi"}) {
+	if got := listUnreadSettings(scans, []string{`values["language"]`}); !slices.Equal(got, []string{"dpi"}) {
 		t.Errorf("a setting nothing names is found as %v", got)
 	}
-	if got := listUnreadSettings(manifest, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
+	if got := listUnreadSettings(scans, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
 	}
 	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
-	triggered.Contributes.Triggers = []pluginport.PluginTrigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
+	triggered.Contributes.Triggers = []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
 	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
 		t.Errorf("a setting the condition of a trigger reads is found unread: %v", got)
 	}

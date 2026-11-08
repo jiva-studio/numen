@@ -21,7 +21,6 @@ type (
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
 	PluginReader           = manifest.Reader
-	PluginTrigger          = manifest.Trigger
 	PluginSecret           = manifest.Secret
 	PluginSettingsView     = manifest.SettingsView
 	PluginSettingCondition = manifest.Condition
