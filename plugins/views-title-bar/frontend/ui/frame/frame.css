@@ -3,9 +3,11 @@
   min-width: 0;
 }
 
+/* The 4px after the system buttons keep the first command off them. */
 .mac-buttons-inset {
   flex: none;
   width: 80px;
+  margin-inline-end: 4px;
 }
 
 .window-controls {
