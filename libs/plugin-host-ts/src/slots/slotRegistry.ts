@@ -12,7 +12,6 @@ import {
   type SlotItem,
   type SlotPlace,
   type CommandTarget,
-  type Result,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
