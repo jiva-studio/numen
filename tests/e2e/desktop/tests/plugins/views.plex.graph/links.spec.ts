@@ -15,8 +15,6 @@ const showInPlex = async (page: Page, path: string): Promise<void> => {
   await page.getByRole('menuitem', { name: 'Show note in plex', exact: true }).click()
 }
 
-const SEARCH_NAMES = '**/numen.v1.SearchService/SearchNames'
-
 const openQuickLink = async (page: Page, title: string) => {
   await expect(getTab(page, title)).toBeVisible()
   await getGraph(page)
