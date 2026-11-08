@@ -37,7 +37,7 @@ func TestDownloadMediaDownloadsTheItemPicked(t *testing.T) {
 	}
 }
 
-func TestDownloadMediaRejectsAnItemItDoesNotOffer(t *testing.T) {
+func TestDownloadMediaRejectsAnUnknownItem(t *testing.T) {
 	commands, _ := newMockCommands(t)
 	made := runImport(t, commands, videoAddress)
 
