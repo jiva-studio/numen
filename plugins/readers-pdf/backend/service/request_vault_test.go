@@ -132,7 +132,8 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	server := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	if err := server.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
