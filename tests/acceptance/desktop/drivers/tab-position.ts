@@ -69,10 +69,10 @@ const leavePdfAt = async (page: Page, panel: Locator, file: string, target: numb
 }
 
 const leaveBookAt = async (panel: Locator, target: number): Promise<void> => {
-  const reading = getReading(panel)
+  const position = getReading(panel)
   for (let next = 2; next <= target; next += 1) {
     await panel.locator('.book-tab').press('PageDown')
-    await expect(reading).toContainText(new RegExp(`^${next} of \\d+`))
+    await expect(position).toContainText(new RegExp(`^${next} of \\d+`))
   }
 }
 

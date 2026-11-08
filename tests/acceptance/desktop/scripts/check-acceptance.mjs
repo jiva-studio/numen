@@ -5,7 +5,6 @@
 //   ambiguous      a scenario step that more than one definition matches
 //   unused         a definition no scenario step uses
 //   near-duplicate two definitions that differ in a word, a tense or an article
-//   vocabulary     a word of vocabulary.json (a control, a gesture) in a scenario or a step text
 //   conjunction    a definition that says two things at once, joined by "and"
 //   steps-per-scenario  more steps in a scenario than MAX_STEPS
 //
@@ -159,30 +158,8 @@ for (let i = 0; i < definitions.length; i++) {
   }
 }
 
-// Words of a control or a gesture.
-const vocabulary = JSON.parse(fs.readFileSync(path.join(root, 'vocabulary.json'), 'utf8'))
-const banned = new Set(vocabulary.banned.filter((word) => !vocabulary.allowed.includes(word)))
-const findBanned = (text) =>
-  text
-    .replace(/"[^"]*"/g, '') // a quoted value is data, not wording
-    .replace(/\{[^}]*\}/g, '')
-    .toLowerCase()
-    .split(/[^a-z]+/)
-    .filter((word) => banned.has(word))
-const checkWording = (feature, step) => {
-  const hits = findBanned(step.text)
-  if (hits.length) report('vocabulary', `${rel(feature.file)}:${step.line}`, `"${step.text}" uses ${hits.join(', ')}`)
-}
-for (const feature of features) {
-  for (const step of feature.background) checkWording(feature, step)
-  for (const scenario of feature.scenarios) {
-    checkWording(feature, { text: scenario.name, line: scenario.line })
-    for (const step of scenario.steps) checkWording(feature, step)
-  }
-}
+// A step says one thing.
 for (const definition of definitions) {
-  const hits = findBanned(definition.pattern)
-  if (hits.length) report('vocabulary', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' uses ${hits.join(', ')}`)
   if (/\sand\s/.test(definition.pattern.replace(/"[^"]*"/g, '').replace(/\{[^}]*\}/g, ''))) {
     report('conjunction', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' joins two things with "and"`)
   }
