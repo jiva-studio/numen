@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// ModelService answers the editor about the models of a connection. A plugin token does not reach it.
+service ModelService {
+  // ListModels lists the models of a connection that fit an operation. A model the service does not list
+  // is still accepted when typed.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+
+  // ListReasoningLevels lists the reasoning levels of a model of a connection.
+  rpc ListReasoningLevels(ListReasoningLevelsRequest) returns (ListReasoningLevelsResponse);
+}
+
+// ModelErrorCode is the reason a served call did not succeed. The zero value is a call that succeeded.
+enum ModelErrorCode {
+  MODEL_ERROR_CODE_UNSPECIFIED = 0;
+  // MODEL_ERROR_CODE_NOT_FOUND is a connection that is not in the list.
+  MODEL_ERROR_CODE_NOT_FOUND = 1;
+  // MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that cannot be started or that failed; the detail
+  // says why, for example that the key was rejected.
+  MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE = 2;
+}
+
+message ConnectionModel {
+  string id = 1;
+  string title = 2;
+  // operations are what the service says the model does; empty when it says nothing, and then the model
+  // is shown for every operation.
+  repeated string operations = 3;
+}
+
+message ConnectionReasoningLevel {
+  string value = 1;
+  string title = 2;
+}
+
+message ListModelsRequest {
+  string connection_id = 1;
+  string operation = 2;
+}
+
+message ListModelsResponse {
+  repeated ConnectionModel models = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+}
+
+message ListReasoningLevelsRequest {
+  string connection_id = 1;
+  string model = 2;
+}
+
+message ListReasoningLevelsResponse {
+  repeated ConnectionReasoningLevel levels = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+}

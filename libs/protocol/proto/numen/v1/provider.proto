@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/embedding.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// ProviderService is served by a plugin that provides connection types. The core calls it with the
+// fields of one connection for the length of one call. The provider keeps no state and no key between
+// calls.
+service ProviderService {
+  // Complete turns messages into the text of an answer.
+  rpc Complete(ProviderCompleteRequest) returns (ProviderCompleteResponse);
+
+  // Embed turns texts into vectors, in the order of the texts.
+  rpc Embed(ProviderEmbedRequest) returns (ProviderEmbedResponse);
+
+  // ListModels lists the models of the connection that fit an operation.
+  rpc ListModels(ProviderListModelsRequest) returns (ProviderListModelsResponse);
+
+  // ListReasoningLevels lists the reasoning levels of the model of the call.
+  rpc ListReasoningLevels(ProviderListReasoningLevelsRequest) returns (ProviderListReasoningLevelsResponse);
+
+  // GetModelProfile returns what the provider knows about the embedding model of the call.
+  rpc GetModelProfile(ProviderGetModelProfileRequest) returns (ProviderGetModelProfileResponse);
+
+  // ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
+  rpc ProbeEmbeddingWidth(ProviderProbeEmbeddingWidthRequest) returns (ProviderProbeEmbeddingWidthResponse);
+
+  // SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
+  rpc SubmitJob(ProviderSubmitJobRequest) returns (ProviderSubmitJobResponse);
+
+  // GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
+  rpc GetJobStatus(ProviderGetJobStatusRequest) returns (ProviderGetJobStatusResponse);
+
+  // FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
+  rpc FetchJobResult(ProviderFetchJobResultRequest) returns (ProviderFetchJobResultResponse);
+}
+
+// ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
+message ProviderCall {
+  // type is the id the manifest of the plugin gives the type, without the plugin id.
+  string type = 1;
+  // fields are the fields that are not secret, with the fixed values of the type.
+  map<string, string> fields = 2;
+  repeated ProviderSecret secrets = 3;
+  string model = 4;
+  // reasoning is a value from ListReasoningLevels, or empty for the default of the provider.
+  string reasoning = 5;
+}
+
+message ProviderSecret {
+  string key = 1;
+  string value = 2 [debug_redact = true];
+}
+
+// ProviderFailureKind is what the core does after a call fails.
+enum ProviderFailureKind {
+  PROVIDER_FAILURE_KIND_UNSPECIFIED = 0;
+  // PROVIDER_FAILURE_KIND_TRY_NEXT is a connection that cannot serve now; the core goes to the next one.
+  PROVIDER_FAILURE_KIND_TRY_NEXT = 1;
+  // PROVIDER_FAILURE_KIND_STOP is a request that is wrong in itself; the core goes to no other connection.
+  PROVIDER_FAILURE_KIND_STOP = 2;
+}
+
+// ProviderFailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text
+// from a service.
+enum ProviderFailureReason {
+  PROVIDER_FAILURE_REASON_UNSPECIFIED = 0;
+  PROVIDER_FAILURE_REASON_KEY_REJECTED = 1;
+  PROVIDER_FAILURE_REASON_PAYMENT_REQUIRED = 2;
+  PROVIDER_FAILURE_REASON_RATE_LIMITED = 3;
+  PROVIDER_FAILURE_REASON_UNREACHABLE = 4;
+  PROVIDER_FAILURE_REASON_TIMEOUT = 5;
+  PROVIDER_FAILURE_REASON_BAD_REQUEST = 6;
+  PROVIDER_FAILURE_REASON_UNKNOWN = 7;
+}
+
+// ProviderFailure is a call that was served and failed. A response that holds a failure holds no result.
+message ProviderFailure {
+  ProviderFailureKind kind = 1;
+  ProviderFailureReason reason = 2;
+  // retry_after_ms is the wait the service asked for, and zero when it gave none.
+  int64 retry_after_ms = 3;
+}
+
+message ProviderMessage {
+  // role is system, user or assistant.
+  string role = 1;
+  string text = 2;
+}
+
+message ProviderCompleteRequest {
+  ProviderCall call = 1;
+  repeated ProviderMessage messages = 2;
+  optional double temperature = 3;
+  int32 max_tokens = 4;
+}
+
+message ProviderCompleteResponse {
+  string text = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderEmbedRequest {
+  ProviderCall call = 1;
+  repeated string texts = 2;
+}
+
+message ProviderEmbedResponse {
+  repeated FloatVector vectors = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderModel {
+  string id = 1;
+  string title = 2;
+  // operations are what the service says the model does; empty when it says nothing.
+  repeated string operations = 3;
+}
+
+message ProviderListModelsRequest {
+  ProviderCall call = 1;
+  string operation = 2;
+}
+
+message ProviderListModelsResponse {
+  repeated ProviderModel models = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderReasoningLevel {
+  string value = 1;
+  string title = 2;
+}
+
+message ProviderListReasoningLevelsRequest {
+  ProviderCall call = 1;
+}
+
+message ProviderListReasoningLevelsResponse {
+  repeated ProviderReasoningLevel levels = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderGetModelProfileRequest {
+  ProviderCall call = 1;
+}
+
+message ProviderGetModelProfileResponse {
+  // is_known is false when the provider has no profile for the model; the core then probes the width.
+  bool is_known = 1;
+  int32 dimensions = 2;
+  // max_tokens is zero when the provider does not know the limit.
+  int32 max_tokens = 3;
+  string pooling = 4;
+  string query_prefix = 5;
+  string document_prefix = 6;
+  // source is the type and the address of the connection, never a key.
+  string source = 7;
+  ProviderFailure failure = 8;
+}
+
+message ProviderProbeEmbeddingWidthRequest {
+  ProviderCall call = 1;
+}
+
+message ProviderProbeEmbeddingWidthResponse {
+  int32 dimensions = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderSubmitJobRequest {
+  ProviderCall call = 1;
+  string operation = 2;
+  bytes request = 3;
+}
+
+message ProviderSubmitJobResponse {
+  // job_id is opaque to the core.
+  string job_id = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderGetJobStatusRequest {
+  ProviderCall call = 1;
+  string job_id = 2;
+}
+
+message ProviderGetJobStatusResponse {
+  string status = 1;
+  ProviderFailure failure = 2;
+}
+
+message ProviderFetchJobResultRequest {
+  ProviderCall call = 1;
+  string job_id = 2;
+}
+
+message ProviderFetchJobResultResponse {
+  bytes result = 1;
+  ProviderFailure failure = 2;
+}
