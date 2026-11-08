@@ -81,7 +81,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     // failure and fails the tests after it. The book is found by its words once the task has written them.
     await waitForPassage(page, 'The water is low at dawn', `assets/${name}`)
     await page.keyboard.press('Escape')
-    await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+    await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^\d+ of \d+$/)
     await page.locator('.tasks-status__trigger').click()
     await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
     await page.keyboard.press('Escape')

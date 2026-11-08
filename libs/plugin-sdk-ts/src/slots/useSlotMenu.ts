@@ -118,16 +118,7 @@ function closeWhenEmpty(
   )
 }
 
-/**
- * Runs the menu opens of a slot owner. `open` reads the entries and target, synchronously where
- * `read` returns no promise, then the items of every command that offers them. The menu is
- * shown once every list is read, or MENU_HOLD_MS after the open with loading rows for the lists still
- * read. Escape or a pointer press from the start of the open until the menu is shown cancels it. A
- * menu with no rows is not shown, and an open menu whose rows all go is closed. A list that fails to
- * read is reported through `onError` and lists no item; a failed read of the entries is reported and
- * opens nothing. `pick` returns what a row runs and closes the menu. A new open replaces the one
- * before.
- */
+/** Opens a slot menu once its item lists are read, or after MENU_HOLD_MS with loading rows. */
 export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
   const target = shallowRef<T | null>(null)
   const entries = shallowRef<readonly SlotItem[]>([])

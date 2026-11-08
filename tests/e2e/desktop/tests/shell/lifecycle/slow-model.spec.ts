@@ -26,7 +26,7 @@ test.describe('Start-up while the embeddings model is still opening', () => {
     await expectWorkspaceDrawn(page)
 
     const within = { timeout: USABLE_WITHIN_MS }
-    await expect(page.locator('.tasks-status__trigger')).toContainText(/active/, within)
+    await expect(page.locator('.tasks-status__trigger')).toContainText(/\d+ of \d+/, within)
 
     // The embedding pass is now waiting for the model, which stays closed for the rest of the run.
     // A window that loads now asks the index and the search while the plugin holds the model.

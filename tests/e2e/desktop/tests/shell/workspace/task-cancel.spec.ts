@@ -38,7 +38,7 @@ test.describe('Cancelling a background task', () => {
     await page.goto('/')
     const trigger = page.locator('.tasks-status__trigger')
     await expect(trigger).toBeVisible()
-    await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+    await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^\d+ of \d+$/)
 
     const created = await callRPC(request, 'NoteService/CreateNote', {
       title: 'Tide clock',

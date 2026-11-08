@@ -5,7 +5,7 @@ import { forgetOpenTabs } from './test.js'
 export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Neighbourhood' })
 
 /**
- * Waits until the window is drawn: the task status of the title bar is there. It says "Ready" only
+ * Waits until the window is drawn: the task status of the title bar is there. It says "Idle" only
  * until the first list of tasks arrives, a moment after the page loads, and that list holds the
  * failed task of corrupted.pdf in every run, so the label cannot be waited for.
  */
