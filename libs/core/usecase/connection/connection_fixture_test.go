@@ -154,7 +154,7 @@ func newFixture(t *testing.T) *fixture {
 
 func (f *fixture) createOpenRouter(t *testing.T, name string) connection.Entry {
 	t.Helper()
-	entry, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{
+	entry, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Name: name, Secrets: map[string]string{"apiKey": "sk-or-1"},
 	})
 	if err != nil {
@@ -169,7 +169,7 @@ func (f *fixture) createCompatible(t *testing.T, name, address, key string) conn
 	if key != "" {
 		request.Secrets = map[string]string{"apiKey": key}
 	}
-	entry, err := f.connection.Create.Execute(context.Background(), request)
+	entry, err := f.connection.Create.Execute(t.Context(), request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,4 +183,22 @@ func hasValueContaining(values map[string]string, part string) bool {
 		}
 	}
 	return false
+}
+
+func (f *fixture) listStored(t *testing.T) []connectionport.Connection {
+	t.Helper()
+	stored, err := f.repository.ListConnections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return stored
+}
+
+func (f *fixture) listEntries(t *testing.T) []connection.Entry {
+	t.Helper()
+	entries, err := f.connection.List.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return entries
 }

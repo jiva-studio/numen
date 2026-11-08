@@ -1,7 +1,6 @@
 package connection_test
 
 import (
-	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -25,7 +24,7 @@ func TestCreateKeepsASecretInTheKeyStoreAndNotInTheList(t *testing.T) {
 	if !strings.HasSuffix(f.keys.values[names[0]], ":sk-or-1") {
 		t.Errorf("the key store entry = %q, want a fingerprint and the key", f.keys.values[names[0]])
 	}
-	stored, _ := f.repository.ListConnections()
+	stored := f.listStored(t)
 	if len(stored) != 1 || len(stored[0].Fields) != 0 {
 		t.Errorf("stored = %+v, want no field: the key is in the key store, the address is fixed", stored)
 	}
@@ -57,7 +56,7 @@ func TestCreateMakesANameFromTheTitleOfTheTypeAndANumber(t *testing.T) {
 	if first.Name != "OpenRouter" || second.Name != "OpenRouter 2" || third.Name != "OpenRouter 3" {
 		t.Errorf("names = %q, %q, %q", first.Name, second.Name, third.Name)
 	}
-	if err := f.connection.Delete.Execute(context.Background(), second.ID); err != nil {
+	if err := f.connection.Delete.Execute(t.Context(), second.ID); err != nil {
 		t.Fatal(err)
 	}
 	if again := f.createOpenRouter(t, ""); again.Name != "OpenRouter 2" {
@@ -72,7 +71,7 @@ func TestCreateTrimsTheNameAndRefusesATakenOneIgnoringCase(t *testing.T) {
 		t.Fatalf("name = %q", first.Name)
 	}
 
-	_, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{
+	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Name: "WORK", Secrets: map[string]string{"apiKey": "k"},
 	})
 
@@ -86,7 +85,7 @@ func TestCreateTrimsTheNameAndRefusesATakenOneIgnoringCase(t *testing.T) {
 
 func TestCreateRefusesANameOfTheWrongShape(t *testing.T) {
 	f := newFixture(t)
-	_, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{
+	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Name: strings.Repeat("n", 65), Secrets: map[string]string{"apiKey": "k"},
 	})
 	if !errors.Is(err, connection.ErrInvalidField) {
@@ -96,7 +95,7 @@ func TestCreateRefusesANameOfTheWrongShape(t *testing.T) {
 
 func TestCreateRefusesATypeNoPluginProvides(t *testing.T) {
 	f := newFixture(t)
-	_, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{TypeID: retiredID})
+	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{TypeID: retiredID})
 	if !errors.Is(err, connection.ErrTypeUnavailable) {
 		t.Errorf("err = %v, want ErrTypeUnavailable", err)
 	}
@@ -117,7 +116,7 @@ func TestCreateRejectsInvalidFieldValues(t *testing.T) {
 	for name, request := range cases {
 		t.Run(name, func(t *testing.T) {
 			f := newFixture(t)
-			if _, err := f.connection.Create.Execute(context.Background(), request); !errors.Is(err, connection.ErrInvalidField) {
+			if _, err := f.connection.Create.Execute(t.Context(), request); !errors.Is(err, connection.ErrInvalidField) {
 				t.Errorf("err = %v, want ErrInvalidField", err)
 			}
 			if len(f.keys.listNames()) != 0 {
@@ -135,7 +134,7 @@ func TestCreateRequiresEveryRequiredField(t *testing.T) {
 		"no address":    {TypeID: compatibleID},
 		"a blank value": {TypeID: compatibleID, Fields: map[string]any{"baseUrl": ""}},
 	} {
-		if _, err := f.connection.Create.Execute(context.Background(), request); !errors.Is(err, connection.ErrInvalidField) {
+		if _, err := f.connection.Create.Execute(t.Context(), request); !errors.Is(err, connection.ErrInvalidField) {
 			t.Errorf("%s: err = %v, want ErrInvalidField", name, err)
 		}
 	}
@@ -146,7 +145,7 @@ func TestCreateKeepsNeitherAFixedValueNorADefaultInTheList(t *testing.T) {
 
 	f.createOpenRouter(t, "")
 
-	stored, _ := f.repository.ListConnections()
+	stored := f.listStored(t)
 	if _, found := stored[0].Fields["baseUrl"]; found {
 		t.Errorf("the fixed value was stored: %+v", stored[0].Fields)
 	}
@@ -159,7 +158,7 @@ func TestCreateRemovesKeyStoreEntriesOnListWriteFailure(t *testing.T) {
 	f := newFixture(t)
 	f.repository.failWrite = errDisk
 
-	_, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{
+	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Secrets: map[string]string{"apiKey": "k"},
 	})
 
@@ -175,14 +174,14 @@ func TestCreateWritesNoListEntryWhenTheKeyStoreFails(t *testing.T) {
 	f := newFixture(t)
 	f.keys.failSet = errDisk
 
-	_, err := f.connection.Create.Execute(context.Background(), connection.CreateRequest{
+	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Secrets: map[string]string{"apiKey": "k"},
 	})
 
 	if !errors.Is(err, connection.ErrKeyStore) {
 		t.Errorf("err = %v, want ErrKeyStore", err)
 	}
-	if stored, _ := f.repository.ListConnections(); len(stored) != 0 {
+	if stored := f.listStored(t); len(stored) != 0 {
 		t.Errorf("stored = %+v", stored)
 	}
 }
@@ -191,14 +190,14 @@ func TestCreateOfASecretFailsWhenTheMachineHasNoKeyStore(t *testing.T) {
 	f := newFixture(t)
 	noKeys := connection.NewConnections(f.repository, f.types, nil, func() (string, error) { return "c00000001", nil })
 
-	_, err := noKeys.Create.Execute(context.Background(), connection.CreateRequest{
+	_, err := noKeys.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Secrets: map[string]string{"apiKey": "k"},
 	})
 	if !errors.Is(err, connection.ErrKeyStore) {
 		t.Errorf("err = %v, want ErrKeyStore", err)
 	}
 
-	local, err := noKeys.Create.Execute(context.Background(), connection.CreateRequest{
+	local, err := noKeys.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: compatibleID, Fields: map[string]any{"baseUrl": "http://localhost:11434/v1"},
 	})
 	if err != nil || local.ID == "" {

@@ -34,13 +34,9 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err != nil {
 		return Entry{}, err
 	}
-	index := getIndex(list, request.ID)
-	if index < 0 {
-		return Entry{}, newNotFoundError(request.ID)
-	}
-	current := list[index]
-	if current.Revision != request.Revision {
-		return Entry{}, newStaleRevisionError(request.ID)
+	current, err := findCurrent(list, request)
+	if err != nil {
+		return Entry{}, err
 	}
 	declared, err := u.getAvailableType(current.TypeID)
 	if err != nil {
@@ -78,6 +74,17 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
 	return u.buildEntry(ctx, updated)
+}
+
+func findCurrent(list []connectionport.Connection, request UpdateRequest) (connectionport.Connection, error) {
+	index := getIndex(list, request.ID)
+	if index < 0 {
+		return connectionport.Connection{}, newNotFoundError(request.ID)
+	}
+	if list[index].Revision != request.Revision {
+		return connectionport.Connection{}, newStaleRevisionError(request.ID)
+	}
+	return list[index], nil
 }
 
 // secretPlan is what an update does to the key store: the keys to clear and the values to store.
@@ -120,18 +127,32 @@ func (u *Update) plan(
 	updated.IsPrivateNetworkAllowed = request.IsPrivateNetworkAllowed
 	updated.Fields = mergeFields(declared.Declaration, current.Fields, edited)
 
+	plan, hasKey, err := u.planSecrets(ctx, declared, current, updated, request.Secrets)
+	if err != nil {
+		return connectionport.Connection{}, secretPlan{}, err
+	}
+	if err := checkAddress(declared.Declaration, updated.Fields, hasKey, updated.IsPrivateNetworkAllowed); err != nil {
+		return connectionport.Connection{}, secretPlan{}, err
+	}
+	return updated, plan, nil
+}
+
+// planSecrets decides what happens to each secret field and reports whether the connection holds a key afterwards.
+func (u *Update) planSecrets(
+	ctx context.Context, declared connectionport.Type, current, updated connectionport.Connection, requested map[string]string,
+) (secretPlan, bool, error) {
 	oldAddress := getAddress(declared.Declaration, current.Fields)
 	newAddress := getAddress(declared.Declaration, updated.Fields)
 	plan := secretPlan{fingerprint: getFingerprint(current.TypeID, newAddress), store: map[string]string{}}
 	oldFingerprint := getFingerprint(current.TypeID, oldAddress)
 	hasKey := false
 	for _, key := range getSecretKeys(declared.Declaration) {
-		value, isNamed := request.Secrets[key]
+		value, isNamed := requested[key]
 		isKept := false
 		if !isNamed && oldAddress == newAddress {
 			isSet, err := u.secrets().isSet(ctx, current.ID, key, oldFingerprint)
 			if err != nil {
-				return connectionport.Connection{}, secretPlan{}, err
+				return secretPlan{}, false, err
 			}
 			isKept = isSet
 		}
@@ -145,10 +166,7 @@ func (u *Update) plan(
 			plan.clear = append(plan.clear, key)
 		}
 	}
-	if err := checkAddress(declared.Declaration, updated.Fields, hasKey, updated.IsPrivateNetworkAllowed); err != nil {
-		return connectionport.Connection{}, secretPlan{}, err
-	}
-	return updated, plan, nil
+	return plan, hasKey, nil
 }
 
 func (u *Update) apply(ctx context.Context, id string, plan secretPlan) error {

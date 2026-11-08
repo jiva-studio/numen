@@ -19,9 +19,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The words this module shows in the window. */
 export interface ConnectionOptions {
-  /** The reason a refused call is shown to the person, in words. */
   readonly describeFailure: (failure: ConnectionFailure) => string
-  /** The start of the message shown when the core cannot be read. */
   readonly loadFailed: string
   readonly notify: MessageWriter
 }

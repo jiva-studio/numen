@@ -80,7 +80,7 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 	})
 	const key = "sk-secret-value-123"
 
-	created, err := connections.Create.Execute(context.Background(), connection.CreateRequest{
+	created, err := connections.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: keychainType().GetID(), Name: "Server",
 		Fields:  map[string]any{"baseUrl": "https://api.example.com/v1"},
 		Secrets: map[string]string{"apiKey": key},
@@ -88,7 +88,7 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := connections.Update.Execute(context.Background(), connection.UpdateRequest{
+	if _, err := connections.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: created.Revision, Name: "Server",
 		Fields:  map[string]any{"baseUrl": "https://api.example.com/v1"},
 		Secrets: map[string]string{"apiKey": key + "-renewed"},
@@ -106,7 +106,7 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 	if !strings.Contains(string(bytes), `"baseUrl":"https://api.example.com/v1"`) {
 		t.Errorf("the address is missing from the file:\n%s", bytes)
 	}
-	entry, err := keys.GetKey(context.Background(), "connection/"+created.ID+"/apiKey")
+	entry, err := keys.GetKey(t.Context(), "connection/"+created.ID+"/apiKey")
 	if err != nil || !strings.HasSuffix(entry, ":"+key+"-renewed") {
 		t.Errorf("key store entry = %q, %v", entry, err)
 	}

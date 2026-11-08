@@ -26,7 +26,7 @@ export const PLUGIN_WORDS = {
   secrets: 'Secrets',
   secretsDetail: 'API keys and tokens for plugins.',
   connections: 'Connections',
-  connectionsDetail: 'Services and programs that plugins send requests to.',
+  connectionsDetail: 'Services and programs for plugin requests.',
   systemSettings: 'System',
   systemSettingsDetail: 'Theme, scale and filename sync.',
   searchPlugins: 'Search plugins…',

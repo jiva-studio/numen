@@ -205,7 +205,7 @@ describe('the Add dialog', () => {
     const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
     expect(labels).toStrictEqual(['Name', 'API key', 'Parallel requests'])
     expect(dialog().textContent).not.toContain('Address')
-    expect(dialog().textContent).toContain('The model is chosen on the page of the plugin')
+    expect(dialog().textContent).toContain('Choose the model on the page of the plugin')
     expect(dialog().querySelector('a')?.getAttribute('href')).toBe(
       'https://docs.numen.md/connections/',
     )
@@ -232,7 +232,7 @@ describe('the Add dialog', () => {
     await click(findButton(/add connection/i))
 
     expect(Array.from(dialog().querySelectorAll('label')).map(nameOf)).toStrictEqual(['Name'])
-    expect(dialog().textContent).toContain('Nothing else to enter.')
+    expect(dialog().textContent).toContain('No other field is needed.')
     expect(dialog().querySelector('[role="switch"]')).toBeNull()
     dispose(wrapper)
   })
@@ -371,10 +371,12 @@ describe('editing and deleting', () => {
     await click(findButton(/connection actions/i))
     await click(findMenuItem(/^delete$/i))
 
-    const asking = root().querySelector('[role="alertdialog"]')
-    expect(asking?.textContent).toContain('Delete "Work"? Its key is removed from this machine.')
+    const confirmation = root().querySelector('[role="alertdialog"]')
+    expect(confirmation?.textContent).toContain(
+      'Delete "Work"? Its key is removed from this machine.',
+    )
     expect(deleteConnection).not.toHaveBeenCalled()
-    await click(findButton(/^delete$/i, asking!))
+    await click(findButton(/^delete$/i, confirmation!))
 
     expect(deleteConnection).toHaveBeenCalledWith('c00000001')
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()

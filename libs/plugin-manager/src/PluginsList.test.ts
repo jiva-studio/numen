@@ -129,7 +129,7 @@ describe('PluginsList', () => {
 
     expect(row.find('.plugin-row__name').text()).toBe('Connections')
     expect(row.find('.plugin-row__description').text()).toBe(
-      'Services and programs that plugins send requests to.',
+      'Services and programs for plugin requests.',
     )
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['connections']])
   })

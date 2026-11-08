@@ -18,6 +18,8 @@ import (
 // id, because an id has a dot.
 const keyConnections = "connections"
 
+const jsonNull = "null"
+
 // connectionEntry is a connection as the file lays it out. A secret value is never part of it.
 type connectionEntry struct {
 	ID                  string         `json:"id"`
@@ -30,7 +32,7 @@ type connectionEntry struct {
 
 func (f *File) readConnections(raw json.RawMessage) {
 	f.Connections = nil
-	if string(raw) == "null" {
+	if string(raw) == jsonNull {
 		return
 	}
 	var entries []json.RawMessage

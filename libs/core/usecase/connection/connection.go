@@ -229,24 +229,29 @@ func (o operation) buildEntry(ctx context.Context, one connectionport.Connection
 	entry.IsComplete = true
 	fingerprint := getFingerprint(one.TypeID, getAddress(found.Declaration, one.Fields))
 	for _, field := range found.Declaration.Fields {
-		switch {
-		case field.Type == secretFieldType:
-			isSet, err := o.secrets().isSet(ctx, one.ID, field.Key, fingerprint)
-			if err != nil {
-				return Entry{}, err
-			}
-			if isSet {
-				entry.SecretKeysSet = append(entry.SecretKeysSet, field.Key)
-			}
-			entry.IsComplete = entry.IsComplete && (isSet || !field.IsRequired)
-		case field.FixedValue != nil:
-		default:
-			value, isSet := one.Fields[field.Key]
-			if isSet {
-				entry.Fields[field.Key] = value
-			}
-			entry.IsComplete = entry.IsComplete && (isSet || !field.IsRequired)
+		isSet, err := o.addField(ctx, &entry, one, field, fingerprint)
+		if err != nil {
+			return Entry{}, err
 		}
+		entry.IsComplete = entry.IsComplete && (isSet || !field.IsRequired || field.FixedValue != nil)
 	}
 	return entry, nil
+}
+
+// addField adds one field of the type to the entry and reports whether the connection holds a value for it.
+func (o operation) addField(
+	ctx context.Context, entry *Entry, one connectionport.Connection, field connectionport.ConnectionField, fingerprint string,
+) (bool, error) {
+	if field.Type == secretFieldType {
+		isSet, err := o.secrets().isSet(ctx, one.ID, field.Key, fingerprint)
+		if isSet {
+			entry.SecretKeysSet = append(entry.SecretKeysSet, field.Key)
+		}
+		return isSet, err
+	}
+	value, isSet := one.Fields[field.Key]
+	if isSet && field.FixedValue == nil {
+		entry.Fields[field.Key] = value
+	}
+	return isSet, nil
 }

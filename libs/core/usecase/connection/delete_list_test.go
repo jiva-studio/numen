@@ -19,11 +19,11 @@ func TestDeleteRemovesTheConnectionAndItsSecrets(t *testing.T) {
 	keep := f.createOpenRouter(t, "Keep")
 	removedConnection := f.createOpenRouter(t, "Gone")
 
-	if err := f.connection.Delete.Execute(context.Background(), removedConnection.ID); err != nil {
+	if err := f.connection.Delete.Execute(t.Context(), removedConnection.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	stored, _ := f.repository.ListConnections()
+	stored := f.listStored(t)
 	if len(stored) != 1 || stored[0].ID != keep.ID {
 		t.Errorf("stored = %+v", stored)
 	}
@@ -34,7 +34,7 @@ func TestDeleteRemovesTheConnectionAndItsSecrets(t *testing.T) {
 
 func TestDeleteOfAnUnknownConnectionIsNotFound(t *testing.T) {
 	f := newFixture(t)
-	if err := f.connection.Delete.Execute(context.Background(), "c0000000f"); !errors.Is(err, connection.ErrNotFound) {
+	if err := f.connection.Delete.Execute(t.Context(), "c0000000f"); !errors.Is(err, connection.ErrNotFound) {
 		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
@@ -45,12 +45,12 @@ func TestDeleteRestoresTheEntryWhenASecretCannotBeRemoved(t *testing.T) {
 	failing := &failingDelete{memoryKeys: f.keys}
 	f.connection = connection.NewConnections(f.repository, f.types, failing, func() (string, error) { return "c0000000b", nil })
 
-	err := f.connection.Delete.Execute(context.Background(), created.ID)
+	err := f.connection.Delete.Execute(t.Context(), created.ID)
 
 	if !errors.Is(err, connection.ErrKeyStore) {
 		t.Fatalf("err = %v, want ErrKeyStore", err)
 	}
-	if stored, _ := f.repository.ListConnections(); len(stored) != 1 {
+	if stored := f.listStored(t); len(stored) != 1 {
 		t.Errorf("the connection is gone and its key stays: %+v", stored)
 	}
 }
@@ -64,7 +64,7 @@ func TestListReturnsTheConnectionsWithoutAnyValueOfASecret(t *testing.T) {
 	f.createOpenRouter(t, "Work")
 	f.createCompatible(t, "Ollama", "http://localhost:11434/v1", "")
 
-	entries, err := f.connection.List.Execute(context.Background())
+	entries, err := f.connection.List.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestListSkipsAKeyWhoseAddressChangedInTheFile(t *testing.T) {
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "key-for-a")
 	f.repository.connections[0].Fields["baseUrl"] = "https://attacker.example/v1"
 
-	entries, err := f.connection.List.Execute(context.Background())
+	entries, err := f.connection.List.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestListSkipsAKeyWhoseTypeChangedInTheFile(t *testing.T) {
 	f.repository.connections[0].TypeID = openRouterID
 	f.repository.connections[0].Fields = map[string]any{}
 
-	entries, _ := f.connection.List.Execute(context.Background())
+	entries := f.listEntries(t)
 
 	if len(entries[0].SecretKeysSet) != 0 {
 		t.Errorf("set = %v", entries[0].SecretKeysSet)
@@ -112,7 +112,7 @@ func TestListMarksAConnectionOfAnUnavailableType(t *testing.T) {
 	f := newFixture(t)
 	f.repository.connections = append(f.repository.connections, retiredConnection())
 
-	entries, err := f.connection.List.Execute(context.Background())
+	entries, err := f.connection.List.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestListMarksAConnectionWhoseRequiredFieldIsMissingAsIncomplete(t *testing.
 	})
 	delete(f.keys.values, "connection/c00000001/apiKey")
 
-	entries, _ := f.connection.List.Execute(context.Background())
+	entries := f.listEntries(t)
 
 	if entries[0].IsComplete || entries[1].IsComplete {
 		t.Errorf("complete = %v, %v: a missing key or address leaves a connection incomplete", entries[0].IsComplete, entries[1].IsComplete)
@@ -144,7 +144,7 @@ func TestListShowsOnlyTheFieldsTheTypeDeclares(t *testing.T) {
 		Fields: map[string]any{"baseUrl": "https://a.example/v1", "removedField": "old"},
 	})
 
-	entries, _ := f.connection.List.Execute(context.Background())
+	entries := f.listEntries(t)
 
 	if len(entries[0].Fields) != 1 || entries[0].Fields["baseUrl"] != "https://a.example/v1" {
 		t.Errorf("fields = %+v", entries[0].Fields)

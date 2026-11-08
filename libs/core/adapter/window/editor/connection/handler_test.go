@@ -181,7 +181,7 @@ func TestListProviderConnectionsReturnsTheCreatedConnections(t *testing.T) {
 
 func TestAServedFailureIsAnErrorCodeAndNotAStatus(t *testing.T) {
 	handler := newHandler(newKeys())
-	created, _ := handler.CreateProviderConnection(t.Context(), createRequest("Work"))
+	created := mustCreate(t, handler)
 	id := created.Msg.GetConnection().GetId()
 
 	taken, err := handler.CreateProviderConnection(t.Context(), createRequest("work"))
@@ -222,7 +222,7 @@ func TestAKeyStoreFailureIsAnErrorCode(t *testing.T) {
 
 func TestUpdateProviderConnectionChangesTheNameAndTheRevision(t *testing.T) {
 	handler := newHandler(newKeys())
-	created, _ := handler.CreateProviderConnection(t.Context(), createRequest("Work"))
+	created := mustCreate(t, handler)
 	one := created.Msg.GetConnection()
 
 	response, err := handler.UpdateProviderConnection(t.Context(), connect.NewRequest(&v1.UpdateProviderConnectionRequest{
@@ -241,15 +241,27 @@ func TestUpdateProviderConnectionChangesTheNameAndTheRevision(t *testing.T) {
 
 func TestDeleteProviderConnectionRemovesTheConnection(t *testing.T) {
 	handler := newHandler(newKeys())
-	created, _ := handler.CreateProviderConnection(t.Context(), createRequest("Work"))
+	created := mustCreate(t, handler)
 
 	response, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: created.Msg.GetConnection().GetId()}))
 	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("response = %v, err = %v", response.Msg, err)
 	}
 
-	listed, _ := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(listed.Msg.GetConnections()) != 0 {
 		t.Errorf("connections = %v", listed.Msg.GetConnections())
 	}
+}
+
+func mustCreate(t *testing.T, handler *Handler) *connect.Response[v1.CreateProviderConnectionResponse] {
+	t.Helper()
+	created, err := handler.CreateProviderConnection(t.Context(), createRequest("Work"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return created
 }

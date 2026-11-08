@@ -95,9 +95,9 @@ export const WORDS = {
   connectionPrivateNetwork: 'Allow a private network address',
   connectionPrivateNetworkHint:
     'Needed for a server on your local network. Addresses on this computer are always allowed.',
-  connectionModelNote: 'The model is chosen on the page of the plugin that uses this connection.',
+  connectionModelNote: 'Choose the model on the page of the plugin, not here.',
   connectionAgentNote: (pluginName: string) =>
-    `Nothing else to enter. ${pluginName} runs the program on this computer with your own login.`,
+    `${pluginName} runs the program on this computer with your own login. No other field is needed.`,
   connectionGuide: 'How to get a key and what leaves this computer',
   connectionGuideAddress: 'https://docs.numen.md/connections/',
   connectionSave: 'Save',

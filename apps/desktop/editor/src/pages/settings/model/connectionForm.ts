@@ -92,8 +92,8 @@ function createActions(
 ) {
   const chooseType = (id: string): void => {
     state.typeId = id
-    const chosen = input.types().find((one) => one.id === id)
-    state.values = chosen ? createFieldValues(chosen) : {}
+    const target = input.types().find((one) => one.id === id)
+    state.values = target ? createFieldValues(target) : {}
     state.secrets = {}
     state.clearedKeys = []
     state.problem = ''
@@ -113,16 +113,16 @@ function createActions(
     state.clearedKeys = [...state.clearedKeys, key]
   }
 
-  const send = (chosen: ConnectionTypeInfo): Promise<Result<ConnectionInfo, string>> => {
+  const send = (target: ConnectionTypeInfo): Promise<Result<ConnectionInfo, string>> => {
     const stored = input.connection()
     const request = {
       name: state.name,
-      fields: getSentFields(chosen, state.values),
+      fields: getSentFields(target, state.values),
       secrets: getSentSecrets(state.secrets, state.clearedKeys),
-      isPrivateNetworkAllowed: hasPrivateNetworkChoice(chosen) && state.isPrivateAllowed,
+      isPrivateNetworkAllowed: hasPrivateNetworkChoice(target) && state.isPrivateAllowed,
     }
     if (stored) return input.update({ ...request, id: stored.id, revision: stored.revision })
-    return input.create({ ...request, typeId: chosen.id })
+    return input.create({ ...request, typeId: target.id })
   }
 
   /** Sends the form. Resolves to whether it was saved; the reason it was not is in `problem`. */

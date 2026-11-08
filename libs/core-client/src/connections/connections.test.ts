@@ -137,11 +137,11 @@ describe('createConnectionClient', () => {
   })
 
   it('sends the fields as values and the secrets as texts when it creates a connection', async () => {
-    const sent: unknown[] = []
+    const requests: unknown[] = []
     const client = createConnectionClient(
       createRpc({
         createProviderConnection: (request) => {
-          sent.push({
+          requests.push({
             typeId: request.typeId,
             name: request.name,
             fields: Object.fromEntries(
@@ -169,7 +169,7 @@ describe('createConnectionClient', () => {
     })
 
     expect(answer.ok).toBe(true)
-    expect(sent).toStrictEqual([
+    expect(requests).toStrictEqual([
       {
         typeId: 'a.b/x',
         name: 'N',

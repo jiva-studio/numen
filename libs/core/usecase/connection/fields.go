@@ -17,7 +17,10 @@ func getAddress(declared connectionport.ConnectionType, fields map[string]any) s
 		if field.FixedValue != nil {
 			return *field.FixedValue
 		}
-		address, _ := fields[field.Key].(string)
+		address, isText := fields[field.Key].(string)
+		if !isText {
+			return ""
+		}
 		return address
 	}
 	return ""
@@ -92,20 +95,25 @@ func normalizeValue(field connectionport.ConnectionField, value any) (cleaned an
 	return nil, false, newInvalidError("%q has the type %q, which a connection does not take", field.Key, field.Type)
 }
 
-func normalizeNumber(field connectionport.ConnectionField, value any) (float64, error) {
-	var number float64
+func toFloat(value any) (float64, bool) {
 	switch item := value.(type) {
 	case float64:
-		number = item
+		return item, true
 	case float32:
-		number = float64(item)
+		return float64(item), true
 	case int:
-		number = float64(item)
+		return float64(item), true
 	case int32:
-		number = float64(item)
+		return float64(item), true
 	case int64:
-		number = float64(item)
-	default:
+		return float64(item), true
+	}
+	return 0, false
+}
+
+func normalizeNumber(field connectionport.ConnectionField, value any) (float64, error) {
+	number, isNumber := toFloat(value)
+	if !isNumber {
 		return 0, newInvalidError("%q is a number", field.Key)
 	}
 	if math.IsNaN(number) || math.IsInf(number, 0) {
@@ -178,8 +186,8 @@ func checkAddress(declared connectionport.ConnectionType, fields map[string]any,
 		if !field.IsAddress || field.FixedValue != nil {
 			continue
 		}
-		address, _ := fields[field.Key].(string)
-		if address == "" {
+		address, isText := fields[field.Key].(string)
+		if !isText || address == "" {
 			return nil
 		}
 		return CheckAddress(address, hasKey, isPrivateAllowed)

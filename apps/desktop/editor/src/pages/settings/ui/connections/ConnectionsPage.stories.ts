@@ -243,7 +243,7 @@ export const AddDialogOfAnAgent: Story = {
   play: async ({ canvasElement }) => {
     const dialog = await openDialog(canvasElement)
     await expect(dialog.getByLabelText('Name')).toBeVisible()
-    await expect(dialog.getByText(/Nothing else to enter/)).toBeVisible()
+    await expect(dialog.getByText(/No other field is needed/)).toBeVisible()
     await expect(dialog.queryByLabelText('API key')).toBeNull()
   },
 }

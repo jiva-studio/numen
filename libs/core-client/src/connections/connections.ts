@@ -28,10 +28,8 @@ export interface ConnectionFieldInfo {
   readonly title: string
   readonly description: string
   readonly defaultValue?: ConnectionValue
-  /** The value every connection of the type has. It is neither stored nor edited. */
   readonly fixedValue?: string
   readonly isRequired: boolean
-  /** Whether a change of this field clears the secret fields of the connection. */
   readonly isAddress: boolean
   readonly options: readonly { readonly value: string; readonly title: string }[]
   readonly min?: number
@@ -41,7 +39,6 @@ export interface ConnectionFieldInfo {
 
 /** A kind of connection one plugin provides. */
 export interface ConnectionTypeInfo {
-  /** The plugin id, a slash and the id the plugin gives the type. */
   readonly id: string
   readonly pluginId: string
   readonly pluginName: string
@@ -49,7 +46,6 @@ export interface ConnectionTypeInfo {
   readonly description: string
   readonly operations: readonly string[]
   readonly fields: readonly ConnectionFieldInfo[]
-  /** Whether the plugin is installed and enabled. */
   readonly isAvailable: boolean
 }
 
@@ -58,14 +54,10 @@ export interface ConnectionInfo {
   readonly id: string
   readonly typeId: string
   readonly name: string
-  /** Grows by one at every change. An update carries the revision it read. */
   readonly revision: number
-  /** The fields of the type the connection holds a value for, secrets excluded. */
   readonly fields: Readonly<Record<string, ConnectionValue>>
-  /** The keys of the secret fields that hold a value for the current address. */
   readonly secretKeysSet: readonly string[]
   readonly isTypeAvailable: boolean
-  /** False while a required field has no value. */
   readonly isComplete: boolean
   readonly isPrivateNetworkAllowed: boolean
 }
@@ -149,7 +141,7 @@ const readOptions = (field: ManifestConnectionField): ConnectionFieldInfo['optio
   })
 
 const readFieldType = (type: string): ConnectionFieldType => {
-  const known: readonly ConnectionFieldType[] = [
+  const fieldTypes: readonly ConnectionFieldType[] = [
     'string',
     'number',
     'boolean',
@@ -157,7 +149,7 @@ const readFieldType = (type: string): ConnectionFieldType => {
     'file',
     'secret',
   ]
-  return known.find((one) => one === type) ?? 'string'
+  return fieldTypes.find((one) => one === type) ?? 'string'
 }
 
 const readField = (field: ManifestConnectionField): ConnectionFieldInfo => {

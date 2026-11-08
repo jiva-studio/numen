@@ -1,7 +1,6 @@
 package connection_test
 
 import (
-	"context"
 	"errors"
 	"slices"
 	"testing"
@@ -13,7 +12,7 @@ func TestUpdateRenamesAConnectionAndAddsOneToItsRevision(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: created.Revision, Name: "Home",
 	})
 	if err != nil {
@@ -32,7 +31,7 @@ func TestUpdateAddsOneToTheRevisionForAKeyWriteAlone(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Work", Secrets: map[string]string{"apiKey": "sk-or-2"},
 	})
 	if err != nil {
@@ -50,20 +49,20 @@ func TestUpdateAddsOneToTheRevisionForAKeyWriteAlone(t *testing.T) {
 func TestUpdateIsRefusedWhenTheRevisionIsOlderThanTheStoredOne(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
-	if _, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	if _, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "First window",
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Second window", Secrets: map[string]string{"apiKey": "sk-or-9"},
 	})
 
 	if !errors.Is(err, connection.ErrStaleRevision) {
 		t.Fatalf("err = %v, want ErrStaleRevision", err)
 	}
-	stored, _ := f.repository.ListConnections()
+	stored := f.listStored(t)
 	if stored[0].Name != "First window" || stored[0].Revision != 2 {
 		t.Errorf("stored = %+v", stored[0])
 	}
@@ -74,7 +73,7 @@ func TestUpdateIsRefusedWhenTheRevisionIsOlderThanTheStoredOne(t *testing.T) {
 
 func TestUpdateOfAnUnknownConnectionIsNotFound(t *testing.T) {
 	f := newFixture(t)
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{ID: "c0000000f", Revision: 1, Name: "X"})
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{ID: "c0000000f", Revision: 1, Name: "X"})
 	if !errors.Is(err, connection.ErrNotFound) {
 		t.Errorf("err = %v, want ErrNotFound", err)
 	}
@@ -85,7 +84,7 @@ func TestUpdateRefusesATakenName(t *testing.T) {
 	f.createOpenRouter(t, "Work")
 	other := f.createOpenRouter(t, "Home")
 
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{ID: other.ID, Revision: 1, Name: "work"})
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{ID: other.ID, Revision: 1, Name: "work"})
 
 	if !errors.Is(err, connection.ErrNameTaken) {
 		t.Errorf("err = %v, want ErrNameTaken", err)
@@ -96,7 +95,7 @@ func TestUpdateKeepsTheNameWhenTheRequestNamesTheSameOneInOtherCase(t *testing.T
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{ID: created.ID, Revision: 1, Name: "WORK"})
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{ID: created.ID, Revision: 1, Name: "WORK"})
 
 	if err != nil || updated.Name != "WORK" {
 		t.Errorf("updated = %+v, err = %v", updated, err)
@@ -107,7 +106,7 @@ func TestUpdateOfTheAddressClearsTheSecretsBeforeItStoresTheNewOnes(t *testing.T
 	f := newFixture(t)
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "key-for-a")
 
-	cleared, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	cleared, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Server", Fields: map[string]any{"baseUrl": "https://b.example/v1"},
 	})
 	if err != nil {
@@ -117,7 +116,7 @@ func TestUpdateOfTheAddressClearsTheSecretsBeforeItStoresTheNewOnes(t *testing.T
 		t.Fatalf("set = %v, key store = %v: the key of the old address stayed", cleared.SecretKeysSet, f.keys.listNames())
 	}
 
-	renewed, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	renewed, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 2, Name: "Server", Fields: map[string]any{"baseUrl": "https://c.example/v1"},
 		Secrets: map[string]string{"apiKey": "key-for-c"},
 	})
@@ -133,7 +132,7 @@ func TestUpdateKeepsTheSecretsWhenTheAddressIsTheSame(t *testing.T) {
 	f := newFixture(t)
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "key-for-a")
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Renamed", Fields: map[string]any{"baseUrl": "https://a.example/v1"},
 	})
 
@@ -146,7 +145,7 @@ func TestUpdateClearsASecretWithAnEmptyValue(t *testing.T) {
 	f := newFixture(t)
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "key-for-a")
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Server", Fields: map[string]any{"baseUrl": "https://a.example/v1"},
 		Secrets: map[string]string{"apiKey": ""},
 	})
@@ -161,7 +160,7 @@ func TestUpdateKeepsAStoredFieldTheTypeNoLongerDeclares(t *testing.T) {
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "")
 	f.repository.connections[0].Fields["removedField"] = "old"
 
-	updated, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	updated, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Server", Fields: map[string]any{"baseUrl": "https://a.example/v1"},
 	})
 	if err != nil {
@@ -180,7 +179,7 @@ func TestUpdateRefusesAnAddressThatAKeyMustNotBeSentTo(t *testing.T) {
 	f := newFixture(t)
 	created := f.createCompatible(t, "Server", "https://a.example/v1", "key-for-a")
 
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Server", Fields: map[string]any{"baseUrl": "http://metadata.google.internal"},
 		Secrets: map[string]string{"apiKey": "k"},
 	})
@@ -196,7 +195,7 @@ func TestUpdateRestoresKeysOnListWriteFailure(t *testing.T) {
 	before := f.keys.values["connection/"+created.ID+"/apiKey"]
 	f.repository.failWrite = errDisk
 
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: 1, Name: "Work", Secrets: map[string]string{"apiKey": "sk-or-2"},
 	})
 
@@ -212,7 +211,7 @@ func TestUpdateRejectsAnUnavailableType(t *testing.T) {
 	f := newFixture(t)
 	f.repository.connections = append(f.repository.connections, retiredConnection())
 
-	_, err := f.connection.Update.Execute(context.Background(), connection.UpdateRequest{ID: "c0000000a", Revision: 1, Name: "Old"})
+	_, err := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{ID: "c0000000a", Revision: 1, Name: "Old"})
 
 	if !errors.Is(err, connection.ErrTypeUnavailable) {
 		t.Errorf("err = %v, want ErrTypeUnavailable", err)

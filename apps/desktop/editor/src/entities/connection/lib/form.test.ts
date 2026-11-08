@@ -142,13 +142,13 @@ describe('createInitialValues', () => {
 
 describe('getStoredSecretKeys', () => {
   it('lists the keys of the connection while the address is the stored one', () => {
-    const typed = { baseUrl: 'https://a.example' }
-    expect(getStoredSecretKeys(compatible, stored(), typed)).toStrictEqual(['apiKey'])
+    const draft = { baseUrl: 'https://a.example' }
+    expect(getStoredSecretKeys(compatible, stored(), draft)).toStrictEqual(['apiKey'])
   })
 
   it('lists none once the address differs, and none for a new connection', () => {
-    const typed = { baseUrl: 'https://b.example' }
-    expect(getStoredSecretKeys(compatible, stored(), typed)).toStrictEqual([])
+    const draft = { baseUrl: 'https://b.example' }
+    expect(getStoredSecretKeys(compatible, stored(), draft)).toStrictEqual([])
     expect(getStoredSecretKeys(compatible, undefined, {})).toStrictEqual([])
   })
 })
@@ -165,8 +165,8 @@ describe('isStoredKeyLost', () => {
 
 describe('getSentFields', () => {
   it('sends the filled editable fields and leaves out blanks, fixed values and unknown keys', () => {
-    const typed = { parallelRequests: 8, baseUrl: 'https://other.example', other: 'x' }
-    expect(getSentFields(openRouter, typed)).toStrictEqual({ parallelRequests: 8 })
+    const draft = { parallelRequests: 8, baseUrl: 'https://other.example', other: 'x' }
+    expect(getSentFields(openRouter, draft)).toStrictEqual({ parallelRequests: 8 })
     expect(getSentFields(compatible, { baseUrl: '', stream: false })).toStrictEqual({
       stream: false,
     })

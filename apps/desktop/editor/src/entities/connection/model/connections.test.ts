@@ -54,7 +54,7 @@ describe('createConnectionStore', () => {
     expect(store.connections.value.map((one) => one.name)).toStrictEqual(['Work'])
   })
 
-  it('shows why a read failed and keeps what it held', async () => {
+  it('reports a failed read and keeps the connections', async () => {
     let isFailing = false
     const { notify, store } = createStore(
       createClient({
