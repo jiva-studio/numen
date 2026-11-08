@@ -3,10 +3,8 @@ import { getGraph, openWorkspace } from '../../support/workspace.js'
 import { readBox } from '../../support/browser.js'
 import { getRow, getTab, readOpenTabs, readWidth, showInFiles } from '../../support/layout.js'
 
-/** The panes of the window, in the order they are drawn. */
 const getPanes = (page: Page): Locator => page.locator('section[data-workspace-pane]')
 
-/** The pane that draws the tab of that title. */
 const getPaneOf = (page: Page, title: string): Locator =>
   getPanes(page).filter({ has: getTab(page, title) })
 

@@ -39,12 +39,8 @@ const (
 
 // Settings is the user's appearance configuration.
 type Settings struct {
-	Mode ColorScheme
-	// Theme is the stylesheet chosen, as its text. A window with none uses
-	// `tokens.css`.
-	Theme string
-	// InterfaceScale is the scale of the interface and TextScale the scale of
-	// the reading text, with 1 being the designed size.
+	Mode           ColorScheme
+	Theme          string
 	InterfaceScale float64
 	TextScale      float64
 }
@@ -77,9 +73,6 @@ func AddStyles(text []byte, styles string) []byte {
 	return slices.Concat(text[:pos], []byte(styles), text[pos:])
 }
 
-// buildSizeElement is the two multipliers as the page carries them: how large the
-// interface is drawn, which is the root's font size, and how large the text a
-// person reads is set.
 func buildSizeElement(rendered, set float64) string {
 	var vars []string
 	if rendered > 0 {
@@ -94,11 +87,8 @@ func buildSizeElement(rendered, set float64) string {
 	return buildStyleElement(IsSizes, ":root { "+strings.Join(vars, "; ")+"; }")
 }
 
-// number is a multiplier as CSS takes it, at the shortest that reads back as
-// the number it was given.
 func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
-// scheme is which half of every colour pair the tokens are read as.
 func scheme(mode ColorScheme) string {
 	switch mode {
 	case Light:
@@ -110,9 +100,6 @@ func scheme(mode ColorScheme) string {
 	}
 }
 
-// buildStyleElement is one stylesheet as the page carries it, marked as the one of the
-// three it is. A `</style>` in a theme's file is written as the CSS escape for
-// it, which is the same declaration and ends no element.
 func buildStyleElement(is, css string) string {
 	escaped := ending.ReplaceAllStringFunc(css, func(found string) string {
 		return `<\` + found[len("<"):]

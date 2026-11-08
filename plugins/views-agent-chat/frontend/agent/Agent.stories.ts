@@ -42,10 +42,6 @@ const TEMPLATE = `
   />
 `
 
-/**
- * A live one. Sending adds the turn, the disc becomes the one that stops it,
- * and the answer arrives a few characters at a time.
- */
 const conversation =
   (start: readonly Turn[]): Render =>
   () => ({

@@ -74,8 +74,6 @@ func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 // presetsPlugin is the plugin that holds the preset themes the application does not ship.
 const presetsPlugin = "../../../../../plugins/themes-presets"
 
-// readPresets returns the text of the default theme and of every theme of the presets plugin, keyed
-// by name.
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
 	catalogue := createThemeFolder(t)
@@ -107,7 +105,6 @@ func readPresets(t *testing.T) map[string]string {
 	return texts
 }
 
-// getThemeFields is what a theme sets, and the shape each of them takes.
 func getThemeFields(t *testing.T) map[string]valueKind {
 	t.Helper()
 	css, err := os.ReadFile(contract)
@@ -138,8 +135,6 @@ func getThemeFields(t *testing.T) map[string]valueKind {
 // pointing is a value that is nothing but another token: `var(--numen-hushed)`.
 var pointing = regexp.MustCompile(`^var\(\s*(--[\w-]+)\s*\)$`)
 
-// resolveToken follows a token given as another token, to the value at the end of
-// it. A cycle of tokens resolves to itself and retains its raw value.
 func resolveToken(value string, tokens map[string]string) string {
 	for range len(tokens) {
 		found := pointing.FindStringSubmatch(value)
@@ -155,8 +150,6 @@ func resolveToken(value string, tokens map[string]string) string {
 	return value
 }
 
-// getValueKind classifies a value by its shape. A colour and a length are
-// identified directly, and an elevation is any other value.
 func getValueKind(value string) valueKind {
 	switch {
 	case isColour(value):
@@ -181,7 +174,6 @@ func hasValueKind(value string, want valueKind) bool {
 
 var hex = regexp.MustCompile(`^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
 
-// isColour is a hex colour, or the pair of them the mode chooses between.
 func isColour(value string) bool {
 	if inner, is := getLightDarkPair(value); is {
 		halves := splitOn(inner, ',')
@@ -195,8 +187,6 @@ var measure = regexp.MustCompile(`^-?(\d+\.?\d*|\.\d+)(px|rem|em|%)$`)
 
 func isLength(value string) bool { return value == "0" || measure.MatchString(value) }
 
-// isElevationValue is one layer or several, each consisting of the offsets and
-// the spread of the layer, followed by its colour.
 func isElevationValue(value string) bool {
 	for _, layer := range splitOn(value, ',') {
 		parts := splitWords(layer)
@@ -212,7 +202,6 @@ func isElevationValue(value string) bool {
 	return true
 }
 
-// getLightDarkPair is the inside of a `light-dark()`.
 func getLightDarkPair(value string) (string, bool) {
 	const opens = "light-dark("
 	if !strings.HasPrefix(value, opens) || !strings.HasSuffix(value, ")") {
@@ -221,7 +210,6 @@ func getLightDarkPair(value string) (string, bool) {
 	return value[len(opens) : len(value)-1], true
 }
 
-// setBy is every property a stylesheet sets, whichever of its rules sets it.
 func setBy(css string) []declaration {
 	var found []declaration
 	for _, block := range splitBlocks(stripComments(css)) {
@@ -230,8 +218,6 @@ func setBy(css string) []declaration {
 	return found
 }
 
-// getDeclarations is what one block sets. A value runs to the semicolon standing
-// outside brackets, so a pair written over two lines stays whole.
 func getDeclarations(block string) []declaration {
 	var found []declaration
 	for _, part := range splitOn(block, ';') {
@@ -245,7 +231,6 @@ func getDeclarations(block string) []declaration {
 	return found
 }
 
-// splitBlocks is the inside of every rule in a stylesheet.
 func splitBlocks(css string) []string {
 	var found []string
 	for {
@@ -262,7 +247,6 @@ func splitBlocks(css string) []string {
 	}
 }
 
-// stripComments is a stylesheet with its comments cut away.
 func stripComments(css string) string {
 	var text strings.Builder
 	for {
@@ -280,7 +264,6 @@ func stripComments(css string) string {
 	}
 }
 
-// splitOn splits on the separators standing outside brackets.
 func splitOn(text string, on byte) []string {
 	var parts []string
 	depth, start := 0, 0
@@ -300,8 +283,6 @@ func splitOn(text string, on byte) []string {
 	return append(parts, text[start:])
 }
 
-// splitWords splits on the spaces standing outside brackets, so a pair is one word
-// however it is laid out.
 func splitWords(text string) []string {
 	var found []string
 	depth, start := 0, 0

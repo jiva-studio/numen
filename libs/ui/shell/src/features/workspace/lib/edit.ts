@@ -22,7 +22,6 @@ export type { NodeIdFactory }
 
 export interface TabDrop {
   readonly tab: TabId
-  /** The pane it was let go on. */
   readonly onto: NodeId
   readonly side: Side
 }

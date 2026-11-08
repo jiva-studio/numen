@@ -43,7 +43,6 @@ export interface ConflictWords {
 
 /** What the window hands the store of open notes, beside the vault itself. */
 export interface OpenNotesOptions {
-  /** How long the typing settles for, and how long a note may go unwritten. */
   limits?: typeof DEFAULT_WRITE_LIMITS
   /** Called when a note on screen is replaced by the content of its file. */
   onReplaced?(path: string): void

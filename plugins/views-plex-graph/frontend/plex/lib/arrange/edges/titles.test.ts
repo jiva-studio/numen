@@ -28,7 +28,6 @@ import {
 import type { PlexNeighbourhood } from '../../neighbourhood'
 import type { PlacedNode, Position } from '../../node'
 
-/** A letter of a fixed width, so what a title needs is a matter of counting. */
 const perLetter = (width: number) => (label: string) => width * [...label].length
 
 const measureLabel = perLetter(6)
@@ -42,7 +41,6 @@ const labelDepth = getDepth(labelType)
 /** What every arrangement here measures its titles with. */
 const measured = { measureLabel, labelType }
 
-/** What a title keeps of the place its label was given. */
 const setting = ({ side, heading }: LabelPlace) => ({
   side,
   shift: getShift(side, labelType),
@@ -75,10 +73,6 @@ interface Box {
 const isOverlapping = (one: Box, other: Box): boolean =>
   one.minX < other.maxX && other.minX < one.maxX && one.minY < other.maxY && other.minY < one.maxY
 
-/**
- * The area a title's text covers: the run along the line, with half a line of
- * text height on either side.
- */
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
   const axisEdge = createPointOnCurve(edge)
@@ -112,7 +106,6 @@ const boxAround = (node: PlacedNode): Box => ({
   maxY: node.y + node.height / 2,
 })
 
-/** One line with enough length for any label it is given. */
 const createOneLine = (label: string): PlexNeighbourhood => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },

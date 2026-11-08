@@ -16,11 +16,6 @@ const (
 // effortNone is the entry in a list of depths that means reasoning is disabled.
 const effortNone = "none"
 
-// getCommonLevels returns the depths offered for a model whose listing names the field that takes
-// the
-// depth and no depths. OpenAI-compatible servers list the field and nothing more, so these are the
-// depths
-// the field is documented to take.
 func getCommonLevels() []reasoning.Level {
 	return reasoning.NewLevels("low", "medium", "high")
 }
@@ -44,8 +39,6 @@ type effort struct {
 	level string
 }
 
-// getReasoningField is the field the parameters a model lists accept the depth of reasoning in, empty
-// where they accept none.
 func getReasoningField(supported []string) string {
 	switch {
 	case slices.Contains(supported, fieldReasoningEffort):
@@ -77,7 +70,6 @@ func parseListing(listing *reasoningListing, currentField string) ([]reasoning.L
 	return levels, defaultEffort, field, true
 }
 
-// newModel is the model a chat API lists, with the depths of reasoning it names for the model.
 func newModel(name, title string, supported []string, listing *reasoningListing) model {
 	one := model{
 		Name: name, Title: title, ReasoningField: getReasoningField(supported),
@@ -95,8 +87,6 @@ func newModel(name, title string, supported []string, listing *reasoningListing)
 	return one
 }
 
-// newEffort returns the reasoning depth requested from the model: the level if the model lists a field to
-// receive it and offers the level, else none.
 func newEffort(m model, level string) effort {
 	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, level) == "" {
 		return effort{field: "", level: ""}
@@ -104,7 +94,6 @@ func newEffort(m model, level string) effort {
 	return effort{field: m.ReasoningField, level: level}
 }
 
-// newChatRequest is the request for the next message of a conversation.
 func newChatRequest(model string, reqEffort effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
 	request := chatRequest{
 		Model: model, Messages: messages, Tools: tools, Stream: isStreamed,

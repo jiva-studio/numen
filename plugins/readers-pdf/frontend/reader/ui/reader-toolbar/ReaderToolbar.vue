@@ -11,9 +11,7 @@ import { clampZoom, READER_WORDS, type ReaderWords } from '../../lib/strip'
 
 withDefaults(
   defineProps<{
-    /** How many pages the document has. */
     pageCount?: number
-    /** The words they are drawn with. */
     words?: ReaderWords
   }>(),
   {

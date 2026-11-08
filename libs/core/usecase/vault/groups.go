@@ -27,8 +27,6 @@ type grouping struct {
 	bytes int
 }
 
-// add takes one note and its size on disk, writing the group when either bound
-// is reached.
 func (g *grouping) add(ctx context.Context, note domain.Note, size int) error {
 	g.notes = append(g.notes, note)
 	g.bytes += size
@@ -38,7 +36,6 @@ func (g *grouping) add(ctx context.Context, note domain.Note, size int) error {
 	return nil
 }
 
-// flush writes whatever is held, and does nothing when nothing is.
 func (g *grouping) flush(ctx context.Context) error {
 	if len(g.notes) == 0 {
 		return nil

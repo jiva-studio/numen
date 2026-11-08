@@ -29,7 +29,6 @@ const createStyle = (sheet: Document, is: string, css: string): HTMLStyleElement
   return one
 }
 
-/** A page as the window's handler serves one: the link, then the three elements. */
 const page = (css = SERVED): Document => {
   const sheet = document.implementation.createHTMLDocument('numen')
   sheet.head.append(
@@ -41,14 +40,11 @@ const page = (css = SERVED): Document => {
   return sheet
 }
 
-/** The elements of the head, in order. */
 const getHeadStyles = (sheet: Document) =>
   [...sheet.head.querySelectorAll('style')].map((one) => one.textContent)
 
-/** What the theme's element holds, which is the second of the three. */
 const getThemeCss = (sheet: Document) => getHeadStyles(sheet)[1]
 
-/** What the sizes' element holds, which is the last of them. */
 const sizes = (sheet: Document) => getHeadStyles(sheet)[2]
 
 const APPEARANCE: Appearance = {
@@ -63,13 +59,10 @@ const APPEARANCE: Appearance = {
   bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
 }
 
-/** A short delay for pending application requests to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A delay longer than the interval after which the window applies a size. */
 const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
-/** The user's folder, which a test writes to. */
 const folder = () => {
   let wake: ((names: readonly string[]) => void) | null = null
   return {
@@ -84,7 +77,6 @@ const folder = () => {
   }
 }
 
-/** A window with a theme applied, over a page a test can read the head of. */
 const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
   const sheet = page(css)
   const response = folder()
@@ -127,7 +119,6 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
   }
 }
 
-/** The window listing its themes, over a page served with a theme. */
 const startWindow = async (overrides: Partial<Appearance> = {}, css = SERVED) => {
   const one = window(overrides, css)
   await one.appearance.start()
@@ -417,7 +408,6 @@ describe('two reads of the settings in flight', () => {
   })
 })
 
-/** The first moments of a window and the stream it follows, with every answer in a test's hands. */
 const createManual = (waits = Infinity) => {
   const sheet = page()
   const reads: { name: string; give: (css: string) => void; fail: () => void }[] = []

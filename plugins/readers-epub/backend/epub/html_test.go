@@ -120,7 +120,6 @@ type run struct {
 	text   string
 }
 
-// offsets returns the runs of text with their offset attributes, in markup order.
 func offsets(t *testing.T, root *html.Node) []run {
 	t.Helper()
 	var out []run
@@ -153,7 +152,6 @@ func parseHTML(t *testing.T, page string) *html.Node {
 	return root
 }
 
-// elements are the elements of a name a parsed page holds, in reading order.
 func elements(n *html.Node, name string) []*html.Node {
 	var out []*html.Node
 	if n.Type == html.ElementNode && n.Data == name {
@@ -165,7 +163,6 @@ func elements(n *html.Node, name string) []*html.Node {
 	return out
 }
 
-// text returns the text content of a parsed node.
 func text(n *html.Node) string {
 	if n.Type == html.TextNode {
 		return n.Data

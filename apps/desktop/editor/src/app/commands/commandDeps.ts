@@ -20,18 +20,14 @@ export interface CommandDepsOptions {
   making: NoteCreator
   setVaultName: (vault: VaultRef) => void
   reload: () => void
-  /** Holds the open tabs back while the vault is switched; the tabs are written as they come where absent. */
   tabsHold?: TabsHold
   reached: Notes
-  /** The adapter that writes the row chosen in the step of the command of a setting. */
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
-  /** Shows a note, in the place the note-viewing plugin uses. */
   travel: (path: string) => Promise<void> | void
-  /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
   getOpeningNote: () => string
   runs: RunSupport

@@ -58,7 +58,6 @@ func (c *PluginCaches) Write(
 	return store.Write(ctx, vaultID, content)
 }
 
-// at is the folder one plugin keeps one name in. A plugin and a name that carry a separator or a dot
 func (c *PluginCaches) at(pluginID, name string) (*VaultFiles, error) {
 	for _, part := range []string{pluginID, name} {
 		if part == "" || strings.ContainsAny(part, `/\`) || strings.HasPrefix(part, ".") || strings.Contains(part, "..") {

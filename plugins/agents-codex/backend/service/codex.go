@@ -24,10 +24,9 @@ import (
 
 // AgentModel represents an AI model available from an external agent CLI.
 type AgentModel struct {
-	Name      string `json:"name"`
-	Title     string `json:"title"`
-	IsDefault bool   `json:"isDefault,omitempty"`
-	// Reasoning are the depths the model supports, from least to most.
+	Name             string            `json:"name"`
+	Title            string            `json:"title"`
+	IsDefault        bool              `json:"isDefault,omitempty"`
 	Reasoning        []reasoning.Level `json:"-"`
 	DefaultReasoning string            `json:"-"`
 }
@@ -44,7 +43,6 @@ type codexCache struct {
 	} `json:"models"`
 }
 
-// readCodexCache reads visible models from ~/.codex/models_cache.json.
 func readCodexCache() []AgentModel {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -87,17 +85,15 @@ const codexFailureBackoff = 30 * time.Second
 // codexModelCache caches what Codex listed, for as long as the command line stays the same. A
 // failure caches nothing, and the command line that failed is not retried for a while.
 type codexModelCache struct {
-	mu       sync.Mutex
-	key      string
-	models   []AgentModel
-	isCached bool
-	// failedKey and failedAt are the command line Codex last failed to list under, and when.
+	mu        sync.Mutex
+	key       string
+	models    []AgentModel
+	isCached  bool
 	failedKey string
 	failedAt  time.Time
 	inFlight  map[string]bool
 	isAsync   bool
-	// clock is the time source of the backoff.
-	clock timeSource
+	clock     timeSource
 }
 
 // timeSource gets the current time.
@@ -105,12 +101,10 @@ type timeSource interface {
 	Now() time.Time
 }
 
-// getNow is the time by the clock of the cache.
 func (c *codexModelCache) getNow() time.Time {
 	return c.clock.Now()
 }
 
-// get are the models Codex lists: the cached ones, or those it lists now.
 func (c *codexModelCache) get(ctx context.Context, command []string) []AgentModel {
 	key := strings.Join(command, " ")
 	c.mu.Lock()
@@ -132,7 +126,6 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 	return c.fetchAndStore(ctx, key, command)
 }
 
-// startBackgroundFetch lists the models in the background unless that is already under way. The caller holds the lock.
 func (c *codexModelCache) startBackgroundFetch(ctx context.Context, key string, command []string) {
 	if c.inFlight[key] {
 		return
@@ -170,8 +163,6 @@ func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command
 	return models
 }
 
-// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
-// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
 func isStopped(err error) bool {
 	var exit *exec.ExitError
 	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
@@ -316,8 +307,6 @@ func readCodexAnswer(lines *bufio.Scanner, id int) (json.RawMessage, error) {
 	return nil, fmt.Errorf("codex exited before answering message %d", id)
 }
 
-// newAgentModel is a model with the levels of reasoning it lists, the empty names left out and the
-// default kept where it is one of them.
 func newAgentModel(name, title string, isDefault bool, efforts []string, byDefault string) AgentModel {
 	var levels []reasoning.Level
 	for _, effort := range efforts {

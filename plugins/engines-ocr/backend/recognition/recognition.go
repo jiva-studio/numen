@@ -155,8 +155,6 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	return runEnd, true, nil
 }
 
-// claim locks the file of the request for one run, keyed by the id of its vault. An empty vault ID
-// means the vault the host shows.
 func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
 	key, err := r.getRunKey(ctx, req.Vault, req.Path)
 	if err != nil {
@@ -183,8 +181,6 @@ func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, fileP
 	return r.running[key], nil
 }
 
-// getRunKey returns the lock key of the file of the vault. An empty vault ID means the vault the host
-// shows.
 func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, filePath string) (string, error) {
 	if vault == "" {
 		shown, err := r.host.Vault.GetVault(ctx)
@@ -265,7 +261,6 @@ func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePa
 	return on.StatFile(ctx, filePath)
 }
 
-// isMissing reports whether the file is no longer in the vault.
 func isMissing(ctx context.Context, vault host.Vault, filePath string) bool {
 	_, err := vault.StatFile(ctx, filePath)
 	return errors.Is(err, host.ErrNotExist)
@@ -322,7 +317,6 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	return putVersion(ctx, on, rec)
 }
 
-// keepOrRestart returns the record when it was made from this content with this model, else a new empty one.
 func keepOrRestart(rec *record, path, inputHash string, model Model, pageCount int) *record {
 	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
 	if rec.isFor(inputHash, recipe) {
@@ -340,8 +334,6 @@ type pageReading struct {
 	task       *host.Task
 }
 
-// readPages reads the pages the record does not hold yet, keeping them a batch at a time and showing
-// how far it came in the task.
 func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record) error {
 	on.task.TotalCount, on.task.CompletedCount = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
@@ -370,9 +362,6 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 	return nil
 }
 
-// putVersion stores the text of a complete record as the file's version,
-// reports it, and deletes the record. A record with no text is deleted and
-// reported as no version.
 func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	store := on.store
 	text, err := rec.getText()
@@ -401,7 +390,6 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: false}, nil
 }
 
-// hasRecognition reports whether the file has a version of the plugin made from the content hash.
 func hasRecognition(ctx context.Context, texts host.Texts, path, inputHash string) (bool, error) {
 	listing, err := texts.ListVersions(ctx, path)
 	if err != nil {

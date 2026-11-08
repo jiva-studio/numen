@@ -29,9 +29,6 @@ type DocumentServer struct {
 // pluginID is the id of the plugin in its manifest.
 const pluginID = "md.numen.readers.pdf"
 
-// newCompilationCache returns the cache the compiled PDFium is kept in. It is kept in the cache
-// directory the host granted the plugin, so only the first start after an install or an update
-// compiles PDFium; without that directory the compiled module is kept in memory.
 func newCompilationCache() wazero.CompilationCache {
 	dir, err := cache.GetPluginDir()
 	// gomutants:disable-next-line BRANCH_IF reason="missing plugin cache directory falls back to in-memory compilation cache"
@@ -41,8 +38,6 @@ func newCompilationCache() wazero.CompilationCache {
 	return wasm.NewCompilationCache(dir)
 }
 
-// newWorkers returns the worker pool of the plugin, started at once: one worker per CPU, a few of
-// them kept while idle, released by the plugin's clock.
 func newWorkers() *pdf.Workers {
 	workers := pdf.NewWorkers()
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
@@ -143,8 +138,6 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	return out, nil
 }
 
-// readLiveText reads the live text version of a file until it holds the offset end. A file with
-// no live version has an empty text.
 func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (domain.VersionText, error) {
 	listing, err := texts.ListVersions(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
@@ -176,7 +169,6 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 	}
 }
 
-// writePlaces groups the boxes of a run by page, in page order of appearance.
 func writePlaces(boxes []pdf.HighlightBox) []DocumentPlace {
 	places := []DocumentPlace{}
 	for _, box := range boxes {

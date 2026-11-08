@@ -22,7 +22,6 @@ import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
 /** The stylesheet of `@numen/ui` the utilities are built from. */
 const THEME = createRequire(import.meta.url).resolve('@numen/ui/theme.css')
 
-/** The template and scripts of a single-file component, without its style blocks. */
 function getVueScanContent(source: string): string {
   const { descriptor } = parseSfc(source)
   return [descriptor.template?.content, descriptor.script?.content, descriptor.scriptSetup?.content]
@@ -71,7 +70,6 @@ export function getDefinedClasses(css: string): Set<string> {
   return classes
 }
 
-/** The literal class names an expression bound to `class` can evaluate to. */
 function getBoundClasses(node: BabelNode | null | undefined): string[] {
   if (!node) return []
   switch (node.type) {
@@ -123,7 +121,6 @@ interface TemplateNode {
 const ATTRIBUTE = 6
 const DIRECTIVE = 7
 
-/** The class names one attribute or `:class` binding of an element names. */
 function getPropClasses(prop: NonNullable<TemplateNode['props']>[number]): string[] {
   if (prop.type === ATTRIBUTE && prop.name === 'class') {
     return (prop.value?.content ?? '').split(/\s+/)
@@ -177,7 +174,6 @@ export async function getUndefinedUtilities(
   return missing
 }
 
-/** The source files of the bundle that lie in the plugin's directory `root`. */
 function getPluginFiles(root: string, moduleIds: Iterable<string>): string[] {
   const prefix = resolve(root) + sep
   const files = new Set<string>()
@@ -221,7 +217,6 @@ export function createUtilitiesPlugin(root: string): Plugin {
 /** The id the stories import the utilities of every plugin frontend by. */
 const STORY_UTILITIES = 'virtual:plugin-utilities.css'
 
-/** Every source file of every plugin frontend under `pluginsDir`, stories and tests left out. */
 function getFrontendFiles(pluginsDir: string): string[] {
   return readdirSync(pluginsDir, { recursive: true, encoding: 'utf8' })
     .filter((path) => /^[^/]+\/frontend\/.+\.(vue|ts)$/.test(path.split(sep).join('/')))

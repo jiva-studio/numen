@@ -15,61 +15,20 @@ import type { Clock } from '../model/transition'
 export interface PlexProps {
   neighbourhood: PlexNeighbourhood
   options?: PlexOptionsInput
-  /** Rows and columns unless another arrangement is handed in. */
   placement?: Placement
   showEdgeLabels?: boolean
-  /** Milliseconds. Zero arrives instantly. */
   duration?: number
-  /** The clock. Browser by default; a test hands in its own. */
   clock?: Clock
-  /**
-   * Viewport size and its changes. Browser by default; a test supplies its own,
-   * which makes every coordinate a known value.
-   */
   viewport?: Viewport
-  /**
-   * Relations a gesture may produce. A sibling is another of the parent's
-   * children, so it is left out; which relationships exist is the caller's
-   * to say.
-   */
   creatable?: readonly PlexRelation[]
-  /** Distance in pixels a pointer moves before a gesture is a drag and not a click. */
   dragThreshold?: number
-  /**
-   * How long the attention rests on a box before it widens to the whole of
-   * its title. Milliseconds; nothing at all never widens.
-   */
   expansionDelay?: number
-  /** How a node offers to be reached out of. The handle by default. */
   reaching?: ReachStrategy
-  /** How a node is requested on its own. The second click by default. */
   showing?: ShowStrategy
-  /**
-   * The headings of a node, looked up by the node's identifier. They appear
-   * below its box while the pointer rests on it. A node with no headings shows
-   * none.
-   */
   headings?: (id: string) => readonly PlexHeading[]
-  /**
-   * What to call a relation, for the outline a gesture draws and for the
-   * overflow line. English by default.
-   */
   relationName?: (relation: PlexRelation) => string
-  /**
-   * A node awaiting a partner, drawn as a line from the node to a point in the
-   * plex's own pixels. Nothing draws no line.
-   */
   pending?: PlexPending | null
-  /**
-   * Identifiers being dragged over the plex from outside. Each identifier is
-   * opaque and is returned unchanged in the `bring` event. An empty list means
-   * nothing is dragged, and the plex draws nothing for it.
-   */
   dragged?: readonly string[]
-  /**
-   * What to call what letting go with something dragged in would do. English
-   * by default.
-   */
   dropName?: (relation: PlexRelation) => string
 }
 

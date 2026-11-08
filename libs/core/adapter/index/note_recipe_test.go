@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveChunkedAt stores notes cut at a chunk size, as a scan that knows the size of the embedding plugin
-// hands them over.
 func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes ...domain.Note) string {
 	t.Helper()
 	splitter := notecase.NewCutNotes(tokens)
@@ -19,7 +17,6 @@ func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes .
 	return splitter.Recipe()
 }
 
-// getNotesWithOtherRecipe is the paths of the notes of a vault that were not cut by the recipe.
 func getNotesWithOtherRecipe(t *testing.T, db *DB, vault domain.Vault, recipe string) []string {
 	t.Helper()
 	paths, err := db.ChunkQueries().GetSourcesWithOtherRecipe(t.Context(), vault.ID, string(domain.KindNote), []string{recipe}, 100)

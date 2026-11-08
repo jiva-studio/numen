@@ -117,11 +117,6 @@ const onSettle = (id: string, isResting: boolean) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * The role of each node in the current gesture. While a gesture runs, only the
- * node it started from keeps a handle, because a second handle would offer to
- * start a gesture while one is already in progress.
- */
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'

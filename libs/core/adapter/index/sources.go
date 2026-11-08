@@ -132,8 +132,6 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 // Cursor is the point in the ordering a walk carries on after.
 type Cursor = chunk.Cursor
 
-// parseCursor is the Cursor a chunk cursor names. The empty
-// cursor starts from the beginning.
 func parseCursor(after embeddingport.ChunkCursor) (Cursor, error) {
 	if after == "" {
 		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
@@ -159,8 +157,6 @@ func parseCursor(after embeddingport.ChunkCursor) (Cursor, error) {
 	return Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
 }
 
-// parseCursorNumbers is the numbers of a cursor of two or three parts, and an
-// error where it has another count or a part that is no number.
 func parseCursorNumbers(after embeddingport.ChunkCursor, parts []string) ([]int64, error) {
 	if len(parts) != 2 && len(parts) != 3 {
 		return nil, fmt.Errorf("%q is no cursor of this index", after)

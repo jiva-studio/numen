@@ -12,14 +12,8 @@ import { build } from '../../fixtures/build'
 
 const every = Object.entries(neighbourhoods)
 
-/**
- * A width that follows the title and needs no font. Nothing in the arrangement
- * is allowed to assume one size for every box, and the fixtures carry titles
- * from one letter to a sentence.
- */
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
-/** A neighbourhood whose titles are picked for their lengths alone. */
 const createNeighbourhood = (relation: PlexRelation, ...titles: string[]): PlexNeighbourhood => ({
   nodes: [
     { id: 'focus', title: 'Focus', relation: 'focus' },
@@ -28,7 +22,6 @@ const createNeighbourhood = (relation: PlexRelation, ...titles: string[]): PlexN
   edges: [],
 })
 
-/** The nodes of one relation, cut into the lines they were laid out on. */
 const inLines = (nodes: readonly PlacedNode[], perLine: number): PlacedNode[][] => {
   const lines: PlacedNode[][] = []
   for (const node of nodes) {
@@ -47,7 +40,6 @@ const getFocus = (layout: { nodes: readonly PlacedNode[] }) => {
   return focus
 }
 
-/** Boxes are centred on their coordinates; touching edges is not overlapping. */
 function isOverlapping(a: PlacedNode, b: PlacedNode): boolean {
   return (
     Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 1e-9 &&

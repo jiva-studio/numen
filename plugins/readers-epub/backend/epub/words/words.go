@@ -37,7 +37,6 @@ func HasTokenBytes(attribute []byte, token string) bool {
 	return false
 }
 
-// isSpaceByte reports whether b separates the values of an attribute.
 func isSpaceByte(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }

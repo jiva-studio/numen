@@ -25,7 +25,6 @@ func (b bookTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
 
 type vaultBookTexts struct{ files vaultport.VaultReader }
 
-// read is the version of the book at a path, made from the bytes it holds now.
 func (t vaultBookTexts) read(ctx context.Context, path string) (domain.VersionText, error) {
 	raw, err := t.files.Read(ctx, path)
 	if err != nil {

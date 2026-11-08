@@ -179,9 +179,6 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 	return NoteResolveOutput{Paths: paths}, nil
 }
 
-// getFolderPrefix returns the folder in the form vault paths start with: without a leading "./" or
-// "/" and a trailing "/", in the normal form given, and followed by a slash, so "library" matches
-// "library/a.pdf" and not "library2/a.pdf". The vault root is empty.
 func getFolderPrefix(folder string) string {
 	for {
 		next := strings.TrimPrefix(strings.TrimLeft(folder, "/"), "./")

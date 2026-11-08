@@ -16,9 +16,6 @@ type recording struct {
 	raw    []byte
 	length int
 
-	// segments holds the speech segments, and isCut reports that the recording has
-	// been through the segmenter. A recording with no speech is cut and has no
-	// segments.
 	segments []Audio
 	isCut    bool
 	mu       sync.Mutex
@@ -72,7 +69,6 @@ func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, 
 	return out, nil
 }
 
-// cut runs the segmenter over the whole recording and keeps the segments. The caller holds the lock.
 func (r *recording) cut(ctx context.Context) error {
 	samples, rate, err := sound.Read(r.raw)
 	if err != nil {

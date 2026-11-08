@@ -225,7 +225,9 @@ const spoken = (declared, command) => {
 const checkSettingCommands = async () => {
   const source = await read(APP, 'window/settingCommands.ts')
   if (!source.includes('`${owner.name}: ${setting.title}`')) {
-    die('settingCommands.ts no longer names a plugin setting in the palette as its plugin and title')
+    die(
+      'settingCommands.ts no longer names a plugin setting in the palette as its plugin and title',
+    )
   }
 }
 
@@ -347,8 +349,13 @@ const structOf = (source, name) => {
   const own = fieldsOf(source, name)
   if (own === null) return null
   const mirror = fieldsOf(source, `${name[0].toLowerCase()}${name.slice(1)}File`)
-  const read = own.fields.length === 0 && mirror !== null ? mirror : own
+  const readsMirror = own.fields.length === 0 && mirror !== null
+  const read = readsMirror ? mirror : own
+  const declared = readsMirror ? `${name[0].toLowerCase()}${name.slice(1)}File` : name
   if (read.unread.length > 0) die(`${name} declares a field this cannot read: ${read.unread[0]}`)
+  if (read.fields.length > 0 && !commentAbove(source, declared).includes(SETTINGS_MARKER)) {
+    die(`${declared} holds settings and has no ${SETTINGS_MARKER} line in its doc comment`)
+  }
   return read.fields.length > 0 ? read.fields : null
 }
 
@@ -364,19 +371,32 @@ const kindOf = (given) => {
   return ''
 }
 
-/** The doc comment over a type, which is what a section of the file is about. */
-const docOf = (source, name) => {
+/**
+ * The comment lines over a type. A settings type carries the line
+ * `//numen:settings`: tools/lint-comments keeps the comments on its fields,
+ * which this reads as the descriptions of the keys.
+ */
+const SETTINGS_MARKER = '//numen:settings'
+
+const commentAbove = (source, name) => {
   const at = source.search(new RegExp(`^type ${name} `, 'm'))
-  if (at < 0) return ''
-  const above = source.slice(0, at).split('\n').reverse()
+  if (at < 0) return []
   const lines = []
-  for (const line of above.slice(1)) {
-    const comment = line.match(/^\/\/ ?(.*)$/)
-    if (!comment) break
-    lines.unshift(comment[1])
+  for (const line of source.slice(0, at).split('\n').reverse().slice(1)) {
+    if (!line.startsWith('//')) break
+    lines.unshift(line)
   }
-  return lines.join(' ').replace(new RegExp(`^${name}\\s+`), '')
+  return lines
 }
+
+/** The doc comment over a type, which is what a section of the file is about. */
+const docOf = (source, name) =>
+  commentAbove(source, name)
+    .filter((line) => !/^\/\/[a-z0-9]+:\S/.test(line))
+    .map((line) => line.replace(/^\/\/ ?/, ''))
+    .join(' ')
+    .trim()
+    .replace(new RegExp(`^${name}\\s+`), '')
 
 /**
  * The words a constant is written as in the file, for the comments that name

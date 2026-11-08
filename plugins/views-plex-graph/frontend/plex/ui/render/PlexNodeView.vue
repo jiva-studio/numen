@@ -96,7 +96,6 @@ watch(
 )
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The middle of the node, for a press, which carries no point of its own. */
 function getMiddle(): Position | null {
   const element = group.value
   if (!element) return null

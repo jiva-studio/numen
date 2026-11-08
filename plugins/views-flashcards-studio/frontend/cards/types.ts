@@ -9,7 +9,6 @@ export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 export interface CardModelSummary {
   readonly path: string
   readonly title: string
-  /** The names of the fields, in the order they are presented. */
   readonly fields: readonly string[]
 }
 
@@ -34,13 +33,9 @@ export type ProblemKind =
  */
 export interface DeckProblem {
   readonly kind: ProblemKind
-  /** The card it refers to, counted from one, or null. */
   readonly card: number | null
-  /** The template it refers to, counted from one, or null. */
   readonly template: number | null
-  /** The field name, as the file spells it. Empty for a problem against no field. */
   readonly field: string
-  /** What is wrong, in the words to show. */
   readonly text: string
 }
 
@@ -52,27 +47,11 @@ export interface Value {
 
 /** One card as the vault reads it. */
 export interface VaultCard {
-  /**
-   * What the card is, without the caret its heading writes it behind.
-   */
   readonly cardId: string
-  /**
-   * Position of the card's section among the deck's sections, counted from one.
-   */
   readonly sectionIndex: number | null
-  /**
-   * The heading line, with the card id removed.
-   */
   readonly heading: string
-  /**
-   * The card model it is cut by, as the wikilink beneath its heading names it.
-   */
   readonly cardModelLink: string
-  /**
-   * Where that link lands in the vault. Empty for a card naming none.
-   */
   readonly cardModelPath: string
-  /** The prose between that wikilink and the first field. */
   readonly preamble: string
   readonly values: readonly Value[]
 }
@@ -81,9 +60,7 @@ export interface VaultCard {
  * One section of a deck as the vault reads it.
  */
 export interface VaultSection {
-  /** What it is called, as its heading spells it. */
   readonly name: string
-  /** The prose between its heading and its first card. */
   readonly preamble: string
 }
 
@@ -92,7 +69,6 @@ export interface VaultDeck extends Surrounds {
   readonly path: string
   readonly title: string
   readonly cards: readonly VaultCard[]
-  /** The sections, in the order they stand in the note. */
   readonly sections: readonly VaultSection[]
   readonly problems: readonly DeckProblem[]
 }
@@ -100,7 +76,6 @@ export interface VaultDeck extends Surrounds {
 /** One way a card model shows a card. */
 export interface VaultTemplate {
   readonly name: string
-  /** The prose between the template's heading and its first side. */
   readonly preamble: string
   readonly front: string
   readonly back: string
@@ -124,7 +99,6 @@ export type CardsFailure = ErrorCode | 'changed'
 /** Why a deck was not read or not written, with the size that stopped a read. */
 export interface DeckFailure {
   readonly code: CardsFailure
-  /** The size a deck is read up to, in bytes. */
   readonly bound: number
 }
 
@@ -132,7 +106,6 @@ export interface DeckFailure {
 export type DeckReadResult = Result<
   {
     readonly deck: VaultDeck
-    /** The file it came out of, to present at the next write. */
     readonly at: string
   },
   DeckFailure
@@ -153,15 +126,12 @@ export type CardModelWriteResult = Result<{ readonly at: string }, CardsFailure>
 /** One deck a rename did not reach, which keeps the heading it had. */
 export interface UnwrittenDeck {
   readonly path: string
-  /** Why it was not reached, in the words to show. */
   readonly text: string
 }
 
 /** A field renamed, and what it reached. */
 export interface RenamedField {
-  /** The decks a heading was rewritten in, by path. */
   readonly decks: readonly string[]
-  /** How many headings were rewritten, over all those decks. */
   readonly cards: number
   readonly notWritten: readonly UnwrittenDeck[]
   readonly at: string

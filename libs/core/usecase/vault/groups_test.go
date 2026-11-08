@@ -30,7 +30,6 @@ func TestFlushClearsTheBackingArray(t *testing.T) {
 	}
 }
 
-// newRecordingGroup is a group whose writes are the sizes of what each one held.
 func newRecordingGroup() (*grouping, *[]int) {
 	var writes []int
 	return &grouping{write: func(_ context.Context, notes []domain.Note) error {

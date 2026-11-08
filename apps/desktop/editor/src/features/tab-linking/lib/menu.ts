@@ -18,9 +18,7 @@ export interface LinkMenuOptions {
   readonly isLinked?: boolean
   readonly linkedTargetTitle?: string
   readonly canDetach?: boolean
-  /** The other windows the tab can move to, the main window first. */
   readonly windows?: readonly TabWindow[]
-  /** Whether the tab is asking; an asking tab is not moved or detached. */
   readonly isAsking?: boolean
 }
 

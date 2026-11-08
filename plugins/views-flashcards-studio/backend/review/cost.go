@@ -69,8 +69,6 @@ func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardID]st
 // answerTimes is how long the answers of each kind took, one entry an answer.
 type answerTimes struct{ begun, spaced []time.Duration }
 
-// addAnswer counts one answer. An answer with no recorded time carries no
-// information about how long its kind takes.
 func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	if took <= 0 {
 		return
@@ -82,8 +80,6 @@ func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	t.begun = append(t.begun, took)
 }
 
-// cost returns the cost these answers imply for each half of an answer, with each
-// half set to the default where the history is too short.
 func (t *answerTimes) cost() AnswerCost {
 	out := GetDefaultCost()
 	if middle, read := getMedian(t.begun); read {
@@ -95,12 +91,6 @@ func (t *answerTimes) cost() AnswerCost {
 	return out
 }
 
-// getMedian returns the median of these answers, and whether there are enough
-// answers to compute one.
-//
-// Answer times have a long right tail: a card stays displayed while the user is
-// interrupted. The median is the value with half the answers on each side, and
-// one long answer shifts it by one position.
 func getMedian(took []time.Duration) (time.Duration, bool) {
 	if len(took) < LeastAnswers {
 		return 0, false

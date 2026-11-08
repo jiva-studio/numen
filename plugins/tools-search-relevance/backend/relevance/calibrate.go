@@ -41,17 +41,12 @@ const (
 
 // Calibration is what one measurement of a vault under one recipe found.
 type Calibration struct {
-	// Floor is the similarity a passage has to reach, as the measurement derives it.
-	Floor float64
-	// Median and Spread describe the similarities between queries and passages that are not about them.
-	Median float64
-	Spread float64
-	// Histogram counts those similarities in equal bins from zero to one.
-	Histogram []int
-	// QueryCount and PassageCount are how many queries were measured against how many passages.
-	QueryCount   int
-	PassageCount int
-	// CalibratedTime is when the measurement ended.
+	Floor          float64
+	Median         float64
+	Spread         float64
+	Histogram      []int
+	QueryCount     int
+	PassageCount   int
 	CalibratedTime time.Time
 }
 
@@ -124,7 +119,6 @@ func (c Calibrator) Calibrate(ctx context.Context, index host.Search, notes host
 	}, nil
 }
 
-// isTooSmall reports whether the sampled passages are too few, or come from too few notes, to measure.
 func isTooSmall(sample host.SimilaritySample) bool {
 	return sample.PassageCount < minPassages || sample.SourceCount < minSources
 }
@@ -135,8 +129,6 @@ type noteTitle struct {
 	text string
 }
 
-// readTitles reads the titles of the first notes of the vault, at most titleSample of them, in the
-// order the host lists the paths. A note with a blank title is left out.
 func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error) {
 	paths, err := notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
@@ -158,7 +150,6 @@ func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error)
 	return titles, nil
 }
 
-// embedTitles returns one query per title, in one call to the model.
 func embedTitles(ctx context.Context, index host.Search, recipe string, titles []noteTitle) ([]host.SimilarityQuery, error) {
 	texts := make([]string, len(titles))
 	for i, title := range titles {
@@ -182,7 +173,6 @@ func embedTitles(ctx context.Context, index host.Search, recipe string, titles [
 	return queries, nil
 }
 
-// clipText is the text cut to at most limit bytes at the end of a character.
 func clipText(text string, limit int) string {
 	if len(text) <= limit {
 		return text
@@ -194,8 +184,6 @@ func clipText(text string, limit int) string {
 	return text[:end]
 }
 
-// collectNoise gathers the similarities of the sample into one list, and counts the queries that had
-// a vector. A query without a vector is not measured.
 func collectNoise(queries []host.SimilarityQuery, sample host.SimilaritySample) ([]float64, int) {
 	// gomutants:disable-next-line ARITHMETIC_BASE reason="Slice capacity hint does not affect collected values."
 	similarities := make([]float64, 0, len(queries)*sample.PassageCount)

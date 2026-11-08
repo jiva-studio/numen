@@ -28,9 +28,7 @@ type Plugins interface {
 // token by which the plugin identifies the host. It holds a reference on the plugin from the first byte of a
 // call to the last, so a stream cannot outlive its plugin.
 type Proxy struct {
-	host Plugins
-	// onError receives the errors that cannot reach the caller, such as a failed release or a
-	// response that ended early. It is set before the proxy serves.
+	host    Plugins
 	onError func(error)
 }
 
@@ -40,21 +38,18 @@ func (p *Proxy) SetErrorHandler(handler func(error)) {
 	p.onError = handler
 }
 
-// reportError passes a non-nil err to the error handler.
 func (p *Proxy) reportError(err error) {
 	if err != nil && p.onError != nil {
 		p.onError(err)
 	}
 }
 
-// closeResponse closes the body of a forwarded response.
 func (p *Proxy) closeResponse(res *http.Response) {
 	if err := res.Body.Close(); err != nil {
 		p.reportError(fmt.Errorf("close plugin response: %w", err))
 	}
 }
 
-// releasePlugin releases the reference a call holds on its plugin.
 func (p *Proxy) releasePlugin(lease *bridge.Lease) {
 	if err := lease.Close(); err != nil {
 		p.reportError(fmt.Errorf("release plugin %s: %w", lease.PluginID, err))
@@ -82,7 +77,6 @@ func (p *Proxy) Serves(urlPath string) bool {
 	return found
 }
 
-// hopHeaders are the headers of one connection and not of the call.
 func getHopHeaders() []string {
 	return []string{
 		"Connection", "Proxy-Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
@@ -140,8 +134,6 @@ func copyHeaders(to, from http.Header) {
 	}
 }
 
-// streamBody copies the body as it arrives and flushes after each read, so a
-// stream is delivered to the window message by message.
 func streamBody(w http.ResponseWriter, body io.Reader) error {
 	flusher := http.NewResponseController(w)
 	buf := make([]byte, 32*1024)
@@ -164,7 +156,6 @@ func streamBody(w http.ResponseWriter, body io.Reader) error {
 	}
 }
 
-// writeConnectError answers a call that did not reach a plugin as Connect clients read an error.
 func writeConnectError(w http.ResponseWriter, status int, code connect.Code, message string) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

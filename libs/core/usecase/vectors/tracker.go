@@ -16,11 +16,8 @@ type tracker struct {
 	u       Embed
 	workers int
 	res     *EmbedResult
-	// mu guards res.
-	mu *sync.Mutex
-	// order serialises the reports, so a callback never receives an older
-	// snapshot after a newer one.
-	order sync.Mutex
+	mu      *sync.Mutex
+	order   sync.Mutex
 
 	flightMu sync.Mutex
 	nextID   uint64
@@ -37,7 +34,6 @@ func newTracker(u Embed, workers int, res *EmbedResult, mu *sync.Mutex) *tracker
 	return &tracker{u: u, workers: workers, res: res, mu: mu}
 }
 
-// enter lists a batch of the sources given as being worked on and returns its id.
 func (t *tracker) enter(sources []string) uint64 {
 	t.flightMu.Lock()
 	defer t.flightMu.Unlock()
@@ -46,7 +42,6 @@ func (t *tracker) enter(sources []string) uint64 {
 	return t.nextID
 }
 
-// leave takes a stored batch out of the list.
 func (t *tracker) leave(id uint64) {
 	t.flightMu.Lock()
 	defer t.flightMu.Unlock()
@@ -58,15 +53,12 @@ func (t *tracker) leave(id uint64) {
 	}
 }
 
-// isIdle reports whether no batch has left the producer without being stored.
 func (t *tracker) isIdle() bool {
 	t.flightMu.Lock()
 	defer t.flightMu.Unlock()
 	return len(t.flight) == 0
 }
 
-// getActive returns the distinct sources of the oldest batches that are being
-// worked on, in the order they were sent.
 func (t *tracker) getActive() (active []string) {
 	t.flightMu.Lock()
 	defer t.flightMu.Unlock()
@@ -80,10 +72,6 @@ func (t *tracker) getActive() (active []string) {
 	return active
 }
 
-// publish applies change to the result and reports a snapshot of it. The
-// snapshot names the sources being worked on, and the first of them is the
-// current source; when no batch is waiting the current source is the one the
-// change set.
 func (t *tracker) publish(change func(res *EmbedResult)) {
 	t.order.Lock()
 	defer t.order.Unlock()
@@ -99,9 +87,6 @@ func (t *tracker) publish(change func(res *EmbedResult)) {
 	t.u.progress(snapshot)
 }
 
-// publishNext reports source as the current one when no batch is waiting: the
-// first chunk read is then the next to be embedded. Once batches wait, the
-// current source is that of the oldest.
 func (t *tracker) publishNext(source string) {
 	t.publish(func(res *EmbedResult) {
 		if t.isIdle() {
@@ -110,8 +95,6 @@ func (t *tracker) publishNext(source string) {
 	})
 }
 
-// withdraw takes a batch that was never sent out of the list and reports the
-// sources still in flight, or none when no other batch is waiting.
 func (t *tracker) withdraw(id uint64) {
 	t.leave(id)
 	t.publish(func(res *EmbedResult) { res.CurrentSource = "" })

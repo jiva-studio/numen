@@ -26,7 +26,6 @@ const MODELS: readonly Model[] = [
   },
 ]
 
-/** A vault holding those settings, and rejecting the writes it is configured to reject. */
 const createStore = (text: string, failure: string | null = null) => {
   const request: unknown[] = []
   const core: SettingsStoreDeps = {
@@ -218,7 +217,6 @@ describe('a setting written', () => {
   })
 })
 
-/** A promise that the test resolves manually. */
 const defer = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((isDone) => {

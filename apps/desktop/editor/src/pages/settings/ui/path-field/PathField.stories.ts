@@ -54,14 +54,12 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The field alone, without the info button of the row around it. */
 const getField = (canvasElement: HTMLElement) => {
   const field = canvasElement.querySelector<HTMLElement>('.settings__path')
   if (!field) throw new Error('the path field is not drawn')
   return within(field)
 }
 
-/** Every action of the field is the library's outline button: one height, the field rule as border. */
 const expectOneButtonFamily = async (canvasElement: HTMLElement) => {
   const buttons = getField(canvasElement).getAllByRole('button')
   await expect(buttons.length).toBeGreaterThan(1)

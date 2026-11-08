@@ -58,10 +58,6 @@ func readWholeStreamReply(reader io.Reader, emit func(string) error) (message, s
 	return reply, finished, nil
 }
 
-// stream requests the next message as send does, with the reply streamed as server-sent
-// events. Each piece of its text goes to emit as it arrives, and an error from emit ends the stream
-// and is returned unchanged. A chat API that replies to the stream with one complete JSON body has its
-// text sent to emit at once. A 400 or 422 response is errStreamRejected.
 func (c chat) stream(
 	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
 ) (reply message, reason string, err error) {
@@ -92,8 +88,6 @@ func (c chat) stream(
 	return readStream(reader, emit)
 }
 
-// isWholeReply reports whether the answer is one JSON object, which a stream of events never
-// begins with.
 func isWholeReply(reader *bufio.Reader) bool {
 	for n := 1; ; n++ {
 		peeked, err := reader.Peek(n)
@@ -135,8 +129,6 @@ func (r *streamedReply) flush(data *bytes.Buffer, emit func(string) error) (bool
 	return r.add(data.Bytes(), emit)
 }
 
-// readStream reads server-sent events until the `[DONE]` event, sending each piece of text to emit.
-// A stream that ends before it, with no reason the model stopped, is errStreamEnded.
 func readStream(reader *bufio.Reader, emit func(string) error) (message, string, error) {
 	var reply streamedReply
 	var data bytes.Buffer
@@ -195,8 +187,6 @@ func (r *streamedReply) mergeToolCalls(pieces []streamedToolPiece) error {
 	return nil
 }
 
-// add takes one event's data into the reply, sending its text to emit. It reports whether the
-// event is the stream's last.
 func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) {
 	if string(data) == "[DONE]" {
 		return true, nil
@@ -236,7 +226,6 @@ func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) 
 	return false, nil
 }
 
-// getMessage is the message the pieces make: its text, and every call that has a name or an id.
 func (r *streamedReply) getMessage() message {
 	reply := message{Role: "assistant", Content: nil, ToolCalls: nil, ToolCallID: ""}
 	if r.text.Len() > 0 {
@@ -250,7 +239,6 @@ func (r *streamedReply) getMessage() message {
 	return reply
 }
 
-// readStreamError returns an error event's message, else the raw event.
 func readStreamError(raw json.RawMessage) string {
 	var described struct {
 		Message string `json:"message"`

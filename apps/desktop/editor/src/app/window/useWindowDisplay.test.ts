@@ -19,8 +19,6 @@ const answer = (path: string): Neighbourhood => ({
   connections: [],
 })
 
-/** A stream that stays open, so a loop waiting on it is not the one under test. */
-/** A stream that ends without an item. */
 async function* emptyStream(): AsyncGenerator<never> {
   yield* []
 }
@@ -36,7 +34,6 @@ const resolved = {
   agentUnreachable: '',
 }
 
-/** A core that answers whatever it is configured to, and records the calls it receives. */
 function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
   const request: string[] = []
   return {
@@ -104,10 +101,6 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-/**
- * What the window does with a vault-changed signal and a request to show a note.
- * What each tab does about either is determined by that tab.
- */
 const createDisplay = (
   core: Core,
   openFileAt?: (path: string, spans: readonly TextRange[]) => void,

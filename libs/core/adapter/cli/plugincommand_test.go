@@ -31,8 +31,6 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) 
 	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
-// createPluginCommandDeps is a terminal over the notebook whose plugins declare a command over no
-// file and one over PDFs, and the vaults the plugins were opened over.
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{

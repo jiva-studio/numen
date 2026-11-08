@@ -52,10 +52,6 @@ const LABELS: Readonly<Record<string, string>> = {
   demon: 'costs',
 }
 
-/**
- * A line with the record of one end: its words, in the middle of the line, and
- * an arrowhead at the end it points at.
- */
 const createLine = (from: string, to: string, text: string, end: 'from' | 'to'): PlexEdge => ({
   from,
   to,
@@ -63,11 +59,6 @@ const createLine = (from: string, to: string, text: string, end: 'from' | 'to'):
   arrows: [end],
 })
 
-/**
- * A line with a record written by each note: the words of the first note near
- * the start of the line, those of the second near its end, and an arrowhead at
- * each end.
- */
 const createPair = (from: string, to: string, texts: readonly [string, string]): PlexEdge => ({
   from,
   to,
@@ -75,7 +66,6 @@ const createPair = (from: string, to: string, texts: readonly [string, string]):
   arrows: ['to', 'from'],
 })
 
-/** A sibling hangs off the parent it shares; everything else meets the focus. */
 const createEdge = (neighbour: PlexNode): PlexEdge => {
   const label = LABELS[neighbour.id]
   if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
@@ -157,15 +147,11 @@ const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
 const menuIcon = (id: string) => MENU_ICONS[id]
 
 interface MapScreen {
-  /** The headings a node hangs under its box, and none where there are none. */
   readonly headings?: (id: string) => readonly PlexHeading[]
-  /** The relations a new note may be made in. */
   readonly creatable?: readonly PlexRelation[]
-  /** The position of the node menu, or null when no menu is open. */
   readonly menu?: { x: number; y: number } | null
 }
 
-/** The map around the note on entropy, with the whole window to itself. */
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {

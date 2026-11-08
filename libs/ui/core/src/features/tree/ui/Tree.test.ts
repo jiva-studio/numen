@@ -64,7 +64,6 @@ const getRow = (wrapper: Tree, row: string) => wrapper.get(`[data-tree-row="${ro
 const getDrawnRows = (wrapper: Tree) =>
   wrapper.findAll('[data-tree-row]').map((row) => row.attributes('data-tree-row'))
 
-/** A pointer event of its own making: the button and the point are read-only. */
 const pointer = (
   kind: string,
   y: number,
@@ -76,13 +75,11 @@ const pointer = (
   )
 }
 
-/** The middle of a row, down the page. */
 const getMiddle = (wrapper: Tree, row: string): number => {
   const box = getRow(wrapper, row).element.getBoundingClientRect()
   return box.top + box.height / 2
 }
 
-/** A row pressed and let go, with whatever was held down as it was. */
 const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {}): Promise<void> => {
   const on = getRow(wrapper, row)
   const pos = getMiddle(wrapper, row)
@@ -92,7 +89,6 @@ const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {})
   await on.trigger('click', overrides)
 }
 
-/** Drags a row to a vertical position and drops it, in several pointer steps. */
 const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
   const from = getRow(wrapper, row).element
   const start = getMiddle(wrapper, row)
@@ -647,7 +643,6 @@ describe('the attribute rows are marked with', () => {
   })
 })
 
-/** A cancelable key press: the tree took it where it is prevented. */
 const sendKey = (
   target: Element,
   key: string,

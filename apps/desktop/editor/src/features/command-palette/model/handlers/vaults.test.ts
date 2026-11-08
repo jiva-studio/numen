@@ -22,7 +22,6 @@ const unused = async (): Promise<never> => {
   throw new Error('empty selection')
 }
 
-/** The installation's vaults, answering as the test specifies and recording the calls. */
 const createWindow = (
   answers: {
     opened?: VaultErrorCode | null

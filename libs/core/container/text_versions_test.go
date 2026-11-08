@@ -22,8 +22,6 @@ const (
 	talkPath    = "talks/Morning talk.mp3"
 )
 
-// putTranscript records a transcript of the talk by a plugin this installation
-// does not have, with its file in that plugin's folder.
 func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain.TextVersion {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
@@ -52,8 +50,6 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 	return version
 }
 
-// readIntoIndex reads the vault into the index, with the text versions as the
-// texts of its sources.
 func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 	t.Helper()
 	if _, err := cfg.Scan(db).Execute(t.Context(), v); err != nil {
@@ -188,8 +184,6 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 }
 
-// newTalkIndex is the talk vault read into an index, with a transcript of the
-// talk recorded.
 func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
@@ -209,8 +203,6 @@ func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersio
 	return cfg, db, v, version
 }
 
-// refreshPaths brings the named paths up to date, as the watch does with the
-// paths it reports.
 func refreshPaths(t *testing.T, cfg Config, db *Index, v domain.Vault, paths ...string) {
 	t.Helper()
 	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {

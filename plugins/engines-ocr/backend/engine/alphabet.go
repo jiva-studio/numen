@@ -16,10 +16,6 @@ const (
 	valueField    = 2
 )
 
-// alphabet returns the characters the model reads, from the dictionary named in
-// the settings or else from the model's metadata, in the format the recogniser
-// takes: one per line, with the space last. The model supplies the characters,
-// the space, and the CTC blank.
 func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	characters, err := readAlphabet(model, cfg.Dict)
 	if err != nil {
@@ -134,8 +130,6 @@ func readPayload(raw []byte, wire byte) (body []byte, size int, ok bool) {
 	return nil, 0, false
 }
 
-// readAlphabet reads a PaddleOCR character dictionary, UTF-8 with one character per line, from the
-// file named, or else from the model's metadata.
 func readAlphabet(model, dict string) (string, error) {
 	if dict != "" {
 		raw, err := os.ReadFile(dict)

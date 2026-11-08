@@ -82,8 +82,6 @@ func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(i
 	return true
 }
 
-// answerPluginAssetError answers a request whose file could not be opened and reports
-// whether it did. A missing file is left unanswered, for the plugin backend.
 func answerPluginAssetError(w http.ResponseWriter, err error) bool {
 	switch {
 	case errors.Is(err, os.ErrNotExist):
@@ -99,8 +97,6 @@ func answerPluginAssetError(w http.ResponseWriter, err error) bool {
 // errPluginAssetEscapes marks a link that leads out of the plugin directory.
 var errPluginAssetEscapes = errors.New("plugin asset path escapes the plugin directory")
 
-// openPluginAsset opens a regular file below pluginDir. The directory is opened once and
-// the name is resolved inside it, so no link can lead out of it.
 func openPluginAsset(ctx context.Context, pluginDir, name string) (_ *os.File, _ os.FileInfo, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
@@ -124,8 +120,6 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (_ *os.File, _
 	return file, info, nil
 }
 
-// classifyPluginAssetError names the reason root.Open failed. A name whose links lead out of
-// the plugin directory is an escape; every other failure keeps its own error.
 func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
 	if errors.Is(openErr, os.ErrNotExist) || errors.Is(openErr, os.ErrPermission) {
 		return openErr
@@ -139,8 +133,6 @@ func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
 // maxPluginAssetLinks bounds the links followed while checking one name.
 const maxPluginAssetLinks = 40
 
-// isPluginAssetEscape follows the links on name one component at a time and reports whether
-// the walk resolves to an absolute target or climbs above the root.
 func isPluginAssetEscape(root *os.Root, name string) bool {
 	pending := strings.Split(filepath.ToSlash(name), "/")
 	var resolved []string

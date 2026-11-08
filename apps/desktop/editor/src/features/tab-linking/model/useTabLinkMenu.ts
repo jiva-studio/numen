@@ -15,7 +15,6 @@ export interface TabLinkMenuDeps {
   /** Returns whether a tab of this window can be linked. */
   isLinkable(tab: TabId): boolean
   onDetach?(tab: TabId, position: { x: number; y: number }): void
-  /** The id of this window, excluded from the move targets. */
   readonly windowId?: string
   /** Whether a tab of this window is asking; an asking tab is not moved or detached. */
   isAsking?(tab: TabId): boolean
@@ -24,7 +23,6 @@ export interface TabLinkMenuDeps {
   onHighlight?(windowId: string, isOn: boolean): void
 }
 
-/** Returns the move targets, the asking state of the tab, and the highlight control. */
 function createWindowMoves(deps: TabLinkMenuDeps, tabId: Ref<TabId | null>) {
   /** The other windows, main window first; empty without onMove. */
   const windows = computed(() =>

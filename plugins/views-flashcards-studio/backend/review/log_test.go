@@ -182,8 +182,6 @@ func TestOnlyTheFourAreRatings(t *testing.T) {
 	}
 }
 
-// makeJumbledHistory is a history as a synchroniser leaves it: out of order,
-// with a duplicated run and an answer taken back.
 func makeJumbledHistory() []review.Answer {
 	pos := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := review.Answer{
@@ -232,10 +230,6 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 	}
 }
 
-// logSeeds are the forms a log may take: an answer, an undone answer, a run
-// truncated in the middle of a line, a line with an unknown version, a line
-// missing a required field, a blank line, a timestamp with an offset, JSON that
-// is not a line, and bytes that are not a log.
 func getLogSeeds() []string {
 	return []string{
 		`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
@@ -282,9 +276,6 @@ func FuzzReadLog(f *testing.F) {
 	})
 }
 
-// lines is how many lines of a log there are to account for: the ones carrying
-// something, and the run after the last newline, which is a line that did not
-// land whole whatever it holds.
 func lines(raw string) int {
 	lastNewline := strings.LastIndex(raw, "\n")
 	if lastNewline < 0 {

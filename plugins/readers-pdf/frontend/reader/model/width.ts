@@ -9,17 +9,13 @@ import { hasWindow, win } from '@numen/ui'
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
-/** How many device pixels a CSS pixel is. One, where there is no window to ask. */
 const pixelRatio = (): number =>
   !hasWindow() || !Number.isFinite(win.devicePixelRatio) ? 1 : win.devicePixelRatio
 
-/** Rounds a pixel width up to the next width step. */
 const roundUpWidth = (pixels: number): number => Math.ceil(pixels / WIDTH_STEP) * WIDTH_STEP
 
 export interface PageWidthState {
-  /** The width the row requests for its pages, in device pixels. */
   readonly needed: ComputedRef<number>
-  /** The width each page is requested at; follows `needed` once it has settled. */
   readonly drawnWidth: Ref<number>
 }
 

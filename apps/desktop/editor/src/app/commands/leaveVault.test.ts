@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { openAfterSavingTabs } from './leaveVault'
 
-/** A hold that records what it was asked, in order, together with the vault calls around it. */
 const record = () => {
   const calls: string[] = []
   const hold = {

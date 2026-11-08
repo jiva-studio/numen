@@ -143,7 +143,6 @@ func TestLocateModelPrecedence(t *testing.T) {
 	}
 }
 
-// writeFile writes content to path and fails the test when writing fails.
 func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	t.Helper()
 	if err := os.WriteFile(path, content, perm); err != nil {

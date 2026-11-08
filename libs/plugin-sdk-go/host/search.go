@@ -48,6 +48,8 @@ const (
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
+//
+//numen:api
 type EmbeddingState struct {
 	// Recipe identifies the model in use. Every vector the host returns, and every floor it stores,
 	// is kept under it.
@@ -64,6 +66,8 @@ type EmbeddingState struct {
 }
 
 // ExtensionStats is the sources of one file extension and the chunks they hold.
+//
+//numen:api
 type ExtensionStats struct {
 	// Extension is in lower case, without the dot, and empty for a source with none.
 	Extension string
@@ -74,6 +78,8 @@ type ExtensionStats struct {
 }
 
 // IndexStats is what the search index of a vault holds and the space it takes.
+//
+//numen:api
 type IndexStats struct {
 	// Recipe, Model and Dimensions identify the model in use.
 	Recipe     string
@@ -106,6 +112,8 @@ type SimilarityQuery struct {
 }
 
 // SimilaritySample is the cosine similarity of each query with the small chunks the host sampled.
+//
+//numen:api
 type SimilaritySample struct {
 	// PassageCount is how many small chunks the host sampled, and SourceCount how many sources they
 	// belong to.
@@ -199,6 +207,8 @@ const (
 )
 
 // PassageQuery is a passage search request.
+//
+//numen:api
 type PassageQuery struct {
 	Query string
 	// Limit is the maximum number of passages to return: DefaultSearchedPassages when zero, at
@@ -213,6 +223,8 @@ type PassageQuery struct {
 }
 
 // Passage is a span of source text matching a query.
+//
+//numen:api
 type Passage struct {
 	// Path is the file the text is read from, relative to the vault.
 	Path string

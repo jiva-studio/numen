@@ -25,14 +25,8 @@ const STROKE = 2.4
 /** One key held, as it is drawn. */
 export interface DrawnIcon {
   readonly icon: LucideIcon
-  /**
-   * How many icon boxes wide this one is drawn. An icon drawn larger is stroked
-   * thinner by the same factor, so the rendered stroke thickness is unchanged.
-   */
   readonly fills: number
-  /** How thick to stroke it, in the 24 units it is drawn on. */
   readonly stroke: number
-  /** What it is called, for a reader who is listening and not looking. */
   readonly label: string
 }
 

@@ -12,14 +12,10 @@ import type { FooterEntry, VaultRow, WelcomeAction } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
-    /** Text placed under the mark, identifying which window the user opened. */
     name?: string
-    /** The ways in, above the list. */
     ways?: readonly WelcomeAction[]
     vaults: readonly VaultRow[]
-    /** What the list is called. */
     heading: string
-    /** The row below the list, where a window offers one. */
     footer?: FooterEntry | null
   }>(),
   { name: 'numen', ways: () => [], footer: null },

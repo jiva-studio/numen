@@ -17,7 +17,6 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
   ...overrides,
 })
 
-/** What the menu offers on one row, by the identity of each item, as it is drawn. */
 const getGroupedIds = (overrides: Partial<Entry> = {}, isSeveral = false): readonly string[] =>
   groupItems([
     ...createMenuItems(getPathCommands({ entry: entry(overrides), isSeveral }), isSeveral),

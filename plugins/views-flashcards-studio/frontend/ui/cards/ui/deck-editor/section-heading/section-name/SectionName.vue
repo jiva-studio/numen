@@ -6,17 +6,11 @@ import type { Objection } from '../../../../lib/order'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 defineProps<{
-  /** Name entry state managing this section heading input. */
   naming: NameEntryState<Objection>
-  /** Unique target identifier for the section. */
   targetId: string
-  /** Placeholder and accessible name when title is empty. */
   stem: string
-  /** Current section name text. */
   text: string
-  /** Validation description element ID. */
   describedBy: string | null
-  /** Accessible label for the remove button. */
   removeLabel: string
 }>()
 

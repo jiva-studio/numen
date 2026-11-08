@@ -28,19 +28,13 @@ import (
 // are rejected, including the vault's identity, which lives in the vault
 // folder and in no area.
 type DerivedStore struct {
-	vault   string   // the vault folder
-	service string   // the application's folder inside it
-	id      string   // the identity that folder carried when this store was opened
-	root    string   // <vault>/<serviceDir>
-	areas   []string // the folders inside it this store answers for
-	// last is the configuration file state at the time the identity was last
-	// read. Every name checks the identity; an unchanged file reuses the
-	// identity already read.
-	last atomic.Pointer[fileInfo]
-	// where is the store's own folder with every link on its path resolved.
-	// Names are checked against it. It is resolved again when the store's
-	// folder is missing.
-	where atomic.Pointer[places]
+	vault   string
+	service string
+	id      string
+	root    string
+	areas   []string
+	last    atomic.Pointer[fileInfo]
+	where   atomic.Pointer[places]
 }
 
 // places is the store's folder as it is on this machine, and its areas as the
@@ -50,15 +44,11 @@ type places struct {
 	areas map[string]string
 }
 
-// isInside reports whether a resolved name is inside the area it claims. An
-// area is a folder of the store, so a link at an area's position is not
-// inside it.
 func (p *places) isInside(resolved, area string) bool {
 	linked, named := p.areas[area]
 	return named && vaultconfig.IsUnderRoot(resolved, linked)
 }
 
-// isCurrent reports whether the store's folder still resolves to the located path.
 func (d *DerivedStore) isCurrent(p *places) bool {
 	found, err := os.Lstat(p.root)
 	if err != nil {
@@ -68,7 +58,6 @@ func (d *DerivedStore) isCurrent(p *places) bool {
 	return err == nil && os.SameFile(found, now)
 }
 
-// locate resolves the store's folder and places each area inside it.
 func (d *DerivedStore) locate() (*places, error) {
 	root, err := vaultconfig.GetDeepestExisting(d.root)
 	if err != nil {
@@ -85,7 +74,6 @@ func (d *DerivedStore) locate() (*places, error) {
 // file.
 type fileInfo struct{ stat os.FileInfo }
 
-// isSameFile reports whether a file is the one a fileInfo was taken of.
 func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 	return s != nil && os.SameFile(s.stat, now) &&
 		s.stat.Size() == now.Size() && s.stat.ModTime().Equal(now.ModTime())
@@ -262,7 +250,6 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) (e
 	return file.Close()
 }
 
-// newShortAppendError describes an append that wrote fewer bytes than requested.
 func newShortAppendError(name string, output, wanted int, why error) error {
 	if why == nil {
 		why = io.ErrShortWrite
@@ -270,13 +257,6 @@ func newShortAppendError(name string, output, wanted int, why error) error {
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, output, wanted, why)
 }
 
-// closeAndTruncate truncates the file back to the offset before the write.
-// The truncation length is the current offset minus the bytes written, and a
-// write that wrote nothing leaves the file unchanged.
-//
-// The truncation is performed by name after the file is closed, because a file
-// opened for append cannot be truncated through its handle. The name belongs
-// to the store, so the truncation applies to the file that was written.
 func closeAndTruncate(root *os.Root, file *os.File, name string, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
@@ -291,7 +271,6 @@ func closeAndTruncate(root *os.Root, file *os.File, name string, wrote int) erro
 	return truncateFile(root, name, pos-int64(wrote))
 }
 
-// truncateFile takes a file back to a length and flushes it there.
 func truncateFile(root *os.Root, name string, to int64) error {
 	file, err := root.OpenFile(name, os.O_WRONLY, 0o644)
 	if err != nil {
@@ -407,14 +386,6 @@ func (d *DerivedStore) RemoveAll(_ context.Context, name string) (err error) {
 	return root.RemoveAll(pos)
 }
 
-// checkVaultIdentity confirms the folder is the vault this store was opened on. A vault
-// carries its identity inside itself, and a folder that has lost the identity
-// it had is somewhere else: an unmounted disk, a synchroniser's stub, an empty
-// folder this store made on its way to a name.
-//
-// Every name is checked, so the check is a stat of the file the identity is
-// written in: the same file, of the same length and the same age, carries the
-// identity already read out of it. Anything else is read again.
 func (d *DerivedStore) checkVaultIdentity() error {
 	if now, err := os.Stat(vaultconfig.ConfigAt(d.vault, d.service)); err == nil && d.last.Load().isSameFile(now) {
 		return nil
@@ -442,10 +413,6 @@ func (d *DerivedStore) checkVaultIdentity() error {
 	return nil
 }
 
-// readIdentity is the identity a folder holds, and nothing where it holds
-// none. The file it was read from comes back with it, stamped before the
-// reading, so a file that changed under the recognition is read again at the next
-// asking.
 func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
 		serviceDir = vaultconfig.DefaultServiceDir
@@ -464,9 +431,6 @@ func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	return cfg.ID, was, nil
 }
 
-// openRoot is the store's folder as a handle, and a place in it as a name that
-// handle takes. Every step of a write is made through the handle, so a folder
-// itself and not by a rule read a moment before. The caller closes the handle.
 func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	name, err := filepath.Rel(d.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
@@ -479,8 +443,6 @@ func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// createRoot is the same, with the store's own folder put there if it is not.
-// It is what a write does that a read does not.
 func (d *DerivedStore) createRoot(target string) (*os.Root, string, error) {
 	if err := os.MkdirAll(d.root, 0o755); err != nil {
 		return nil, "", err
@@ -488,8 +450,6 @@ func (d *DerivedStore) createRoot(target string) (*os.Root, string, error) {
 	return d.openRoot(target)
 }
 
-// findArea is the one of this store's areas a cleaned name is in, and whether it is
-// in any of them.
 func (d *DerivedStore) findArea(clean string) (string, bool) {
 	for _, area := range d.areas {
 		if clean == area || strings.HasPrefix(clean, area+"/") {
@@ -499,16 +459,6 @@ func (d *DerivedStore) findArea(clean string) (string, bool) {
 	return "", false
 }
 
-// getPath returns the path of a name on this machine. The vault identity is
-// checked first, so nothing is read or written in a folder that is not the one
-// this store was opened on.
-//
-// The name is joined under its area and checked against it with every link on
-// the path resolved. Without the check, a name could be a link to a note, and
-// derived data could be read as, or written over, user content.
-//
-// The store's folder need not exist: the existing part of the path is
-// resolved, which is the rule used for writes into the vault.
 func (d *DerivedStore) getPath(name string) (string, error) {
 	clean, err := vaultconfig.CleanPath(name)
 	if err != nil {
@@ -538,13 +488,6 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	return target, nil
 }
 
-// isEnclosedBy reports whether the resolved path is inside the store's area. A
-// name that resolves outside the area is rejected, including a name that goes
-// through a link whose target is outside.
-//
-// The check uses the most recently resolved folder, and a positive result is
-// cached for as long as the store's folder is that folder. A rejected name or a
-// moved folder is checked against a new resolution.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {
 		return true, nil

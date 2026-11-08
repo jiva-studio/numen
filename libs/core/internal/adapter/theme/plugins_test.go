@@ -62,14 +62,12 @@ func (f *fakePlugins) ReadTheme(pluginID, themeID string) (string, error) {
 	return "", themecontract.ErrNoTheme
 }
 
-// enable adds themes to the list, as a plugin being enabled does. The texts stay.
 func (f *fakePlugins) enable(themes ...themecontract.PluginTheme) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.themes = append(f.themes, themes...)
 }
 
-// disable removes every theme of the plugin, as the plugin being disabled does.
 func (f *fakePlugins) disable() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -220,8 +218,6 @@ func TestEveryOriginOfAThemeIsNamedByItsPrefix(t *testing.T) {
 	}
 }
 
-// openWatch opens WatchThemes over the service. The stream ends after a bound on a machine under
-// load, and reading it then reports the failure.
 func openWatch(t *testing.T, service *theme.Service) *connect.ServerStreamForClient[v1.WatchThemesResponse] {
 	t.Helper()
 	server := serveThemes(t, service)
@@ -240,7 +236,6 @@ func openWatch(t *testing.T, service *theme.Service) *connect.ServerStreamForCli
 	return stream
 }
 
-// serveThemes serves the service over HTTP.
 func serveThemes(t *testing.T, service *theme.Service) *httptest.Server {
 	t.Helper()
 	route, handler := numenv1connect.NewThemeServiceHandler(service)
@@ -251,7 +246,6 @@ func serveThemes(t *testing.T, service *theme.Service) *httptest.Server {
 	return server
 }
 
-// readReported reads the stream until the names reported hold every wanted name.
 func readReported(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchThemesResponse], want ...string) {
 	t.Helper()
 	reported := map[string]bool{}

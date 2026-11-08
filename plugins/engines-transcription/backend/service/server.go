@@ -31,7 +31,6 @@ type Host struct {
 	Queue host.Queue
 }
 
-// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) Host {
 	return Host{
 		Vault: host.NewClient(endpoint),
@@ -67,7 +66,6 @@ func (f vaultFiles) GetActiveVaultID(ctx context.Context) (domain.VaultID, error
 // openModel opens the recogniser of the configuration.
 type openModel func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
 
-// newParakeetOpener returns what opens the recogniser of a configuration through the runtime.
 func newParakeetOpener(runtime engine.Runtime) openModel {
 	return func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
 		return engine.Open(ctx, runtime, cfg)
@@ -102,9 +100,6 @@ func (m *models) get(ctx context.Context) (engine.TranscriberPort, error) {
 	return m.current, nil
 }
 
-// updateConfig takes the model the settings name, which the recogniser opens with. A model the
-// plugin does not provision is left as it was. The host stops the plugin when the model
-// changes, since the model's files change with it, so an open model is kept.
 func (m *models) updateConfig(values map[string]string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -167,8 +162,6 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	return nil
 }
 
-// newTranscribeCommand transcribes the recording the user named, in the vault the host has open, and
-// waits for it.
 func newTranscribeCommand(transcriber *Transcriber) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		if err := transcriber.Transcribe(ctx, "", req.Path); err != nil {

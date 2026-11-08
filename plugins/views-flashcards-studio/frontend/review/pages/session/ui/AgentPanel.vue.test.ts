@@ -30,7 +30,6 @@ const agent: AgentPort = {
   finish: async () => undefined,
 }
 
-/** The panel over one card, with the session around it standing in for it. */
 const createPanel = (): AgentPanelState => {
   const open = ref(false)
   return useAgentPanel({
@@ -45,7 +44,6 @@ const createPanel = (): AgentPanelState => {
   })
 }
 
-/** A host that records each view mounted, writes its focus into the element, and counts focus calls. */
 const createHost = () => {
   const mounts: { capability: string; context: ConversationContext; isDisposed: boolean }[] = []
   let focusCount = 0

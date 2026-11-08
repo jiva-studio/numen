@@ -78,11 +78,10 @@ func (c Config) PickFolder(dialog machineport.FolderDialog) *vault.PickFolder {
 // folder watches and the access to the settings file. An application builds one with
 // NewResources and names it in its Config.
 type Resources struct {
-	vaultLocks    *vaultwriter.Locks
-	watches       *vaultwatch.Hub
-	settingsFiles *settings.Files
-	settingEvents *settingevents.Events
-	// hostSubscribed makes the plugin host a reader of the setting events once.
+	vaultLocks     *vaultwriter.Locks
+	watches        *vaultwatch.Hub
+	settingsFiles  *settings.Files
+	settingEvents  *settingevents.Events
 	hostSubscribed sync.Once
 }
 
@@ -108,8 +107,6 @@ func NewConfig(c Config) Config {
 	return c
 }
 
-// getResources returns the resources the Config names, or empty ones whose locks, watches and
-// settings access return an error.
 func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources

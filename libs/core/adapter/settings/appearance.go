@@ -10,23 +10,12 @@ import (
 // Appearance holds the theme, the mode and the sizes of the window. The declaration of the shell
 // gives each its type, its bounds and its default.
 type Appearance struct {
-	// InterfaceScale is the scale of the window: its chrome, its controls, the
-	// spacing between them and the type in them.
 	InterfaceScale float64 `json:"interfaceScale"`
 
-	// TextScale is the scale of reading text: a note, a book, an answer, the
-	// editor.
 	TextScale float64 `json:"textScale"`
 
-	// Mode is which half of a colour pair the window takes: ModeSystem,
-	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
-	// this nothing to choose.
 	Mode string `json:"mode"`
 
-	// Theme is the stylesheet applied to the window, named by its origin
-	// and its identifier: `preset:numen` ships here, `mine:dracula` is the
-	// person's file, and `plugin:org.example.themes/dark` is a theme
-	// of an enabled plugin.
 	Theme string `json:"theme"`
 }
 
@@ -74,12 +63,6 @@ func GetTextScaleBounds() Bounds { return getAppBounds(keyTextScale) }
 // theme chosen. It is the default the declaration of the shell gives the theme.
 const DefaultTheme = "preset:numen"
 
-// getDesktopScale returns the interface scale used when the file names no size.
-//
-// A screen reports its pixel count, not its physical size, so the desktop is
-// queried: GDK_DPI_SCALE is the text scale configured for the session, and the
-// interface scale is set to match. A number outside the bounds of the interface scale is not
-// used as the default.
 func getDesktopScale() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
 	if err != nil || !GetInterfaceScaleBounds().Contains(scale) {

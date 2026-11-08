@@ -12,7 +12,6 @@ const pluginID = "md.numen.sample.speech"
 
 func number(v float64) *float64 { return &v }
 
-// declaredSettings declares the shell and one plugin, the way a loaded installation does.
 func declaredSettings(owner string) ([]pluginport.PluginManifestSetting, bool) {
 	switch owner {
 	case settings.OwnerApp:

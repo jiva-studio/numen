@@ -31,9 +31,6 @@ var errSafeMode = errors.New("numen is running in safe mode")
 
 const pluginFailureTaskPrefix = "plugin-failed:"
 
-// resolvePlugin is the plugin host where an enabled plugin declares the capability. Where none
-// does, the error is a *port.UnavailableError: an installation with no plugin host has none
-// installed, and one in safe mode has every one disabled.
 func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, error) {
 	if c.PluginHost == nil {
 		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginNotInstalled}
@@ -47,7 +44,6 @@ func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, erro
 	return c.PluginHost, nil
 }
 
-// hasPlugin is whether an enabled plugin declares the capability.
 func (c Config) hasPlugin(capability string) bool {
 	_, err := c.resolvePlugin(capability)
 	return err == nil
@@ -186,7 +182,6 @@ func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	}
 }
 
-// getPluginName is the name given by the plugin's manifest, or its id when the host has no such plugin.
 func (c Config) getPluginName(pluginID string) string {
 	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
@@ -225,21 +220,12 @@ func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type PluginVaultHooks struct {
-	// Written is called after a plugin changes the vault.
-	Written func()
-	// IndexState starts reading a vault into the index when it is not indexed and reports its state. When
-	// nil, a vault the index holds is treated as indexed and any other as being indexed.
+	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
-	Moved func(ctx context.Context) (<-chan struct{}, error)
-	// Notes is the window's own use cases on notes, used for the vault the window shows, so the
-	// window follows a note a plugin renames or moves there. The zero value is the host's own, which no
-	// window follows.
-	Notes note.Scenarios
+	Moved      func(ctx context.Context) (<-chan struct{}, error)
+	Notes      note.Scenarios
 }
 
-// hasReaders reports whether the use cases on notes have their vault readers, which a zero
-// Scenarios lacks.
 func hasReaders(notes note.Scenarios) bool {
 	return notes.Move.Readers() != nil
 }

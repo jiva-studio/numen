@@ -35,7 +35,6 @@ func (o *output) println(args ...any) {
 	_, o.err = fmt.Fprintln(o.w, args...)
 }
 
-// finish returns code, or 1 when code reports success and a stream failed to take the output.
 func finish(code int, outs ...*output) int {
 	if code != 0 {
 		return code

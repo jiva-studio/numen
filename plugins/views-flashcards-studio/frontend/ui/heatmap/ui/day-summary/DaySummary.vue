@@ -15,7 +15,6 @@ import type { Words } from '../../lib/words'
 
 const props = defineProps<{
   day: Day
-  /** The label of each line, in the user's language. */
   words: Words
 }>()
 

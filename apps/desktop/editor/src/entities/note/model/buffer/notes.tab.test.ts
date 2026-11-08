@@ -17,7 +17,6 @@ import {
   type Tab,
 } from './tab'
 
-/** A tab that has read its note and shows what it read. */
 const tab = (overrides: Partial<Tab> = {}): Tab => ({
   path: 'Note.md',
   savedText: 'one',
@@ -35,7 +34,6 @@ const tab = (overrides: Partial<Tab> = {}): Tab => ({
 
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
-/** A tab whose pending write was reported against a different file stat. */
 const createStaleTab = (overrides: Partial<Tab> = {}): Tab =>
   transitionTab(tab({ editorText: 'mine', pendingWrite: 'mine', since: 10, ...overrides }), {
     kind: 'written',

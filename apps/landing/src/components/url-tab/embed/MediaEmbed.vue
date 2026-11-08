@@ -16,24 +16,15 @@ import { createHeightStore, type HeightStore } from '../lib/storage'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
   defineProps<{
-    /** Where a frame plays what is at the address, and nothing where a copy is. */
     embed: string
-    /**
-     * Where a copy of it on this disk is played from, and nothing where there is
-     * none. A copy is played in place of the frame: it plays offline, and nothing
-     * of the site it came from is loaded to play it.
-     */
     copy: string
-    /** What the frame and the bar that resizes it are called. */
     words: { readonly playing: string; readonly taller: string }
-    /** Where the height a person drew the player is kept. This machine's storage by default. */
     store?: HeightStore
   }>(),
   { store: () => createHeightStore() },
 )
 
 const emit = defineEmits<{
-  /** Where the copy stands, in milliseconds, as it plays. A frame says nothing. */
   'time-update': [ms: number]
   'play-state': [isPlaying: boolean]
 }>()
@@ -88,13 +79,6 @@ onBeforeUnmount(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * The bar under the player is taken hold of, and the player follows it.
- *
- * The pointer is captured by the bar and the player stops taking pointers at
- * all: a frame is a document of its own, and one dragged across takes every
- * move and the release with it.
- */
 function onPointerDown(at: PointerEvent): void {
   const bar = at.currentTarget as HTMLElement
   const held = bar.previousElementSibling
@@ -175,10 +159,6 @@ function onWindowMessage(event: MessageEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * The nearest ancestor that is a size container: its height does not follow the player's, and it
- * is the box the player's `cqh` units resolve against. The window where there is none.
- */
 function findPane(): HTMLElement | null {
   for (let at = root.value?.parentElement ?? null; at; at = at.parentElement) {
     if (getComputedStyle(at).containerType.split(' ').includes('size')) return at
@@ -189,7 +169,6 @@ function findPane(): HTMLElement | null {
 function getPaneHeight(): number {
   return findPane()?.clientHeight || window.innerHeight
 }
-/** Played from a moment, in milliseconds: the copy where there is one. */
 function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000

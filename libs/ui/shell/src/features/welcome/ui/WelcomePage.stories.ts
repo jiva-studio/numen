@@ -58,9 +58,7 @@ const MANY: readonly VaultRow[] = [
 ]
 
 interface Knobs {
-  /** How wide the window is, in pixels. */
   wide: number
-  /** How tall the window is, in pixels. */
   high: number
   ways: readonly WelcomeAction[]
   vaults: readonly VaultRow[]
@@ -103,7 +101,6 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The element the selector names, or the story fails saying which is missing. */
 async function found(canvas: HTMLElement, selector: string): Promise<HTMLElement> {
   const el = canvas.querySelector<HTMLElement>(selector)
   await expect(el, `nothing here is ${selector}`).not.toBeNull()

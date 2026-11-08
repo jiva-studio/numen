@@ -14,7 +14,6 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 /** The request as the transport serialized it. */
 let request: Record<string, unknown>[] = []
 
-/** What the application answers with, in the words the schema writes it in. */
 const replyWith = (answer: unknown) => {
   request = []
   vi.stubGlobal(

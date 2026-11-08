@@ -24,12 +24,6 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	return cfg
 }
 
-// makeDeps builds what the terminal works through, for the places one run was
-// pointed at. The application assembles an installation, so the openers are
-// created here and passed to the terminal.
-//
-// Each opens when its command requests it, not before: listing vaults waits for
-// no index, and a links query starts no plugin.
 func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg = configureLocations(cfg, where)
@@ -49,8 +43,6 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	}
 }
 
-// createVaults creates the registry of vaults with the readers over them. The
-// index behind the rows is opened only when the rows are requested.
 func createVaults(cfg container.Config) (cli.Vaults, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -72,7 +64,6 @@ func createVaults(cfg container.Config) (cli.Vaults, error) {
 	}, nil
 }
 
-// createLinks is the links of a note, read from the index.
 func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
@@ -83,8 +74,6 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 	return cli.Links{Show: notes.Links, Close: db.Close}, nil
 }
 
-// createScan is the walk of a vault into the index. The vault is read whether
-// or not the embedding model arrives.
 func createScan(
 	ctx context.Context, cfg container.Config, v domain.Vault, rebuild bool,
 ) (cli.Scan, error) {
@@ -115,7 +104,6 @@ func createScan(
 	}, nil
 }
 
-// closeIfOpen closes what a function returned to close, when it returned one.
 func closeIfOpen(closeFn func() error) error {
 	if closeFn == nil {
 		return nil
@@ -123,9 +111,6 @@ func closeIfOpen(closeFn func() error) error {
 	return closeFn()
 }
 
-// createSearch is the search over the index, reading the text of a passage through the text
-// versions of the vault. Only the provider that embeds questions is opened, because nothing a
-// search does fills an index.
 func createSearch(
 	ctx context.Context, cfg container.Config, v domain.Vault, errorHandler windowport.ErrorHandler,
 ) (cli.Search, error) {
@@ -147,7 +132,6 @@ func createSearch(
 	}, nil
 }
 
-// createProblems is the problems the index holds.
 func createProblems(ctx context.Context, cfg container.Config) (cli.Problems, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
@@ -156,7 +140,6 @@ func createProblems(ctx context.Context, cfg container.Config) (cli.Problems, er
 	return cli.Problems{Problems: db.Problems(), Close: db.Close}, nil
 }
 
-// createPluginCommands is the commands the enabled plugins declare.
 func createPluginCommands(cfg container.Config) cli.PluginCommands {
 	return cli.PluginCommands{List: cfg.GetPluginCommands().List, Open: cfg.OpenPluginCommands}
 }

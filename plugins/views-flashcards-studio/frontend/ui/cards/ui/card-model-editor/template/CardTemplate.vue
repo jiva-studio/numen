@@ -26,11 +26,8 @@ import { insert } from '../../../lib/fill'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The template, laid out against the fields the card model declares. */
     template: TemplateRow
-    /** The problems the caller found with this template, shown next to its name. */
     wrong?: readonly string[]
-    /** The words it is drawn with. */
     words?: CardModelWords
   }>(),
   { wrong: () => [], words: () => CARD_MODEL_WORDS },
@@ -67,7 +64,6 @@ const back = shallowRef<InstanceType<typeof TemplatePane> | null>(null)
 const divided = computed<readonly Pane[]>(() => getPanes(props.template, props.words))
 
 /* -------------------------------- Handlers -------------------------------- */
-/** A part was drawn, or taken away. The part a half is written in holds its box. */
 const onSetBox = (pane: Pane, element: Element | ComponentPublicInstance | null): void => {
   if (pane.mode !== 'written') return
   const box = element as InstanceType<typeof TemplatePane> | null
@@ -75,11 +71,6 @@ const onSetBox = (pane: Pane, element: Element | ComponentPublicInstance | null)
   else back.value = box
 }
 
-/**
- * Inserts a field into the half the caret is in, at the caret position, and
- * moves the caret after it. A box that has never been typed in has no caret, so
- * the field is appended to its content.
- */
 const onPut = async (field: string): Promise<void> => {
   const half = focusedHalf.value
   const target = getBox(half)
@@ -98,7 +89,6 @@ const onPut = async (field: string): Promise<void> => {
 const getBox = (half: Half): HTMLTextAreaElement | null =>
   (half === 'front' ? front.value : back.value)?.box ?? null
 
-/** The part a field would be written into. */
 const isFocused = (pane: Pane): boolean =>
   pane.mode === 'written' && focusedHalf.value === pane.half
 </script>

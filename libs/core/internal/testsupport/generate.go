@@ -93,6 +93,4 @@ func note(r *rand.Rand, i, total int) string {
 	return b.String()
 }
 
-// name is what a note is called, and therefore what a link by name has to
-// resolve.
 func name(i int) string { return fmt.Sprintf("note-%06d", i) }

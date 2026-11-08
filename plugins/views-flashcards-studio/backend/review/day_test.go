@@ -91,9 +91,6 @@ func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
 	}
 }
 
-// zones is the spread of zones the days are counted over, taking in a clock
-// that goes forward at midnight, one that moves by half an hour, and one that
-// crossed the date line.
 func getZones() []string {
 	return []string{
 		"America/Santiago", "America/Havana", "Australia/Lord_Howe", "Pacific/Chatham",
@@ -185,8 +182,6 @@ func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 	}
 }
 
-// counting is a day as the rest of the application counts one, in a zone a test
-// can say things about.
 func getCounting() review.Day {
 	return review.Day{
 		Starts: review.DayStartTime,
@@ -268,8 +263,6 @@ func TestGetDayTallies_CountsPerRating(t *testing.T) {
 	}
 }
 
-// makeTallies returns the days with answers, with the count of answers each
-// specifies.
 func makeTallies(days map[string]int) map[string]review.Tally {
 	out := make(map[string]review.Tally, len(days))
 	for day, reply := range days {

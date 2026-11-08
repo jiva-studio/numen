@@ -18,8 +18,6 @@ import (
 
 var errTooManyLinks = fmt.Errorf("too many links: at most %d per call", batchLimit)
 
-// readRole returns the role of a link on the wire, empty for ROLE_UNSPECIFIED. A value the schema does
-// not name is kept as its number, which no link has, so the core rejects it.
 func readRole(role v1.Role) domain.LinkRole {
 	if converted, isKnown := wire.ConvertRoleFromWire(role); isKnown || role == v1.Role_ROLE_UNSPECIFIED {
 		return converted
@@ -118,9 +116,6 @@ type linkEdit struct {
 	detail string
 }
 
-// writeLinkEdit returns the outcome of an edit of the links of one note: the file stat after the write,
-// or the code and the core's text of the failure. A failure of the call is returned as the call's
-// code or error.
 func writeLinkEdit(ctx context.Context, stat domain.FileStat, err error) (linkEdit, v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return linkEdit{stat: writeFileStat(stat)}, 0, nil

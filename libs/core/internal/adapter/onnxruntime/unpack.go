@@ -12,11 +12,6 @@ import (
 	"strings"
 )
 
-// unpack takes the library called name out of an archive and writes it at at.
-//
-// The library is looked for by name at any depth: the folder inside the archive
-// is named after the release. The plain name inside is a link to the file
-// carrying the version, and what is taken out is that file.
 func unpack(archive, name, pos string) error {
 	if strings.HasSuffix(archive, ".zip") {
 		return unpackZip(archive, name, pos)
@@ -71,8 +66,6 @@ func unpackZip(archive, name, pos string) (err error) {
 	return fmt.Errorf("%s holds no %s", archive, name)
 }
 
-// write writes one file through a temporary name in the same directory, so an
-// interrupted unpacking leaves nothing that looks finished.
 func write(pos string, from io.Reader) error {
 	part := pos + ".part"
 	file, err := os.OpenFile(part, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
@@ -88,12 +81,6 @@ func write(pos string, from io.Reader) error {
 	return os.Rename(part, pos)
 }
 
-// isLibrary reports whether one name in an archive is the library.
-//
-// It is the exact name, that name with a version after it, or the name carrying
-// a version before its extension, which is where a mac library keeps one. It is
-// not one of the libraries published in the same archive: those are named for
-// what they add, so they carry the same prefix and a different word.
 func isLibrary(found, name string) bool {
 	if found == name || strings.HasPrefix(found, name+".") {
 		return true

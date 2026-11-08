@@ -34,7 +34,6 @@ type Story = StoryObj<typeof meta>
 const getFrame = (canvasElement: HTMLElement) =>
   canvasElement.querySelector<HTMLElement>('[data-numen-searchable-list]')!
 
-/** Fails unless the input and the list sit in one frame, the input first. */
 const expectOneFrame = async (canvasElement: HTMLElement, hasList: boolean) => {
   const canvas = within(canvasElement)
   const frame = getFrame(canvasElement)

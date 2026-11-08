@@ -12,15 +12,10 @@ import { AHEAD, ROWS } from './grid'
 /** What one day behind came to. */
 export interface Tally {
   readonly reviewed: number
-  /** The number of answers per rating. */
   readonly again: number
   readonly hard: number
   readonly good: number
   readonly easy: number
-  /**
-   * The answers given to cards already under review, and how many of those were
-   * recalled. A card still repeating within minutes is in neither count.
-   */
   readonly tested: number
   readonly recalled: number
 }
@@ -38,15 +33,10 @@ export const NOTHING: Tally = {
 
 /** One day of the grid. */
 export interface Day extends Tally {
-  /** The day it is, as the year, the month and the day it began on. */
   readonly day: string
-  /** How much was done on it, or how much falls on it where it is still ahead. */
   readonly did: number
-  /** How dark it is drawn: nothing at 0, most at 4. */
   readonly weight: 0 | 1 | 2 | 3 | 4
-  /** Whether it is the day holding now. */
   readonly isToday: boolean
-  /** Whether it is still to come, and what it holds is what is coming. */
   readonly isAhead: boolean
 }
 
@@ -103,10 +93,6 @@ export function getDays(
   return out
 }
 
-/**
- * The first day of the history, or today when there is none. A day still to come
- * counts: a vault whose cards are all in the future has a first day too.
- */
 function getFirstDay(
   did: ReadonlyMap<string, unknown>,
   due: ReadonlyMap<string, unknown>,
@@ -127,7 +113,6 @@ function monday(date: Date): Date {
   return out
 }
 
-/** Monday is the first day of a week, and Sunday the seventh. */
 function weekday(date: Date): number {
   const day = date.getDay()
   return day === 0 ? 7 : day
@@ -156,7 +141,6 @@ export interface Cell {
   readonly radius: number
 }
 
-/** How far apart two cells begin. */
 const getStep = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
 
 /** The grid height: seven rows, with no gap after the last one. */

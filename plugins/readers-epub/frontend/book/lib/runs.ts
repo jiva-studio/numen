@@ -15,9 +15,7 @@ import type { Mark } from './spread'
 
 /** Single contiguous text run in rendered book. */
 export interface Run {
-  /** Byte offset where the text run begins. */
   readonly at: number
-  /** DOM element containing the rendered text run. */
   readonly element: HTMLElement
 }
 
@@ -87,11 +85,6 @@ export function findOffset(
   return undefined
 }
 
-/**
- * The text node and offset within `run` at the byte distance `into`. The
- * distance from the run's own offset is a number of bytes, and only
- * `getUnitOffset` converts one into a position in a string.
- */
 const getPlaceInRun = (
   run: HTMLElement,
   into: number,
@@ -108,11 +101,6 @@ const getPlaceInRun = (
   return undefined
 }
 
-/**
- * Returns `span` clipped to the text of the rendered runs, so a span extending past this document
- * keeps the part rendered here, or undefined when the span is wholly outside them. An empty span
- * selects the run at its offset and is not clipped.
- */
 const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
   const first = runs[0]
   const last = runs.at(-1)
@@ -123,7 +111,6 @@ const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined 
   return { start: Math.max(span.start, first.at), end: Math.min(span.end, textEnd) }
 }
 
-/** One stretch of the book's text as a range over the nodes the markup carries. */
 const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
   const clipped = clipSpan(runs, span)
   if (!clipped) return undefined

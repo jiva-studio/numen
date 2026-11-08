@@ -34,13 +34,10 @@ type bridgeContract struct {
 	open func(ctx context.Context, host bridgeHost) (io.Closer, bridgeCall, error)
 }
 
-// isZeroResult reports whether a call returned the zero value of its type.
 func isZeroResult[T any](value T, err error) (bool, error) {
 	return reflect.ValueOf(&value).Elem().IsZero(), err
 }
 
-// createContract pairs an open bridge with a call through it. An open that failed
-// returns no bridge.
 func createContract[B io.Closer](bridge B, err error, call func(B, context.Context) (bool, error)) (io.Closer, bridgeCall, error) {
 	if err != nil {
 		return nil, nil, err
@@ -48,8 +45,6 @@ func createContract[B io.Closer](bridge B, err error, call func(B, context.Conte
 	return bridge, func(ctx context.Context) (bool, error) { return call(bridge, ctx) }, nil
 }
 
-// bridgeContracts is every bridge the host opens, each with a call that invokes
-// its plugin.
 func getBridgeContracts() []bridgeContract {
 	return []bridgeContract{
 		{"embedder", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
@@ -70,10 +65,6 @@ func getBridgeContracts() []bridgeContract {
 // contractPluginID is the plugin the bridges that are opened by id are opened on.
 const contractPluginID = "md.numen.stub"
 
-// listRefusalProblems opens a bridge on a plugin that cannot respond and lists
-// what is wrong with its error behavior. A plugin that is down, and one that is
-// not installed, fail the bridge with port.ErrUnavailable, at the open or at the
-// call, and never with a value.
 func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) (problems []string) {
 	bridge, call, err := open(ctx, host)
 	if err == nil {
@@ -99,7 +90,6 @@ func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context
 	return problems
 }
 
-// What the rejection of a bridge is judged by.
 func isUnavailable(err error) bool { return errors.Is(err, completionport.ErrUnavailable) }
 
 func isNotInstalled(err error) bool {
@@ -152,7 +142,6 @@ func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 	cases := []struct {
 		name string
 		open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error)
-		// want is what the problems say, and empty where there are none.
 		want string
 	}{
 		{"an error with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {

@@ -37,7 +37,6 @@ const words: Words = {
   newVaultDetail: 'choose a folder',
 }
 
-/** A window showing a vault it has read. */
 const createCurrentVault = (overrides: Partial<CurrentVault> = {}): CurrentVault => ({
   vault: 'physics',
   isReady: true,

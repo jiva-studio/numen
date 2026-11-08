@@ -7,10 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// listAddressSeeds returns the shapes a link is written in: a bare name, a name with an
-// alias, one with a fragment, both together, the two schemes the index writes,
-// a title carrying a colon, a name that is only punctuation, and the empty
-// string.
 func listAddressSeeds() []string {
 	return []string{
 		"Entropy",

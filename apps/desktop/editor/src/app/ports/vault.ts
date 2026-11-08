@@ -7,18 +7,14 @@ import type { TabLinksChange, TabLinksSnapshot, TabWindow } from '@/features/tab
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
   state(): Promise<{
-    /** The folder's identity, which looks up the vault. */
     id: string
-    /** The user-visible vault name. */
     name: string
     path: string
-    /** How far indexing the vault has got. */
     scan: {
       isReady: boolean
       error: string
       unwatchedPath: string
     }
-    /** How far searching it by meaning has got. */
     coverage: {
       chunkCount: bigint
       embeddedCount: bigint
@@ -56,7 +52,6 @@ export interface VaultPort {
   watchFocus(signal: AbortSignal): AsyncIterable<{
     path: string
     ranges: readonly { start: number; end: number }[]
-    /** The id of an open tab to make active; when set, path and ranges are empty. */
     tabId: string
   }>
   /** Reports the currently open tabs; called again whenever they change. */
@@ -132,8 +127,6 @@ export interface TabPathSync {
 export interface TabLinksEvent {
   readonly links?: TabLinksSnapshot
   readonly sync?: TabPathSync
-  /** A tab that another window sends to this window. */
   readonly movedTab?: MovedTab
-  /** Whether this window shows the highlight outline. */
   readonly isHighlighted?: boolean
 }

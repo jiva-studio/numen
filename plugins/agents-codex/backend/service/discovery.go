@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
-// getCodexPlaces returns where the CLI is looked for after PATH. A leading ~/ is the home
-// directory.
 func getCodexPlaces() []string {
 	return []string{
 		"~/.local/bin/codex",
@@ -38,8 +36,6 @@ func FindCodex(customPath ...string) string {
 	return findCodexIn(getCodexPlaces(), customPath...)
 }
 
-// findCodexIn returns the path of the Codex CLI, searched in customPath, PATH and places, or the
-// bare name where not found.
 func findCodexIn(places []string, customPath ...string) string {
 	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
 		return customPath[0]

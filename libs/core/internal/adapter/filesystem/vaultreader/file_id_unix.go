@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// getFileID returns the inode of the file the info describes.
 func getFileID(info fs.FileInfo) domain.FileID {
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {

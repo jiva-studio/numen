@@ -37,8 +37,6 @@ func (f *Folders) IsKnownFolder(path string) bool {
 	return f.Indexed[path]
 }
 
-// addFolder remembers a path as a folder, which is the one moment the question is
-// answerable.
 func (f *Folders) addFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -188,7 +186,6 @@ type underWalk struct {
 	short      bool
 }
 
-// visit is one entry of the walk.
 func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err error) error {
 	if ctx.Err() != nil {
 		return fs.SkipAll

@@ -20,7 +20,6 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (lines []Line
 	return buildFixedLines(batch, reply, maxDistance, indexBatchLines(batch))
 }
 
-// indexBatchLines maps each line number in the batch to its text.
 func indexBatchLines(batch Batch) map[int]string {
 	read := make(map[int]string, len(batch.Lines))
 	for _, line := range batch.Lines {
@@ -29,7 +28,6 @@ func indexBatchLines(batch Batch) map[int]string {
 	return read
 }
 
-// buildFixedLines parses reply rows, validates each against the batch, and collects accepted corrections.
 func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[int]string) ([]Line, bool, bool) {
 	var out []Line
 	hasOverflow := false
@@ -50,7 +48,6 @@ func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[in
 	return out, hasOverflow, true
 }
 
-// processRow parses and checks a single reply row against the batch lines and edit distance.
 func processRow(row string, batch Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
 	startLine, endLine, text, barred, numbers := readRow(row)
 	if !numbers {
@@ -78,8 +75,6 @@ func processRow(row string, batch Batch, read map[int]string, claimedLines map[i
 	return Line{Number: startLine, Last: endLine, Text: text}, true, false, true
 }
 
-// matchLines concatenates lines from startLine to endLine and checks whether each exists in the batch.
-// The second result is true when the line range extends beyond the last batch line.
 func matchLines(read map[int]string, startLine, endLine, last int) (joined string, reaches, ok bool) {
 	was, named := read[startLine]
 	if !named {
@@ -98,7 +93,6 @@ func matchLines(read map[int]string, startLine, endLine, last int) (joined strin
 	return was, false, true
 }
 
-// claimLines marks the given line range as answered, rejecting duplicate lines.
 func claimLines(claimedLines map[int]bool, startLine, endLine int) bool {
 	for line := startLine; line <= endLine; line++ {
 		if claimedLines[line] {
@@ -109,7 +103,6 @@ func claimLines(claimedLines map[int]bool, startLine, endLine int) bool {
 	return true
 }
 
-// isValidRow validates that the reply row format and content are well-formed.
 func isValidRow(row, was, text string, barred bool) bool {
 	if !barred && strings.HasPrefix(strings.TrimSpace(was), readLeadingDigits(row)) {
 		return false
@@ -120,7 +113,6 @@ func isValidRow(row, was, text string, barred bool) bool {
 	return true
 }
 
-// canKeepCorrection reports whether a correction modifies the line within the maximum allowed edit distance.
 func canKeepCorrection(was, text string, startLine, endLine int, maxDistance float64) bool {
 	if endLine > startLine {
 		return true
@@ -137,7 +129,6 @@ func canKeepCorrection(was, text string, startLine, endLine int, maxDistance flo
 	return true
 }
 
-// readRow parses a reply row into line bounds, text, and delimiter flags.
 func readRow(row string) (startLine, endLine int, text string, barred, ok bool) {
 	digits := readLeadingDigits(row)
 	if digits == "" || len(digits) == len(row) {
@@ -166,7 +157,6 @@ func readRow(row string) (startLine, endLine int, text string, barred, ok bool) 
 	return startLine, endLine, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
 }
 
-// readRowRange parses the ending line number in a hyphenated line range.
 func readRowRange(rest string, startLine int) (endLine int, remainder string, ok bool) {
 	last := readLeadingDigits(rest[1:])
 	if last == "" {
@@ -183,8 +173,6 @@ func readRowRange(rest string, startLine int) (endLine int, remainder string, ok
 	return endLine, remainder, true
 }
 
-// readLeadingDigits is the run of digits a row opens with, and nothing for a row readLeadingDigits
-// with anything else.
 func readLeadingDigits(row string) string {
 	digits := 0
 	for digits < len(row) && row[digits] >= '0' && row[digits] <= '9' {
@@ -193,12 +181,6 @@ func readLeadingDigits(row string) string {
 	return row[:digits]
 }
 
-// isPrefixedBySymbols reports whether text is the corrected line with only
-// symbols (no letters or digits) prepended.
-//
-// An unrecognized separator (a dash, an arrow, a colon) at the start
-// of the line leaves the letters on both sides identical, so letter-counting
-// checks do not detect it.
 func isPrefixedBySymbols(was, text string) bool {
 	was = strings.TrimSpace(was)
 	if was == "" || !strings.HasSuffix(text, was) {
@@ -212,7 +194,6 @@ func isPrefixedBySymbols(was, text string) bool {
 	return true
 }
 
-// stripFence is a reply with the code fence a model wrapped it in taken off.
 func stripFence(reply string) string {
 	body := strings.TrimSpace(reply)
 	if !strings.HasPrefix(body, "```") {
@@ -243,8 +224,6 @@ func EditDistance(a, b string) float64 {
 	return float64(countEdits(x, y)) / float64(long)
 }
 
-// extractLetters returns a line with its spaces, punctuation, symbols,
-// diacritics and case removed.
 func extractLetters(line string) []rune {
 	var out []rune
 	for _, r := range norm.NFD.String(line) {
@@ -256,8 +235,6 @@ func extractLetters(line string) []rune {
 	return out
 }
 
-// countEdits returns the Levenshtein distance between two runs of letters, carrying one
-// row of the table at a time.
 func countEdits(x, y []rune) int {
 	row := make([]int, len(y)+1)
 	for j := range row {

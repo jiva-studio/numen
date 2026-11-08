@@ -1,7 +1,6 @@
 import { test, expect } from '../../support/test.js'
 import { openWorkspace, waitForPassage } from '../../support/workspace.js'
 
-/** The text of every range the book reader lights, in the order the ranges were drawn. */
 const readLitText = (): string[] => {
   const ranges = CSS.highlights.get('numen-book')
   return ranges ? [...ranges].map((range) => range.toString()) : []

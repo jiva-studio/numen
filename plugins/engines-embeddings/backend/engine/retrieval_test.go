@@ -129,8 +129,6 @@ func checkRetrieval(t *testing.T, profile Profile, dir, lib string, fixture retr
 	}
 }
 
-// flatten returns a folder that holds the files of a model as Locate finds them in a directory: the model
-// file, its data file and the tokenizer side by side.
 func flatten(t *testing.T, dir string) string {
 	t.Helper()
 	flat := t.TempDir()

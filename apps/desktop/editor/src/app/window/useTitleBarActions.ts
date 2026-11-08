@@ -19,21 +19,15 @@ const KEY_TEXT: Readonly<Record<PaletteIcon, string>> = {
 }
 
 export interface TitleBarActionsDeps {
-  /** The places plugins put their commands in; only `titleBar` is read. */
   readonly menus: Pick<Menus, 'getEntries'>
-  /** True while a vault is open in this window. */
   readonly isVaultOpen: () => boolean
-  /** The runner the palette and the shortcuts use. */
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getTarget: () => CommandTarget
-  /** Lucide name to component. */
   readonly getIcon: (name: string) => Component
-  /** `navigator.userAgent`, for the keys of a shortcut. */
   readonly agent: string
 }
 
 export interface TitleBarActions {
-  /** The actions in the order the menus give; empty while no vault is open. */
   readonly actions: ComputedRef<readonly TitleBarAction[]>
   /** The press of an action by its id (the full command id). */
   run(id: string): void

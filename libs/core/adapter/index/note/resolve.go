@@ -59,12 +59,6 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 	return dedupe(out), nil
 }
 
-// dedupe merges links that resolve to the same note, which happens when one
-// note is written two ways: [[notes/Entropy]] in the links block and [[Entropy]]
-// in prose are one link, and the described one wins.
-//
-// Deduplication runs after resolution, which determines that two different
-// strings denote one note.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	observed := map[string]int{}
 	var out []domain.ResolvedLink
@@ -226,8 +220,6 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 	return out, nil
 }
 
-// getBacklinkCandidates returns the links that may point at the note filed under
-// an identifier and a base name, before resolution decides which of them do.
 func (q *Queries) getBacklinkCandidates(ctx context.Context, vault int64, identifier, base string) (_ []domain.ResolvedLink, err error) {
 	rows, err := q.db.QueryContext(ctx, backlinkCandidatesSQL,
 		identifier, vault, base, vault)

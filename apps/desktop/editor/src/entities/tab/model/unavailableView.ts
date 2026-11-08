@@ -10,7 +10,6 @@ export interface UnavailableView {
   readonly message: string
   readonly action: UnavailableAction
   readonly actionText: string
-  /** The plugin the action applies to; absent where the catalog names none. */
   readonly pluginId: string | undefined
 }
 

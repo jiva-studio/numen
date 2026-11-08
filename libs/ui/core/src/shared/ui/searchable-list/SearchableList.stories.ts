@@ -96,7 +96,6 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The same story in the dark token set. */
 const inDark = (story: Story): Story => ({
   ...story,
   globals: DARK,
@@ -109,7 +108,6 @@ const inDark = (story: Story): Story => ({
 const getFrame = (canvasElement: HTMLElement) =>
   canvasElement.querySelector<HTMLElement>('[data-numen-searchable-list]')!
 
-/** Fails unless the search line and the rows are one frame, the line first. */
 const expectOneFrame = async (canvasElement: HTMLElement) => {
   const frame = getFrame(canvasElement)
   const canvas = within(canvasElement)

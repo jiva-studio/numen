@@ -17,9 +17,6 @@ const (
 	courierToken  = "5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e"
 )
 
-// openDisabledCourier loads a settings file in which the plugin courier, whose setting token asks for
-// a generated token, is disabled and holds no token, wires the host as the app does, and returns the
-// settings reader of the host.
 func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost, func(string) map[string]any) {
 	t.Helper()
 	root := t.TempDir()
@@ -55,7 +52,6 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 	return cfg, path, host, pluginHost.GetPluginSettings
 }
 
-// readCourierToken returns the token numen.json holds for the plugin courier.
 func readCourierToken(t *testing.T, path string) any {
 	t.Helper()
 	raw, err := os.ReadFile(path)

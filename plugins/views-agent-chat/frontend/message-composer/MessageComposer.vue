@@ -60,7 +60,6 @@ function onAct() {
   else emit('submit', getMessage(text.value))
 }
 
-/** Enter sends, and Shift+Enter inserts a newline. While an answer is on its way it does nothing. */
 function onKeydown(event: KeyboardEvent) {
   if (keyIntent(event) !== 'submit') return
   event.preventDefault()

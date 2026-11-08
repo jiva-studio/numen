@@ -10,15 +10,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// note is a file as the application reads it, so a test states the content of the
-// file and nothing about how it is parsed.
 func note(t *testing.T, raw string) domain.Note {
 	t.Helper()
 	return markdown.Parse(domain.FileStat{Path: "Animals.md", Size: int64(len(raw))}, []byte(raw))
 }
 
-// getProblem is the one problem of a fault, and it fails the test where there
-// is none or more than one.
 func getProblem(t *testing.T, problems []format.Problem, fault format.Fault) format.Problem {
 	t.Helper()
 	var found []format.Problem

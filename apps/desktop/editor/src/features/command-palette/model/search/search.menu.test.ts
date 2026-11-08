@@ -214,7 +214,6 @@ describe('a search that finds nothing', () => {
   })
 })
 
-/** What is in front: a note, or no note. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'note',

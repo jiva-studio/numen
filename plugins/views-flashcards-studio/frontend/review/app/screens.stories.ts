@@ -23,7 +23,6 @@ const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
  */
 const TODAY = getDayName(new Date())
 
-/** One day's answers, as the grid above the decks counts them. */
 const tally = (answers: number, recalls: number): HeatmapTally => ({
   reviewed: answers,
   again: Math.round(answers * 0.12),
@@ -35,11 +34,6 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
   recalled: recalls,
 })
 
-/**
- * A number between nought and one from a day's place and a name, so a year of
- * work is scattered the way a year is and not stepping with the arithmetic
- * that made it.
- */
 const scatter = (index: number, salt: number): number => {
   let x = Math.imul(index + salt * 7919 + 1, 2654435761)
   x ^= x >>> 15
@@ -218,7 +212,6 @@ const CARD: ReviewCard = {
   ahead: { again: 60, hard: 4 * 86_400, good: 11 * 86_400, easy: 26 * 86_400 },
 }
 
-/** The window the two screens are drawn in, as the application draws them. */
 const frame = (screen: VNode) => ({
   setup: () => () =>
     h(

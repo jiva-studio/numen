@@ -11,9 +11,7 @@ export const getDraggedRows = (selection: readonly RowId[], row: RowId): readonl
 
 /** What is drawn at the pointer while rows are dragged. */
 export interface DragLabel {
-  /** The name of the one row dragged, or how many there are. */
   readonly label: string
-  /** Where the pointer is, which is where it is drawn. */
   readonly at: Position
 }
 

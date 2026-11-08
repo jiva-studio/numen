@@ -13,10 +13,6 @@ import (
 // protocolPackage is the package of the services the core declares.
 const protocolPackage = protoreflect.FullName("numen.v1")
 
-// listServiceNameIssues returns each service of the manifest that is neither named after the plugin
-// nor declared by the protocol. A service named after the plugin is its id or a name below it, so
-// two plugins cannot serve one name. A shared service is one the protocol declares, which several
-// plugins implement.
 func listServiceNameIssues(m manifest.Manifest) []error {
 	shared := listProtocolServices()
 	var issues []error
@@ -30,7 +26,6 @@ func listServiceNameIssues(m manifest.Manifest) []error {
 	return issues
 }
 
-// listProtocolServices returns the full names of the services the protocol declares.
 func listProtocolServices() map[string]bool {
 	found := map[string]bool{}
 	protoregistry.GlobalFiles.RangeFilesByPackage(protocolPackage, func(file protoreflect.FileDescriptor) bool {

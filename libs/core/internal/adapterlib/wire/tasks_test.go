@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// openTaskStream is the stream a window would hold, over a list a test drives.
 func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
 	t.Helper()
 
@@ -37,7 +36,6 @@ func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClie
 	return stream
 }
 
-// receiveTasks returns the next task list from the stream.
 func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksResponse]) []*v1.Task {
 	t.Helper()
 	if !stream.Receive() {

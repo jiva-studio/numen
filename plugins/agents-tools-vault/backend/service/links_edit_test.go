@@ -28,7 +28,6 @@ type linkEditOutput struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-// readFingerprint is the fingerprint note_read gives for the note.
 func readFingerprint(t *testing.T, registry *tools.Registry, notePath string) string {
 	t.Helper()
 	var out struct {
@@ -41,7 +40,6 @@ func readFingerprint(t *testing.T, registry *tools.Registry, notePath string) st
 	return out.Fingerprint
 }
 
-// readLinks is the links written in the frontmatter of the note as the vault has it now.
 func readLinks(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	t.Helper()
 	content, ok := v.Content(notePath)
@@ -51,7 +49,6 @@ func readLinks(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	return markdown.Parse(domain.FileStat{Path: notePath}, []byte(content)).Links
 }
 
-// findLink is the link of the note to the name with the role, and false when there is none.
 func findLink(links []domain.Link, to string, role domain.LinkRole) (domain.Link, bool) {
 	for _, l := range links {
 		if l.Target.Value == to && l.Role == role {
@@ -61,8 +58,6 @@ func findLink(links []domain.Link, to string, role domain.LinkRole) (domain.Link
 	return domain.Link{}, false
 }
 
-// newLinkedGeologyVault is the geology vault whose Basalt note links to Granite twice, as a jump
-// with a label and a note and as a reference, and to Minerals as its parent.
 func newLinkedGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v, registry := newGeologyVault(t)

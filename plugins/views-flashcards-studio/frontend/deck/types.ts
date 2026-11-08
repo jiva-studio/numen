@@ -13,42 +13,20 @@ export type { Choice, DeckPreset }
  * One card as the editor holds it: the file's content, addressed by its identity.
  */
 export interface BufferCard {
-  /** The identity the window addresses it by: its card id, or one minted for it. */
   readonly id: string
-  /**
-   * What the card is, for as long as it exists, without the caret its heading
-   * writes it behind. Empty for a card the application has not written yet.
-   */
   readonly cardId: string
-  /**
-   * The section the card is placed under, by the identity the editor uses for that
-   * section. Null for a card before the first section.
-   */
   readonly section: string | null
-  /**
-   * The heading line, with the card id removed.
-   */
   readonly heading: string
-  /**
-   * The card model it is cut by, as the wikilink beneath its heading names it.
-   */
   readonly cardModelLink: string
-  /**
-   * Where that card model is filed, as the wikilink resolved in the vault.
-   */
   readonly cardModelPath: string
-  /** The prose between that wikilink and the first field. */
   readonly preamble: string
   readonly values: readonly Value[]
 }
 
 /** One section as the window holds it, under an identity of its own. */
 export interface BufferSection {
-  /** The identity the window addresses it by. */
   readonly id: string
-  /** What it is called, as its heading spells it. Two sections may carry one name. */
   readonly name: string
-  /** The prose between its heading and its first card. */
   readonly preamble: string
 }
 

@@ -10,9 +10,7 @@ import { isExternalLink, win } from '@numen/ui'
 
 /** Where a link inside a book points. */
 export interface BookLink {
-  /** The document, as the archive names it, and empty for the one being read. */
   readonly path: string
-  /** The place inside that document, and empty for its beginning. */
   readonly fragment: string
 }
 

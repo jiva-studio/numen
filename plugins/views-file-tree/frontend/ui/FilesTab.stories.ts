@@ -34,7 +34,6 @@ const VAULT: Record<string, readonly Entry[]> = {
   physics: [file('physics/Kelvin.md')],
 }
 
-/** A tab of that vault, reading the folders named as it is drawn. */
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
@@ -67,7 +66,6 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** The tab, drawn in the column a window gives it. */
 const room =
   (open: readonly string[] = []) =>
   () => ({

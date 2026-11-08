@@ -16,7 +16,6 @@ import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
 import { ANSWER_WORDS as words } from '../../words'
 
-/** What is in front, which every invocation is carried out over. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'plex',
@@ -28,7 +27,6 @@ const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   ...override,
 })
 
-/** One vault as the list answers one. */
 const createVault = (id: string, name: string): Vault => ({
   id,
   name,
@@ -52,25 +50,18 @@ const createRemoveResult = (override: Partial<RemovedNote> = {}): RemoveResult =
     ...override,
   })
 
-/** A window double that records every call a command makes, in order. */
 const window = (
   answers: {
     renamed?: RenameResult
     removed?: RemoveResult
     wasMade?: boolean
-    /** The current path of the tab holding the note. */
     targetPath?: string
     at?: string
-    /** The note has a pending confirmation prompt, so its file must not move. */
     isAsking?: boolean
-    /** The folder selected in the system folder picker. */
     chose?: string
-    /** What the list of vaults answered adding or renaming one. */
     added?: VaultResult
     turnedDown?: VaultErrorCode
-    /** What moving a file came back with. */
     movement?: Movement
-    /** What making a folder came back with. */
     folderError?: ErrorCode
   } = {},
 ) => {
@@ -192,7 +183,6 @@ const window = (
   return { on, actions: isDone, notices, severities, calls, runs }
 }
 
-/** One command carried out over the note in front. */
 const carry = async (invocation: CommandInvocation, on: CommandDeps) =>
   runInvocation(invocation, on, words)
 

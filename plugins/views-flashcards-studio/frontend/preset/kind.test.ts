@@ -89,11 +89,9 @@ type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
 /** The stubbed write result: the resulting file, or an error in place of it. */
 type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 
-/** A read result built from the fields a test overrides. */
 const readAs = (base: ReadPreset, overrides: ReadOver): PresetReadResult =>
   overrides.error ? asFailure(overrides.error) : asValue({ ...base, ...overrides })
 
-/** A write result built from the fields a test overrides. */
 const writeAs = (overrides: WriteOver): PresetWriteResult =>
   overrides.error ? asFailure(overrides.error) : asValue({ at: overrides.at ?? 'two' })
 
@@ -172,15 +170,10 @@ const openPresetTab = async (
   }
 }
 
-/** A moment for the read, the curve behind it and a write to land. */
 const flushPromises = async () => {
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
-/**
- * A tab whose first read is still out. Until the test lets it land, the tab is
- * standing at the placeholder settings and not at the file's own.
- */
 const opening = async (file: Partial<Settings>) => {
   let resolveRead: () => void = () => undefined
   const target = new Promise<void>((settle) => {
@@ -781,11 +774,6 @@ describe('a setting the goal on screen does not name', () => {
   })
 })
 
-/**
- * A curve computed from the given settings the way the application computes one:
- * its range extends to the cost of carrying the load, which changes with the
- * share of the day assigned to the debt.
- */
 const createRangedCurve = (settings: Settings): Curve => {
   const top = 60 + settings.backlog
   const grid = Array.from({ length: 7 }, (_, index) => Math.round((top * (index + 1)) / 7))
@@ -966,10 +954,8 @@ const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   },
 })
 
-/** A write the file rejects, so the choice stays unwritten once no write is in flight. */
 const rejectedWrite = (): WriteOver => ({ error: 'changed' })
 
-/** A write that never resolves, so the pending write stays pending. */
 const neverWritten = () => new Promise<WriteOver>(() => undefined)
 
 describe('the tab a preset is drawn in', () => {

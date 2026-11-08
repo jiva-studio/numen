@@ -4,18 +4,13 @@ import type { CommandDeps, Commands, CommandTarget, SearchState } from '@/featur
 import type { VaultList } from '@/entities/vault'
 
 export interface WelcomeScreenProps {
-  /** Every vault the installation holds, as the list last answered. */
   vaultList: VaultList
-  /** Every tab the window holds, which is none while this screen is what shows. */
   tabs: readonly Tab[]
   commands: Commands
   search: SearchState
   doing: CommandDeps
   getTarget: () => CommandTarget
-  /** The commands the plugins declare over the window with a keystroke, offered as ways in. */
   pluginWays: readonly WelcomeAction[]
-  /** Runs a command; every way in except the command list resolves to this. */
   runCommand: (id: string, target: CommandTarget) => void
-  /** Opens the placed workspace tabs when the already-active vault is chosen. */
   openCurrentVault?: () => void
 }

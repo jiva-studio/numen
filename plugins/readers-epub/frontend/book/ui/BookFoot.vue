@@ -8,13 +8,9 @@ import type { BookWords } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** The words it is read with. */
   words: BookWords
-  /** The spread in front, as a page of the book, and how many there are. */
   front: Pages
-  /** How many columns of this chapter stand after the spread in front. */
   leftInChapter: number
-  /** How many countSpreads the document is read in. */
   spreadCount: number
 }>()
 </script>

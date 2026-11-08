@@ -15,9 +15,7 @@ import '../curve-slider.css'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   state: CurveSliderState
-  /** What the curve is scheduled by, which names both axes. */
   goal: Goal
-  /** Whether an answer is being waited for. */
   isWaiting: boolean
   valueText: string
 }>()

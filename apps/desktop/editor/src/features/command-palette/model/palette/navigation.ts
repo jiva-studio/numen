@@ -15,7 +15,6 @@ import type {
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 
-/** The field placeholder for each step that requires a single input. */
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
   name: words.typeName,
   note: words.typeNote,
@@ -110,11 +109,6 @@ function resolveConfirmationAction(
     : null
 }
 
-/**
- * The answer to one prompt of a command: the step of the next prompt, or the
- * invocation once the last is answered. A required prompt answered with nothing
- * goes nowhere.
- */
 function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): CommandInvocation | null {
   const prompt = getPrompt(step)
   if (!prompt) return null

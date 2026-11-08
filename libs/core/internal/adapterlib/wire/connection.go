@@ -78,8 +78,6 @@ func ConvertSideFromWire(side *v1.ConnectionSide) (*domain.Side, error) {
 	return convertSide(side, false)
 }
 
-// convertSide converts a record. A record without a role is accepted when
-// isRoleOptional is set, and its role is left empty for the connection to fill.
 func convertSide(side *v1.ConnectionSide, isRoleOptional bool) (*domain.Side, error) {
 	if side == nil {
 		return nil, nil

@@ -6,12 +6,9 @@ import { Glyph } from './glyph'
 import type { ComposerAction } from '../state'
 
 const props = defineProps<{
-  /** What pressing it does. */
   action: ComposerAction
   isDisabled: boolean
-  /** What it is called while it sends. */
   sendLabel: string
-  /** What it is called while it stops. */
   stopLabel: string
 }>()
 

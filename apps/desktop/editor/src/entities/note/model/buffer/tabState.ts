@@ -40,27 +40,16 @@ export interface NoteBaseline {
 
 /** What a tab holds. */
 export interface Tab {
-  /** What was opened. */
   readonly path: string
-  /** The body as last read or last successfully written, normalised. */
   readonly savedText: string | null
-  /** Which file `written` came out of, and nothing where no file was read. */
   readonly filePath: string | null
-  /** The body on screen. */
   readonly editorText: string
-  /** The body being written to the file, or null when no write is pending. */
   readonly pendingWrite: string | null
-  /** Whether the pending write has to be followed by another write. */
   readonly hasPendingWrite: boolean
-  /** Whether the note this tab reads is at a name with no file behind it. */
   readonly isDeleted: boolean
-  /** Whether the file moved past the prose this tab read, and so its save stopped. */
   readonly isStale: boolean
-  /** When the first unwritten change was made, or nothing. */
   readonly since: number | null
-  /** The generation of the newest read issued. */
   readonly reading: number
-  /** Why writing or reading is impossible, or nothing. */
   readonly error: NoteErrorCode | null
 }
 

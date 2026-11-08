@@ -6,26 +6,11 @@ import type { Ref } from 'vue'
 import type { Size } from '../math/geometry'
 
 export interface Viewport {
-  /**
-   * Observes an element and reports every size it takes. Boxes with zero width
-   * or zero height are not reported, since an element that is not rendered
-   * has one and it is not a measurement. The returned function stops observing.
-   */
   readonly watch: (of: HTMLElement, took: (size: Size) => void) => () => void
-  /**
-   * Observes the available size of a component when no size is passed in, and
-   * reports it now and on every change. The returned function stops observing.
-   */
   readonly watchFreeSpace: (took: (size: Size) => void) => () => void
-  /**
-   * Observes an element and reports its size including padding and border,
-   * which is the extent that adjacent content must clear. The returned
-   * function stops observing.
-   */
   readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
 
-/** Stop function returned when there is nothing to observe. */
 const stopNothing = (): void => undefined
 
 export const browserViewport: Viewport = {

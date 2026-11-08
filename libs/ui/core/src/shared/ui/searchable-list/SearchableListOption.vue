@@ -11,13 +11,9 @@ import type { ListRow } from './rows'
 
 defineProps<{
   row: ListRow
-  /** The identifier the search line points at. */
   id: string
-  /** The name of the group the row begins, where it does. */
   heading?: string | undefined
-  /** Whether the keyboard is on the row. */
   isActive: boolean
-  /** Whether the row is the item in force. */
   isCurrent: boolean
 }>()
 

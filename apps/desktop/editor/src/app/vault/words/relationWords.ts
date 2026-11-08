@@ -56,7 +56,6 @@ export const readMarker = (code: NoteMarkerCode): LinkMarker | null => calledMar
 export const writeMarker = (marker: LinkMarker | null | undefined): NoteMarkerCode =>
   marker ? markerCodes[marker] : NOTE_MARKER.UNSPECIFIED
 
-/** The role of a connection as the window names it; null where it is not one a connection carries. */
 const readConnectionRole = (code: NoteRoleCode): ConnectionRole | null => {
   const role = readRole(code)
   return isConnectionRole(role) ? role : null

@@ -85,12 +85,6 @@ func (s *Segmenter) Split(ctx context.Context, sound []float32) ([]Segment, erro
 	return out, nil
 }
 
-// joinShortSpans merges a span shorter than the minimum pause with the span
-// after it, up to the maximum span length.
-//
-// A pause in the middle of a sentence closes a span and yields a line with a
-// single word. The transcription model recognises a sentence better than an
-// isolated word.
 func joinShortSpans(found []span, least, longest int) []span {
 	out := make([]span, 0, len(found))
 	for _, one := range found {
@@ -109,8 +103,6 @@ func joinShortSpans(found []span, least, longest int) []span {
 	return out
 }
 
-// scoreSpeech is how sure the model is that each window of the recording carries
-// speech. A last window short of the model's own is filled out with silence.
 func (s *Segmenter) scoreSpeech(ctx context.Context, sound []float32) ([]float32, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -150,7 +142,6 @@ type speechPass struct {
 // tensorMaker makes a tensor of the shape over the data.
 type tensorMaker func(shape []int64, data any) (*ort.Value, error)
 
-// newSpeechPass makes the tensors over the buffers of a recording with newTensor.
 func newSpeechPass(sound []float32, newTensor tensorMaker) (*speechPass, error) {
 	p := &speechPass{
 		sound:  sound,
@@ -180,7 +171,6 @@ func newSpeechPass(sound []float32, newTensor tensorMaker) (*speechPass, error) 
 	return p, nil
 }
 
-// destroy releases the tensors that were made.
 func (p *speechPass) destroy() {
 	// gomutants:disable-next-line RANGE_BREAK,BRANCH_IF,STATEMENT_REMOVE reason="Destroy on uninitialized test tensors has no side effect"
 	for _, tensor := range []*ort.Value{p.input, p.memory, p.sampling} {
@@ -192,22 +182,18 @@ func (p *speechPass) destroy() {
 	}
 }
 
-// load puts the samples of one window into the window buffer, filled out with
-// silence where the recording ends short of it.
 func (p *speechPass) load(i int) {
 	clear(p.window)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="copy fills at most the window length"
 	copy(p.window, p.sound[i*speechWindow:min((i+1)*speechWindow, len(p.sound))])
 }
 
-// keepAlive holds the buffers until the runs over them are done.
 func (p *speechPass) keepAlive() {
 	runtime.KeepAlive(p.window)
 	runtime.KeepAlive(p.state)
 	runtime.KeepAlive(p.rate)
 }
 
-// scoreNative scores every window by calling the runtime directly.
 func (s *Segmenter) scoreNative(ctx context.Context, pass *speechPass, calls ortraw.Calls) ([]float32, error) {
 	names := ortraw.MakeCNames(speechInput, speechState, speechRate, speechScore, speechAfter)
 	run := &speechRun{
@@ -244,7 +230,6 @@ func (s *Segmenter) scoreNative(ctx context.Context, pass *speechPass, calls ort
 	return out, nil
 }
 
-// scoreManaged scores every window through the runtime's own binding.
 func (s *Segmenter) scoreManaged(ctx context.Context, pass *speechPass) ([]float32, error) {
 	inputs := map[string]*ort.Value{
 		speechInput: pass.input,
@@ -277,7 +262,6 @@ type speechRun struct {
 	outputs  [2]uintptr
 }
 
-// score runs the model once over the window in its input, and gives how sure
 func (r *speechRun) score(state []float32) (float32, error) {
 	r.outputs = [2]uintptr{}
 	status := r.calls.Run(
@@ -347,12 +331,6 @@ type span struct {
 	From, To int
 }
 
-// getSpans returns the spans of speech in a sequence of scores.
-//
-// A span opens at a window scoring above the threshold and closes after enough
-// consecutive silent windows, so a pause between two words does not split a
-// sentence. Each span is then widened by pad at both ends, and spans that
-// touch are merged.
 func getSpans(scores []float32, threshold float32, silenceWindows, pad, longest, shortest int) []span {
 	out := findSpeechSpans(scores, threshold, silenceWindows)
 	wider := widenSpans(out, pad, len(scores))
@@ -371,8 +349,6 @@ func getSpans(scores []float32, threshold float32, silenceWindows, pad, longest,
 	return out
 }
 
-// findSpeechSpans are the runs of windows scored at the threshold or above,
-// each closed by more than silenceWindows quiet windows after it.
 func findSpeechSpans(scores []float32, threshold float32, silenceWindows int) []span {
 	var out []span
 	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,INVERT_NEGATIVES reason="any negative number marks the span as closed, and last is always set on the first speech window before it is read"
@@ -397,8 +373,6 @@ func findSpeechSpans(scores []float32, threshold float32, silenceWindows int) []
 	return out
 }
 
-// widenSpans widens each span by pad at both ends, within the count of
-// windows, and joins two that now meet.
 func widenSpans(found []span, pad, count int) []span {
 	var wider []span
 	for _, one := range found {
@@ -413,9 +387,6 @@ func widenSpans(found []span, pad, count int) []span {
 	return wider
 }
 
-// splitLongSpan cuts a span longer than the maximum into pieces that the model
-// processes one at a time. Each cut is at the quietest window in the second
-// half of the remaining span, which places the cut at a pause.
 func splitLongSpan(one span, scores []float32, longest int) []span {
 	if longest <= 1 {
 		return []span{one}
@@ -429,7 +400,6 @@ func splitLongSpan(one span, scores []float32, longest int) []span {
 	return append(out, one)
 }
 
-// findQuietest returns the index of the lowest score in [from, to).
 func findQuietest(scores []float32, from, to int) int {
 	from, to = max(from, 0), min(to, len(scores))
 	pos := from

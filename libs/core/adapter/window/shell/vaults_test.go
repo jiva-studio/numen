@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newVaultsClient is the list of vaults the window answers with.
 func newVaultsClient(t *testing.T, api *API) numenv1connect.VaultsServiceClient {
 	t.Helper()
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))

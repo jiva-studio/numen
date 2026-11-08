@@ -38,7 +38,6 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-// openConfigurable opens the bridge on a host that runs the embedding plugin and a second plugin.
 func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
@@ -82,7 +81,6 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 	return host, bridge, mock, &announced
 }
 
-// settle waits until the read that follows a configuration has ended.
 func settle(t *testing.T, bridge *Embedder, mock *mockEmbeddingServer, readsBefore int32) {
 	t.Helper()
 	plugintest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {

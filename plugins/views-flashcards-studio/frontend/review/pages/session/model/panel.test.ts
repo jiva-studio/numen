@@ -6,7 +6,6 @@ import { useAgentPanel } from './panel'
 import { WORDS as words } from '../lib/agentWords'
 import type { ReviewCard } from '../../../entities/card'
 
-/** A card as the session hands one over. */
 const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   deck: 'decks/Words.md',
   section: '',
@@ -20,7 +19,6 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   ...more,
 })
 
-/** A port that answers nothing, one to each card it was made for. */
 const createAgent = (): AgentPort => ({
   async *ask() {
     yield* []
@@ -28,10 +26,6 @@ const createAgent = (): AgentPort => ({
   finish: async () => undefined,
 })
 
-/**
- * The panel, with the session around it standing in for the window. What the
- * test holds it the way the window does.
- */
 const panel = (
   more: {
     card?: ReviewCard | null

@@ -43,7 +43,6 @@ func TestTheWindowACardMayBeMovedInside(t *testing.T) {
 	}
 }
 
-// own is the parameters this package schedules on.
 func own() fsrs.Parameters {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false

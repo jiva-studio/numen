@@ -49,8 +49,6 @@ func (r *indexRows) Unregister(_ context.Context, vaultID domain.VaultID) error 
 	return nil
 }
 
-// twoVaults returns two folders registered with this installation, and the
-// registry that holds them.
 func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistry) {
 	t.Helper()
 	add, registry := newAdd(t)

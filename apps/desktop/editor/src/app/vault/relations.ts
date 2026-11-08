@@ -15,7 +15,6 @@ import {
   writeMarker,
 } from './words/relationWords'
 
-/** The answer of a write: nothing where it landed, and why where it did not. */
 const toResult = <E>(error: E | null): Result<void, E> =>
   error === null ? asValue(undefined) : asFailure(error)
 

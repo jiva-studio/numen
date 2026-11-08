@@ -27,7 +27,6 @@ import { book, editor, reader } from './stubs'
 
 const App = (await import('@/app/shell/App.vue')).default
 
-/** Waits for the vault requests issued by the window to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** Longer than the palette's keystroke debounce before it queries the vault. */
@@ -45,10 +44,6 @@ afterEach(() => {
   forgetRequests()
 })
 
-/**
- * The window mounted with stubs for the content of each tab kind. The tabs
- * themselves are the window's own, and they are under test.
- */
 async function mountWindow() {
   const window = mount(App, {
     global: {
@@ -75,10 +70,6 @@ async function mountWindow() {
   return window
 }
 
-/**
- * The window with a palette the test can type into. The palette renders at the
- * end of the document and is queried from the document.
- */
 async function mountWindowWithPalette() {
   const window = mount(App, {
     global: {
@@ -93,7 +84,6 @@ async function mountWindowWithPalette() {
   return window
 }
 
-/** What the failed tasks of the status bar say, one string per task. */
 const cards = (window: VueWrapper): readonly string[] =>
   (
     window.findComponent(StatusBar).props('tasks') as readonly {
@@ -105,13 +95,6 @@ const cards = (window: VueWrapper): readonly string[] =>
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
-/**
- * The id the plex gives the note it is focused on, carried by every gesture it
- * reports. The vault is queried by path, and this is not a path.
- *
- * The tab is found by the name the window addresses it by, so this harness
- * holds no screen's file.
- */
 const nodeInPlex = (window: VueWrapper): string => {
   const state = window.findComponent({ name: 'PlexTab' }).props('state') as {
     picture: { value: { nodes: readonly { id: string }[] } | null }
@@ -119,15 +102,12 @@ const nodeInPlex = (window: VueWrapper): string => {
   return state.picture.value?.nodes[0]?.id ?? ''
 }
 
-/** How the window is split, as the workspace it draws has it. */
 const getLayout = (window: VueWrapper): Workspace =>
   window.findComponent(WorkspaceLayout).props('modelValue') as Workspace
 
-/** What each pane holds, by the kind each of its tabs is filed under. */
 const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
   getPanes(getLayout(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
 
-/** What each tab of the window is called, in the order the strip has them. */
 const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =>
   (window.findComponent(WorkspaceLayout).props('tabs') as readonly {
     id: string

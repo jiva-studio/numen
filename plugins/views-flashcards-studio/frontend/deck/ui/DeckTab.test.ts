@@ -25,7 +25,6 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
   'stops' | 'stopsOn'
 >
 
-/** Waits for the tab's pending vault requests to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is rendered into the page, so the previous tab is unmounted before
@@ -65,15 +64,11 @@ const CARDS: readonly VaultCard[] = [
 
 const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
-/** A window with one deck open, drawn. */
 const mountDeck = async (
   problems: readonly DeckProblem[] = [],
   schedule: {
-    /** The presets the vault holds. */
     presets?: readonly PresetChoice[]
-    /** The preset the deck names, and nothing for a deck naming none. */
     by?: string
-    /** The message shown for what the deck names. */
     saying?: string
     notScheduled?: ErrorCode
   } = {},
@@ -172,7 +167,6 @@ const mountDeck = async (
   return { window, tab, decks, appliedPresets }
 }
 
-/** The tile one card is drawn as, by the identity the window gave that card. */
 const getTile = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: string) =>
   window.find(`[data-card="${card}"]`)
 

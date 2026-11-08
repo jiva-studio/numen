@@ -5,9 +5,7 @@
 
 /** The words the pill is drawn with, declared once. */
 export interface DueWords {
-  /** The figure and what it counts, as one reading. */
   readonly formatDue: (due: number) => string
-  /** Text shown while the figure is still being computed. */
   readonly counting: string
 }
 

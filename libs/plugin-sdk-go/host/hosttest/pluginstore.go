@@ -27,7 +27,6 @@ type folder struct {
 // Store is the plugin's folder in the store of the vault.
 func (v *Vault) Store() *Store { return &Store{vault: v} }
 
-// getFolder is the vault's folder, made on first use. The caller holds the world's lock.
 func (v *Vault) getFolder() *folder {
 	if v.folder == nil {
 		v.folder = &folder{files: map[string][]byte{}, errs: map[string]error{}}
@@ -60,8 +59,6 @@ func (s *Store) With(id domain.VaultID) host.Store {
 	return &Store{vault: s.vault.find(id)}
 }
 
-// reach rejects a call on a vault the host does not have open, does not know, or whose folder is gone.
-// The caller holds the world's lock.
 func (s *Store) reach(ctx context.Context) (*folder, error) {
 	if err := s.vault.gate(ctx); err != nil {
 		return nil, err
@@ -72,7 +69,6 @@ func (s *Store) reach(ctx context.Context) (*folder, error) {
 	return s.vault.getFolder(), nil
 }
 
-// open checks a call on the name and returns the folder. The caller holds the world's lock.
 func (s *Store) open(ctx context.Context, name string) (*folder, error) {
 	f, err := s.reach(ctx)
 	if err != nil {

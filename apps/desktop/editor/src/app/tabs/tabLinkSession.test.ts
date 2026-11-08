@@ -39,7 +39,6 @@ const MOVED_TAB = {
   moveId: 'move-1',
 }
 
-/** Returns a stream that yields the events, then waits until the signal aborts. */
 async function* createStream(events: readonly TabLinksEvent[], signal: AbortSignal) {
   yield* events
   if (!signal.aborted) await new Promise((resolve) => signal.addEventListener('abort', resolve))

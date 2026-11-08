@@ -20,11 +20,8 @@ export type SessionKeyIntent =
   | { does: 'shut' }
 
 export interface ScreenState {
-  /** Whether the answer is already showing. */
   isShown: boolean
-  /** Whether the panel for asking about the card is open. */
   isAsking?: boolean
-  /** Whether the panel the deck's notes are read in is up. */
   isNotesOpen?: boolean
 }
 
@@ -55,7 +52,6 @@ export function getSessionKeyIntent(
   return getCardKeyIntent(press, screen)
 }
 
-/** The letters the two panels beside the card are brought in and taken away by. */
 const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
   const letter = press.key.toLowerCase()
   if (letter === ASK_KEY) return { does: 'ask' }
@@ -63,7 +59,6 @@ const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
   return null
 }
 
-/** The keys the card itself is turned over, answered and left by. */
 const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
   if (press.key === 'Escape') {
     return screen.isAsking || screen.isNotesOpen ? { does: 'shut' } : { does: 'leave' }
@@ -73,16 +68,11 @@ const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKey
   return getGradeKeyIntent(press)
 }
 
-/**
- * Space scrolls the notes down while they are open. When they are closed it shows the
- * answer, which is already visible once shown.
- */
 const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
   if (screen.isNotesOpen) return { does: 'scroll', back: press.shiftKey }
   return screen.isShown ? null : { does: 'show' }
 }
 
-/** The number a card is answered with, one for each grade in the order they are listed. */
 const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
   const how = grades[Number(press.key) - 1]
   return how ? { does: 'answer', how } : null
@@ -131,13 +121,8 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
   return null
 }
 
-/**
- * A held key repeats, and a key pressed with a modifier is a system shortcut.
- * Neither is a request for an action here.
- */
 const hasModifierOrRepeat = (press: KeyboardEvent): boolean =>
   press.repeat || press.altKey || press.ctrlKey || press.metaKey
 
-/** Whether the overlay key is held, which is control here and command on a Mac. */
 const hasOverlayKey = (press: KeyboardEvent): boolean =>
   !press.repeat && !press.altKey && (press.ctrlKey || press.metaKey)

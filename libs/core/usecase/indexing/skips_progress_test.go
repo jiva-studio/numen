@@ -26,14 +26,12 @@ func (l *progressLog) ReportTask(pos run.Task) {
 	l.recorder.ReportTask(pos)
 }
 
-// getReports returns every report of the vector pass so far.
 func (l *progressLog) getReports() []run.Task {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return append([]run.Task(nil), l.reports...)
 }
 
-// getCounted returns the reports of the vector pass that carry a total.
 func (l *progressLog) getCounted() []run.Task {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -46,8 +44,6 @@ func (l *progressLog) getCounted() []run.Task {
 	return counted
 }
 
-// cancelledPass is a pass over a vault whose note Held.md had its vector pass cancelled by a person,
-// and the number of chunks of that note.
 func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}

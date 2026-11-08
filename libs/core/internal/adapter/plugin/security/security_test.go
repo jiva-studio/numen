@@ -224,8 +224,6 @@ func TestValidateExecutablePath(t *testing.T) {
 	})
 }
 
-// createPluginTestDir creates a directory below the package directory. The system temporary
-// directory is rejected by validateExecutablePath, so t.TempDir cannot hold a plugin.
 func createPluginTestDir(t *testing.T, pattern string) string {
 	t.Helper()
 	name := strings.ReplaceAll(pattern, "*", rand.Text())

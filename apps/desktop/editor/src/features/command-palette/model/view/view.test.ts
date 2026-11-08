@@ -35,7 +35,6 @@ const lists: PaletteLists = {
   previewItem: vi.fn(),
 }
 
-/** The view over a set of commands, with every list empty. */
 const createView = (commands: readonly Command[]) =>
   getPaletteView({
     words,

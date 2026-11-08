@@ -4,11 +4,6 @@ package onnx
 
 import "github.com/ebitengine/purego"
 
-// preloadCppRuntime loads what the runtime is linked against and the loader cannot find.
-//
-// A build published for Linux in general names the C++ runtime and expects the
-// system to hold it. Loading it here first, into the global namespace, is what
-// resolves that name on a machine that keeps the file somewhere else.
 func preloadCppRuntime() {
 	// gomutants:disable-next-line RANGE_BREAK reason="Preloading shared libraries into the global linker namespace is a platform side effect."
 	for _, p := range FindInstalled("libstdc++.so", "*-gcc-*-lib") {

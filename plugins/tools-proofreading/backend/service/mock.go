@@ -11,8 +11,6 @@ import (
 // MockMark is appended by the mock proofreader to the end of every line in the prompt.
 const MockMark = "[proofread]"
 
-// completeMock responds to a request as a model would, with no model: every numbered line of the
-// prompt comes back with MockMark after its words. It touches nothing outside the process.
 func completeMock(ctx context.Context, question *ai.Question) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err

@@ -42,7 +42,6 @@ interface StoodFor {
 export interface BookLayoutOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
-  /** The box beside the paper that holds the copy of the spread a turn into another document carries out. */
   readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
@@ -124,10 +123,8 @@ export interface BookSettlingOptions {
   readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
-  /** The document the columns last stood for. */
   readonly stoodFor: { value: StoodFor | null }
   readonly takeLed: () => BookLink | undefined
-  /** The page turn the markup now drawn answers, once; undefined after any other move. */
   readonly takeBorderTurn: () => BorderTurn['way'] | undefined
   readonly column: {
     readonly measure: () => void
@@ -157,13 +154,6 @@ export interface BookSettlingOptions {
   }
 }
 
-/**
- * A value that follows `read` only while the columns stand at their spread for the markup in
- * front. A document just drawn is carried to its spread on the next frame, and until then its
- * spread, its marks and its span belong to two documents, so what they say together is a page the
- * reader never stood on. The props arrive one by one before the watcher of the markup runs, so the
- * columns count as standing only for the markup and the span they were set for.
- */
 function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<T>> {
   const followed = shallowRef(read()) as Ref<T>
   watch(

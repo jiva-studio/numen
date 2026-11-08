@@ -10,8 +10,6 @@ import (
 
 const otherRecipe = "other-model"
 
-// saveSeededVectorsUnder stores, under the recipe, a vector with the given seed
-// for every chunk of the vault that lacks one.
 func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe string, seed byte) int {
 	t.Helper()
 	ctx := t.Context()
@@ -33,7 +31,6 @@ func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe str
 	return len(vectors)
 }
 
-// storedBits is the coarse form every chunk holds in the coarse index.
 func storedBits(t *testing.T, db *DB) map[int64][]byte {
 	t.Helper()
 	rows, err := db.read.QueryContext(t.Context(), `SELECT chunk_id, coarse FROM chunks_vec`)

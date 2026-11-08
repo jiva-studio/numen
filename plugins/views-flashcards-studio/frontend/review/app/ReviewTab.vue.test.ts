@@ -93,7 +93,6 @@ type Review = ReturnType<typeof useReview>
 
 const closers: (() => void)[] = []
 
-/** The review of a vault, drawn as the window draws it. */
 const mountReview = async (vault: string) => {
   const counts = createVaultCounts({ reportError: vi.fn() })
   const scope = effectScope()
@@ -123,7 +122,6 @@ afterEach(() => {
   started.splice(0)
 })
 
-/** One keystroke, as the window delivers it to the active review. */
 const press = async (state: Review, key: string) => {
   state.onKeyDown(new KeyboardEvent('keydown', { key, cancelable: true }))
   await flushPromises()

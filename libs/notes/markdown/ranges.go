@@ -49,7 +49,6 @@ func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 	return nil, false
 }
 
-// stepped over, so two reported spans never overlap.
 func occurrences(text, wanted string) []Range {
 	var foundSpans []Range
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at from == len(text) strings.Index on an empty slice with non-empty wanted returns -1"
@@ -71,7 +70,6 @@ type mappedText struct {
 	offsets []int
 }
 
-// foldPunctuation reads typographic punctuation and spacing as the marks they stand for.
 func foldPunctuation(text string) mappedText {
 	var out strings.Builder
 	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="make capacity hint does not alter the appended slice contents"
@@ -86,8 +84,6 @@ func foldPunctuation(text string) mappedText {
 	return mappedText{text: out.String(), offsets: append(offsets, len(text))}
 }
 
-// foldSpacing reads a run of spacing inside a line as one space. A break between
-// lines is spacing of its own and is left where it is.
 func foldSpacing(text string) mappedText {
 	var out strings.Builder
 	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="make capacity hint does not alter the appended slice contents"
@@ -115,9 +111,6 @@ func foldSpacing(text string) mappedText {
 	return mappedText{text: out.String(), offsets: append(offsets, len(text))}
 }
 
-// getPlainRune returns the mark a rune represents, or the rune itself. Dashes, quotes
-// and non-standard spaces are what a user's editor inserts into prose and what a
-// program writing about that prose rarely reproduces.
 func getPlainRune(r rune) rune {
 	switch {
 	// Hyphens and dashes, U+2010 to U+2015, and the minus sign U+2212.
@@ -168,8 +161,6 @@ func Diff(was, now string) (Range, string) {
 	return Range{Start: head, End: len(was) - tail}, now[head : len(now)-tail]
 }
 
-// canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,
-// or where a rune begins and spacing precedes it.
 func canSpanBeginAt(text string, offset int) bool {
 	if offset <= 0 {
 		return true
@@ -180,8 +171,6 @@ func canSpanBeginAt(text string, offset int) bool {
 	return isSpace(text[offset-1])
 }
 
-// canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
-// where spacing is.
 func canSpanEndAt(text string, offset int) bool {
 	if offset >= len(text) {
 		return true

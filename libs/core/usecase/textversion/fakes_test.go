@@ -19,8 +19,7 @@ import (
 type memoryVersions struct {
 	mu       sync.Mutex
 	versions map[domain.VaultID][]domain.TextVersion
-	// sources is the source rows of every vault, by path.
-	sources map[domain.VaultID]map[string]textport.ContentHash
+	sources  map[domain.VaultID]map[string]textport.ContentHash
 }
 
 func (m *memoryVersions) Open(v domain.Vault) (textport.VersionRepository, error) {
@@ -199,10 +198,8 @@ type fakeProvider struct {
 	versions *textversion.Versions
 	vault    domain.Vault
 	folders  *memoryFiles
-	// make is the text made of the file, or of the source text where hasSource is set.
-	make func(path string, source domain.VersionText, hasSource bool) []domain.TextSegment
-	// files is the content of each vault file, as the plugin reads it.
-	files map[string][]byte
+	make     func(path string, source domain.VersionText, hasSource bool) []domain.TextSegment
+	files    map[string][]byte
 
 	mu      sync.Mutex
 	created int
@@ -213,8 +210,6 @@ func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation
 	return f.create(ctx, req.Path, "")
 }
 
-// create makes the text of the file, or of the version where source names one, as a plugin does
-// when a command runs.
 func (f *fakeProvider) create(ctx context.Context, path string, source domain.TextVersionID) error {
 	params := textversion.VersionPut{Path: path, Source: source, Kind: f.kind}
 	var segments []domain.TextSegment
@@ -248,7 +243,6 @@ func (f *fakeProvider) getCreated() int {
 	return f.created
 }
 
-// steppingClock is an instant a minute later at every reading.
 func steppingClock() *minuteClock {
 	return &minuteClock{now: time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)}
 }
@@ -290,13 +284,10 @@ func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHa
 	return nil
 }
 
-// addScannedSource adds the row a scan of the vault writes for a file: its
-// path, size and modification time, with no hash.
 func (m *memoryVersions) addScannedSource(vault domain.VaultID, path string, size int64, modTime time.Time) {
 	m.addSource(vault, textport.ContentHash{Path: path, Size: size, ModTime: modTime})
 }
 
-// addSource adds a source row as it is given.
 func (m *memoryVersions) addSource(vault domain.VaultID, row textport.ContentHash) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -309,7 +300,6 @@ func (m *memoryVersions) addSource(vault domain.VaultID, row textport.ContentHas
 	m.sources[vault][row.Path] = row
 }
 
-// getSource is the source row of the path.
 func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textport.ContentHash, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

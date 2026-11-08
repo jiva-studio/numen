@@ -14,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// createOutsideFolder is a folder on this machine holding those files, and
-// where it is.
 func createOutsideFolder(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
@@ -31,8 +29,6 @@ func createOutsideFolder(t *testing.T, files map[string]string) string {
 	return root
 }
 
-// readArrived is what the vault holds at a path, and the test stops where it
-// holds nothing.
 func readArrived(t *testing.T, root, path string) string {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))

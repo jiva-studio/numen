@@ -9,19 +9,14 @@ import { placeMenu } from '../items/item'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 
 export interface MenuPlacementOptions {
-  /** The requested position, in the coordinates of the area the menu is drawn into. */
   readonly at: () => Position
-  /** The area it is placed in, and the browser's own where there is none. */
   readonly viewport: () => Size | null
-  /** Kept clear of that area's edges. */
   readonly margin: () => number
   readonly asking?: () => number
 }
 
 export interface MenuPlacementState {
-  /** Where the menu is drawn. */
   readonly placed: ComputedRef<Position>
-  /** How big the menu turned out to be, as the drawing measured it. */
   readonly setSize: (size: Size) => void
   readonly resetSize: () => void
   readonly menuStyle: ComputedRef<Record<string, string>>

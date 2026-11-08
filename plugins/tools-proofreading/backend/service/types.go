@@ -17,11 +17,8 @@ type Batch struct {
 	Number int
 	Lines  []Line
 
-	// IsJoinable is whether a reply may answer for a run of lines as one.
 	IsJoinable bool
 
-	// Context is the whole text. It is placed before the lines in the prompt
-	// and receives no reply.
 	Context string
 }
 

@@ -17,7 +17,6 @@ import { Icon } from '../icon'
 import { parseStepKey, STEP_KEYS, type StepDirection } from '../../lib/order'
 
 defineProps<{
-  /** The label of the control for grabbing the card. */
   drag: string
 }>()
 
@@ -38,11 +37,6 @@ const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 /** It is taken hold of. A press on something worked lets that thing have it. */
 const isDraggable = shallowRef(true)
 
-/**
- * The press is over, wherever it was let go. A press that began on something
- * worked may travel outside the strip and end there, so the end of it is heard
- * where every gesture ends.
- */
 const release = (): void => {
   isDraggable.value = true
   win.removeEventListener('pointerup', release)
@@ -58,7 +52,6 @@ const press = (event: PointerEvent): void => {
 
 onScopeDispose(release)
 
-/** The handle moved by an arrow key to carry the card it heads one position along. */
 const step = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)
   if (direction !== null) emit('step', direction, event)

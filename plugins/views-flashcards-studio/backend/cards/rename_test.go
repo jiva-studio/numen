@@ -349,9 +349,8 @@ func (s shut) Open(v domain.Vault) (ports.VaultWriter, error) {
 
 // decksOf is an index that names the decks of a vault from a list, or fails.
 type decksOf struct {
-	paths []string
-	err   error
-	// cancel is called once the decks have been named.
+	paths  []string
+	err    error
 	cancel func()
 }
 
@@ -603,8 +602,6 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 		path    string
 		readers ports.VaultReaders
 		links   ports.LinkQueries
-		// written is what the deck holds by the time the rename runs, after the
-		// index read it as a deck.
 		content string
 	}{
 		{name: "not looked at", path: "decks/Birds.md",

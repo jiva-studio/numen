@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey, getLetter } from './keys'
 
-/** One keystroke, as the window meets it. */
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({
     key,
@@ -14,7 +13,6 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
     ...more,
   }) as KeyboardEvent
 
-/** The target of a keystroke that landed in something being written in. */
 const createTarget = (tag: string, isEditable = false): Partial<KeyboardEvent> => ({
   target: { tagName: tag, isContentEditable: isEditable } as unknown as EventTarget,
 })

@@ -94,8 +94,6 @@ func TestReadRangeOfAFolderOrAMissingFileIsNotExist(t *testing.T) {
 	}
 }
 
-// newRangeTexts is the texts of a vault with one recognition of Strata.pdf whose whole text is
-// "teh end of ice": "teh " is bytes 0 to 3, "end of " bytes 4 to 10, "ice" bytes 11 to 13.
 func newRangeTexts(t *testing.T, segments []domain.TextSegment) (*hosttest.Texts, domain.TextVersionID) {
 	t.Helper()
 	ctx := t.Context()

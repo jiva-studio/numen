@@ -25,8 +25,6 @@ import (
 // dimensions is the width the vector index is built at.
 const dimensions = 1024
 
-// The two vaults every test here uses. They share one word and nothing else, so
-// a result from the wrong one is recognisable.
 func getFirstNotes() map[string]string {
 	return map[string]string{
 		"notes/Entropy.md": "# Entropy\n\nA measure of disorder, shared by every closed system.\n",
@@ -40,8 +38,6 @@ func getSecondNotes() map[string]string {
 	}
 }
 
-// A note whose prose is placed under a frontmatter block, with the words
-// looked for on the seventh line of that prose.
 func getIsotherm() string {
 	return "---\nid: 01M0DEM0000000000000000002\n---\n" +
 		"# Isotherm\n\nA curve of one temperature.\n\n## Below\n\nThe curve holds throughout.\n"
@@ -85,8 +81,6 @@ func newCorpus(t *testing.T) corpus {
 	return c
 }
 
-// cut replaces one note's chunks with a large one and the small ones named,
-// each carrying its own words. A small chunk is what a vector belongs to.
 func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) {
 	t.Helper()
 	reader, err := vaultreader.Readers{}.Open(v)
@@ -106,8 +100,6 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	}
 }
 
-// vectorise gives every small chunk of one vault a vector pointing the way
-// given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
 	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
@@ -133,7 +125,6 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	}
 }
 
-// precise is the full-precision half of a vector, one signed byte per dimension.
 func precise(v []float32) []byte {
 	q := vector.Bytes(vector.Normalise(slices.Clone(v)))
 	out := make([]byte, len(q))
@@ -151,7 +142,6 @@ func getModel() embeddingport.EmbeddingModel {
 	return embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
 }
 
-// newVector is a vector whose every dimension has the sign given.
 func newVector(sign float32) []float32 {
 	v := make([]float32, dimensions)
 	for i := range v {
@@ -160,10 +150,6 @@ func newVector(sign float32) []float32 {
 	return v
 }
 
-// newNearVector agrees with `newVector(+1)` on all but an eighth of its
-// dimensions. The two stand at a cosine of 0.75, which is near enough for
-// either to be an answer to the other and far enough for the nearer one to be
-// recognisable.
 func newNearVector() []float32 {
 	v := newVector(+1)
 	for i := range dimensions / 8 {
@@ -381,11 +367,6 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 	}
 }
 
-// sectioned replaces one note's chunks with three, of which the first opens a
-// section whose name the following section repeats.
-//
-// This is the shape of a book chapter: the heading names the subject once, and a
-// later paragraph repeats it four times.
 func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 	t.Helper()
 	chunks := []chunk.Chunk{

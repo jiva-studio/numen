@@ -33,91 +33,49 @@ import (
 // reads: the vault shown, the door on every question, the writes and tasks in
 // the air, and who is drawing what changes.
 type State struct {
-	// vault is the vault the window has open. It is replaced while requests are
-	// being served, so every reader takes it through GetCurrentVault.
 	vault atomic.Pointer[domain.Vault]
 
-	// closed rejects new requests. It is set before the index and the embedder
-	// that handlers use are closed.
 	closed atomic.Bool
 
-	// questions are the questions taken and not yet answered. A search, a note
-	// and a link are read straight from the index, and Close waits here until
-	// the last of them is off it.
-	//
-	// A stream is not counted: it lives as long as the page that opened it.
 	questions inflight
 
-	// published as one after the vault, so a run, a cut and a drop reach the
-	// vault the request was answered over. Nothing while the vault is being
-	// changed.
 	session atomic.Pointer[vaultSession]
 
 	ChangeEvents broadcaster[change]
 
-	// OpenVault puts another vault in the window: the agents are stopped, the vault
-	// is swapped, and the agents are started again against the one that
-	// arrived. It is bound by every build that serves the list of vaults. The open is the
-	// plugin open whose lock the switch shares, nil for a user vault switch.
 	OpenVault func(context.Context, domain.Vault, *PluginOpen) error
 
-	// NotifyNoteWritten is called after a note save. The embedding pipeline then
-	// queries the index for chunks without vectors once the vault is idle. Nil
-	// when no embedding pipeline runs, in which case a save changes no vectors.
 	NotifyNoteWritten func()
 
-	// Edits broadcasts note edits to the subscribers of this vault.
 	Edits broadcaster[domain.Edit]
 
-	// Places broadcasts place focus requests to the subscribers of this vault.
 	Places broadcaster[domain.Place]
 
-	// TabIDs broadcasts the ids of open tabs to make active to the subscribers of this vault.
 	TabIDs broadcaster[string]
 
-	// openTabs is the open-tab report most recently received from the window.
-	// It is replaced while requests are served, so readers use GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
-	// openTabsReports is notified after each open-tab report is stored.
 	openTabsReports reportSignal
 
-	// TabActivationBound is the maximum time ActivateTab waits for the window to report the tab active.
-	// Zero means 2 seconds.
 	TabActivationBound time.Duration
 
-	// NotifyOpenTabs is called with each accepted open-tab report. Nil when
-	// nothing consumes the report.
 	NotifyOpenTabs func(domain.OpenTabs)
 
-	// OpenTabsStore keeps the open tabs of the vault across restarts. Nil keeps
-	// them for as long as the core runs.
 	OpenTabsStore windowport.OpenTabsStore
 
-	// DetachTab opens a tab in a window of its own.
 	DetachTab func(context.Context, DetachedTab) error
 
-	// TabLinks stores the link groups of the tabs of all windows. When nil, the
-	// tab links RPCs return Unimplemented.
 	TabLinks *tablinks.Registry
 
-	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Ready is set when the scan has finished. Error holds the scan failure, if any.
-	Ready atomic.Bool
-	Error wire.Reason
-	// WatchError is why the vault is not being followed, when it is not.
-	WatchError wire.Reason
-	// Unreachable is why an agent cannot be reached, when one cannot.
+	Ready       atomic.Bool
+	Error       wire.Reason
+	WatchError  wire.Reason
 	Unreachable wire.Reason
 
-	// Window is this window itself: everything being done behind it, which
-	// whatever does work puts itself into, and everyone drawing it for the
-	// moment it goes.
 	Window *wire.Window
 
-	// EmitEvent queues an event into the plugin host event bus.
 	EmitEvent func(event string)
 
 	Indexing IndexState
@@ -125,17 +83,9 @@ type State struct {
 
 // IndexState is how far the vault has been read for meaning.
 type IndexState struct {
-	// Progress reports chunking and embedding progress. Nil when the vault is
-	// not indexed for semantic search; the window then reports no coverage.
 	Progress indexport.IndexProgress
-	// Model is the embedding model identity that new vectors are created with.
-	// It decides whether a chunk already has a vector. Empty when no model is
-	// installed, in which case nothing is embedded. The indexing goroutine
-	// writes it and every request reads it.
-	Model atomic.Value
-	// Recipe is everything that decides what a vector is, which is what a
-	// vector is found by.
-	Recipe atomic.Value
+	Model    atomic.Value
+	Recipe   atomic.Value
 }
 
 // GetCurrentVault is the vault the window has open. A window standing on nothing
@@ -147,7 +97,6 @@ func (s *State) GetCurrentVault() domain.Vault {
 	return domain.Vault{}
 }
 
-// writeOpenTabs records the open tabs of the vault in the window.
 func (s *State) writeOpenTabs(ctx context.Context, open domain.OpenTabs) error {
 	if v := s.GetCurrentVault(); s.OpenTabsStore != nil && v.Path != "" {
 		return vaults.WriteOpenTabs(ctx, s.OpenTabsStore, v, open)
@@ -155,7 +104,6 @@ func (s *State) writeOpenTabs(ctx context.Context, open domain.OpenTabs) error {
 	return nil
 }
 
-// readOpenTabs reads the open tabs kept for the vault in the window.
 func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
 	v := s.GetCurrentVault()
 	if s.OpenTabsStore == nil || v.Path == "" {
@@ -164,23 +112,14 @@ func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
 	return vaults.ReadOpenTabs(ctx, s.OpenTabsStore, v)
 }
 
-// setVault sets the vault that subsequent requests are served over.
 func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 
-// setSession sets the session a run, a rechunk and a drop are taken through from now
-// on. They arrive together, after the vault they belong to.
 func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
 
-// reportTask puts one piece of work in the list of what is being done behind the
-// window, for a build that keeps one.
 func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
 
-// finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
-// isIndexOutdated reports whether a write reached the vault but the index did not
-// follow. The result is returned to the client that saved, and the pending
-// task is shown until a later write updates the index again.
 func (s *State) isIndexOutdated(err error) bool {
 	if err == nil {
 		s.finishTask(updatingIndex)
@@ -203,7 +142,6 @@ func (s *State) Close() {
 
 func (s *State) isClosed() bool { return s.closed.Load() }
 
-// getCurrentVault is the vault a question is answered over. A window standing on nothing
 func (s *State) getCurrentVault() (domain.Vault, error) {
 	v := s.GetCurrentVault()
 	if v.ID == "" {
@@ -288,7 +226,6 @@ func (h *vaultHandler) WatchVaultChanges(
 	}
 }
 
-// newChangeResponse is the wire message that reports one change.
 func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 	renamedMoves := make([]*v1.Move, 0, len(what.renamed))
 	for _, went := range what.renamed {
@@ -342,11 +279,9 @@ var errClosing = broadcast.ErrClosing
 type change struct {
 	paths        []string
 	shouldReload bool
-	// renamed lists notes that moved, each with its old and new path.
-	renamed []domain.Move
+	renamed      []domain.Move
 }
 
-// newChangeBroadcaster delivers what moved to its subscribers.
 func newChangeBroadcaster() broadcaster[change] {
 	return broadcaster[change]{
 		Broadcaster: broadcast.Broadcaster[change]{
@@ -356,23 +291,18 @@ func newChangeBroadcaster() broadcaster[change] {
 	}
 }
 
-// newPlaceBroadcaster delivers place focus requests to every subscriber.
 func newPlaceBroadcaster() broadcaster[domain.Place] {
 	return broadcaster[domain.Place]{
 		Broadcaster: broadcast.Broadcaster[domain.Place]{IsLatest: true, Capacity: 1},
 	}
 }
 
-// newTabIDBroadcaster delivers the id of a tab to make active to every subscriber. A newer id
-// replaces a pending one.
 func newTabIDBroadcaster() broadcaster[string] {
 	return broadcaster[string]{
 		Broadcaster: broadcast.Broadcaster[string]{IsLatest: true, Capacity: 1},
 	}
 }
 
-// newEditBroadcaster delivers to every subscriber, for a change to a note being made
-// while they are showing it.
 func newEditBroadcaster() broadcaster[domain.Edit] {
 	return broadcaster[domain.Edit]{
 		Broadcaster: broadcast.Broadcaster[domain.Edit]{
@@ -387,8 +317,7 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 // DetachedTab is a tab to open in a window of its own. The new window reads
 // the tab by its id with ReadDetachedTab.
 type DetachedTab struct {
-	ID string
-	// X and Y are the screen position of the new window.
+	ID   string
 	X, Y int
 }
 
@@ -403,7 +332,6 @@ type reportSignal struct {
 	next chan struct{}
 }
 
-// wait returns a channel that the next notify closes.
 func (r *reportSignal) wait() <-chan struct{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -413,7 +341,6 @@ func (r *reportSignal) wait() <-chan struct{} {
 	return r.next
 }
 
-// notify closes the channel that wait returned.
 func (r *reportSignal) notify() {
 	r.mu.Lock()
 	defer r.mu.Unlock()

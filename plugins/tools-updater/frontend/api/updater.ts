@@ -14,7 +14,6 @@ export type State = 'unchecked' | 'current' | 'available' | 'unreachable'
 /** The running build, as the backend compares it with the newest one. */
 export interface App {
   readonly version: string
-  /** The build number; 0 where the build has none. */
   readonly build: number
   readonly platform: Platform
 }
@@ -41,9 +40,7 @@ export interface Update {
   readonly build: number
   readonly channel: string
   readonly releasedAt: string
-  /** The page that lists what the release changed. */
   readonly notesUrl: string
-  /** The address the build is downloaded from by hand. */
   readonly downloadUrl: string
   readonly file?: ReleaseFile
 }
@@ -51,7 +48,6 @@ export interface Update {
 /** The result of the last check. */
 export interface Status {
   readonly state: State
-  /** Present in the available state only. */
   readonly update?: Update
 }
 

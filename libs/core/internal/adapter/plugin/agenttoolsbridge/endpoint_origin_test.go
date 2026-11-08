@@ -10,7 +10,6 @@ import (
 const initializeBody = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":` +
 	`{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"orchard","version":"1"}}}`
 
-// serveOriginEndpoint serves an endpoint of no tools and closes it at the end of the test.
 func serveOriginEndpoint(t *testing.T) *endpoint {
 	t.Helper()
 	served, err := serveEndpoint(t.Context(), nil, callScope{}, nil)
@@ -25,8 +24,6 @@ func serveOriginEndpoint(t *testing.T) *endpoint {
 	return served
 }
 
-// postInitialize sends an MCP initialize to the endpoint with the origins and, where token is not
-// empty, the bearer token, and returns the status of the response.
 func postInitialize(t *testing.T, served *endpoint, token string, origins ...string) int {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, served.url, strings.NewReader(initializeBody))

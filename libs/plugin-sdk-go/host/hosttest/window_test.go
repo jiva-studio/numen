@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
 
-// newWindowVault is a vault of one note and one PDF, and its window.
 func newWindowVault() *hosttest.Window {
 	vault := hosttest.New("marsh")
 	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dusk.")
@@ -124,7 +123,6 @@ func TestWindowSetToNoWindowReturnsErrNoWindow(t *testing.T) {
 	}
 }
 
-// getBirdTabs is one PDF open in two tabs, the first of them active.
 func getBirdTabs() []host.OpenTab {
 	return []host.OpenTab{
 		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},

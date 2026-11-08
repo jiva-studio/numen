@@ -13,9 +13,6 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// makeVaultAndShape is a vault holding one note, and the shape of it taken before anything
-// else arrives. The root is spelled as the operating system reports paths in it, with
-// every link resolved; a temporary folder on macOS is under a link.
 func makeVaultAndShape(t *testing.T) (string, *vaultreader.Folders) {
 	t.Helper()
 	root, err := filepath.EvalSymlinks(t.TempDir())
@@ -36,8 +33,6 @@ func makeVaultAndShape(t *testing.T) (string, *vaultreader.Folders) {
 	return root, shape
 }
 
-// writeFolderOfNotes writes a folder of notes into the vault, the way a sync client
-// unpacking an archive does.
 func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 	t.Helper()
 	pos := filepath.Join(root, name)

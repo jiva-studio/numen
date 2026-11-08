@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
-// folder is a vault of one note, somewhere of its own.
 func folder(t *testing.T, name string) string {
 	t.Helper()
 	pos := filepath.Join(t.TempDir(), name)
@@ -29,7 +28,6 @@ func folder(t *testing.T, name string) string {
 	return pos
 }
 
-// note is one trashinfo file read as the fields it carries.
 func note(t *testing.T, pos string) map[string]string {
 	t.Helper()
 	raw, err := os.ReadFile(pos)
@@ -51,7 +49,6 @@ func note(t *testing.T, pos string) map[string]string {
 	return fields
 }
 
-// getDeletedOn returns the moment that the clock of the tests reports.
 func getDeletedOn() time.Time { return time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC) }
 
 func TestAFolderGoesToTheTrash(t *testing.T) {

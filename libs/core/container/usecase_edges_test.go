@@ -11,9 +11,6 @@ import (
 	"testing"
 )
 
-// getUseCaseEdges returns the use cases each use case may build on. Under strict Clean
-// Architecture, use cases are independent application scenarios that compose
-// via ports or in the composition root, never by importing sibling usecase packages.
 func getUseCaseEdges() map[string][]string {
 	return map[string][]string{
 		"note":          nil,
@@ -32,7 +29,6 @@ func getUseCaseEdges() map[string][]string {
 	}
 }
 
-// getUseCaseName is the use case a package belongs to, and whether it is one.
 func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	rest, found := strings.CutPrefix(pkg, "usecase/")
 	if !found {
@@ -42,8 +38,6 @@ func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	return name, true
 }
 
-// getUseCaseEdgeRefusal returns why one package may not import another, and nothing
-// where it may.
 func getUseCaseEdgeRefusal(from, to string) string {
 	source, isSource := getUseCaseName(from)
 	target, isTarget := getUseCaseName(to)

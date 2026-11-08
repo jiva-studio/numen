@@ -3,12 +3,10 @@ import { ref, shallowRef } from 'vue'
 import { createWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
 import type { Task } from '@/shared/notices/task'
 
-/** A stream that yields the given items and then ends. */
 async function* yielding<T>(...items: T[]): AsyncIterable<T> {
   for (const item of items) yield item
 }
 
-/** Deps whose window closes after the first reading of a stream ends. */
 const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
   let open = true
   const deps = {

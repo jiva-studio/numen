@@ -24,13 +24,12 @@ import (
 
 // Vault is a vault the host shows. Its notes are in the index as soon as their files are there.
 type Vault struct {
-	world    *world
-	vault    domain.Vault
-	isShown  bool
-	files    store
-	indexed  map[string]domain.Note
-	rejected map[string]error
-	// unwritable are the files that may be read and not written.
+	world      *world
+	vault      domain.Vault
+	isShown    bool
+	files      store
+	indexed    map[string]domain.Note
+	rejected   map[string]error
 	unwritable map[string]error
 	cache      map[string][]byte
 	locked     chan struct{}
@@ -41,8 +40,7 @@ type Vault struct {
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
-	// tb receives the failures of changes made to the files of a vault kept on disk.
-	tb testing.TB
+	tb         testing.TB
 }
 
 var _ host.Vault = (*Vault)(nil)
@@ -91,11 +89,9 @@ func newVault(v domain.Vault, files store) *Vault {
 
 // world is the set of vaults of a host. One lock guards them.
 type world struct {
-	mu      sync.Mutex
-	members []*Vault
-	// openedVault is the vault OpenVault last opened, nil before any.
-	openedVault *Vault
-	// hasUnsavedChanges makes OpenVault return host.ErrUnsavedChanges.
+	mu                sync.Mutex
+	members           []*Vault
+	openedVault       *Vault
 	hasUnsavedChanges bool
 }
 
@@ -158,7 +154,6 @@ func (v *Vault) Move() {
 // errGone is what a call on the files of a vault gets when its folder is not there any longer.
 var errGone = errors.New("the vault's folder is gone")
 
-// reach fails a call on the vault's folder when the folder is gone.
 func (v *Vault) reach() error {
 	if on, isDisk := v.files.(disk); isDisk {
 		if _, err := os.Stat(on.root); err != nil {
@@ -168,7 +163,6 @@ func (v *Vault) reach() error {
 	return nil
 }
 
-// gate fails a call on a vault the host does not show or does not know.
 func (v *Vault) gate(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -453,7 +447,6 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 	return v.getBacklinks(v.parsed(), to), nil
 }
 
-// getBacklinks returns the links of the notes that point to the note at to. The caller has the lock.
 func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.ResolvedLink {
 	target, ok := notes[to]
 	if !ok {
@@ -588,7 +581,6 @@ func (v *Vault) With(id domain.VaultID) host.Vault {
 	return v.find(id)
 }
 
-// find returns the vault with the identity among those of the host. The caller holds the world's lock.
 func (v *Vault) find(id domain.VaultID) *Vault {
 	if v.vault.ID == id {
 		return v
@@ -637,8 +629,6 @@ func (v *Vault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
 	return out, nil
 }
 
-// report fails the test that owns the vault. A vault kept in memory has no test and its files cannot
-// fail, so an error there goes to standard error.
 func (v *Vault) report(err error) {
 	if v.tb != nil {
 		v.tb.Helper()

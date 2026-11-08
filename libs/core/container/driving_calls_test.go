@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// getPortFields are the names of the struct fields a file types port.X.
 func getPortFields(file *ast.File) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -42,8 +41,6 @@ func getPortFields(file *ast.File) []string {
 	return found
 }
 
-// getFieldCalls are the calls in a file made as x.Field.Method(...) where Field
-// is one of these names, each written Field.Method.
 func getFieldCalls(file *ast.File, fields []string) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -64,8 +61,6 @@ func getFieldCalls(file *ast.File, fields []string) []string {
 	return found
 }
 
-// isDrivingAdapterFile reports whether a path, relative to the core, is a file
-// of a driving adapter, that is, an adapter that external callers enter through.
 func isDrivingAdapterFile(rel string) bool {
 	return isAmong([]string{"adapter/cli", "adapter/window"}, filepath.ToSlash(filepath.Dir(rel)))
 }
@@ -151,8 +146,6 @@ func read(a *API, queries noteport.NoteQueries) {
 	}
 }
 
-// depguardFiles are the file patterns of the lint rule that keeps a driving
-// adapter off the ports.
 func depguardFiles(t *testing.T) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", ".golangci.yml"))
@@ -176,8 +169,6 @@ func depguardFiles(t *testing.T) []string {
 	return config.Linters.Settings.Depguard.Rules["driving-adapter"].Files
 }
 
-// getUncovered returns the driving adapters of adapter/ that no pattern of the
-// lint rule matches.
 func getUncovered(patterns []string) []string {
 	var found []string
 	for one := range getDriving() {

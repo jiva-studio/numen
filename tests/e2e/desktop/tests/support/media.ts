@@ -109,7 +109,6 @@ interface ArchiveEntry {
   readonly content: string
 }
 
-/** A zip archive holding the entries uncompressed, in order, which is the form an EPUB opens in. */
 const createArchive = (entries: readonly ArchiveEntry[]): Buffer => {
   const parts: Buffer[] = []
   const directory: Buffer[] = []

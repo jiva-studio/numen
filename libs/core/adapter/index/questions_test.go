@@ -81,8 +81,6 @@ func (s tallyingStmt) QueryContext(ctx context.Context, args []driver.NamedValue
 	return queries.QueryContext(ctx, args)
 }
 
-// openCountedDB is an index whose questions are counted: the database itself,
-// and the note queries over a pool of its own that does the counting.
 func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	t.Helper()
 
@@ -112,7 +110,6 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	return db, note.NewQueries(pool), tallied.ran
 }
 
-// questions is how many statements a call ran.
 func questions(t *testing.T, ran *atomic.Int64, ask func() error) int64 {
 	t.Helper()
 	ran.Store(0)

@@ -80,13 +80,6 @@ func WritePage(
 	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(text))
 }
 
-// readAppearanceSettings returns the appearance the settings specify for a
-// window, and whether the settings could be read.
-//
-// It runs on every request, so a changed theme, a changed size, or an edited
-// file in the user's folder takes effect on the next reload. When the settings
-// cannot be read, nothing is added to the page and the tokens built into the
-// bundle apply.
 func readAppearanceSettings(
 	ctx context.Context, themes numenv1connect.ThemeServiceHandler,
 ) (appearance.Settings, bool) {

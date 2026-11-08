@@ -18,21 +18,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// rename returns the rename of an unconfigured installation, which keeps the
-// title and the filename as one name.
 func (c changing) rename() note.Rename {
 	return note.Rename{Move: c.move()}
 }
 
-// renameApart is the rename an installation that has turned the two apart does.
 func (c changing) renameApart() note.Rename {
 	mover := c.move()
 	mover.Sync = func() note.SyncTitleAndFilename { return false }
 	return note.Rename{Move: mover}
 }
 
-// title returns the title that the index reports for the note at the path,
-// which is the title the vault displays.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
 	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
@@ -603,7 +598,6 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	}
 }
 
-// isGone reports whether the vault has no file at the path.
 func isGone(t *testing.T, c changing, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))

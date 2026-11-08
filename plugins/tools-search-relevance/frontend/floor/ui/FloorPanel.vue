@@ -16,7 +16,6 @@ import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../words'
 const props = defineProps<{
   pluginId: string
   values: Record<string, unknown>
-  /** The client of the service of the plugin's backend. */
   client?: FloorClient
 }>()
 

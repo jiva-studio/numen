@@ -94,8 +94,6 @@ type appearance struct {
 	Theme          string  `json:"theme"`
 }
 
-// is. One file is written over and over: a folder for each of a million inputs
-// is a folder a run never gets to the end of.
 func writeFile(tb testing.TB, path, raw string) string {
 	tb.Helper()
 	if err := os.WriteFile(path, []byte(raw), 0o600); err != nil {

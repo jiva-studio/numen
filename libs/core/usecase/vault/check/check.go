@@ -129,7 +129,6 @@ func (c Checks) Loud() []domain.Check {
 	return out
 }
 
-// getDefaultCheckers returns every check that is not opt-in.
 func (c Checks) getDefaultCheckers() []Checker {
 	var out []Checker
 	for _, check := range c.List {

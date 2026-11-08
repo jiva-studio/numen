@@ -80,7 +80,6 @@ func (l linkHostVault) Write(ctx context.Context, filePath string, content []byt
 	return l.Vault.Write(ctx, filePath, content, baseline)
 }
 
-// newLinkHostVault is the linked geology vault served through a host that records its link edits.
 func newLinkHostVault(t *testing.T) (*hosttest.Vault, *linkCalls, *tools.Registry) {
 	t.Helper()
 	v, _ := newLinkedGeologyVault(t)
@@ -92,7 +91,6 @@ func newLinkHostVault(t *testing.T) (*hosttest.Vault, *linkCalls, *tools.Registr
 	return v, calls, registry
 }
 
-// statOf is the file stat of the note as the vault has it now.
 func statOf(t *testing.T, v *hosttest.Vault, notePath string) domain.FileStat {
 	t.Helper()
 	stat, err := v.StatFile(t.Context(), notePath)
@@ -102,12 +100,10 @@ func statOf(t *testing.T, v *hosttest.Vault, notePath string) domain.FileStat {
 	return stat
 }
 
-// isSameBaseline reports whether the baseline the host received is the file stat the fingerprint names.
 func isSameBaseline(got, want domain.FileStat) bool {
 	return got.Size == want.Size && got.ModTime.Equal(want.ModTime)
 }
 
-// getErrorText calls the tool and returns the text of its error, failing the test when it is not rejected.
 func getErrorText(t *testing.T, registry *tools.Registry, name, arguments string) string {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: geologyVault, Name: name, Arguments: []byte(arguments)})

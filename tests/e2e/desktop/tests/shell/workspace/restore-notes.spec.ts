@@ -15,7 +15,6 @@ import {
 const NOTES_PLUGIN_MANIFEST = '**/md.numen.notes/manifest.json'
 const WATCH_QUIT = '**/numen.v1.WindowService/WatchQuit'
 
-/** The answer of a stream that says it is listening and then that the window is going: Connect frames of JSON. */
 const flushFrames = (): Buffer => {
   const frame = (flags: number, message: object): Buffer => {
     const json = Buffer.from(JSON.stringify(message))
@@ -31,7 +30,6 @@ const flushFrames = (): Buffer => {
   ])
 }
 
-/** Waits until the core keeps the tab of each path under that path, and under no key of a tab. */
 const expectSavedPaths = async (page: Page, paths: readonly string[]): Promise<void> => {
   await expect
     .poll(async () => {
@@ -41,7 +39,6 @@ const expectSavedPaths = async (page: Page, paths: readonly string[]): Promise<v
     .toBe(true)
 }
 
-/** Every note tab shows its note: named after its file, with its text and no banner. */
 const expectRestored = async (page: Page, notes: readonly { path: string; text: string }[]) => {
   for (const { path, text } of notes) {
     await expect(getNoteTab(page, path)).toBeVisible()
@@ -51,7 +48,6 @@ const expectRestored = async (page: Page, notes: readonly { path: string; text: 
   }
 }
 
-/** The vault holds no file whose name a tab key could have made: one with a colon. */
 const expectNoColonFile = async (page: Page, folders: readonly string[]): Promise<void> => {
   for (const folder of folders) {
     expect(

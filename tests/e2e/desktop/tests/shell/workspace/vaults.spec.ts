@@ -23,7 +23,6 @@ import {
   type Vault,
 } from '../../support/vault.js'
 
-/** A folder of this machine outside the run's vault, holding one invented note, added as a vault. */
 const addSecondVault = async (request: APIRequestContext): Promise<Vault> => {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-second-vault-'))
   fs.writeFileSync(
@@ -33,7 +32,6 @@ const addSecondVault = async (request: APIRequestContext): Promise<Vault> => {
   return addVault(request, folder, createUniqueTitle('Coastline'))
 }
 
-/** Puts the run's vault back in the window, and takes the second vault and its folder away. */
 const dropSecondVault = async (
   request: APIRequestContext,
   second: Vault,
@@ -46,13 +44,11 @@ const dropSecondVault = async (
   fs.rmSync(second.path, { recursive: true, force: true })
 }
 
-/** Picks a vault in the step a vault command opens on. */
 const pickVault = async (page: Page, name: string) => {
   await getPaletteField(page).fill(name)
   await page.getByRole('option', { name: new RegExp(`^${name}`) }).click()
 }
 
-/** Where this machine's trash keeps a folder the core erased, by the folder's name. */
 const getTrashedPath = async (request: APIRequestContext, name: string): Promise<string> =>
   process.platform === 'darwin'
     ? path.join(os.homedir(), '.Trash', name)

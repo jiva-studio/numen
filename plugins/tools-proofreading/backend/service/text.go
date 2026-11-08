@@ -12,14 +12,10 @@ type askModel func(ctx context.Context, instruction, prompt string) (string, err
 type textResult struct {
 	corrections []Line
 	uncorrected int
-	// next is the line to continue from, and isDone reports that nothing is left
-	// after the lines answered. Both are for speech.
-	next   int
-	isDone bool
+	next        int
+	isDone      bool
 }
 
-// getScanDistance is how far a correction may stand from a line read off a page:
-// the limit the request names, or MaxEditDistance where it names none.
 func getScanDistance(maxDistance float64) float64 {
 	if maxDistance <= 0 {
 		return MaxEditDistance
@@ -27,8 +23,6 @@ func getScanDistance(maxDistance float64) float64 {
 	return maxDistance
 }
 
-// proofreadScan queries the model about each page and returns the corrections
-// its replies contain, in the order of the lines they correct.
 func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance float64) (textResult, error) {
 	answers, err := askBatches(ctx, ask, scanInstruction, pages, getScanDistance(maxDistance))
 	if err != nil {
@@ -54,11 +48,6 @@ type batchShape struct {
 	overlap int
 }
 
-// proofreadSpeech queries the model about the lines of a recording from a given
-// line on, at most limit of them when limit is above zero. The batches are cut
-// by size and overlap, and a sentence spanning a cut is queried whole in a
-// batch over that cut. The next line is where a sentence spanning past the last
-// line answered begins, or the lines shared with the end of the window.
 func proofreadSpeech(
 	ctx context.Context, ask askModel, lines []Line, shape batchShape, from, limit int,
 ) (textResult, error) {
@@ -114,13 +103,10 @@ func proofreadSpeech(
 	return out, nil
 }
 
-// getLineIndex is the place of the line numbered number among the lines, or the
-// place of the first line after it.
 func getLineIndex(lines []Line, number int) int {
 	return sort.Search(len(lines), func(i int) bool { return lines[i].Number >= number })
 }
 
-// askBatches queries the model about each batch in turn.
 func askBatches(
 	ctx context.Context, ask askModel, instruction string, batches []Batch, maxDistance float64,
 ) ([]answer, error) {
@@ -135,7 +121,6 @@ func askBatches(
 	return out, nil
 }
 
-// setContext returns the batches with what the recording holds on each of them.
 func setContext(batches []Batch, about string) []Batch {
 	for item := range batches {
 		batches[item].Context = about

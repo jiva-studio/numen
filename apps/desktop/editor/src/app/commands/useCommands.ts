@@ -54,7 +54,6 @@ export interface CommandsDepsOptions {
   reload: () => void
   tabsHold?: TabsHold
   reached: Notes
-  /** The adapter that writes the row chosen in the step of the command of a setting. */
   settingPalette?: {
     getCommands: () => readonly Command[]
     choose: (command: string, item: string) => Promise<void>
@@ -65,22 +64,16 @@ export interface CommandsDepsOptions {
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
     getCommittedSetting?: (path: readonly string[]) => unknown
   }
-  /** Shows a note in the plugin that displays notes. */
   travel: (path: string) => Promise<void> | void
-  /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  /** The places plugins put their commands in. */
   menus?: Menus
-  /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
-  /** The menu the text versions of the file in front make, read each time the palette opens. */
   fileMenuCommands?: FileMenuCommands
 }
 
-/** What a chosen result is over, replacing the tab and the note of the window. */
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   tab: '',
   kind: null,

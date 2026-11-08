@@ -13,11 +13,6 @@ const FAILURE = /failed to play|unreadable|not supported|loading stopped/i
 /** The length of `fixtures/talk.mp3`, a VBR mp3 with a Xing header. */
 const LENGTH_MS = 187_000
 
-/**
- * The length the player's bar runs to, which is the length the engine reads: Chromium reads 187.0 s
- * and WebKit 187.2 s, the frame count of the Xing header. A length read off the first frames is far
- * shorter.
- */
 const getBarLength = async (bar: Locator): Promise<number> => Number(await bar.getAttribute('max'))
 
 test.describe('An mp3 recording', () => {

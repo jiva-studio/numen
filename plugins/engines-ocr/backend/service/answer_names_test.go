@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// decodeAnswer decodes a structured tool answer into a map of its top-level keys.
 func decodeAnswer(t *testing.T, structured []byte) map[string]any {
 	t.Helper()
 	var answer map[string]any
@@ -20,7 +19,6 @@ func decodeAnswer(t *testing.T, structured []byte) map[string]any {
 	return answer
 }
 
-// requireKeys fails the test for every key of want the object lacks and every key of absent it has.
 func requireKeys(t *testing.T, what string, object map[string]any, want, absent []string) {
 	t.Helper()
 	for _, key := range want {
@@ -35,7 +33,6 @@ func requireKeys(t *testing.T, what string, object map[string]any, want, absent 
 	}
 }
 
-// getToolSchema returns the input or the output JSON schema of the named tool.
 func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput bool) map[string]any {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -60,8 +57,6 @@ func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput
 	return nil
 }
 
-// getSchemaProperties returns the properties of the object the path of property names leads to,
-// stepping into the items of an array property.
 func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) map[string]any {
 	t.Helper()
 	node := schema
@@ -86,8 +81,6 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	return properties
 }
 
-// visitSchema calls onProperty for every property name and onDescription for every description in
-// the schema, nested objects, array items and definitions included.
 func visitSchema(node any, onProperty, onDescription func(string)) {
 	object, ok := node.(map[string]any)
 	if !ok {
@@ -121,8 +114,6 @@ func visitSchema(node any, onProperty, onDescription func(string)) {
 	}
 }
 
-// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool, and
-// passes the description of each tool to onDescription as well.
 func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, onDescription func(tool, text string)) {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -147,8 +138,6 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the patterns of narrative wording that tool descriptions, field
-// descriptions and tool instructions must not contain.
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
@@ -225,7 +214,6 @@ func TestOCRToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	}
 }
 
-// getToolSentences is the instruction sentences the tool of the name lists.
 func getToolSentences(listing tools.Listing, name string) []string {
 	for _, info := range listing.Tools {
 		if info.GetName() == name {
@@ -235,8 +223,6 @@ func getToolSentences(listing tools.Listing, name string) []string {
 	return nil
 }
 
-// isOneSentence reports whether the text is one sentence: it ends with a full stop and has no
-// other end of a sentence.
 func isOneSentence(text string) bool {
 	return strings.TrimSpace(text) == text && strings.HasSuffix(text, ".") && !regexp.MustCompile(`[.!?]\s+\S`).MatchString(text)
 }
@@ -278,8 +264,6 @@ func TestOCRToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
 	}
 }
 
-// getForeignToolNames is the tools of the other plugins: the vault, window, OCR, transcription,
-// importer and flashcard tools, without the tools of this plugin.
 func getForeignToolNames() []string {
 	all := []string{
 		"note_read", "note_write", "note_heading_list", "note_search", "note_list", "note_title_list",

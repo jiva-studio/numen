@@ -15,12 +15,6 @@ import (
 // `vectors` is addressed by chunks of both.
 const sharedText = "a passage that both vaults hold word for word"
 
-// fillVault puts a row in every table the index has, for one vault: a note with
-// a heading, a link and a problem, a book cut into chunks and embedded, and a
-// book whose chunks open named sections.
-//
-// Every text carries the stem, so a row that arrives from the wrong vault is
-// recognisable. The one exception is the shared passage.
 func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 	t.Helper()
 	ctx := t.Context()
@@ -73,8 +67,6 @@ type contents struct {
 	chunks   []int64
 }
 
-// getVaultContents reads what a vault holds. A vault holding none of the four
-// fails here.
 func getVaultContents(t *testing.T, db *DB, vault domain.Vault) contents {
 	t.Helper()
 
@@ -96,8 +88,6 @@ func getVaultContents(t *testing.T, db *DB, vault domain.Vault) contents {
 	return c
 }
 
-// virtual is how many rows the five virtual tables hold for what a vault held,
-// keyed by table name so a failure identifies the table that kept them.
 func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	t.Helper()
 
@@ -110,7 +100,6 @@ func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	}
 }
 
-// ordinary is how many rows the cascading tables hold for what a vault held.
 func ordinary(t *testing.T, db *DB, c contents) map[string]int {
 	t.Helper()
 
@@ -152,8 +141,6 @@ func numbers(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	return out
 }
 
-// list writes row numbers as an SQL list, for a query over rows that the
-// result is allowed to have removed.
 func list(rows []int64) string {
 	content := make([]string, len(rows))
 	for i, row := range rows {

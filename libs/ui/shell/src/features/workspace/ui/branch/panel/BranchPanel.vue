@@ -43,7 +43,6 @@ const slots = useSlots()
 const passed = computed(() => Object.keys(slots) as BranchSlotName[])
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>
 

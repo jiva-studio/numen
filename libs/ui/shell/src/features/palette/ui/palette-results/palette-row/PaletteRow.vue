@@ -10,11 +10,8 @@ import type { PlacedItem } from '../../../lib/place'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** The row as it is drawn, its lines already split. */
   row: PlacedItem
-  /** What this row is addressed by. */
   id: string
-  /** Whether the keyboard relies on it. */
   isCurrent: boolean
 }>()
 

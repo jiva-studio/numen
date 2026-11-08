@@ -10,7 +10,6 @@ import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 
-/** No movement unless a test is about movement. */
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
     props: { neighbourhood: neighbourhoods.typical, duration: 0, ...props },

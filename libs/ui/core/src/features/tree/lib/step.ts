@@ -12,9 +12,7 @@ export const isTreeKey = (key: string): key is TreeKey =>
 
 /** What a key evaluates to: a row to turn on the way, and where the keyboard lands. */
 export interface Step {
-  /** Where the keyboard is afterwards. Null while nothing is drawn. */
   readonly at: RowId | null
-  /** The row to open, or to close, before it lands. */
   readonly turn: { readonly row: RowId; readonly isOpen: boolean } | null
 }
 
@@ -58,14 +56,12 @@ function stepUp(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): 
   return { at: visibleRows[pos - 1]?.id ?? here.id, turn: null }
 }
 
-/** A closed row opens, an open one is descended into, and a leaf stays. */
 function stepIn(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {
   if (here.hasChildren && !here.isOpen) return { at: here.id, turn: { row: here.id, isOpen: true } }
   if (here.isOpen && here.hasRows) return stepDown(visibleRows, pos, here)
   return { at: here.id, turn: null }
 }
 
-/** An open row closes, and a closed one climbs to its holder. */
 function stepOut(_visibleRows: readonly ShownRow[], _pos: number, here: ShownRow): Step {
   if (here.isOpen) return { at: here.id, turn: { row: here.id, isOpen: false } }
   return { at: here.parent ?? here.id, turn: null }

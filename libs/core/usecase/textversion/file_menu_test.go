@@ -141,7 +141,6 @@ func getDeleteProofreadingCommand() pluginport.PluginCommandEntry {
 	}}
 }
 
-// liveOfKinds holds in the context of the live version when it is of one of the kinds.
 func liveOfKinds(kinds ...string) []pluginport.PluginContextCondition {
 	return []pluginport.PluginContextCondition{
 		{Key: textversion.ContextKeyLive, Is: []string{"true"}},
@@ -149,7 +148,6 @@ func liveOfKinds(kinds ...string) []pluginport.PluginContextCondition {
 	}
 }
 
-// ownedBy holds in the context of a version the plugin made.
 func ownedBy(pluginID string) []pluginport.PluginContextCondition {
 	return []pluginport.PluginContextCondition{{Key: textversion.ContextKeyPlugin, Is: []string{pluginID}}}
 }

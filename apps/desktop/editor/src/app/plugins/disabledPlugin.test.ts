@@ -28,7 +28,6 @@ const entryOf = (state: typeof CATALOG_STATE.INSTALLED | typeof CATALOG_STATE.DI
     state,
   })
 
-/** A window with the plugin active and one of its tabs open. */
 const createWindow = () => {
   const catalog = createMockPluginCatalog([entryOf(CATALOG_STATE.INSTALLED)])
   const enabled: string[] = []

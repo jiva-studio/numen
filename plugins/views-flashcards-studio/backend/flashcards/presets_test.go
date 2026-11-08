@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// A vault where one deck names a preset, one names an ordinary note, and one
-// is empty.
 func getPointing() map[string]string {
 	return map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -278,8 +276,6 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	}
 }
 
-// A vault whose preset carries keys the application does not own, an identity,
-// comments on a key it owns, and an owned key standing last in the block.
 func getSettled() map[string]string {
 	return map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
@@ -290,17 +286,12 @@ func getSettled() map[string]string {
 	}
 }
 
-// minutes is a preset steered by how long a day runs.
 func minutes() review.Preset {
 	p := review.Defaults()
 	p.MinutesADay, p.NewADay, p.ReviewsADay, p.Retention = 35, 8, 45, 0.87
 	return p
 }
 
-// frontmatter returns the frontmatter block of a note after a write, parsed by the
-// same parser as every other note. A missing key, a duplicated key and a block
-// that fails to parse are all detected here by parsing, not by the substring
-// checks of the write.
 func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 	t.Helper()
 	raw := []byte(read(t, s.vault, path))
@@ -876,8 +867,6 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 	}
 }
 
-// A vault of two presets and three decks: one on a preset, one on none, and one
-// on a note that is not a preset.
 func getChoosing() map[string]string {
 	return map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
@@ -1313,8 +1302,6 @@ func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 	}
 }
 
-// getPointingDecks returns the decks whose preset link targets the note at path,
-// in file order.
 func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
 	found, err := s.links.GetBacklinks(t.Context(), s.vault.ID, path)

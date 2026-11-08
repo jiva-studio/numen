@@ -12,28 +12,19 @@ import (
 // A zero field takes its default, so a settings file naming one thing leaves
 // the rest alone.
 type Config struct {
-	// Runtime is the ONNX Runtime shared library. Empty means the one beside
-	// the application, and then the one the platform holds.
 	Runtime string `json:"runtime"`
 
-	// Dir is a folder holding the models. Empty means the folder beside the
-	// application, and then the download cache.
 	Dir string `json:"dir"`
 
-	// ShouldDownload allows fetching what is not on this machine.
 	ShouldDownload bool `json:"download"`
 
-	// Threads is how many threads the encoder may use. Zero takes one per core, up to eight.
 	Threads int `json:"threads"`
 
-	// Workers is how many goroutines share the resampling and feature extraction of a recording. It is not a setting: the composition root fills it from the compute plan, and zero takes one per core.
 	Workers int `json:"-"`
 
 	Model     ParakeetModel   `json:"model"`
 	Segmenter segmenter.Model `json:"segmenter"`
 
-	// Progress receives the download progress when a listener is set. It is not a
-	// setting and is not persisted: it carries progress to the observer.
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
@@ -41,13 +32,9 @@ type Config struct {
 // pieces they write, and all four are one model: three graphs from two exports
 // answer with nothing anybody can read.
 type ParakeetModel struct {
-	// Name is what this model is called in the record kept beside a text.
 	Name string `json:"name"`
-	// Repo is the folder the four files are fetched from.
 	Repo string `json:"from"`
 
-	// Encoder, Decoder, Joiner and Tokens are the files on this machine. A path
-	// is used as given; an empty one is the file of that name under Repo.
 	Encoder string `json:"encoder"`
 	Decoder string `json:"decoder"`
 	Joiner  string `json:"joiner"`
@@ -89,7 +76,6 @@ func Defaults() Config {
 	}
 }
 
-// The defaults for everything a settings file leaves out.
 func (c Config) threads() int {
 	if c.Threads <= 0 {
 		return onnx.GetDefaultThreads()

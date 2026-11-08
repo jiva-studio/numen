@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// newRunningHost returns a host with the plugin running and the channel its supervisor closes when the process is reaped.
 func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 	t.Helper()
 	host := newDiscoveredHost(t)

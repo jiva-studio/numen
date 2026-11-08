@@ -41,23 +41,17 @@ func (q *Queries) SetMinimum(length int64) { q.minimum.Swap(length) }
 //
 // chunk.
 type Passage struct {
-	Chunk    int64
-	Path     string
-	Start    int
-	Length   int
-	Location string
-	Parent   int64
-	// Producer is what made the text this chunk is a place in. Empty where the
-	// source's own bytes are the text, which is the ordinary case.
-	Producer string
-	// ContentHash is the SHA-256 of the source content; text versions are stored under it.
+	Chunk       int64
+	Path        string
+	Start       int
+	Length      int
+	Location    string
+	Parent      int64
+	Producer    string
 	ContentHash string
-	// ChunkHash addresses the text this chunk held when the index cut it.
-	ChunkHash string
-	// MTime is when the source was last modified.
-	MTime int64
-	// Source is the source row id.
-	Source int64
+	ChunkHash   string
+	MTime       int64
+	Source      int64
 }
 
 // ID is how the core addresses the chunk on a row. This is the one place a
@@ -170,11 +164,6 @@ type passageSearch struct {
 	kinds string
 }
 
-// findPassages runs search.all, or search.kinds when the search is limited to
-// kinds, and reads the passages it returns. The sources are limited to those whose
-// path starts with the composed (NFC) or the decomposed (NFD) form of the prefix of
-// the query before the list is truncated to its limit. A query with no words
-// matches nothing.
 func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
 	expression := Expression(query.Text, query.IsGrowing)
 	if expression == "" {
@@ -284,15 +273,12 @@ func (q *Queries) GetBestSimilarity(ctx context.Context, vaultID domain.VaultID,
 	return ranked[0].similarity, nil
 }
 
-// hasOtherCoarseRecipe reports whether the coarse vector table holds vectors for a different recipe.
 func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool {
 	var currentRecipe string
 	err := q.db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&currentRecipe)
 	return err == nil && currentRecipe != "" && currentRecipe != recipe
 }
 
-// findNearestWithPrefix returns findNearestByBits limited to the sources whose path starts with the
-// composed (NFC) or the decomposed (NFD) form of pathPrefix, k chunks of them.
 func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query []float32, k int, pathPrefix string) (_ []int64, err error) {
 	if pathPrefix == "" {
 		return q.findNearestByBits(ctx, vault, query, k)
@@ -320,9 +306,6 @@ func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query 
 	return kept, rows.Err()
 }
 
-// getUpperBound returns the least value above every path that starts with prefix, by bytes: the
-// prefix with its trailing 0xFF bytes removed and its last byte incremented. If every byte is 0xFF,
-// no TEXT value is greater, so the bound is a BLOB, which SQLite sorts above every TEXT.
 func getUpperBound(prefix string) any {
 	end := []byte(prefix)
 	for len(end) > 0 && end[len(end)-1] == 0xFF {
@@ -335,8 +318,6 @@ func getUpperBound(prefix string) any {
 	return string(end)
 }
 
-// findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
-// stand nearest the query's, by Hamming distance, k of them.
 func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) (_ []int64, err error) {
 	ctx, err = sqlwrite.Uninterrupted(ctx)
 	if err != nil {
@@ -360,11 +341,6 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	return val, rows.Err()
 }
 
-// getEnclosingPassages returns the enclosing passage of each chunk.
-//
-// The nearest-neighbour query runs against the vector index alone, which
-// applies its own ordering and does not join. Resolving where each result is
-// read from is a separate query, run once per result.
 func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) (_ []domain.Passage, err error) {
 	if len(chunks) == 0 {
 		return nil, nil
@@ -481,7 +457,6 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	return out, rows.Err()
 }
 
-// paths answers the questions that come back as a list of paths in one vault.
 func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, name, query string, limit int, args func(vault int64) []any) (_ []string, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("%s needs a positive limit, got %d", name, limit)

@@ -393,9 +393,6 @@ func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
 // compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
-// newWorkers returns a pool that is closed when the test ends. The pools of the binary compile PDFium
-// into one folder, so it is compiled once and not for each pool, which costs minutes under the race
-// detector.
 func newWorkers(t testing.TB) *pdf.Workers {
 	t.Helper()
 	workers := pdf.NewWorkers()

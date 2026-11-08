@@ -11,21 +11,13 @@ import type { Position } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
 
 export interface Gesture {
-  /** The node it started from, while one is under way. */
   readonly from: Ref<string | null>
-  /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Position | null>
-  /** What letting go here would come to, so it can be shown before it does. */
   readonly outcome: Ref<Drop | null>
 }
 
 export interface GestureHandlers {
   readonly begin: (from: string, event: PointerEvent) => void
-  /**
-   * Starts a gesture from a node without a pointer direction — from the keyboard,
-   * where there is no direction to read. It evaluates to what a press without
-   * movement evaluates to, and completes immediately.
-   */
   readonly ask: (from: string) => void
   readonly cancel: () => void
 }

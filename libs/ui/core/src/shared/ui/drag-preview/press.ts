@@ -21,20 +21,11 @@ interface Drag<Item> {
  * both are returned untouched.
  */
 export interface Press<Item, At> {
-  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
-  /** The clock the release is held against. */
   readonly getClock: () => Clock
-  /** Where letting go here would put what is held. */
   readonly getDropTargetAt: (item: Item, point: Position) => At | null
-  /**
-   * Called on pointerup after a drag. `target` is the drop target at the pointerup position,
-   * or null outside every target; `point` is that position in viewport coordinates.
-   */
   readonly commit: (item: Item, target: At | null, point: Position) => void
-  /** Called once, when the press becomes a drag. */
   readonly begin?: (item: Item) => void
-  /** Called on pointercancel. `commit` is not called then. */
   readonly cancel?: (item: Item) => void
 }
 
@@ -42,7 +33,6 @@ export interface Press<Item, At> {
 export interface PressDragState<Item, At> {
   readonly dragging: ShallowRef<Drag<Item> | null>
   readonly at: ShallowRef<At | null>
-  /** Where the pointer is, for as long as a drag is live. */
   readonly position: ShallowRef<Position | null>
   readonly lift: (item: Item, event: PointerEvent) => void
 }

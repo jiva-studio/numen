@@ -11,6 +11,8 @@ import (
 )
 
 // Client calls an agent service.
+//
+//numen:api
 type Client struct {
 	// Header is sent with every call.
 	Header http.Header
@@ -23,7 +25,6 @@ func NewClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.Cl
 	return &Client{Header: http.Header{}, rpc: numenv1connect.NewAgentServiceClient(httpClient, baseURL, opts...)}
 }
 
-// newRequest wraps the message with the headers of the client.
 func newRequest[T any](client *Client, msg *T) *connect.Request[T] {
 	req := connect.NewRequest(msg)
 	for key, values := range client.Header {

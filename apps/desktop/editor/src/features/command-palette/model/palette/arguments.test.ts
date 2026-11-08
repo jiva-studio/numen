@@ -9,12 +9,10 @@ import { useCommandPalette, type Commands } from './palette'
 import type { Command, CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
 
-/** Chooses the first row the step draws, by the id and action the row carries. */
 function chooseRow(commands: Commands) {
   const row = commands.groups.value.flatMap((group) => group.items)[0]
   return commands.chooseItem(row?.id ?? '', row?.actions?.[0]?.id ?? '')

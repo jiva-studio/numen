@@ -12,21 +12,15 @@ declare global {
   }
 }
 
-/** The page field of the PDF reader in a panel. */
 const getPageField = (page: Page, name: RegExp) =>
   page.getByRole('tabpanel', { name }).getByRole('spinbutton', { name: 'Page' })
 
-/**
- * Waits until the state the core keeps for the tab of the file holds the text. The window writes it
- * in the background, and a reload before the write lands loses it.
- */
 const expectSavedState = async (page: Page, path: string, text: string): Promise<void> => {
   await expect.poll(async () => (await readSavedStates(page.request)).get(path)).toContain(text)
 }
 
 const PDF_READER_ID = 'md.numen.readers.pdf'
 
-/** Turns the PDF reader plugin on or off in the settings. */
 const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })

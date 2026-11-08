@@ -18,11 +18,6 @@ type Budget struct {
 	Minutes float64
 }
 
-// getBudget is what a preset keeps for this day of the week: its share of the
-// load, whether or not the days are evened out.
-//
-// What a day of it admits is GetAllowance, which is the one place a limit is
-// read.
 func (p Preset) getBudget(day time.Weekday) Budget {
 	share := p.GetShare(day)
 	return Budget{
@@ -63,8 +58,6 @@ const (
 // the other also closed the day.
 type BudgetNames []BudgetName
 
-// getClosers returns every budget a day may be closed by, in the order a closing names
-// them.
 func getClosers() []BudgetName {
 	return []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
 }
@@ -101,16 +94,9 @@ func (c BudgetNames) GetName() string {
 //
 // in force again the moment its goal is chosen.
 type Limits struct {
-	// New, Reviews and Minutes are the budgets. The goal names the one that
-	// closes the day, and the others take no part.
 	New     BudgetName
 	Reviews BudgetName
 	Minutes BudgetName
-	// Backlog is the share of the day that goes to the debt. It closes nothing:
-	// it states what the day is spent on, and it is empty under a goal whose day is
-	// not a single pot split between the two. A goal of a date covers the whole
-	// material by its own schedule, and a goal of retention holds each side to a
-	// count of its own.
 	Backlog BudgetName
 }
 
@@ -120,22 +106,13 @@ type Limits struct {
 // It is the one answer to what a day admits: a session spends against it, and a
 // projection runs on it.
 type Allowance struct {
-	// Keeps is what the preset keeps for the whole of this day, after the weekday's
-	// load is applied.
-	Keeps Budget
-	// New, Reviews and Minutes are what is left of it.
+	Keeps   Budget
 	New     int
 	Reviews int
 	Minutes time.Duration
-	// Limits is which of the three closes the day.
-	Limits Limits
-	// Backlog is how much of the day goes to the debt before anything unbegun
-	// is offered, as a share in hundredths. A goal whose day is not one pot
-	// first.
+	Limits  Limits
 	Backlog int
-	// Stops is why this day schedules nothing, and empty where it schedules
-	// something.
-	Stops StopReason
+	Stops   StopReason
 }
 
 // IsPaused reports whether this day schedules nothing.
@@ -202,14 +179,6 @@ func (a Allowance) IsNextCardDebt(debt, begun int, isDue, isNew bool) bool {
 	return debt*AllBacklog < a.Backlog*(debt+begun+1)
 }
 
-// getLimits is which budget closes this preset's day.
-//
-// A goal of a date closes the day on a count of new cards, which is the share
-// of the material a day has to begin to be through it by then. The date is what
-// paced that count, so the date is what closed the day.
-//
-// The share of the day that goes to the debt is read where one pot is spent
-// between the two. A goal of retention keeps a count for each side, so each is
 func (p Preset) getLimits() Limits {
 	switch p.Goal {
 	case GoalRetention:

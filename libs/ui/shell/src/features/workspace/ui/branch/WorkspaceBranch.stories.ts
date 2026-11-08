@@ -44,11 +44,8 @@ type Arrangement = keyof typeof ARRANGEMENTS
 
 interface Knobs {
   arrangement: Arrangement
-  /** The minimum size at which a pane is worth rendering. */
   minimum: number
-  /** How wide the box holding the branch is drawn. */
   room: string
-  /** Given by the story, and nothing a reader turns. */
   node?: never
   axis?: never
   depth?: never
@@ -110,7 +107,6 @@ const meta: Meta<Knobs> = {
   }),
 }
 
-/** The branch with one of its own given other shares. */
 function resizeBranch(node: Branch, branch: NodeId, sizes: readonly number[]): Branch {
   if (node.id === branch) return { ...node, sizes: fit(sizes, node.children.length) }
   return {

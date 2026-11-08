@@ -12,7 +12,6 @@ import (
 
 var readyListenerPattern = regexp.MustCompile(`NUMEN_READY port=\d+[^\n]* listener\.mcp=(\d+)[ \n]`)
 
-// waitForListenerPort returns the port the ready line on stdout reports for the listener mcp.
 func waitForListenerPort(t *testing.T, stdout *safeBuffer) int {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
@@ -32,14 +31,12 @@ func waitForListenerPort(t *testing.T, stdout *safeBuffer) int {
 	}
 }
 
-// serveInBackground runs Serve and returns a channel with its result.
 func serveInBackground(s *Server) <-chan error {
 	serveErrCh := make(chan error, 1)
 	go func() { serveErrCh <- s.Serve() }()
 	return serveErrCh
 }
 
-// stopServing triggers shutdown and fails the test when Serve returns an error or does not return.
 func stopServing(t *testing.T, s *Server, serveErrCh <-chan error) {
 	t.Helper()
 	s.Lifecycle().TriggerShutdown()

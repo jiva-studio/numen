@@ -30,8 +30,7 @@ type Proxy struct {
 	listener net.Listener
 	target   Target
 	onError  func(error)
-	// cancel ends the context the targets of the connections are opened with.
-	cancel context.CancelFunc
+	cancel   context.CancelFunc
 
 	mu       sync.Mutex
 	conns    map[net.Conn]struct{}
@@ -49,8 +48,6 @@ func Open(ctx context.Context, addr string, target Target, onError func(error)) 
 	return newProxy(ctx, listener, target, onError), nil
 }
 
-// newProxy forwards each connection accepted on listener to the address target returns, and closes
-// listener on Close.
 func newProxy(ctx context.Context, listener net.Listener, target Target, onError func(error)) *Proxy {
 	proxyCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p := &Proxy{
@@ -98,8 +95,6 @@ func (p *Proxy) Close() error {
 	return nil
 }
 
-// acceptConnections accepts until the listener is closed. After an accept error it waits before the
-// next accept, from minAcceptRetryDelay doubling to maxAcceptRetryDelay, until an accept succeeds.
 func (p *Proxy) acceptConnections(ctx context.Context) {
 	defer p.wg.Done()
 	var retryDelay time.Duration
@@ -126,7 +121,6 @@ func (p *Proxy) acceptConnections(ctx context.Context) {
 	}
 }
 
-// waitFor waits for delay and returns false when ctx ends first.
 func waitFor(ctx context.Context, delay time.Duration) bool {
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
@@ -138,7 +132,6 @@ func waitFor(ctx context.Context, delay time.Duration) bool {
 	}
 }
 
-// track records conn so that Close closes it, and reports false when the proxy is closed.
 func (p *Proxy) track(conn net.Conn) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -149,7 +142,6 @@ func (p *Proxy) track(conn net.Conn) bool {
 	return true
 }
 
-// untrack forgets conn and closes it.
 func (p *Proxy) untrack(conn net.Conn) {
 	p.mu.Lock()
 	delete(p.conns, conn)
@@ -157,7 +149,6 @@ func (p *Proxy) untrack(conn net.Conn) {
 	p.closeConn(conn)
 }
 
-// forward opens the target of client and copies bytes in both directions until both ends close.
 func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 	defer p.wg.Done()
 	defer p.untrack(client)
@@ -195,8 +186,6 @@ func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 	copies.Wait()
 }
 
-// copyStream copies src to dst and closes the write side of dst at the end of src. A failed copy
-// closes both connections, which ends the copy in the other direction.
 func (p *Proxy) copyStream(dst, src net.Conn) {
 	if _, err := io.Copy(dst, src); err != nil {
 		p.closeConn(dst)
@@ -213,14 +202,12 @@ func (p *Proxy) copyStream(dst, src net.Conn) {
 	p.closeConn(dst)
 }
 
-// closeConn closes conn. A connection that is already closed is not an error.
 func (p *Proxy) closeConn(conn net.Conn) {
 	if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 		p.onError(fmt.Errorf("close connection %s: %w", conn.RemoteAddr(), err))
 	}
 }
 
-// reportUnlessClosed passes err to onError unless Close ended the connection.
 func (p *Proxy) reportUnlessClosed(ctx context.Context, err error) {
 	if ctx.Err() == nil {
 		p.onError(err)

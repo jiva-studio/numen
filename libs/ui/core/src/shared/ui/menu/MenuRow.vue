@@ -12,11 +12,8 @@ import type { GroupedItem } from './items/item'
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
   item: GroupedItem
-  /** Which item is the one in force, by the caller's identifier. */
   current: string | null
-  /** Whether the name of the group it begins is drawn over it. */
   hasName: boolean
-  /** Whether the menu draws icons, so every row reserves the icon space. */
   hasIcons: boolean
 }>()
 
@@ -39,7 +36,6 @@ defineSlots<{
 const row = useTemplateRef<HTMLElement>('row')
 
 /* -------------------------------- Helpers --------------------------------- */
-/** Focuses this row; called by the menu. */
 const focus = (): void => row.value?.focus()
 
 defineExpose({ focus, getElement: () => row.value })

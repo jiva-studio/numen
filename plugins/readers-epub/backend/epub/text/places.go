@@ -13,22 +13,15 @@ import (
 // part of its text was written from. The offsets count from the start of the document, as ReadNodes
 // counts them.
 type Places struct {
-	// Blocks are where each block element begins, ascending.
 	Blocks []int
-	// Runs are the text nodes that wrote text, in document order.
-	Runs []Run
+	Runs   []Run
 }
 
 // A Run is one text node of a document and the text it wrote.
 type Run struct {
-	// Start and End are where the node's text begins and ends in the text.
 	Start, End int
-	// Steps are the EPUB CFI steps from the root element to the node. The last step is odd: the
-	// node is character data between elements.
-	Steps []int
-	// Base is how many UTF-16 code units the text nodes of the same run of character data hold
-	// before this node. A comment splits one run into two nodes.
-	Base int
+	Steps      []int
+	Base       int
 
 	data    string
 	isPre   bool
@@ -46,7 +39,6 @@ func ReadPlaces(docPath string, raw []byte) Places {
 	return x.places
 }
 
-// recordRun records the text node that wrote the text from start, with the byte before it.
 func (x *Extractor) recordRun(n *html.Node, start int, last byte, hasLast bool) {
 	steps, base := getTextSteps(n)
 	x.places.Runs = append(x.places.Runs, Run{
@@ -95,9 +87,6 @@ func (r Run) Length() int {
 	return r.walk(func(int, int, int) bool { return true })
 }
 
-// walk replays how the node's characters were written: for each, its offset in UTF-16 code units,
-// where it was written, and how many bytes it wrote. It stops when visit returns false, and returns
-// the code units walked.
 func (r Run) walk(visit func(char, out, n int) bool) int {
 	char, out, last, hasLast := 0, r.Start, r.last, r.hasLast
 	for i := 0; i < len(r.data); {
@@ -133,9 +122,6 @@ func utf16Len(ch rune) int {
 	return 1
 }
 
-// getElementSteps is the EPUB CFI steps from the root element of a document to an element: each the
-// even index of the element among its parent's children, counting elements only (EPUB CFI 1.1
-// §3.1.3).
 func getElementSteps(n *html.Node) []int {
 	var steps []int
 	for node := n; node.Parent != nil && node.Parent.Type == html.ElementNode; node = node.Parent {
@@ -145,8 +131,6 @@ func getElementSteps(n *html.Node) []int {
 	return steps
 }
 
-// getTextSteps is the EPUB CFI steps to a text node, ending in the odd index of its run of
-// character data, and how many UTF-16 code units the nodes of that run hold before it.
 func getTextSteps(n *html.Node) ([]int, int) {
 	var steps []int
 	if n.Parent != nil && n.Parent.Type == html.ElementNode {
@@ -171,7 +155,6 @@ func countElementsBefore(n *html.Node) int {
 	return count
 }
 
-// writeTextNode writes the text of a text node, and records the node where places are read.
 func (x *Extractor) writeTextNode(n *html.Node) {
 	start := len(x.out)
 	last, hasLast := x.findLastByte()

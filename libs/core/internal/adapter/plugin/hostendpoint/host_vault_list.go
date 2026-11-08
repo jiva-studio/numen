@@ -18,8 +18,6 @@ import (
 
 var errNoVaultList = errors.New("this host has no list of vaults to change")
 
-// getVaultsErrorCode returns the error code of a rejected change of the list of vaults, and
-// false for any other failure.
 func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaults.ErrUnreadable):
@@ -43,8 +41,6 @@ func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	}
 }
 
-// getVaultsResult returns the error code and the detail of a change of the list, or the error of
-// the call. The detail is the core's error text.
 func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr error) {
 	if err == nil {
 		return 0, "", nil
@@ -58,8 +54,6 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 	return 0, "", connect.NewError(connect.CodeInternal, err)
 }
 
-// beginList authorizes a change of the list of vaults and returns the list. A host with no list
-// returns CodeUnavailable.
 func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultList, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultManage); err != nil {
 		return nil, err
@@ -71,7 +65,6 @@ func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultLis
 	return list, nil
 }
 
-// findVault returns the vault with the identity on the list the plugins read.
 func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 	vault := e.endpoint.callers.GetPluginVault()
 	if vault == nil {

@@ -18,7 +18,6 @@ import {
 } from './search'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
@@ -44,7 +43,6 @@ const WORDS: Words = {
 /** The first action of a note is the id of the editor command that opens it. */
 const OPEN_NOTE = COMMAND.openNote
 
-/** A vault that responds when the test resolves it, and records its requests. */
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
   const searched: { mode: SearchMode; answer: Deferred<readonly Passage[]> }[] = []
@@ -72,7 +70,6 @@ function createVault() {
 /** Nothing waits in a test; the hold is a clock and the clock is handed in. */
 const now = vi.fn(() => Promise.resolve())
 
-/** Let everything already resolved run before the assertion. */
 const flushPromises = async () => {
   for (let turn = 0; turn < 6; turn += 1) await Promise.resolve()
 }
@@ -101,7 +98,6 @@ const passage = (override: Partial<Passage> = {}): Passage => ({
   ...override,
 })
 
-/** The group under one identity, from what the palette is drawing now. */
 const getGroup = (groups: readonly { id: string }[], id: string) =>
   groups.find((one) => one.id === id) as
     | {
@@ -637,7 +633,6 @@ describe('a group landing under the keyboard', () => {
   })
 })
 
-/** A gate that opens when the test releases it, one per keystroke, in order. */
 function createHolds() {
   const holds: Deferred<void>[] = []
   const wait = () => {
@@ -648,7 +643,6 @@ function createHolds() {
   return { holds, wait }
 }
 
-/** The state of each group: its rows, whether it is loading, and its message. */
 const describeGroups = (groups: readonly { id: string }[]) =>
   Object.fromEntries(
     ['names', 'text', 'meaning'].map((id) => {

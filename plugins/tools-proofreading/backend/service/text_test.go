@@ -23,7 +23,6 @@ func (m *model) ask(_ context.Context, instruction, prompt string) (string, erro
 	return m.script(prompt), nil
 }
 
-// newReplyModel returns a model that answers every prompt with the same reply.
 func newReplyModel(reply string) *model {
 	return &model{script: func(string) string { return reply }}
 }
@@ -97,7 +96,6 @@ func TestProofreadScan_AppliesEditLimit(t *testing.T) {
 	}
 }
 
-// speech is a transcript of count lines, line n saying "word n".
 func speech(count int) []Line {
 	out := make([]Line, count)
 	for item := range out {

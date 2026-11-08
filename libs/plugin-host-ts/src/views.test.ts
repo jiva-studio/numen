@@ -4,7 +4,6 @@ import { CONVERSATION } from '@numen/plugin-sdk'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from './styles'
 import { createViewRegistry } from './views'
 
-/** A view that writes the context it was given, and counts the times the keyboard was put in it. */
 function createView(name: string, options?: { exposeFocus?: boolean; onUnmount?: () => void }) {
   const focused = { count: 0 }
   const component = defineComponent({

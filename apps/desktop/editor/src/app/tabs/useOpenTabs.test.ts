@@ -13,9 +13,7 @@ interface Entry {
   icon?: object
   openTab?: Record<string, unknown>
   savedState?: unknown
-  /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
-  /** The tab's kind accepts text sent to it, as a conversation does. */
   takesText?: boolean
 }
 

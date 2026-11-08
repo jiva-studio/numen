@@ -30,22 +30,12 @@ func (s Sources) Policy() string {
 // serves. One field to a directive of the policy: widening where a picture
 // comes from must not widen where sound does.
 type Sources struct {
-	// Images fills img-src. A `data:` URI carries its own bytes and is no
-	// request.
-	Images []string
-	// Media fills media-src, which is where sound and video are loaded from. A
-	// of the world and not the scheme a window is drawn from.
-	Media []string
-	// Frames fills frame-src, the origins that pages pointed to by a link note
-	// are loaded from. Every host here runs its own scripts inside its own
-	// frame and has access to its own machines, and the window names them.
-	Frames []string
-	// Connect fills connect-src, which is where fetch, WebSocket, and
-	// EventSource may connect besides what the window serves itself.
+	Images  []string
+	Media   []string
+	Frames  []string
 	Connect []string
 }
 
-// listSources is a window's own handler and whatever else is allowed beside it.
 func listSources(also []string) string {
 	return strings.Join(append([]string{"'self'"}, also...), " ")
 }

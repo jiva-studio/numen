@@ -12,20 +12,14 @@ import (
 
 // Config is what an application hands the catalog.
 type Config struct {
-	// Target is the window the application opens, as plugins name it in their manifests.
-	Target string
-	// Sources are the places plugins are found in, in the order that decides between two entries that
-	// are equal in every other way.
-	Sources []Source
-	// InstallDir is the folder installed plugins are unpacked into.
+	Target     string
+	Sources    []Source
 	InstallDir string
-	// CacheDir is the folder downloaded packages are kept in.
-	CacheDir string
+	CacheDir   string
 }
 
 // Listing is the merged entries of the sources, and the sources that could not be read in full.
 type Listing struct {
-	// Entries are ordered by plugin id.
 	Entries []Entry
 	Errors  []*SourceError
 }

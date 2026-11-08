@@ -44,7 +44,6 @@ const mark = (key: string, x: number, y: number, text = key): Mark => ({
   text,
 })
 
-/** A box in the plot, to place a label against. */
 const box = (x: number, y: number, width: number, height: number): Box => ({
   x,
   y,
@@ -52,7 +51,6 @@ const box = (x: number, y: number, width: number, height: number): Box => ({
   high: height,
 })
 
-/** Whether a box is wholly inside the plot, which is the extent of the viewBox. */
 const isInside = (one: Box): boolean =>
   one.x >= 0 && one.y >= 0 && one.x + one.wide <= PLOT_WIDTH && one.y + one.high <= PLOT_HEIGHT
 
@@ -239,7 +237,6 @@ describe('the names of the marks that fit', () => {
   })
 })
 
-/** A number formatted as itself, so a test reads the height and not the wording. */
 const formatValue = (value: number): string => String(value)
 
 /** A curve drawn well clear of the left edge, where no number is read. */

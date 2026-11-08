@@ -20,16 +20,13 @@ export interface FileConflictWords {
 }
 
 defineProps<{
-  /** The read or write error, as a message for the user. */
   errorMessage: string
   conflict: FileConflict
   words: FileConflictWords
 }>()
 
 defineEmits<{
-  /** The user keeps their own content over whatever the file holds. */
   keep: []
-  /** The user takes the content the file holds. */
   take: []
 }>()
 </script>

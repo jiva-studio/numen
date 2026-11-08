@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// launchAnsweringPing returns a launcher whose process reports the port of a server answering Ping with protocol.
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plugin.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServePing(t, protocol)

@@ -156,8 +156,6 @@ func (v *Vault) OpenVault(ctx context.Context, id domain.VaultID) error {
 	return nil
 }
 
-// checkListMember returns an error for a call on the list of vaults made through a vault not on
-// the list. The caller has the lock.
 func (v *Vault) checkListMember(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -168,7 +166,6 @@ func (v *Vault) checkListMember(ctx context.Context) error {
 	return nil
 }
 
-// findByID returns the vault on the list with the identity. The caller has the lock.
 func (v *Vault) findByID(id domain.VaultID) (*Vault, bool) {
 	for _, member := range v.world.members {
 		if member.vault.ID == id {
@@ -178,8 +175,6 @@ func (v *Vault) findByID(id domain.VaultID) (*Vault, bool) {
 	return nil, false
 }
 
-// findByName returns the vault on the list with the name, compared as the host compares names. The
-// caller has the lock.
 func (v *Vault) findByName(name string) (*Vault, bool) {
 	foldedName := notesdomain.FoldName(name)
 	for _, member := range v.world.members {
@@ -190,8 +185,6 @@ func (v *Vault) findByName(name string) (*Vault, bool) {
 	return nil, false
 }
 
-// getFreeName returns the name, or the name with the lowest number from 2 that neither a name nor an
-// identity on the list has. The caller has the lock.
 func (v *Vault) getFreeName(name string) string {
 	candidate := name
 	for attempt := 2; v.isNameTaken(candidate); attempt++ {
@@ -206,8 +199,6 @@ func (v *Vault) isNameTaken(name string) bool {
 	return isNamed || isIdentity
 }
 
-// checkOverlap rejects a folder that is a vault on the list, is inside one or contains one, with the
-// text of the core. The caller has the lock.
 func (v *Vault) checkOverlap(root string) error {
 	vaults := make(notesdomain.Vaults, 0, len(v.world.members))
 	for _, member := range v.world.members {

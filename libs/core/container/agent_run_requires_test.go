@@ -10,15 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 )
 
-// newAgentPlugin is the agent plugin of the test host with the permissions given.
 func newAgentPlugin(agent *toolAgent, permissions ...string) testPlugin {
 	plugin := agentAt(agent)
 	plugin.permissions = permissions
 	return plugin
 }
 
-// runWrite runs the agent, which calls atlas_write, on the editor over a tools plugin offering
-// atlas_open and atlas_write, the second requiring vault:manage, and returns the tool plugin.
 func runWrite(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolPlugin {
 	t.Helper()
 	served := &toolPlugin{tools: []*v1.PluginTool{

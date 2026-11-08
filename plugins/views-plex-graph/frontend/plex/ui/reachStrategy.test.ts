@@ -15,7 +15,6 @@ import { build } from '../fixtures/build'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 
-/** One plex unit to the pixel, origin in the middle, as the browser draws it. */
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
     a: 1,

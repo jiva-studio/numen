@@ -8,8 +8,6 @@ import (
 	"syscall"
 )
 
-// acquireFileLock takes an advisory lock on the file and returns what lets it go.
-// The kernel drops the lock when the process ends, however it ends.
 func acquireFileLock(path string) (func() error, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {

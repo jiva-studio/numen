@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// openBreakingDB is an index whose both pools go through the breaking driver,
-// holding the first vault and nothing else.
 func openBreakingDB(t *testing.T) (*DB, *faults) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "index.db")
@@ -21,8 +19,6 @@ func openBreakingDB(t *testing.T) (*DB, *faults) {
 	return db, faults
 }
 
-// readWidth is the width the vector index holds and the recipe recorded as
-// having filled it.
 func readWidth(t *testing.T, db *DB) (int, string) {
 	t.Helper()
 	width, err := getVectorWidth(t.Context(), db.write)

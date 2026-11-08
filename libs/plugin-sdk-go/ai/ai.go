@@ -159,7 +159,6 @@ func Complete(ctx context.Context, question *Question) (string, error) {
 	return c.Complete(ctx, question)
 }
 
-// addDetail is the rejection followed by the detail the host gave, or the rejection alone where it gave none.
 func addDetail(targetErr error, detail string) error {
 	if detail == "" {
 		return targetErr

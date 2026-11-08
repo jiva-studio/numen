@@ -22,16 +22,13 @@ interface PlexSavedState {
   readonly focus: string
 }
 
-/** The note in focus a plex tab saved, and empty where it saved none. */
 const readSavedFocus = (saved: unknown): string => {
   const focus = (saved as Partial<PlexSavedState> | null | undefined)?.focus
   return typeof focus === 'string' ? focus : ''
 }
 
-/** What a plex tab is called: the note it relies on. */
 const getPlexTitle = (note: string): string => note || words.plex
 
-/** Every plex tab, the most recently used last. */
 function createPlexTabs() {
   const tabs = new Map<string, PlexTabState>()
   const getLast = (): PlexTabState | null => [...tabs.values()].at(-1) ?? null
@@ -53,10 +50,6 @@ function createPlexTabs() {
   }
 }
 
-/**
- * Every plex follows a change to the vault, and falls back to the opening note
- * when it was showing none.
- */
 async function refreshTabs(
   host: PlexHost,
   tabs: readonly PlexTabState[],

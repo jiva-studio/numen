@@ -149,11 +149,6 @@ func TestReplay_UnansweredCardHasNoSchedule(t *testing.T) {
 	}
 }
 
-// session generates a vault's answers: a few review cards answered over a few
-// weeks, some of them in the same millisecond, each answer under an identifier
-// of its own.
-//
-// here as they are minted anywhere: one to an answer, and no two alike.
 func session(t *rapid.T) []review.Answer {
 	cards := rapid.SliceOfNDistinct(
 		rapid.StringMatching(`[0-9abcdefghjkmnpqrstvwxyz]{10}`), 1, 3,
@@ -285,7 +280,6 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	}
 }
 
-// order is the places of a history, for a permutation to be drawn over.
 func order(n int) []int {
 	out := make([]int, n)
 	for item := range out {

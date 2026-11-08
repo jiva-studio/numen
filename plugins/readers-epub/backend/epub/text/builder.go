@@ -22,12 +22,8 @@ const hrefAttribute = "href"
 // the text is not taken from — head, script, style and title — are dropped whole
 // by the walk that reads both.
 type builder struct {
-	// written against.
-	base string
-	// stack is the elements standing open, the first being the document itself.
-	stack []markup.Node
-	// waiting are the runs written in a table before its first cell, which the
-	// cell takes when it opens.
+	base    string
+	stack   []markup.Node
 	waiting []markup.Node
 }
 
@@ -35,8 +31,6 @@ func newBuilder(base string) *builder {
 	return &builder{base: base, stack: []markup.Node{{Name: "", Text: "", Offset: 0, Attributes: nil, Children: nil}}, waiting: nil}
 }
 
-// openElement starts an element and reports whether one was started. An element that
-// is not drawn is passed through to its children.
 func (b *builder) openElement(n *html.Node, offset int) bool {
 	if !isDrawn(n.DataAtom) {
 		return false
@@ -62,11 +56,6 @@ func (b *builder) close() {
 	b.appendChild(isDone)
 }
 
-// run marks a run of text written at an offset, whether written from the markup or
-// to end a line. Its content is filled in when the document has been read, so a space
-// removed by the following line is removed here too.
-//
-// one standing between the cells out in front of the table.
 func (b *builder) run(offset int) {
 	if b == nil {
 		return
@@ -82,8 +71,6 @@ func (b *builder) run(offset int) {
 	}
 }
 
-// findLastCell returns the last cell opened under an element, and nil where the
-// element is no part of a table or holds no cell yet.
 func findLastCell(in *markup.Node) *markup.Node {
 	for isTabular(in.Name) && len(in.Children) > 0 {
 		last := &in.Children[len(in.Children)-1]
@@ -95,7 +82,6 @@ func findLastCell(in *markup.Node) *markup.Node {
 	return nil
 }
 
-// isTabular reports whether the element holds rows and cells and no text of its own.
 func isTabular(name string) bool {
 	switch name {
 	case "table", "thead", "tbody", "tfoot", "tr":
@@ -104,7 +90,6 @@ func isTabular(name string) bool {
 	return false
 }
 
-// isCell reports whether the element is a cell of a table, which holds text.
 func isCell(name string) bool {
 	return name == "td" || name == "th"
 }
@@ -114,10 +99,6 @@ func (b *builder) appendChild(n markup.Node) {
 	top.Children = append(top.Children, n)
 }
 
-// document.
-//
-// A run extends to where the next one begins, so every byte of the document is
-// covered exactly once.
 func (b *builder) finish(text string, end int) []markup.Node {
 	nodes := b.stack[0].Children
 	found := collectNodes(nodes, nil)
@@ -146,7 +127,6 @@ func (b *builder) finish(text string, end int) []markup.Node {
 	return nodes
 }
 
-// collectNodes appends the nodes of a finished document to the list, in reading order.
 func collectNodes(nodes []markup.Node, into []*markup.Node) []*markup.Node {
 	for i := range nodes {
 		into = append(into, &nodes[i])
@@ -155,8 +135,6 @@ func collectNodes(nodes []markup.Node, into []*markup.Node) []*markup.Node {
 	return into
 }
 
-// convertAttributes returns the attributes of an element that survive, with href
-// and src resolved. A book's own styling is not among them.
 func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 	var out []markup.Attribute
 	for _, a := range n.Attr {
@@ -180,12 +158,6 @@ func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 	return out
 }
 
-// resolveLinkAddress resolves a link to the archive entry it names and the place
-// in it, or to an address in one of the reachable schemes. Anything else
-// resolves to empty and the attribute goes.
-//
-// An href naming no document names a place in the document being read, and
-// crosses as the fragment it is.
 func resolveLinkAddress(base, url string) string {
 	if named := parseScheme(removeSpacesAndControls(url)); named != "" {
 		if isReachable(named) {
@@ -202,8 +174,6 @@ func resolveLinkAddress(base, url string) string {
 	return href.ResolveWithFragment(base, url)
 }
 
-// resolveImageSource resolves an img source to a file the book carries or to an
-// inline base64 image. An address off the machine resolves to empty.
 func resolveImageSource(base, url string) string {
 	if parseScheme(removeSpacesAndControls(url)) == "" {
 		return href.ResolveWithFragment(base, url)
@@ -214,7 +184,6 @@ func resolveImageSource(base, url string) string {
 	return ""
 }
 
-// isReachable reports whether a link may name the scheme.
 func isReachable(key string) bool {
 	switch key {
 	case "http", "https", "mailto", "tel":
@@ -223,14 +192,11 @@ func isReachable(key string) bool {
 	return false
 }
 
-// isInlineImage reports whether an address is a base64 image written into the markup.
 func isInlineImage(url string) bool {
 	head, _, content := strings.Cut(strings.ToLower(url), ",")
 	return content && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
 }
 
-// removeSpacesAndControls returns an address with its spaces and control
-// characters removed.
 func removeSpacesAndControls(url string) string {
 	return strings.Map(func(r rune) rune {
 		if r <= ' ' {
@@ -241,7 +207,6 @@ func removeSpacesAndControls(url string) string {
 	}, url)
 }
 
-// parseScheme returns the scheme a URL names, and empty when it names none.
 func parseScheme(url string) string {
 	for i := 0; i < len(url); i++ {
 		c := url[i]
@@ -255,7 +220,6 @@ func parseScheme(url string) string {
 	return ""
 }
 
-// isSchemeByte reports whether c may stand at index i of a scheme: a letter, or after the first byte a digit, plus, minus or dot.
 func isSchemeByte(c byte, i int) bool {
 	if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
 		return true
@@ -263,8 +227,6 @@ func isSchemeByte(c byte, i int) bool {
 	return i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.')
 }
 
-// isAnyElementAttribute reports whether any element may carry the attribute. An id is how a link
-// inside the book lands on the element it names.
 func isAnyElementAttribute(key string) bool {
 	switch key {
 	case "id", "dir", "lang", "title":
@@ -273,7 +235,6 @@ func isAnyElementAttribute(key string) bool {
 	return false
 }
 
-// getOwnAttributes returns what an element may carry beyond those.
 func getOwnAttributes(element atom.Atom) []string {
 	switch element {
 	case atom.A:
@@ -294,7 +255,6 @@ func getOwnAttributes(element atom.Atom) []string {
 	return nil
 }
 
-// isDrawn reports whether a book is drawn from the element.
 func isDrawn(key atom.Atom) bool {
 	switch key {
 	case atom.A, atom.Abbr, atom.Address, atom.Article, atom.Aside, atom.B, atom.Bdi, atom.Bdo,

@@ -63,7 +63,6 @@ const pointer = (kind: string, x: number, y: number): void => {
   window.dispatchEvent(new MouseEvent(kind, { clientX: x, clientY: y }))
 }
 
-/** A press on a row at the middle of the tree. */
 const lift = (drag: RowDragState, rows: readonly string[]): void => {
   drag.lift(rows, new MouseEvent('pointerdown', { clientX: 10, clientY: 150 }) as PointerEvent)
 }

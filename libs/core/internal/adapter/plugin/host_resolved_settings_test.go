@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// newResolvedHost is a host with one plugin whose model follows its provider and whose url is shown
-// only for the remote provider.
 func newResolvedHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()

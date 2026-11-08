@@ -5,10 +5,6 @@ import { planShards, readPathsFromEnv } from './scripts/shards.mjs'
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const baseURL = `https://127.0.0.1:${port}`
 
-// `scripts/run-offline.mjs` runs one process for each engine and shard, each against the server of
-// its own port. A shard runs the spec files that `scripts/shards.mjs` deals to it; a run without
-// NUMEN_E2E_SHARD runs every file against one server. NUMEN_E2E_PATHS limits the run, and its
-// shards, to the spec files of the folders and files it names (`tests/shell/ tests/plugins/notes/`).
 const readShardFiles = (): string[] | undefined => {
   const named = process.env.NUMEN_E2E_SHARD
   const paths = readPathsFromEnv()

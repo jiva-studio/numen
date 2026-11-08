@@ -48,7 +48,6 @@ const NODE: PlacedNode = {
   opacity: 1,
 }
 
-/** A viewport that reports a size on request and records when observation stops. */
 function createViewport() {
   const stop = vi.fn<() => void>()
   const watching: Array<(size: Size) => void> = []

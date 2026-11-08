@@ -69,7 +69,6 @@ func (u Create) ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote)
 	return CreateResult{}, domain.ErrNoFreeName
 }
 
-// getUntitledName is the title tried on the given attempt, counted from one.
 func getUntitledName(attempt int) string {
 	if attempt == 1 {
 		return UntitledName

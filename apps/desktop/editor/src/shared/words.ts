@@ -12,7 +12,6 @@ import { ERRORS } from '@numen/core-client'
 
 export { ERRORS }
 
-/** The string with its first letter in lower case, for a reason placed after a colon. */
 const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1)
 
 export const WORDS = {

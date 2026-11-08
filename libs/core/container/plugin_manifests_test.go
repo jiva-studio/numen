@@ -29,13 +29,11 @@ const (
 
 // pluginManifest is a plugin's manifest as the tree holds it.
 type pluginManifest struct {
-	// Dir is the directory of the plugin.
 	Dir string
 	Raw []byte
 	pluginport.PluginManifest
 }
 
-// getPluginManifests reads every manifest the plugins directory holds.
 func getPluginManifests(t *testing.T) []pluginManifest {
 	t.Helper()
 	paths, err := filepath.Glob(filepath.Join(modulesRoot, "plugins", "*", "manifest.json"))
@@ -62,8 +60,6 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 
 var backtick = regexp.MustCompile("`([^`]+)`")
 
-// readDocumentedPermissions is the permissions the plugin guide lists: the
-// values in backticks before the sentence that rejects any other.
 func readDocumentedPermissions(guide string) []string {
 	for line := range strings.SplitSeq(guide, "\n") {
 		if !strings.HasPrefix(line, "- **`permissions`**") {
@@ -79,8 +75,6 @@ func readDocumentedPermissions(guide string) []string {
 	return nil
 }
 
-// listPermissionDifferences lists the permissions one side names and the other
-// does not.
 func listPermissionDifferences(documented, valid []string) []string {
 	var differences []string
 	for _, name := range documented {
@@ -136,8 +130,6 @@ func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
 	}
 }
 
-// readDocumentedCapabilities is the capabilities the plugin guide lists: the
-// values in backticks on the capabilities line.
 func readDocumentedCapabilities(guide string) []string {
 	for line := range strings.SplitSeq(guide, "\n") {
 		if !strings.HasPrefix(line, "- **`capabilities`**") {
@@ -153,8 +145,6 @@ func readDocumentedCapabilities(guide string) []string {
 	return nil
 }
 
-// readDocumentedActivationEvents is the activation event patterns the plugin guide lists:
-// the values in backticks on the bullet lines of the activationEvents section.
 func readDocumentedActivationEvents(guide string) []string {
 	var inSection bool
 	var events []string
@@ -176,7 +166,6 @@ func readDocumentedActivationEvents(guide string) []string {
 	return events
 }
 
-// listDifferences lists the items one side names and the other does not.
 func listDifferences(documented, valid []string, itemKind string) []string {
 	var differences []string
 	for _, name := range documented {
@@ -238,7 +227,6 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	}
 }
 
-// hasIssue reports whether the manifest breaks the rule the error names.
 func hasIssue(m pluginport.PluginManifest, rule error) bool {
 	return slices.ContainsFunc(m.ListIssues(), func(issue error) bool { return errors.Is(issue, rule) })
 }
@@ -264,8 +252,6 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	}
 }
 
-// listBackendSources is the Go sources a plugin's backend is compiled from: its own,
-// to any depth, and those of every directory of this repository that they import.
 func listBackendSources(t *testing.T, backend string) []string {
 	t.Helper()
 	var files []string
@@ -293,8 +279,6 @@ func listBackendSources(t *testing.T, backend string) []string {
 	return files
 }
 
-// listGoSources is the Go files of a directory that are not tests, with those of
-// the directories under it where deep is set.
 func listGoSources(t *testing.T, dir string, deep bool) []string {
 	t.Helper()
 	var files []string
@@ -322,7 +306,6 @@ func listGoSources(t *testing.T, dir string, deep bool) []string {
 	return files
 }
 
-// listFrontendSources is the sources of a plugin's frontend that are not tests.
 func listFrontendSources(t *testing.T, dir string) []string {
 	t.Helper()
 	var files []string
@@ -352,7 +335,6 @@ func listFrontendSources(t *testing.T, dir string) []string {
 	return files
 }
 
-// isNamedIn reports whether a source contains a key as a string.
 func isNamedIn(source, key string) bool {
 	for _, quote := range []string{`"`, `'`, "`"} {
 		if strings.Contains(source, quote+key+quote) {
@@ -362,8 +344,6 @@ func isNamedIn(source, key string) bool {
 	return false
 }
 
-// listUnreadSettings lists the settings a manifest declares that none of the
-// sources name.
 func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
@@ -430,7 +410,6 @@ func TestEveryPluginHasAReadme(t *testing.T) {
 	}
 }
 
-// listValidPluginKinds returns every plugin kind known to numen.
 func listValidPluginKinds() []string {
 	return []string{
 		"agents",
@@ -443,15 +422,10 @@ func listValidPluginKinds() []string {
 	}
 }
 
-// listDomainPlugins returns plugins named by the domain they hold whole, with no kind.
 func listDomainPlugins() []string {
 	return []string{"notes"}
 }
 
-// listPluginNamingIssues lists what a plugin folder and id break: the id starts
-// with md.numen., matches the folder name (with hyphens mapped to dots),
-// and the kind is one of agents, readers, editors, views, engines, tools or themes, or
-// the folder is a domain plugin.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
 	if !strings.HasPrefix(id, "md.numen.") {

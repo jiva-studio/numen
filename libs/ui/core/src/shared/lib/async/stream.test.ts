@@ -7,7 +7,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createFollower, AGAIN, LOST } from './stream'
 
-/** A window that is open for as many streams as the test allows it. */
 const window = (streams = 3) => {
   const waits: number[] = []
   const missing: string[] = []
@@ -23,7 +22,6 @@ const window = (streams = 3) => {
   return { follows, waits, lost: missing, took: () => acquiredCount }
 }
 
-/** A stream that emits what it was given and ends. */
 const createStream = <T>(...response: readonly T[]) =>
   async function* () {
     for (const one of response) yield one

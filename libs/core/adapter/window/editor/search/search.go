@@ -175,7 +175,6 @@ func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	}
 }
 
-// atMost returns the number of results to return for the limit the client requested.
 func atMost(limit int32) int {
 	if limit <= 0 {
 		return mostFound
@@ -183,7 +182,6 @@ func atMost(limit int32) int {
 	return min(int(limit), maxQueryLength)
 }
 
-// getPassageSources is every file the passages came out of, each named once.
 func getPassageSources(found []domain.Passage) []string {
 	observed := make(map[string]bool, len(found))
 	out := make([]string, 0, len(found))

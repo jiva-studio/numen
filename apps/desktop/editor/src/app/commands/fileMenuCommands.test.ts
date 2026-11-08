@@ -66,7 +66,6 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
 
 const runs = { canRun: () => true, cannotRun: vi.fn() }
 
-/** A pending request that the test resolves itself. */
 const createDeferred = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((done) => (resolve = done))

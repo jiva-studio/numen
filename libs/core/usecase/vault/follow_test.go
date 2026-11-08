@@ -65,7 +65,6 @@ type followed struct {
 	moved <-chan vaults.VaultChanges
 }
 
-// newFollowed puts one vault, one index and a watcher a test drives together.
 func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) followed {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)

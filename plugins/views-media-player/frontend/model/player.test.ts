@@ -11,10 +11,6 @@ import { WORDS } from '../words'
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
 const OTHER = 'http://127.0.0.1:1/files/w/v/other.mp3'
 
-/**
- * An element reduced to what the player uses. It records the calls made on it
- * and fires the events a real element fires, when a test requests it.
- */
 function createElement() {
   const listeners = new Map<string, (() => void)[]>()
 
@@ -96,7 +92,6 @@ function createElement() {
   return { element, emit, countListeners, setDuration, setCurrentTime, setError }
 }
 
-/** A player over a fake element, and that element. */
 const player = () => {
   const element = createElement()
   const getElement: AudioFactory = () => element.element as unknown as HTMLAudioElement

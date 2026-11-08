@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// bytes it occupies.
 func spanOf(t *testing.T, front, key string) (int, string, bool) {
 	t.Helper()
 	d, err := Open([]byte("---\n" + front + "---\nbody\n"))

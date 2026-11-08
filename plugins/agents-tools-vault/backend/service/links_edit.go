@@ -107,7 +107,6 @@ func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 	}, inVault(t, (*Tools).removeLinks))
 }
 
-// readAddition returns the link to write and the baseline of its note, or the validation error.
 func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	link := domain.Link{
 		Target: domain.ParseAddress(in.Address),
@@ -128,7 +127,6 @@ func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	return host.LinkAddition{From: in.From, Baseline: baseline, Link: link}, nil
 }
 
-// readBaseline returns the file stat of the note at notePath that the note_read fingerprint encodes.
 func readBaseline(notePath, fingerprint string) (domain.FileStat, error) {
 	if strings.TrimSpace(notePath) == "" {
 		return domain.FileStat{}, errors.New("from is required")
@@ -141,7 +139,6 @@ func readBaseline(notePath, fingerprint string) (domain.FileStat, error) {
 	return baseline, nil
 }
 
-// checkWritable returns an error when the link breaks a rule the notes library sets for links.
 func checkWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
 		return fmt.Errorf("invalid role %q: use parent, child, jump, ref or attachment", link.Role)
@@ -152,7 +149,6 @@ func checkWritable(link domain.Link) error {
 	return nil
 }
 
-// checkRole rejects a role no link can have. An empty role means no role.
 func checkRole(role domain.LinkRole) error {
 	if role != "" && !domain.IsKnownRole(role) {
 		return fmt.Errorf("invalid role %q: use parent, child, jump, ref or attachment", role)
@@ -198,8 +194,6 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	return out, nil
 }
 
-// describeWriteError returns the error of a write of a note, naming the note when the
-// fingerprint is stale.
 func describeWriteError(notePath string, err error) error {
 	if errors.Is(err, host.ErrStale) {
 		return fmt.Errorf("%s changed since note_read returned the fingerprint; read it again: %w", notePath, err)

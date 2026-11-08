@@ -28,7 +28,6 @@ func (c Config) GetPluginCatalog() *catalog.Service {
 	return service
 }
 
-// getEditorCatalog is the catalog as the editor window asks for it, and nil where there is none.
 func (c Config) getEditorCatalog() assembly.PluginCatalog {
 	service := c.GetPluginCatalog()
 	if service == nil {

@@ -16,20 +16,15 @@ import (
 // `v` and the owners of settings: `app` holds the settings of the shell, and every other key is the
 // id of a plugin with the settings of that plugin below it.
 type File struct {
-	// Version is the format version of the file. Nothing reads it yet.
-	Version int
-	// The tags of the sections name their keys under the owner app.
+	Version     int
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
 	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
-	// Plugins holds the object of each plugin, keyed by plugin id.
-	Plugins map[string]map[string]any
-	// Notices are the warnings that reading the file produced, shown to the
-	// user. They are not written to the file.
-	Notices []string
+	Plugins     map[string]map[string]any
+	Notices     []string
 }
 
 // appObject is the object of the owner app as the file lays it out.
@@ -53,8 +48,6 @@ type appSections struct {
 	AI          *AI                   `json:"ai"`
 }
 
-// The sections of the owner app that the declaration of the shell does not cover. Their keys are
-// outside the check of a write and of a read.
 func isOutsideDeclaration(section string) bool { return section == "agent" || section == "ai" }
 
 // keyVersion is the key of the version of the file.
@@ -149,7 +142,6 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// readApp reads the object of the owner app, and returns whether it names a valid interface scale.
 func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) {
 	app, isObject := decodeObject(raw)
 	if !isObject {
@@ -186,7 +178,6 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
-// decodeObject decodes a JSON object, and reports whether the bytes are one.
 func decodeObject(raw json.RawMessage) (map[string]any, bool) {
 	var object map[string]any
 	if err := json.Unmarshal(raw, &object); err != nil {
@@ -195,7 +186,6 @@ func decodeObject(raw json.RawMessage) (map[string]any, bool) {
 	return object, true
 }
 
-// readPlugin reads the object of a plugin over the one the file holds.
 func (f *File) readPlugin(id string, raw json.RawMessage) {
 	if !manifest.IsValidID(id) {
 		f.AddNotice(fmt.Sprintf("numen.json: %s is not a valid plugin id; its settings are ignored", id))
@@ -212,8 +202,6 @@ func (f *File) readPlugin(id string, raw json.RawMessage) {
 	f.Plugins[id] = values
 }
 
-// listUndeclared returns the paths in the object of the owner app that the declaration of the
-// shell does not name, and that are none of the sections outside it.
 func listUndeclared(app map[string]any) []string {
 	declared := map[string]bool{}
 	parents := map[string]bool{}
@@ -248,7 +236,6 @@ func listUndeclared(app map[string]any) []string {
 	return found
 }
 
-// lookupPath returns the value at a path through nested objects.
 func lookupPath(object map[string]any, path []string) (any, bool) {
 	var current any = object
 	for _, step := range path {
@@ -265,7 +252,6 @@ func lookupPath(object map[string]any, path []string) (any, bool) {
 	return current, true
 }
 
-// storePath puts a value at a path through nested objects, making the objects on the way.
 func storePath(object map[string]any, path []string, value any) {
 	for _, step := range path[:len(path)-1] {
 		next, isObject := object[step].(map[string]any)

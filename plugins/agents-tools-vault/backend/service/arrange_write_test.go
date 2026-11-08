@@ -54,7 +54,6 @@ type noteRemoveOutput struct {
 	Results []noteRemoveItem `json:"results"`
 }
 
-// newGeologyVault is an invented vault of rocks and minerals. Minerals.md links to Basalt by name.
 func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(geologyVault)
@@ -69,7 +68,6 @@ func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	return v, registry
 }
 
-// requireContent fails the test unless the file of the vault contains exactly the content.
 func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 	t.Helper()
 	got, ok := v.Content(filePath)
@@ -82,7 +80,6 @@ func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 	}
 }
 
-// requireAbsent fails the test when a file is at the path.
 func requireAbsent(t *testing.T, v *hosttest.Vault, filePath string) {
 	t.Helper()
 	if got, ok := v.Content(filePath); ok {
@@ -90,7 +87,6 @@ func requireAbsent(t *testing.T, v *hosttest.Vault, filePath string) {
 	}
 }
 
-// makePathsArguments is the arguments {"paths": [...] , extra...} of n invented paths.
 func makePathsArguments(t *testing.T, n int, extra map[string]any) string {
 	t.Helper()
 	paths := make([]string, n)
@@ -152,8 +148,6 @@ func TestNoteRenameOntoAnExistingNoteIsRejected(t *testing.T) {
 	requireContent(t, v, "Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
 
-// getRejectionText calls the tool, fails the test unless the tool is known and rejects the call, and
-// returns the text of the error.
 func getRejectionText(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) string {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -342,8 +336,6 @@ func (l limitedBatchVault) RemoveNotes(ctx context.Context, paths []string) ([]h
 	return l.Vault.RemoveNotes(ctx, paths)
 }
 
-// newLimitedBatchRegistry is the geology vault served through a host that limits a batch to 50 notes,
-// and the path counts of the calls the host received.
 func newLimitedBatchRegistry(t *testing.T) (*tools.Registry, *[]int) {
 	t.Helper()
 	v, _ := newGeologyVault(t)

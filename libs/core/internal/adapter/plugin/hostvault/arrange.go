@@ -28,17 +28,12 @@ type NoteChanges struct {
 
 // Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
 type Arranger struct {
-	Notes NoteChanges
-	// Window is the window's own NoteChanges, used for a call on the vault WindowVault names, so the
-	// window follows a note a plugin renames or moves. Without WindowVault every call uses Notes.
+	Notes       NoteChanges
 	Window      NoteChanges
 	WindowVault func() (domain.Vault, bool)
-	// Checks runs the checks of a vault. Without it every call for the checks fails with
-	// completionport.ErrUnavailable.
-	Checks *vaults.GetProblems
+	Checks      *vaults.GetProblems
 }
 
-// getChanges returns the NoteChanges for a call on the vault.
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 	if a.WindowVault == nil {
 		return a.Notes
@@ -52,8 +47,6 @@ func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 	return changes
 }
 
-// notifyWindowIfCurrent notifies the window of a move only while the window still shows the vault
-// of the move: the window may switch vault while a rename or a move of a plugin runs.
 func (a Arranger) notifyWindowIfCurrent(v domain.Vault, draw note.TellMove) note.TellMove {
 	if draw == nil {
 		return nil

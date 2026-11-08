@@ -22,11 +22,8 @@ import (
 type Create struct {
 	writers vaultport.VaultWriters
 	names   NameQueries
-	// index brings the named notes up to date, so a note that is created and then
-	// searched for immediately is found.
-	index IndexUpdater
-	// now is when this is happening. An identifier carries it.
-	now machineport.Clock
+	index   IndexUpdater
+	now     machineport.Clock
 }
 
 // NewCreate builds the use case that creates notes. It takes the vault the note
@@ -48,21 +45,15 @@ func (u Create) WithIndex(index IndexUpdater) Create {
 type NewNote struct {
 	Title string
 	Body  string
-	// Path is the folder it goes in, relative to the root. Empty is the root
-	// itself: the application does not arrange anyone's folders.
-	Path string
-	// Links are what the note is joined to, written together with the note itself,
-	// so the note is never created without them.
+	Path  string
 	Links []domain.Link
 }
 
 // CreateResult is the note that now exists.
 type CreateResult struct {
-	Path  string
-	ID    string
-	Title string
-	// Shares is the other notes already filed under this name. Creating a note
-	// under a shared name is allowed and is reported.
+	Path   string
+	ID     string
+	Title  string
 	Shares []string
 }
 
@@ -123,9 +114,6 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	return made, nil
 }
 
-// writeTitle writes the note's name into its frontmatter, where the filename
-// cannot carry the whole of it. A filename that carries it names the note, and
-// nothing is written.
 func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 	if exact {
 		return content, nil
@@ -140,8 +128,6 @@ func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-// writeLinks writes relationships into freshly created frontmatter, through the
-// same splicing every other link uses: one set of quoting rules.
 func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	doc, err := markdown.Open(content)
 	if err != nil {

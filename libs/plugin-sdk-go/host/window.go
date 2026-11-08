@@ -25,6 +25,8 @@ type OpenTab struct {
 
 // TabPlace is the place a reader tab shows, as its reader reports it. A zero field is a place the
 // reader does not have.
+//
+//numen:api
 type TabPlace struct {
 	// Page is the page a PDF shows, from 1, and PageCount the number of its pages.
 	Page, PageCount int

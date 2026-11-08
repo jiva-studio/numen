@@ -43,7 +43,6 @@ var errClosing = errors.New("this agent is closing")
 type Server struct {
 	agentrun.Unimplemented
 
-	// Client sends the requests to the chat API. Nil sends them with a client of its own.
 	Client *http.Client
 
 	mu            sync.Mutex
@@ -91,13 +90,11 @@ func (s *Server) Configure(values map[string]string) {
 	s.models, s.isListed = nil, false
 }
 
-// readPositive reads a whole number above zero from a setting value.
 func readPositive(text string) (int, bool) {
 	val, err := strconv.Atoi(text)
 	return val, err == nil && val > 0
 }
 
-// getChat is the chat API as the settings name it.
 func (s *Server) getChat() chat {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -110,8 +107,6 @@ func (s *Server) getChat() chat {
 	}
 }
 
-// getMaxSteps returns how many requests to the model a task may make: the limit the task names,
-// else the setting, else zero, which the run reads as its default.
 func (s *Server) getMaxSteps(task *agentrun.Request) int {
 	if task.MaxSteps > 0 {
 		return int(task.MaxSteps)
@@ -121,7 +116,6 @@ func (s *Server) getMaxSteps(task *agentrun.Request) int {
 	return s.maxSteps
 }
 
-// getModel returns the model to use: the one named, else the configured one, else the default.
 func (s *Server) getModel(named string) string {
 	if named != "" {
 		return named
@@ -193,7 +187,6 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
-// getConversation is the transcript in the conversation so far, oldest first.
 func (s *Server) getConversation(conversation string) []message {
 	if conversation == "" {
 		return nil
@@ -203,8 +196,6 @@ func (s *Server) getConversation(conversation string) []message {
 	return append([]message(nil), s.conversations[conversation]...)
 }
 
-// appendConversation adds the transcript in one task to the conversation. A task that named no
-// conversation keeps nothing.
 func (s *Server) appendConversation(conversation string, transcript []message) {
 	if conversation == "" {
 		return
@@ -271,8 +262,6 @@ func (s *Server) GetPrograms(ctx context.Context, _ []agentrun.ProgramCommand) (
 	return []*agentrun.Program{program}, nil
 }
 
-// listModels is what the chat API lists: what it listed under the present settings, or what it
-// lists now.
 func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	s.mu.Lock()
 	if s.isListed {
@@ -303,8 +292,6 @@ func (s *Server) Close() error {
 	return s.registry.Close()
 }
 
-// getEffort returns the reasoning depth requested from the model the chat API lists: none when the task requests
-// none, the API does not list the model, or the model takes no depth.
 func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 	if level == "" {
 		return effort{field: "", level: ""}

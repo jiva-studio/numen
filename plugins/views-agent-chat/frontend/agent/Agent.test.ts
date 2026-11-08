@@ -9,10 +9,6 @@ const createResponded = (id: string, text = 'back'): Turn => ({ id, voice: 'resp
 /** How tall the area the conversation scrolls in is, and one turn in it. */
 const SCREEN = 100
 
-/**
- * An agent over a conversation that scrolls, since the document a test runs in
- * lays nothing out. One turn is one screenful.
- */
 const createAgent = (turns: readonly Turn[]) => {
   const wrapper = mount(Agent, { props: { turns, modelValue: '' } })
   const thread = wrapper.find('.agent__thread').element as HTMLElement

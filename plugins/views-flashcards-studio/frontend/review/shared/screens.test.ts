@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 
 import { useScreens } from './screens'
 
-/** Three screens, each with one release callback that records when it ran. */
 const three = () => {
   const dropped: string[] = []
   const target = useScreens(['list', 'rows', 'one'] as const, {

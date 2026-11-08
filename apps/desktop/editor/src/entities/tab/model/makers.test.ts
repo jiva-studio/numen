@@ -11,7 +11,6 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 
-/** A vault stub that returns the configured result and records the creation requests. */
 const maker = (
   error: ErrorCode | null = null,
   throws = false,

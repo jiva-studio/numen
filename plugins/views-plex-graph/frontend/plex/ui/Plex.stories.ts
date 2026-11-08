@@ -69,31 +69,18 @@ interface Knobs {
   arriveAfter: number
   leaveBefore: number
 
-  /** Playground only: how many of each relation to invent. */
   parents: number
   children: number
   jumps: number
   siblings: number
   title: string
 
-  /**
-   * What a node made by a gesture is called. Handed in and not settled
-   * here, because naming is the application's business and the plex never
-   * learns that a title is a name.
-   */
   naming: () => string
 
-  /**
-   * Identifiers of the opaque items dragged over the plex from outside it;
-   * empty when nothing is dragged. The story plays the drag source, since a
-   * plex cannot start a drag.
-   */
   dragged: readonly string[]
 
-  /** The label for the relation under the pointer while an item is dragged in. */
   dropName: (relation: PlexRelation) => string
 
-  /** Component props the panel has no business showing. */
   options?: PlexOptionsInput
   clock?: Clock
 }
@@ -122,11 +109,6 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
       : { parent: 'up', child: 'down', jump: 'left', sibling: 'right' },
 })
 
-/**
- * The knobs at the type size of a node. The toolbar sets the interface size,
- * the label follows it, and the box sizes and clearances are passed in to fit
- * that label.
- */
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
   optionsForType(type, resolveOptions(getOptions(a)))
 
@@ -142,14 +124,6 @@ const createCounts = (a: Knobs) => ({
   sibling: a.siblings,
 })
 
-/**
- * Every story is walkable: choosing a node builds the next neighbourhood
- * around it. The first neighbourhood is the story's starting point; later ones
- * are generated from the counts, standing in for the application.
- *
- * The neighbourhood is computed: a new object on every render signals the plex
- * to re-target, and it re-aims once per frame.
- */
 const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
@@ -262,12 +236,6 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
   `,
 })
 
-/**
- * Choosing a node moves the focus, which is what the story verifies.
- *
- * The neighbourhood is computed: a new object on every render signals the plex
- * to re-target, and it re-aims once per frame.
- */
 const renderWalk = (args: Knobs) => ({
   components: { Plex },
   setup() {
@@ -845,12 +813,6 @@ interface Edges {
   bottom: number
 }
 
-/**
- * No drawn title overlaps a box or another title: none of its letters overlaps
- * a box, and none overlaps another title's letters.
- *
- * Two counts are asserted directly, so a regression reports its magnitude.
- */
 const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   /** Whether two boxes on the screen share any of it. */
   const isOverlapping = (one: Edges, other: Edges) =>

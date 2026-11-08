@@ -11,23 +11,11 @@ import { useTemplateRef } from 'vue'
 import { listId, optionId } from '../../lib/place'
 
 defineProps<{
-  /**
-   * What the field and the list beside it are addressed by. The field names the
-   * row that is lit, so the two are addressed off one prefix.
-   */
   uid: string
-  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
-  /** Whether there is a list under the field at all. */
   isExpanded: boolean
-  /** The words standing in for what has not been typed. */
   placeholder: string
-  /** What the field is announced as. */
   name: string
-  /**
-   * Which step of a flow the field is on, in a few words, drawn beside it.
-   * Nothing is drawn without it.
-   */
   crumb: string
 }>()
 
@@ -35,7 +23,6 @@ const searchQuery = defineModel<string>({ required: true })
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
-/** Focuses the field and selects its text. */
 const focus = (): void => field.value?.focus()
 const select = (): void => field.value?.select()
 

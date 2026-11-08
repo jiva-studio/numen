@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// writeSecondPlugin adds a plugin of another id beside the sample one.
 func writeSecondPlugin(t *testing.T, dir string) {
 	t.Helper()
 	pDir := filepath.Join(dir, "second")

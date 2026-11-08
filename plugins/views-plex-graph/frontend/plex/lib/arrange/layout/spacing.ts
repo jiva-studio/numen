@@ -49,7 +49,6 @@ export function findSpacing(
   return spacing
 }
 
-/** The largest factor from one to `most` that holds. One is known to hold. */
 function findWidestFactor(most: number, holds: (factor: number) => boolean): number {
   if (holds(most)) return most
 

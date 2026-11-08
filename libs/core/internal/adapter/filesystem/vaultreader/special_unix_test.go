@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// fifo is a named pipe in a vault, with the extension of a note. Nothing is at
-// the other end of it.
 func fifo(t *testing.T, root, name string) {
 	t.Helper()
 	if err := syscall.Mkfifo(filepath.Join(root, name), 0o600); err != nil {

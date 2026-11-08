@@ -23,8 +23,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-// connectHost returns the vault and the window of the host at the endpoint, or none when the
-// endpoint is not configured.
 func connectHost(endpoint hostcall.Endpoint, err error) Host {
 	if err != nil {
 		return Host{}

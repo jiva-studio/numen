@@ -9,14 +9,6 @@ import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode } from '../lib/node'
 import type { PlexNodeRelation } from '../lib/relation'
 
-/**
- * Focus in, everything else out — the shape every fixture below is built as.
- *
- * A sibling is the exception, and the shape that catches the most: it is
- * another of a parent's children, so its line runs from that parent and never
- * touches the focus. A fixture that drew it from the focus would be a shape no
- * producer emits, and everything swept over these would be arranged against it.
- */
 function neighbourhood(
   focus: string,
   neighbours: readonly PlexNode[],

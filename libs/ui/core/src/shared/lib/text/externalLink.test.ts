@@ -13,7 +13,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-/** One link on the page, and what happened when it was pressed. */
 const pressLink = (href: string, inside = '', kind = 'click') => {
   const openLink = vi.fn()
   stop = interceptExternalLinks(openLink)

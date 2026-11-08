@@ -19,7 +19,6 @@ import type { Preset } from '../types'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   presets: readonly Preset[]
-  /** The day this is being read on, as the year, the month and the day. */
   today: string
 }>()
 

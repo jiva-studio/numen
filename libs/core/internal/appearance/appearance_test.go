@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// A window styled with everything a user can set.
 func buildSettings() appearance.Settings {
 	return appearance.Settings{
 		Mode:           appearance.Dark,
@@ -17,7 +16,6 @@ func buildSettings() appearance.Settings {
 	}
 }
 
-// buildElementHead is the head of one of the three elements.
 func buildElementHead(is string) string { return `<style ` + appearance.Marker + `="` + is + `">` }
 
 // Each of the three elements the head ends with identifies itself. A theme's

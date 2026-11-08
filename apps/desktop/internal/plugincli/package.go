@@ -79,10 +79,8 @@ func isSamePath(path, absDest string) bool {
 	return absCurrent == absDest
 }
 
-// shippedPaths are the entries of a plugin directory an archive holds.
 func getShippedPaths() []string { return []string{"manifest.json", "bin", "dist"} }
 
-// isArchive reports whether the file is an archive in the top level of the dist folder.
 func isArchive(pluginDir, path string) bool {
 	return strings.HasSuffix(path, ".zip") && filepath.Dir(path) == filepath.Join(pluginDir, "dist")
 }
@@ -117,7 +115,6 @@ func (w *archiveWalker) Walk(path string, entry fs.DirEntry, walkErr error) erro
 	return nil
 }
 
-// listThemeFiles returns the stylesheets the manifest declares, as paths relative to the plugin folder.
 func listThemeFiles(themes []manifest.Theme) []string {
 	files := make([]string, 0, len(themes))
 	for _, theme := range themes {
@@ -126,7 +123,6 @@ func listThemeFiles(themes []manifest.Theme) []string {
 	return files
 }
 
-// createArchive writes the shipped folders and the extra files, given relative to the plugin folder.
 func createArchive(pluginDir, destPath string, extra []string) (count int, err error) {
 	absDest, err := filepath.Abs(destPath)
 	// gomutants:disable-next-line
@@ -174,7 +170,6 @@ func createArchive(pluginDir, destPath string, extra []string) (count int, err e
 	return walker.count, nil
 }
 
-// filterOutsideShipped returns the files that no shipped folder already holds.
 func filterOutsideShipped(files []string) []string {
 	var outside []string
 	for _, file := range files {

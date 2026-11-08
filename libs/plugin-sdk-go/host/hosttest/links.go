@@ -46,8 +46,6 @@ func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]
 	return out, nil
 }
 
-// checkWritable returns the reason the addition cannot be written: a link the notes library rejects, or a
-// baseline other than the one of the links before it into the same note.
 func checkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped []int) error {
 	switch {
 	case !domain.IsKnownRole(one.Link.Role):
@@ -103,8 +101,6 @@ func (v *Vault) RemoveLinks(
 	})
 }
 
-// editLinks makes one change to the note at from in one read and one write, against the baseline
-// when one is given, and returns the stat of the note written. The caller has the lock.
 func (v *Vault) editLinks(
 	ctx context.Context, from string, baseline domain.FileStat, change func(*notesmarkdown.Document) error,
 ) (domain.FileStat, error) {

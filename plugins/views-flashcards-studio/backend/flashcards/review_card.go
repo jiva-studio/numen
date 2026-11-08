@@ -19,19 +19,11 @@ import (
 // ReviewCard is one review card as the vault holds it: a card, shown through one
 // review card of the card model that cuts it, and where both of them are written.
 type ReviewCard struct {
-	// the section it is placed under. A card standing before the first section has
-	// none.
 	Deck    string
 	Section string
-	// ID is what a schedule belongs to: the card's id and the template's name.
-	ID review.CardID
-	// Heading is what the card's heading shows, which is the first line of its
-	// first field.
+	ID      review.CardID
 	Heading string
 
-	// The card model the card is laid out from. It is read once with the deck and
-	// cached, so laying out is the last step and runs only for a card about to be
-	// shown: counting due cards fills in no template at all.
 	cardModel  format.CardModel
 	reviewCard format.CardTemplate
 	card       format.Card
@@ -47,20 +39,11 @@ func (s ReviewCard) Lay() (front, back string) { return format.Lay(s.reviewCard,
 // excluded; assigning card ids is done when the vault's decks are written, before
 // any review card is requested.
 type ListReviewCards struct {
-	readers ports.VaultReaders
-	// notes identifies which notes of the vault are decks. A build without one
-	// returns ErrNotCarried for every vault, as does an index that has not read this
-	// vault yet.
-	notes ports.NoteQueries
-	links ports.LinkQueries
-	// cache is the review cards of the decks already parsed, for the life of the window.
-	// Copies of a ListReviewCards share it.
-	cache *reviewCardCache
-	// Cores is how many decks are parsed at once. A build naming none parses one
-	// at a time.
-	Cores int
-	// MaxCards is the most review cards kept parsed. A build naming none keeps
-	// defaultCachedCards.
+	readers  ports.VaultReaders
+	notes    ports.NoteQueries
+	links    ports.LinkQueries
+	cache    *reviewCardCache
+	Cores    int
 	MaxCards int
 }
 
@@ -175,8 +158,6 @@ func (u ListReviewCards) Invalidate(vault domain.VaultID, paths ...string) {
 // InvalidateAll forgets every deck parsed.
 func (u ListReviewCards) InvalidateAll() { u.cache.invalidateAll() }
 
-// getCached is the review cards of the deck at path when the files they were parsed
-// from are the files now standing.
 func (u ListReviewCards) getCached(
 	ctx context.Context, reader ports.VaultReader, v domain.Vault, path string,
 ) ([]ReviewCard, bool) {
@@ -206,8 +187,6 @@ func (u ListReviewCards) getCached(
 	return slices.Clone(e.reviewCards), true
 }
 
-// parseDeck reads one deck and lays out its review cards. They are stored when every
-// card model a card named was read.
 func (u ListReviewCards) parseDeck(
 	ctx context.Context, v domain.Vault, path string, epoch uint64, cardModels *cardModelMemo,
 ) []ReviewCard {
@@ -257,9 +236,6 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 	return out
 }
 
-// getDeckCards returns the review cards one deck holds: every card with a card id, through every
-// review card of the card model it names that lays anything out. It also returns which
-// card models the review cards depend on, and whether every card model a card named was read.
 func (u ListReviewCards) getDeckCards(
 	ctx context.Context, v domain.Vault, deck cards.DeckContents, cardModels *cardModelMemo,
 ) (out []ReviewCard, used map[string]domain.FileStat, isWhole bool) {
@@ -300,8 +276,6 @@ func (u ListReviewCards) getDeckCards(
 	return out, used, isWhole
 }
 
-// getSectionName returns the name of the section a card is placed under, and is empty for a
-// card standing before the first.
 func getSectionName(d format.Deck, c format.Card) string {
 	if c.Section == format.NoSection || c.Section >= len(d.Sections) {
 		return ""
@@ -334,8 +308,6 @@ type deckCards struct {
 	reviewCards []ReviewCard
 }
 
-// isCurrent reports whether the deck and every card model it was cut by are the
-// files the review cards were parsed from.
 func (e deckCards) isCurrent(deck domain.FileStat, cardModels map[string]domain.FileStat) bool {
 	if !e.deck.IsUnchanged(deck) || len(e.cardModels) != len(cardModels) {
 		return false
@@ -359,12 +331,8 @@ type cached struct {
 type reviewCardCache struct {
 	mu    sync.Mutex
 	decks map[deckKey]*list.Element
-	// order runs from the most recently used deck to the least.
 	order *list.List
-	// total is the number of review cards held.
 	total int
-	// epoch counts invalidations, and a parse that began before one is not
-	// stored.
 	epoch uint64
 }
 
@@ -372,7 +340,6 @@ func newCardCache() *reviewCardCache {
 	return &reviewCardCache{mu: sync.Mutex{}, decks: make(map[deckKey]*list.Element), order: list.New(), total: 0, epoch: 0}
 }
 
-// begin returns the epoch a parse starts in.
 func (c *reviewCardCache) begin() uint64 {
 	if c == nil {
 		return 0
@@ -398,9 +365,6 @@ func (c *reviewCardCache) get(key deckKey) (deckCards, bool) {
 	return getEntry(pos).deckCards, true
 }
 
-// put stores a deck parsed in the given epoch, then forgets the least recently
-// used decks until no more than limit review cards are held. A deck holding more than
-// limit review cards is not stored.
 func (c *reviewCardCache) put(epoch uint64, key deckKey, e deckCards, limit int) {
 	if c == nil {
 		return
@@ -418,7 +382,6 @@ func (c *reviewCardCache) put(epoch uint64, key deckKey, e deckCards, limit int)
 	}
 }
 
-// remove forgets the deck at key. The caller holds the lock.
 func (c *reviewCardCache) remove(key deckKey) {
 	if pos, target := c.decks[key]; target {
 		c.removeElement(pos)
@@ -441,7 +404,6 @@ func (c *reviewCardCache) drop(key deckKey) {
 	c.remove(key)
 }
 
-// keep drops every entry of the vault whose path is not in paths.
 func (c *reviewCardCache) keep(vault domain.VaultID, paths []string) {
 	if c == nil {
 		return
@@ -455,8 +417,6 @@ func (c *reviewCardCache) keep(vault domain.VaultID, paths []string) {
 	}
 }
 
-// invalidate drops the decks at paths and every deck cut by a card model at one of
-// them.
 func (c *reviewCardCache) invalidate(vault domain.VaultID, paths []string) {
 	if c == nil {
 		return
@@ -495,8 +455,6 @@ func (c *reviewCardCache) invalidateAll() {
 	c.total = 0
 }
 
-// getEntry returns the deck for an element of the order. Only decks are added
-// to it, so the zero entry is never returned.
 func getEntry(pos *list.Element) *cached {
 	one, isCached := pos.Value.(*cached)
 	if !isCached || one == nil {

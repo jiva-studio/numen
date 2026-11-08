@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// checkCardSize returns an error when the card values exceed the size limit of one write.
 func checkCardSize(vs []FieldValue) error {
 	if size := countBytes(vs); size > maxBytes {
 		return fmt.Errorf("a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
@@ -22,7 +21,6 @@ func checkCardSize(vs []FieldValue) error {
 	return nil
 }
 
-// writeDeck presents the file stat the caller read to one edit of the deck at path.
 func (t *Tools) writeDeck(
 	ctx context.Context, path, stat string, edit func(v domain.Vault, version deckedit.DeckVersion) (deckedit.EditResult, error),
 ) (WriteOutcome, error) {

@@ -44,8 +44,6 @@ func (s *Server) OpenListener(name string) (net.Listener, error) {
 
 var errDuplicateListener = errors.New("the listener is already open")
 
-// formatReadyLine returns the handshake line: the port of the RPC server and one
-// listener.<name>=<port> token per opened listener, in the order they were opened.
 func (s *Server) formatReadyLine() string {
 	var line strings.Builder
 	line.WriteString("NUMEN_READY port=" + strconv.Itoa(s.actualPort))

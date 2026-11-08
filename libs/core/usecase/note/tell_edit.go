@@ -15,11 +15,6 @@ import (
 // failure to report.
 type TellEdit func(ctx context.Context, edit domain.Edit) error
 
-// beginChange names one change and reports its start. It returns the function
-// that reports its end.
-//
-// The name is a ULID, so the change is named on the same clock the write is
-// stamped from.
 func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, response domain.Edit) (func() error, error) {
 	if tell == nil {
 		return func() error { return nil }, nil

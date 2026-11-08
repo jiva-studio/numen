@@ -68,10 +68,6 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 	})
 }
 
-// readBack returns an error where the file with the settings written is not one that reads back
-// into the document, such as a value of the wrong shape for the section it is in, or where a
-// setting of the shell that this call wrote holds a value its declaration does not accept. A value
-// the file already held and this call did not write is left for the person to correct.
 func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
@@ -98,8 +94,6 @@ func readBack(raw []byte, wrote []Setting, into Document) error {
 	return nil
 }
 
-// isFieldCovered is whether a setting handed in at one name wrote the field at another: the field
-// itself, or a field inside the section named.
 func isFieldCovered(pos []string, field string) bool {
 	name := strings.Join(pos, ".")
 	return field == name || strings.HasPrefix(field, name+".")
@@ -124,10 +118,6 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	return replaceValueAt(raw, setting.At, value, "")
 }
 
-// replaceValueAt replaces the value at a path through an object, and returns the
-// object's bytes with that one span changed.
-//
-// what a section made here is laid out against.
 func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
 	target, err := parseObjectShape(object)
 	if err != nil {
@@ -153,9 +143,7 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 
 // member is one member of an object: its name, where that name is written, and
 type member struct {
-	key string
-	// nameFrom and nameTo are the name as written in the file, including quotes. Both
-	// are zero for a name containing escapes, which is not renamed.
+	key              string
 	nameFrom, nameTo int
 	from, to         int
 }
@@ -164,16 +152,11 @@ type member struct {
 // written, where another one would go, and the indentation they are laid out
 // with.
 type shape struct {
-	pairs []member
-	// last is the end offset of the final member's value, where a comma and
-	// another member are inserted. For an empty object it is the offset immediately after the brace.
-	last int
-	// indent is the whitespace before the first member's name. Empty for an
-	// object written on one line and for one holding nothing.
+	pairs  []member
+	last   int
 	indent string
 }
 
-// parseObjectShape reads an object without disturbing it: what it holds, and where.
 func parseObjectShape(object []byte) (shape, error) {
 	decoder := json.NewDecoder(bytes.NewReader(object))
 	open, err := decoder.Token()
@@ -202,7 +185,6 @@ func parseObjectShape(object []byte) (shape, error) {
 	return target, nil
 }
 
-// readMember reads the next member of the object the decoder is in.
 func readMember(decoder *json.Decoder, object []byte, target shape) (member, error) {
 	name, err := decoder.Token()
 	if err != nil {
@@ -235,7 +217,6 @@ func readMember(decoder *json.Decoder, object []byte, target shape) (member, err
 	return one, nil
 }
 
-// hasKey is whether the object has a member of this name.
 func (s shape) hasKey(key string) bool {
 	for _, one := range s.pairs {
 		if one.key == key {
@@ -245,9 +226,6 @@ func (s shape) hasKey(key string) bool {
 	return false
 }
 
-// appendMember appends a member at the end of the object, using the object's
-// existing layout. A new name goes last because the order of existing members is
-// preserved.
 func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
 	name, err := json.Marshal(pos[0])
 	if err != nil {
@@ -277,9 +255,6 @@ func (s shape) appendMember(object []byte, pos []string, value []byte, outer str
 	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body)), nil
 }
 
-// wrapInSections is the value a name is given, wrapped in the sections between
-// it and the field it names. A section made for a one-line object is written on
-// one line too.
 func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
 	if len(pos) == 0 {
 		return value, nil
@@ -298,7 +273,6 @@ func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
 	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}"), nil
 }
 
-// getIndent is the whitespace an object's members are laid out with, taken from
 func getIndent(object []byte, first int) string {
 	head := object[:first]
 	line := bytes.LastIndexByte(head, '\n')
@@ -309,9 +283,6 @@ func getIndent(object []byte, first int) string {
 	return string(rest[:len(rest)-len(bytes.TrimLeft(rest, " \t"))])
 }
 
-// resolvePath is where the bytes of the settings are, with every link on the
-// way followed. A link is followed to its end whether or not anything is
-// written there yet, and a path that resolves to nothing is its own answer.
 func resolvePath(path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -353,8 +324,6 @@ var ErrNoFiles = errors.New("settings: no Files value was given")
 // NewFiles returns the access to settings files that one composition root holds.
 func NewFiles() *Files { return &Files{} }
 
-// run hands the work the file the path leads to, with the folder that link is followed once and
-// the rest of the way is the file itself.
 func (f *Files) run(path string, work func(path string) error) error {
 	if f == nil {
 		return ErrNoFiles
@@ -375,11 +344,6 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 	return slices.Concat(raw[:from], with, raw[to:])
 }
 
-// writeFileAtomically writes the file next to its target and renames it over the
-// target, so a crash mid-write leaves the settings intact. The file mode is 0600.
-//
-// The path is the one run hands its work: the file itself, with every link
-// on the way to it already followed.
 func writeFileAtomically(path string, content []byte) (err error) {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
@@ -410,11 +374,6 @@ func writeFileAtomically(path string, content []byte) (err error) {
 	return syncDirectory(filepath.Dir(path))
 }
 
-// syncDirectory flushes the folder the rename was recorded in. Flushing the file is
-// what keeps its contents; flushing the folder is what keeps the rename.
-//
-// Not every filesystem lets a folder be opened for this, and the ones that
-// refuse are the ones that did not need it.
 func syncDirectory(dir string) error {
 	folder, err := os.Open(dir)
 	if err != nil {
@@ -429,14 +388,11 @@ func syncDirectory(dir string) error {
 	return folder.Close()
 }
 
-// isSyncUnsupported is whether the filesystem refuses to flush a folder.
 func isSyncUnsupported(err error) bool {
 	return errors.Is(err, errors.ErrUnsupported) || errors.Is(err, fs.ErrPermission) ||
 		errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP)
 }
 
-// isUnwritable is whether the file or its folder refuses writes. A read-only
-// installation runs with the settings it reads, so this is not reported.
 func isUnwritable(err error) bool {
 	return errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EROFS)
 }

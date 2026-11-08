@@ -113,7 +113,6 @@ function createRegistrationBridge(
   }
 }
 
-/** The settings of a plugin, as the window holds them. */
 function createSettingBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
@@ -138,7 +137,6 @@ function createSettingBridge(
   }
 }
 
-/** The views, status views and drops a plugin registers, which the shared registries hold. */
 function createSharedBridge({
   views,
   drops,
@@ -156,7 +154,6 @@ function createSharedBridge({
   }
 }
 
-/** The tabs a plugin opens in the window. */
 function createTabBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'openTab' | 'navigateTab' | 'closeTab'> {
@@ -194,7 +191,6 @@ function createHostContextBridge(
   }
 }
 
-/** The host services a plugin context is given, as the window has made them. */
 function createServiceBridge(
   deps: PluginHostDeps,
 ): Pick<
@@ -241,7 +237,6 @@ function createHostRegistry(): HostRegistry {
   }
 }
 
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
 function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
   const getAvailable = () => readAvailableCommands(deps, registry)
   const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
@@ -277,7 +272,6 @@ function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
   }
 }
 
-/** The context menu items the plugins registered. */
 function createContextMenuApi(registry: HostRegistry) {
   return {
     getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
@@ -299,7 +293,6 @@ function createContextMenuApi(registry: HostRegistry) {
   }
 }
 
-/** What the plugins registered, as lists. */
 function createRegisteredApi(registry: HostRegistry) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
@@ -319,7 +312,6 @@ function createRegisteredApi(registry: HostRegistry) {
   }
 }
 
-/** The contexts and manifests of the plugins. */
 function createContextApi(registry: HostRegistry, contextHost: PluginContextHost) {
   return {
     contextHost,

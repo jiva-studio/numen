@@ -206,8 +206,7 @@ func (s *MockAgentServer) GetAgentTools(
 
 // LeaseHost resolves every capability to one stub plugin and counts the references taken and given back.
 type LeaseHost struct {
-	Endpoint pluginport.Endpoint
-	// ensureErr is what activating the plugin fails with.
+	Endpoint  pluginport.Endpoint
 	EnsureErr error
 	Acquired  atomic.Int32
 	Released  atomic.Int32

@@ -12,7 +12,6 @@ type cfiSelector struct {
 	CFI string `json:"cfi,omitempty"`
 }
 
-// encode returns the selector as the JSON a segment carries.
 func (s cfiSelector) encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {

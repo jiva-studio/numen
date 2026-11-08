@@ -14,8 +14,6 @@ import (
 
 func ptr(n int32) *int32 { return &n }
 
-// requireEqual fails unless got and want encode to the same JSON, an absent collection counting as
-// an empty one.
 func requireEqual(t *testing.T, got, want any) {
 	t.Helper()
 	api.FillCollections(got)

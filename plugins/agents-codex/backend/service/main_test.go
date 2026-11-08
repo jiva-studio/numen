@@ -156,8 +156,6 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	}
 }
 
-// withoutAgentsAnywhere empties PATH and HOME, where the program is searched for first, and skips
-// the test on a machine that holds Codex in a system-wide place.
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())

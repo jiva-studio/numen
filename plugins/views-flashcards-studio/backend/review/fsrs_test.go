@@ -174,13 +174,10 @@ func TestASchedulerReturnsWhichItIs(t *testing.T) {
 	}
 }
 
-// libraryNow is the instant the schedules below are answered at.
 func getLibraryNow() time.Time {
 	return time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
 }
 
-// libraryGaps are the elapsed times before a review card is answered: none, a few
-// minutes (within the learning steps), and days, months and years.
 func getLibraryGaps() []time.Duration {
 	return []time.Duration{
 		0,
@@ -196,14 +193,10 @@ func getLibraryGaps() []time.Duration {
 	}
 }
 
-// libraryRatings are the four answers, in the library's own vocabulary.
 func getLibraryRatings() []fsrs.Rating {
 	return []fsrs.Rating{fsrs.Again, fsrs.Hard, fsrs.Good, fsrs.Easy}
 }
 
-// libraryRetentions are the target retentions the scheduler is exercised with: its
-// published parameters, both ends of the range a preset may hold, and a few values
-// in between.
 func getLibraryRetentions() []float64 {
 	return []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 }
@@ -229,9 +222,6 @@ func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 	}
 }
 
-// makeSchedulers is the scheduler and the library it takes its parameters from,
-// both asking for the same share of the cards. A retention of nothing is the
-// scheduler on its published parameters.
 func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
@@ -243,14 +233,6 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 
-// libraryAgrees evaluates the scheduler and the library on one review card, at
-// every rating and at both endings, and requires the two results to be the same
-// schedule.
-//
-// The library is evaluated on the card after clampLastAnswer: a review card whose
-// last answer is not before the evaluation instant has zero elapsed days. The
-// scheduler's handling of such a card is tested in
-// TestFSRSNext_ClampsElapsedDaysToZero.
 func libraryAgrees(
 	t *testing.T, retention float64, delta review.FSRS, engine *fsrs.FSRS,
 	s review.Schedule,
@@ -275,9 +257,6 @@ func libraryAgrees(
 		again, asSchedule(engine.Next(asCard(status), getLibraryNow(), fsrs.Again).Card))
 }
 
-// clampLastAnswer returns the schedule with its last answer limited to the
-// evaluation instant, so a review card answered no earlier than that instant has
-// zero elapsed days.
 func clampLastAnswer(s review.Schedule) review.Schedule {
 	if !s.IsNew() && getLibraryNow().Before(s.Last) {
 		s.Last = getLibraryNow()
@@ -319,12 +298,6 @@ func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 	}
 }
 
-// libraryWalked returns every review card reached by a walk of seven answers,
-// each answer given after a gap of its own following the answer already on the
-// review card.
-//
-// The walk starts far enough back that its last answer falls before the evaluation
-// instant, so every gap passed to the library is non-negative.
 func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
 		s         review.Schedule
@@ -347,9 +320,6 @@ func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	return out
 }
 
-// getLibraryWalkOpens returns the interval before the evaluation instant at which a walk
-// of seven answers starts. It is the sum of all gaps, which is at least the sum of
-// any seven, so no answer of the walk falls after that instant.
 func getLibraryWalkOpens() time.Duration {
 	var all time.Duration
 	for _, g := range getLibraryGaps() {
@@ -358,10 +328,6 @@ func getLibraryWalkOpens() time.Duration {
 	return all
 }
 
-// libraryMade is a grid of review cards outside the reach of a walk: at the
-// stability a run of lapses reduces a card to and at the stability of an unmodified
-// card, at each end of the difficulty scale, answered after gaps from none to
-// years.
 func libraryMade() []review.Schedule {
 	stabilities := []float64{
 		0, 1e-6, review.LeastStability, 0.01, 0.1, 1, 2.5, 7, 20, 100, 1000, 36500, 1e6,
@@ -398,8 +364,6 @@ func libraryMade() []review.Schedule {
 	return out
 }
 
-// sameSchedule holds two answers to being the same schedule, field by field and
-// bit for bit.
 func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 	t.Helper()
 	if !got.Due.Equal(want.Due) {
@@ -425,7 +389,6 @@ func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 	}
 }
 
-// asCard converts review.Schedule into an FSRS library Card model.
 func asCard(s review.Schedule) fsrs.Card {
 	if s.IsNew() {
 		return fsrs.NewCard()
@@ -441,7 +404,6 @@ func asCard(s review.Schedule) fsrs.Card {
 	}
 }
 
-// asSchedule converts the library's card to a schedule.
 func asSchedule(c fsrs.Card) review.Schedule {
 	return review.Schedule{
 		Due:        c.Due,
@@ -454,7 +416,6 @@ func asSchedule(c fsrs.Card) review.Schedule {
 	}
 }
 
-// describe is one review card, as much of it as names which review card it was.
 func describe(s review.Schedule) string {
 	return fmt.Sprintf("a review card in phase %d at stability %v difficulty %v answered %v",
 		s.Phase, s.Stability, s.Difficulty, s.Last)

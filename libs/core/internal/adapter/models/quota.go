@@ -163,13 +163,11 @@ func lockQuota(ctx context.Context, clock machineport.Clock, root string) (func(
 
 // Reservation tracks bytes claimed under quota until release.
 type Reservation struct {
-	Room int64
-	file string
-	stop chan struct{}
-	wg   sync.WaitGroup
-	once sync.Once
-	// touchErr is the first error of refreshing the file; the keep-alive
-	// goroutine writes it and Release reads it after the goroutine ends.
+	Room     int64
+	file     string
+	stop     chan struct{}
+	wg       sync.WaitGroup
+	once     sync.Once
 	touchErr error
 }
 

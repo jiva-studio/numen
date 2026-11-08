@@ -17,11 +17,6 @@ const dependencyTaskPrefix = "provision:"
 // envMockML names the variable that runs the plugins on mock models.
 const envMockML = "NUMEN_MOCK_ML"
 
-// newDependencies returns the provisioners together: the ONNX Runtime, and any
-// other dependency that is a file with a pinned checksum. Fetching follows
-// NUMEN_OFFLINE, and the folder is NUMEN_MODELS_DIR when it is set, else defaultDir; with neither, nothing is provisioned. Plugins
-// on mock models open no model and load no runtime, so then every dependency is
-// an empty placeholder and nothing is fetched.
 func newDependencies(defaultDir string) *provision.Registry {
 	if os.Getenv(envMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
@@ -38,8 +33,6 @@ func newDependencies(defaultDir string) *provision.Registry {
 	)
 }
 
-// newPlaceholders keeps the placeholders under the cache folder of the user, or
-// in a new private temporary folder where the user has no cache folder.
 func newPlaceholders() *provision.PlaceholderProvisioner {
 	dir, err := os.UserCacheDir()
 	if err == nil {

@@ -30,11 +30,8 @@ const (
 // any card is written into it.
 type Create struct {
 	writers ports.VaultWriters
-	// index updates the index with the new file, which makes it visible to a caller
-	// that creates a deck and then lists the vault's decks.
-	index note.IndexUpdater
-	// now is when this is happening. An identifier carries it.
-	now ports.Clock
+	index   note.IndexUpdater
+	now     ports.Clock
 }
 
 // NewCreate is what a deck, a card model or a preset is made through: the vault it
@@ -52,15 +49,10 @@ func (u Create) WithIndex(index note.IndexUpdater) Create {
 
 // New is what to make.
 type New struct {
-	Title string
-	Body  string
-	// Path is the folder it goes in, relative to the root. Empty is the root
-	// itself: the application does not arrange anyone's folders.
-	Path string
-	// Fields are the fields a card model declares, in the order they are
-	// requested from the user. A deck declares none.
-	Fields []string
-	// Templates are the ways a card cut by a card model is shown, laid down as its body.
+	Title     string
+	Body      string
+	Path      string
+	Fields    []string
 	Templates []format.CardTemplate
 }
 

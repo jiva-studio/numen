@@ -6,7 +6,6 @@ import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader, PLUGIN_SETTLE_MS, PLUGIN_WAIT_MS } from './loader'
 import { getLifecycleHooks, resolveModule } from './module'
 
-/** The loader, with a module registered under each plugin id. */
 function registerModules(
   loader: ReturnType<typeof createPluginLoader>,
   modules: Record<string, () => Promise<unknown>>,

@@ -6,8 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 )
 
-// holdsBook indexes a book of a large chunk and two small ones, names for the
-// section the large one opens, and a vector for every chunk.
 func holdsBook(s *store) {
 	s.t.Helper()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{

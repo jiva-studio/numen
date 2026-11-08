@@ -44,7 +44,6 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	}
 }
 
-// search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
 	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, nil)
 }
@@ -559,8 +558,6 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	}
 }
 
-// moveWithoutRepair moves a note and checks that no link needed repairing and
-// that the note at linking was not rewritten.
 func moveWithoutRepair(t *testing.T, c changing, from, to, linking string) {
 	t.Helper()
 	before := c.read(t, linking)
@@ -576,8 +573,6 @@ func moveWithoutRepair(t *testing.T, c changing, from, to, linking string) {
 	}
 }
 
-// removeToTrash removes path and checks that it is kept in the trash under its
-// own path and that the one note left pointing at nothing is dangling.
 func removeToTrash(t *testing.T, c changing, path, dangling string) {
 	t.Helper()
 	removed, err := c.remove().Execute(t.Context(), c.vault, path)
@@ -592,7 +587,6 @@ func removeToTrash(t *testing.T, c changing, path, dangling string) {
 	}
 }
 
-// checkNoNoteMentions checks that a search for word finds nothing in the index.
 func checkNoNoteMentions(t *testing.T, c changing, word string) {
 	t.Helper()
 	found, err := c.search().Execute(t.Context(), c.vault, word, search.Parameters{})

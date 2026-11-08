@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 )
 
-// openSettingsAgent is the agent of a window over the host, under the settings written.
 func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentport.Agent {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
@@ -25,7 +24,6 @@ func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentpor
 	return agent
 }
 
-// runTask starts the task and reads its steps to the end.
 func runTask(t *testing.T, agent agentport.Agent, task agentport.Task) {
 	t.Helper()
 	run, err := agent.StartRun(t.Context(), task)

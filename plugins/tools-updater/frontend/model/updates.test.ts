@@ -25,7 +25,6 @@ const AVAILABLE: Status = {
   },
 }
 
-/** A timer that runs nothing until the test runs the wait it holds. */
 const createFakeTimer = () => {
   const waits = new Map<number, { run: () => void; delayMs: number }>()
   let next = 1
@@ -52,7 +51,6 @@ const createFakeTimer = () => {
   }
 }
 
-/** Lets the settled promises of a check run. */
 const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
 }

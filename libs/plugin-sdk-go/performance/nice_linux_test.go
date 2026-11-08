@@ -11,7 +11,6 @@ import (
 	"testing"
 )
 
-// readNice is the niceness of the thread tid, field 19 of its stat file.
 func readNice(t *testing.T, tid string) int {
 	t.Helper()
 	raw, err := os.ReadFile("/proc/self/task/" + tid + "/stat")

@@ -42,8 +42,6 @@ type configEntryResolver struct {
 	calls    *configEntryTable
 }
 
-// loadConfigEntryTable resolves the config-entry calls of the library at path.
-// It returns a nil table when the library does not carry them.
 func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
 	handle, err := loadLibrary(libPath)
 	if err != nil {
@@ -74,8 +72,6 @@ func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
 	return table, nil
 }
 
-// getConfigEntryTable returns the config-entry calls of the loaded runtime,
-// resolving them on first use.
 func (l *Library) getConfigEntryTable() (*configEntryTable, error) {
 	_, loadedPath := l.runtime.GetLoaded()
 	if loadedPath == "" {
@@ -95,8 +91,6 @@ func (l *Library) getConfigEntryTable() (*configEntryTable, error) {
 	return table, nil
 }
 
-// addConfigEntry sets one session config entry through the table. A nil table
-// leaves the options untouched.
 func addConfigEntry(table *configEntryTable, options uintptr, key, value string) error {
 	if table == nil || table.addEntry == nil {
 		return nil
@@ -126,7 +120,6 @@ func addConfigEntry(table *configEntryTable, options uintptr, key, value string)
 	return fmt.Errorf("set session config %s=%s: %s", key, value, message)
 }
 
-// readCString copies a NUL-terminated string out of runtime memory.
 func readCString(p *byte) string {
 	if p == nil {
 		return ""
@@ -138,9 +131,6 @@ func readCString(p *byte) string {
 	return string(out)
 }
 
-// disableSpinning stops the session's idle intra-op threads from busy-waiting.
-// Idle threads do not spin because the application shares the CPU with its
-// interface.
 func (l *Library) disableSpinning(opts *ort.SessionOptions) error {
 	optHandle := *(*uintptr)(unsafe.Pointer(opts))
 	if optHandle == 0 {

@@ -12,7 +12,6 @@ import type { PaletteKeys } from '@numen/ui'
 export interface WelcomeAction {
   readonly id: string
   readonly text: string
-  /** What is drawn in front of it. A way with none is drawn without one. */
   readonly icon?: Component
   readonly keys?: PaletteKeys
 }
@@ -21,14 +20,8 @@ export interface WelcomeAction {
 export interface VaultRow {
   readonly id: string
   readonly name: string
-  /** The folder it represents, as an absolute path on this machine. */
   readonly path: string
-  /** What is true of this row and not of the ones beside it. */
   readonly detail?: string
-  /**
-   * Whether what the window has to say about this row is still on its way. Such
-   * a row is drawn and carries no letter, and it is not pressed until it is.
-   */
   readonly isWorking?: boolean
 }
 
@@ -37,6 +30,5 @@ export interface FooterEntry {
   readonly text: string
   readonly detail?: string
   readonly icon?: Component
-  /** The keystroke that triggers it, if any. */
   readonly keys?: PaletteKeys
 }

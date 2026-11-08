@@ -7,6 +7,5 @@
  */
 export interface PaletteAction {
   readonly id: string
-  /** What is written on it. */
   readonly text: string
 }

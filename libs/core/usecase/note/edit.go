@@ -28,8 +28,6 @@ func WrapIndexOutdated(err error, paths ...string) error {
 	return edit.WrapIndexOutdated(err, paths...)
 }
 
-// mapMissingNote returns ErrNoNote when the vault holds no note at the path,
-// and err unchanged for any other error.
 func mapMissingNote(err error) error {
 	return edit.MapMissingNote(err)
 }
@@ -51,16 +49,10 @@ type Edit struct {
 	index   IndexUpdater
 	now     machineport.Clock
 
-	FileStat domain.FileStat
-	// ShouldOverwrite writes the caller's text as the whole note: a missing note
-	// is created, and no identifier is stamped.
+	FileStat        domain.FileStat
 	ShouldOverwrite bool
-	// Bound is the most the file may be. Zero holds it to nothing.
-	Bound int
-	// Baseline is what the caller last saw of the note, and is what a file that is
-	// there is compared with. Nil for a caller that puts its text down whatever
-	// the note now holds.
-	Baseline *Baseline
+	Bound           int
+	Baseline        *Baseline
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it
@@ -79,7 +71,6 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	return e.shared().Apply(ctx, v, path, change)
 }
 
-// shared is the edit as the notes module makes it, over the files of a vault.
 func (e Edit) shared() edit.Edit {
 	return edit.Edit{
 		Open:            e.openFiles,

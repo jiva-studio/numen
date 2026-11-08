@@ -33,12 +33,9 @@ type glob struct {
 
 // Table is the snapshot, read once.
 type Table struct {
-	// literals are the patterns that name a whole file, such as `makefile`.
 	literals []glob
-	// suffixes are the patterns `*.<suffix>`, by suffix with its dot, the heaviest first.
 	suffixes map[string][]glob
-	// others are the rest of the patterns, such as `*.so.[0-9]*`.
-	others []glob
+	others   []glob
 }
 
 // Open parses the snapshot.
@@ -68,7 +65,6 @@ func parseTable(text string) Table {
 	return table
 }
 
-// matches says whether the subject fits the glob pattern. A pattern that does not parse matches nothing.
 func (g glob) matches(subject string) bool {
 	matched, err := path.Match(g.pattern, subject)
 	return err == nil && matched
@@ -134,8 +130,6 @@ func (t Table) GetContentType(name string) domain.ContentType {
 	return domain.UnknownContentType
 }
 
-// findSuffix is the type of the heaviest pattern of the suffix: a case-sensitive one where the case
-// is its own, else any other.
 func (t Table) findSuffix(suffix string) (domain.ContentType, bool) {
 	for _, one := range t.suffixes[suffix] {
 		if one.isCaseSensitive {

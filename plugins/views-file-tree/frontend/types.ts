@@ -25,7 +25,6 @@ export interface ListingRow {
 
 /** Where the menu opens, and the row it was opened on. */
 export interface MenuRequest {
-  /** The row the menu was opened on, or null when opened outside every row. */
   readonly path: string | null
   readonly at: { x: number; y: number }
 }

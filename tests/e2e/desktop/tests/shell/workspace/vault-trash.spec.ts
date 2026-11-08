@@ -25,11 +25,9 @@ import {
 
 const SYNC_SETTING = ['app', 'naming', 'syncTitleAndFilename'] as const
 
-/** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
 const getPlexNode = (page: Page, title: string, relation: string) =>
   getGraph(page).getByRole('button', { name: `${title}, ${relation}`, exact: true })
 
-/** Renames the note in front through the palette's Rename note step. */
 const changeTitle = async (page: Page, from: string, to: string) => {
   await runPaletteCommand(page, 'Rename note', 'Rename note')
   const field = getPaletteField(page)

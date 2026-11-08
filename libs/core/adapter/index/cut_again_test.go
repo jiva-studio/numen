@@ -11,16 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 )
 
-// vocabulary is the words a generated cutting draws its chunks from. It is small,
-// so a text repeats within a source often, and a large chunk contains what a chunk
-// inside it contains.
 func getVocabulary() []string {
 	return []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 }
 
-// generateChunks generates a source cut into large chunks with small chunks inside
-// them. What a chunk holds is what identifies it, so the words are what varies;
-// at its current position is what a cut moves, and it moves with the text.
 func generateChunks(t *rapid.T, name string) []chunk.Chunk {
 	word := rapid.SampledFrom(getVocabulary())
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
@@ -55,7 +49,6 @@ type textOf struct {
 	isSmall bool
 }
 
-// countChunks returns the chunks a cut requires the index to hold, with multiplicity.
 func countChunks(chunks []chunk.Chunk) map[textOf]int {
 	out := map[textOf]int{}
 	for _, large := range chunks {
@@ -72,8 +65,6 @@ func hashText(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// getSourceRows is the rows one source relies on, by the text and the size each
-// holds.
 func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	t.Helper()
 	cursor, err := db.read.QueryContext(t.Context(),
@@ -102,7 +93,6 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	return out
 }
 
-// countByText is what a set of rows evaluates to, one key at a time.
 func countByText(rows map[textOf][]int64) map[textOf]int {
 	out := make(map[textOf]int, len(rows))
 	for key, target := range rows {
@@ -111,8 +101,6 @@ func countByText(rows map[textOf][]int64) map[textOf]int {
 	return out
 }
 
-// cutSource puts one book in and cuts it into the chunks given, answering with
-// the row the source relies on.
 func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	t.Helper()
 	if err := db.Chunks().SaveSource(t.Context(), getFirst().ID, chunk.Source{

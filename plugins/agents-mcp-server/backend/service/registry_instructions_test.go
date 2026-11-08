@@ -65,8 +65,6 @@ func newReadTool(name string) *tools.ToolInfo {
 	}
 }
 
-// openSession connects a new MCP client to the server and returns the instructions of its
-// initialize result.
 func openSession(t *testing.T, srv *Server) string {
 	t.Helper()
 	serverSide, clientSide := sdk.NewInMemoryTransports()
@@ -81,7 +79,6 @@ func openSession(t *testing.T, srv *Server) string {
 	return session.InitializeResult().Instructions
 }
 
-// newToolWithSentences is a read-only tool of the host that has the sentences given.
 func newToolWithSentences(name string, sentences ...string) *tools.ToolInfo {
 	tool := newReadTool(name)
 	tool.Instructions = sentences

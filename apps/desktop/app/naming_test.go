@@ -13,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// waitForIndex waits until the vault holds the note at this path, which signals
-// that the walk reading the new file is over.
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {

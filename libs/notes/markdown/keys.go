@@ -97,11 +97,8 @@ func (d *Document) SetList(key string, names []string) error {
 
 // Entry is one line of a mapping written under a top-level frontmatter key.
 type Entry struct {
-	Key   string
-	Value any
-	// IsVerbatim keeps what the entry holds as it was written, which is what an
-	// entry the application could not read gets. Such an entry under a key
-	// that is not there is written nowhere.
+	Key        string
+	Value      any
 	IsVerbatim bool
 }
 
@@ -126,8 +123,6 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	return out, true
 }
 
-// entries is the mapping one top-level key holds, an empty one where the key
-// holds nothing at all or is not there, and nil where it holds something else.
 func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
 	if node == nil {
 		return &yaml.Node{Kind: yaml.MappingNode}
@@ -209,8 +204,6 @@ func (d *Document) SetDay(key string, day time.Time) error {
 	})
 }
 
-// getSpelling returns the quoting style of each name in one key's list, so a name
-// passed through a write unchanged keeps its original spelling.
 func (d *Document) getSpelling(key string) map[string]yaml.Style {
 	out := map[string]yaml.Style{}
 	node, err := d.readMapping()

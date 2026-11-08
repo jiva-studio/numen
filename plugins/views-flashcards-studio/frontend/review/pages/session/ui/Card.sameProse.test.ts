@@ -24,7 +24,6 @@ const REVIEW_CARDS = [
   '',
 ]
 
-/** The prose of a review card as the review window draws it. */
 const inTheReviewWindow = (text: string): string => {
   const renderedElement = mount(Card, { props: { front: text, back: '', isShown: false } })
   const response = renderedElement.find('.prose').element.innerHTML
@@ -32,7 +31,6 @@ const inTheReviewWindow = (text: string): string => {
   return response
 }
 
-/** The prose of the same review card as the editor's pane draws it. */
 const inTheEditor = (text: string): string => {
   const renderedElement = mount(CardProse, { props: { text } })
   const response = renderedElement.find('.prose').element.innerHTML

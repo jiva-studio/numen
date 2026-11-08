@@ -14,12 +14,9 @@ import (
 type CutNotes struct {
 	Sizes      Sizes
 	Legibility Legibility
-	// Profiles describes how notes of a type declared by a plugin are chunked. Nil
-	// chunks every note as an ordinary note.
-	Profiles func(domain.NoteType) (domain.NoteProfile, bool)
+	Profiles   func(domain.NoteType) (domain.NoteProfile, bool)
 }
 
-// getProfile is how the notes of the type are kept.
 func (u CutNotes) getProfile(noteType domain.NoteType) domain.NoteProfile {
 	if u.Profiles != nil {
 		if profile, declared := u.Profiles(noteType); declared {
@@ -46,7 +43,6 @@ func (u CutNotes) Recipe() string {
 		noteCutReader, sizes.Large, sizes.LargeOverlap, sizes.Small, sizes.SmallOverlap, sizes.Limit)
 }
 
-// getSizes is the sizes a note is cut to: one large chunk over the whole note.
 func (u CutNotes) getSizes() Sizes {
 	sizes := u.Sizes
 	sizes.Large = Whole
@@ -65,11 +61,6 @@ func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 	return out
 }
 
-// cut is one large chunk over the whole note, holding the small chunks that
-// carry the vectors. Each section the headings name is tiled on its own, and
-// offsets are into the file, so the body's start after the frontmatter is added
-// to every chunk. A note whose type has no chunks is found by its headings and its
-// title.
 func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.NoteProfile) []domain.Chunk {
 	if !profile.HasChunks {
 		return nil
@@ -95,7 +86,6 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 	return out
 }
 
-// getPartStarts is where each heading begins its section, named by its text.
 func getPartStarts(headings []domain.Heading) []domain.PartStart {
 	if len(headings) == 0 {
 		return nil
@@ -107,11 +97,6 @@ func getPartStarts(headings []domain.Heading) []domain.PartStart {
 	return out
 }
 
-// getIndexedHeadings is the headings of a note as the index keeps them.
-//
-// A type a plugin declares keeps the levels of heading its profile names, and a heading of a level
-// that ends in a block id is kept without it; a heading of no text is not kept. Every other note keeps
-// every heading it has.
 func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Heading {
 	if profile.HeadingLevels == nil && len(profile.IDHeadingLevels) == 0 {
 		return n.Headings
@@ -132,8 +117,6 @@ func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Head
 	return out
 }
 
-// removeID returns a heading without the block id it ends in: a space, a caret and a word of letters,
-// digits and hyphens. A heading that is only an id has no text.
 func removeID(heading string, pattern *regexp.Regexp) string {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
@@ -150,8 +133,6 @@ func removeID(heading string, pattern *regexp.Regexp) string {
 	return heading[:pos]
 }
 
-// isIDWord reports whether a word is a block id: one the pattern matches whole, else any word
-// of letters, digits and hyphens.
 func isIDWord(word string, pattern *regexp.Regexp) bool {
 	if pattern != nil {
 		return pattern.MatchString(word)

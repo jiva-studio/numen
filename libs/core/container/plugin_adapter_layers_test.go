@@ -16,8 +16,6 @@ import (
 
 const pluginRootImportPath = "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 
-// getPluginRootImports are the files under dir, tests excluded, that import the plugin adapter's
-// root package. Packages below the root never import it.
 func getPluginRootImports(dir string) ([]string, error) {
 	var found []string
 	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {

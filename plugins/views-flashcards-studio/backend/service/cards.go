@@ -41,8 +41,6 @@ func (h *cardsHandler) ListCardModels(
 	return &api.ListCardModelsResponse{CardModels: summaries, Total: int32(count)}, nil
 }
 
-// getCardModelLimit returns how many card models one response contains. A limit
-// of zero or less, or above the ceiling, yields the ceiling.
 func getCardModelLimit(limit int32) int {
 	if limit <= 0 || limit > cardwire.MaxCardModels {
 		return cardwire.MaxCardModels
@@ -82,9 +80,6 @@ func (h *cardsHandler) CreateDeck(
 	}, nil
 }
 
-// createCardNote is what making a deck and making a card model have in common: the vault
-// being shown, the window's hold on writing, and the error codes a file that
-// could not be made comes back as.
 func (b *Backend) createCardNote(
 	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, api.ErrorCode, bool, error) {
@@ -271,8 +266,6 @@ func (h *cardsHandler) WriteCardModel(
 	return &api.WriteCardModelResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 }
 
-// errorCodeOfDeck is why a deck was not read. What holds for a note holds here,
-// and a deck read at a bound of its own fails at that bound.
 func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
 	if o == note.TooLarge {
 		return api.ErrorCodeDeckTooLarge, true
@@ -283,7 +276,6 @@ func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, boo
 	return convertOutcomeToErrorCode(o)
 }
 
-// errorCodeOfCardModel is why a card model was not read.
 func errorCodeOfCardModel(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
 	if o == note.Ok && is != format.TypeCardModel {
 		return api.ErrorCodeNotACardModel, true

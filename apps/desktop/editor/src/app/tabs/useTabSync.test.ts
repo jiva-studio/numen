@@ -5,7 +5,6 @@ import { createTabSync, type TabSyncDeps } from './useTabSync'
 
 type Navigate = (state: unknown, path: string, title: string) => void | Promise<void>
 
-/** Returns a navigation that never settles, as a tab that reports its path later. */
 const createPendingNavigation = () => new Promise<void>(() => undefined)
 
 const createWindowTabs = (
@@ -26,7 +25,6 @@ const createWindowTabs = (
     },
   }) as unknown as TabSyncDeps['windowTabs']
 
-/** Returns one group with the source `s` and the given tabs. */
 const createLinkedTabs = (...targets: string[]): TabSyncDeps['tabLinks'] => {
   const group: TabLinkGroup = {
     id: 'group-1',
@@ -333,7 +331,6 @@ describe('linked tabs in two windows', () => {
   })
 })
 
-/** Returns one group whose last synced path is the given path. */
 const createGroupAt = (path: string, ...tabs: string[]): TabLinkGroup => ({
   id: 'group-1',
   colorIndex: 1,

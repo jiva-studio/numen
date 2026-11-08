@@ -44,7 +44,6 @@ func GetWords(vocabulary []string, n int) string {
 // Library is one vault as a set of files. It counts the reads per path, so a
 // test can check that an unchanged file was not opened.
 type Library struct {
-	// The interface is embedded for the listing, which no source scenario uses.
 	vaultport.VaultReader
 	Files map[string]*File
 	Reads map[string]int
@@ -52,10 +51,8 @@ type Library struct {
 
 // File is one file of a Library.
 type File struct {
-	Kind domain.SourceKind
-	Raw  []byte
-	// MTime is nanoseconds since the epoch, so a test can compare it against a
-	// hand-written value.
+	Kind  domain.SourceKind
+	Raw   []byte
 	MTime int64
 }
 

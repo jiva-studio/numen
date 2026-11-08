@@ -24,7 +24,6 @@ func TestOutlineWithInvalidStarts(t *testing.T) {
 	}
 }
 
-// pickElement is values[index], which panics when the index is out of range.
 func pickElement(values []int, index int) int { return values[index] }
 
 func TestRecoverPanic(t *testing.T) {

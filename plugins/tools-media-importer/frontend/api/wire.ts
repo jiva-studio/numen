@@ -42,13 +42,11 @@ export const describeError = (error: ApiError): string => {
   }
 }
 
-/** Calls a method of the importer service. */
 const call = <M extends keyof Methods>(
   method: M,
   request: Methods[M]['request'],
 ): Promise<Result<Methods[M]['response'], ApiError>> => api.call(method, request)
 
-/** Calls a method again after a wait while the application answers unavailable. */
 const callWhileBusy = async <M extends keyof Methods>(
   method: M,
   request: Methods[M]['request'],
@@ -60,7 +58,6 @@ const callWhileBusy = async <M extends keyof Methods>(
   }
 }
 
-/** The outcome of a call whose response holds no value. */
 const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
   result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 

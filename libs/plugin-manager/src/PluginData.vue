@@ -12,9 +12,7 @@ import { PLUGIN_WORDS as words } from './words'
 const props = defineProps<{
   pluginId: string
   pluginName: string
-  /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
   fileCount: number
-  /** Why the last attempt to delete failed; empty otherwise. */
   problem: string
 }>()
 

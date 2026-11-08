@@ -56,7 +56,6 @@ export interface Neighbours {
 
 /** Position of the menu and the node it was requested on. */
 export interface MenuRequest {
-  /** The node the menu was requested on, or null when requested outside every node. */
   readonly node: string | null
   readonly at: { x: number; y: number }
   readonly opening: MenuTrigger
@@ -103,7 +102,6 @@ export interface PlexView {
   readonly neighbourhood: Ref<Neighbourhood | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
-  /** A requested note whose result has not arrived, or that the vault does not hold yet; empty when none. */
   readonly nextPath: Ref<string>
   readonly isLoading: Ref<boolean>
   go(path: string): Promise<void>
@@ -147,7 +145,6 @@ export interface PlexViewState {
 
 export interface PlexMenuState {
   readonly menu: Ref<MenuRequest | null>
-  /** What the menu offers where it is open: on a node, or off every node. */
   readonly menuItems: ComputedRef<readonly MenuItem[]>
   getMenuIcon(id: string): Component | null
   /** The icon a node is drawn with, and nothing for an ordinary note. */

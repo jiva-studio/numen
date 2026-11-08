@@ -40,12 +40,6 @@ const policy: Record<string, string[]> = Object.fromEntries(
     .map(([named, ...sources]) => [named, sources]),
 )
 
-/**
- * Whether a directive allows a request to an address.
- *
- * Only the source forms that this policy uses are supported: a keyword, a
- * bare scheme, and a host with an optional wildcard port.
- */
 function isAllowed(directive: string, address: string): boolean {
   const sources = policy[directive] ?? policy['default-src'] ?? []
   return sources.some((source) => {
@@ -64,7 +58,6 @@ function isAllowed(directive: string, address: string): boolean {
   })
 }
 
-/** Every file the page is built from. Its tests are not built into it. */
 function readSources(from: string): string[] {
   return readdirSync(from, { withFileTypes: true }).flatMap((entry) => {
     const path = join(from, entry.name)

@@ -6,7 +6,6 @@ import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The messages this module shows in the window. */
 export interface SecretWords {
-  /** The key could not be stored or removed. */
   readonly secretFailed: string
 }
 

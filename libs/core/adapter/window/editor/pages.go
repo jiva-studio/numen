@@ -48,7 +48,6 @@ type served struct {
 	to     http.Handler
 }
 
-// mount takes a generated handler and the path it answers under as one.
 func mount(pos string, to http.Handler) served { return served{posVal: pos, to: to} }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
@@ -90,8 +89,6 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 	})
 }
 
-// isServed is whether a build naming these services answers one. Naming none is
-// a build that answers the whole schema.
 func isServed(named []string, service string) bool {
 	return len(named) == 0 || slices.Contains(named, service)
 }
@@ -102,7 +99,6 @@ type service struct {
 	handle func(counted connect.HandlerOption) (string, http.Handler)
 }
 
-// newRoutes mounts each service this build serves, behind the request counter.
 func (s *Services) newRoutes(named []string) []served {
 	counted := s.newQuestionCounter()
 	var routes []served
@@ -124,7 +120,6 @@ func (s *Services) newRoutes(named []string) []served {
 	return routes
 }
 
-// newServices is every service the window itself answers.
 func (s *Services) newServices() []service {
 	return []service{
 		{numenv1connect.VaultServiceName, func(c connect.HandlerOption) (string, http.Handler) {
@@ -175,8 +170,6 @@ func (s *Services) newServices() []service {
 	}
 }
 
-// serveAdjacent answers what no service does: the bytes of a file, the page the
-// interface opens at, and every other file the interface is made of.
 func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
@@ -200,11 +193,6 @@ func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole
 	}
 }
 
-// newQuestionCounter tracks every request a client makes until it completes, so
-// the index closes with nothing reading it.
-//
-// A stream is excluded: it lives as long as the page that opened it, and the
-// window closes while its pages are still rendered.
 func (s *Services) newQuestionCounter() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
@@ -254,8 +242,6 @@ func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unesc
 	return true
 }
 
-// openVaultFile opens the regular file name below vaultDir. The folder is opened once and the
-// name is resolved inside it, so no link leads out of it.
 func openVaultFile(vaultDir, name string) (*os.File, os.FileInfo, error) {
 	root, err := os.OpenRoot(vaultDir)
 	if err != nil {
@@ -278,8 +264,6 @@ func openVaultFile(vaultDir, name string) (*os.File, os.FileInfo, error) {
 	return file, info, nil
 }
 
-// servePluginRoute answers the plugin route: a file of the plugin's folder, or else the plugin's
-// backend in a build that answers the whole schema.
 func (s *Services) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
 	if wire.ServePluginFile(w, r, s.getPluginDir) {
 		return
@@ -296,9 +280,6 @@ func (s *Services) servePluginRoute(w http.ResponseWriter, r *http.Request, isWh
 // reads it on the calls the plugin makes back.
 const requestVaultHeader = "Numen-Vault"
 
-// setRequestVault names the vault the window shows on a request it forwards to a plugin, where the
-// request names none, so the plugin works that vault and not whichever the host shows when it
-// calls back.
 func (s *Services) setRequestVault(r *http.Request) {
 	if r.Header.Get(requestVaultHeader) != "" {
 		return

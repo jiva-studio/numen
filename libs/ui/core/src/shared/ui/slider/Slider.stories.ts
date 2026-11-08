@@ -16,9 +16,7 @@ interface Knobs {
   max: number
   step: number
   isDisabled: boolean
-  /** What the slider is called, shown before it. */
   label: string
-  /** How wide the box drawing the control is. */
   width: string
 }
 

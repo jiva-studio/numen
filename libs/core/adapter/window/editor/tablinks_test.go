@@ -16,8 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newTabLinksClient serves the workspace with detach expiries disabled and
-// returns a client for it.
 func newTabLinksClient(t *testing.T, state *State) numenv1connect.WorkspaceServiceClient {
 	t.Helper()
 	return serveTabLinks(t, state, func(time.Duration, func()) func() bool {
@@ -25,8 +23,6 @@ func newTabLinksClient(t *testing.T, state *State) numenv1connect.WorkspaceServi
 	})
 }
 
-// serveTabLinks serves the workspace with tab links on the schedule and returns
-// a client for it.
 func serveTabLinks(t *testing.T, state *State, schedule tablinks.Schedule) numenv1connect.WorkspaceServiceClient {
 	t.Helper()
 	tabLinks, err := tablinks.NewRegistry(linkGrace, schedule)
@@ -63,7 +59,6 @@ func linkTabs(t *testing.T, client numenv1connect.WorkspaceServiceClient, source
 	}
 }
 
-// readLinksUntil reads a stream until a snapshot matches the predicate.
 func readLinksUntil(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTabLinksResponse], isWanted func(*v1.TabLinks) bool,
 ) *v1.TabLinks {
@@ -131,8 +126,6 @@ func TestWatchTabLinksSendsGroupAndPathSyncToTwoWindows(t *testing.T) {
 	}
 }
 
-// newDetachingState returns a State whose DetachTab sends on the returned
-// channel once the core stored the tab.
 func newDetachingState() (*State, chan struct{}) {
 	windowRequests := make(chan struct{}, 1)
 	return &State{DetachTab: func(context.Context, DetachedTab) error {
@@ -141,8 +134,6 @@ func newDetachingState() (*State, chan struct{}) {
 	}}, windowRequests
 }
 
-// detachInBackground sends DetachTab and returns a channel that receives its
-// response, after the core stored the tab.
 func detachInBackground(
 	t *testing.T, client numenv1connect.WorkspaceServiceClient, windowRequests <-chan struct{}, tab *v1.Tab,
 ) <-chan *connect.Response[v1.DetachTabResponse] {
@@ -337,8 +328,6 @@ func TestTabLinksReturnUnimplementedWithoutRegistry(t *testing.T) {
 	}
 }
 
-// openWatch opens a tab links watch for a window until the test ends and
-// returns after the first snapshot.
 func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -377,8 +366,6 @@ func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 	}
 }
 
-// watchAs opens a tab links stream for a window until the test ends, and
-// returns it after the first snapshot.
 func watchAs(
 	t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string,
 ) *connect.ServerStreamForClient[v1.WatchTabLinksResponse] {

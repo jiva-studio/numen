@@ -24,7 +24,6 @@ type ortAPI struct {
 	SetSessionGraphOptimizationLevel uintptr
 }
 
-// bindGraphOptimization resolves the call that sets the graph optimization level of a session.
 func (l *Library) bindGraphOptimization(libPath string) error {
 	l.graph.mu.Lock()
 	defer l.graph.mu.Unlock()

@@ -10,7 +10,6 @@ import { isBranch } from '../lib/tree'
 import { fit } from '../lib/shares'
 
 export interface ArrangeOptions {
-  /** What is left between two children for the handle between them. */
   readonly gap: number
 }
 

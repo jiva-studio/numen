@@ -23,15 +23,10 @@ import type { Words } from '../lib/words'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** What was answered on each day, by the day it was answered on. */
     did: ReadonlyMap<string, Tally>
-    /** How much falls on each day still to come, by the day it falls on. */
     due?: ReadonlyMap<string, number>
-    /** The labels of a day's summary, in the user's language. */
     words: Words
-    /** When it is. */
     now?: Date
-    /** How large one cell is drawn, at most, in pixels. */
     cell?: number
     gap?: number
   }>(),

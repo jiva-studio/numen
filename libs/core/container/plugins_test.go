@@ -8,7 +8,6 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
-// readGoMod parses the go.mod at path.
 func readGoMod(t *testing.T, path string) *modfile.File {
 	t.Helper()
 	text, err := os.ReadFile(path)
@@ -22,7 +21,6 @@ func readGoMod(t *testing.T, path string) *modfile.File {
 	return file
 }
 
-// getModulePath returns the path a go.mod declares in its module directive, or "" when it has none.
 func getModulePath(file *modfile.File) string {
 	if file.Module == nil {
 		return ""
@@ -30,10 +28,6 @@ func getModulePath(file *modfile.File) string {
 	return file.Module.Mod.Path
 }
 
-// getPluginGoModViolations returns why the go.mod of the plugin in the folder named dir is refused: a
-// module path other than the one of the folder, a direct requirement getPluginDependencyRefusal
-// refuses, or a module built from a local folder. An indirect requirement is what Go records of
-// the requirements of the SDK and is allowed.
 func getPluginGoModViolations(dir string, file *modfile.File) []string {
 	var refusals []string
 	mod := getModulePath(file)

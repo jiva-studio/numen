@@ -9,9 +9,7 @@ import { READER_WORDS, type ReaderWords } from '../../../lib/strip'
 
 withDefaults(
   defineProps<{
-    /** How many pages the document has. */
     pageCount?: number
-    /** The words they are drawn with. */
     words?: ReaderWords
   }>(),
   {
@@ -37,10 +35,6 @@ const inputValue = computed({
   },
 })
 
-/**
- * Goes to a page by its position in the document. The field shows the current
- * page, and an empty field requests nothing.
- */
 const turn = () => {
   const rawInput = typing.value
   typing.value = null

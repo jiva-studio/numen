@@ -42,19 +42,11 @@ import (
 // busy timeout, and a writer still waiting when it runs out retries — see
 // the sqlwrite package, which every write on this pool goes through.
 type DB struct {
-	write *sql.DB
-	read  *sql.DB
-	// minimum is the shortest small chunk that gets a vector, shared by the queries of this handle.
+	write   *sql.DB
+	read    *sql.DB
 	minimum chunk.Minimum
 }
 
-// pragmas are carried in the connection string, so every connection in the
-// pool opens with them. `sql.Open` returns a pool, and a PRAGMA statement
-// configures whichever single connection happened to serve it. Foreign keys and
-// the busy timeout are per-connection state, so a statement-based setup leaves
-// every other connection with foreign keys off — and no ordinary test can see
-// it, because a sequential test keeps being handed the one connection that was
-// configured.
 func getPragmas() []string {
 	return []string{
 		// WAL so a long scan does not block readers. This one is persisted in the
@@ -177,9 +169,6 @@ func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
 
-// writeDSN is what the write pool opens with. Every transaction on it takes the
-// write lock at BEGIN, so one that reads before it writes waits its turn under
-// the busy timeout.
 func writeDSN(path string, pos settings) string { return dsn(path, pos) + "&_txlock=immediate" }
 
 func dsnOf(path string, pragmas []string) string {

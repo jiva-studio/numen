@@ -12,7 +12,6 @@ const hiddenTensorsLive = 4
 // floatBytes is the size of one float32 value.
 const floatBytes = 4
 
-// getPassBytes calculates the memory one forward pass holds at once.
 func getPassBytes(batchTexts, window, hiddenDim int) int64 {
 	batchTexts, window, hiddenDim = max(batchTexts, 1), max(window, 1), max(hiddenDim, 1)
 	heads := int64(max(hiddenDim/headWidth, 1))
@@ -24,7 +23,6 @@ func getPassBytes(batchTexts, window, hiddenDim int) int64 {
 	return floatBytes * (cells*heads + tokens*int64(hiddenDim)*hiddenTensorsLive)
 }
 
-// getPassesWithinMemory calculates passes bounded by memory.
 func getPassesWithinMemory(passes int, memory int64, batchTexts, window, hiddenDim int) int {
 	if memory <= 0 {
 		return passes
@@ -33,7 +31,6 @@ func getPassesWithinMemory(passes int, memory int64, batchTexts, window, hiddenD
 	return int(max(min(int64(passes), fit), 1))
 }
 
-// resolvePasses determines the number of concurrent passes for a model.
 func resolvePasses(cfg LocalModel, provider onnx.Provider, identity ModelInfo) int {
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="GetPasses returns at least one pass"
 	passes := max(cfg.GetPasses(provider), 1)

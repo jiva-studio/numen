@@ -31,6 +31,7 @@ PLUGIN_BUNDLE := tools/bundle-plugins
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
+COMMENTS := tools/lint-comments
 PLUGINS  := plugins
 # Every directory under plugins/ holding a manifest.json is a plugin.
 PLUGIN_DIRS := $(patsubst %/manifest.json,%,$(wildcard $(PLUGINS)/*/manifest.json))
@@ -602,6 +603,11 @@ lint_narrative: ## reject narrative identifiers, test names, comments, documents
 # a full scan reports them as advisory. CI passes the pull request base as HEAD^1.
 NARRATIVE_BASE ?= origin/main
 
+.PHONY: lint_comments
+lint_comments: ## reject comments on fields and properties and doc comments on unexported functions (Go, TypeScript, Vue)
+	cd $(COMMENTS) && npm test
+	node $(COMMENTS)/check.mjs
+
 .PHONY: lint_narrative_changed
 lint_narrative_changed: ## reject narrative phrases in test titles and comments on the lines added since NARRATIVE_BASE
 	node $(NARRATIVE)/scan.mjs . --check --changed-since $(NARRATIVE_BASE)
@@ -629,7 +635,7 @@ check_gate: lib_protocol_generate_check lib_ui_build ## run every architectural 
 	$(MAKE) -j $(JOBS) $(OUTPUT_SYNC) gate_parts
 
 .PHONY: gate_parts
-gate_parts: typecheck_workspaces typecheck_plugins lint_narrative gate_layers gate_quality
+gate_parts: typecheck_workspaces typecheck_plugins lint_narrative lint_comments gate_layers gate_quality
 
 .PHONY: gate_layers
 gate_layers:
@@ -647,7 +653,7 @@ check_all: lib_ui_build ## run full architectural and quality suites across all 
 	$(MAKE) -j $(JOBS) $(OUTPUT_SYNC) all_parts
 
 .PHONY: all_parts
-all_parts: gate_layers all_quality all_narrative
+all_parts: gate_layers all_quality all_narrative lint_comments
 
 .PHONY: all_quality
 all_quality:

@@ -53,7 +53,6 @@ func (g Generator) NewID(t time.Time) (string, error) {
 	return encode(b), nil
 }
 
-// encode writes 128 bits as 26 base32 characters, most significant first.
 func encode(b [16]byte) string {
 	out := make([]byte, 26)
 	// 26 base32 characters carry 130 bits; the value is left-padded into them.

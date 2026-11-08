@@ -105,7 +105,6 @@ func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 // host runs the plugin. No setting of a manifest takes the name.
 const SettingEnabled = "enabled"
 
-// listReservedSettingKeys returns the fields of the object of a plugin the host keeps for itself.
 func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingEnabled} }
 
 var (
@@ -130,7 +129,6 @@ const SettingTypeFile = "file"
 // settingTypeNumber is the type of a setting that stores a number.
 const settingTypeNumber = "number"
 
-// listSettingTypes returns the types a setting may have.
 func listSettingTypes() []string {
 	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile}
 }
@@ -154,29 +152,16 @@ type Setting struct {
 	Palette     bool
 	Icon        string
 	Options     SettingOptions
-	// Min, Max and Step are nil where the manifest sets none.
-	Min  *float64
-	Max  *float64
-	Step *float64
-	// OptionsBy gives an enum setting its options from the value of another setting. The first option
-	// of each list is the default under that value.
-	OptionsBy *OptionsBy
-	// When is the condition under which the setting is shown and handed to the plugin. A setting
-	// whose condition fails keeps its stored value.
-	When *Condition
-	// Accept are the file extensions a setting of type file takes, each with its leading dot. Empty
-	// takes any file.
-	Accept []string
-	// Multiple is a setting of type file that holds a list of paths, one per line.
-	Multiple bool
-	// Preview makes the window apply the value while the control of the setting is focused, and
-	// restore the saved value on leaving.
-	Preview bool
-	// OptionsFrom names a registry the options are listed from, such as the installed themes.
-	// Empty where the setting lists its own options.
+	Min         *float64
+	Max         *float64
+	Step        *float64
+	OptionsBy   *OptionsBy
+	When        *Condition
+	Accept      []string
+	Multiple    bool
+	Preview     bool
 	OptionsFrom string
-	// Generate names the value the host stores when the setting holds none. Empty generates nothing.
-	Generate string
+	Generate    string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -192,44 +177,22 @@ type Manifest struct {
 	Permissions      []string
 	Dependencies     []DependencyRequirement
 	Backend          Backend
-	// Frontend is nil for a plugin without a frontend.
-	Frontend *Frontend
-	Settings []Setting
-	// Secrets are the names of the secrets, such as an API key, that the plugin
-	// requests the host to store. The host passes them as Configure values,
-	// empty while a secret has no key, and never puts one in the environment or
-	// on the command line.
-	Secrets []Secret
-	// Services are the services the plugin serves to the windows, by their full names. A window that
-	// receives a call for one forwards it to the plugin; a service the host serves itself is never
-	// forwarded.
-	Services []string
-	// SettingsViews are the components of the plugin's frontend the settings page draws among the
-	// settings of the plugin, each by the id the frontend registers it under.
-	SettingsViews []SettingsView
-	// Contributes is what the plugin adds to the application, known before its frontend is loaded.
-	Contributes Contributes
-	// Warnings are the findings of the reader that do not make the manifest invalid, such as a key the
-	// schema does not name. The reader fills them and a manifest built in code has none.
-	Warnings []string
+	Frontend         *Frontend
+	Settings         []Setting
+	Secrets          []Secret
+	Services         []string
+	SettingsViews    []SettingsView
+	Contributes      Contributes
+	Warnings         []string
 }
 
 // NoteType declares one type of note and how the index keeps the notes of it.
 type NoteType struct {
-	// Type is the word the `type` key of a note's frontmatter holds.
-	Type string
-	// Chunks states whether the prose of the note is split into chunks and
-	// searched by meaning. When omitted, it is.
-	Chunks *bool
-	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty
-	// list keeps none.
-	Headings *[]int
-	// IDHeadingLevels are the levels whose headings end in a block id (` ^id`, as in Obsidian) that
-	// is no part of their text.
+	Type            string
+	Chunks          *bool
+	Headings        *[]int
 	IDHeadingLevels []int
-	// IDPattern is a regular expression a block id must match whole. Left out, any word of letters,
-	// digits and hyphens is an id.
-	IDPattern string
+	IDPattern       string
 }
 
 // GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.
@@ -268,7 +231,6 @@ func (m Manifest) ListIssues() []error {
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
 
-// listServiceIssues checks that each service is a full name of dot-separated words, and is listed once.
 func (m Manifest) listServiceIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -284,8 +246,6 @@ func (m Manifest) listServiceIssues() []error {
 	return issues
 }
 
-// listNoteTypeIssues checks that each type is a word the frontmatter can hold, is declared once, and
-// that the levels it names are those of headings.
 func (m Manifest) listNoteTypeIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -382,8 +342,6 @@ func (m Manifest) HasFrontend() bool {
 	return m.Frontend != nil
 }
 
-// listBackendlessIssues names each field of a plugin without a backend that only a backend serves:
-// the host would start a process to answer it.
 func (m Manifest) listBackendlessIssues() []error {
 	if m.Backend != (Backend{}) {
 		return nil
@@ -430,7 +388,6 @@ func (m Manifest) listPermissionIssues() []error {
 	return issues
 }
 
-// listCapabilityIssues checks that every capability is one the host resolves a plugin by.
 func (m Manifest) listCapabilityIssues() []error {
 	var issues []error
 	for _, c := range m.Capabilities {
@@ -441,7 +398,6 @@ func (m Manifest) listCapabilityIssues() []error {
 	return issues
 }
 
-// listActivationEventIssues checks that every activation event is ActivationEventAll.
 func (m Manifest) listActivationEventIssues() []error {
 	var issues []error
 	for _, e := range m.ActivationEvents {
@@ -517,8 +473,6 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	return append(issues, listFileSettingIssues(s, key)...)
 }
 
-// listGenerateSettingIssues checks that a generated value is a token, on a string setting without a
-// default.
 func listGenerateSettingIssues(s Setting, key string) []error {
 	if s.Generate == "" {
 		return nil
@@ -536,8 +490,6 @@ func listGenerateSettingIssues(s Setting, key string) []error {
 	return issues
 }
 
-// listFileSettingIssues checks that only a file setting accepts extensions, each with its leading dot,
-// or holds several paths.
 func listFileSettingIssues(s Setting, key string) []error {
 	var issues []error
 	if len(s.Accept) > 0 && s.Type != SettingTypeFile {

@@ -59,8 +59,6 @@ func (l *Locks) getLock(root string) chan struct{} {
 	return lock
 }
 
-// getLockKey returns the name a folder is locked under. A path that cannot be
-// resolved is its own key.
 func getLockKey(root string) string {
 	abs, err := filepath.Abs(root)
 	if err != nil {

@@ -6,7 +6,6 @@
  * when it is removed.
  */
 export interface RefRegistry<K> {
-  /** The function ref for the key. */
   readonly getRef: (key: K) => (element: unknown) => void
 }
 

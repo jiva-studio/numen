@@ -15,8 +15,7 @@ import (
 
 // TextClient works the text versions of a vault through HostTextService.
 type TextClient struct {
-	rpc numenv1connect.HostTextServiceClient
-	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
+	rpc   numenv1connect.HostTextServiceClient
 	vault string
 }
 
@@ -65,7 +64,6 @@ func newTextRequest[T any](c *TextClient, msg *T) *connect.Request[T] {
 	return req
 }
 
-// failText converts the error code of a response into the corresponding error.
 func failText(code v1.TextErrorCode) error {
 	switch code {
 	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:

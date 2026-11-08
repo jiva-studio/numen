@@ -20,7 +20,6 @@ var errChanged = errors.New("the file changed")
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostListed caps the maximum number of items returned in a book summary"
 const mostListed = 1000
 
-// readBookFile reads a book of the vault the request works.
 func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, error) {
 	raw, _, err := getVault(ctx, s.files).Read(ctx, path)
 	if err != nil {
@@ -34,7 +33,6 @@ func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, err
 type BookServer struct {
 	files host.Vault
 
-	// books caches the books entries are read from, and closes them when the server closes.
 	books *bookCache
 
 	mu     sync.Mutex
@@ -150,8 +148,6 @@ func (s *BookServer) ReadBookEntry(ctx context.Context, req api.ReadBookEntryReq
 	return api.ReadBookEntryResponse{Body: body}, nil
 }
 
-// isStatOf is whether a file of the size and the stamp given is the bytes the
-// file stat names. A stamp of zero names no time.
 func isStatOf(named api.FileStat, size, mtime int64) bool {
 	if named.Size != size {
 		return false
@@ -159,8 +155,6 @@ func isStatOf(named api.FileStat, size, mtime int64) bool {
 	return named.Mtime == 0 || named.Mtime == mtime
 }
 
-// locked book is a failed precondition, and bytes that are no book are an invalid
-// argument.
 func newReadError(err error) error {
 	if errors.Is(err, epub.ErrEncrypted) {
 		return server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read epub: %v", err))

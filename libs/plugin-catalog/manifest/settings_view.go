@@ -12,13 +12,10 @@ var ErrInvalidSettingsView = errors.New("invalid settings view")
 // SettingsView is a component of the plugin's frontend that the settings page draws among the
 // settings of the plugin.
 type SettingsView struct {
-	// ID is the id the frontend registers the component under.
 	ID    string
 	Title string
 }
 
-// listSettingsViewIssues checks that each view has an id of its own and a title, and that the plugin
-// has a frontend to draw it.
 func (m Manifest) listSettingsViewIssues() []error {
 	var issues []error
 	if len(m.SettingsViews) > 0 && !m.HasFrontend() {

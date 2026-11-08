@@ -15,7 +15,6 @@ const props = defineProps<{ state: PresetTabState }>()
 // and the template unwraps it.
 const { hasExternalChange, problems, errorMessage } = props.state
 
-// --- Handlers ---
 function onRefresh() {
   props.state.reload()
 }

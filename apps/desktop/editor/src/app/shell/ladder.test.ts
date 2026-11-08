@@ -21,7 +21,6 @@ const IN_JS = /(?<![-\w])fontSize\s*:\s*'([^']*)'/g
 /** A size is a token by name, the size around it, or a multiple of that. */
 const LADDER = /^(inherit|[\d.]+em|var\(--[\w-]+\))$/
 
-/** Every size set in one file, in the words it is written in. */
 const sizes = (text: string): string[] =>
   [...text.matchAll(IN_CSS), ...text.matchAll(IN_JS)].map((found) => (found[1] ?? '').trim())
 

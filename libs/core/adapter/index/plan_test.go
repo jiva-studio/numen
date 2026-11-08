@@ -15,11 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// coarse is a vector of the shape the vector index holds: one bit per dimension
-// over 1024 dimensions.
 func getCoarse() []byte { return make([]byte, 128) }
 
-// The queries the index runs, and the index each must be answered through.
 func getExpectedPlans() []struct {
 	statements map[string]string
 	name       string
@@ -30,9 +27,7 @@ func getExpectedPlans() []struct {
 		statements map[string]string
 		name       string
 		args       []any
-		// An index name, or the columns for a primary key: SQLite names those
-		// itself, and the name changes when a constraint is added.
-		endPos []string
+		endPos     []string
 	}{
 		{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
 		{note.Statements(), "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
@@ -90,16 +85,8 @@ func getExpectedPlans() []struct {
 	}
 }
 
-// growing is the tables that grow with the vault. A question answered by
-// reading one of them whole is a question that gets slower as the user writes.
 func getGrowing() []string { return []string{"sources", "notes", "links", "chunks", "vectors"} }
 
-// readsEverything reports whether a plan step reads a whole table.
-//
-// A plan uses the alias the statement gave the table, so `SCAN c` is how a read
-// of every chunk appears. Every scan is a failure except a full-text or
-// nearest-neighbour match, which appear as a scan of their virtual table, and
-// `vaults`, which is always small.
 func readsEverything(step string) bool {
 	return strings.HasPrefix(step, "SCAN ") &&
 		!strings.Contains(step, "VIRTUAL TABLE") &&
@@ -144,10 +131,6 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 	}
 }
 
-// openPopulatedDB fills two vaults. A single vault cannot show which index a
-// query uses: a filter on a column that holds only one value costs nothing
-// whichever way the planner applies it, and the planner decides from the
-// statistics it has.
 func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
@@ -223,9 +206,6 @@ func openPopulatedDB(t *testing.T) *DB {
 	return db
 }
 
-// cut writes one source's chunks: a large one, and two small ones inside it
-// carrying a vector each. Every chunk is indexed for its words, as the
-// repository indexes them.
 func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 	t.Helper()
 	ctx := t.Context()
@@ -258,8 +238,6 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 	}
 }
 
-// index puts one chunk's words in the full-text index, under the chunk's own
-// number.
 func index(t *testing.T, tx *sql.Tx, chunkID int64, text string) {
 	t.Helper()
 	if _, err := tx.ExecContext(t.Context(),

@@ -33,7 +33,6 @@ func GetSettingsBounds() *api.SettingsBounds {
 	}
 }
 
-// getBounds is one pair of bounds as the schema carries it.
 func getBounds(b review.Bounds) *api.Bounds {
 	return &api.Bounds{Min: b.Min, Max: b.Max}
 }
@@ -303,8 +302,6 @@ func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 	}
 }
 
-// convertLearnedDay returns the day on which the whole material is learned, as
-// the schema carries it. A projection with no such day returns nil.
 func convertLearnedDay(day int) *int32 {
 	if day == review.LearnsUnasked {
 		return nil
@@ -313,7 +310,6 @@ func convertLearnedDay(day int) *int32 {
 	return &out
 }
 
-// convertBacklog is a convertBacklog day by day, as the schema carries one.
 func convertBacklog(days []int) []int32 {
 	out := make([]int32, 0, len(days))
 	for _, one := range days {

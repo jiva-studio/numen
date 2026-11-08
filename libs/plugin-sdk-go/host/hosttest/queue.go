@@ -89,8 +89,6 @@ func (q *Queue) ListTasks() []host.Task {
 	return out
 }
 
-// release passes the queue to the work that has waited longest, user-started
-// work first.
 func (q *Queue) release() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -105,7 +103,6 @@ func (q *Queue) release() {
 	q.isIndexed = false
 }
 
-// leave takes a wait that ended out of the queue, and hands on a turn that arrived as it ended.
 func (q *Queue) leave(turn chan struct{}) {
 	q.mu.Lock()
 	for _, line := range []*[]chan struct{}{&q.requested, &q.background} {

@@ -14,15 +14,6 @@ import (
 // 60 is the constant reciprocal rank fusion uses.
 const rankConstant = 60
 
-// merge fuses rankings into one order.
-//
-// A chunk's score is the sum of `1 / (rankConstant + rank)` over the rankings
-// that returned it, counting from one. BM25 and cosine similarity are not
-// comparable — one is unbounded and drawn from the corpus, the other a bounded
-// angle — so ranks are what is combined, and combining ranks calibrates nothing.
-//
-// Equal scores are ordered by source and then by chunk, so one index gives one
-// answer.
 func merge(rankings ...[]domain.Passage) []domain.Passage {
 	score := map[domain.ChunkID]float64{}
 	observed := map[domain.ChunkID]domain.Passage{}
@@ -58,12 +49,6 @@ type passageID struct {
 	start, length int
 }
 
-// collapse keeps at most `each` passages of one source, in the order it was
-// given, so the best-ranked chunks of a source are the ones that survive.
-//
-// Where a document has a section named after the query, that section is the
-// first passage returned for it. Which documents match is decided by every
-// ranking; the position within a document is decided by its section names.
 func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, p := range named {

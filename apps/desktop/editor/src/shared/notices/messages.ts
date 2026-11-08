@@ -12,9 +12,7 @@ export type { Severity, MessageWriter }
 
 /** One message the window holds. */
 export interface WindowMessage {
-  /** What this message is addressed by, which no two of them share. */
   readonly id: string
-  /** The part of the window that wrote it, which holds one message at a time. */
   readonly name: string
   readonly severity: Severity
   readonly text: string

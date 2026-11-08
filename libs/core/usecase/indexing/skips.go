@@ -9,15 +9,9 @@ import "sync"
 // pass first saw after the cancel, and by the text pass until it changes. A
 // change the vault reports for its path clears it from both.
 type skipSet struct {
-	mu sync.Mutex
-	// vectors maps a path to the content hash its chunks carry. A nil hash
-	// is a cancel no pass has seen the source under since.
-	vectors map[string]*string
-	texts   map[string]bool
-	// chunks is how many chunks the last vector pass that ran to its end left
-	// without a vector for the sources listed. A change of the list sets it to
-	// zero until the next such pass counts them again, and generation counts the
-	// changes, so a pass that ran across one records nothing.
+	mu         sync.Mutex
+	vectors    map[string]*string
+	texts      map[string]bool
 	chunks     int64
 	generation uint64
 }
@@ -45,8 +39,6 @@ func (c *skipSet) addTexts(path string) {
 	c.texts[path] = true
 }
 
-// isVectorSkipped reports whether the chunks of the source at path, read with
-// this content hash, are left without vectors.
 func (c *skipSet) isVectorSkipped(path, hash string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -66,14 +58,12 @@ func (c *skipSet) isVectorSkipped(path, hash string) bool {
 	}
 }
 
-// isTextSkipped reports whether the source at path is left uncut.
 func (c *skipSet) isTextSkipped(path string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.texts[path]
 }
 
-// clear forgets the cancel of every path given.
 func (c *skipSet) clear(paths []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -84,24 +74,17 @@ func (c *skipSet) clear(paths []string) {
 	c.forgetChunks()
 }
 
-// forgetChunks drops the count of skipped chunks after a change of the list.
-// The caller holds mu.
 func (c *skipSet) forgetChunks() {
 	c.chunks = 0
 	c.generation++
 }
 
-// getGeneration returns the number of changes of the list so far, which a
-// vector pass reads when it starts.
 func (c *skipSet) getGeneration() uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.generation
 }
 
-// setSkippedChunks records how many chunks a vector pass that ran to its end
-// left without a vector for the sources listed. A pass that started at another
-// generation counted another list, and records nothing.
 func (c *skipSet) setSkippedChunks(n int, generation uint64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -110,8 +93,6 @@ func (c *skipSet) setSkippedChunks(n int, generation uint64) {
 	}
 }
 
-// getSkippedChunks returns how many chunks the sources listed hold without a
-// vector, as the last vector pass that ran to its end counted them.
 func (c *skipSet) getSkippedChunks() int64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()

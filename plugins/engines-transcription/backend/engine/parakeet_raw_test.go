@@ -13,9 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
 )
 
-// openCachedTranscriber is the models a machine holds, in NUMEN_MODELS or in the
-// cache. A machine without them skips and the rest of the package is still
-// tested.
 func openCachedTranscriber(t testing.TB) *Transcriber {
 	t.Helper()
 	cfg := Defaults()
@@ -31,8 +28,6 @@ func openCachedTranscriber(t testing.TB) *Transcriber {
 	return delta
 }
 
-// makeFrames is a run of encoder frames that is the same on every call and
-// makes the joiner return tokens.
 func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 	data := make([]float32, encoded*width)
 	seed := uint32(1)

@@ -6,78 +6,30 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
 export type { Size }
 
 export interface BoxOptions {
-  /** The focus box. Its width is the widest that box is drawn. */
   readonly focusSize: Size
-  /**
-   * Every other box. Its width is the widest one is drawn, and the width
-   * admission is worked out from.
-   */
   readonly nodeSize: Size
-  /** The narrowest a box is drawn, however little its title needs. */
   readonly minWidth: number
-  /**
-   * Space reserved beside a title for the icon the caller renders there, as a
-   * gap from the title within the same padding. A box is this much wider wherever
-   * an icon is rendered, since the plex cannot measure one.
-   */
   readonly iconWidth: number
-  /** One place inside a node, as it is drawn under the box. */
   readonly headingHeight: number
-  /** How far one level of nesting sets a place in. */
   readonly headingIndent: number
-  /** Between neighbouring nodes along one line. */
   readonly gap: number
-  /** Between one line and the next, further from the focus. */
   readonly lineGap: number
-  /** Between the focus box and the first line of any relation. */
   readonly focusGap: number
-  /** Distance kept from the viewport edge, so nothing touches it. */
   readonly margin: number
-  /**
-   * How far a gap may exceed its setting when the viewport has spare space. This
-   * multiple of a gap is the maximum. At one, a gap never grows.
-   */
   readonly spread: number
-  /**
-   * How far a gap may shrink below its setting when the viewport is short of
-   * space. This fraction of a gap is the minimum, and a box narrows towards
-   * `minWidth` with it. At one, nothing shrinks.
-   */
   readonly squeeze: number
 }
 
 export interface LimitOptions {
-  /**
-   * How many nodes go on one line before a second line is started, when there
-   * is no window to measure a line against.
-   */
   readonly maxPerLine: number
-  /** Lines per relation. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
-  /**
-   * How many headings a node hangs under its box at once. The rest are scrolled to,
-   * and a node with less depth under it than this hangs what the depth holds.
-   */
   readonly maxHeadings: number
 }
 
 export interface RoutingOptions {
-  /** How far an edge holds its leaving direction, as a fraction of the gap. */
   readonly curvature: number
-  /** And never less than this, or a short edge sets off crooked. */
   readonly minReach: number
-  /**
-   * How much of a line an arrowhead occupies. A title is placed near the middle
-   * of its line, so a line with an arrowhead has this much less space at either
-   * end.
-   */
   readonly arrowClearance: number
-  /**
-   * The shortest stretch between two boxes that a straight line is drawn over. Two
-   * boxes closer than this, side by side in a row or one above the other in a column,
-   * are joined by a bow out of their sides, long enough for an arrowhead at each end
-   * and for a word.
-   */
   readonly minRun: number
 }
 
@@ -87,18 +39,11 @@ export interface RoutingOptions {
  * never at its most crowded halfway through.
  */
 export interface MotionOptions {
-  /** When a node only in the new picture starts to appear. */
   readonly arriveAfter: number
-  /** When a node only in the old one has finished going. */
   readonly leaveBefore: number
 }
 
 export interface GestureOptions {
-  /**
-   * How much further sideways than vertical a gesture may go and still count
-   * as up or down. Rows are wide and columns narrow, so the wedge that means
-   * child of a wide row would be read as something off to the side.
-   */
   readonly verticalBias: number
 }
 
@@ -107,11 +52,6 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly motion: MotionOptions
   readonly gesture: GestureOptions
   readonly direction: Readonly<Record<PlexRelation, Direction>>
-  /**
-   * The viewport the plex is rendered in. With a viewport, a line extends as far
-   * as the viewport allows and the gaps grow into the remaining space. Without
-   * one, the limits above apply literally.
-   */
   readonly viewport?: Size | undefined
 }
 

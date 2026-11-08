@@ -18,7 +18,6 @@ const getRange = (element: HTMLElement) => {
   return Number.isNaN(from) || Number.isNaN(to) ? null : { from, to }
 }
 
-/** What is in the cell, written back over the stretch the cell came from. */
 const keep = (view: EditorView, element: HTMLElement) => {
   const range = getRange(element)
   if (!range) return
@@ -41,7 +40,6 @@ const focus = (element: HTMLElement | undefined) => {
 
 const countColumns = (frame: HTMLElement) => frame.querySelectorAll('thead .cm-cell').length
 
-/** A row under the table, and a column at its right. */
 const grow = (frame: HTMLElement, view: EditorView) => {
   const where = getSpan(frame)
   if (!where) return null

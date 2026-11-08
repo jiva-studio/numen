@@ -13,26 +13,12 @@ import (
 // by Fallback, and Capacity sets how many messages may be pending before a
 // subscriber counts as lagging.
 type Broadcaster[T any] struct {
-	// Fallback makes the message for a subscriber that has not read the last one.
-	Fallback func(latest T) T
-	// IsLatest replaces a pending message with the newest message on the same
-	// topic.
-	IsLatest bool
-	// IsOrdered queues a superseding message after every pending message instead
-	// of in the place of the message it supersedes, so messages on different
-	// topics reach a subscriber in the order they were published.
-	IsOrdered bool
-	// GetTopic returns the topic a message is about. A message supersedes
-	// pending messages on the same topic; messages on different topics are
-	// queued independently. Nil puts every message on the same topic.
-	GetTopic func(T) string
-	// IsRequired reports whether a message must be delivered. A pending
-	// required message is not superseded, and the message that would replace it
-	// is queued after it.
+	Fallback   func(latest T) T
+	IsLatest   bool
+	IsOrdered  bool
+	GetTopic   func(T) string
 	IsRequired func(T) bool
-	// Capacity is the number of pending messages after which a subscriber
-	// counts as lagging.
-	Capacity int
+	Capacity   int
 
 	mu          sync.Mutex
 	next        int
@@ -94,8 +80,6 @@ func (a *Broadcaster[T]) Publish(what T) {
 	}
 }
 
-// queue appends a message to the pending messages of a subscriber and reports
-// whether the pending messages had capacity for it.
 func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
@@ -130,8 +114,6 @@ func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	return fitted
 }
 
-// findSupersededIndex returns the index of the pending message that this
-// message supersedes, or -1 when it supersedes none.
 func (a *Broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.IsLatest {
 		return -1
@@ -147,8 +129,6 @@ func (a *Broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	return -1
 }
 
-// deliver carries what queue puts on the slice to the channel listen handed
-// out, one message at a time, in the order queue put them there.
 func (a *Broadcaster[T]) deliver(l *subscriber[T]) {
 	defer close(l.out)
 
@@ -167,7 +147,6 @@ type front[T any] struct {
 	seq     uint64
 }
 
-// getFront reads the head of the line, and reports whether the line holds one.
 func (a *Broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -177,8 +156,6 @@ func (a *Broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
 	return front[T]{message: l.waiting[0], seq: l.frontSeq}, true
 }
 
-// waitForFront blocks until the line holds a message, and reports false once
-// the subscriber is done.
 func (a *Broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 	for {
 		if head, ok := a.getFront(l); ok {
@@ -192,8 +169,6 @@ func (a *Broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 	}
 }
 
-// sendHead hands the head to out until it is taken, and takes it off the line when
-// nothing has overtaken it.
 func (a *Broadcaster[T]) sendHead(l *subscriber[T], head front[T]) bool {
 	for {
 		select {

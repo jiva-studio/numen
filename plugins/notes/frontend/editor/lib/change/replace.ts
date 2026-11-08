@@ -27,12 +27,6 @@ const getOffset = (doc: Text, place: Place): number => {
   return Math.min(line.from + place.column, line.to)
 }
 
-/**
- * The stretch the two texts differ over, as one change.
- *
- * Measured in characters from both ends, so what is replaced is the smallest
- * run that differs and every position outside it is where it was.
- */
 const difference = (was: Text, now: Text): ChangeSpec => {
   const before = was.toString()
   const after = now.toString()

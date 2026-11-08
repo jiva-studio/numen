@@ -14,7 +14,6 @@ import type { NodeIdFactory } from '../lib/edit'
 /** A stack of tabs. */
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
 
-/** A row or a column, in equal shares when none are given. */
 const splitBranch = (
   id: NodeId,
   children: readonly WorkspaceNode[],

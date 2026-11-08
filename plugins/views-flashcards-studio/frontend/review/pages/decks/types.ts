@@ -30,40 +30,19 @@ export interface Budget {
 
 /** One preset, the decks it schedules, and what it holds today. */
 export interface Preset {
-  /** The note the settings were read from, and empty for the defaults. */
   readonly path: string
   readonly name: string
-  /** How its decks are scheduled, and null where no deck points at it. */
   readonly settings: Settings | null
-  /** The decks it schedules, by the path each is filed under. */
   readonly decks: readonly string[]
-  /** How many decks name it, whatever they hold. */
   readonly named: number
-  /** How many review cards stand in those decks. */
   readonly reviewCards: number
-  /**
-   * What starting a session on it would ask, as the count gives it: the cards its
-   */
   readonly cards: number
-  /** What the day holds under it, which is what today is weighed against. */
   readonly budget: Budget
-  /** Which key each of those budgets closes on, and empty where it closes none. */
   readonly closes: BudgetKeys
-  /**
-   * Cards answered under it since the day opened, and the minutes they took.
-   * The two beside the total divide it the way a budget does, so each is
-   * weighed against the budget of its own kind.
-   */
   readonly reviewed: number
   readonly reviewedNew: number
   readonly reviewedReviews: number
   readonly took: number
-  /** Why it schedules nothing, and empty while it schedules something. */
   readonly paused: string
-  /**
-   * The problem with the preset as display text, and empty when there is none:
-   * what the file contained that could not be read, or why the file itself could
-   * not be read.
-   */
   readonly wrong: string
 }

@@ -19,8 +19,7 @@ import (
 type Client struct {
 	rpc    numenv1connect.HostVaultServiceClient
 	window numenv1connect.HostWindowServiceClient
-	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
-	vault string
+	vault  string
 }
 
 // vaultHeader names the vault a call works.
@@ -74,7 +73,6 @@ func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *C
 	}
 }
 
-// readError converts the failure of a call into its error: a vault the host does not know is ErrUnknownVault.
 func readError(err error) error {
 	if connect.CodeOf(err) == connect.CodeNotFound {
 		return ErrUnknownVault
@@ -82,7 +80,6 @@ func readError(err error) error {
 	return err
 }
 
-// getHostVaultErrors returns the error of each error code of a call on a vault.
 func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
 	return map[v1.HostVaultErrorCode]error{
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:           ErrNoVault,
@@ -120,7 +117,6 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 }
 
-// readKind returns the SourceKind of the file a file stat describes, and none for a file stat with no file.
 func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
@@ -132,8 +128,6 @@ func readKind(f *v1.HostFileStat) domain.SourceKind {
 	}
 }
 
-// writeFileStat returns the stat as the host reads it, and nil for the zero stat, which is a write
-// made without a baseline. time.Time{}.UnixNano is no zero, so the zero stat is sent as no stat.
 func writeFileStat(f domain.FileStat) *v1.HostFileStat {
 	if f.IsZero() {
 		return nil

@@ -50,9 +50,6 @@ type plugins struct {
 	host Host
 }
 
-// listTools lists the tools offered on the server by the plugins that declare the tools capability,
-// in the order of the plugin ids, leaving out the plugin of the id given. A tool whose effect needs a
-// permission its plugin lacks is left out, and of two tools with one name the first is kept.
 func (p plugins) listTools(ctx context.Context, server Server, except string) []tool {
 	var found []tool
 	names := map[string]bool{}
@@ -77,8 +74,6 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 	return found
 }
 
-// listPluginTools lists the tools of one plugin, keeping a reference to it during
-// the call.
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
@@ -93,7 +88,6 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing 
 	return res.Msg, nil
 }
 
-// callTool runs the tool on the plugin that listed it, in the scope of the run.
 func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (response *v1.CallToolResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
@@ -110,9 +104,6 @@ func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope
 	return res.Msg, nil
 }
 
-// isAvailable reports whether the tool is offered on the server. A tool that
-// names no server is offered on the full server only, and a tool with no effect
-// is offered nowhere.
 func isAvailable(spec *v1.PluginTool, server Server) bool {
 	if spec.GetName() == "" || spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED {
 		return false
@@ -123,8 +114,6 @@ func isAvailable(spec *v1.PluginTool, server Server) bool {
 	return slices.Contains(spec.GetServers(), v1.ToolServer(server))
 }
 
-// hasPermission reports whether the plugin holds the permission that a tool
-// with the given effect requires.
 func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	if effect == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
 		return slices.Contains(permissions, pluginport.PermissionVaultWrite)
@@ -133,8 +122,6 @@ func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 		slices.Contains(permissions, pluginport.PermissionVaultWrite)
 }
 
-// getPermissions returns the permissions of the plugin with the id, and none for a plugin the host does
-// not know.
 func (p plugins) getPermissions(pluginID string) []string {
 	for _, info := range p.host.GetPluginInfos() {
 		if info.ID == pluginID {
@@ -144,8 +131,6 @@ func (p plugins) getPermissions(pluginID string) []string {
 	return nil
 }
 
-// listToolsFor returns the tools offered on the server for which the caller has the effect permission
-// and all required permissions. The caller's own tools are listed too.
 func (p plugins) listToolsFor(ctx context.Context, server Server, callerID string) []tool {
 	permissions := p.getPermissions(callerID)
 	all := p.listTools(ctx, server, "")

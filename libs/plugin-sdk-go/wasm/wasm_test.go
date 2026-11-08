@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 )
 
-// newModule returns a WebAssembly module that exports one empty function.
 func newModule() []byte {
 	return []byte{
 		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
@@ -21,8 +20,6 @@ func newModule() []byte {
 	}
 }
 
-// compile compiles the module on a new runtime that uses compilation, then closes the runtime and
-// the cache.
 func compile(t *testing.T, compilation wazero.CompilationCache) {
 	t.Helper()
 	if compilation == nil {

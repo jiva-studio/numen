@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// coarseRows is how many chunks of one source the coarse pass can reach, and
-// how many of its small chunks there are to reach.
 func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached, small int) {
 	t.Helper()
 
@@ -27,10 +25,6 @@ func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached,
 	return reached, small
 }
 
-// embedFromKeptVectors writes every chunk of a vault that lacks a vector from the
-// vectors the recipe already stores, as the embedding pass does, and returns how
-// many it wrote. A chunk whose text has no stored vector would cost a model call,
-// and fails the test.
 func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()

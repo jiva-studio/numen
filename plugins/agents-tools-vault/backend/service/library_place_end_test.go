@@ -19,8 +19,6 @@ const (
 	riverPage      = "The kingfisher dives for minnows. "
 )
 
-// newRiverLibrary is an invented library of a recording with one range that ends and one that only
-// starts, and a PDF of one page; the search finds a passage of each kind.
 func newRiverLibrary(t *testing.T) *tools.Registry {
 	t.Helper()
 	vault := hosttest.New(testVault)
@@ -52,7 +50,6 @@ func newRiverLibrary(t *testing.T) *tools.Registry {
 	return registry
 }
 
-// getPlaces calls the tool and returns the place object of each element of the list under key.
 func getPlaces(t *testing.T, registry *tools.Registry, name, arguments, key string) []map[string]any {
 	t.Helper()
 	structured := callTool(t, registry, testVault, name, arguments)

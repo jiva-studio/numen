@@ -56,13 +56,10 @@ export function createDeclaredPaletteCommands(
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
   readonly run?: typeof runDeclaredCommand
-  /** Whether the plugin host lists the command of the full id: its frontend registered a handler, or is still loading. */
   readonly isListed?: (id: string) => boolean
-  /** Whether the plugin declares a backend; a command is run in a backend only where it does. */
   readonly hasBackend?: (pluginId: string) => boolean
 }
 
-/** The declaration the plugin host receives for a declared command. */
 const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => ({
   pluginId: command.pluginId,
   id: command.id,

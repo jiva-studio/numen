@@ -13,7 +13,6 @@ export interface DeclaredStatusView {
 }
 
 export interface StatusViewRegistry {
-  /** The registered views, in order of registration; reactive. */
   readonly views: Readonly<ShallowRef<readonly DeclaredStatusView[]>>
   registerStatusView(pluginId: string, registration: StatusViewRegistration): Disposable
   /** Removes every view the plugin registered. */

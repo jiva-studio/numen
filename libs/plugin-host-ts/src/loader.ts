@@ -140,14 +140,12 @@ interface StartLoaderDeps {
   readonly pluginIds: readonly string[]
   readonly listen: (id: string) => void
   readonly isEnabled: (id: string) => boolean
-  /** Reads the module of a plugin from the window. */
   readonly load: (id: string) => Promise<unknown>
 }
 
 /** What reading a plugin gave: its module, or the failure, which the activation reads again and reports. */
 type Loaded = { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
 
-/** A plugin that has no frontend has no module, and nothing to activate. */
 const startPlugin = async (
   activate: (id: string, module?: unknown) => Promise<boolean>,
   id: string,
@@ -157,7 +155,6 @@ const startPlugin = async (
   await activate(id, one.isRead ? one.module : undefined)
 }
 
-/** What the read of a plugin gave within PLUGIN_WAIT_MS, or 'late' where it gave nothing yet. */
 async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<'late'>((resolve) => {
@@ -172,12 +169,6 @@ async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
   /* Stryker restore BlockStatement,CallExpression */
 }
 
-/**
- * Reads every enabled plugin at once and activates them in the order of the list, so each plugin
- * registers what it provides in the same order on every start. A plugin that is not read within
- * PLUGIN_WAIT_MS is passed over and activated when it is read; it holds back no other plugin. The
- * promise settles when every plugin has been activated or has failed.
- */
 async function startLoader(
   deps: StartLoaderDeps,
   activate: (id: string, module?: unknown) => Promise<boolean>,

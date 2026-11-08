@@ -95,7 +95,6 @@ func TestTheClientKeepsTheDetailOfARemovalEntryInItsError(t *testing.T) {
 	}
 }
 
-// getVaultsErrors is the sentinel each error code of a change of the list of vaults gives.
 func getVaultsErrors() map[v1.VaultsErrorCode]error {
 	return map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
@@ -109,7 +108,6 @@ func getVaultsErrors() map[v1.VaultsErrorCode]error {
 	}
 }
 
-// changeVaults calls each change of the list of vaults on the client and returns its error by call.
 func changeVaults(t *testing.T, client *host.Client) map[string]error {
 	t.Helper()
 	ctx := t.Context()

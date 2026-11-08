@@ -21,10 +21,6 @@ func newLimits() *limits {
 	return &limits{gates: make(map[string]*gate)}
 }
 
-// acquire waits for a place under the agent's limit and returns the call that
-// gives it back. A limit changed since the last question applies to the
-// questions that come after; those already answering keep their place under
-// the old one. A cancelled context ends the wait.
 func (l *limits) acquire(ctx context.Context, agent string, size int) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err

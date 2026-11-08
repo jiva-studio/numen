@@ -5,7 +5,6 @@ import { getParts, type PalettePart } from './parts'
 /** One item as it is drawn: the number it has in the list, and its lines split. */
 export interface PlacedItem {
   readonly item: PaletteItem
-  /** Its number in the whole list, which is what the keyboard counts in. */
   readonly at: number
   readonly name: readonly PalettePart[]
   readonly detail: readonly PalettePart[]

@@ -28,11 +28,6 @@ const getTab = (id: string): Tab | undefined => {
   return title === undefined ? undefined : { id, title }
 }
 
-/**
- * A workspace drawn in a frame at (100, 50), 1000 by 600, in a window 1100 by 650. The right and
- * bottom sides of the frame coincide with the viewport. `main` is the left half and holds one
- * tab; `aside` is the right half and holds two. A strip is the top 30 of a pane.
- */
 function createDrag(
   options: {
     getTab?: typeof getTab

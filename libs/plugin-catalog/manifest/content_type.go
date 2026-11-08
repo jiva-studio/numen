@@ -14,7 +14,6 @@ var ErrInvalidReader = errors.New("invalid reader")
 
 // Reader is a tab of the plugin that opens files of the types it names.
 type Reader struct {
-	// ID is the id the frontend registers the reader under.
 	ID           string
 	ContentTypes []domain.ContentType
 	Rank         domain.HandlerRank
@@ -50,8 +49,6 @@ func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) b
 	return false
 }
 
-// listReaderIssues checks that each reader has an id of its own, a rank and types, and that the
-// plugin has a frontend to show it.
 func (m Manifest) listReaderIssues() []error {
 	var issues []error
 	if len(m.Contributes.Readers) > 0 && !m.HasFrontend() {
@@ -77,8 +74,6 @@ func (m Manifest) listReaderIssues() []error {
 	return issues
 }
 
-// listContentTypesIssues checks that each type or mask is lowercase, and
-// returns an issue of the given kind for each one that is not.
 func listContentTypesIssues(kind error, types []domain.ContentType) []error {
 	var issues []error
 	for _, one := range types {

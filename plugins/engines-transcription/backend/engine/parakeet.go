@@ -54,21 +54,16 @@ const (
 	layers  = 2
 )
 
-// getDecoderInputNames returns the names the predictor is run over, as the C strings the runtime
-// reads them from.
 func getDecoderInputNames() [][]byte {
 	return ortraw.MakeCNames(inputTargets, inputTargetN, inputState, inputCell)
 }
 
-// getDecoderOutputs returns the names of the outputs of the predictor, as C strings.
 func getDecoderOutputs() [][]byte {
 	return ortraw.MakeCNames(outputFrames, outputState, outputCell)
 }
 
-// getJoinerInputNames returns the names the joiner is run over, as C strings.
 func getJoinerInputNames() [][]byte { return ortraw.MakeCNames(inputEncoded, inputDecoded) }
 
-// getJoinerOutputs returns the names of the outputs of the joiner, as C strings.
 func getJoinerOutputs() [][]byte { return ortraw.MakeCNames(outputFrames) }
 
 // blankPiece is the token the model emits when a frame carries no token. It is
@@ -85,19 +80,13 @@ type Transcriber struct {
 	pieces tokens.Pieces
 	blank  int
 
-	// segmenter is the model that finds the stretches, and cutting is how it
-	// cuts them. A recording opened by this transcriber is cut by them.
 	segmenter *ort.Session
 	cutter    *segmenter.Segmenter
 
-	// runner calls the runtime directly where it offers the entry points.
 	runner *ortraw.Runner
 
-	// workers is how many goroutines share the signal processing of a stretch.
 	workers int
 
-	// One set of sessions, one stretch at a time. The library is safe to call
-	// from several goroutines, and a stretch is heard start to finish.
 	mu sync.Mutex
 }
 
@@ -152,7 +141,6 @@ func Open(ctx context.Context, runtime Runtime, cfg Config) (*Transcriber, error
 	return out, nil
 }
 
-// openSession compiles the model at path with the given intra-op thread count.
 func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int) (*ort.Session, error) {
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider:     onnx.GetSessionProvider(),
@@ -219,15 +207,10 @@ func (t *Transcriber) Transcribe(ctx context.Context, audio Audio) (string, erro
 	return t.pieces.GetText(response), nil
 }
 
-// decode is what the encoder's frames say, read one at a time.
 func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]int, error) {
 	return t.decodeWith(ctx, out, true)
 }
 
-// decodeWith is decode with the predictor and the joiner run through the raw
-// runtime when useRaw is set and the runtime supports it, and through the
-// library in every other case. The first position of each graph always runs through the
-// library, which validates the output size of the graph.
 func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
 	frames, err := readFrames(out)
 	if err != nil {
@@ -290,7 +273,6 @@ type encodedFrames struct {
 	width  int
 }
 
-// readFrames reads the frames of the encoder's answer and how many carry the stretch.
 func readFrames(out map[string]*ort.Value) (encodedFrames, error) {
 	frames, ok := out[outputFrames]
 	if !ok {
@@ -316,8 +298,6 @@ func readFrames(out map[string]*ort.Value) (encodedFrames, error) {
 	return encodedFrames{data: data, stride: int(shape[2]), width: width}, nil
 }
 
-// readFrameCount is the count of frames the encoder reports, where it reports
-// one that makes sense.
 func readFrameCount(counted *ort.Value) (int, bool) {
 	lengths, err := ort.GetTensorData[int64](counted)
 	if err != nil || len(lengths) == 0 || lengths[0] < 0 {
@@ -326,8 +306,6 @@ func readFrameCount(counted *ort.Value) (int, bool) {
 	return int(lengths[0]), true
 }
 
-// copyFrame writes the frame at a position into dst, one value from each
-// channel.
 func (f encodedFrames) copyFrame(pos int, dst []float32) {
 	for c := range dst {
 		dst[c] = f.data[c*f.stride+pos]
@@ -347,7 +325,6 @@ type decodeBuffers struct {
 	targetTensor, countTensor, stateTensor, cellTensor, frameTensor, predictionTensor *ort.Value
 }
 
-// newDecodeBuffers makes the buffers and the tensors over them.
 func newDecodeBuffers() (*decodeBuffers, error) {
 	b := &decodeBuffers{
 		target:     []int32{0},
@@ -385,7 +362,6 @@ func newDecodeBuffers() (*decodeBuffers, error) {
 	return b, nil
 }
 
-// destroy releases the tensors that were made.
 func (b *decodeBuffers) destroy() {
 	for _, tensor := range []*ort.Value{
 		b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor, b.frameTensor, b.predictionTensor,
@@ -396,7 +372,6 @@ func (b *decodeBuffers) destroy() {
 	}
 }
 
-// keepAlive holds the buffers until the runs over them are done.
 func (b *decodeBuffers) keepAlive() {
 	runtime.KeepAlive(b.target)
 	runtime.KeepAlive(b.count)
@@ -406,7 +381,6 @@ func (b *decodeBuffers) keepAlive() {
 	runtime.KeepAlive(b.frame)
 }
 
-// getDecoderInputs are the tensors the predictor is run over, by name.
 func (b *decodeBuffers) getDecoderInputs() map[string]*ort.Value {
 	return map[string]*ort.Value{
 		inputTargets: b.targetTensor,
@@ -416,7 +390,6 @@ func (b *decodeBuffers) getDecoderInputs() map[string]*ort.Value {
 	}
 }
 
-// getJoinerInputs are the tensors the joiner is run over, by name.
 func (b *decodeBuffers) getJoinerInputs() map[string]*ort.Value {
 	return map[string]*ort.Value{
 		inputEncoded: b.frameTensor,
@@ -424,8 +397,6 @@ func (b *decodeBuffers) getJoinerInputs() map[string]*ort.Value {
 	}
 }
 
-// makeRawRuns are the predictor and the joiner run through the raw runtime, or
-// nothing for each where useRaw does not hold or the runtime does not offer it.
 func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, joinerRun *ortraw.Graph) {
 	calls, ok := t.runner.GetCalls()
 	if !ok || !useRaw {
@@ -438,8 +409,6 @@ func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, jo
 	return decoderRun, joinerRun
 }
 
-// predict runs the predictor for one position: it takes the previous token and
-// the recurrent state and cell, and returns the prediction.
 func (t *Transcriber) predict(inputs map[string]*ort.Value, response, state, cell []float32) ([]float32, error) {
 	out, err := t.decoder.Run(inputs)
 	if err != nil {
@@ -466,8 +435,6 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, response, state, cel
 	return response, nil
 }
 
-// copyPrediction copies the output of the predictor with the given name into
-// dst, which it must fill.
 func copyPrediction(out map[string]*ort.Value, name string, dst []float32) error {
 	value, ok := out[name]
 	if !ok {
@@ -484,8 +451,6 @@ func copyPrediction(out map[string]*ort.Value, name string, dst []float32) error
 	return nil
 }
 
-// predictRaw is predict run on the outputs the run owns. The three are copied
-// out before the next run writes over them.
 func (t *Transcriber) predictRaw(run *ortraw.Graph, prediction, state, cell []float32) ([]float32, error) {
 	if err := run.Run(); err != nil {
 		return nil, err
@@ -498,8 +463,6 @@ func (t *Transcriber) predictRaw(run *ortraw.Graph, prediction, state, cell []fl
 	return prediction, nil
 }
 
-// computeJointRaw is joint run on the output the run owns, copied into scoresDst, which
-// holds as many scores as the first position answered.
 func (t *Transcriber) computeJointRaw(run *ortraw.Graph, frameDst, frame, scoresDst []float32) ([]float32, error) {
 	copy(frameDst, frame)
 	if err := run.Run(); err != nil {
@@ -511,9 +474,6 @@ func (t *Transcriber) computeJointRaw(run *ortraw.Graph, frameDst, frame, scores
 	return scoresDst, nil
 }
 
-// computeJoint is what one frame of the encoder and one position of the predictor say
-// together: a score for every token, and after them a score for every number of
-// frames to step on by.
 func (t *Transcriber) computeJoint(inputs map[string]*ort.Value, frameDst, frame, scoresDst []float32) ([]float32, error) {
 	copy(frameDst, frame)
 	out, err := t.joiner.Run(inputs)

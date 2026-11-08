@@ -16,11 +16,8 @@ type Endpoint struct {
 	Token string
 }
 
-// noRelease is the release function of a run that holds nothing.
 func noRelease() error { return nil }
 
-// setupAntigravityHome creates a temporary HOME folder with symlinked configs. Its MCP servers are the
-// vault's tools and those the user configured, or none at all where there are no tools.
 func setupAntigravityHome(tools *Endpoint) (string, func() error, error) {
 	tempHome, cleanup, err := agentrun.CreateTempDir("numen-antigravity-*")
 	if err != nil {
@@ -86,7 +83,6 @@ func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
 	return map[string]any{"mcpServers": servers}
 }
 
-// readMCPServers returns the servers of the config file, none when it cannot be read.
 func readMCPServers(path string) map[string]any {
 	raw, err := agentrun.ReadFile(path)
 	if err != nil {

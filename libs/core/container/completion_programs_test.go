@@ -13,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
 
-// serveCompletions gives the host the settings written and returns what answers the questions of
-// its plugins.
 func serveCompletions(t *testing.T, host *plugin.Host, output string) (completionport.Completer, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")

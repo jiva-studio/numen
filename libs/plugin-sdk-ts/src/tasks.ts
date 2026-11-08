@@ -7,11 +7,9 @@ export interface PluginTaskStatus {
   readonly pluginId: string
   readonly pluginName: string
   readonly title: string
-  // The file the task works on; empty for a task on no file.
   readonly about: string
   readonly done: number
   readonly total: number
-  // Why the task stopped; empty while it runs.
   readonly error: string
 }
 

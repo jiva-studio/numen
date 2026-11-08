@@ -7,9 +7,7 @@ import { computed } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
 
 const props = defineProps<{
-  /** Where the pointer is, in pixels from the top left of the window. */
   at: Position
-  /** What is being dragged, in the caller's own words. */
   label: string
 }>()
 

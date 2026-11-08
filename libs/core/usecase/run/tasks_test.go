@@ -184,7 +184,6 @@ func next(t *testing.T, watching <-chan []Task) []Task {
 	return nil
 }
 
-// quiet fails when a listener has received anything.
 func quiet(t *testing.T, watching <-chan []Task, why string) {
 	t.Helper()
 	select {

@@ -9,7 +9,6 @@ interface Drawn {
   readonly name: string
 }
 
-/** What is drawn for a document with the caret at `caret`: a class name, or `hidden` for a replaced range. */
 const getDrawn = (doc: string, caret: number): Drawn[] => {
   const state = createState(doc, caret)
   const found: Drawn[] = []

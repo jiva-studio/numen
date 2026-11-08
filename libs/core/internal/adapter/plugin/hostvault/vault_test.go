@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// diskVault is the vault of a folder on this machine, worked as the host works it for a plugin.
 func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, files)

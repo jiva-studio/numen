@@ -10,7 +10,6 @@ import { WORDS } from '../words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   calibration: FloorCalibration
-  /** The threshold in force. */
   floor: number
 }>()
 

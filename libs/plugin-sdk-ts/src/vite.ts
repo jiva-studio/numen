@@ -12,7 +12,6 @@ import { createStoryUtilitiesPlugin, createUtilitiesPlugin } from './viteStyles.
 
 export { createStoryUtilitiesPlugin }
 
-/** Writes an empty `dist/styles.css` when the bundle carries no stylesheet. */
 function createStylesPlugin(root: string): Plugin {
   return {
     name: 'ensure-styles',
@@ -27,9 +26,7 @@ function createStylesPlugin(root: string): Plugin {
 }
 
 export interface PluginBuildOptions {
-  /** The plugin's directory, which holds `frontend/index.ts` and receives `dist/`. */
   readonly root: string
-  /** The plugins of the build ahead of the stylesheet one, such as `vue()`. */
   readonly plugins: readonly PluginOption[]
 }
 

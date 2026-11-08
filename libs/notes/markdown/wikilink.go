@@ -8,10 +8,8 @@ import (
 
 // Wikilink is one `[[…]]` at its current position in a line.
 type Wikilink struct {
-	// At is the byte the brackets open at, and To the byte after they close.
 	At, To int
 	Inside string
-	// Target is where it points.
 	Target domain.Address
 }
 
@@ -81,9 +79,6 @@ func WikilinksInText(text string) []Wikilink {
 	return out
 }
 
-// getCodeSpans is where each inline code span of one line begins and the byte
-// after it ends. A run of backticks opens a span that the next run of the same
-// length closes; a run that nothing closes is text.
 func getCodeSpans(line string) [][2]int {
 	var out [][2]int
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(line) strings.IndexByte on the empty slice returns -1 and breaks"
@@ -120,7 +115,6 @@ func getCodeSpans(line string) [][2]int {
 	return out
 }
 
-// getBacktickRun is how many backticks stand in a row from start.
 func getBacktickRun(line string, start int) int {
 	end := start
 	for end < len(line) && line[end] == '`' {
@@ -129,7 +123,6 @@ func getBacktickRun(line string, start int) int {
 	return end - start
 }
 
-// findCodeSpan is the code span holding the byte at pos, if one does.
 func findCodeSpan(spans [][2]int, pos int) ([2]int, bool) {
 	for _, span := range spans {
 		if pos >= span[0] && pos < span[1] {
@@ -139,7 +132,6 @@ func findCodeSpan(spans [][2]int, pos int) ([2]int, bool) {
 	return [2]int{}, false
 }
 
-// hasCodeSpanIn reports whether a code span begins between from and to.
 func hasCodeSpanIn(spans [][2]int, from, to int) bool {
 	for _, span := range spans {
 		if span[0] > from && span[0] < to {

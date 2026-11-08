@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// getRivers is a vault where two notes link to Danube by its name.
 func getRivers() map[string]string {
 	return map[string]string{
 		"Danube.md":    "# Danube\n\nA river of central Europe.\n",
@@ -24,7 +23,6 @@ func getRivers() map[string]string {
 	}
 }
 
-// openScannedPluginVault opens the plugin vault over the notes and scans every one of them into the index.
 func openScannedPluginVault(t *testing.T, notes map[string]string, hooks container.PluginVaultHooks) (domain.Vault, pluginport.PluginVault) {
 	t.Helper()
 	v, current, assembly := openPluginVault(t, notes)

@@ -9,29 +9,24 @@ import { createNoteWithBody } from '../../support/layout.js'
 import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 
-/** The status bar item that counts the vectors of the index. */
 const getItem = (page: Page): Locator => page.locator('.index-stats__label')
 
-/** The vectors the item shows. */
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''
   return Number(text.replace('⬡', '').replace(/\D/g, ''))
 }
 
-/** Whether the index is embedded: the mark of the item does not pulse. */
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
   const isIndexing = await item.locator('.index-stats__icon--indexing').count()
   return /\d/.test(text) && isIndexing === 0
 }
 
-/** Waits until every chunk carries a vector, and returns the number of vectors then. */
 const readSettledVectors = async (item: Locator): Promise<number> => {
   await expect.poll(() => isSettled(item), { timeout: 45_000 }).toBe(true)
   return readVectors(item)
 }
 
-/** Paragraphs that differ from each other, so each of them is a chunk of its own. */
 const writeParagraphs = (topic: string, count: number, first = 1): string =>
   Array.from(
     { length: count },

@@ -16,7 +16,6 @@ type linkServer struct {
 	links *link.Links
 }
 
-// mountAPI mounts the importer API methods on s and returns the first failure to mount one.
 func mountAPI(s *server.Server, links *link.Links) error {
 	service := linkServer{links: links}
 	a := s.NewAPI(api.Service)
@@ -30,8 +29,6 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	return a.Err()
 }
 
-// toAPIError returns the API failure for a link error: not_found for a path that is no link,
-// failed_precondition for a missing vault. Any other error is returned as it is.
 func toAPIError(err error) error {
 	switch {
 	// gomutants:disable-next-line BRANCH_CASE reason="nil error falls through to return err which is nil"
@@ -45,7 +42,6 @@ func toAPIError(err error) error {
 	return err
 }
 
-// readLink returns the link at the path.
 func (s linkServer) readLink(ctx context.Context, path string) (link.Link, error) {
 	found, err := s.links.Read(ctx, path)
 	if err != nil {
@@ -114,8 +110,6 @@ func (s linkServer) deleteCopy(ctx context.Context, req api.DeleteCopyRequest) (
 	return api.DeleteCopyResponse{}, nil
 }
 
-// createLinks creates a link note of each web address in the folder and starts fetching what is
-// published at each. A text that is no web address is skipped.
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {
 	out := api.CreateLinksResponse{Paths: []string{}}
 	for _, raw := range req.URLs {

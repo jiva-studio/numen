@@ -7,7 +7,6 @@ import type { Deck as DeckMessage } from '../../api/types.js'
 import type { VaultCard } from '../types'
 import { deserializeDeck, serializeCardToWire } from './serialize'
 
-/** A card as the window carries it, standing under the section given. */
 const createCard = (sectionIndex: number | null): VaultCard => ({
   cardId: 'a1',
   sectionIndex,

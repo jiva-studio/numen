@@ -24,27 +24,14 @@ const LinkType = "preset"
 
 // PresetContents is one preset as returned by a read.
 type PresetContents struct {
-	// Path is the note the settings were read from, and is empty for a deck
-	// naming no preset.
-	Path    string
-	Outcome note.ReadOutcome
-	// Type is the note type of the note at Path, so a caller given an ordinary
-	// note can detect it.
-	Type domain.NoteType
-	// Settings are how the decks pointing here are scheduled. They stand at the
-	// defaults for every outcome but Ok.
-	Settings review.Preset
-	// Stops is why the preset schedules nothing, and empty where it schedules
-	// something. It is a fact about the preset and holds on every day.
-	Stops review.StopReason
-	// StopsToday is why it schedules nothing on the day this was read in. A
-	// preset that schedules is stopped today by a day of the week carrying none
-	// of the load.
+	Path       string
+	Outcome    note.ReadOutcome
+	Type       domain.NoteType
+	Settings   review.Preset
+	Stops      review.StopReason
 	StopsToday review.StopReason
-	// Problems are what was wrong in the file and was not guessed at. They are
-	// shown against the preset, and the editor is where they are settled.
-	Problems []string
-	FileStat domain.FileStat
+	Problems   []string
+	FileStat   domain.FileStat
 }
 
 // Presets is how each deck of a vault is scheduled.
@@ -53,24 +40,14 @@ type PresetContents struct {
 // `type: preset`. A deck naming none is scheduled by the defaults, which is
 // what a vault holding no preset at all gets.
 type Presets struct {
-	readers ports.VaultReaders
-	writers ports.VaultWriters
-	// links answers where a deck's link to its preset lands.
-	links ports.LinkQueries
-	// notes identifies which notes of the vault are presets, gives each its name,
-	// and resolves the name a link written to a preset targets. A build without it
-	// lists no preset and points no deck at one.
-	notes ports.NoteQueries
-	// Problems holds the parse problems of each file of the vault. A build without
-	// it reports nothing against a deck whose link the parser could not read.
+	readers  ports.VaultReaders
+	writers  ports.VaultWriters
+	links    ports.LinkQueries
+	notes    ports.NoteQueries
 	Problems ports.ProblemQueries
-	// index brings what a write touched up to date. Every write here calls it,
-	// and a preset short of it cannot point a deck at anything.
-	index note.IndexUpdater
-	// day is where one day of review gives way to the next, and now what time
-	// it is. They answer whether a preset schedules anything today.
-	day review.Day
-	now ports.Clock
+	index    note.IndexUpdater
+	day      review.Day
+	now      ports.Clock
 }
 
 // NewPresets creates the use case through which a vault's presets are read and
@@ -98,8 +75,6 @@ func (u Presets) WithDay(day review.Day) Presets {
 	return u
 }
 
-// getStopReasons is why a preset schedules nothing, and why it schedules
-// nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
 	pos := u.now.Now()
 	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
@@ -164,11 +139,7 @@ func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (P
 type PresetReads struct {
 	Presets
 	cachedPresets map[string]PresetContents
-	// scheduling is the preset that schedules each queried deck, so a deck is
-	// resolved once per run.
-	scheduling map[string]PresetContents
-	// parseProblems is what parsing turned up against each file, read once for the run
-	// and only where a deck names no preset.
+	scheduling    map[string]PresetContents
 	parseProblems map[string][]string
 }
 
@@ -196,7 +167,6 @@ func (r *PresetReads) GetForDeck(ctx context.Context, v domain.Vault, deck strin
 	return out, nil
 }
 
-// getSchedulingPreset works out which preset schedules the deck at path.
 func (r *PresetReads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
 ) (PresetContents, error) {
@@ -233,7 +203,6 @@ func (r *PresetReads) getSchedulingPreset(
 	return out, nil
 }
 
-// readFirstLink reads the preset the link names, and returns the name of the link that schedules the deck.
 func (r *PresetReads) readFirstLink(ctx context.Context, v domain.Vault, first domain.ResolvedLink) (PresetContents, string, error) {
 	delta := first.Target.GetWritten()
 	out := CreateDefaultPreset()
@@ -254,10 +223,6 @@ func (r *PresetReads) readFirstLink(ctx context.Context, v domain.Vault, first d
 	return out, delta, nil
 }
 
-// readRolelessProblems returns what is shown against a deck that names no preset: every entry of
-// its `links:` block the parser could not read for want of a role.
-//
-// Such an entry is not a link, so a preset written in one schedules nothing.
 func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
 	if r.Problems == nil {
 		return nil, nil
@@ -282,7 +247,6 @@ func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, 
 	return out, nil
 }
 
-// read is the preset at path, opened once however many decks name it.
 func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	if target, ok := r.cachedPresets[path]; ok {
 		return target, nil
@@ -307,8 +271,6 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 	return out, nil
 }
 
-// readPreset reads the note at path as a preset, before determining what it
-// schedules.
 func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out := PresetContents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
@@ -354,7 +316,6 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 	return parsePresetBytes(out, ref, raw)
 }
 
-// parsePresetBytes reads the settings from the bytes of the note at the path of out.
 func parsePresetBytes(out PresetContents, ref domain.FileStat, raw []byte) (PresetContents, error) {
 	if !utf8.Valid(raw) {
 		out.Outcome = note.NotText
@@ -429,7 +390,6 @@ func (u Presets) Point(
 	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef)
 }
 
-// getPresetAddress is the address of the preset a deck is to point at, empty when it is to point at none.
 func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
 	var to domain.Address
 	if preset == "" {
@@ -482,8 +442,6 @@ func (u Presets) Save(
 	return pos, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
-// save is the read, the change and the write, under this vault's write lock
-// from before the read until after the file is replaced.
 func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
@@ -540,15 +498,6 @@ func (u Presets) save(
 	return writer.Write(ctx, path, doc.Bytes(), expectedFp)
 }
 
-// writeSettings writes the settings into the frontmatter, one key at a time. A
-// day the goal does not name and a week of days that all carry the whole load
-// are removed from the note.
-//
-// was is the preset the note was read as. A key is written only where the
-// setting differs from it, so a key the read could not parse keeps the user's
-// text and a save that changes one control leaves the rest of the file byte for
-// byte. A key the read could not parse and the user has since changed differs
-// from was and is written.
 func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 	// gomutants:disable-next-line BRANCH_IF reason="Setting by_date on a parsed preset document does not fail."
 	if err := writeByDate(doc, p, was); err != nil {
@@ -589,8 +538,6 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 	return doc.SetMapping(loadKey, readShares(entries, p.Load, was.Load))
 }
 
-// writeByDate writes the day the goal aims at when it differs from the one the
-// note was read with, and empties the key when the preset names no day.
 func writeByDate(doc *markdown.Document, p, was review.Preset) error {
 	if p.By.Equal(was.By) {
 		return nil
@@ -601,14 +548,6 @@ func writeByDate(doc *markdown.Document, p, was review.Preset) error {
 	return doc.SetDay(byDateKey, p.By)
 }
 
-// readShares is the `load` block written by a save: a day the read parsed
-// carries the share from the settings or is removed, and every other entry keeps
-// its position and order. A day the block does not name is appended after the
-// named ones.
-//
-// A day named more than once, under spellings that differ only in formatting, is
-// one day to the read. The entry the read used carries the share and the others
-// are removed.
 func readShares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
 	out := make([]markdown.Entry, 0, len(entries)+len(load))
 	dayEntries := getDayEntries(entries, read)
@@ -635,9 +574,6 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 	return out
 }
 
-// getDayEntries returns the entry a read takes for each day of the week. Keys reach the
-// reader in the order their names sort in, so the last of the names standing
-// for one day is the one whose share it holds.
 func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
 	for _, name := range entries {
@@ -652,7 +588,6 @@ func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday
 	return out
 }
 
-// getWeek returns the days of the week in the order a preset writes them.
 func getWeek() []time.Weekday {
 	return []time.Weekday{
 		time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
@@ -660,8 +595,6 @@ func getWeek() []time.Weekday {
 	}
 }
 
-// checkBounds is what in the settings may not be written, and is nil when all
-// of them may.
 func checkBounds(p review.Preset) error {
 	if !review.IsKnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
@@ -698,8 +631,6 @@ func checkBounds(p review.Preset) error {
 	return checkLoad(p.Load)
 }
 
-// checkLoad is what in the week's load may not be written, and is nil when all
-// of it may.
 func checkLoad(load map[time.Weekday]int) error {
 	for _, weekday := range getWeek() {
 		share, named := load[weekday]
@@ -717,8 +648,6 @@ func checkLoad(load map[time.Weekday]int) error {
 	return nil
 }
 
-// mapMissingNote returns note.ErrNoNote where the vault holds nothing at the
-// path, and the original error in every other case.
 func mapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return note.ErrNoNote

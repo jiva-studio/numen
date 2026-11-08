@@ -10,21 +10,15 @@ import type { TextRange } from '@numen/ui'
 
 /** The position of one run of text in the laid-out document. */
 export interface Mark {
-  /** The byte offset the run begins at, read off `data-offset`. */
   readonly at: number
-  /** Position along the columns, in CSS pixels from the first column. */
   readonly x: number
 }
 
 /** A document set in columns, measured. */
 export interface Flow {
-  /** Total rendered columns width, in CSS pixels. */
   readonly contentWidth: number
-  /** The reading area one spread fills, in CSS pixels. */
   readonly width: number
-  /** Spacing between two columns, in CSS pixels. */
   readonly gap: number
-  /** How many columns stand in one spread. */
   readonly columns: number
 }
 

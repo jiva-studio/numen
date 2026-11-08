@@ -78,9 +78,6 @@ func TestSharedFileRule_ReportsViolations(t *testing.T) {
 	}
 }
 
-// describeOwnership lists every way a schema file owns a subject: the services
-// it declares, and the files it imports. A file with none can be imported by
-// every other file.
 func describeOwnership(file protoreflect.FileDescriptor) []string {
 	var out []string
 	for i := range file.Services().Len() {

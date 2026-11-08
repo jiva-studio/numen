@@ -43,7 +43,6 @@ const getNodeHeadings = (
   deps = DEPS,
 ) => baseGetNodeHeadings(node, items, { options, deps })
 
-/** Headings all at one level, named by their number. */
 const headings = (count: number, level = 1): PlexHeading[] =>
   Array.from({ length: count }, (_, index) => ({
     id: `${index}`,

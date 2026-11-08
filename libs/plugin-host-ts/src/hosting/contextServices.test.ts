@@ -340,7 +340,6 @@ describe('a command a plugin runs over the vault', () => {
   })
 })
 
-/** The agent a context was handed, which every test of it was given. */
 const getAgent = (context: PluginContext): AgentHost => {
   if (!context.agent) throw new Error('the context was handed no agent')
   return context.agent

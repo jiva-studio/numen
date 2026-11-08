@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// getPathsUnder is the paths one vault holds at a path and beneath it.
 func getPathsUnder(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 

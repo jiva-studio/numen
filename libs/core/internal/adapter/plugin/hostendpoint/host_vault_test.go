@@ -36,12 +36,10 @@ type memoryVault struct {
 	locks       int
 	changes     chan []string
 	droppedChan chan struct{}
-	// others are the vaults beside the shown one, by identity.
-	others map[domain.VaultID]*memoryVault
-	state  pluginport.PluginIndexState
-	moves  chan struct{}
-	// storeRoot is the folder the plugins' folders of the store are kept under.
-	storeRoot string
+	others      map[domain.VaultID]*memoryVault
+	state       pluginport.PluginIndexState
+	moves       chan struct{}
+	storeRoot   string
 
 	connection    domain.Connection
 	connectionErr error
@@ -329,7 +327,6 @@ func (m *memoryVault) Watch(context.Context) (<-chan []string, <-chan struct{}, 
 	return m.changes, m.droppedChan, nil
 }
 
-// newVaultClient serves the host's vault endpoint over the callers and returns a client for the plugin the token names.
 func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers}

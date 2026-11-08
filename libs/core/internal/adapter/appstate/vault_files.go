@@ -37,9 +37,6 @@ func (f *VaultFiles) Write(_ context.Context, vaultID domain.VaultID, content []
 	return replace(pos, content)
 }
 
-// getPath is the file of one vault.
-//
-// The identity is written into the name, and an identity carrying a separator
 func (f *VaultFiles) getPath(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {

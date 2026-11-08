@@ -4,7 +4,6 @@ import { ref } from 'vue'
 import { useNotesPanel } from './notes'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 
-/** One note as the window supplies it. */
 const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
@@ -17,7 +16,6 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   ...more,
 })
 
-/** The panel, with the session around it standing in for the window. */
 const panel = (more: { deck?: string; failure?: boolean } = {}) => {
   const request: { vault: string; deck: string }[] = []
   const open = ref(false)

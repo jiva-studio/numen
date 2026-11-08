@@ -6,7 +6,6 @@ import { LONG_PRESS_DELAY, LONG_PRESS_TOLERANCE, useLongPress } from './longPres
 const press = (overrides: Partial<PointerEvent> = {}) =>
   ({ pointerType: 'touch', clientX: 100, clientY: 100, ...overrides }) as PointerEvent
 
-/** A hold watched inside a scope, so what it disposes of can be tested too. */
 const createHolding = (ready = () => true) => {
   const reached = vi.fn()
   const scope = effectScope()

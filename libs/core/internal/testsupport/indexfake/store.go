@@ -23,19 +23,14 @@ import (
 // Store is the index, in memory, answering every question the way the index
 // answers it.
 type Store struct {
-	mu      sync.RWMutex
-	Sources map[domain.VaultID]map[string]domain.Source // vault, then path
-	Chunks  []Chunk
-	// Vectors is the coarse rows, per chunk, appended, so a second write shows.
-	Vectors map[domain.ChunkID][]embeddingport.Vector
-	// Groups is every write of vectors, in order.
-	Groups [][]embeddingport.Vector
-	// Extractions counts the extractions written per path.
+	mu          sync.RWMutex
+	Sources     map[domain.VaultID]map[string]domain.Source
+	Chunks      []Chunk
+	Vectors     map[domain.ChunkID][]embeddingport.Vector
+	Groups      [][]embeddingport.Vector
 	Extractions map[string]int
 	next        int64
-	// Kept is what the index already holds, by recipe and hash. A test seeds it
-	// with vectors computed before the run under test.
-	Kept map[string][]byte
+	Kept        map[string][]byte
 }
 
 // Chunk is one row of chunks. Parent is zero for a large chunk.
@@ -178,8 +173,6 @@ func GetChunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
 
-// parseCursor returns the position in the ordering after which a walk
-// continues. The empty cursor starts from the beginning.
 func parseCursor(after embeddingport.ChunkCursor) (int64, int64, error) {
 	if after == "" {
 		return math.MaxInt64, 0, nil
@@ -210,7 +203,6 @@ func GetHash(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// put records a source as given, including its recipe.
 func (s *Store) put(vaultID domain.VaultID, src domain.Source) {
 	if s.Sources[vaultID] == nil {
 		s.Sources[vaultID] = map[string]domain.Source{}
@@ -294,7 +286,6 @@ func (s *Store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 	return out, nil
 }
 
-// clear removes the chunks of one source and their vectors.
 func (s *Store) clear(vaultID domain.VaultID, path string) {
 	keptChunks := s.Chunks[:0]
 	for _, c := range s.Chunks {
@@ -316,8 +307,6 @@ func (s *Store) insert(vaultID domain.VaultID, ref domain.FileStat, c domain.Chu
 	return s.next
 }
 
-// getPaths returns the paths of the sources that match, sorted and limited as
-// the index sorts and limits them.
 func (s *Store) getPaths(vaultID domain.VaultID, kind domain.SourceKind, limit int, isMatch func(domain.Source) bool) ([]string, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a question about sources needs a positive limit, got %d", limit)
@@ -364,9 +353,6 @@ func (s *Store) GetVectors(c Chunk) []embeddingport.Vector {
 	return slices.Clone(s.Vectors[GetChunkID(c.ID)])
 }
 
-// hasVector reports whether a chunk has a coarse row under the model, which the
-// store writes once a vector is saved for it. A chunk without one needs a
-// vector, regardless of other chunks with the same text.
 func (s *Store) hasVector(chunk int64, model embeddingport.EmbeddingModel) bool {
 	for _, v := range s.Vectors[GetChunkID(chunk)] {
 		if v.Model == model {
@@ -376,8 +362,6 @@ func (s *Store) hasVector(chunk int64, model embeddingport.EmbeddingModel) bool 
 	return false
 }
 
-// getOrderedChunks returns the chunks ordered by source modification time
-// descending, then by chunk id ascending.
 func (s *Store) getOrderedChunks() []Chunk {
 	out := slices.Clone(s.Chunks)
 	slices.SortFunc(out, func(a, b Chunk) int {

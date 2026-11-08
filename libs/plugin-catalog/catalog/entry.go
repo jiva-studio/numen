@@ -38,23 +38,17 @@ var ErrAlreadyOnDisk = errors.New("plugin is already on disk")
 
 // Entry is one plugin as the catalog knows it.
 type Entry struct {
-	ID          string
-	Name        string
-	Version     string
-	Description string
-	Category    string
-	Contributes manifest.Contributes
-	// Source names the source the entry comes from.
-	Source string
-	State  State
-	// Requirements are what the plugin requires of the application.
-	Requirements manifest.Requirements
-	// Incompatibility is why the application cannot run the plugin. Nil is a plugin it can run. The
-	// Service sets it and a source leaves it nil.
+	ID              string
+	Name            string
+	Version         string
+	Description     string
+	Category        string
+	Contributes     manifest.Contributes
+	Source          string
+	State           State
+	Requirements    manifest.Requirements
 	Incompatibility *manifest.IncompatibleError
-	// Warnings are the findings of the manifest reader that leave the manifest valid, such as a key the
-	// schema does not name.
-	Warnings []string
+	Warnings        []string
 }
 
 // NewEntry returns the entry of a plugin whose manifest a source has read.

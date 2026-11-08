@@ -46,10 +46,8 @@ const windowCommands = {
   getEntryIcon: () => ({}),
 }
 
-/** Waits for the vault requests issued by a gesture to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A tab of that vault, recording everything it requested from the window. */
 const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const isDone: string[] = []
   const request: string[] = []

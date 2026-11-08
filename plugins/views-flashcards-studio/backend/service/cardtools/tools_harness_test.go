@@ -15,14 +15,11 @@ import (
 
 // session is the tools the plugin offers, called the way the host calls them.
 type session struct {
-	registry *tools.Registry
-	// toolContext is the context the host provides to each tool about the window the agent was started from.
+	registry    *tools.Registry
 	toolContext map[string]string
-	// vault is the vault the host reports as the target of each call.
-	vault domain.VaultID
+	vault       domain.VaultID
 }
 
-// newSession is the tools over a vault of the notes given.
 func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) {
 	t.Helper()
 	env := vaulttest.New(t, notes)
@@ -33,7 +30,6 @@ func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) 
 	return &session{registry: registry, vault: env.Vault.ID}, env.Vault
 }
 
-// invoke calls one tool and returns what it answered.
 func (s *session) invoke(t *testing.T, name string, args any) *tools.CallResponse {
 	t.Helper()
 	raw, err := json.Marshal(args)
@@ -52,7 +48,6 @@ func (s *session) invoke(t *testing.T, name string, args any) *tools.CallRespons
 	return res
 }
 
-// list is the tools the plugin offers.
 func (s *session) list(t *testing.T) []*tools.ToolInfo {
 	t.Helper()
 	listed, err := s.registry.ListTools(t.Context())
@@ -62,7 +57,6 @@ func (s *session) list(t *testing.T) []*tools.ToolInfo {
 	return listed.Tools
 }
 
-// call is a tool called and its answer read as T.
 func call[T any](t *testing.T, s *session, name string, args any) T {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()
@@ -85,7 +79,6 @@ func getToolError(t *testing.T, s *session, name string, args any) string {
 	return res.GetText()
 }
 
-// deckFingerprint is what a deck is at this moment, as card_read gives it.
 func deckFingerprint(t *testing.T, s *session, path string) string {
 	t.Helper()
 	return call[struct {

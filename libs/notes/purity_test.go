@@ -15,7 +15,6 @@ import (
 // module is what the packages of this module are named under.
 const module = "github.com/jiva-studio/numen/libs/notes"
 
-// listThirdParty returns the code outside the standard library these packages may name.
 func listThirdParty() []string {
 	return []string{"gopkg.in/yaml.v3", "golang.org/x/text/"}
 }

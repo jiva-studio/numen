@@ -62,8 +62,6 @@ func RoundTrip[E SchemaEnum, C any](t *testing.T, reading func(E) C, writing fun
 	})
 }
 
-// checkEachValue runs check over every value of the enum but the unspecified zero, which
-// is what a field carries when nothing was set and has no action.
 func checkEachValue[E SchemaEnum](t *testing.T, check func(*testing.T, protoreflect.EnumValueDescriptor, E)) {
 	t.Helper()
 	var zero E

@@ -30,15 +30,9 @@ type NoteMover interface {
 type Move struct {
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries
-	// queries is what the index holds about each file, and determines which sources
-	// are under the path being moved.
 	queries sourceport.SourceQueries
-	// sources is where the index files each file. A folder and everything under
-	// it are filed at their new paths in one write.
 	sources sourceport.SourceRepository
-	// notes reconciles each moved note: its open views, and the links written with
-	// its old name.
-	notes NoteMover
+	notes   NoteMover
 }
 
 // NewMove is what files anything the vault holds somewhere else: the vault it
@@ -123,8 +117,6 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	return res, called
 }
 
-// getBacklinksByPath is the links that point at each note among the sources, by
-// the note's path.
 func (u Move) getBacklinksByPath(
 	ctx context.Context, v domain.Vault, sources []domain.FileStat,
 ) (map[string][]domain.ResolvedLink, error) {
@@ -142,8 +134,6 @@ func (u Move) getBacklinksByPath(
 	return linksBySource, nil
 }
 
-// rewriteNoteLinks rewrites the links of each note among the sources at its new path and adds what
-// it repaired and what it left dangling in the result.
 func (u Move) rewriteNoteLinks(
 	ctx context.Context,
 	v domain.Vault,
@@ -166,9 +156,6 @@ func (u Move) rewriteNoteLinks(
 	return res, nil
 }
 
-// isRename is whether this move is one note given a different name, in the
-// folder and under the extension it already has. Travelling is everything the
-// index files under from.
 func isRename(travelling []domain.FileStat, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
@@ -177,7 +164,6 @@ func isRename(travelling []domain.FileStat, from, to string) bool {
 		travelling[0].Path == from && travelling[0].Kind == domain.KindNote
 }
 
-// getMovedPath is where a path under from is once from is at to.
 func getMovedPath(from, to, path string) string {
 	return to + path[len(from):]
 }

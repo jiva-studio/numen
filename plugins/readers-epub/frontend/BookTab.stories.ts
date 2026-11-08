@@ -72,7 +72,6 @@ const THREE: Chapter = createChapter(
   TWO.span.end,
 )
 
-/** The offset at which `words` begin in the last run of `chapter`. */
 const getEndOf = (chapter: Chapter, words: string): number => chapter.span.end - countBytes(words)
 
 /** A passage that begins at the end of the second chapter and runs into the third. */
@@ -129,7 +128,6 @@ interface StoryTab {
 
 let storyTab: StoryTab | null = null
 
-/** A book tab whose window sets `ranges` once the book has loaded. */
 const openAt =
   (ranges: readonly TextRange[]): NonNullable<Story['render']> =>
   () => ({
@@ -165,11 +163,9 @@ const openAt =
     `,
   })
 
-/** The text of every range highlighted for the current passage. */
 const getHighlightedText = (): string[] =>
   [...(CSS.highlights.get(HIGHLIGHT) ?? [])].map((range) => (range as Range).toString())
 
-/** The tab the current story renders. */
 const getStoryTab = (): StoryTab => {
   if (!storyTab) throw new Error('the story rendered no book tab')
   return storyTab

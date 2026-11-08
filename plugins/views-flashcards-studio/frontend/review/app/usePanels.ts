@@ -19,17 +19,11 @@ import type { ReviewCard } from '../entities/card'
 
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {
-  /** The agent of the window, which every question about a card goes to. */
   readonly agent: AgentPort
-  /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** The reason no question can be sent, empty while a question can be sent. */
   readonly unreachable: () => string
-  /** The vault the session is on. */
   readonly vault: () => string
-  /** Shows a message to the user. */
   readonly showNotice: (text: string) => void
-  /** The wikilinks of a text, as the core reads them. */
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
 }
 

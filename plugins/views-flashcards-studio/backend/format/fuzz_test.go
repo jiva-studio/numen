@@ -9,11 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// deckSeeds are the shapes a deck's body arrives in: cards under a section and
-// cards before one, a card already marked, a card naming a card model, a card whose
-// heading has fallen out of step with its first field, a heading of the deeper
-// level a value may hold, a card id-shaped run that is not a card id, other scripts,
-// carriage returns, and bytes that are no deck at all.
 func getDeckSeeds() []string {
 	return []string{
 		"# Roots\n\n## a card\n\n[[Word]]\n\n### Word\n\nkaru\n\n### Meaning\n\nto do\n",
@@ -89,8 +84,6 @@ func FuzzWhole(f *testing.F) {
 	})
 }
 
-// createIDs creates card ids a run at a time, so the output for one body is the
-// same on every machine and in every run.
 func createIDs() func() cardid.ID {
 	pos := 0
 	return func() cardid.ID {

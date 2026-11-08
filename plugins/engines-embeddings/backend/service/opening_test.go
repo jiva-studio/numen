@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
-// slowModel is a server whose model does not finish opening until release is closed, as a model
-// that is still downloading.
 func slowModel(t *testing.T) (srv *embeddingServer, started chan struct{}, release chan struct{}) {
 	t.Helper()
 	srv = newEmbeddingServer()
@@ -31,7 +29,6 @@ func slowModel(t *testing.T) (srv *embeddingServer, started chan struct{}, relea
 	return srv, started, release
 }
 
-// within fails the test when call does not return in time.
 func within(t *testing.T, what string, call func()) {
 	t.Helper()
 	finished := make(chan struct{})
@@ -114,7 +111,6 @@ func closeServer(t *testing.T, srv *embeddingServer) {
 	}
 }
 
-// embedText embeds one text and ignores the outcome: the caller is a batch that may be cancelled.
 func embedText(ctx context.Context, t *testing.T, srv *embeddingServer) {
 	t.Helper()
 	if vectors, err := srv.EmbedTexts(ctx, embedding.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {

@@ -34,8 +34,6 @@ func NewProxies(host Host, stores pluginport.PluginStores) Copies {
 	return Copies{host: host, stores: stores}
 }
 
-// getKeepers is the ids of the enabled plugins that keep copies of files of the path's type or of
-// notes of the note type, in the order of their ids.
 func (c Copies) getKeepers(path string, noteType domain.NoteType) []string {
 	contentType := c.host.GetContentType(path)
 	var out []string
@@ -84,10 +82,8 @@ func (c Copies) OpenProxy(ctx context.Context, v domain.Vault, path string, note
 	return playbackport.Copy{}, playbackport.ErrNoProxy
 }
 
-// playedTypes are the masks of the types a copy is played as.
 func getPlayedTypes() []domain.ContentType { return []domain.ContentType{"audio/*", "video/*"} }
 
-// openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoProxy.
 func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
 	files, err := store.List(ctx)
 	if err != nil {

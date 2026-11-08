@@ -7,20 +7,15 @@
 /** One place the keyboard stopped. */
 export interface Stop {
   readonly where: string
-  /** What a screen reader would call it. */
   readonly name: string
-  /** Whether the browser draws it where a person could see it. */
   readonly shown: boolean
-  /** Whether the page says it is still on its way in or out. */
   readonly isMoving: boolean
 }
 
 /** What a story turned out to be, walked from the top of its tab order. */
 export interface Walk {
   readonly stops: readonly Stop[]
-  /** Where Tab went and stayed, having kept it through every strike it was given. */
   readonly trapped: string | null
-  /** Whether the page had come to rest before the census was taken. */
   readonly settled: boolean
 }
 

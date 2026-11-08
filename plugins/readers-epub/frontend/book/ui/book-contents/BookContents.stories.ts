@@ -24,7 +24,6 @@ type Story = StoryObj<typeof meta>
 /** How long a wait goes on where the browser sets the pace: a scroll it animates itself. */
 const ITS_OWN_PACE = 10_000
 
-/** A panel of a fixed size, so a story is read at the measure it is judged at. */
 const panel: Decorator = (story) => ({
   components: { story },
   template: `
@@ -56,10 +55,6 @@ const PAGES: readonly ContentsEntry[] = Array.from({ length: 5_000 }, (_, index)
   level: 0,
 }))
 
-/**
- * The panel over a book being read. The button simulates the reading advancing
- * by itself, which the panel follows.
- */
 const activeReading =
   (entries: readonly ContentsEntry[], deep = 0) =>
   () => ({

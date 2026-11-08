@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { areMarksEqual, createMarks } from './marks'
 import type { DeckProblem } from '../types'
 
-/** One problem as the vault reports one, against nothing in particular. */
 const problem = (overrides: Partial<DeckProblem> = {}): DeckProblem => ({
   kind: 'cardWithoutACardModel',
   card: null,
@@ -98,7 +97,6 @@ describe('where two problems of one card stand', () => {
   })
 })
 
-/** The marks of problems read against two cards and a template. */
 const createTestMarks = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
 
 describe('whether two evaluations are wrong in the same way', () => {

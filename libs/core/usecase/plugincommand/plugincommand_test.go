@@ -37,7 +37,6 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 	return out
 }
 
-// vault is the vault every command of these tests runs over.
 func getVault() domain.Vault { return domain.Vault{ID: "v1", Name: "v1"} }
 
 func getTypes() fileTypes {

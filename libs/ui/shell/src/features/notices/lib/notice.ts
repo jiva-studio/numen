@@ -21,27 +21,15 @@ export type Stay = 'holds' | 'read' | 'kept'
  * applied to: one change counts as one, however large the changed object.
  */
 export interface Notice {
-  /** Whatever the caller addresses this notice by. Never read, only returned. */
   readonly id: string
-  /** What is happening, in the words it is to be shown by. */
   readonly text: string
-  /** What it is happening to, or why it stopped, when that is worth saying. */
   readonly about?: string
-  /** Where it has got to, when there is a total to count against. */
   readonly done?: number
   readonly total?: number
-  /** What that count counts. */
   readonly counting?: TallyUnit
-  /** Whether it is running now, or is a standing fact. */
   readonly isWorking?: boolean
-  /** How severe it is: info unless set. */
   readonly severity?: Severity
-  /** How long it is displayed. Defaults to held. */
   readonly stay?: Stay
-  /**
-   * Whether the user requested this and awaits confirmation that it began. One
-   * of these is displayed as soon as it arrives.
-   */
   readonly isUserStarted?: boolean
 }
 
@@ -52,10 +40,8 @@ export interface Task {
   readonly about: string
   readonly error: string
   readonly isUserStarted: boolean
-  /** How far it has got, where there is a total to count against. */
   readonly done?: number
   readonly total?: number
-  /** What that count counts. */
   readonly counting?: TallyUnit
 }
 

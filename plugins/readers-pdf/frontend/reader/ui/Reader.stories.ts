@@ -43,14 +43,9 @@ const HIGHLIGHTS: readonly Rect[] = [
   { minX: 0.12, minY: 0.27, maxX: 0.44, maxY: 0.33 },
 ]
 
-/** Every page the same shape, the way a book is. */
 const createPages = (pageCount: number) =>
   Array.from({ length: pageCount }, () => ({ width: 612, height: 792 }))
 
-/**
- * A page drawn to the requested width. Substitutes for the document renderer and
- * draws only its own page number.
- */
 const renderPage = (label: string, width: number): string => {
   const tall = Math.round((width * 792) / 612)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${tall}">
@@ -60,10 +55,6 @@ const renderPage = (label: string, width: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-/**
- * The reader with a document. Pages are drawn to the width the reader requests,
- * and the requested width is written on the frame so a test can read it.
- */
 const book =
   (highlights: readonly Rect[] = [], pageCount = PAGES): Render =>
   () => ({
@@ -101,23 +92,15 @@ const TEMPLATE = `
   </div>
 `
 
-/** One page of the strip, by at its current position in the document. */
 const getSheet = (canvasElement: HTMLElement, page: number) =>
   canvasElement.querySelector(`.reader__page[data-page="${page}"]`) as HTMLElement | null
 
-/** The image of one page, once drawn. */
 const getImage = (canvasElement: HTMLElement, page: number) =>
   getSheet(canvasElement, page)?.querySelector('.reader__picture') as HTMLImageElement | null
 
-/** The scroll container of the strip. */
 const getFreeSpace = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.reader__viewport') as HTMLElement
 
-/**
- * The strip has reached a page when that page is at the leading edge of the
- * scroll container. A page turn is a browser-animated scroll, and this is the
- * position where it ends.
- */
 const waitForPage = async (canvasElement: HTMLElement, page: number) =>
   await waitFor(
     async () => {

@@ -24,8 +24,6 @@ type antigravityModel struct {
 	Title string
 }
 
-// listAntigravityModels queries the program for its models: the output of "models", one model per
-// line as its name, a tab and its title.
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {
 	name, args := resolveCommand(command)
 	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
@@ -38,8 +36,6 @@ func listAntigravityModels(ctx context.Context, command []string) ([]antigravity
 	return parseAntigravityModels(out), nil
 }
 
-// parseAntigravityModels reads the lines of "models" that hold a name and a title. Any other line,
-// such as the notice that the models are being fetched, is skipped.
 func parseAntigravityModels(output []byte) []antigravityModel {
 	var models []antigravityModel
 	lines := bufio.NewScanner(bytes.NewReader(output))

@@ -6,7 +6,6 @@ import type { EdgeLine } from './lines'
 withDefaults(
   defineProps<{
     line: EdgeLine
-    /** Drawn over the boxes, in the colours that stand out against them. */
     isRaised?: boolean
   }>(),
   { isRaised: false },

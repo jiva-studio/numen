@@ -73,7 +73,6 @@ func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {
 	}
 }
 
-// listSchemaFields lists every field of the message and of the messages it holds, as Message.field.
 func listSchemaFields(message protoreflect.MessageDescriptor, visited map[string]bool) []string {
 	if visited[string(message.FullName())] {
 		return nil
@@ -95,7 +94,6 @@ func listSchemaFields(message protoreflect.MessageDescriptor, visited map[string
 	return names
 }
 
-// collectSetFields records every field that is set in the message or in a message it holds.
 func collectSetFields(message protoreflect.Message, present map[string]bool) {
 	message.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		present[string(message.Descriptor().FullName())+"."+string(field.Name())] = true
@@ -165,8 +163,6 @@ func listModelFields(kind reflect.Type, visited map[reflect.Type]bool) []string 
 	return names
 }
 
-// collectSetValues records, as Type.Field, every field that holds a non-zero value in the struct or
-// in a struct it holds.
 func collectSetValues(value reflect.Value, set map[string]bool) {
 	switch value.Kind() {
 	case reflect.Struct:
@@ -188,8 +184,6 @@ func collectSetValues(value reflect.Value, set map[string]bool) {
 	}
 }
 
-// isUnmappedByDesign names the fields the reader does not read from the file: the folder of the plugin
-// is known to whoever discovers it, the warnings are findings of the reader, and a note type that keeps the default chunking is false by choice.
 func isUnmappedByDesign(name string) bool {
 	return name == "DependencyRequirement.PluginDir" || name == "Discovered.Dir" || name == "Manifest.Warnings" || name == "NoteType.Chunks"
 }

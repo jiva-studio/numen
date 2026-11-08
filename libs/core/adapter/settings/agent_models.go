@@ -28,8 +28,6 @@ func AgentModels(targetPath string, target Agent, programs []agentport.AgentProg
 	return models
 }
 
-// getProgramModels are the programs the agent setting can name, the default one marked, and the
-// choice of none.
 func getProgramModels(useAt []string, programs []agentport.AgentProgram) []settingsport.Model {
 	byDefault, hasDefault := agentport.GetDefaultProgram(programs)
 
@@ -57,8 +55,6 @@ func getProgramModels(useAt []string, programs []agentport.AgentProgram) []setti
 	})
 }
 
-// getModelsOfProgram are the rows of one program: what it reported, or the model the settings name
-// alone where it reported none.
 func getModelsOfProgram(pos []string, program agentport.AgentProgram, set string) []settingsport.Model {
 	var models []settingsport.Model
 	switch {
@@ -76,8 +72,6 @@ func getModelsOfProgram(pos []string, program agentport.AgentProgram, set string
 	return models
 }
 
-// getReportedModels are the rows of the models a program reported, the one the settings name last
-// where it is not among them.
 func getReportedModels(pos []string, set string, available []agentport.AgentModel) []settingsport.Model {
 	isSet := slices.ContainsFunc(available, func(one agentport.AgentModel) bool { return one.Name == set })
 	isReportedDefault := slices.ContainsFunc(available, func(one agentport.AgentModel) bool { return one.IsDefault })
@@ -102,7 +96,6 @@ func getReportedModels(pos []string, set string, available []agentport.AgentMode
 	return models
 }
 
-// newSetting is one setting written down.
 func newSetting(pos []string, value any) settingsport.Setting {
 	response, err := json.Marshal(value)
 	if err != nil {

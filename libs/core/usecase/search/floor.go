@@ -26,11 +26,10 @@ const (
 // EffectiveFloor is the floor a search applies to a vault under a recipe, and the floor of each
 // source it was chosen from. A source with no floor holds zero.
 type EffectiveFloor struct {
-	Floor  float64
-	Source FloorSourceKind
-	Stored float64
-	Hint   float64
-	// Default is the floor that applies when no other source answers.
+	Floor   float64
+	Source  FloorSourceKind
+	Stored  float64
+	Hint    float64
 	Default float64
 }
 
@@ -107,7 +106,6 @@ func (p FloorPolicy) Set(ctx context.Context, v domain.Vault, recipe string, flo
 	return p.store.WriteFloor(ctx, v, recipe, floor)
 }
 
-// isValidFloor reports whether the floor is above zero and at most one.
 func isValidFloor(floor float64) bool {
 	return floor > 0 && floor <= 1
 }

@@ -4,7 +4,6 @@ import type { CommandDeclaration, PluginHostDeps, PluginPaletteCommand } from '.
 
 /** A command the window lists: what its manifest declares and, where the plugin registered one, its handler. */
 export interface AvailableCommand {
-  /** The full id: the owner, a colon, and the id the manifest declares. */
   readonly id: string
   readonly declaration: CommandDeclaration
   readonly entry?: RegisteredCommand
@@ -33,13 +32,6 @@ export interface AvailableList {
   readonly issues: CommandIssue[]
 }
 
-/**
- * What becomes of a declared command with no handler. It is 'available' while the frontend of its
- * plugin has not started to register. It is 'unbound' once the frontend has started and the plugin
- * has no backend: nothing runs it, the host does not list it, and the missing handler is an issue.
- * It is 'left' to the window for a plugin with a backend, which runs it, for a plugin with no
- * frontend, and for one that failed to load.
- */
 function getBeforeHandlerState(
   deps: PluginHostDeps,
   registry: HostRegistry,

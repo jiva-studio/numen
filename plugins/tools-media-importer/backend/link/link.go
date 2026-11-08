@@ -142,7 +142,6 @@ func (l *Links) Read(ctx context.Context, path string) (Link, error) {
 	return readLink(ctx, l.host.Vault, path)
 }
 
-// readLink is the link note at a path of the vault.
 func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) {
 	if !strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension) {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
@@ -168,7 +167,6 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 	return Link{Vault: "", Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw)}
 }
 
-// getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
 // Create creates the link note of an address in a folder of a vault, named by the address. An empty
@@ -235,7 +233,6 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	return found, nil
 }
 
-// getVault returns the vault of the identity, or the vault the host shows for an empty one.
 func (l *Links) getVault(vault domain.VaultID) host.Vault {
 	if vault == "" {
 		return l.host.Vault
@@ -243,7 +240,6 @@ func (l *Links) getVault(vault domain.VaultID) host.Vault {
 	return l.host.Vault.With(vault)
 }
 
-// getStore is the plugin's folder in the vault of the link.
 func (l *Links) getStore(link Link) host.Store {
 	if link.Vault == "" {
 		return l.host.Store
@@ -251,7 +247,6 @@ func (l *Links) getStore(link Link) host.Store {
 	return l.host.Store.With(link.Vault)
 }
 
-// getTexts is the text versions of the vault of the link.
 func (l *Links) getTexts(link Link) host.Texts {
 	if link.Vault == "" {
 		return l.host.Texts
@@ -259,9 +254,6 @@ func (l *Links) getTexts(link Link) host.Texts {
 	return l.host.Texts.With(link.Vault)
 }
 
-// claim reserves the named work on a key of a link's vault for this run and
-// returns false when another run holds it. The same address in another vault is
-// separate work.
 func (l *Links) claim(work string, link Link, key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -279,8 +271,6 @@ func (l *Links) release(work string, link Link, key string) {
 	delete(l.running, getWorkName(work, link, key))
 }
 
-// getWorkName returns the name of the work on a key in the vault of a
-// link.
 func getWorkName(work string, link Link, key string) string {
 	return work + "\x00" + string(link.Vault) + "\x00" + key
 }
@@ -351,9 +341,6 @@ func (l *Links) StartCopy(ctx context.Context, link Link) {
 	})
 }
 
-// reportBackgroundError writes the failure of background work on a link to the standard error
-// stream of the plugin process. The failure is also shown as the task of the work. A work ended by
-// Close, and a work another run has, are not failures.
 func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
 	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
 		return
@@ -399,8 +386,6 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 	return err
 }
 
-// reuseText completes a fetch not requested by the user from stored data and
-// reports whether it did.
 func (l *Links) reuseText(ctx context.Context, folder folder, link Link) (bool, error) {
 	if isNone, err := folder.isNone(ctx, link.Key); err != nil || isNone {
 		return true, err
@@ -448,8 +433,6 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	return l.putVersion(ctx, link, rec.Kind)
 }
 
-// ensureVersion puts the stored text of a link as its version where the note has none made from it
-// as it reads now.
 func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	listing, err := l.getTexts(link).ListVersions(ctx, link.Path)
 	if err != nil {
@@ -463,7 +446,6 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 	return l.putVersion(ctx, link, kind)
 }
 
-// putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
 		Path: link.Path, Key: link.Key, Source: "", Kind: kind, InputHash: link.Hash, File: link.Key + textExt,
@@ -556,7 +538,6 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	return into.byteCount, l.recordCopy(ctx, link, link.Hash+ext)
 }
 
-// recordCopy writes down the file the copy of a link is kept in.
 func (l *Links) recordCopy(ctx context.Context, link Link, name string) error {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
@@ -632,7 +613,6 @@ func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
 	return TextInfo{Title: rec.Title, Producer: rec.Producer, HasNoText: isNone}, nil
 }
 
-// reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
@@ -640,7 +620,6 @@ func (l *Links) reportTask(ctx context.Context, task host.Task) {
 	}
 }
 
-// endTask takes a task out of the list, or leaves it shown with the error that ended the work.
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
@@ -696,7 +675,6 @@ func (w *storeWriter) send(chunk []byte) error {
 	return nil
 }
 
-// newLinkIn is the link note at a path of the vault, carrying the identity of the vault.
 func newLinkIn(ctx context.Context, vault host.Vault, path string, parsed address.URL, raw []byte) (Link, error) {
 	v, err := vault.GetVault(ctx)
 	if err != nil {

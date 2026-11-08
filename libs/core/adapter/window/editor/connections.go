@@ -13,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// bindConnections binds the use cases that read and write the relationships
-// between notes.
 func (h *noteHandler) bindConnections(notes *note.Scenarios) {
 	h.getConnection = &notes.Connection
 	h.saveConnection = &notes.SaveConnection
@@ -33,8 +31,6 @@ type connectionFailure struct {
 	isCycle   bool
 }
 
-// failureOf sorts the error of a connection write. The second result is the
-// error to fail the call with when the schema carries no answer for it.
 func (h *noteHandler) failureOf(err error) (connectionFailure, error) {
 	switch {
 	case err == nil, h.state.isIndexOutdated(err):

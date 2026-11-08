@@ -7,9 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// mergeEntries returns one entry for each plugin id, ordered by id. Of the entries sharing an id, the
-// one on disk wins over the one on offer; between two of the same standing the newer version wins;
-// and between two of the same version the one from the earlier list wins.
 func mergeEntries(lists [][]Entry) []Entry {
 	byID := map[string]Entry{}
 	for _, list := range lists {
@@ -28,7 +25,6 @@ func mergeEntries(lists [][]Entry) []Entry {
 	return merged
 }
 
-// precedes reports whether the candidate replaces the entry current for its id.
 func precedes(candidate, current Entry) bool {
 	if candidate.State.IsOnDisk() != current.State.IsOnDisk() {
 		return candidate.State.IsOnDisk()

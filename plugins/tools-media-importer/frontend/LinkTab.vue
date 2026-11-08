@@ -13,7 +13,6 @@ import { WORDS as words } from './words'
 const props = defineProps<{
   readonly path?: string
   readonly state?: { readonly path?: string }
-  /** What the tab reads the link through. The window's own by default. */
   readonly links?: Links
 }>()
 

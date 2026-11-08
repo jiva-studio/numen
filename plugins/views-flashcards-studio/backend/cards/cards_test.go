@@ -19,9 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// The two vaults every test here uses. They share no word: a heading renamed in
-// one is recognisable in the other, and so is a card model listed from the wrong
-// place.
 func getAnimals() map[string]string {
 	return map[string]string{
 		"Animal.md": "---\n" +
@@ -83,7 +80,6 @@ func newVaults(t *testing.T) vaulted {
 	}
 }
 
-// index updates the index for what the vault now holds, as a walk of it does.
 func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
 	return func(_ context.Context, v domain.Vault, _ []string) error {
@@ -92,8 +88,6 @@ func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []stri
 	}
 }
 
-// indexNothing updates nothing: these tests read the file back and not the
-// index. The ones that ask the index level it with a whole scan.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
 func read(t *testing.T, v domain.Vault, path string) string {
@@ -105,7 +99,6 @@ func read(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
-// write puts a note in the vault, with the folders above it.
 func write(t *testing.T, v domain.Vault, path, raw string) {
 	t.Helper()
 	pos := filepath.Join(v.Path, filepath.FromSlash(path))
@@ -230,7 +223,6 @@ func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	}
 }
 
-// prose returns the content after the frontmatter, which is the input of a write.
 func prose(t *testing.T, raw string) string {
 	t.Helper()
 	_, body, found := strings.Cut(raw, "---\n")

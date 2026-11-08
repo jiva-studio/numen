@@ -33,8 +33,6 @@ func (c Config) SetPluginSearch(db *Index, embedder embeddingport.Embedder, erro
 	})
 }
 
-// getFloorHint is the starting floor an embedder reports for its model, and nil for one that reports
-// none.
 func getFloorHint(embedder embeddingport.Embedder) search.FloorHint {
 	advisor, ok := embedder.(embeddingport.FloorAdvisor)
 	if !ok {

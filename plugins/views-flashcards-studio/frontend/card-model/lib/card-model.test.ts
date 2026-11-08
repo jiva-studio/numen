@@ -17,7 +17,6 @@ import {
   type BufferCardModel,
 } from './card-model'
 
-/** Identities counted out, so a test names the template it means. */
 const createIds = () => {
   let count = 0
   return () => `c${(count += 1)}`

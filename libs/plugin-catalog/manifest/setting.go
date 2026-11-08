@@ -9,13 +9,9 @@ import (
 
 // SettingOption is one value an enum setting can hold.
 type SettingOption struct {
-	Value string
-	// Title is the display text for the value. Empty shows the value itself.
-	Title string
-	// Detail is the text shown under the setting while the value is in force.
-	Detail string
-	// Dependencies are the ids of the manifest's dependencies the host provisions only while the
-	// option is in force.
+	Value        string
+	Title        string
+	Detail       string
 	Dependencies []string
 }
 
@@ -42,9 +38,7 @@ func (o SettingOptions) Find(value string) (SettingOption, bool) {
 
 // OptionsBy gives a setting its options from the value of another setting.
 type OptionsBy struct {
-	// Setting is the key of the enum setting the options follow.
 	Setting string
-	// Options are the options under each value of that setting.
 	Options map[string]SettingOptions
 }
 
@@ -57,12 +51,10 @@ type Condition struct {
 // Secret is one secret, such as an API key, that a plugin requests the
 // host to store.
 type Secret struct {
-	// Name is what the plugin reads the key under.
 	Name        string
 	Title       string
 	Description string
-	// When is the condition under which the secret is shown and handed to the plugin.
-	When *Condition
+	When        *Condition
 }
 
 // GetSecretNames returns the names of the secrets the plugin declares.
@@ -133,8 +125,6 @@ func (m Manifest) ResolveSettings(stored map[string]any) map[string]any {
 	return values
 }
 
-// resolveValue returns the value in force of one setting under the values resolved before it, and
-// false where it holds none.
 func (m Manifest) resolveValue(s Setting, values map[string]any) (any, bool) {
 	value, ok := values[s.Key]
 	if s.OptionsBy == nil {
@@ -194,7 +184,6 @@ func (m Manifest) IsSecretActive(secret Secret, values map[string]any) bool {
 	return m.isActive(secret.When, values, 0)
 }
 
-// isActive reports whether the condition holds, and the conditions of the settings it reads.
 func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bool {
 	if when == nil {
 		return true
@@ -208,10 +197,6 @@ func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bo
 	return ok && m.isActive(parent.When, values, depth+1)
 }
 
-// listSettingLinkIssues checks what the settings say of one another and of the dependencies: a
-// setting whose options follow another names an enum setting declared before it and lists options
-// under each of its values; a condition names a setting declared before it; an option provisions
-// dependencies the manifest declares.
 func (m Manifest) listSettingLinkIssues() []error {
 	var issues []error
 	declared := map[string]Setting{}
@@ -252,7 +237,6 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	return issues
 }
 
-// listConditionIssues checks a condition against every setting the manifest declares.
 func (m Manifest) listConditionIssues(subject string, when *Condition) []error {
 	declared := make(map[string]Setting, len(m.Settings))
 	for _, s := range m.Settings {
@@ -286,7 +270,6 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	return issues
 }
 
-// getAllOptions returns every list of options the setting declares.
 func (m Manifest) getAllOptions(s Setting) []SettingOptions {
 	lists := []SettingOptions{s.Options}
 	if s.OptionsBy != nil {
@@ -297,8 +280,6 @@ func (m Manifest) getAllOptions(s Setting) []SettingOptions {
 	return lists
 }
 
-// getOptionalDependencies returns the ids of the dependencies an option provisions, and those of
-// the options in force under the values given.
 func (m Manifest) getOptionalDependencies(values map[string]any) (optional, active map[string]bool) {
 	optional, active = map[string]bool{}, map[string]bool{}
 	for _, s := range m.Settings {

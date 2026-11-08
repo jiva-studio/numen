@@ -22,8 +22,6 @@ const (
 	holdFor      = 120 * time.Millisecond
 )
 
-// hold takes the lock of dir, records that it entered and left the critical section, and
-// releases the lock. name tells the entries of the holders apart.
 func hold(dir, log, name string) error {
 	release, err := shared.Lock(dir)
 	if err != nil {
@@ -52,7 +50,6 @@ func appendLine(path, line string) error {
 	return closeErr
 }
 
-// checkSerial fails the test where a holder entered before the previous one left.
 func checkSerial(t *testing.T, log string, holders int) {
 	t.Helper()
 	raw, err := os.ReadFile(log)

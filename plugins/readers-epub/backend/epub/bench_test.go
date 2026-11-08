@@ -12,7 +12,6 @@ import (
 //
 // The corpus is not in the repository, and these stand aside without it.
 
-// getLargestBook is the corpus book with the most bytes on disk.
 func getLargestBook(b *testing.B) string {
 	b.Helper()
 	root := os.Getenv(corpusEnv)

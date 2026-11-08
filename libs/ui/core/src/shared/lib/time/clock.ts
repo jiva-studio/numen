@@ -1,7 +1,6 @@
 /** The clock, and the only place in the library that reads the current time. */
 
 export interface Clock {
-  /** Milliseconds, monotonic. Only differences are used. */
   readonly now: () => number
   readonly schedule: (run: (now: number) => void) => number
   readonly cancel: (handle: number) => void

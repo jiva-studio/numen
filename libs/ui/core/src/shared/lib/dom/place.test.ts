@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest'
 import { getAdjacentPlace } from './place'
 
-/** A span from 100 to 120, in an area of 240, with a thing 60 to place. */
 const span = (overrides: Partial<Parameters<typeof getAdjacentPlace>[0]> = {}) =>
   getAdjacentPlace({ from: 100, to: 120, size: 60, room: 240, margin: 8, gap: 8, ...overrides })
 

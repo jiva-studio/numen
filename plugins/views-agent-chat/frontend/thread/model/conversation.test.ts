@@ -16,7 +16,6 @@ const words: ConversationStrings = {
   nothing: 'Said nothing',
 }
 
-/** Words are put on the screen as they arrive, with no frame to wait for. */
 const now = (draw: () => void) => draw()
 
 /** What one conversation is called. Every question it sends carries it. */
@@ -31,7 +30,6 @@ const useConversation = (
   paint: Paint = now,
 ) => baseUseConversation({ agent, words: conversationWords, conversation, paint })
 
-/** An agent that does as instructed, one step at a time. */
 const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPort => ({
   async *ask(query) {
     for (const step of steps) {
@@ -810,7 +808,6 @@ describe('words with none in them', () => {
   })
 })
 
-/** A promise that stays open until the test lets it go. */
 const createHold = () => {
   let release: () => void = () => undefined
   const target = new Promise<void>((go) => {
@@ -819,11 +816,9 @@ const createHold = () => {
   return { target: target, release }
 }
 
-/** What the panel draws, with how far along each turn is. */
 const getDrawn = (conversation: ReturnType<typeof useConversation>) =>
   conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])
 
-/** The lines about work, by what they say and how far along they are. */
 const getDoing = (conversation: ReturnType<typeof useConversation>) =>
   conversation.turns.value
     .filter((turn) => turn.voice === 'doing')

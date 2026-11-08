@@ -4,15 +4,10 @@ export type Severity = 'info' | 'warning' | 'error'
 // NoticeTask is one piece of work a plugin does behind the window, drawn while it runs.
 export interface NoticeTask {
   readonly id: string
-  // What is being done, in the words it is shown by.
   readonly label: string
-  // What it is being done to.
   readonly about?: string
-  // Why it stopped; empty while it runs.
   readonly error?: string
-  // The user requested it and is waiting for confirmation that it began.
   readonly isUserStarted?: boolean
-  // How far it has got, where there is a total to count against.
   readonly done?: number
   readonly total?: number
 }

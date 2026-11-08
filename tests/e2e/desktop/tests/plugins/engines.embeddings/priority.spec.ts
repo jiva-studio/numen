@@ -26,7 +26,6 @@ const readProcesses = (): Row[] =>
         : []
     })
 
-/** The niceness of the embeddings backend that belongs to the server this run tests. */
 const readPluginNice = (): number | undefined => {
   const port = process.env['NUMEN_TEST_PORT'] ?? '3456'
   const rows = readProcesses()

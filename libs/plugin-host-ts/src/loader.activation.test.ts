@@ -15,7 +15,6 @@ const showNote: CommandDeclaration = {
   scope: 'note',
 }
 
-/** A window with a plugin that has a frontend and no backend, and the commands its manifest declares. */
 function createWindow(activate: (context: PluginContext) => void | Promise<void>) {
   const reportCommandIssue = vi.fn()
   const onError = vi.fn()
@@ -34,7 +33,6 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
   return { host, loader, reportCommandIssue, onError }
 }
 
-/** Reads the commands the window lists at once on every change, as a window part that follows them does. */
 function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
   const reports: string[][] = []
   watch(

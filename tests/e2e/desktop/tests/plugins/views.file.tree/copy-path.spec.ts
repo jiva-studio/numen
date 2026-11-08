@@ -4,7 +4,6 @@ import { getRow, showInFiles } from '../../support/layout.js'
 
 declare global {
   interface Window {
-    /** The texts the page wrote to the clipboard since it loaded. */
     copiedTexts?: string[]
   }
 }

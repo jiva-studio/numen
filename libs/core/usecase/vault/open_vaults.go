@@ -113,8 +113,6 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 	}
 }
 
-// writeOutput writes a line to Out. A failed write is kept and returned by the next
-// IndexVault or UpdateIndex.
 func (o *OpenVaults[C, I]) writeOutput(format string, args ...any) {
 	if _, err := fmt.Fprintf(o.Out, format, args...); err != nil {
 		o.mu.Lock()
@@ -123,7 +121,6 @@ func (o *OpenVaults[C, I]) writeOutput(format string, args ...any) {
 	}
 }
 
-// takeOutputError returns the errors of failed writes to Out and clears them.
 func (o *OpenVaults[C, I]) takeOutputError() error {
 	o.mu.Lock()
 	defer o.mu.Unlock()

@@ -6,17 +6,11 @@ import type { Turn } from '../lib/turn'
 import type { Paint } from '@numen/ui'
 
 export interface Answer {
-  /** More words of the answer. */
   readonly say: (text: string) => void
-  /** The answer ends at its current position, and the next words begin another. */
   readonly settle: () => void
-  /** Mark the current answering turn as failed. */
   readonly fail: () => void
-  /** The accumulated text of the current answer. */
   readonly getText: () => string
-  /** Whether a turn is open for the words still arriving. */
   readonly isOpen: () => boolean
-  /** Whether the last answer carried any words. */
   readonly hasContent: () => boolean
 }
 

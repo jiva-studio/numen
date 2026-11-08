@@ -14,14 +14,12 @@ import { WINDOW_SOURCE } from './useWindowTasks'
 /** What the commands are given in place of the window's own services. */
 export interface AppearanceServices {
   readonly client?: ThemeClient
-  /** The name each installed plugin is listed under, by plugin id. */
   readonly listPluginNames?: () => Promise<ReadonlyMap<string, string>>
 }
 
 const listInstalledPluginNames = async (): Promise<ReadonlyMap<string, string>> =>
   new Map((await pluginService.getPlugins({})).plugins.map((one) => [one.id, one.name]))
 
-/** Whether the keystroke is Ctrl+P, or Cmd+P, which toggles the palette. */
 const isToggleChord = (event: KeyboardEvent): boolean =>
   !event.defaultPrevented &&
   (event.ctrlKey || event.metaKey) &&

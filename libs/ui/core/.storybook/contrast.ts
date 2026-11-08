@@ -66,7 +66,6 @@ export interface Resolved {
   readonly ground: Rgb
 }
 
-/** The ancestors of an element from the outermost to the element itself. */
 const getChain = (element: Element): Element[] => {
   const chain: Element[] = []
   for (let at: Element | null = element; at; at = at.parentElement) chain.unshift(at)

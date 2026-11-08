@@ -25,7 +25,6 @@ var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 const maxQueryLength = 200
 
-// eachOnce returns the paths a client requested, each listed once.
 func eachOnce(paths []string) ([]string, error) {
 	observed := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
@@ -187,7 +186,6 @@ func (h *fileHandler) MoveFile(
 	return connect.NewResponse(out), nil
 }
 
-// getListCode is the code a folder that could not be listed is answered with.
 func getListCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, file.ErrOutside):
@@ -199,8 +197,6 @@ func getListCode(err error) connect.Code {
 	}
 }
 
-// convertNoteTypeToWire is what a note is, as the schema carries it: the word its frontmatter
-// holds. A note carrying no type of its own is an ordinary note, and is carried as no word.
 func convertNoteTypeToWire(noteType domain.NoteType) string {
 	if noteType == domain.TypeNote {
 		return ""
@@ -241,7 +237,6 @@ func (h *fileHandler) RemoveFile(
 	}), nil
 }
 
-// removal is the two ways something leaves the vault.
 func (h *fileHandler) removal(
 	ctx context.Context,
 	v domain.Vault,

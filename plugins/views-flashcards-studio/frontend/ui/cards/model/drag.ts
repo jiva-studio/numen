@@ -17,31 +17,20 @@ import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '
  * represents it.
  */
 export interface DragDeps<At extends InsertionPoint | undefined> {
-  /** The order, as the thing dragged is stepped along it. */
   readonly order: () => readonly string[]
-  /** The drop target used while the pointer is over nothing that accepts a drop. */
   readonly nowhere: At
-  /** Whether letting the thing dragged go there moves it. */
   readonly isMoved: (dragged: string, target: InsertionPoint) => boolean
-  /** What a drop that is allowed evaluates to. */
   readonly move: (dragged: string, target: InsertionPoint) => void
 }
 
 /** What a drag answers: what is being dragged, where it would land, and the gestures. */
 export interface DragState<At extends InsertionPoint | undefined> {
-  /** The item under the pointer, and null while nothing is dragged. */
   readonly dragged: ShallowRef<string | null>
-  /** Where letting go would put it. */
   readonly at: ShallowRef<At>
-  /** It was taken up. */
   readonly lift: (what: string, press: DragEvent) => void
-  /** It is over a place that would take it. */
   readonly hover: (target: At, press: DragEvent) => void
-  /** The drag is over, and nothing was let go. */
   readonly release: () => void
-  /** It was let go at its current position. */
   readonly drop: () => void
-  /** The item is moved one position along the order. */
   readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void
 }
 

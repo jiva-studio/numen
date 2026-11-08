@@ -2,28 +2,23 @@ package pluginport
 
 // PluginSetting declares one configuration field managed by the core host.
 type PluginSetting struct {
-	Key         string
-	Type        string
-	Title       string
-	Description string
-	DefaultJSON string
-	Palette     bool
-	Icon        string
-	Options     PluginSettingOptions
-	Min         *float64
-	Max         *float64
-	Step        *float64
-	// OptionsBy, When, Accept and Multiple are as the manifest declares them.
-	OptionsBy *PluginSettingOptionsBy
-	When      *PluginSettingCondition
-	Accept    []string
-	Multiple  bool
-	// Preview and OptionsFrom are as the manifest declares them.
-	Preview     bool
-	OptionsFrom string
-	// ActiveOptions, IsShown and ValueJSON are the options, the visibility and the value in force
-	// under the stored values, resolved by the manifest. A window draws them and applies no rule of
-	// OptionsBy or When itself.
+	Key           string
+	Type          string
+	Title         string
+	Description   string
+	DefaultJSON   string
+	Palette       bool
+	Icon          string
+	Options       PluginSettingOptions
+	Min           *float64
+	Max           *float64
+	Step          *float64
+	OptionsBy     *PluginSettingOptionsBy
+	When          *PluginSettingCondition
+	Accept        []string
+	Multiple      bool
+	Preview       bool
+	OptionsFrom   string
 	ActiveOptions PluginSettingOptions
 	IsShown       bool
 	ValueJSON     string
@@ -55,36 +50,25 @@ func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, option
 
 // PluginInfo describes a discovered plugin and its declarative settings.
 type PluginInfo struct {
-	ID           string
-	Name         string
-	Version      string
-	Description  string
-	Capabilities []string
-	Settings     []PluginSetting
-	IsActive     bool
-	// Permissions are the permissions the manifest declares.
-	Permissions []string
-	// Secrets are the names of the secrets the manifest declares, and
-	// StoredSecrets those of them that have a key stored. A key never appears here.
+	ID            string
+	Name          string
+	Version       string
+	Description   string
+	Capabilities  []string
+	Settings      []PluginSetting
+	IsActive      bool
+	Permissions   []string
 	Secrets       []PluginSecret
 	StoredSecrets []string
-	// Failure is set while the host suspends the plugin after it failed to start.
-	Failure *PluginFailure
-	// HasFrontend is whether the plugin declares a bundle the windows load.
-	HasFrontend bool
-	// HasBackend is whether the plugin declares a process the host starts.
-	HasBackend bool
-	// Readers are the readers the manifest declares, with the files each opens.
-	Readers []PluginReaderInfo
-	// SettingsViews are the components the settings page draws among the settings of the plugin.
+	Failure       *PluginFailure
+	HasFrontend   bool
+	HasBackend    bool
+	Readers       []PluginReaderInfo
 	SettingsViews []PluginSettingsView
 }
 
 // PluginReaderInfo is a reader of a plugin and the files it opens.
 type PluginReaderInfo struct {
-	// ID is the id the frontend registers the reader under.
-	ID string
-	// Extensions are the extensions, lowercase and without the dot, of the files the reader opens:
-	// those of its types where it is the default reader of every enabled plugin.
+	ID         string
 	Extensions []string
 }

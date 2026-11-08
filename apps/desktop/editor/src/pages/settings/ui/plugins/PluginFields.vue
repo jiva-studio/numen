@@ -81,7 +81,6 @@ function readSetting(key: string): unknown {
   return installation.value.getSetting([props.plugin.id, ...key.split('.')])
 }
 
-/** The value in force of a setting: the one the core resolved, else the file, else nothing. */
 function getValue(key: string): unknown {
   const setting = props.plugin.settings.find((one) => one.key === key)
   if (!setting) return readSetting(key)

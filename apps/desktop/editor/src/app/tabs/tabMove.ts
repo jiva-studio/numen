@@ -32,9 +32,7 @@ export interface TabMoverDeps {
   readonly core: Pick<VaultPort, 'detachTab' | 'moveTab'>
   readonly windowId: string
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab' | 'tabs'>
-  /** The asking check and the flush of pending writes of a tab. */
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
-  /** Closes the source tab after the target window accepts it; returns false when the tab stays open. */
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
 }
@@ -100,7 +98,6 @@ export function createTabMover(deps: TabMoverDeps) {
 export interface MovedTabOpenerDeps {
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab' | 'openSavedTab'>
   readonly closeTab: (id: string) => void
-  /** Sends AcceptTabMove. On an error the opener closes the tab it opened. */
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
   readonly focusWindow: () => Promise<void>
   readonly wait: (ms: number) => Promise<unknown>

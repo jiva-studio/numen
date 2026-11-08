@@ -4,25 +4,21 @@ import { openWorkspace, runCommand } from '../../support/workspace.js'
 /** `--numen-surface` in the Dracula theme of the preset themes plugin. */
 const DRACULA_SURFACE = '#21222c'
 
-/** The text of the style element the window carries its theme in. */
 const getThemeStyle = (page: Page): Promise<string> =>
   page.evaluate(
     () => document.head.querySelector('style[data-appearance="theme"]')?.textContent ?? '',
   )
 
-/** The text of the theme style in the page as the server sends it, before any script runs. */
 const getServedThemeStyle = async (page: Page): Promise<string> => {
   const html = await (await page.request.get('/')).text()
   return /<style data-appearance="theme">([^<]*)<\/style>/.exec(html)?.[1] ?? ''
 }
 
-/** Reloads the window and waits until it has drawn the tabs it restores. */
 const reloadWindow = async (page: Page): Promise<void> => {
   await page.reload()
   await expect(page.getByRole('tabpanel').first()).toBeVisible()
 }
 
-/** Applies the theme of that title through the palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
   await runCommand(page, 'Theme', /^Theme/)
   await page
@@ -31,7 +27,6 @@ const chooseTheme = async (page: Page, title: string): Promise<void> => {
     .click()
 }
 
-/** Turns the preset themes plugin on or off in the settings. */
 const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })

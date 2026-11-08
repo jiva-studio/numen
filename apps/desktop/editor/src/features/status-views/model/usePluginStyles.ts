@@ -8,7 +8,6 @@
 import { onBeforeUnmount, watch } from 'vue'
 import { adoptPluginStyle, getPluginStyle, type DeclaredStatusView } from '@numen/plugin-host'
 
-/** Adds the stylesheet of a plugin to the window: as an adopted sheet, or as a link where the sheet was not read. */
 function createStyle(pluginId: string): () => void {
   const release = adoptPluginStyle(pluginId, document)
   if (release) return release

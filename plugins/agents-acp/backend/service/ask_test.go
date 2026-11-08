@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 )
 
-// askAgent sends the task and returns the response text and the stop reason.
 func askAgent(t *testing.T, svc *agentServer, task *agentrun.Request) (said, stopReason string) {
 	t.Helper()
 	stream, err := agenttest.Serve(t, svc).Ask(t.Context(), task)

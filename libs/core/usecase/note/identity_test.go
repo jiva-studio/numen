@@ -14,9 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// started are the initial notes of a run: one created by this application with
-// a title, one created by it without a title, one created in another editor,
-// and one created in another editor with a title.
 func getStarted() []string {
 	return []string{
 		"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\ntitle: Old\n---\n\nA measure.\n",
@@ -26,16 +23,10 @@ func getStarted() []string {
 	}
 }
 
-// titles are what a note is renamed to: names a filename carries, one it cannot
-// carry, and one that is a name in another script.
 func getTitles() []string { return []string{"Entropy", "Order", "TCP/IP", "Энтропия", "a: b"} }
 
-// folders are where a note is moved to.
 func getFolders() []string { return []string{"", "physics", "physics/thermo"} }
 
-// writeNote writes one run's note into its own folder and registers it with the
-// index. One vault is shared by the whole check, because opening an index for
-// every run of a property is too slow.
 func writeNote(rt *rapid.T, c changing, folder, raw string) string {
 	rt.Helper()
 	path := folder + "/Old.md"
@@ -52,8 +43,6 @@ func writeNote(rt *rapid.T, c changing, folder, raw string) string {
 	return path
 }
 
-// getIdentifier is the identifier the note at this path is placed under, and
-// whether it carries one at all.
 func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))

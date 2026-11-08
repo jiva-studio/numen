@@ -58,7 +58,6 @@ func (*chunkingPlugin) EmbedBatch(
 	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
 }
 
-// openChunkingConfig is a configuration whose embedding plugin reports tokens as the chunk size.
 func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.Host, *chunkingPlugin) {
 	t.Helper()
 	reporter := &chunkingPlugin{}

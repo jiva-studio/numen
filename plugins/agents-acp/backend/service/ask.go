@@ -24,15 +24,10 @@ type question struct {
 	system    string
 	prompt    string
 	tools     toolEndpoint
-	// words are the declarations of the run's tools, which a call is shown by.
-	words map[string]toolcall.Declaration
-	// report sends a step of the run as it happens.
-	report func(*agentrun.Response) error
+	words     map[string]toolcall.Declaration
+	report    func(*agentrun.Response) error
 }
 
-// answer poses one question to the agent in a new session, using the model the
-// agent reports for the id and the tools of the question. It reports each tool
-// call as it happens and returns the text of the answer.
 func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (text string, err error) {
 	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
@@ -79,8 +74,6 @@ func sendStopped(send func(*agentrun.Response) error, reason string) error {
 	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
-// findAgent returns the agent the program names, started by the command line given, else by the one
-// the settings gave at the last program listing.
 func (s *agentServer) findAgent(program string, command []string) (acpAgent, error) {
 	name, isACP := strings.CutPrefix(program, acpProgramPrefix)
 	if !isACP || name == "" {

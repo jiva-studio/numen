@@ -4,7 +4,6 @@
  */
 // --- Props & Emits ---
 const props = defineProps<{
-  /** Why the core could not be reached, in user-readable text. */
   failure: string
 }>()
 

@@ -26,7 +26,6 @@ export const CARD_MODEL = 'card-model'
 /** What the card model tabs of a window are made from. */
 export interface CardModelTabsOptions {
   readonly buffers: BufferHost
-  /** The window lets go of a tab that took its own close. */
   readonly closeTab: (id: string) => void
   readonly writeMessage?: MessageWriter | undefined
 }

@@ -181,8 +181,7 @@ type clientTurn struct {
 	waitingOnce sync.Once
 	ended       chan struct{}
 	releaseOnce sync.Once
-	// err is the failure the stream ended on while the turn was held. It is set before ended closes.
-	err error
+	err         error
 }
 
 func (t *clientTurn) Release() error {

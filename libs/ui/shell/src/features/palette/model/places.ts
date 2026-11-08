@@ -20,35 +20,22 @@ import { getActionId } from '../lib/keys'
 import { placePalette, type PlacedGroup } from '../lib/place'
 
 export interface PalettePlacesState {
-  /** The groups as they are drawn, their rows numbered over the whole list. */
   readonly placed: ComputedRef<readonly PlacedGroup[]>
-  /** Every row of every group, in the order the keyboard walks them. */
   readonly places: ComputedRef<readonly PalettePlace[]>
-  /** What a search came back with, where it came back with nothing. */
   readonly announcement: ComputedRef<string>
-  /** The number of the row the keyboard is on, and -1 for none. */
   readonly here: ComputedRef<number>
-  /** The item with keyboard focus, and the actions available on it. */
   readonly activeItem: ComputedRef<PaletteItem | undefined>
   readonly actions: ComputedRef<readonly PaletteAction[]>
-  /** The keyboard onto the row at that number. */
   readonly goTo: (pos: number) => void
-  /** The keyboard put on nothing, which a fresh question leaves it on. */
   readonly selectedId: Ref<string>
-  /** A pointer crossing the list lights the row it passes over. */
   readonly lightAt: (pos: number, event: PointerEvent) => void
-  /** The row at that index, and whether the second action was requested. */
   readonly chooseAt: (pos: number, second: boolean) => void
 }
 
 export interface PalettePlacesOptions {
-  /** The groups, in the order they are offered. */
   readonly groups: () => readonly PaletteGroup[]
-  /** What is typed, which a fresh question is a fresh list of. */
   readonly typed: Ref<string>
-  /** The keyboard position, emitted whenever it moves. */
   readonly onItemActive: (item: string) => void
-  /** An item chosen, and the action requested on it. */
   readonly tellChoice: (item: string, action: string) => void
 }
 

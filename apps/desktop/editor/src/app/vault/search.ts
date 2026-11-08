@@ -6,7 +6,6 @@ import type { Selector } from '@numen/plugin-host'
 import { modes, mapNoteType, mapRange } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 
-/** The selector of a hit, parsed from its JSON, and null where it has none. */
 const parseSelector = (json: string): Selector | null => {
   try {
     const value: unknown = JSON.parse(json)

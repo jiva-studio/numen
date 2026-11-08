@@ -22,8 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// The fixture vault is deliberately awkward: a note with no frontmatter, broken
-// YAML, CRLF line endings, text that is not Latin, a PDF, and a hidden folder.
 func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 	t.Helper()
 	cfg, err := vaultconfig.ReadConfig(root, vaultconfig.DefaultServiceDir)
@@ -44,12 +42,8 @@ func openIndex(t *testing.T) *container.Index {
 	return db
 }
 
-// notesOnly keeps a search to what the vault holds as notes.
 func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
 
-// searchNotes is the notes of a vault whose text matches the words typed, by
-// path. The words are indexed over chunks, so a note matching in more than one
-// of its own is named once.
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	found, err := db.Passages().FindLexical(t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})

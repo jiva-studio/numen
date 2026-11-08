@@ -13,7 +13,6 @@ const settings = (goal: Goal): SettingsMessage => ({
   reviewsADay: 45,
 })
 
-/** An application answering every deck with what is given here. */
 const answering = (answer: Awaited<ReturnType<PresetsClient['getVaultDeckPreset']>>) => ({
   getVaultDeckPreset: async () => answer,
 })

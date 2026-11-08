@@ -43,7 +43,6 @@ func (c Config) Settings() (Settings, error) {
 	return c.getCheckedSettingsAt(path)
 }
 
-// getSettingsAt is that document read from an explicit file.
 func (c Config) getSettingsAt(path string) (Settings, error) {
 	target := DefaultSettings()
 	if err := c.getResources().settingsFiles.OpenAt(path, &target); err != nil {
@@ -52,9 +51,6 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 	return target, nil
 }
 
-// getCheckedSettingsAt is that document with every value left out of force that the declarations of
-// the plugin host and the registries refuse. Without a plugin host no plugin declares anything,
-// and the document is read as it is.
 func (c Config) getCheckedSettingsAt(path string) (Settings, error) {
 	target, err := c.getSettingsAt(path)
 	if err != nil {
@@ -71,8 +67,6 @@ func DefaultSettings() Settings {
 	return settings.DefaultFile()
 }
 
-// getSettingsOrDefaults returns the settings document, or the defaults when
-// the file cannot be read.
 func (c Config) getSettingsOrDefaults() Settings {
 	if path, err := c.settingsFile(); err == nil {
 		if target, err := c.getCheckedSettingsAt(path); err == nil {
@@ -139,7 +133,6 @@ func (c Config) listModels() []settingsport.Model {
 	return prefixModels(settings.OwnerApp, settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent)))
 }
 
-// prefixModels puts the owner at the head of the path of every model and of every setting it writes.
 func prefixModels(owner string, models []settingsport.Model) []settingsport.Model {
 	for place := range models {
 		models[place].Path = append([]string{owner}, models[place].Path...)
@@ -156,7 +149,6 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 	return c.listModels
 }
 
-// getDeclarations returns the settings each owner declares: the shell, and the plugins of the host.
 func (c Config) getDeclarations() settings.Declarations {
 	return func(owner string) ([]pluginport.PluginManifestSetting, bool) {
 		if owner == settings.OwnerApp {
@@ -170,7 +162,6 @@ func (c Config) getDeclarations() settings.Declarations {
 	}
 }
 
-// getRegistries returns the registries an option list may name: the installed themes.
 func (c Config) getRegistries() settings.Registries {
 	return func(name string) ([]string, bool) {
 		options, found := c.listRegistryOptions(name)
@@ -182,8 +173,6 @@ func (c Config) getRegistries() settings.Registries {
 	}
 }
 
-// listRegistryOptions returns the options a registry lists, and false for a registry that has no
-// provider.
 func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
 	if name != settings.RegistryThemes {
 		return nil, false
@@ -199,14 +188,10 @@ func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOption
 	return options, true
 }
 
-// listAppSettings returns the declaration of the settings of the shell with the options, the
-// visibility and the value in force of each under the settings file.
 func (c Config) listAppSettings() []pluginport.PluginSetting {
 	return c.listAppSettingsOn(runtime.GOOS)
 }
 
-// listAppSettingsOn lists the settings of the shell that apply on an operating system, named as
-// runtime.GOOS names it.
 func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
 	current := c.getSettingsOrDefaults()
 	declared := settings.GetAppDeclaration()
@@ -261,15 +246,12 @@ func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()
 	})
 }
 
-// refreshSettingEvents delivers what a write changed.
 func (c Config) refreshSettingEvents() {
 	if events := c.getResources().settingEvents; events != nil {
 		events.Refresh(c.readSettingValues)
 	}
 }
 
-// readSettingValues reads the values in force from the settings file. A file that is not there is
-// an unconfigured installation, and reading does not write it.
 func (c Config) readSettingValues() (settingevents.Values, error) {
 	path, err := c.settingsFile()
 	if err != nil {
@@ -285,7 +267,6 @@ func (c Config) readSettingValues() (settingevents.Values, error) {
 	return c.listSettingValues(target)
 }
 
-// listDefaultSettingValues is the values of an installation with no settings file.
 func (c Config) listDefaultSettingValues() settingevents.Values {
 	values, err := c.listSettingValues(DefaultSettings())
 	if err != nil {
@@ -301,8 +282,6 @@ const (
 	hostFieldStoredSecrets = pluginport.SettingStoredSecrets
 )
 
-// listSettingValues lists the value in force of every setting the shell and the plugins declare,
-// and the fields the host keeps for each plugin.
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
 	values := settingevents.Values{}
 	var failures []error
@@ -347,8 +326,6 @@ func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]
 	}
 }
 
-// subscribeHost makes the plugin host a reader of the events, once: it takes the settings of its
-// plugins and the performance profile through them.
 func (c Config) subscribeHost() {
 	resources := c.getResources()
 	if resources.settingEvents == nil || c.PluginHost == nil {
@@ -364,8 +341,6 @@ func (c Config) subscribeHost() {
 	})
 }
 
-// tellHost gives the plugin host the settings of the plugins among those that changed, and the
-// performance profile.
 func (c Config) tellHost(batch []settingsport.Setting) {
 	notifyPluginSettings(c.PluginHost, batch, c.handleError)
 	for _, one := range batch {
@@ -381,5 +356,4 @@ func (c Config) tellHost(batch []settingsport.Setting) {
 	}
 }
 
-// profilePath is the path of the performance profile in the settings file.
 func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }

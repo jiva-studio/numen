@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// writeSettings is a settings file beside the vault list, which is where an
-// installation pointed somewhere of its own keeps one.
 func writeSettings(t *testing.T, body string) container.Config {
 	t.Helper()
 	target := t.TempDir()

@@ -67,29 +67,15 @@ export interface CommandPlace {
  * tab, the note the plex is focused on.
  */
 export interface CommandTarget {
-  /** The tab in front, for a command about the tab itself. */
   readonly tab: string
-  /** The word its kind is filed under, and nothing for a tab holding nothing. */
   readonly kind: string | null
-  /** The note it means, and nothing where it means none. */
   readonly path: string
   readonly title: string
-  /**
-   * The file a run targets. A tab holding a file names that file; a tree row
-   * names the file the row represents.
-   */
   readonly file: string
-  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
   readonly line?: number
-  /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
-  /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
-  /**
-   * Whether the vault accepts operations. A vault still being scanned does: the
-   * scan runs in the background and the files it has reached are available.
-   */
   readonly isReady: boolean
 }
 
@@ -97,63 +83,36 @@ export interface CommandTarget {
 export interface Command {
   readonly id: string
   readonly text: string
-  /** A second line under the command text, such as the plugin that carries it out. */
   readonly detail?: string
-  /** The keyboard shortcut that triggers it outside the palette. */
   readonly keys?: PaletteKeys
-  /** The icon it is drawn with, where the one who declares it gives one. */
   readonly icon?: Component
-  /** The Lucide name of its icon, for a place that draws icons by name. */
   readonly iconName?: string
-  /** The input it requires before it runs. */
   readonly input?: PromptStep
-  /** The step that follows the first one. */
   readonly next?: PromptStep
-  /** The values the `arguments` steps ask for, in order. */
   readonly prompts?: readonly CommandPrompt[]
-  /** The group it is offered in. */
   readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string
-  /** What its step displays, when that step confirms or prompts for the name again. */
   readonly answers?: ConfirmWords
   readonly warns?: RetypeWords
-  /** The command Shift and Enter reach on the same row. */
   readonly also?: string
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */
 export interface CommandInvocation {
   readonly id: string
-  /** The note it is over. Empty for a command over the window or the vault. */
   readonly path: string
-  /** The vault it is over, which is the one the window shows until a step picks another. */
   readonly vault: VaultRef
-  /**
-   * The identity of the tab holding that note, and nothing where none holds it.
-   * A note that moves is at another name by the time the invocation is carried out.
-   */
   readonly note: string | null
   readonly title: string
-  /** The file a run is over, which is the one `CommandTarget` named. */
   readonly file: string
-  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
   readonly line?: number
-  /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
-  /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
-  /**
-   * What was typed for it: a name to give, or a name typed back. A step that
-   * offers a list the window holds puts the one that was chosen here.
-   */
   readonly name: string
-  /** The tab kind the command was invoked from; determines where a note it creates opens. */
   readonly kind: string | null
-  /** The tab the command was invoked from, for a command about the tab itself. */
   readonly tab: string
-  /** What the `arguments` steps were answered, by the name of each prompt. */
   readonly values?: Readonly<Record<string, string>>
 }
 

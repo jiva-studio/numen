@@ -11,7 +11,6 @@ import (
 // A window reads an offset off the markup and counts none itself.
 const OffsetAttribute = "data-offset"
 
-// isAlone reports whether an element holds nothing and is written without a closing tag.
 func isAlone(key string) bool {
 	switch key {
 	case "br", "col", "hr", "img":

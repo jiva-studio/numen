@@ -6,7 +6,6 @@ import type { FileKind } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
-/** A vault that returns the given kinds. */
 const createVault = (kinds: Record<string, FileKind>): FileOpenerDeps => ({
   fileKinds: async (paths) => {
     const found = new Map<string, FileKind>()

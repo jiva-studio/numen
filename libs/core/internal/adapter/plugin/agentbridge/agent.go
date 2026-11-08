@@ -46,7 +46,6 @@ func OpenForPlugin(ctx context.Context, host Host, pluginID string) (*Agent, err
 	}, nil
 }
 
-// newAskRequest is the task in the schema's words.
 func newAskRequest(task agentport.Task) *v1.AskAgentRequest {
 	declarations := make([]*v1.ToolDeclaration, 0, len(task.ToolDeclarations))
 	for _, one := range task.ToolDeclarations {
@@ -340,7 +339,6 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 	}
 }
 
-// stepKindWords are what a call does to the vault, in the words the plugins report it in.
 func getStepKindWords() map[domain.StepKind]string {
 	return map[domain.StepKind]string{
 		domain.StepRead:   "read",
@@ -351,12 +349,8 @@ func getStepKindWords() map[domain.StepKind]string {
 	}
 }
 
-// getKindWord returns the word that identifies to a plugin what a call does. A
-// kind that does not act on the vault maps to the empty word.
 func getKindWord(kind domain.StepKind) string { return getStepKindWords()[kind] }
 
-// getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
-// core does not know is a call of unknown effect.
 func getStepKind(kind string) domain.StepKind {
 	for effect, word := range getStepKindWords() {
 		if word == kind {
@@ -366,7 +360,6 @@ func getStepKind(kind string) domain.StepKind {
 	return domain.StepToolCall
 }
 
-// newReasoningLevels is the levels of reasoning a plugin reports, as the port holds them.
 func newReasoningLevels(reported []*v1.ReasoningLevel) []agentport.ReasoningLevel {
 	if len(reported) == 0 {
 		return nil

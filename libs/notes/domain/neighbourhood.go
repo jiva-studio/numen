@@ -37,9 +37,7 @@ func GetRelationRank(s Relation) int {
 type NoteRef struct {
 	Path  string
 	Title string
-	// ID is the identifier written in the file, empty for a note made outside
-	// the application.
-	ID string
+	ID    string
 }
 
 // Neighbour is a note and its relation to the note in focus. The
@@ -54,12 +52,6 @@ type Neighbourhood struct {
 	Focus   NoteRef
 	Related []Neighbour
 
-	// Connections holds one connection for every pair of drawn notes that a
-	// record joins: the focus with a neighbour, and two neighbours with each
-	// other. A hierarchical connection runs from the parent (A) to its child
-	// (B). A connection of jumps runs from the later drawn note (A) to the
-	// earlier one (B). Records that contradict the direction or the kind of
-	// the connection are left out.
 	Connections []Connection
 }
 

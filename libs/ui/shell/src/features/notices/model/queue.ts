@@ -8,7 +8,6 @@ import type { Severity } from '../lib/tally'
 
 /** The notices of every source, and what changes them. */
 export interface NoticeQueue {
-  /** The tasks of every source first, then the messages, oldest first. */
   readonly notices: ComputedRef<readonly Notice[]>
   /** A notice from a source. An info notice is removed once read; any other persists until dismissed. */
   show(source: string, text: string, severity: Severity): void

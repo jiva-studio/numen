@@ -94,7 +94,6 @@ export function useLink(links: Links | undefined, path: string) {
   }
 }
 
-/** Where the copy is played from, or else where the page that frames the player is loaded from. */
 const readPlayback = async (
   links: Links,
   path: string,

@@ -11,13 +11,11 @@ import { createAgentKind } from '../kind'
 import { createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
 
-/** The agent and the model the stories make up, so the tab has one that can answer. */
 const getStoryModels = (path: readonly string[]) =>
   path.join('/') === 'app/agent/use'
     ? [{ name: 'orchard', title: 'Orchard', isDefault: true, presence: 'present' as const }]
     : [{ name: 'main', title: 'Main', isDefault: true, presence: 'present' as const }]
 
-/** An agent tab opened by the kind over a talk that answers with the transcript so far. */
 const createTab = (turn: readonly Turn[]) =>
   defineComponent({
     name: 'AgentKindTab',

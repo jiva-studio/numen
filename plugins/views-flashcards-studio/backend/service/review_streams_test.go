@@ -32,14 +32,10 @@ type breakingClient struct {
 	b       breaking
 }
 
-// newBreakingClient returns the client of the review window over streams broken
-// as b specifies.
 func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 	return breakingClient{handler: handler, b: b}
 }
 
-// breakStream runs the stream method under the breaking context, counting each
-// message sent and failing the ones b selects.
 func breakStream[Req, Res any](
 	ctx context.Context, c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
@@ -71,7 +67,6 @@ func (c breakingClient) WatchCardsDue(
 	return breakStream(ctx, c, req, c.handler.WatchCardsDue)
 }
 
-// awaitReturn is what the handler returned.
 func awaitReturn(t *testing.T, returned <-chan error) error {
 	t.Helper()
 	select {

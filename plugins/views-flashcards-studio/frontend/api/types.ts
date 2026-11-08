@@ -129,7 +129,6 @@ export interface Value {
 
 /** ListCardModelsRequest is the request of the ListCardModels method. */
 export interface ListCardModelsRequest {
-  /** Limit is the largest number of card models to return; a value of zero or less selects the maximum. */
   limit?: number
 }
 
@@ -216,7 +215,6 @@ export interface CreateDeckRequest {
 export interface CreateDeckResponse {
   path: string
   error?: ErrorCode
-  /** IsIndexOutdated reports that the file was written and the index did not follow. */
   isIndexOutdated: boolean
 }
 
@@ -230,7 +228,6 @@ export interface ReadDeckResponse {
   deck?: Deck
   error?: ErrorCode
   at?: FileStat
-  /** Bound is the size limit in bytes that a deck failed against; zero for any other outcome. */
   bound: number
 }
 
@@ -248,7 +245,6 @@ export interface WriteDeckRequest {
 export interface WriteDeckResponse {
   error?: ErrorCode
   at?: FileStat
-  /** Bound is the size limit in bytes that a deck failed against; zero for any other outcome. */
   bound: number
   isIndexOutdated: boolean
 }
@@ -513,7 +509,6 @@ export interface PresetCardsDue {
   pendingReviews: number
   pendingNew: number
   reviewed: number
-  /** DurationMs is the time spent reviewing in the current day in milliseconds. */
   durationMs: number
   reviewedNew: number
   reviewedReviews: number
@@ -554,10 +549,8 @@ export type WatchCardsDueRequest = Record<string, never>
 
 /** WatchCardsDueResponse is the response of the WatchCardsDue method. */
 export interface WatchCardsDueResponse {
-  /** Vaults lists every known vault; sent first and again while no count has arrived. */
   vaults: VaultCardsDue[]
   day: string
-  /** Counted is the count of one vault, sent as soon as it is worked out. */
   counted?: VaultCardsDue
 }
 
@@ -565,7 +558,6 @@ export interface WatchCardsDueResponse {
 export interface StartSessionRequest {
   vault?: string
   deck?: string
-  /** Preset selects the decks of one preset; the path may be empty for the default preset. Absent selects no preset. */
   preset?: string
 }
 
@@ -584,7 +576,6 @@ export interface RecordReviewRequest {
   cardId?: string
   template?: string
   rating?: Rating
-  /** DurationMs is the time spent on the card in milliseconds. */
   durationMs?: number
 }
 
@@ -659,7 +650,6 @@ export type WatchReloadsRequest = Record<string, never>
 
 /** WatchReloadsResponse is the response of the WatchReloads method. */
 export interface WatchReloadsResponse {
-  /** Reload is true when the vault changed; false messages only show the stream is open. */
   reload: boolean
 }
 

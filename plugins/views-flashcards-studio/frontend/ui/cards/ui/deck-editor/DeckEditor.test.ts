@@ -46,7 +46,6 @@ const getTile = (wrapper: Grid, id: string) => wrapper.get(`[data-card="${id}"]`
 const getDrawnCards = (wrapper: Grid) =>
   wrapper.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
 
-/** The fields a tile puts in boxes, in the order it draws them. */
 const getFields = (wrapper: Grid, id: string): readonly (string | undefined)[] =>
   getTile(wrapper, id)
     .findAll('textarea')
@@ -55,16 +54,11 @@ const getFields = (wrapper: Grid, id: string): readonly (string | undefined)[] =
 const getBox = (wrapper: Grid, id: string, field: string) =>
   getTile(wrapper, id).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
 
-/** Every box standing under one field of one card, in the order they are drawn. */
 const getBoxes = (wrapper: Grid, id: string, field: string): readonly HTMLTextAreaElement[] =>
   getTile(wrapper, id)
     .findAll<HTMLTextAreaElement>(`[data-value="${field}"]`)
     .map((box) => box.element)
 
-/**
- * A card picked up by its grip and let go over another card, the head of the
- * deck, a section, or the grid.
- */
 const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<void> => {
   await getTile(wrapper, id).get('[data-grip]').trigger('dragstart')
   const overTarget =
@@ -79,21 +73,18 @@ const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<v
   await overTarget.trigger('drop')
 }
 
-/** A box typed into, as a user types into it. */
 const typeInto = (box: HTMLTextAreaElement | undefined, text: string): void => {
   if (!box) throw new Error('no box to type in')
   box.value = text
   box.dispatchEvent(new Event('input'))
 }
 
-/** A key pressed on something, as the event it was pressed with. */
 const pressKey = (on: Element, key: string): KeyboardEvent => {
   const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   on.dispatchEvent(press)
   return press
 }
 
-/** A card picked up and the drag ended without it being let go anywhere. */
 const dragOff = async (wrapper: Grid, id: string, targetId: string | null): Promise<void> => {
   const grip = getTile(wrapper, id).get('[data-grip]')
   await grip.trigger('dragstart')

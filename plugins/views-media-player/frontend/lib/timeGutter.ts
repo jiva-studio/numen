@@ -11,9 +11,7 @@ import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codem
 /** What the editor shows against its lines. */
 export interface TimeGutterState {
   readonly times: readonly string[]
-  /** The current line, counted from zero; -1 for none. */
   readonly current: number
-  /** Whether the view scrolls to keep the current line visible. */
   readonly isFollowing: boolean
 }
 
@@ -134,7 +132,6 @@ const timeGutterTheme = EditorView.theme({
 
 /** The times of one editor, and what puts them there. */
 export interface TimeGutter {
-  /** The extension, put in the editor these are shown in. */
   readonly extension: Extension
   /** What the editor shows now. */
   show(state: TimeGutterState): void
@@ -142,7 +139,6 @@ export interface TimeGutter {
   centerCurrent(): void
 }
 
-/** Whether two of these say the same thing. */
 const isSame = (one: TimeGutterState, two: TimeGutterState): boolean =>
   one.current === two.current &&
   one.isFollowing === two.isFollowing &&

@@ -8,7 +8,6 @@ import { CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from '../..
 
 withDefaults(
   defineProps<{
-    /** The words they are drawn with. */
     words?: ReaderWords
   }>(),
   { words: () => READER_WORDS },

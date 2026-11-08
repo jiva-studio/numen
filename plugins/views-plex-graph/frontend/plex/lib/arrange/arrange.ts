@@ -25,23 +25,9 @@ import { separateTitles } from './edges/titles'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
-  /** Defaults to rows and columns — the arrangement a plex is recognised by. */
   readonly placement?: Placement | undefined
-  /**
-   * The width a node's box needs to hold its title, padding included. Text is
-   * measured where the plex is drawn; here it arrives as a number. Without one
-   * every box is drawn at its widest.
-   */
   readonly measure?: ((node: PlexNode) => number) | undefined
-  /**
-   * The width a label's words need on their line, measured where the plex is
-   * drawn. Without one a label is written at whatever length it has.
-   */
   readonly measureLabel?: ((label: string) => number) | undefined
-  /**
-   * The ink of a label's font, measured where the plex is
-   * drawn. A label uses its own font, and one with no ink takes up none.
-   */
   readonly labelType?: LabelType | undefined
 }
 
@@ -98,11 +84,6 @@ export function arrangePlex(
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }
 
-/**
- * Width at which each box is drawn: the measurer's result, clamped between the
- * minimum and the maximum the node's relation allows. The focus is measured like
- * every other node, against its own width.
- */
 function createWidthLookup(
   options: PlexOptions,
   measure: ((node: PlexNode) => number) | undefined,
@@ -114,7 +95,6 @@ function createWidthLookup(
   }
 }
 
-/** Whether every node stays inside the window, the margin kept clear. */
 function isInsideViewport(nodes: readonly PlacedNode[], viewport: Size, margin: number): boolean {
   const halfWidth = viewport.width / 2 - margin
   const halfHeight = viewport.height / 2 - margin
@@ -134,10 +114,6 @@ function countRelations(nodes: readonly PlexNode[]): Record<PlexRelation, number
   ) as Record<PlexRelation, number>
 }
 
-/**
- * How many nodes of each relation fit in the drawing. Determined before a
- * strategy runs, so the overflow count means the same for every strategy.
- */
 function canPlace(
   nodes: readonly PlexNode[],
   limits: Limits,

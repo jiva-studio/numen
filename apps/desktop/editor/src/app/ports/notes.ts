@@ -44,7 +44,6 @@ export interface NotePort {
   ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
-  /** The relationships between notes: read, written and created through the core. */
   readonly relations: VaultRelations
   /**
    * A note given a different name. Whichever of the title and the filename

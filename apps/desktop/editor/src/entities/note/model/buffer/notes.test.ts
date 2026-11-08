@@ -4,15 +4,12 @@ import { computed, watch } from 'vue'
 
 import { openNotes, type Notes } from './notes'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
 
-/** A file's file stat, which follows what the file holds. */
 const statFile = (body: string): string => `at:${body}`
 
-/** A core that answers reads and writes from what a test puts in it. */
 function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
@@ -42,7 +39,6 @@ function fake(overrides: Partial<Notes> = {}) {
   return { core, files, wrote }
 }
 
-/** Let every microtask settle. */
 const settle = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve()
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
-// scanVault scans a vault and returns the checks over it.
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)

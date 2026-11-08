@@ -18,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// watchVault follows a vault and gives back a function that waits for the next
-// batch of changed paths.
 func watchVault(t *testing.T, hub *watchhub.Hub, root string) func() []string {
 	t.Helper()
 	changes, _, err := vaultwatch.Watcher{Hub: hub}.WatchVault(t.Context(), domain.Vault{Path: root})

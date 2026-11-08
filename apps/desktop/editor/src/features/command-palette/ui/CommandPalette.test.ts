@@ -74,7 +74,6 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
 }
 
-/** The window's field, with a search that answered with the names and passages given. */
 async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, text: string) {
   const core: SearchDeps = {
     names: async () => found.names ?? [],

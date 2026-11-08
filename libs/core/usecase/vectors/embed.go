@@ -33,30 +33,17 @@ type Embed struct {
 	chunks  embeddingport.VectorQueries
 	vectors embeddingport.VectorRepository
 
-	// Texts is optional. A chunk of a source cut from a text version is re-sliced
-	// out of that version; without it such a chunk is left pending its vector.
 	Texts textport.TextReaders
-	// Claim is optional. It keeps a second process from embedding the vault at
-	// once; without it nothing is claimed.
 	Claim vaultport.IndexClaim
 
-	// Embedder is optional. Without one nothing is embedded and a search answers
-	// on its words alone, which is a whole search: the vector index fills in
-	// behind, and may never finish.
 	Embedder embeddingport.Embedder
 
-	// BatchCharacters bounds one request to the model. Zero takes the default.
 	BatchCharacters int
 
-	// Concurrency is how many infer workers run in parallel. Zero takes the
-	// embedder's concurrency.
 	Concurrency int
 
-	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
 
-	// IsSkipped, if set, names the sources, by path and content hash, whose
-	// chunks are left without vectors.
 	IsSkipped func(path, hash string) bool
 }
 
@@ -100,7 +87,6 @@ func (u Embed) EmbedWithProgress(
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
 const pipelineBufferSize = 4
 
-// getSources returns the distinct sources of the chunks, in the order they appear.
 func getSources(chunks []domain.Passage) []string {
 	var out []string
 	for _, one := range chunks {
@@ -120,9 +106,8 @@ type preparedBatch struct {
 	reusedCount int
 	asking      []string
 	askingMap   []int
-	// sources are the distinct sources of the chunks, in order, and id the batch in the tracker.
-	sources []string
-	id      uint64
+	sources     []string
+	id          uint64
 }
 
 // completedBatch is one batch whose vectors are ready to be stored.
@@ -194,8 +179,6 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, er
 	return res, nil
 }
 
-// claim takes the index claim when one is set, and reports isBusy when
-// another process holds it.
 func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	if u.Claim == nil {
 		return func() error { return nil }, false, nil
@@ -210,8 +193,6 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	return release, false, nil
 }
 
-// produceBatches reads every pending chunk of the vault and sends them on out as
-// prepared batches.
 func (u Embed) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
@@ -252,7 +233,6 @@ func (u Embed) produceBatches(
 	}
 }
 
-// sendBatches splits the texts into batches by size and sends each one prepared.
 func (u Embed) sendBatches(
 	ctx context.Context,
 	model embeddingport.EmbeddingModel,
@@ -281,8 +261,6 @@ func (u Embed) sendBatches(
 	return nil
 }
 
-// sortBySource orders chunks and their texts in place: sources in order of first
-// appearance, and within a source by ascending text length.
 func sortBySource(chunks []domain.Passage, texts []string) {
 	if len(chunks) < 2 {
 		return
@@ -318,7 +296,6 @@ func sortBySource(chunks []domain.Passage, texts []string) {
 	}
 }
 
-// inferBatches runs workers that turn prepared batches into completed ones.
 func (u Embed) inferBatches(
 	ctx context.Context,
 	workers int,
@@ -332,7 +309,6 @@ func (u Embed) inferBatches(
 	return g.Wait()
 }
 
-// runInferWorker infers batches from in until it closes or ctx ends.
 func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out chan<- completedBatch) error {
 	for {
 		select {
@@ -355,7 +331,6 @@ func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out 
 	}
 }
 
-// storeBatches writes the vectors of each completed batch and reports progress.
 func (u Embed) storeBatches(
 	ctx context.Context,
 	in <-chan completedBatch,
@@ -377,7 +352,6 @@ func (u Embed) storeBatches(
 	}
 }
 
-// saveCompleted writes the vectors of a completed batch, if it has any.
 func (u Embed) saveCompleted(ctx context.Context, comp completedBatch) error {
 	if len(comp.vectors) == 0 {
 		return nil
@@ -388,12 +362,6 @@ func (u Embed) saveCompleted(ctx context.Context, comp completedBatch) error {
 	return nil
 }
 
-// read recovers the text of each chunk by reopening its source; the index stores
-// chunk positions, not content.
-//
-// A chunk whose source is gone, or whose position is not in the current source
-// text, is left unchanged: the file is the source of truth, and the index
-// follows it when the file is next read.
 func (u Embed) read(
 	ctx context.Context,
 	source *extracted,
@@ -439,7 +407,6 @@ func (u Embed) read(
 	return chunks, texts, nil
 }
 
-// prepareBatch resolves cached vectors and identifies texts requiring inference.
 func (u Embed) prepareBatch(
 	ctx context.Context,
 	model embeddingport.EmbeddingModel,
@@ -501,9 +468,6 @@ func (u Embed) prepareBatch(
 	return prep, nil
 }
 
-// queueText queues the text at index i for inference. A nil visited map queues
-// every text; a non-nil map makes a key already in visited share the position of its
-// first text.
 func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
 	if visited != nil {
 		if pos, ok := visited[key]; ok {
@@ -521,7 +485,6 @@ type uniqueVector struct {
 	coarse []byte
 }
 
-// inferBatch embeds texts that need vectors and normalises/quantises the output.
 func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBatch, error) {
 	if len(prep.pending) == 0 {
 		return completedBatch{}, nil
@@ -559,8 +522,6 @@ func (u Embed) progress(res EmbedResult) {
 	}
 }
 
-// packVector is a quantised vector as the bytes that are stored, one per
-// dimension.
 func packVector(q []int8) []byte {
 	out := make([]byte, len(q))
 	for i, x := range q {
@@ -580,11 +541,6 @@ type extracted struct {
 	isIndexed bool
 }
 
-// textOf returns the extracted text of one source, and false when the vault no
-// longer holds a source with text at that path.
-//
-// A note chunk is sliced from the note's file, and a version chunk from that
-// version.
 func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isIndexed, nil
@@ -603,8 +559,6 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 	return e.text, true, nil
 }
 
-// read is the text a source's chunks are places in: a note's file, or the
-// version the source was cut from.
 func (e *extracted) read(ctx context.Context, path, from string) (string, error) {
 	if from == "" {
 		raw, err := e.files.Read(ctx, path)
@@ -617,8 +571,6 @@ func (e *extracted) read(ctx context.Context, path, from string) (string, error)
 	return doc.Text, err
 }
 
-// embedAsking embeds the texts the batch asks for, as documents, and returns their normalised,
-// quantised vectors. A batch that asks for none returns none.
 func (u Embed) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVector, error) {
 	if len(prep.asking) == 0 {
 		return nil, nil

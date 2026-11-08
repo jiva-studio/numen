@@ -29,17 +29,12 @@ export interface PluginSupportDeps {
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
   readonly reportError?: (pluginId: string, error: unknown) => void
-  /** Reports a plugin whose frontend failed to load or activate; falls back to `reportError`. */
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
-  /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
   readonly services?: PluginServices
-  /** The window's one list of notices, which each plugin shows its own in. */
   readonly notices?: NoticeQueue
-  /** The commands the enabled plugins declare in their manifests. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
-  /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
 }
 

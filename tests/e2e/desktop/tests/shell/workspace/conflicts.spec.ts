@@ -14,10 +14,6 @@ import {
 
 const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
 
-/**
- * Holds the writes the window makes until the returned function lets them go, so a change made on
- * disk lands between what the tab read and what it writes.
- */
 const blockWrites = async (
   page: Page,
 ): Promise<{ pendingRoutes: Route[]; release: () => Promise<void> }> => {
@@ -36,7 +32,6 @@ const blockWrites = async (
   }
 }
 
-/** Opens a fresh note, types into it, and writes another body on disk before the typing lands. */
 const raiseConflict = async (page: Page, notePath: string) => {
   await writeNote(page.request, notePath, 'The lock gate opens at high water.\n')
   await openWorkspace(page)
@@ -112,7 +107,6 @@ test.describe('A note that changes on disk', () => {
   })
 })
 
-/** Turns any CSS colour the browser computes into red, green, blue and alpha. */
 const readColour = (page: Page, css: string) =>
   page.evaluate((value) => {
     const pixel = document.createElement('canvas')

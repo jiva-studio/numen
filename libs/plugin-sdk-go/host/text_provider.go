@@ -35,8 +35,6 @@ type providerService struct {
 	provider TextProvider
 }
 
-// writeTextError is the code a provider's error is returned with. An error the protocol names no
-// code for fails the call.
 func writeTextError(err error) (v1.TextErrorCode, error) {
 	switch {
 	case err == nil:

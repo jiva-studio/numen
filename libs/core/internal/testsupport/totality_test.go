@@ -9,13 +9,6 @@ import (
 	_ "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// walked is every enum of the schema and where its values are walked one by
-// one. The tests themselves are in the packages that hold the mappings, because
-// a mapping is unexported and belongs to its own package.
-//
-// This list is maintained manually, and it is a list of enums and not of
-// values: an enum added to the schema and missing here fails below, and a
-// value added to an enum already listed fails in the test named for that enum.
 func getWalked() map[protoreflect.FullName]string {
 	return map[protoreflect.FullName]string{
 		"numen.v1.CatalogErrorCode":       "adapter/window/editor/plugincatalog: written by newWireErrorCode",
@@ -80,8 +73,6 @@ func TestEveryEnumOfTheSchemaIsWalked(t *testing.T) {
 	}
 }
 
-// enumsOf is every enum a file declares, inside its messages as well as beside
-// them.
 func enumsOf(file protoreflect.FileDescriptor) []protoreflect.FullName {
 	var out []protoreflect.FullName
 	for i := range file.Enums().Len() {

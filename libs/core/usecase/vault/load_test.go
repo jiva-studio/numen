@@ -96,10 +96,6 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-// measureUnderLoad answers the question a mean cannot: not what a search costs
-// on average while the index is being rewritten, but what the slowest one in
-// twenty costs. An application feels slow at its ninety-fifth percentile, not at
-// its median.
 func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
 	const (
 		readers  = 4

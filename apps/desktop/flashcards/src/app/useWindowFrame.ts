@@ -29,7 +29,6 @@ export interface FrameRuntime {
 export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
 
 export interface WindowFrame {
-  /** How the title bar draws the window buttons on this platform. */
   readonly controls: Readonly<Ref<ControlsStyle>>
   readonly isMaximised: Readonly<Ref<boolean>>
   minimise(): Promise<void>
@@ -48,15 +47,10 @@ const loadRuntime: FrameRuntimeLoader = () => {
   return runtime
 }
 
-/**
- * Windows draws the buttons at the right to keep Snap Layouts, and macOS keeps the system buttons.
- * Linux draws the Windows buttons: the setting that moves them to the left does not exist yet.
- */
 function getControls(system: FrameRuntime['System']): ControlsStyle {
   return system?.IsMac?.() ? 'native-mac' : 'windows'
 }
 
-/** A read of the window state that fails leaves the state as it was. */
 const ignoreFailure = (): undefined => undefined
 
 export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {

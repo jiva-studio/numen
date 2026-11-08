@@ -88,12 +88,10 @@ export function putAdjacent(
   }
 }
 
-/** The new pane and a node as a branch's two children, ordered by the requested side. */
 function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNode[] {
   return isLeading(side) ? [newPane, node] : [node, newPane]
 }
 
-/** The branch with the new pane among its children, taking half the share of the child at `index`. */
 function joinAdjacent(parent: Branch, newPane: Pane, join: JoinAdjacent): WorkspaceNode {
   const { index, side } = join
   const targetIndex = isLeading(side) ? index : index + 1

@@ -15,35 +15,26 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// listClockReaders returns the functions of package time that read the machine clock.
 func listClockReaders() []string {
 	return []string{"Now", "Since", "Until"}
 }
 
 // clockRead is a reference to a machine clock reader found in the source.
 type clockRead struct {
-	// position is the file:line of the reference.
-	position string
-	// name is the referenced function, such as time.Now.
-	name string
-	// isSanctioned reports whether the reference is inside the body of a method
-	// Now() time.Time whose receiver implements a clock port.
+	position     string
+	name         string
 	isSanctioned bool
 }
 
-// isTimeTime reports whether t is the type time.Time.
 func isTimeTime(t types.Type) bool {
 	named, ok := t.(*types.Named)
 	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
 }
 
-// isClockSignature reports whether sig is func() time.Time.
 func isClockSignature(sig *types.Signature) bool {
 	return sig.Params().Len() == 0 && sig.Results().Len() == 1 && isTimeTime(sig.Results().At(0).Type())
 }
 
-// getClockPorts returns the interfaces declared in non-test code of pkgs whose only method is
-// Now() time.Time.
 func getClockPorts(pkgs []*packages.Package) []*types.Interface {
 	var ports []*types.Interface
 	visited := map[string]bool{}
@@ -76,7 +67,6 @@ func getClockPorts(pkgs []*packages.Package) []*types.Interface {
 	return ports
 }
 
-// isClockMethod reports whether decl is a method Now() time.Time whose receiver implements one of ports.
 func isClockMethod(decl *ast.FuncDecl, info *types.Info, ports []*types.Interface) bool {
 	if decl.Recv == nil || decl.Name.Name != "Now" || decl.Body == nil {
 		return false
@@ -101,7 +91,6 @@ func isClockMethod(decl *ast.FuncDecl, info *types.Info, ports []*types.Interfac
 	return false
 }
 
-// isClockReader reports whether object is time.Now, time.Since or time.Until.
 func isClockReader(object types.Object) bool {
 	function, ok := object.(*types.Func)
 	if !ok || function.Pkg() == nil || function.Pkg().Path() != "time" || !slices.Contains(listClockReaders(), function.Name()) {
@@ -113,15 +102,13 @@ func isClockReader(object types.Object) bool {
 
 // clockWalk collects the clock reads of one package.
 type clockWalk struct {
-	pkg   *packages.Package
-	ports []*types.Interface
-	// enclosing holds, for each function around the visited node, whether it is a clock method.
+	pkg       *packages.Package
+	ports     []*types.Interface
 	enclosing []bool
 	reads     []clockRead
 	visited   map[string]bool
 }
 
-// visit records the clock reads under node.
 func (w *clockWalk) visit(node ast.Node) bool {
 	switch current := node.(type) {
 	case *ast.FuncDecl:
@@ -151,7 +138,6 @@ func (w *clockWalk) visit(node ast.Node) bool {
 	return true
 }
 
-// descend visits body as the innermost function.
 func (w *clockWalk) descend(body *ast.BlockStmt, isClock bool) {
 	w.enclosing = append(w.enclosing, isClock)
 	ast.Inspect(body, func(inner ast.Node) bool {
@@ -163,9 +149,6 @@ func (w *clockWalk) descend(body *ast.BlockStmt, isClock bool) {
 	w.enclosing = w.enclosing[:len(w.enclosing)-1]
 }
 
-// getMachineClockReads returns every reference to time.Now, time.Since and time.Until in the
-// non-generated files of pkgs, test files included. A reference is sanctioned when the innermost
-// enclosing function is a method Now() time.Time implementing a clock port.
 func getMachineClockReads(pkgs []*packages.Package) []clockRead {
 	ports := getClockPorts(pkgs)
 	visited := map[string]bool{}
@@ -192,7 +175,6 @@ func getMachineClockReads(pkgs []*packages.Package) []clockRead {
 	return reads
 }
 
-// loadPackages loads the packages matching patterns under dir with syntax and types, tests included.
 func loadPackages(t *testing.T, dir string, env []string, patterns ...string) []*packages.Package {
 	t.Helper()
 	loaded, err := packages.Load(newTypedConfig(dir, env), patterns...)
@@ -202,7 +184,6 @@ func loadPackages(t *testing.T, dir string, env []string, patterns ...string) []
 	return loaded
 }
 
-// newTypedConfig is the load of the packages under dir with syntax and types, tests included.
 func newTypedConfig(dir string, env []string) *packages.Config {
 	return &packages.Config{
 		Dir:   dir,
@@ -213,7 +194,6 @@ func newTypedConfig(dir string, env []string) *packages.Config {
 	}
 }
 
-// listWorkspaceModules returns the directory of every module in go.work.
 func listWorkspaceModules(t *testing.T) []string {
 	t.Helper()
 	command := exec.CommandContext(t.Context(), "go", "work", "edit", "-json")
@@ -239,9 +219,6 @@ func listWorkspaceModules(t *testing.T) []string {
 	return dirs
 }
 
-// The machine clock is read in one place: the body of a method Now() time.Time on a type that
-// implements a clock port. Every other reference to time.Now, time.Since or time.Until in
-// non-generated Go, tests included, takes the time from an injected clock.
 func checkMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	var reads []clockRead
@@ -272,7 +249,6 @@ func checkMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T, workspa
 	}
 }
 
-// writeFixture writes the files into a new module named fixture and returns its directory.
 func writeFixture(t *testing.T, files map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()

@@ -41,7 +41,6 @@ const point = (overrides: Partial<Point> = {}): Point => ({
   ...overrides,
 })
 
-/** A curve of a goal of minutes, which is read in the cards a day answers. */
 const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve => ({
   goal: 'minutes',
   grid: cards.map((_, index) => index * 10),

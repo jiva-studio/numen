@@ -12,7 +12,6 @@ import (
 // trueValue is the text of a true boolean argument or setting.
 const trueValue = "true"
 
-// newCommands is the commands the manifest declares.
 func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
@@ -30,8 +29,6 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 	return commands, nil
 }
 
-// newImportCommand makes the link note of an address in the root of the vault and fetches its text.
-// A video published there is copied in the background.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		made, err := links.Create(ctx, "", "", req.Arguments.GetString("address"))
@@ -50,7 +47,6 @@ func newImportCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDownloadTextCommand fetches the text of a link note again.
 func newDownloadTextCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -64,7 +60,6 @@ func newDownloadTextCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDownloadCopyCommand copies the video a link note points at.
 func newDownloadCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -82,7 +77,6 @@ func newDownloadCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDeleteCopyCommand removes the copy kept of a link note.
 func newDeleteCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -96,7 +90,6 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// describeSize returns a size in the unit a user reads it in.
 func describeSize(bytes int64) string {
 	if bytes < 1<<20 {
 		return fmt.Sprintf("%d bytes", bytes)

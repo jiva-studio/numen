@@ -23,15 +23,10 @@ import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
 const props = withDefaults(
   defineProps<{
     tabs: readonly Tab[]
-    /** Where identities for what a gesture makes come from. */
     createId?: NodeIdFactory | undefined
-    /** How close to the outer edge divides the whole workspace. */
     edge?: number
-    /** Distance the pointer moves before a press becomes a drag. */
     threshold?: number
-    /** The minimum size at which a pane is rendered. */
     minimum?: number
-    /** The clock. Browser by default; a test hands in its own. */
     clock?: Clock
   }>(),
   { edge: 22, threshold: 4, minimum: 220, clock: () => browserClock },
@@ -73,7 +68,6 @@ const slots = defineSlots<{
 /** Every slot the caller gave, handed down under the name it was given. */
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
-/** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)

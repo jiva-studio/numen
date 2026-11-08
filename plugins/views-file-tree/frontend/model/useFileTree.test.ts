@@ -25,10 +25,6 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
 
 const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
-/**
- * A vault of two folders and an image that no source exists for, and a count of
- * the requests made for each folder.
- */
 const vault = (
   folders: Record<string, readonly Entry[]> = {
     [ROOT]: [folder('physics'), folder('notes'), file('Cover.png', { isNote: false })],
@@ -52,7 +48,6 @@ const vault = (
   }
 }
 
-/** The paths of the rows drawn, in the order they are drawn, one line each. */
 const paths = (rows: readonly ListingRow[]): readonly string[] =>
   rows.flatMap((one) => [one.entry.path, ...paths(one.rows)])
 

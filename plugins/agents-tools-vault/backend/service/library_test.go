@@ -40,7 +40,6 @@ type placeAnswer struct {
 	Chapter         string   `json:"chapter"`
 }
 
-// getPlaceKeys is the keys a place of any tool may have.
 func getPlaceKeys() []string {
 	return []string{"page", "pageCount", "positionSeconds", "endSeconds", "cfi", "chapter"}
 }
@@ -87,7 +86,6 @@ type fileReadAnswer struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-// getPlacePage is the page of the place, and zero for no place.
 func getPlacePage(place *placeAnswer) int {
 	if place == nil {
 		return 0
@@ -95,7 +93,6 @@ func getPlacePage(place *placeAnswer) int {
 	return place.Page
 }
 
-// getPlaceSeconds is the position of the place in seconds, and -1 for no place or no position.
 func getPlaceSeconds(place *placeAnswer) float64 {
 	if place == nil || place.PositionSeconds == nil {
 		return -1
@@ -162,7 +159,6 @@ func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, f
 	}
 }
 
-// call runs a tool on the vault and returns the structured result, or the failure text.
 func (l library) call(t *testing.T, name, arguments string, out any) (failure string) {
 	t.Helper()
 	res, err := l.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})

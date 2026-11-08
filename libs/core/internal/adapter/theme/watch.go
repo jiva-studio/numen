@@ -50,10 +50,6 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 	return debounced, nil
 }
 
-// debounce collects events for a hold and reports each theme once.
-//
-// Reading events and delivering them are separate: a slow listener does not
-// block reading, and the operating system keeps producing events meanwhile.
 func (c Catalogue) debounce(
 	ctx context.Context,
 	hold time.Duration,
@@ -104,8 +100,6 @@ func (c Catalogue) debounce(
 // over.
 type themeBatch struct {
 	pending map[string]bool
-	// ready holds the themes of a closed hold, waiting to be taken. It keeps growing
-	// while nothing takes it: one batch, never two.
 	ready   []string
 	inReady map[string]bool
 }
@@ -114,13 +108,11 @@ func newThemeBatch() *themeBatch {
 	return &themeBatch{pending: map[string]bool{}, inReady: map[string]bool{}}
 }
 
-// clearReady empties the ready themes once they are taken.
 func (b *themeBatch) clearReady() {
 	b.ready = nil
 	clear(b.inReady)
 }
 
-// closeHold moves the pending themes to the ready ones, each once.
 func (b *themeBatch) closeHold() {
 	for name := range b.pending {
 		if !b.inReady[name] {
@@ -131,8 +123,6 @@ func (b *themeBatch) closeHold() {
 	clear(b.pending)
 }
 
-// getThemeName is the theme an event is about, where it is about one. A file one level
-// down is not a theme and neither is a name that does not end `.css`.
 func (c Catalogue) getThemeName(absolute string) (string, bool) {
 	if filepath.Clean(filepath.Dir(absolute)) != filepath.Clean(c.dir) {
 		return "", false

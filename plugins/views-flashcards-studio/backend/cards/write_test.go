@@ -106,8 +106,6 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 	}
 }
 
-// newWriteForDeck adds a deck to the vault and updates the index, so the
-// wikilink under each card's heading resolves to the card model it names.
 func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 	t.Helper()
 	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
@@ -119,7 +117,6 @@ func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 		vaulttest.NewClock())
 }
 
-// readDeck is the deck as the vault now holds it.
 func readDeck(t *testing.T, vs vaulted, path string) format.Deck {
 	t.Helper()
 	got, err := cards.NewRead(vs.ports.Readers, vs.queries).

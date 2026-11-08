@@ -30,14 +30,10 @@ const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 
 interface Knobs {
   levelOf: Readonly<Record<string, number>>
-  /** Which day the week is turned to start on. */
   startsOn: string
-  /** Which names the days are drawn under. */
   names: 'English' | 'Russian'
-  /** The levels a day is offered. */
   levels: readonly number[]
   isDisabled: boolean
-  /** The names themselves, where a story draws something other than a week. */
   named?: readonly DayName[]
 }
 

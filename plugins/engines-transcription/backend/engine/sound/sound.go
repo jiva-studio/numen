@@ -82,8 +82,6 @@ func isWav(raw []byte) bool {
 	return len(raw) >= 12 && bytes.HasPrefix(raw, []byte(riff)) && string(raw[8:12]) == wave
 }
 
-// isMP3 reports whether a file is an mp3: it starts with a tag, or with a
-// frame sync mark.
 func isMP3(raw []byte) bool {
 	if bytes.HasPrefix(raw, []byte(id3)) {
 		return true
@@ -108,9 +106,6 @@ const (
 	wavExtended = 0xFFFE
 )
 
-// parseWav reads a parseWav file's header and finds its samples.
-//
-// A file is a run of chunks, and only two of them are wanted, so the rest are
 func parseWav(raw []byte) (riffWave, error) {
 	var out riffWave
 	var observed bool
@@ -150,7 +145,6 @@ func parseWav(raw []byte) (riffWave, error) {
 	return out, nil
 }
 
-// readFormat reads the body of the format chunk.
 func (w *riffWave) readFormat(body []byte) error {
 	if len(body) < 16 {
 		return fmt.Errorf("the wav recording's header is %d bytes", len(body))
@@ -167,8 +161,6 @@ func (w *riffWave) readFormat(body []byte) error {
 	return nil
 }
 
-// readSound is a wav file's samples as floating point, one channel after another as
-// the file interleaves them.
 func (w riffWave) readSound() ([]float32, error) {
 	width := w.bits / 8
 	if width == 0 {
@@ -191,7 +183,6 @@ func (w riffWave) readSound() ([]float32, error) {
 	return out, nil
 }
 
-// readSample is one sample of the file as floating point.
 func (w riffWave) readSample(raw []byte) (float32, error) {
 	switch {
 	case w.format == wavFloating && w.bits == 32:
@@ -209,8 +200,6 @@ func (w riffWave) readSample(raw []byte) (float32, error) {
 	}
 }
 
-// readInt16 fills out with little-endian 16-bit samples scaled to [-1, 1), four
-// to a step. raw holds exactly 2*len(out) bytes.
 func readInt16(out []float32, raw []byte) {
 	const scale = 1.0 / 32768
 	i := 0
@@ -227,7 +216,6 @@ func readInt16(out []float32, raw []byte) {
 	}
 }
 
-// readSigned is one little-endian sample of any width, as a number.
 func readSigned(raw []byte) int64 {
 	var out int64
 	for i := len(raw) - 1; i >= 0; i-- {
@@ -247,8 +235,6 @@ const (
 	mp3BlockMoments = 4096
 )
 
-// fromMP3 decodes an mp3 into one channel of floating point at the rate it was
-// recorded at, a block at a time.
 func fromMP3(raw []byte) ([]float32, int, error) {
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
 	if err != nil {
@@ -276,7 +262,6 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 	return out, decoder.SampleRate(), nil
 }
 
-// fromFlac decodes a flac, frame by frame, one subframe to a channel.
 func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	stream, err := flac.New(bytes.NewReader(raw))
 	if err != nil {
@@ -306,8 +291,6 @@ func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	return out, int(stream.Info.SampleRate), nil
 }
 
-// mono is many channels as one: what they say at each moment, averaged. The
-// result is written over the start of interleaved.
 func mono(interleaved []float32, channels int) []float32 {
 	if channels <= 1 {
 		return interleaved

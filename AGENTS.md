@@ -52,6 +52,49 @@ Rewrite on sight of any of these:
 
 Comments must be concise, factual, and strictly technical engineering English. Avoid storytelling and literary cadence.
 
+### Where a comment goes
+
+| Place                                                              | Comment                                                                   |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Package (`doc.go`), file header of a module entry                  | yes, what the package or module is for                                    |
+| Type, interface, class                                             | yes, what it represents and its contract                                  |
+| Exported function and method, interface method                     | yes, one sentence of contract: result, errors, side effects               |
+| Struct field, interface or type property, class property, Vue prop | no                                                                        |
+| Unexported function, private method                                | no                                                                        |
+| Inside a function body                                             | only a non-obvious why: an outside constraint, a workaround, an invariant |
+| `.proto` messages and fields                                       | yes, the protocol is a contract between languages                         |
+
+A field states its meaning through its name and type. A fact the name cannot carry goes to the type's comment or into the type itself:
+
+```go
+// Limits bounds one import. A zero MaxFiles imports every file.
+type Limits struct {
+	MaxFiles int
+	Timeout  time.Duration
+	state    struct {
+		mu    sync.Mutex
+		count int
+	}
+}
+```
+
+A Go type whose field comments are documentation for someone else carries a marker line at the end of its doc comment, and its exported fields keep their comments:
+
+```go
+// Spec describes a tool: its name, its purpose and where it is offered.
+//
+//numen:api
+type Spec struct {
+	// Name is the name the agent calls the tool by.
+	Name string
+}
+```
+
+- `//numen:api`: a type of the plugin SDK; plugin authors read the field comments in the SDK documentation.
+- `//numen:settings`: a settings type; `apps/docs/tools/manual.mjs` writes the field comments into the settings reference and refuses a settings type without the marker.
+
+`tools/lint-comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
+
 ---
 
 ## 2. Function and method naming (all languages)

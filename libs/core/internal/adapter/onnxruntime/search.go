@@ -10,11 +10,8 @@ import (
 	"strings"
 )
 
-// libraryEnvs lists the environment variables that name the ONNX runtime
-// library. The first one that is set is used as given.
 func getLibraryEnvs() []string { return []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"} }
 
-// getLibraryName returns what the library is called on an operating system.
 func getLibraryName(goos string) string {
 	switch goos {
 	case "darwin":
@@ -25,7 +22,6 @@ func getLibraryName(goos string) string {
 	return "libonnxruntime.so"
 }
 
-// getEnvLibrary returns the library path named in the environment, or empty.
 func getEnvLibrary() string {
 	for _, name := range getLibraryEnvs() {
 		if pos := os.Getenv(name); pos != "" {
@@ -35,7 +31,6 @@ func getEnvLibrary() string {
 	return ""
 }
 
-// getMachineDirs returns where this machine keeps shared libraries.
 func getMachineDirs() []string {
 	out := filepath.SplitList(os.Getenv("LD_LIBRARY_PATH"))
 	if home, err := os.UserHomeDir(); err == nil {
@@ -54,7 +49,6 @@ func getMachineDirs() []string {
 	)
 }
 
-// findMatching returns the regular files one pattern names.
 func findMatching(pattern string) []string {
 	found, err := filepath.Glob(pattern)
 	if err != nil {
@@ -69,8 +63,6 @@ func findMatching(pattern string) []string {
 	return out
 }
 
-// getAdjacentDirs returns the folders a library may stand beside: the plugin, its
-// bin folder and the host, each with its models folder.
 func getAdjacentDirs(pluginDir string) []string {
 	dirs := []string{pluginDir, filepath.Join(pluginDir, "bin")}
 	if self, err := os.Executable(); err == nil {
@@ -85,18 +77,10 @@ func getAdjacentDirs(pluginDir string) []string {
 	return out
 }
 
-// getCandidates returns every library this machine holds without fetching one,
-// in the order they are tried: beside the plugin or the host, where an earlier
-// run unpacked one (when it holds the pinned sum), in the folders shared
-// libraries live in, in the package store, and in the folders the platform
-// loader searches. A machine list that is not nil replaces the folders shared
-// libraries live in, and the package store and the loader folders are then not
-// searched.
 func getCandidates(pluginDir, home, librarySum string, machine []string) []string {
 	return getCandidatesInStore(pluginDir, home, librarySum, machine, filepath.Join("/nix/store", "*-onnxruntime-*", "lib"))
 }
 
-// getCandidatesInStore searches the machine and a package store pattern.
 func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, storePattern string) []string {
 	name := getLibraryName(runtime.GOOS)
 	var out []string
@@ -120,8 +104,6 @@ func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, 
 	return removeDuplicates(out)
 }
 
-// findInDirs returns every file named for the library in the folders. A folder
-// that is not an absolute path is not searched.
 func findInDirs(dirs []string, name string) []string {
 	var out []string
 	for _, dir := range dirs {
@@ -132,9 +114,6 @@ func findInDirs(dirs []string, name string) []string {
 	return out
 }
 
-// getLoaderDirs returns the further folders the platform loader searches for a
-// library named without a folder: the folders /etc/ld.so.conf names, the dyld
-// search paths on darwin, and System32 and PATH on windows.
 func getLoaderDirs(goos string) []string {
 	switch goos {
 	case "darwin":
@@ -154,8 +133,6 @@ func getLoaderDirs(goos string) []string {
 	return readLoaderConfig("/etc/ld.so.conf", map[string]bool{})
 }
 
-// readLoaderConfig returns the folders a loader configuration file names,
-// following its include lines. seen holds the files already read.
 func readLoaderConfig(pos string, visited map[string]bool) []string {
 	if visited[pos] {
 		return nil
@@ -182,9 +159,6 @@ func readLoaderConfig(pos string, visited map[string]bool) []string {
 	return out
 }
 
-// readIncludedConfig returns the folders listed in the files that one include
-// pattern matches. A relative pattern is resolved against the directory of the
-// including file.
 func readIncludedConfig(from, pattern string, seenCount map[string]bool) []string {
 	if !filepath.IsAbs(pattern) {
 		pattern = filepath.Join(filepath.Dir(from), pattern)
@@ -200,14 +174,10 @@ func readIncludedConfig(from, pattern string, seenCount map[string]bool) []strin
 	return out
 }
 
-// isConfigSeparator reports whether r separates the folders on one line of a
-// loader configuration file.
 func isConfigSeparator(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == ',' || r == ':'
 }
 
-// removeDuplicates returns the paths with each file kept once, at the first
-// path that names it.
 func removeDuplicates(paths []string) []string {
 	observed := make(map[string]bool, len(paths))
 	var out []string
@@ -229,24 +199,18 @@ func isFile(pos string) bool {
 	return err == nil && info.Mode().IsRegular()
 }
 
-// normalize lower-cases a name and trims the space around it.
 func normalize(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
 }
 
 var versionPart = regexp.MustCompile(`[0-9]+`)
 
-// sortNewestFirst orders package store paths by the numbers in the package name
-// that follows the store hash, highest first. The newest package links the
-// newest C library, and the library loaded first fixes the C library every
-// later one resolves against.
 func sortNewestFirst(paths []string) {
 	slices.SortStableFunc(paths, func(a, b string) int {
 		return -slices.Compare(getVersion(a), getVersion(b))
 	})
 }
 
-// getVersion returns the numbers in the store package name of a path.
 func getVersion(path string) []int {
 	rel, err := filepath.Rel("/nix/store", path)
 	if err != nil {

@@ -26,7 +26,6 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-// getStatement returns the statement in sql/<name>.sql.
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Statements exposes the SQL this package runs, for tests that inspect the
@@ -48,8 +47,6 @@ type Source struct {
 	ContentHash string
 	Recipe      string
 
-	// Producer is what made the text this source's chunks are places in. Empty
-	// where the source's own bytes are the text.
 	Producer string
 }
 
@@ -86,11 +83,8 @@ type Chunk struct {
 	Length   int
 	Location string
 	Text     string
-	// Opens are the parts of the source that begin exactly where this chunk
-	// does: what a section starting here is called. Empty for a chunk that
-	// opens none, which is most of them.
-	Opens []string
-	Small []Chunk
+	Opens    []string
+	Small    []Chunk
 }
 
 // FromDomain is the chunks of a source as the index holds them.
@@ -196,8 +190,6 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 	})
 }
 
-// removeSource takes out the source of one kind at a path. A source the index
-// does not hold is already removed.
 func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, kind, path string) error {
 	source, err := getSourceRow(ctx, tx, vault, kind, path)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -253,7 +245,6 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	})
 }
 
-// hasSourcesUnder is whether the vault holds a source at the path or under it.
 func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ bool, err error) {
 	first, past := getRangeUnder(path)
 	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, path, first, past)
@@ -269,15 +260,6 @@ func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64,
 	return hasRow, nil
 }
 
-// deleteMoveTarget deletes the rows the vault holds at the path a move lands on.
-//
-// A file is moved on disk and then in the index. A scan between the two steps
-// indexes the file again under its new path. The moved row owns the note's
-// chunks, vectors and links, so it keeps the path and the row already at that
-// path is deleted.
-//
-// Rows that are being moved are kept: a folder moved inside itself contains
-// them, and they are the rows to be renamed.
 func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	displaced, err := getDisplacedSources(ctx, tx, vault, from, to)
 	if err != nil {
@@ -294,8 +276,6 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 	return nil
 }
 
-// getDisplacedSources returns the sources at the destination of a move, and
-// under it, that are not themselves moving.
 func getDisplacedSources(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
 ) (displaced []int64, err error) {
@@ -324,14 +304,6 @@ func getDisplacedSources(
 	return displaced, nil
 }
 
-// updateNoteName updates the name of the note at a path after its file moved.
-//
-// A note is named by its `title` key, else by its filename. The name follows the
-// new filename when the file has no `title` key and the old filename matches the
-// note's name. In every other case the name is unchanged.
-//
-// The name is also written to the title index, which a search by name ranks and
-// highlights against.
 func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
@@ -359,8 +331,6 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	return exec(ctx, tx, "rename_title", vault, from, displayName)
 }
 
-// getRangeUnder is the range every path a folder holds falls in: from the
-// folder's slash to the byte after one.
 func getRangeUnder(folder string) (first, past string) {
 	return folder + "/", folder + "0"
 }
@@ -430,10 +400,6 @@ type chunkWriter struct {
 	source, vault int64
 }
 
-// upsert is the row one chunk is held on, and moves or writes it.
-//
-// A chunk inside another arrives with the row enclosing it, and a large chunk
-// with nothing, which is also what the row's `parent_id` becomes.
 func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf bool) (int64, error) {
 	tx, target, source, vault := w.tx, w.target, w.source, w.vault
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
@@ -465,8 +431,6 @@ func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf boo
 	return row, nil
 }
 
-// writeSectionNames keeps the names of the sections one chunk begins, so a section can be
-// found by its name and answer with the chunk it opens.
 func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
@@ -488,9 +452,7 @@ type textID struct {
 type rows struct {
 	candidates    map[textID][]int64
 	remainingErrs map[int64]bool
-	// hash maps each row to its text hash, which identifies the text of a
-	// removed row.
-	hash map[int64]string
+	hash          map[int64]string
 }
 
 func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *rows, err error) {
@@ -514,8 +476,6 @@ func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *r
 	return h, cursor.Err()
 }
 
-// takeUnusedRow is a row holding the text given, and false where none does. A row is
-// claimed once, so a text that occurs twice in a source is two rows.
 func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	rows := h.candidates[key]
 	if len(rows) == 0 {
@@ -527,8 +487,6 @@ func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	return row, true
 }
 
-// getUnusedRows returns the rows of the source that no chunk matched, in order,
-// so repeated runs write the same result.
 func (h *rows) getUnusedRows() []int64 {
 	out := make([]int64, 0, len(h.remainingErrs))
 	for row := range h.remainingErrs {
@@ -538,12 +496,6 @@ func (h *rows) getUnusedRows() []int64 {
 	return out
 }
 
-// deleteRows deletes the given rows and everything indexed over them.
-//
-// The rows in the two virtual tables are deleted first, by chunk number.
-// Nothing cascades into a virtual table, and a remaining row returns a search
-// hit for a chunk that is deleted. A large chunk deletes the chunks inside it,
-// so a row here may already be gone from `chunks` when it is processed.
 func deleteRows(ctx context.Context, tx *sqlwrite.Transaction, rows []int64) error {
 	for _, row := range rows {
 		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
@@ -555,16 +507,11 @@ func deleteRows(ctx context.Context, tx *sqlwrite.Transaction, rows []int64) err
 	return nil
 }
 
-// computeHash addresses a chunk by the text it holds. A chunk keeps its row, and its
-// vector and its full-text row with it, for as long as this value stays the same.
 func computeHash(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
 }
 
-// exec runs a named statement and wraps an error with the statement name. A
-// statement interrupted by a cancelled context can fail as "sql: statement is
-// closed", so the cancellation is reported instead.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
 		if ctx.Err() != nil {
@@ -580,8 +527,6 @@ type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-// vaultRow turns the identifier a vault carries in the world into the row
-// number this database files it under.
 func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
 	err := db.QueryRowContext(ctx, vaultRowSQL, string(identifier)).Scan(&row)
@@ -591,15 +536,12 @@ func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64
 	return row, err
 }
 
-// getSourceRow is the row number of one source of one kind.
 func getSourceRow(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
 	var row int64
 	err := db.QueryRowContext(ctx, identifySQL, vault, kind, path).Scan(&row)
 	return row, err
 }
 
-// newNullable maps an empty string to NULL, so an unset value and an empty
-// value stay distinguishable.
 func newNullable(s string) any {
 	if s == "" {
 		return nil
@@ -607,8 +549,6 @@ func newNullable(s string) any {
 	return s
 }
 
-// getRemovedHashes returns the text hashes of the rows no chunk matched: the
-// text the source contained before and does not contain now.
 func (h *rows) getRemovedHashes() []string {
 	out := make([]string, 0, len(h.remainingErrs))
 	for row := range h.remainingErrs {

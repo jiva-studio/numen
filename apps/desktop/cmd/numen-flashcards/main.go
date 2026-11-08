@@ -55,8 +55,6 @@ func main() {
 	}
 }
 
-// makeConfig is the configuration of the window of the desktop.flashcards target, which reports what
-// the core carried on past to out.
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
 	cfg.ErrorHandler = func(err error) {
@@ -68,8 +66,6 @@ func makeConfig(out io.Writer) container.Config {
 	return cfg
 }
 
-// makeNotes is everything that acts on the vault's notes. What a write touched is brought up to date
-// in the index through the opening the vault was opened with.
 func makeNotes(cfg container.Config, db *container.Index, vaults *container.OpenVaults) container.Notes {
 	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex)
 }
@@ -139,8 +135,6 @@ func run(cfg container.Config, debug debugOptions) error {
 	return runApplication(handler, target)
 }
 
-// makeWindowAPI is the window of the desktop.flashcards target: its plugins, the services they serve,
-// the agent the settings choose, whether the index carries a vault, and where links land.
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	agent := cfg.GetSettingsAgent()
 	return &shell.API{
@@ -154,8 +148,6 @@ func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	}
 }
 
-// openPluginVault is every vault of the installation, lent to the plugins. The window shows none of
-// its own, so a plugin names the vault of each call.
 func openPluginVault(
 	cfg container.Config, registry vaultport.VaultRegistry, db *container.Index, api *shell.API,
 ) (pluginport.PluginVault, error) {
@@ -167,8 +159,6 @@ func openPluginVault(
 		})
 }
 
-// bindVaultIndexer connects the walk of a vault into the index to the API. A vault that moved is
-// walked again where the last walk failed.
 func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.OpenVaults) {
 	vaults.RecordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
@@ -177,8 +167,6 @@ func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.Ope
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 }
 
-// followChanges notifies the plugins that something moved each time the index
-// changes, including when another window writes it.
 func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
 	moves, err := cfg.Moves(ctx)
 	if err != nil {
@@ -188,7 +176,6 @@ func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
 	api.ReportChangesFrom(ctx, moves)
 }
 
-// runApplication opens the window and runs until it closes.
 func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 	app := application.New(application.Options{
 		Name: appName,

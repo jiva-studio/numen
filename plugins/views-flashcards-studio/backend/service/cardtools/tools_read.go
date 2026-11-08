@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// addCardCurrentGet adds the tool that returns the card currently open.
 func (t *Tools) addCardCurrentGet(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,

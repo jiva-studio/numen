@@ -3,7 +3,6 @@ import { flushPromises } from '@vue/test-utils'
 import { useLink } from './link'
 import type { LinkFacts, Links } from '../types'
 
-/** A link whose facts and text a test sets, and whose work it starts and ends. */
 function createLinks(facts: LinkFacts) {
   const link = {
     facts,

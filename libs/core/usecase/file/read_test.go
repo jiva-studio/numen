@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// openFileRead is a vault on disk and the read that works on it.
 func openFileRead(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	t.Helper()
 	return file.Read{Readers: vaultreader.Readers{}}, testsupport.NewVault(t, files)

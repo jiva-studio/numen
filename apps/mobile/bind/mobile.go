@@ -35,9 +35,7 @@ type Core struct {
 func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
-	port int
-	// isDown is set when the server has stopped on its own, after which the
-	// port serves nothing.
+	port   int
 	isDown atomic.Bool
 	stop   context.CancelFunc
 	opened *editor.Installation
@@ -136,8 +134,6 @@ func (c *Core) Start(dir string) (int, error) {
 	return c.running.port, nil
 }
 
-// setHomeFolders points the libraries that resolve user folders at this
-// application's folders, so nothing is resolved outside the sandbox.
 func setHomeFolders(dir string) error {
 	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
 		if err := os.Setenv(named, dir); err != nil {
@@ -153,7 +149,6 @@ type localListener struct {
 	port int
 }
 
-// listenLocal is a listener on a free loopback port.
 func listenLocal(ctx context.Context) (localListener, error) {
 	var listenConfig net.ListenConfig
 	listener, err := listenConfig.Listen(ctx, "tcp", "127.0.0.1:0")
@@ -195,9 +190,6 @@ func (c *Core) Port() int {
 	return c.running.port
 }
 
-// makeConfig returns the configuration for this installation: all stored data
-// is under the folder the platform provides, and errors the core continues past
-// are written to the stream the platform collects.
 func makeConfig(dir string, out io.Writer) container.Config {
 	return container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
@@ -212,8 +204,6 @@ func makeConfig(dir string, out io.Writer) container.Config {
 	})
 }
 
-// registerVault puts the vault on this installation's list, and answers with
-// the path the list files it under. A vault already on it stays where it is.
 func registerVault(cfg container.Config, root string) (string, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -239,14 +229,6 @@ func registerVault(cfg container.Config, root string) (string, error) {
 // loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
 
-// allowOrigin adds the CORS headers that permit requests from the origin the
-// webview loaded.
-//
-// It allows only Page. The socket is on the loopback interface and reachable by
-// every process on the phone, so any page in a browser can send requests
-// to it; allowing a single origin makes the browser block such requests and
-// their responses. CORS is not authentication: it does not
-// restrict non-browser clients.
 func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()

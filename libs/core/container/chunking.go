@@ -28,8 +28,6 @@ func (c Config) CutNotes() note.CutNotes {
 	return cutter
 }
 
-// setNoteCut sets the cut of the scan and the check that finds the notes recorded with another cut.
-// The check runs where the chunk size is known; an unknown size never cuts a note again.
 func (c Config) setNoteCut(scan *vault.Scan, db *Index) {
 	scan.Cut = c.CutNotes()
 	scan.ShouldRecut = c.Chunks.Get() > 0
@@ -81,8 +79,6 @@ func (c Config) ReadWholeVault(
 // errNoteUnreadable is the error of a note read again whose file could not be read.
 var errNoteUnreadable = errors.New("the note could not be read")
 
-// newNoteReader reads one note again through refresh. A refresh that finds the file unreadable
-// returns no error of its own, so the result is checked for the path.
 func newNoteReader(
 	refresh func(ctx context.Context, v domain.Vault, paths []string) (vault.RefreshResult, error),
 ) func(ctx context.Context, v domain.Vault, path string) error {

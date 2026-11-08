@@ -7,14 +7,9 @@ var ErrNoTheme = errors.New("no such plugin theme")
 
 // PluginTheme is a theme an enabled plugin contributes.
 type PluginTheme struct {
-	// PluginID is the plugin that contributes the theme.
-	PluginID string
-	// ID is the slug of the theme inside the plugin.
-	ID string
-	// Name is the title the theme is listed with.
-	Name string
-	// Appearance is "light" or "dark" when the theme sets one color scheme, and empty when it follows the
-	// mode.
+	PluginID   string
+	ID         string
+	Name       string
 	Appearance string
 }
 

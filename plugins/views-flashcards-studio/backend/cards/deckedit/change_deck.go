@@ -16,7 +16,6 @@ type deckChange struct {
 	cardIDs []format.CardID
 }
 
-// changeDeck splices one change into a deck. Every byte the change does not name is written as it arrived.
 func changeDeck(
 	ctx context.Context, read Read, write Write, v domain.Vault, pos DeckVersion,
 	change func(contents DeckContents, file *format.DeckFile) error,

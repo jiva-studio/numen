@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// bodyLinks finds the links written in prose. They carry no role of their own,
-// so they are references — the plain "see also" of a vault.
 func bodyLinks(body []byte) []domain.Link {
 	var out []domain.Link
 	observed := map[string]bool{}
@@ -48,11 +46,6 @@ func bodyLinks(body []byte) []domain.Link {
 // at all.
 const NoRole = " has no role"
 
-// frontmatterLinks reads the `links:` block, which is where a link that carries
-// a role, a type or an argument is written.
-//
-// A malformed entry is skipped and the rest of the note is read: everything
-// else in the file still shows.
 func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 	raw, ok := frontmatter["links"].([]any)
 	// gomutants:disable-next-line BRANCH_IF reason="ranging over a nil slice after a failed type assertion also returns nil, nil"
@@ -107,7 +100,6 @@ func str(v any) string {
 	return strings.TrimSpace(readText(v))
 }
 
-// readText returns v when it is a string, or "" otherwise.
 func readText(v any) string {
 	s, isString := v.(string)
 	// gomutants:disable-next-line BRANCH_IF reason="a failed string type assertion leaves s as the empty string"
@@ -117,9 +109,6 @@ func readText(v any) string {
 	return s
 }
 
-// mergeLinks puts the two sources together. The same target written in both
-// places is one link, and the annotated record wins: a role, a type and an
-// argument say more than a mention in prose.
 func mergeLinks(annotated, references []domain.Link) []domain.Link {
 	described := make(map[string]bool, len(annotated))
 	for _, l := range annotated {

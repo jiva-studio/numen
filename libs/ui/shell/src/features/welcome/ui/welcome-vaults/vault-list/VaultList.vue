@@ -23,11 +23,6 @@ defineSlots<{
   vault?(props: { vault: VaultRow }): unknown
 }>()
 
-/**
- * The letter a vault is opened by. Beyond the alphabet a vault has no letter and
- * is opened with the pointer, and a row in progress is drawn without the letter
- * it will be opened by.
- */
 const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => {
   const letter = vaultLetter(pos)
   if (!letter || vault.isWorking) return undefined

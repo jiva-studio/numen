@@ -83,7 +83,6 @@ func isPathWithin(base, child string) bool {
 	return true
 }
 
-// isRelativeInside reports whether child lies at or below base by the names alone.
 func isRelativeInside(base, child string) bool {
 	rel, err := filepath.Rel(base, child)
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
@@ -109,7 +108,6 @@ func IsWhitelistedEnv(key string) bool {
 	return strings.HasPrefix(upper, "LC_")
 }
 
-// isSecretEnv reports whether an upper-case variable name looks like it holds a secret.
 func isSecretEnv(upper string) bool {
 	for _, word := range []string{"KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "AUTH"} {
 		if strings.Contains(upper, word) {
@@ -122,10 +120,6 @@ func isSecretEnv(upper string) bool {
 // onnxRuntimeEnvPrefix names the versioned toolkit folders the CUDA installer sets on windows.
 const onnxRuntimeEnvPrefix = "CUDA_PATH_V"
 
-// isRuntimeEnv reports whether a variable is one of the host variables a plugin
-// that declares the ONNX Runtime is also launched with on goos: where the loader
-// finds shared libraries, where the accelerator toolkits are installed and which
-// devices the plugin may use.
 func isRuntimeEnv(goos, key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -175,7 +169,6 @@ type LaunchEnvironment struct {
 	HostPort    int
 	Token       string
 	RuntimeVars []string
-	// StorageVars name the directories the host grants the plugin.
 	StorageVars []string
 }
 

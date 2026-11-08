@@ -11,24 +11,19 @@ import { ERRORS } from '../cards/wire/errors'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from './kind'
 import { WORDS as words } from '../cards'
 
-/** Waits for the tab's pending vault requests to resolve. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const TEMPLATES: readonly VaultTemplate[] = [
   { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
 ]
 
-/** A vault holding one card model, recording every write it receives. */
 const vault = (
   answers: {
     error?: ErrorCode
     problems?: readonly DeckProblem[]
     isChanged?: boolean
-    /** The result of renaming a field, when a test needs a different result. */
     renaming?: FieldRenameResult
-    /** The vault is unreachable, and reading the card model fails. */
     isUnreachable?: boolean
-    /** What a write of the card model fails for. */
     wrote?: ErrorCode
   } = {},
 ) => {
@@ -99,7 +94,6 @@ const vault = (
   }
 }
 
-/** A window with one card model open on a file, and what that tab holds. */
 const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md') => {
   const one = vault(answers)
   const windowTabs = createMockTabWindow()
@@ -461,7 +455,6 @@ describe('a card model whose tab has gone', () => {
   })
 })
 
-/** A card model whose write failed because its file moved: the tab is stale. */
 const openStale = async () => {
   const one = await open({ isChanged: true })
   one.tab.addField('Weight')

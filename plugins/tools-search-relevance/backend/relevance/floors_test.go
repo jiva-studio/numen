@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
 
-// newFloors is the floors over a host that shows an embedded vault of 25 notes, and the vault whose
-// store folder holds the records.
 func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search, *hosttest.Vault) {
 	t.Helper()
 	search, vault := newHost(hint)

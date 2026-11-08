@@ -8,7 +8,6 @@ import {
 } from '../../support/media.js'
 import { createUniqueTitle, readNote, writeVaultFile } from '../../support/vault.js'
 
-/** A deck of two cards cut by the Animal card model of the fixture, at `cards/<title>.md`. */
 const createDeck = async (request: APIRequestContext) => {
   const title = createUniqueTitle('Shore birds')
   const path = `cards/${title}.md`

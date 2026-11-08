@@ -11,7 +11,6 @@ import type { Clock } from '@/shared/lib/time/clock'
 const pointer = (type: string, x: number, y: number, pointerId = 1) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId, bubbles: true })
 
-/** An element that records captured pointer ids. jsdom does not implement pointer capture. */
 function createCapturingElement() {
   const element = document.createElement('div')
   const captured = new Set<number>()
@@ -26,7 +25,6 @@ function createCapturingElement() {
   return { element, captured }
 }
 
-/** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4, withBegin = true) {
   const commit = vi.fn<(item: string, target: Position | null, point: Position) => void>()
   const begin = vi.fn<(item: string) => void>()

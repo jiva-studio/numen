@@ -36,13 +36,10 @@ type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) erro
 // FileStat answers for text that did move, and is what makes a save that follows a save land: the
 // note is at the file stat the last write produced, so it is the note this caller put there.
 type Baseline struct {
-	// Prose is what a read gave this caller, with every line break as one \n.
-	Prose string
-	// FileStat is the file that read came out of.
+	Prose    string
 	FileStat domain.FileStat
 }
 
-// isStale reports whether the note in front of the writer holds prose this caller has not read.
 func (s *Baseline) isStale(on domain.FileStat, prose string) bool {
 	if s == nil {
 		return false
@@ -61,24 +58,15 @@ type Clock interface {
 // at a time: read, refuse what cannot be read, write the identifier because this is an edit, change
 // the one thing, put it back, and update the index.
 type Edit struct {
-	// Open gives the files of the vault.
-	Open func(v domain.Vault) (Files, error)
-	// Index updates the index for what was written. Nil brings nothing.
-	Index IndexUpdater
-	// Clock gives the time an identifier is minted at.
-	Clock Clock
-	// Entropy is the randomness source for minted identifiers.
+	Open    func(v domain.Vault) (Files, error)
+	Index   IndexUpdater
+	Clock   Clock
 	Entropy io.Reader
 
-	FileStat domain.FileStat
-	// ShouldOverwrite is set by a caller writing the user's current text: the note on disk is
-	// replaced and no identifier is added.
+	FileStat        domain.FileStat
 	ShouldOverwrite bool
-	// Bound is the most the file may be. Zero holds it to nothing.
-	Bound int
-	// Baseline is what the caller last saw of the note, and is what a file that is there is compared
-	// with. Nil for a caller that puts its text down whatever the note now holds.
-	Baseline *Baseline
+	Bound           int
+	Baseline        *Baseline
 }
 
 // Apply makes one change to the note at path and puts it back.
@@ -96,8 +84,6 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	return content, WrapIndexOutdated(e.Index(context.WithoutCancel(ctx), v, []string{path}), path)
 }
 
-// splice is the read, the change and the write, under this vault's write lock from before the read
-// until after the file is replaced.
 func (e Edit) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.FileStat, error) {
@@ -148,8 +134,6 @@ func (e Edit) splice(
 	return files.Write(ctx, path, content, against)
 }
 
-// statNote is the file stat of the file on disk, and the error of asking, for a caller that holds
-// the note to what it last saw or to what is there now.
 func (e Edit) statNote(ctx context.Context, files Reader, path string) (domain.FileStat, error) {
 	if e.Baseline != nil || (e.FileStat.IsZero() && !e.ShouldOverwrite) {
 		return files.StatFile(ctx, path)
@@ -157,9 +141,6 @@ func (e Edit) statNote(ctx context.Context, files Reader, path string) (domain.F
 	return domain.FileStat{}, nil
 }
 
-// readNote returns the bytes of the note at path. A caller overwriting a note that does not
-// exist gets no bytes: the write creates the note from the user's own text, with no
-// frontmatter and no identifier.
 func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, error) {
 	raw, err := files.Read(ctx, path)
 	switch {
@@ -185,8 +166,6 @@ func (e Edit) getExpected(path string, on domain.FileStat, looked error) (domain
 	return on, nil
 }
 
-// addIdentifier writes an identifier into a note that has none. A caller overwriting
-// existing content leaves the frontmatter unchanged.
 func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil

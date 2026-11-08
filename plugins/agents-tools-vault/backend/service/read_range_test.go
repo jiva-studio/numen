@@ -38,7 +38,6 @@ type rangeVault struct {
 	calls       *rangeCalls
 	answers     map[string]host.FileRange
 	rangeErrors map[string]error
-	// readRefused is the error a whole Read of the path returns.
 	readRefused map[string]error
 }
 
@@ -76,8 +75,7 @@ func (r rangeVault) Read(ctx context.Context, filePath string) ([]byte, domain.F
 
 // textCalls is what the host of the counted text versions received.
 type textCalls struct {
-	mu sync.Mutex
-	// isReadTextRefused fails every ReadText, for a read that must not read the whole text.
+	mu                sync.Mutex
 	isReadTextRefused bool
 	readTexts         int
 	ranges            []rangeRequest
@@ -111,7 +109,6 @@ func (c countingTexts) ReadTextRange(ctx context.Context, path string, id domain
 	return c.Texts.ReadTextRange(ctx, path, id, start, length)
 }
 
-// callFailure calls the tool on the registry and returns its error text, or "" when it returned.
 func callFailure(t *testing.T, registry *tools.Registry, vaultID, name, arguments string, out any) string {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -132,7 +129,6 @@ func callFailure(t *testing.T, registry *tools.Registry, vaultID, name, argument
 	return ""
 }
 
-// newRangeLibrary is the invented library served through a ranged vault and counted text versions.
 func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Registry) {
 	t.Helper()
 	l := newLibrary(t)

@@ -31,8 +31,6 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-// scanAt is a scan cut at a chunk size, wired the way the container wires it: the paths of the notes recorded with another cut are read
-// from the index, and the check runs where the size is known.
 func scanAt(db *container.Index, tokens int) vaults.Scan {
 	scan := scanner(vaultreader.Readers{}, db)
 	scan.Cut = notecase.NewCutNotes(tokens)

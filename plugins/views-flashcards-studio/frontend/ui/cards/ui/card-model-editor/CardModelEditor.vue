@@ -31,15 +31,10 @@ import { sampleValues } from '../../lib/fill'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The fields, in the order the user supplies them. The first names the card. */
     fields: readonly string[]
-    /** The templates, in the order they are drawn. */
     templates: readonly CardModelTemplate[]
-    /** What the editor is announced as. */
     name?: string
-    /** What the caller found wrong with the fields and the templates it handed in. */
     wrong?: CardModelProblems
-    /** The words it is drawn with. */
     words?: CardModelWords
   }>(),
   {
@@ -113,7 +108,6 @@ const onAddTemplate = (): void => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What is wrong with one template, and nothing where nothing is. */
 const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 </script>
 

@@ -17,13 +17,9 @@ var (
 
 // ActivationPolicy bounds how long one activation may take and how often a failing plugin is started again.
 type ActivationPolicy struct {
-	// Timeout is the deadline for a started process to print its handshake.
-	Timeout time.Duration
-	// BackoffBase is the wait after the first failure; each further failure doubles it.
+	Timeout     time.Duration
 	BackoffBase time.Duration
-	// BackoffMax caps the wait between two attempts.
-	BackoffMax time.Duration
-	// MaxFailures is the number of consecutive failures after which the plugin is reported failed.
+	BackoffMax  time.Duration
 	MaxFailures int
 }
 

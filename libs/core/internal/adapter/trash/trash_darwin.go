@@ -38,16 +38,12 @@ func registerSelectors() selectors {
 	}
 }
 
-// loadFoundation loads the framework the classes named here come from. The loader counts each
-// open of a library it holds, so a second call loads nothing again.
 func loadFoundation() error {
 	const frameworkPath = "/System/Library/Frameworks/Foundation.framework/Foundation"
 	_, err := purego.Dlopen(frameworkPath, purego.RTLD_LAZY|purego.RTLD_GLOBAL)
 	return err
 }
 
-// moveToTrash moves the folder to the Finder trash and records its origin for
-// Put Back.
 func moveToTrash(path string, _ time.Time) error {
 	if err := loadFoundation(); err != nil {
 		return err
@@ -81,7 +77,6 @@ func moveToTrash(path string, _ time.Time) error {
 	return fmt.Errorf("%s: %s", path, getFailureMessage(sel, failure))
 }
 
-// getFailureMessage returns the description Cocoa gives for the failure.
 func getFailureMessage(sel selectors, failure objc.ID) string {
 	if failure == 0 {
 		return "the trash would not take it"

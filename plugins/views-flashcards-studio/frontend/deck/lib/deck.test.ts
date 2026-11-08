@@ -47,7 +47,6 @@ const replaceCardValue = (
   text: string,
 ) => replaceCardValueInternal(deck, id, { field, index, text })
 
-/** Identities counted out, so a test names the card it means. */
 const createIds = () => {
   let count = 0
   return () => `c${(count += 1)}`

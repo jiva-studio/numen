@@ -146,8 +146,6 @@ func newWireIncompatibility(reason manifest.IncompatibleReason) v1.CatalogIncomp
 	return v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_UNSPECIFIED
 }
 
-// newWireErrorCode is the code of a call served without an entry. An error that is no refusal to
-// find the entry has no code.
 func newWireErrorCode(err error) v1.CatalogErrorCode {
 	if errors.Is(err, catalog.ErrNotFound) {
 		return v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND

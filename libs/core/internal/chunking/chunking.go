@@ -64,31 +64,20 @@ func GetCharacterBound(tokens int) int {
 
 // Sizes are how large a chunk is cut. A zero field takes its default.
 type Sizes struct {
-	// Large and Small are how many words a chunk of each size holds. Large is
-	// Whole when one large chunk encloses the whole text.
 	Large int
 	Small int
 
-	// LargeOverlap and SmallOverlap are how many words two consecutive chunks
-	// of a size share. Each is at most one word short of its size, which
-	// guarantees that tiling advances.
 	LargeOverlap int
 	SmallOverlap int
 
-	// Limit is the most characters a small chunk may hold. A chunk over it is
-	// cut further at a word, and a single word over it is not indexable.
 	Limit int
 }
 
 // Legibility is what makes a chunk legible enough to index. A zero field takes
 // its default, and a negative one disables the threshold.
 type Legibility struct {
-	// Alphabetic is the least fraction of a chunk's characters that must be
-	// letters.
 	Alphabetic float64
 
-	// Dirty is the most fraction of a chunk's words that may carry a non-letter
-	// inside.
 	Dirty float64
 }
 
@@ -106,8 +95,6 @@ type Chunk struct {
 // ExtractText returns the chunk's own text from the text it was cut from.
 func (c Chunk) ExtractText(text string) string { return text[c.Start : c.Start+c.Length] }
 
-// computeMiddle returns the byte the chunk is centred on; it decides which large
-// chunk a small one belongs to.
 func (c Chunk) computeMiddle() int { return c.Start + c.Length/2 }
 
 // Chunks cuts the text and returns every chunk as the index stores it. The
@@ -150,9 +137,6 @@ type division struct {
 	location string
 }
 
-// divideText divides the text at the parts it names. The parts are copied
-// before they are ordered, so Cut leaves its arguments unmodified.
-// Where two parts share an offset, the last of them names the text after it.
 func divideText(text string, parts []domain.PartStart) []division {
 	named := make([]domain.PartStart, 0, len(parts))
 	for _, p := range parts {
@@ -173,8 +157,6 @@ func divideText(text string, parts []domain.PartStart) []division {
 	return append(divisions, division{from: pos, to: len(text), location: location})
 }
 
-// splitDivision tiles one division twice and puts each small chunk under the large
-// one its middle falls in.
 func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 	words := splitWords(text, d.from, d.to)
 	if len(words) == 0 {
@@ -191,8 +173,6 @@ func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 	return enclose(large, createSmallChunks(text, words, d.location, s, l))
 }
 
-// createWholeTextChunks makes the text itself the large chunk and cuts the small chunks on the
-// structure inside it.
 func createWholeTextChunks(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 	words := splitWords(text, 0, len(text))
 	if len(words) == 0 {
@@ -219,9 +199,6 @@ func createWholeTextChunks(text string, divisions []division, s Sizes, l Legibil
 	return enclose([]Chunk{large}, small)
 }
 
-// createSmallChunks tiles the words of one division into the chunks that carry a
-// vector. A chunk over the character limit is cut further at a word, and one
-// that is still over it after that is a single word and is dropped.
 func createSmallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
 	for _, item := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
@@ -237,15 +214,6 @@ func createSmallChunks(text string, words []word, location string, s Sizes, l Le
 	return out
 }
 
-// enclose puts each small chunk under a large chunk holding it.
-//
-// The one preferred holds the small chunk whole. A large chunk holding only
-// part of it is what a result displays, and the words after the part it holds
-// are the rest of the sentence the hit is in.
-//
-// Large chunks overlap, so where none holds the whole of it the middle decides,
-// and that is the first large chunk reaching past it. Both lists ascend and the
-// look forward stops at the middle, so one pass over each is enough.
 func enclose(large, small []Chunk) []Chunk {
 	pos := 0
 	for _, c := range small {
@@ -273,7 +241,6 @@ func enclose(large, small []Chunk) []Chunk {
 // A word is the byte extent of one run of characters that is not space.
 type word struct{ start, end int }
 
-// splitWords splits text[from:to] into its words.
 func splitWords(text string, from, to int) []word {
 	var words []word
 	start := -1
@@ -295,8 +262,6 @@ func splitWords(text string, from, to int) []word {
 	return words
 }
 
-// getOverlappingRanges covers n words with ranges of size words sharing overlap of them. The
-// last range ends at n, so a division shorter than one chunk is one chunk.
 func getOverlappingRanges(n, size, overlap int) [][2]int {
 	step := size - overlap
 	var out [][2]int
@@ -310,9 +275,6 @@ func getOverlappingRanges(n, size, overlap int) [][2]int {
 	return out
 }
 
-// splitAtLimit breaks a range of words into pieces of at most limit characters,
-// counting the space between words. A word of its own is a piece however long it
-// is.
 func splitAtLimit(text string, words []word, pos [2]int, limit int) [][2]int {
 	from, to := pos[0], pos[1]
 	if utf8.RuneCountInString(text[words[from].start:words[to-1].end]) <= limit {
@@ -331,7 +293,6 @@ func splitAtLimit(text string, words []word, pos [2]int, limit int) [][2]int {
 	return append(out, [2]int{start, to})
 }
 
-// getRangeChunk is the chunk covering a range of words.
 func getRangeChunk(words []word, pos [2]int, location string) Chunk {
 	start, end := words[pos[0]].start, words[pos[1]-1].end
 	return Chunk{Start: start, Length: end - start, Location: location}
@@ -363,7 +324,6 @@ func (s Sizes) Resolve() Sizes {
 	return s
 }
 
-// resolve fills in what configuration left unset.
 func (l Legibility) resolve() Legibility {
 	if l.Alphabetic == 0 {
 		l.Alphabetic = DefaultAlphabetic
@@ -374,8 +334,6 @@ func (l Legibility) resolve() Legibility {
 	return l
 }
 
-// clampOverlap keeps an overlap between none and one word short of the size it belongs
-// to, which guarantees that tiling advances by at least one word.
 func clampOverlap(overlap, size int) int {
 	if overlap < 0 {
 		return 0

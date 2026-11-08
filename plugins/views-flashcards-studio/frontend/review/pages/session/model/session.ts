@@ -52,9 +52,7 @@ export interface SessionStart {
 
 /** What a session could not act on, for the window to say once as it opens. */
 export interface Report {
-  /** The decks holding a card that could not be given a card id. */
   readonly unwritten: readonly string[]
-  /** How many lines of the vault's answers could not be read. */
   readonly skipped: number
 }
 
@@ -325,7 +323,6 @@ export function useReviewSession(deps: SessionDeps) {
   return api
 }
 
-/** One card as the window holds it: the seconds come across as numbers. */
 const createReviewCard = (one: SessionStart['cards'][number]): ReviewCard => ({
   deck: one.deck,
   section: one.section,

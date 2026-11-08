@@ -37,7 +37,6 @@ type vaultTexts struct {
 	files vaultport.VaultReader
 }
 
-// read is the version of the file at a path, made from the bytes it holds now.
 func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, error) {
 	raw, err := t.files.Read(ctx, path)
 	if err != nil {
@@ -65,8 +64,6 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 	return domain.NewVersionText(version, splitAt(text, starts, titles)), nil
 }
 
-// splitAt cuts text into segments at the given starts. A segment with a title
-// opens a heading; one without is a page, numbered by position from 1.
 func splitAt(text string, starts []int, titles []string) []domain.TextSegment {
 	parts := make([]domain.TextSegment, 0, len(starts))
 	for i, from := range starts {

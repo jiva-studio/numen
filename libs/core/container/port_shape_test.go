@@ -13,8 +13,6 @@ import (
 	"testing"
 )
 
-// getInterfaceProbes are the type assertions and type-switch cases of a file
-// whose target is an interface literal or a port.X, each written as the target.
 func getInterfaceProbes(file *ast.File) []string {
 	var found []string
 	probe := func(target ast.Expr) {
@@ -114,8 +112,6 @@ func probe(target any, reader vaultport.VaultReader) {
 	}
 }
 
-// internalTypes are the types a file names from a package under internal/, each
-// written pkg.Name as the file spells it.
 func internalTypes(file *ast.File) []string {
 	local := map[string]bool{}
 	for _, one := range file.Imports {

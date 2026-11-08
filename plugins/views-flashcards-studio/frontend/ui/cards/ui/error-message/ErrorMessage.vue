@@ -8,9 +8,7 @@
  * does a role.
  */
 defineProps<{
-  /** What is wrong: one thing, or each of several. */
   said: string | readonly string[]
-  /** What a list of several is called to a reader. */
   label?: string
 }>()
 </script>

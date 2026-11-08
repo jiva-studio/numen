@@ -17,20 +17,14 @@ export const isSameShares = (a: readonly number[], b: readonly number[]): boolea
   a.length === b.length && a.every((share, index) => Math.abs(share - (b[index] ?? 0)) < EPSILON)
 
 export interface BranchResizeOptions {
-  /** The branch being resized. */
   readonly getBranchId: () => string
-  /** The shares the model holds. */
   readonly getShares: () => readonly number[]
-  /** The branch's own element, which carries the mark. */
   readonly getFrame: () => HTMLElement | undefined
-  /** The model, notified of the final shares. */
   readonly resize: (branch: string, shares: readonly number[]) => void
 }
 
 export interface BranchResize {
-  /** The shares a splitter settled on, in percent. */
   readonly onLayout: (percents: readonly number[]) => void
-  /** A handle taken up, and put down where it stopped. */
   readonly onHold: (isIndexed: boolean) => void
 }
 

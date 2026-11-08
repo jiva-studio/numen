@@ -26,10 +26,7 @@ type session struct {
 	t     *testing.T
 	vault string
 	base  []string
-	// bin is where an erased folder goes. A test sends nothing to the trash of
-	// the machine it runs on.
-	bin *fakeTrash
-	// reply is the text the commands wrote besides their answers.
+	bin   *fakeTrash
 	reply bytes.Buffer
 }
 
@@ -65,8 +62,6 @@ func (s *session) mustRun(args ...string) string {
 	return out
 }
 
-// addVault is a second vault of this installation, with an identity of its own.
-// An installation keeps a vault, so a test that forgets or erases one has two.
 func (s *session) addVault(name string) string {
 	s.t.Helper()
 	dir := testsupport.TempDir(s.t)
@@ -74,7 +69,6 @@ func (s *session) addVault(name string) string {
 	return dir
 }
 
-// types supplies the answer a command prompts for.
 func (s *session) types(answer string) {
 	s.t.Helper()
 	read, write, err := os.Pipe()
@@ -107,15 +101,12 @@ func (b *fakeTrash) Trash(path string) error {
 	return os.Rename(path, filepath.Join(b.into, filepath.Base(path)))
 }
 
-// trash is the bin an erased folder goes to, answering refuse where one is
-// given.
 func (s *session) trash(refuse error) *fakeTrash {
 	s.t.Helper()
 	s.bin.refuse = refuse
 	return s.bin
 }
 
-// getListMarks is the two characters vault list puts before a vault's name.
 func getListMarks(listing, name string) string {
 	for _, line := range strings.Split(listing, "\n") {
 		if len(line) > 2 && strings.HasPrefix(strings.TrimLeft(line, " *?"), name) {
@@ -307,7 +298,6 @@ func TestAMovedVaultIsRecognisedInsteadOfRefused(t *testing.T) {
 	}
 }
 
-// readIdentity is what a vault calls itself, read out of the folder.
 func readIdentity(t *testing.T, path string) string {
 	t.Helper()
 

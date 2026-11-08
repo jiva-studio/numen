@@ -18,7 +18,6 @@ const (
 
 // Performance is the settings section for workload and resource profile.
 type Performance struct {
-	// Profile is the active preset.
 	Profile string `json:"profile"`
 }
 
@@ -27,29 +26,20 @@ const AcceleratorCoreML = "coreml"
 
 // Specs represents the detected host machine hardware capabilities. A zero count or size is unknown.
 type Specs struct {
-	// LogicalCPUs is the number of hardware threads the process may run on.
-	LogicalCPUs int `json:"logical_cpus"`
-	// PhysicalCPUs is the number of physical cores, including efficiency cores.
-	PhysicalCPUs int `json:"physical_cpus"`
-	// PerformanceCPUs is the number of physical cores of the highest performance class; it equals PhysicalCPUs when the cores do not differ.
-	PerformanceCPUs int `json:"performance_cpus"`
-	// TotalRAMMB is the installed physical memory in megabytes.
-	TotalRAMMB int64 `json:"total_ram_mb"`
-	// AvailableRAMMB is the memory that can be claimed without swapping, in megabytes.
-	AvailableRAMMB int64 `json:"available_ram_mb"`
-	// Accelerators lists the compute accelerators the operating system and architecture provide.
-	Accelerators []string `json:"accelerators"`
+	LogicalCPUs     int      `json:"logical_cpus"`
+	PhysicalCPUs    int      `json:"physical_cpus"`
+	PerformanceCPUs int      `json:"performance_cpus"`
+	TotalRAMMB      int64    `json:"total_ram_mb"`
+	AvailableRAMMB  int64    `json:"available_ram_mb"`
+	Accelerators    []string `json:"accelerators"`
 }
 
 // ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools.
 type ResolvedCompute struct {
-	Profile PerformanceProfile `json:"profile"`
-	// CoreBudget is the number of hardware threads the profile lets CPU-bound work occupy at once.
-	CoreBudget int `json:"core_budget"`
-	// Workers is the size of a general pool for CPU-bound jobs such as text extraction and file parsing.
-	Workers int `json:"workers"`
-	// MemoryLimitMB is the soft limit on the memory managed by the Go runtime, in megabytes. Zero means no limit, which is the case when the installed memory is unknown.
-	MemoryLimitMB int64 `json:"memory_limit_mb"`
+	Profile       PerformanceProfile `json:"profile"`
+	CoreBudget    int                `json:"core_budget"`
+	Workers       int                `json:"workers"`
+	MemoryLimitMB int64              `json:"memory_limit_mb"`
 }
 
 // Detect inspects the current host machine capabilities.
@@ -63,7 +53,6 @@ func Detect() Specs {
 	return hw.normalize()
 }
 
-// normalize makes the counts consistent: at least one logical CPU, no more cores than threads, no more performance cores than cores, no more free memory than installed.
 func (hw Specs) normalize() Specs {
 	if hw.LogicalCPUs < 1 {
 		hw.LogicalCPUs = 1
@@ -97,7 +86,6 @@ const (
 	balancedWorkerShare = 2
 )
 
-// getPerformanceThreads is the number of hardware threads of the performance cores. Each core is taken to have the ratio of logical to physical CPUs, rounded up; when the counts are not known it is the logical CPU count.
 func (hw Specs) getPerformanceThreads() int {
 	threadsPerCore := (hw.LogicalCPUs + hw.PhysicalCPUs - 1) / hw.PhysicalCPUs
 	threads := hw.PerformanceCPUs * threadsPerCore
@@ -107,7 +95,6 @@ func (hw Specs) getPerformanceThreads() int {
 	return threads
 }
 
-// getMemoryLimitMB is a share of the installed memory in megabytes, and zero when that size is unknown.
 func (hw Specs) getMemoryLimitMB(sharePercent int64) int64 {
 	return hw.TotalRAMMB * sharePercent / 100
 }

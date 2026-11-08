@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
 
-// decodeAnswer decodes a structured tool answer into a map of its top-level keys.
 func decodeAnswer(t *testing.T, structured []byte) map[string]any {
 	t.Helper()
 	var answer map[string]any
@@ -25,7 +24,6 @@ func decodeAnswer(t *testing.T, structured []byte) map[string]any {
 	return answer
 }
 
-// requireKeys fails the test for every key of want the object lacks and every key of absent it has.
 func requireKeys(t *testing.T, what string, object map[string]any, want, absent []string) {
 	t.Helper()
 	for _, key := range want {
@@ -40,7 +38,6 @@ func requireKeys(t *testing.T, what string, object map[string]any, want, absent 
 	}
 }
 
-// requireList returns the value as a JSON array and fails the test when it is not one.
 func requireList(t *testing.T, what string, value any) []any {
 	t.Helper()
 	list, ok := value.([]any)
@@ -50,7 +47,6 @@ func requireList(t *testing.T, what string, value any) []any {
 	return list
 }
 
-// requireObject returns the value as a JSON object and fails the test when it is not one.
 func requireObject(t *testing.T, what string, value any) map[string]any {
 	t.Helper()
 	object, ok := value.(map[string]any)
@@ -60,7 +56,6 @@ func requireObject(t *testing.T, what string, value any) map[string]any {
 	return object
 }
 
-// getToolSchema returns the input or the output JSON schema of the named tool.
 func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput bool) map[string]any {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -85,8 +80,6 @@ func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput
 	return nil
 }
 
-// getSchemaProperties returns the properties of the object the path of property names leads to,
-// stepping into the items of an array property.
 func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) map[string]any {
 	t.Helper()
 	node := schema
@@ -111,8 +104,6 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	return properties
 }
 
-// visitSchema calls onProperty for every property name and onDescription for every description in
-// the schema, nested objects, array items and definitions included.
 func visitSchema(node any, onProperty, onDescription func(string)) {
 	object, ok := node.(map[string]any)
 	if !ok {
@@ -146,8 +137,6 @@ func visitSchema(node any, onProperty, onDescription func(string)) {
 	}
 }
 
-// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool, and
-// passes the description of each tool to onDescription as well.
 func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, onDescription func(tool, text string)) {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -172,8 +161,6 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the patterns of narrative wording that tool descriptions, field
-// descriptions and tool instructions must not contain.
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
@@ -198,7 +185,6 @@ func getNarrativeMarkers() []*regexp.Regexp {
 	}
 }
 
-// getAnswer calls the tool on the vault and returns its structured result as a map.
 func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]any {
 	t.Helper()
 	res, err := w.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
@@ -245,12 +231,10 @@ func TestWindowTabListReturnsPlaceTabIDAndIsActive(t *testing.T) {
 	requireExactKeys(t, "the output schema of a tab place", getSchemaProperties(t, schema, "tabs", "place"), getPlaceKeys())
 }
 
-// getPlaceKeys is the keys a place of any tool may have.
 func getPlaceKeys() []string {
 	return []string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}
 }
 
-// requireExactKeys fails the test unless the object has exactly the keys.
 func requireExactKeys(t *testing.T, what string, object map[string]any, want []string) {
 	t.Helper()
 	got := make([]string, 0, len(object))
@@ -320,7 +304,6 @@ func TestWindowToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
 	}
 }
 
-// getForeignToolNames is the tools of the vault, OCR, transcription, importer and flashcard plugins.
 func getForeignToolNames() []string {
 	return []string{
 		"note_read", "note_write", "note_heading_list", "note_search", "note_list", "note_title_list",

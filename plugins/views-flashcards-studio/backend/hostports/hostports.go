@@ -186,7 +186,6 @@ func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 
 type store struct{ folder host.Store }
 
-// fileOf is the file the answers of a run are kept in.
 func fileOf(run string) string { return run + reviewLogSuffix }
 
 func (s store) ReadLog(ctx context.Context, run string) ([]byte, error) {

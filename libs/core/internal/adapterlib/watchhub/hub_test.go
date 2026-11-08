@@ -59,7 +59,6 @@ func (f *fakeSystem) Stop(c chan<- notify.EventInfo) {
 	delete(f.watched, c)
 }
 
-// getWatched are the watches placed now.
 func (f *fakeSystem) getWatched() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -71,7 +70,6 @@ func (f *fakeSystem) getWatched() []string {
 	return out
 }
 
-// emit reports a change at path to the watch that covers it.
 func (f *fakeSystem) emit(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -83,7 +81,6 @@ func (f *fakeSystem) emit(path string) {
 	}
 }
 
-// makeTree is a folder holding the folders named, by name.
 func makeTree(t *testing.T, names ...string) map[string]string {
 	t.Helper()
 	root, err := filepath.EvalSymlinks(t.TempDir())

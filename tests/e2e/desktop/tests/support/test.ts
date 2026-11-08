@@ -47,7 +47,6 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
 /** The vault fixture whose text cannot be read, which the core reports as a failed task in every run. */
 const UNREADABLE_FIXTURE = 'corrupted.pdf'
 
-/** The first list of tasks the editor window of the debug server reports, as a Connect stream. */
 const readTasks = (
   baseURL: string,
 ): Promise<{ title?: string; about?: string; error?: string }[]> =>

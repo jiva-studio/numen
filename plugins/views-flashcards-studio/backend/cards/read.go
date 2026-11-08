@@ -24,34 +24,21 @@ const MaxBytes = 8 << 20
 
 // DeckContents is the result of reading one deck.
 type DeckContents struct {
-	Path string
-	// Outcome is how the read ended, out of the list an ordinary note's read
-	// answers with.
-	Outcome note.ReadOutcome
-	// Type is the note type recorded in the note at the path, so a caller that
-	// requested a deck and received a card model can detect the mismatch.
-	Type domain.NoteType
-	// Body is the parsed deck. It contains no cards for any outcome other than
-	// Ok, and a deck over the size limit carries the problem that states why.
-	Body format.Deck
-	// Raw is the prose of the file currently, which is what a caller changing
-	// one card splices. It is empty for any outcome but Ok.
-	Raw string
-	// CardModels maps the wikilink name under each card's heading to the path of the
-	// note it resolves to.
+	Path       string
+	Outcome    note.ReadOutcome
+	Type       domain.NoteType
+	Body       format.Deck
+	Raw        string
 	CardModels map[string]string
-	// FileStat is the file metadata, read before the file content.
-	FileStat domain.FileStat
+	FileStat   domain.FileStat
 }
 
 // CardModelContents is the result of reading one card model.
 type CardModelContents struct {
-	Path    string
-	Title   string
-	Outcome note.ReadOutcome
-	Type    domain.NoteType
-	// Body is the parsed card model: the fields of a card and the templates it is
-	// rendered through. It is empty for any outcome other than Ok.
+	Path     string
+	Title    string
+	Outcome  note.ReadOutcome
+	Type     domain.NoteType
 	Body     format.CardModel
 	FileStat domain.FileStat
 }
@@ -59,9 +46,7 @@ type CardModelContents struct {
 // Read reads a deck or a card model from the vault.
 type Read struct {
 	readers ports.VaultReaders
-	// links resolves the wikilink by which a card names its card model. Reading a
-	// card model does not use it, because a card model holds no cards.
-	links ports.LinkQueries
+	links   ports.LinkQueries
 }
 
 // NewRead is what a deck or a card model is read through: the vault its file is
@@ -129,9 +114,6 @@ func (u Read) GetCardCardModels(
 	return delta, err
 }
 
-// getCardModelPaths maps the wikilink name under each card's heading to the
-// path of the note it resolves to. The link is written in the deck, so it
-// resolves relative to the deck's folder like every name in that file.
 func getCardModelPaths(
 	ctx context.Context, links ports.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
@@ -158,12 +140,6 @@ func getCardModelPaths(
 	return pos, nil
 }
 
-// readCardModels reads the card models that the cards of a deck are cut by,
-// keyed by the wikilink name. Each file is opened once however many cards name
-// it.
-//
-// A name that resolves to a note that is not a card model is omitted from the
-// card models and marked in ordinary.
 func (u Read) readCardModels(
 	ctx context.Context, v domain.Vault, pos map[string]string,
 ) (cardModels map[string]format.CardModel, ordinary map[string]bool, err error) {
@@ -193,9 +169,6 @@ func (u Read) readCardModels(
 	return cardModels, ordinary, nil
 }
 
-// getNonCardModelProblems returns one problem per card whose wikilink resolves
-// to a note that is not a card model. The values are read, and no template
-// renders the card.
 func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
 	for item, card := range d.Cards {
@@ -224,8 +197,6 @@ func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardM
 	return out, nil
 }
 
-// readNote reads the file at a path: the file metadata, and the note parsed
-// from its bytes when every precondition on the file holds.
 func (u Read) readNote(
 	ctx context.Context, v domain.Vault, path string, maxSize int64,
 ) (domain.Note, domain.FileStat, note.ReadOutcome, error) {
@@ -271,7 +242,6 @@ func (u Read) readNote(
 	return parseNoteBytes(ref, raw, path)
 }
 
-// parseNoteBytes parses the bytes of the file at a path, unless they are not text or not a readable note.
 func parseNoteBytes(ref domain.FileStat, raw []byte, path string) (domain.Note, domain.FileStat, note.ReadOutcome, error) {
 	// The values of a card are sent in string fields. A browser replaces an
 	// ill-formed UTF-8 sequence with U+FFFD, and the next save would write those
@@ -283,14 +253,13 @@ func parseNoteBytes(ref domain.FileStat, raw []byte, path string) (domain.Note, 
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
 		return emptyNote(), ref, note.Unreadable, nil
-	// gomutants:disable-next-line BRANCH_IF reason="markdown.Open returns only nil or markdown.ErrUnreadable."
+		// gomutants:disable-next-line BRANCH_IF reason="markdown.Open returns only nil or markdown.ErrUnreadable."
 	} else if err != nil {
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil
 }
 
-// emptyNote returns a note that holds no field.
 func emptyNote() domain.Note {
 	// gomutants:disable-next-line RETURN_ZERO reason="emptyNote constructs the explicit zero value of domain.Note."
 	return domain.Note{

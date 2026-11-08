@@ -26,13 +26,11 @@ const editor = (props: Partial<Props> = {}) => {
   return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
 }
 
-/** The caret position as a one-based line and zero-based column. */
 const getCaret = (view: EditorView) => {
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   return { line: line.number, column: view.state.selection.main.head - line.from }
 }
 
-/** What is drawn over a change, and nothing where nothing is. */
 const getChangeMarks = (view: EditorView) => {
   const found: { from: number; to: number; mark: string | null }[] = []
   view.state.field(changeMarks).decorations.between(0, view.state.doc.length, (from, to, deco) => {
@@ -46,7 +44,6 @@ const setCaret = (view: EditorView, line: number, column: number) => {
   view.dispatch({ selection: EditorSelection.single(pos) })
 }
 
-/** A key pressed wherever the caret is, and the event as the page left it. */
 const chord = (on: EventTarget, modifiers: KeyboardEventInit = { ctrlKey: true }) => {
   const key = new KeyboardEvent('keydown', {
     key: 's',

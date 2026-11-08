@@ -20,15 +20,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The two vaults every scoping test here uses. Their content shares nothing, so
-// a row that arrives from the wrong one is recognisable.
 func getFirst() domain.Vault { return domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"} }
 
 func getSecond() domain.Vault { return domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"} }
 
-// bits is a coarse vector: one bit per dimension over 1024 dimensions. The seed
-// fills every byte, so two different seeds are far apart and the same seed is at
-// distance zero.
 func bits(seed byte) []byte {
 	b := make([]byte, 128)
 	for i := range b {
@@ -37,9 +32,6 @@ func bits(seed byte) []byte {
 	return b
 }
 
-// getVectorForSeed returns the vector for a seed: dimension i takes the sign of the
-// bit the coarse vector stores for it. Quantising it yields `bits(seed)`, so
-// the two representations of a chunk agree.
 func getVectorForSeed(seed byte) []float32 {
 	v := make([]float32, 1024)
 	for i := range v {
@@ -51,7 +43,6 @@ func getVectorForSeed(seed byte) []float32 {
 	return v
 }
 
-// getPreciseBytes is the full-precision half of a vector, one signed byte per dimension.
 func getPreciseBytes(v []float32) []byte {
 	q := vector.Bytes(vector.Normalise(v))
 	out := make([]byte, len(q))
@@ -61,8 +52,6 @@ func getPreciseBytes(v []float32) []byte {
 	return out
 }
 
-// migrated is the schema, built once for this binary. A test that only needs an
-// index to exist is handed a copy of the file.
 func newMigrated() *testsupport.Template {
 	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := Open(ctx, path)
@@ -78,7 +67,6 @@ func openDB(t *testing.T) *DB {
 	return openDBAt(t, filepath.Join(t.TempDir(), "index.db"))
 }
 
-// openDBAt is an index at the path given, holding both vaults and nothing else.
 func openDBAt(t *testing.T, path string) *DB {
 	t.Helper()
 	newMigrated().CopyTo(t, path)
@@ -96,18 +84,12 @@ func openDBAt(t *testing.T, path string) *DB {
 	return db
 }
 
-// book puts one source in, cuts it into a large chunk with two small ones
-// inside it, and embeds the small ones at the seed given.
 func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	t.Helper()
 	cutBook(t, db, vault, path)
 	saveSeededVectors(t, db, vault, seed)
 }
 
-// cutBook saves one source and splits it into a large chunk containing two small ones.
-//
-// Every chunk includes the stem of its file name among its words, so a hit identifies
-// its book, and two copies of one book hold the same text.
 func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
@@ -135,7 +117,6 @@ func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 // the recipe that made it, so a question about one names it.
 const testRecipe = "model"
 
-// saveSeededVectors gives every chunk of a vault that has no vector one at the seed given.
 func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
@@ -156,9 +137,6 @@ func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	}
 }
 
-// hashOf addresses the text one chunk holds, which is what the vector made
-// from it is kept under. The real path hashes what it is about to send; a
-// fixture reads what the cut already recorded.
 func hashOf(t *testing.T, db *DB, chunk int64) []byte {
 	t.Helper()
 
@@ -341,7 +319,6 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	}
 }
 
-// source is one source of one kind, holding one chunk under a name of its own.
 func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.SourceKind, text string) {
 	t.Helper()
 	ctx := t.Context()
@@ -747,7 +724,6 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	}
 }
 
-// hasLeadingColumn reports whether some index of a table has the column first.
 func hasLeadingColumn(ctx context.Context, t *testing.T, db *DB, table, column string) bool {
 	t.Helper()
 	rows, err := db.read.QueryContext(ctx,
@@ -840,8 +816,6 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	}
 }
 
-// cutInto records one book and makes its chunks the small chunks named, each
-// under a large chunk of its own.
 func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...string) {
 	t.Helper()
 	ctx := t.Context()
@@ -1163,7 +1137,6 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 // information: when the model and dimension match, the migrated vectors were
 // created by the model currently in use and are not recomputed.
 
-// saveRecognisedSource puts in one source whose text a producer made.
 func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 	t.Helper()
 
@@ -1200,12 +1173,6 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-// saveSectionedBook saves a book of three sections, where the words of a section's
-// name occur once in its own opening and often in the following section.
-//
-// This is the shape of a scanned-book chapter: the chapter names its subject
-// once, in its heading, and a paragraph in the middle of the next section
-// names it four times.
 func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
@@ -1495,8 +1462,6 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	}
 }
 
-// getTwoUnembedded returns the chunks of the first vault that need a vector,
-// and fails unless there are two of them.
 func getTwoUnembedded(t *testing.T, db *DB) []chunk.Passage {
 	t.Helper()
 	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 10)
@@ -1509,8 +1474,6 @@ func getTwoUnembedded(t *testing.T, db *DB) []chunk.Passage {
 	return unembedded
 }
 
-// saveVectorPerChunk saves one vector for each of the two chunks of the first
-// vault that need one.
 func saveVectorPerChunk(t *testing.T, db *DB) {
 	t.Helper()
 	unembedded := getTwoUnembedded(t, db)

@@ -37,13 +37,10 @@ const (
 // UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
 // ErrUnavailable.
 type UnavailableError struct {
-	// Capability is what was requested. Empty where a plugin was requested by its id.
 	Capability string
-	// PluginID is the plugin requested or found. Empty where none was found.
-	PluginID string
-	Reason   UnavailableReason
-	// Err is the cause the host gave.
-	Err error
+	PluginID   string
+	Reason     UnavailableReason
+	Err        error
 }
 
 // Error reports what is unavailable and why.
@@ -82,14 +79,10 @@ func (e *UnavailableError) Unwrap() error {
 // PluginFailure is a plugin the host suspends after it failed to start, and why.
 type PluginFailure struct {
 	PluginID string
-	// Name is the display name of the plugin.
-	Name string
-	// Reason is a short UI label for the failure, such as "Failed to start".
-	Reason string
-	// Detail is the underlying error, shown on request.
-	Detail string
-	// At is when the host gave the plugin up.
-	At time.Time
+	Name     string
+	Reason   string
+	Detail   string
+	At       time.Time
 }
 
 // PluginPersistHandler is called when a plugin modifies its own settings.

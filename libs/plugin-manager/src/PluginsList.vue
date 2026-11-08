@@ -18,7 +18,6 @@ import { PLUGIN_WORDS as words } from './words'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   plugins: readonly ManagedPlugin[]
-  /** Whether each installed plugin is switched on, by id; a plugin not listed is on. */
   enabled: Readonly<Record<string, boolean>>
 }>()
 

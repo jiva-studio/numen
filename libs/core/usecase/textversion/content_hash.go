@@ -65,8 +65,6 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 	return hash, nil
 }
 
-// markFileFailure wraps a failure of the file in ErrFileUnreadable, and
-// returns the end of the context as it is.
 func markFileFailure(ctx context.Context, err error) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -74,8 +72,6 @@ func markFileFailure(ctx context.Context, err error) error {
 	return fmt.Errorf("%w: %w", ErrFileUnreadable, err)
 }
 
-// isRecordCurrent reports whether the recorded hash is the hash of the file
-// with the stat given.
 func isRecordCurrent(record textport.ContentHash, stat domain.FileStat) bool {
 	if record.Hash == "" || record.Size != stat.Size || !record.ModTime.Equal(stat.ModTime) || record.FileID != stat.FileID {
 		return false
@@ -83,10 +79,6 @@ func isRecordCurrent(record textport.ContentHash, stat domain.FileStat) bool {
 	return !isRacy(record)
 }
 
-// isRacy reports whether the file may have changed after it was hashed with
-// its modification time kept (git's racy check): its modification time is
-// within one tick of the hash time. A modification time further ahead cannot be
-// kept by a later write, which stamps the current time.
 func isRacy(record textport.ContentHash) bool {
 	if record.HashTime.IsZero() {
 		return true
@@ -94,7 +86,6 @@ func isRacy(record textport.ContentHash) bool {
 	return !record.ModTime.Before(record.HashTime.Add(-racyWindow)) && record.ModTime.Before(record.HashTime.Add(racyWindow))
 }
 
-// hashFile returns domain.HashReader of the file at the path.
 func hashFile(ctx context.Context, reader vaultport.VaultReader, path string) (hash string, err error) {
 	file, err := reader.Open(ctx, path)
 	if err != nil {

@@ -17,7 +17,6 @@ const create = (rows: readonly Row[] = ROWS, selection: readonly RowId[] = []) =
     () => selection,
   )
 
-/** A rendered row: what a row component provides, with the element under `$el`. */
 const createDrawn = () => {
   const focus = vi.fn<() => void>()
   return { focus, rendered: { $el: { focus } } }

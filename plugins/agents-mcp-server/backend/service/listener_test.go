@@ -37,7 +37,6 @@ func (b *lockedBuffer) String() string {
 	return b.buf.String()
 }
 
-// serveMounted mounts the plugin on a plugin server, serves it and returns the server and its stdout.
 func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Helper()
 	t.Setenv("NUMEN_HOST_PORT", "")
@@ -60,7 +59,6 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	return s, stdout
 }
 
-// waitForMCPListenerPort returns the port the ready line reports for the listener mcp.
 func waitForMCPListenerPort(t *testing.T, stdout *lockedBuffer) int {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
@@ -95,7 +93,6 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 	}
 }
 
-// configureToken configures the mounted plugin with the value token, as the host passes the setting.
 func configureToken(t *testing.T, s *server.Server, token string) {
 	t.Helper()
 	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}); err != nil {

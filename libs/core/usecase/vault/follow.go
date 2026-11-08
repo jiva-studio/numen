@@ -20,11 +20,7 @@ type Follow struct {
 	refresh Refresh
 	scan    Scan
 
-	// Changed, if set, is called each time the index and the vault are consistent
-	// again.
-	Changed func(VaultChanges)
-	// ErrorHandler, if set, is called with each error, and with nil when a later
-	// attempt succeeds, so it reflects the current state.
+	Changed      func(VaultChanges)
 	ErrorHandler windowport.ErrorHandler
 }
 
@@ -42,10 +38,7 @@ func NewFollow(watcher vaultport.VaultWatcher, refresh Refresh, scan Scan) Follo
 type VaultChanges struct {
 	Paths        []string
 	ShouldReload bool
-	// Assets is the paths of changed files that are not notes. Reading one is
-	// separate work that takes minutes. A reload leaves Assets empty and covers
-	// every asset in the vault.
-	Assets []string
+	Assets       []string
 }
 
 // ShouldReadAssets reports whether any asset needs reading: an asset changed, or

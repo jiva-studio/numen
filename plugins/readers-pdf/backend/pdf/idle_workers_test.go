@@ -38,8 +38,6 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 	}
 }
 
-// startIdlePool returns a pool that keeps idle workers alive and releases them after period. The
-// pool is released when the test ends.
 func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
 	workers := NewWorkers()

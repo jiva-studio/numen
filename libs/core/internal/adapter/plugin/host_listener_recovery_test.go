@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// openListenerTarget opens the target of a connection to the listener mcp and returns its release.
 func openListenerTarget(t *testing.T, host *Host) func() {
 	t.Helper()
 	_, release, err := host.createListenerTarget(listenerPlugin, "mcp")(t.Context())
@@ -55,8 +54,6 @@ func TestTheReleaseOfAStoppedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 	}
 }
 
-// startKillableLauncher returns a launcher like startRelayLauncher that also returns the processes it
-// started.
 func startKillableLauncher(t *testing.T, echoPort int) (Launcher, func() []*os.Process) {
 	t.Helper()
 	ready := "NUMEN_READY port=" + strconv.Itoa(plugintest.ServeHostPing(t)) + " listener.mcp=" + strconv.Itoa(echoPort)
@@ -185,7 +182,6 @@ func (e *listenerTargetErrors) get() []error {
 	return slices.Clone(e.errs)
 }
 
-// connectUntilClosed connects to the listener port and waits until the host closes the connection.
 func connectUntilClosed(t *testing.T, port int) {
 	t.Helper()
 	conn := connectListener(t, port)

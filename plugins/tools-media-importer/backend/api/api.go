@@ -22,16 +22,11 @@ type GetLinkRequest struct {
 
 // GetLinkResponse holds the facts of one link.
 type GetLinkResponse struct {
-	// URL is the web address the note holds.
-	URL string `json:"url"`
-	// IsCopyable is whether a video is published at the address.
-	IsCopyable bool `json:"isCopyable"`
-	// CopySize is the byte count of the stored copy, zero where none is kept.
-	CopySize int64 `json:"copySize"`
-	// IsTextDeleted is whether the text was fetched once and its version deleted since.
-	IsTextDeleted bool `json:"isTextDeleted"`
-	// EmbedPage is the page below the plugin route that frames the video player, empty where none is known.
-	EmbedPage string `json:"embedPage"`
+	URL           string `json:"url"`
+	IsCopyable    bool   `json:"isCopyable"`
+	CopySize      int64  `json:"copySize"`
+	IsTextDeleted bool   `json:"isTextDeleted"`
+	EmbedPage     string `json:"embedPage"`
 }
 
 // ReadArticleRequest requests the article text of the link note at Path.
@@ -46,10 +41,8 @@ type ReadArticleResponse struct {
 
 // FetchTextRequest starts fetching the text of the link note at Path.
 type FetchTextRequest struct {
-	Path string `json:"path"`
-	// IsUserStarted is whether the user requested the fetch; a fetch they did not request leaves a
-	// deleted text deleted.
-	IsUserStarted bool `json:"isUserStarted"`
+	Path          string `json:"path"`
+	IsUserStarted bool   `json:"isUserStarted"`
 }
 
 // FetchTextResponse is the acknowledgement of a started fetch.

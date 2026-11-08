@@ -3,9 +3,9 @@ package service
 import (
 	"archive/zip"
 	"bytes"
-	"maps"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,7 +18,6 @@ import (
 
 const pngText = "\x89PNG\r\n\x1a\nnot really a picture"
 
-// getPNGBytes returns the bytes of a file that starts as a PNG.
 func getPNGBytes() []byte {
 	return []byte(pngText)
 }
@@ -50,7 +49,6 @@ func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
 	return buf.Bytes()
 }
 
-// createImageEpub is a book with one chapter and one picture entry.
 func createImageEpub(t *testing.T) []byte {
 	t.Helper()
 	return createZipEpub(t, map[string][]byte{

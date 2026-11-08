@@ -9,9 +9,7 @@ export interface Row {
   readonly id: string
   readonly label: string
   readonly value: string
-  /** The tooltip of the row; empty where the label says enough. */
   readonly hint: string
-  /** Whether the row is a part of the row above it. */
   readonly isNested: boolean
 }
 
@@ -36,7 +34,6 @@ const row = (
   extra: Partial<Pick<Row, 'hint' | 'isNested'>> = {},
 ): Row => ({ id, label, value, hint: extra.hint ?? '', isNested: extra.isNested ?? false })
 
-/** The row of a kind of source, and nothing for a kind that holds no source and no chunk. */
 function getKindRow(one: KindCount, locale?: string): Row[] {
   if (one.sources <= 0 && one.chunks <= 0) return []
   const value = `${formatCount(one.chunks, locale)} ${words.chunkUnit} · ${formatCount(one.sources, locale)} ${words.fileUnit}`
@@ -49,7 +46,6 @@ function getProfileValue(stats: Stats, locale?: string): string {
   return `${name} · ${formatCount(stats.threads, locale)} ${unit}`
 }
 
-/** The rows that tell the embedding is under way or when the counts last moved. */
 function getActivityRows(stats: Stats, locale?: string): Row[] {
   const rows: Row[] = []
   if (stats.waiting > 0) {

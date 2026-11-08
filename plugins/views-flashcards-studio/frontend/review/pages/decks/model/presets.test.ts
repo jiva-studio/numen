@@ -25,7 +25,6 @@ const settings = (fields: Partial<Settings> = {}): Settings => ({
   ...fields,
 })
 
-/** The same settings, as the schema carries them. */
 const createSettingsMessage = (one: Settings): SettingsMessage =>
   formatSettings({ ...DEFAULT_SETTINGS, ...one })
 
@@ -61,7 +60,6 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   ...fields,
 })
 
-/** One preset of a vault as returned by the count. */
 const presetDue = (fields: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   preset: 'Sanskrit.md',
   title: 'Sanskrit',
@@ -104,7 +102,6 @@ const vault = (
   isIndexing: false,
 })
 
-/** An application answering one preset for each deck named here. */
 const createPresets = (
   by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: StopReason }>,
 ): PresetsClient => ({
@@ -783,7 +780,6 @@ describe('every question about a preset', () => {
   })
 })
 
-/** An application answering each deck named here with the error given, and every other deck with its preset. */
 const createFailingPresets = (
   failing: Record<string, ErrorCode>,
   by: Parameters<typeof createPresets>[0] = {},

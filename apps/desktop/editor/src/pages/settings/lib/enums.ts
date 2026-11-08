@@ -32,7 +32,6 @@ export function toSelectChoices(options: readonly PluginSettingOption[]): readon
   }))
 }
 
-/** The value as a condition compares it. */
 const toText = (value: unknown): string => {
   if (value === undefined || value === null) return ''
   return typeof value === 'string' ? value : JSON.stringify(value)
@@ -68,7 +67,6 @@ export function isSecretShown(
   return secret.when.is.includes(toText(getValueInForce(parent, read, isRequested)))
 }
 
-/** Finds the setting key after which a secret should be placed, or null for the top. */
 function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>): string | null {
   if (secret.when?.setting && shownKeys.has(secret.when.setting)) {
     return secret.when.setting

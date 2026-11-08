@@ -13,8 +13,6 @@ const (
 	closing = "\x03"
 )
 
-// parseMarkedName returns a marked name without its markers, and the runs the
-// index marked in it, counted as a client counts text: in UTF-16 code units.
 func parseMarkedName(marked string) (string, []domain.UnitRange) {
 	var name strings.Builder
 	name.Grow(len(marked))

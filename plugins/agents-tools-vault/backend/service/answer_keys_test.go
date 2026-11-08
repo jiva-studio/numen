@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// collectPropertyNames adds the property names of every object the JSON schema describes, at any
-// depth, to names.
 func collectPropertyNames(schema any, names map[string]bool) {
 	switch node := schema.(type) {
 	case map[string]any:
@@ -30,7 +28,6 @@ func collectPropertyNames(schema any, names map[string]bool) {
 	}
 }
 
-// getCamelCaseToolNames is the tools this branch adds or changes, whose returns take camelCase keys.
 func getCamelCaseToolNames() []string {
 	return []string{
 		"note_list", "note_title_list", "note_resolve", "note_rename", "note_move", "note_remove",

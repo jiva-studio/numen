@@ -45,8 +45,7 @@ type linkingVault struct {
 	additions [][]pluginport.PluginLinkAddition
 	updates   []linkUpdate
 	removals  []linkRemoval
-	// links are the targets each note has a link to.
-	links map[string][]domain.Address
+	links     map[string][]domain.Address
 }
 
 func newLinkingVault() *linkingVault {
@@ -56,7 +55,6 @@ func newLinkingVault() *linkingVault {
 	}
 }
 
-// checkNote is the error of an edit of the note at from against the baseline.
 func (l *linkingVault) checkNote(from string, baseline domain.FileStat) error {
 	now, err := l.stat(from)
 	if err != nil {
@@ -68,7 +66,6 @@ func (l *linkingVault) checkNote(from string, baseline domain.FileStat) error {
 	return nil
 }
 
-// write marks the note at from as written and returns its new file stat.
 func (l *linkingVault) write(from string) (domain.FileStat, error) {
 	l.files[from] += "\n"
 	l.stamp++
@@ -141,7 +138,6 @@ func (l *linkingVault) RemoveLinks(_ context.Context, from string, to domain.Add
 	return l.write(from)
 }
 
-// readBaseline is the file stat of the note as a plugin that read it sends it.
 func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat {
 	t.Helper()
 	l.mu.Lock()
@@ -153,8 +149,6 @@ func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat 
 	return writeFileStat(now)
 }
 
-// newLinksClient serves the vault endpoint over the linking vault, nil for a host that shows none,
-// with md.numen.a granted the permissions named.
 func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	hostCallers := newCallers(nil)

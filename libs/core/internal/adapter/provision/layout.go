@@ -18,8 +18,6 @@ const readyName = ".ready"
 
 var unsafeNameChars = regexp.MustCompile(`[^A-Za-z0-9._-]`)
 
-// getDependencyDir returns the folder one version of a dependency is kept in on
-// this platform: <root>/<kind>/<id>/<version>-<os>-<arch>.
 func getDependencyDir(root, kind, id, version string) string {
 	if version == "" {
 		version = "latest"
@@ -27,7 +25,6 @@ func getDependencyDir(root, kind, id, version string) string {
 	return filepath.Join(root, cleanName(kind), cleanName(id), fmt.Sprintf("%s-%s-%s", cleanName(version), runtime.GOOS, runtime.GOARCH))
 }
 
-// cleanName returns the name as one safe path element.
 func cleanName(name string) string {
 	clean := unsafeNameChars.ReplaceAllString(name, "_")
 	if strings.Trim(clean, ".") == "" {
@@ -36,14 +33,11 @@ func cleanName(name string) string {
 	return clean
 }
 
-// IsReady reports whether the folder holds a whole dependency.
 func isReady(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, readyName))
 	return err == nil
 }
 
-// writeReady marks the folder as holding a whole dependency. The sentinel names
-// the primary file and the checksum the folder was fetched with.
 func writeReady(ctx context.Context, dir, primary, sum string) error {
 	tmp := filepath.Join(dir, readyName+".tmp")
 	if err := os.WriteFile(tmp, []byte(primary+"\n"+sum+"\n"), 0o644); err != nil {
@@ -52,8 +46,6 @@ func writeReady(ctx context.Context, dir, primary, sum string) error {
 	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), newDefaultBackoff())
 }
 
-// readReady returns the primary file the sentinel names and the checksum the
-// folder was fetched with.
 func readReady(dir string) (name, sum string, err error) {
 	raw, err := os.ReadFile(filepath.Join(dir, readyName))
 	if err != nil {
@@ -63,12 +55,10 @@ func readReady(dir string) (name, sum string, err error) {
 	return strings.TrimSpace(name), strings.TrimSpace(sum), nil
 }
 
-// isPlainName reports whether the name is one file name: no folder, no pattern.
 func isPlainName(name string) bool {
 	return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, "/\\*?[\x00")
 }
 
-// isReserved reports whether the folder keeps a file of this name for itself.
 func isReserved(name string) bool {
 	return strings.HasPrefix(name, readyName) || strings.HasPrefix(name, tempPrefix)
 }
@@ -95,8 +85,6 @@ func sleepContext(ctx context.Context, wait time.Duration) error {
 	}
 }
 
-// retry runs the operation until it succeeds, fails with an error that isRetryable
-// rejects, or the attempts run out. The wait doubles after each failure.
 func retry(ctx context.Context, policy backoff, isRetryable func(error) bool, operation func() error) error {
 	wait := policy.first
 	var err error
@@ -111,15 +99,10 @@ func retry(ctx context.Context, policy backoff, isRetryable func(error) bool, op
 	}
 }
 
-// isAccessDenied reports whether the error is the platform refusing a file that
-// another process still holds open, which on windows an antivirus scan or an
-// indexer does for a moment after the file is written.
 func isAccessDenied(err error) bool {
 	return runtime.GOOS == "windows" && errors.Is(err, fs.ErrPermission)
 }
 
-// renameWithRetry moves the file to its place, trying again while the platform
-// reports access denied.
 func renameWithRetry(ctx context.Context, from, to string, policy backoff) error {
 	return retry(ctx, policy, isAccessDenied, func() error { return os.Rename(from, to) })
 }

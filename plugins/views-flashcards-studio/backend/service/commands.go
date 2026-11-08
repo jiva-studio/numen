@@ -45,8 +45,6 @@ func (b *Backend) Commands() (*command.Registry, error) {
 	return registry, nil
 }
 
-// newCreateRun makes the file under the title at the root of the vault the window shows, and answers
-// it as the file to open.
 func (b *Backend) newCreateRun(
 	create func(context.Context, domain.Vault, cards.New) (cards.CreateNoteResult, error),
 ) command.Run {
@@ -64,7 +62,6 @@ func (b *Backend) newCreateRun(
 	}
 }
 
-// describeCreateError returns the reason a file was not created, in words for the user.
 func describeCreateError(code api.ErrorCode) string {
 	switch code {
 	case api.ErrorCodeAlreadyExists:

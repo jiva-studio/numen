@@ -24,7 +24,6 @@ const footer: FooterEntry = {
 const draw = (vaults: readonly VaultRow[]) =>
   mount(WelcomePage, { props: { vaults, heading: 'Vaults' } })
 
-/** The letters drawn on the list, in the order the rows stand. */
 const caps = (screen: ReturnType<typeof draw>): readonly string[] =>
   screen.findAllComponents(KeyCap).map((cap) => cap.props('keys').letter)
 

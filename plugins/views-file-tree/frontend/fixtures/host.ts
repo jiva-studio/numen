@@ -14,7 +14,6 @@ import {
 } from '@numen/plugin-sdk'
 import type { FileTreeHost } from '../model/tabDeps'
 
-/** One command of the window, in the group it is drawn in. */
 const command = (id: string, group: string, text = id): MenuEntry => ({ id, text, group })
 
 const COPY = command('app:note.copyPath', 'file')
@@ -64,9 +63,7 @@ export const renderDeps = {
 }
 
 export interface HostOptions {
-  /** The tabs linked to each files tab, by the identity of the files tab. */
   readonly linked?: Readonly<Record<string, boolean>>
-  /** What each folder holds. */
   readonly folders?: Readonly<Record<string, readonly VaultEntry[]>>
 }
 

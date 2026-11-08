@@ -27,7 +27,6 @@ export const PLUGINS_WAIT_MS = 2_000
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */
 export const STEP_LIMIT_MS = 10_000
 
-/** Starts the plugins and waits for them no longer than PLUGINS_WAIT_MS; the ones still starting go on. */
 async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   const starting = deps.startPlugins?.()
   if (!starting) return
@@ -35,7 +34,6 @@ async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   await waitFor(starting, PLUGINS_WAIT_MS)
 }
 
-/** Settles with the work, or fails naming `what` once the limit passes with the work still pending. */
 async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<never>((_, reject) => {

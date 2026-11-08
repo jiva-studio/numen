@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveNote indexes a note whose title is its own, or the filename's where the
-// frontmatter names none.
 func (s *store) saveNote(vault domain.VaultID, path, title string, named bool) {
 	s.t.Helper()
 	n := domain.Note{

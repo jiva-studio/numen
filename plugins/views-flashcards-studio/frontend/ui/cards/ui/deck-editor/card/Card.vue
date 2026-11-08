@@ -18,13 +18,9 @@ import { createSealedMap, type StepDirection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
-    /** The card, laid out against the card model that cuts it. */
     tile: Tile
-    /** Problems with this card, shown under its heading. */
     wrong?: readonly string[]
-    /** What is wrong with each of its values, under the field the value is in. */
     wrongUnder?: ReadonlyMap<string, readonly string[]>
-    /** The words it is drawn with. */
     words?: CardWords
   }>(),
   { wrong: () => [], wrongUnder: () => createSealedMap(), words: () => DECK_WORDS },
@@ -53,7 +49,6 @@ const cardModelTitle = computed(() => props.tile.cardModel ?? props.words.unknow
 
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
-/** Problems with one value, shown once under the last box of its field. */
 const getProblems = (value: PlacedFieldValue): readonly string[] =>
   value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>

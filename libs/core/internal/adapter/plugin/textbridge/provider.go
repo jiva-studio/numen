@@ -54,7 +54,6 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 	return out
 }
 
-// getFileInput is the extensions, each with its dot, that give a file one of the types.
 func (p Plugins) getFileInput(types []domain.ContentType) domain.FileInput {
 	var out domain.FileInput
 	for _, one := range types {
@@ -100,7 +99,6 @@ func (p provider) CreateText(ctx context.Context, req textport.TextCreation) (er
 	return readError(res.Msg.GetError())
 }
 
-// readError is the error a provider answered with. A text that is not there is textport.ErrNoText.
 func readError(code v1.TextErrorCode) error {
 	switch code {
 	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:

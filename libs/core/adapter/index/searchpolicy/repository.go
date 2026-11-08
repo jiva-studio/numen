@@ -18,7 +18,6 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-// getStatement returns the statement in sql/<name>.sql.
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the floors of every vault. Reads go through read and writes

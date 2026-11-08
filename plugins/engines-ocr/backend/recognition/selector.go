@@ -15,7 +15,6 @@ type pageSelector struct {
 	Boxes [][4]float32 `json:"boxes,omitempty"`
 }
 
-// encode returns the selector as the JSON a segment carries.
 func (s pageSelector) encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {

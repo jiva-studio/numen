@@ -3,13 +3,11 @@ import { getPaletteField, openWorkspace, waitForPassage } from '../../support/wo
 
 const OPEN_DOCUMENT = 'Open the document here'
 
-/** The text of every range the book reader lights, in the order the ranges were drawn. */
 const readLitText = (): string[] => {
   const ranges = CSS.highlights.get('numen-book')
   return ranges ? [...ranges].map((range) => range.toString()) : []
 }
 
-/** Moves the highlight of the list onto the row. */
 const highlightRow = async (page: Page, row: Locator): Promise<void> => {
   await expect(row).toBeVisible()
   for (let step = 0; step < 10 && (await row.getAttribute('aria-selected')) !== 'true'; step += 1) {
@@ -18,7 +16,6 @@ const highlightRow = async (page: Page, row: Locator): Promise<void> => {
   await expect(row).toHaveAttribute('aria-selected', 'true')
 }
 
-/** Opens the panel of actions over the row in front and gives the rows of it. */
 const openActions = async (page: Page) => {
   await page.keyboard.press('Control+k')
   const rows = page.locator('[data-actions="list"] [role="option"]')

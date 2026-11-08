@@ -17,7 +17,6 @@ const (
 	basaltBody   = "A volcanic rock.\n"
 )
 
-// newRockVault is an invented vault of rocks whose Basalt note has the frontmatter given.
 func newRockVault(basaltFrontmatter string) *hosttest.Vault {
 	v := hosttest.New("Geology")
 	v.File(basaltPath, "---\ntitle: Basalt\n"+basaltFrontmatter+"---\n"+basaltBody)
@@ -26,7 +25,6 @@ func newRockVault(basaltFrontmatter string) *hosttest.Vault {
 	return v
 }
 
-// linksOf is the frontmatter links the note has now.
 func linksOf(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	t.Helper()
 	content, ok := v.Content(notePath)
@@ -58,7 +56,6 @@ func nameAddress(name string) domain.Address {
 	return domain.Address{Scheme: domain.SchemeName, Value: name}
 }
 
-// makeStale writes the note again, so a stat read before is stale.
 func makeStale(t *testing.T, v *hosttest.Vault, notePath string) {
 	t.Helper()
 	content, stat, err := v.Read(t.Context(), notePath)

@@ -22,10 +22,6 @@ const batchLimit = 50
 
 var errBatchTooLarge = fmt.Errorf("too many notes: at most %d per call", batchLimit)
 
-// splitNoteError splits the error of a change of one note into the error code of that note and the
-// error code of the call: a vault the host does not show returns NO_VAULT for the call, a cancelled
-// call fails the call, an error with no code is the note's INTERNAL, and every other error is the
-// note's own code.
 func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -146,8 +142,6 @@ func (e *vaultEndpoint) MoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-// moveNote moves one note of a batch into the folder and returns its entry, or the error of the
-// call. A note not reached before the call was cancelled returns NOT_ATTEMPTED.
 func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteMove{
 		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
@@ -194,8 +188,6 @@ func (e *vaultEndpoint) RemoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-// removeNote moves one note of a batch to the trash and returns its entry, or the error of the
-// call. A note not reached before the call was cancelled returns NOT_ATTEMPTED.
 func removeNote(ctx context.Context, vault pluginport.PluginVault, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteRemoval{
 		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
@@ -218,7 +210,6 @@ func removeNote(ctx context.Context, vault pluginport.PluginVault, target string
 	return &v1.HostNoteRemoval{Path: target, Error: noteCode, Detail: err.Error()}, 0, nil
 }
 
-// isCancelled reports whether the call was cancelled, after which a batch changes no further note.
 func isCancelled(ctx context.Context) bool {
 	return ctx.Err() != nil
 }

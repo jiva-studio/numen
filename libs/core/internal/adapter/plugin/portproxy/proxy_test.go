@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// serveEcho starts a loopback TCP server that writes back what it reads and returns its address.
 func serveEcho(t *testing.T) string {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -46,7 +45,6 @@ func serveEcho(t *testing.T) string {
 	return ln.Addr().String()
 }
 
-// openProxy opens a proxy on a free loopback port and returns it with its address.
 func openProxy(t *testing.T, target Target, onError func(error)) (*Proxy, string) {
 	t.Helper()
 	p, err := Open(t.Context(), "127.0.0.1:0", target, onError)

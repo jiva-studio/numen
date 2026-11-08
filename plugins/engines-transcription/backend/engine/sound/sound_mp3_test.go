@@ -34,8 +34,6 @@ func (w *bitWriter) write(value uint32, width int) {
 	}
 }
 
-// getPairCodes returns the codes of the first Huffman table for the pairs it holds, as bits and
-// width, for the pair (x, y) with each of x and y in {0, 1}.
 func getPairCodes() [2][2][2]uint32 {
 	return [2][2][2]uint32{
 		{{1, 1}, {1, 3}},
@@ -46,8 +44,6 @@ func getPairCodes() [2][2][2]uint32 {
 // The bytes of one 44.1 kHz stereo frame at 128 kbit/s, no padding.
 const mp3FrameSize = 417
 
-// encodeMP3 is an mp3 of count frames in which every granule of both channels
-// carries a few hundred small spectral values drawn from the seed.
 func encodeMP3(count int, seed int64) []byte {
 	random := rand.New(rand.NewSource(seed))
 	var out bytes.Buffer
@@ -101,8 +97,6 @@ func writeGranules(random *rand.Rand, main *bitWriter) {
 	}
 }
 
-// decodeMP3Whole is the whole stereo output of the decoder, averaged to one
-// channel once it is all in memory.
 func decodeMP3Whole(t testing.TB, raw []byte) []float32 {
 	t.Helper()
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
@@ -183,8 +177,6 @@ func TestMP3DecodeContainsMemoryInProportionToOneChannel(t *testing.T) {
 	}
 }
 
-// peakHeap is the most the live heap grew while run ran, sampled with the
-// collector running at every few allocated bytes.
 func peakHeap(run func()) int {
 	defer debug.SetGCPercent(debug.SetGCPercent(5))
 	runtime.GC()

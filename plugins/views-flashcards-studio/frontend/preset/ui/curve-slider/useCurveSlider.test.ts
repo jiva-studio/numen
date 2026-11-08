@@ -44,7 +44,6 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
   ...overrides,
 })
 
-/** The control standing at a place of a curve, and everything it emitted. */
 const slider = (overrides: Partial<CurveSliderProps> = {}) => {
   const emitted: unknown[][] = []
   const props = reactive<CurveSliderProps>({
@@ -180,7 +179,6 @@ describe('the picture the pointer is read against', () => {
   })
 })
 
-/** A chart the pointer is read against, scaled and shifted as the test specifies. */
 const createChart = (a: number, e: number, isCaptured = false) => {
   const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {

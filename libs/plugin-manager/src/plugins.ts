@@ -9,13 +9,9 @@ export interface PluginListing {
   readonly name: string
   readonly version: string
   readonly description: string
-  /** The group the manifest declares, lowercase; empty where it declares none. */
   readonly category: string
-  /** What the plugin provides, in words a person reads; empty where the manifest says none. */
   readonly feature: string
-  /** The ids of the kinds of tab the plugin registers. */
   readonly tabKinds: readonly string[]
-  /** Whether a source offers the plugin and the host does not have it on disk. */
   readonly isAvailable: boolean
 }
 
@@ -28,13 +24,9 @@ export interface ManagedPlugin {
   readonly name: string
   readonly version: string
   readonly description: string
-  /** The group the manifest declares, lowercase; empty where it declares none. */
   readonly category: string
-  /** What the plugin provides, in words a person reads; empty where the manifest says none. */
   readonly feature: string
-  /** The ids of the kinds of tab the plugin registers. */
   readonly tabKinds: readonly string[]
-  /** The host's report of the plugin; absent for a plugin that is not installed. */
   readonly info: PluginInfo | undefined
 }
 

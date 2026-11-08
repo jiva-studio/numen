@@ -8,8 +8,6 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// buildScores is a run of windows, sure where the ones named are and sure of nothing
-// elsewhere.
 func buildScores(count int, sure ...int) []float32 {
 	out := make([]float32, count)
 	for _, item := range sure {

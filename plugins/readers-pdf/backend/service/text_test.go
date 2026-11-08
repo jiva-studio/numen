@@ -20,9 +20,6 @@ import (
 // compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
-// newTestWorkers returns a pool that is closed when the test ends. The pools of the binary compile
-// PDFium into one folder, so it is compiled once and not for each pool, which costs minutes under the
-// race detector.
 func newTestWorkers(t testing.TB) *pdf.Workers {
 	t.Helper()
 	workers := pdf.NewWorkers()
@@ -62,8 +59,6 @@ func runTests(m *testing.M) int {
 	return code
 }
 
-// newVault is a vault holding one file under name with the bytes of a fixture, the texts of that
-// vault with the plugin providing, and the plugin's text server.
 func newVault(t *testing.T, name, fixture string) (*hosttest.Texts, *TextServer, []byte) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", fixture))
@@ -83,7 +78,6 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	return texts, server, raw
 }
 
-// createText starts the text layer of a file and waits for it to be written.
 func createText(t *testing.T, server *TextServer, req host.TextCreation) {
 	t.Helper()
 	if err := server.CreateText(t.Context(), req); err != nil {
@@ -92,7 +86,6 @@ func createText(t *testing.T, server *TextServer, req host.TextCreation) {
 	server.Wait()
 }
 
-// readLive is the live version of a file and its whole text.
 func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionText {
 	t.Helper()
 	listing, err := texts.ListVersions(t.Context(), path)
@@ -303,7 +296,6 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 	}
 }
 
-// newDocumentServer is the document service of the vault the text server reads.
 func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
 	return NewDocumentServer(server.files, texts, server.workers)
 }

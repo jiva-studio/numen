@@ -2,7 +2,6 @@ import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
-/** The profile the palette opens its list on, which is the one in force, by the name of its row. */
 const readCurrentProfile = async (page: Page): Promise<string> => {
   await runPaletteCommand(page, 'Performance profile', 'Performance profile')
   const current = page.getByRole('option', { selected: true })

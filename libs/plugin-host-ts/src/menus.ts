@@ -8,7 +8,6 @@ export type MenuLocation = (typeof MENU_LOCATION)[keyof typeof MENU_LOCATION]
 export interface MenuPlacement {
   readonly pluginId: string
   readonly location: string
-  /** Short id of the plugin's command, or the full id of an editor command. */
   readonly command: string
   readonly group?: string
   readonly order?: number | undefined
@@ -17,27 +16,21 @@ export interface MenuPlacement {
 /** What the window knows of a command shown in a place. */
 export interface CommandLook {
   readonly title: string
-  /** Lucide name. */
   readonly icon?: string
   readonly shortcut?: string
-  /** `note` for a command listed only while a note is in front. */
   readonly scope?: string
 }
 
 /** An entry as a place receives it. */
 export interface PlacedCommand extends CommandLook {
   readonly pluginId: string
-  /** Full id: owner, colon, id. */
   readonly command: string
-  /** Empty for none. */
   readonly group: string
   readonly order?: number | undefined
 }
 
 export interface MenusDeps {
-  /** The placements of the enabled plugins; undefined until the first list has loaded. */
   readonly getPlacements: () => readonly MenuPlacement[] | undefined
-  /** The look of a listed command by its full id; undefined where the window lists none of that id. */
   readonly findCommand: (fullId: string) => CommandLook | undefined
   readonly reportIssue?: (pluginId: string, message: string) => void
 }
@@ -51,7 +44,6 @@ const KNOWN_LOCATIONS: readonly string[] = Object.values(MENU_LOCATION)
 
 const isKnownLocation = (location: string): boolean => KNOWN_LOCATIONS.includes(location)
 
-/** Compares two strings by code unit, which does not depend on the language of the person. */
 function compareText(a: string, b: string): number {
   if (a < b) return -1
   return a > b ? 1 : 0
@@ -81,7 +73,6 @@ interface MenuIssue {
   readonly message: string
 }
 
-/** Reports each issue once, whatever the number of reads. */
 function createIssueReporter(reportIssue: MenusDeps['reportIssue']): (issue: MenuIssue) => void {
   const reported = new Set<string>()
   return (issue) => {
@@ -92,7 +83,6 @@ function createIssueReporter(reportIssue: MenusDeps['reportIssue']): (issue: Men
   }
 }
 
-/** The reason the look of a command does not fit the place, and undefined where it does. */
 function findLookIssue(location: string, look: CommandLook): MenuIssue['kind'] | undefined {
   if (location !== MENU_LOCATION.titleBar) return undefined
   if (look.icon === undefined) return 'icon'

@@ -20,7 +20,6 @@ const CREATE_NOTE_ROW = 'creating'
 
 type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 
-/** The search opened, with the words typed and the answers back. */
 const search = async (window: Window, text: string) => {
   globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
   await settle()

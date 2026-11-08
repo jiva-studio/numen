@@ -18,7 +18,6 @@ const reported: Connection = {
   secondSide: null,
 }
 
-/** An inspector over Root.md, on the pair of Root.md and Child.md, over a core that reports the connection given. */
 const inspecting = (connection: Connection | null = reported, takes = true) => {
   const plex = viewOn('Root.md', ['Child.md'])
   const vault = createVault(takes, connection)

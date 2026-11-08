@@ -36,7 +36,6 @@ func IsAvailableOn(key, goos string) bool {
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
 
-// readAppDeclaration decodes the embedded declaration.
 func readAppDeclaration() []pluginport.PluginManifestSetting {
 	decoded, err := manifestjson.Decode(appDeclaration)
 	if err != nil {
@@ -51,7 +50,6 @@ func GetAppDeclaration() []pluginport.PluginManifestSetting {
 	return readAppDeclaration()
 }
 
-// findAppSetting returns the declaration of the setting of the owner app at a key.
 func findAppSetting(key string) pluginport.PluginManifestSetting {
 	for _, one := range readAppDeclaration() {
 		if one.Key == key {
@@ -61,12 +59,10 @@ func findAppSetting(key string) pluginport.PluginManifestSetting {
 	return pluginport.PluginManifestSetting{}
 }
 
-// getAppDefault returns the default the declaration gives a key.
 func getAppDefault(key string) any {
 	return findAppSetting(key).Default
 }
 
-// getAppString returns the default of a string setting.
 func getAppString(key string) string {
 	if text, isText := getAppDefault(key).(string); isText {
 		return text
@@ -74,7 +70,6 @@ func getAppString(key string) string {
 	return ""
 }
 
-// getAppNumber returns the default of a number setting.
 func getAppNumber(key string) float64 {
 	if number, isNumber := getAppDefault(key).(float64); isNumber {
 		return number
@@ -82,7 +77,6 @@ func getAppNumber(key string) float64 {
 	return 0
 }
 
-// getAppBool returns the default of a boolean setting.
 func getAppBool(key string) bool {
 	if isOn, isBool := getAppDefault(key).(bool); isBool {
 		return isOn
@@ -90,7 +84,6 @@ func getAppBool(key string) bool {
 	return false
 }
 
-// getAppBounds returns the bounds the declaration gives a range setting.
 func getAppBounds(key string) Bounds {
 	declared := findAppSetting(key)
 	var bounds Bounds

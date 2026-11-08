@@ -28,7 +28,6 @@ afterEach(() => {
 
 const ROOM = { width: 1000, height: 800 }
 
-/** A window of the size a test names, whatever the machine laid out. */
 const createViewport = (size: { width: number; height: number }): Viewport => ({
   watch: () => () => undefined,
   watchWhole: () => () => undefined,
@@ -46,8 +45,6 @@ const createBox = (overrides: Partial<Box> = {}): Box => ({
   ...overrides,
 })
 
-/** Mounted and placed: the measured size is applied to the style on the
- *  frame after the one it was measured on. */
 const mountTooltip = async (props: Record<string, unknown> = {}) => {
   const tooltip = mount(Tooltip, {
     props: { at: createBox(), viewport: createViewport(ROOM), ...props },
@@ -57,7 +54,6 @@ const mountTooltip = async (props: Record<string, unknown> = {}) => {
   return tooltip
 }
 
-/** Where it was placed, as the two numbers the style carries. */
 const getPlacement = (tooltip: Awaited<ReturnType<typeof mountTooltip>>) => {
   const style = tooltip.get('[role="tooltip"]').element as HTMLElement
   return { x: style.style.insetInlineStart, y: style.style.insetBlockStart }

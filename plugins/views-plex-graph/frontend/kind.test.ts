@@ -9,7 +9,6 @@ import { settle, viewOn } from './fixtures'
 import type { PlexTabState } from './types'
 import { usePlexView } from './model/usePlexView'
 
-/** The plex tabs of a window, opened, shown and closed the way the window does it. */
 const window = (options: HostOptions = {}) => {
   const fixture = createHost(options)
   const views: ReturnType<typeof viewOn>[] = []

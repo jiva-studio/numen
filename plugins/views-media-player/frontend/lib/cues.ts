@@ -36,15 +36,6 @@ export const isSame = (a: readonly Cue[], b: readonly Cue[]): boolean =>
       cue.text === b[index]!.text && cue.from === b[index]!.from && cue.to === b[index]!.to,
   )
 
-/**
- * Where the lines of `text` fall in the cues they were edited from: one cue
- * for each line, in the order they are read, and an emptied line as the empty
- * span it now covers.
- */
-/**
- * How many lines at the start and at the end of the text are unchanged. The
- * lines between them are the edited ones.
- */
 const countSame = (
   lines: readonly string[],
   was: readonly Cue[],
@@ -94,10 +85,6 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
 export const applyCues = (was: readonly Cue[], text: string): readonly Cue[] =>
   spanCues(was, text).filter((cue) => cue.text !== '')
 
-/**
- * Lines laid over one span, each taking of it what its characters are of all
- * of them. Lines carrying no characters at all share the span's start.
- */
 const spread = (texts: readonly string[], start: number, end: number): Cue[] => {
   const all = texts.reduce((sum, one) => sum + one.length, 0)
   const cues: Cue[] = []

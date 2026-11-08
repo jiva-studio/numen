@@ -26,7 +26,6 @@ interface Matrix {
 
 const IDENTITY: Matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
 
-/** A drawing that turns screen pixels into plex coordinates through `inverse`. */
 function createDrawing(inverse: Matrix | null = IDENTITY) {
   let matrix = inverse
   return {
@@ -43,7 +42,6 @@ type Drawing = ReturnType<typeof createDrawing>
 
 const asSvg = (drawing: object) => drawing as unknown as SVGSVGElement
 
-/** The pointer going down on something inside a drawing. */
 const createDown = (drawing: Drawing | null, x: number, y: number, pointerId = 1) =>
   ({
     target: drawing ? { ownerSVGElement: drawing } : null,
@@ -52,7 +50,6 @@ const createDown = (drawing: Drawing | null, x: number, y: number, pointerId = 1
     pointerId,
   }) as unknown as PointerEvent
 
-/** An event as the window gets it. */
 const createPointerEvent = (type: string, x: number, y: number, pointerId = 1) => {
   const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true })
   Object.defineProperty(event, 'pointerId', { value: pointerId })

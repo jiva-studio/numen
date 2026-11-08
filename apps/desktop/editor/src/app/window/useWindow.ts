@@ -113,14 +113,11 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: import('@numen/plugin-host').PluginLoader
-  /** True until every plugin the window starts has started or failed. */
   arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
-  /** Tab links session, started and closed with the window. */
   tabLinkSession: { start(): Promise<void>; close(): void }
-  /** Id of this window in the tab links of the core. */
   windowId: string
   /** Opens the tab of a detach and accepts it; runs in the background. */
   openDetachedTab(moved: MovedTab): void
@@ -129,7 +126,6 @@ interface AppLifecycleDeps {
 /** How long a vault with no saved tabs waits for the plugins that place tabs. */
 const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
-/** Returns the tab of a pending detach, or null when the request fails or none is pending. */
 const readDetachedTab = async (windowId: string, tabId: string) => {
   try {
     return await core.readDetachedTab(windowId, tabId)
@@ -138,7 +134,6 @@ const readDetachedTab = async (windowId: string, tabId: string) => {
   }
 }
 
-/** The tabs the core stored for the vault, and none where the core cannot be queried. */
 const readSavedTabs = async () => {
   try {
     return await core.readOpenTabs()
@@ -220,7 +215,6 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-/** What the declared commands ask of the window: the commands the plugin host lists, and the plugins with a backend. */
 const getDeclaredCommandsDeps = (
   hostHolder: { current?: import('@numen/plugin-host').PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
@@ -323,7 +317,6 @@ interface WindowContext {
   commands?: ReturnType<typeof useCommands>
   kinds?: ReturnType<typeof useWindowKinds>
   vaults?: ReturnType<typeof useVaults>
-  /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
   tabsHold?: TabsHold
 }
 
@@ -512,10 +505,6 @@ function createStatusBar(
   })
 }
 
-/**
- * Closes a tab; calls hold when the tab must stay open. Returns false when the tab stays open. The
- * core unlinks tabs missing from the tab report.
- */
 function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void): boolean => {
     if (!base.windowTabs.releaseTab(id)) {
@@ -527,7 +516,6 @@ function createTabCloser(base: WindowCore) {
   }
 }
 
-/** The tabs the vault placed, opened in the background; what fails is reported. */
 function openPlacedTabs(base: WindowCore) {
   return runInBackground(
     base.windowTabs.openPlacedTabs((kind, error) =>
@@ -543,7 +531,6 @@ interface WindowTabLinksDeps {
   readonly isHighlighted: Ref<boolean>
 }
 
-/** Creates the tab links session, reports the tabs whenever they change, and opens tabs sent from other windows. */
 function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -590,7 +577,6 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   }
 }
 
-/** Closes a secondary window after its last tab closes. */
 function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
   closeWindowWhenEmpty({
     isLayoutReady,
@@ -601,7 +587,6 @@ function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
   })
 }
 
-/** Detach, move and highlight requests of this window. */
 function createWindowTabMoves(
   base: WindowCore,
   editing: WindowServices['editing'],

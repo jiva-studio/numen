@@ -26,15 +26,10 @@ const notesModule = numenRoot + "libs/notes"
 // repoRootDir is the repository root, relative to this package.
 const repoRootDir = "../../.."
 
-// isWithin reports whether path is root or a path below it.
 func isWithin(path, root string) bool {
 	return path == root || strings.HasPrefix(path, root+"/")
 }
 
-// getPluginDependencyRefusal returns why the plugin module mod may not depend on dep, in
-// a direct requirement or in an import, or "" when it may. A plugin depends on its own
-// packages, the plugin SDK and third-party code. It reaches notes, the core and the wire
-// through the SDK.
 func getPluginDependencyRefusal(mod, dep string) string {
 	switch {
 	case isWithin(dep, mod), isSDK(dep):
@@ -89,8 +84,6 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 	}
 }
 
-// listPluginModules is the folder of every plugin that is a Go module, slashed
-// and relative to the root of the modules.
 func listPluginModules(t *testing.T) []string {
 	t.Helper()
 	found, err := filepath.Glob(filepath.Join(repoRootDir, "plugins", "*", "go.mod"))
@@ -107,8 +100,6 @@ func listPluginModules(t *testing.T) []string {
 	return dirs
 }
 
-// getImports is every path a Go file in the tree at root imports, by the file
-// that imports it. A folder of dependencies is not part of the tree.
 func getImports(root string) (map[string][]string, error) {
 	imports := map[string][]string{}
 	fset := token.NewFileSet()
@@ -172,10 +163,6 @@ type depguardRule struct {
 	} `yaml:"deny"`
 }
 
-// getDepguardGaps lists what the depguard rules of a plugin golangci
-// configuration leave open: a rule over "$all" denies every library of the
-// repository, the applications and the RPC library, and allows the plugin SDK
-// and nothing else of the repository.
 func getDepguardGaps(config []byte) ([]string, error) {
 	var parsed struct {
 		Linters struct {
@@ -279,8 +266,6 @@ func TestPluginModules_HaveDepguardRulesDenyingCoreAndPlugins(t *testing.T) {
 // ship with numen, and a name after it.
 var pluginIDLiteral = regexp.MustCompile(`md\.numen\.[A-Za-z0-9]`)
 
-// getPluginIDLiterals is every string literal of a file that spells out a
-// plugin id.
 func getPluginIDLiterals(file *ast.File) []string {
 	var spelled []string
 	ast.Inspect(file, func(n ast.Node) bool {
@@ -321,8 +306,6 @@ func TestPluginIDRule_RejectsPluginIDLiterals(t *testing.T) {
 	}
 }
 
-// listSources is every Go file of the tree at root that is not a test, outside
-// a folder of dependencies and a folder of test fixtures (plugintest).
 func listSources(root string) ([]string, error) {
 	var sources []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -343,7 +326,6 @@ func listSources(root string) ([]string, error) {
 	return sources, err
 }
 
-// parseSources parses every file and hands each parsed file to check.
 func parseSources(t *testing.T, roots []string, check func(path string, file *ast.File)) {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -382,8 +364,6 @@ func TestNoCoreOrHostSourceSpellsOutAPluginID(t *testing.T) {
 	})
 }
 
-// getAnonymousAssertions is every type assertion and type switch case of a file
-// naming an interface that is spelled out where it is asserted.
 func getAnonymousAssertions(file *ast.File) []token.Pos {
 	var found []token.Pos
 	ast.Inspect(file, func(n ast.Node) bool {
@@ -439,8 +419,6 @@ func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 	})
 }
 
-// getManifestIssues is every rule the manifest in data breaks, by the one
-// validator the host and the plugin command line share.
 func getManifestIssues(data []byte) []error {
 	parsed, err := manifestjson.Decode(data)
 	if err != nil {

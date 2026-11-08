@@ -42,32 +42,23 @@ type GetFloorRequest struct{}
 
 // Calibration is what one calibration measured.
 type Calibration struct {
-	// Median and Spread describe the similarities between a query and passages that are not about it.
-	Median float64 `json:"median"`
-	Spread float64 `json:"spread"`
-	// Histogram counts those similarities in equal bins from zero to one.
-	Histogram []int `json:"histogram"`
-	// QueryCount and PassageCount are how many queries were measured against how many passages.
-	QueryCount   int `json:"queryCount"`
-	PassageCount int `json:"passageCount"`
-	// CalibratedAt is when it was measured, in seconds since the epoch.
-	CalibratedAt int64 `json:"calibratedAt"`
+	Median       float64 `json:"median"`
+	Spread       float64 `json:"spread"`
+	Histogram    []int   `json:"histogram"`
+	QueryCount   int     `json:"queryCount"`
+	PassageCount int     `json:"passageCount"`
+	CalibratedAt int64   `json:"calibratedAt"`
 }
 
 // GetFloorResponse is the floor in force for a vault under the model in use.
 type GetFloorResponse struct {
-	// Floor is the floor in force, in cosine similarity, and Source is where it comes from.
-	Floor  float64 `json:"floor"`
-	Source Source  `json:"source"`
-	// Model is the name of the model the floor is for, empty where there is none.
-	Model string `json:"model"`
-	// AutomaticFloor is the floor in force when the person has set none.
-	AutomaticFloor float64 `json:"automaticFloor"`
-	// IsManual is whether the person set the floor, and ManualFloor the value they set.
-	IsManual    bool    `json:"isManual"`
-	ManualFloor float64 `json:"manualFloor"`
-	// Calibration is absent before the first measurement.
-	Calibration *Calibration `json:"calibration,omitempty"`
+	Floor          float64      `json:"floor"`
+	Source         Source       `json:"source"`
+	Model          string       `json:"model"`
+	AutomaticFloor float64      `json:"automaticFloor"`
+	IsManual       bool         `json:"isManual"`
+	ManualFloor    float64      `json:"manualFloor"`
+	Calibration    *Calibration `json:"calibration,omitempty"`
 }
 
 // CalibrateFloorRequest measures the vault the window shows.
@@ -81,10 +72,8 @@ type CalibrateFloorResponse struct {
 
 // SetFloorRequest chooses between the measured floor and one the person sets.
 type SetFloorRequest struct {
-	// IsManual is whether Floor is in force. False returns to the automatic floor.
-	IsManual bool `json:"isManual"`
-	// Floor is the floor, in cosine similarity above zero and at most one.
-	Floor float64 `json:"floor"`
+	IsManual bool    `json:"isManual"`
+	Floor    float64 `json:"floor"`
 }
 
 // SetFloorResponse is the floor in force after the choice.
@@ -99,9 +88,7 @@ type ProbeFloorRequest struct {
 
 // ProbeFloorResponse is what a probe measured.
 type ProbeFloorResponse struct {
-	// BestSimilarity is the similarity of the nearest passage, zero where the vault has none.
 	BestSimilarity float64 `json:"bestSimilarity"`
-	// Floor is the floor in force, and DoesPass whether the nearest passage reaches it.
-	Floor    float64 `json:"floor"`
-	DoesPass bool    `json:"doesPass"`
+	Floor          float64 `json:"floor"`
+	DoesPass       bool    `json:"doesPass"`
 }

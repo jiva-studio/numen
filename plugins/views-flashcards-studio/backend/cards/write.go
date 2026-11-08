@@ -23,12 +23,9 @@ import (
 type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	// links resolves the card model a card's wikilink names, which determines
-	// which of the card's fields is first.
-	links ports.LinkQueries
-	index note.IndexUpdater
-	// now is when this is happening. An identifier written here carries it.
-	now ports.Clock
+	links   ports.LinkQueries
+	index   note.IndexUpdater
+	now     ports.Clock
 }
 
 // NewWrite is what a deck or a card model goes back through: the vault it is read
@@ -80,9 +77,6 @@ func (u Write) Deck(
 	return WriteResult{FileStat: pos, Given: provided}, err
 }
 
-// createWholeBody returns the body with a card id on every card, and the card ids
-// that were assigned. The card models are read against the body being written, so a
-// card whose wikilink the caller changed is resolved against the card model the new wikilink names.
 func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardID, error) {
@@ -131,14 +125,12 @@ func (u Write) CardModel(
 	return written, errors.Join(err, getReleaseError())
 }
 
-// read at.
 func (u Write) createNoteWriter() note.Write {
 	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)
 	writing.Bound = MaxBytes
 	return writing
 }
 
-// newBodyNote returns a note that holds body and no other field.
 func newBodyNote(body string) domain.Note {
 	n := emptyNote()
 	n.Body = body

@@ -14,7 +14,6 @@ import type { TitleBarWords } from '../lib/words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   actions: readonly TitleBarAction[]
-  /** The width the actions may take in pixels, or null while it is not measured. */
   room: number | null
   words: TitleBarWords
 }>()

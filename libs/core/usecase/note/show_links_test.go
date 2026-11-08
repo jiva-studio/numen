@@ -16,8 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// newIndexedVault writes a vault of the given notes, scans it, and returns
-// what is needed to ask questions about links.
 func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
@@ -260,8 +258,6 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 	}
 }
 
-// addVault indexes a second vault into the same database, which is what makes
-// a link across vaults possible at all.
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(
@@ -431,8 +427,6 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	}
 }
 
-// getSingleLink returns the links of the note at path and fails unless it has
-// exactly one.
 func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
 	t.Helper()
 	c := links(t, db, v, path)

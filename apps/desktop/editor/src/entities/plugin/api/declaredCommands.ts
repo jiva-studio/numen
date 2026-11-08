@@ -60,11 +60,9 @@ export interface DeclaredCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  /** 'note' for a command listed only while a note is in front. */
   readonly scope?: 'note'
   readonly shortcut?: string
   readonly contentTypes: readonly string[]
-  /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
   readonly extensions: readonly string[]
   readonly arguments: readonly DeclaredArgument[]
 }

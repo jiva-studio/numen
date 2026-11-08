@@ -18,7 +18,6 @@ interface Knobs {
   actions: readonly TitleBarAction[]
   choices: readonly TitleChoice[]
   onChoose: (id: string) => void
-  /** The width the window is drawn at. */
   width: string
 }
 

@@ -24,8 +24,6 @@ type Replace struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
 	index   IndexUpdater
-	// Drawing is notified of each change while it is applied. When nil, no
-	// notification is sent.
 	Drawing TellEdit
 	now     machineport.Clock
 }
@@ -44,24 +42,15 @@ func NewReplace(
 
 // ReplaceResult is what a replacement did.
 type ReplaceResult struct {
-	// FileStat is of the file this write produced.
 	FileStat domain.FileStat
-	// Range is the location of the span, as byte offsets into the prose that a
-	// read returns.
-	Range markdown.Range
-	// Matched is the span as stored in the note, which can differ from the text
-	// the caller requested.
-	Matched string
-	// IsPlain reports that the span matched only after ignoring differences in
-	// punctuation or spacing.
-	IsPlain bool
+	Range    markdown.Range
+	Matched  string
+	IsPlain  bool
 }
 
 // MissingSpan is a span that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
 type MissingSpan struct {
-	// Matched is the longest prefix of the requested span that is present in the
-	// note.
 	Matched string
 	Instead string
 }
@@ -150,10 +139,6 @@ func (u Replace) Execute(
 	return isDone, nil
 }
 
-// newMissingSpan is what to say about a span that is not in the note: how much of
-//
-// The opening is found by halving over the ends of its runes, which the text being
-// present for every shorter opening allows.
 func newMissingSpan(body, state string) MissingSpan {
 	var ends []int
 	for pos := 0; pos < len(state); {

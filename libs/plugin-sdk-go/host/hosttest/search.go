@@ -18,6 +18,8 @@ import (
 const defaultSearchFloor = 0.30
 
 // SearchModel is the embedding model the host uses, as the fake reports it.
+//
+//numen:api
 type SearchModel struct {
 	Name   string
 	Recipe string
@@ -192,7 +194,6 @@ func (s *Search) EmbeddedBatches() [][]string {
 	return slices.Clone(s.all.embeds)
 }
 
-// lookupLocked is the vault the search works, and false where the host does not know it or shows none.
 func (s *Search) lookupLocked() (*searchVault, bool) {
 	id := s.vault
 	if id == "" {
@@ -205,7 +206,6 @@ func (s *Search) lookupLocked() (*searchVault, bool) {
 	return one, ok
 }
 
-// openLocked authorizes a call and finds the vault it works.
 func (s *Search) openLocked(permission string) (*searchVault, error) {
 	if s.all.denied[permission] {
 		return nil, fmt.Errorf("%w: %s", host.ErrPermissionDenied, permission)
@@ -220,7 +220,6 @@ func (s *Search) openLocked(permission string) (*searchVault, error) {
 	return one, nil
 }
 
-// checkRecipeLocked returns nil when the recipe is the one of the model in use.
 func (s *Search) checkRecipeLocked(recipe string) error {
 	if s.all.model == nil {
 		return host.ErrNoModel
@@ -349,8 +348,6 @@ func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []flo
 	return best, nil
 }
 
-// compareRowLocked is the similarity of the query with each passage of another note, in the order of
-// the passages, and nil for a query with no vector.
 func (s *Search) compareRowLocked(query host.SimilarityQuery, passages []SearchPassage) ([]float64, error) {
 	if len(query.Vector) == 0 {
 		return nil, nil
@@ -368,7 +365,6 @@ func (s *Search) compareRowLocked(query host.SimilarityQuery, passages []SearchP
 	return row, nil
 }
 
-// compareLocked is the similarity of the query with the passage.
 func (s *Search) compareLocked(query, passage []float32) float64 {
 	if s.all.cosine != nil {
 		return s.all.cosine(query, passage)
@@ -423,7 +419,6 @@ func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64)
 	return nil
 }
 
-// cosineOf is the cosine of the angle between two vectors, and zero for vectors of different lengths.
 func cosineOf(query, passage []float32) float64 {
 	if len(query) != len(passage) || len(query) == 0 {
 		return 0
@@ -475,8 +470,6 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	return found, nil
 }
 
-// hasKind reports whether the path is of one of the kinds, where a note is a markdown file and every
-// other file is a file. No kinds means every kind.
 func hasKind(path string, kinds []domain.SourceKind) bool {
 	if len(kinds) == 0 {
 		return true
@@ -488,14 +481,11 @@ func hasKind(path string, kinds []domain.SourceKind) bool {
 	return slices.Contains(kinds, kind)
 }
 
-// hasEveryWord reports whether the text contains every one of the words as a whole word, ignoring case, as the
-// index of the host matches the words of a query.
 func hasEveryWord(text string, words []string) bool {
 	in := getWords(text)
 	return !slices.ContainsFunc(words, func(word string) bool { return !slices.Contains(in, word) })
 }
 
-// getWords returns the words of the text in lower case: the runs of letters and digits.
 func getWords(text string) []string {
 	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 }
@@ -510,7 +500,6 @@ func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	}
 }
 
-// checkKinds rejects a kind of source the search of the host does not cover, with the host's text.
 func checkKinds(kinds []domain.SourceKind) error {
 	for _, kind := range kinds {
 		if kind != domain.KindNote && kind != domain.KindFile {

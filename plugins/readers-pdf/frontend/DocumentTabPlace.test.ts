@@ -31,10 +31,8 @@ const RANGES: readonly TextRange[] = [
   { start: 2_310, end: 2_355 },
 ]
 
-/** Resolves once every pending request has completed. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-/** A document of twelve pages whose layout arrives when `release` is called. */
 const createDocuments = () => {
   let release = () => undefined as void
   const layout = new Promise<void>((resolve) => {

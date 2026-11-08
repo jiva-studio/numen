@@ -1,4 +1,3 @@
-/** A count of files, in the singular for one. */
 const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files} files`)
 
 /** UI copy of the plugin list and the plugin page. */

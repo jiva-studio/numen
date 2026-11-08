@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// schemasIn writes the file a folder of compiled settings is recognised by.
 func schemasIn(t *testing.T, dir string) string {
 	t.Helper()
 

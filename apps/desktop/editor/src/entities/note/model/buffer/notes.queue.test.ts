@@ -4,7 +4,6 @@ import type { Event } from './tab'
 import type { Notes } from './types'
 import { createNoteQueue, convertErrorCode } from './queue'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }

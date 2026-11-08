@@ -42,7 +42,6 @@ func (blockedWalk) StatFile(context.Context, string) (domain.FileStat, error) {
 	return domain.FileStat{}, nil
 }
 
-// hasWalkBegun reports whether a walk began before the wait ran out.
 func (h blockedWalk) hasWalkBegun() bool {
 	select {
 	case <-h.began:

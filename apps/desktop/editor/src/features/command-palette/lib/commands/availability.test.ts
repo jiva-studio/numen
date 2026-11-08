@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { isFileChosen } from './availability'
 import type { CommandTarget } from '../../types'
 
-/** A document chosen as a search result: it names a file, holds no note, and is no tab in front. */
 const chosenDocument = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: '',
   kind: null,

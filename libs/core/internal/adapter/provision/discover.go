@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// systemDirs are the folders a machine keeps programs and libraries in.
 func getSystemDirs() []string {
 	dirs := filepath.SplitList(os.Getenv("PATH"))
 	return append(dirs,
@@ -29,9 +28,7 @@ func getSystemDirs() []string {
 
 // discovery looks for a dependency the machine already holds.
 type discovery struct {
-	dirs []string
-	// ldconfig returns the libraries known to the loader, in the format printed
-	// by `ldconfig -p`.
+	dirs     []string
 	ldconfig func() []byte
 }
 
@@ -55,15 +52,10 @@ func readLoaderCache() []byte {
 	return nil
 }
 
-// getLoaderCachePrograms returns the places a Linux system keeps ldconfig.
 func getLoaderCachePrograms() []string {
 	return []string{"/sbin/ldconfig", "/usr/sbin/ldconfig", "/usr/bin/ldconfig", "/bin/ldconfig"}
 }
 
-// find returns the path of the program or library the requirement names that
-// this machine holds, or empty. Models and datasets are never on a machine
-// before the host puts them there. A requirement that pins a checksum accepts
-// only a file with those bytes.
 func (d discovery) find(req pluginport.DependencyRequirement) string {
 	found := d.locate(req)
 	if found == "" || req.ChecksumSHA256 == "" {
@@ -95,7 +87,6 @@ func (d discovery) locate(req pluginport.DependencyRequirement) string {
 	return ""
 }
 
-// hashFile returns the hex SHA-256 of the file.
 func hashFile(path string) (_ string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -109,7 +100,6 @@ func hashFile(path string) (_ string, err error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// getFileNames are the file names a dependency goes by on this platform.
 func getFileNames(name string, kind pluginport.DependencyKind) []string {
 	if kind == pluginport.DependencyKindBinary {
 		if runtime.GOOS == "windows" {
@@ -147,7 +137,6 @@ func findInDir(dir string, names []string) string {
 	return ""
 }
 
-// findInLoaderCache returns the path of the library in `ldconfig -p` output.
 func findInLoaderCache(cache []byte, name string) string {
 	prefix := "lib" + name + ".so"
 	scanner := bufio.NewScanner(bytes.NewReader(cache))

@@ -39,7 +39,6 @@ export async function closeWindow(load: WindowRuntimeLoader = loadRuntime): Prom
 }
 
 export interface EmptyWindowCloseDeps {
-  /** Whether the initial tabs of the window are open. */
   readonly isLayoutReady: Readonly<Ref<boolean>>
   readonly tabCount: () => number
   readonly closeWindow: () => Promise<void>

@@ -26,8 +26,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// startIn starts the core under dir and stops it when the test ends. The
-// environment the start rewrites is put back with it.
 func startIn(t *testing.T, core *Core, dir string) int {
 	t.Helper()
 	keepEnvironment(t)
@@ -50,8 +48,6 @@ func keepEnvironment(t *testing.T) {
 	}
 }
 
-// captureStderr collects what the process writes on its error stream until the
-// returned function is called, which answers with it.
 func captureStderr(t *testing.T) func() string {
 	t.Helper()
 	reader, writer, err := os.Pipe()
@@ -304,8 +300,6 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	}
 }
 
-// getFailureLines returns the lines of the core's standard error output that report a failure. The
-// progress line the opening prints, "numen: <count> notes", is not one.
 func getFailureLines(output string) []string {
 	var failure []string
 	for _, line := range strings.Split(output, "\n") {
@@ -316,7 +310,6 @@ func getFailureLines(output string) []string {
 	return failure
 }
 
-// isProgressLine reports whether line is the note count the opening prints.
 func isProgressLine(line string) bool {
 	count, found := strings.CutPrefix(line, "numen: ")
 	if !found {
@@ -499,8 +492,6 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 	}
 }
 
-// checkNoIndexOpened holds that a start which ended before it opened the index
-// left none behind.
 func checkNoIndexOpened(t *testing.T, dir string) {
 	t.Helper()
 	if _, err := os.Stat(filepath.Join(dir, "index.db")); !errors.Is(err, fs.ErrNotExist) {
@@ -508,9 +499,6 @@ func checkNoIndexOpened(t *testing.T, dir string) {
 	}
 }
 
-// feedVaultList replaces the vault list file with a named pipe. Each read
-// returns the original list while the index does not exist, and invalid JSON
-// once it exists.
 func feedVaultList(t *testing.T, dir string, list []byte) {
 	t.Helper()
 	path := filepath.Join(dir, "vaults.json")
@@ -598,7 +586,6 @@ func TestStart_ErrorsOnUnreadableVaultList(t *testing.T) {
 	}
 }
 
-// countOpenFiles is the lowest unused file descriptor in the process.
 func countOpenFiles() int {
 	for fd := 0; fd < 4096; fd++ {
 		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno != 0 {
@@ -772,8 +759,6 @@ func TestRegisterVault_ErrorsWithoutConfigFolder(t *testing.T) {
 	}
 }
 
-// getListenersOf is the listeners a server is accepting on. The server holds
-// them in an unexported set, under an unexported lock.
 func getListenersOf(t *testing.T, server *http.Server) []net.Listener {
 	t.Helper()
 	elem := reflect.ValueOf(server).Elem()
@@ -793,8 +778,6 @@ func getListenersOf(t *testing.T, server *http.Server) []net.Listener {
 	return found
 }
 
-// closeListenersOf closes the listeners of a server without stopping the
-// server.
 func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
 	var found []net.Listener

@@ -20,9 +20,6 @@ const alphaBravoTwo = `<html><body><h2 id="b">Bravo</h2><p>second words <span ep
 
 const ncxOpen = `<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">`
 
-// ncxBook is a book of two documents, one.xhtml and two.xhtml, whose headings are
-// Alpha and Bravo and whose one printed page is called "mark", with the given
-// navigation control file.
 func ncxBook(t *testing.T, ncx string) []byte {
 	t.Helper()
 	return buildSpineArchive(t, twoDocumentOpf, map[string]string{
@@ -267,9 +264,6 @@ func repeat(n, size int) []int {
 	return out
 }
 
-// buildCommentBook is a book whose spine documents are each one comment of the
-// given size in bytes, which costs the text nothing and the budget all of it. A
-// size under the markup around the comment is that many bytes of text.
 func buildCommentBook(t *testing.T, sizes []int) []byte {
 	t.Helper()
 

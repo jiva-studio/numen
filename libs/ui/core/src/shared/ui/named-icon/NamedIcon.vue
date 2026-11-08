@@ -13,7 +13,6 @@ defineOptions({ inheritAttrs: false })
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The Lucide name of the icon, in lowercase words joined by hyphens. */
   name: string
 }>()
 

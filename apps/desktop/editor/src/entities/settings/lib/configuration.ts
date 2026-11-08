@@ -17,9 +17,7 @@ export type { PluginSettingType } from '@numen/core-client'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {
-  /** The setting path through the JSON file: the owner, `app` or a plugin id, then its key path. */
   readonly at: readonly string[]
-  /** The value at that path, as serialized JSON. */
   readonly value: string
 }
 
@@ -31,36 +29,24 @@ export type Presence = 'present' | 'not fetched' | 'nothing to fetch'
 
 /** One AI model option a configuration setting can select. */
 export interface Model {
-  /** The setting path it is read from. */
   readonly namedAt: readonly string[]
-  /** Machine-readable name of the model. */
   readonly name: string
-  /** Display title shown in settings rows. */
   readonly title: string
-  /** Grouping category/group for settings navigation. */
   readonly group: string
-  /** Whether this is the default model for fresh installations. */
   readonly isDefault: boolean
-  /** Setting edits applied when this model is selected. */
   readonly edits?: readonly SettingEdit[]
   readonly writes: readonly SettingEdit[]
-  /** Availability of model files on the local machine. */
   readonly presence: Presence
-  /** The reasoning levels the model supports, from lowest to highest. */
   readonly reasoningLevels?: readonly { readonly name: string; readonly title: string }[]
-  /** The level the model works at unasked, empty where it names none. */
   readonly defaultReasoning?: string
 }
 
 /** Every setting currently, where they stand, and the models offered. */
 export interface Configuration {
-  /** Serialized settings JSON content. */
   readonly jsonContent?: string | undefined
   readonly written: string
-  /** Absolute path to the settings file on disk. */
   readonly path: string
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
-  /** The settings of the owner app, as the core declares them. */
   readonly app?: readonly PluginSettingInfo[] | undefined
 }

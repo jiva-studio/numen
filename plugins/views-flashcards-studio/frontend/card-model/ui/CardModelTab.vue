@@ -16,7 +16,6 @@ const props = defineProps<{ state: CardModelTabState }>()
 const cardModel = computed(() => props.state.cardModel.value)
 const marks = computed(() => props.state.marks.value)
 
-// --- Handlers ---
 function onKeep() {
   props.state.keepMine()
 }

@@ -33,7 +33,6 @@ export const parseNumber = (text: string): number | null => {
   return Number.isFinite(value) ? value : null
 }
 
-/** The place the step lays nearest a number, counted from the floor. */
 const onStep = (value: number, bounds: Bounds): number => {
   if (bounds.step <= 0) return value
   const steps = Math.round((value - bounds.min) / bounds.step)
@@ -81,22 +80,11 @@ export interface NumberEntry {
   readonly typed: Ref<string>
   readonly isInvalid: ComputedRef<boolean>
   readonly speechText: ComputedRef<string | undefined>
-  /** The text now in the field. */
   readonly setText: (text: string) => void
-  /** The field left, or committed with Enter. */
   readonly commit: () => Promise<void>
-  /** A key pressed; whether it was one the spin button answers. */
   readonly applyKey: (key: string, isDisabled: boolean) => boolean
 }
 
-/**
- * The typed, model and rested state of a number field.
- *
- * The typed text is kept as typed, and the number is formatted only once the
- * field is left. A number outside the current bounds is clamped and shown
- * formatted. `onCommit` fires when the field settles on a number different from
- * the last settled one.
- */
 const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
   if (!isPartialNumber(raw)) return true
   const value = parseNumber(raw)

@@ -38,20 +38,17 @@ const emit = defineEmits<{
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
 /* -------------------------------- Handlers -------------------------------- */
-/** The section this run is placed under, under a new name. */
 const onRenameSection = (name: string): void => {
   const section = props.run.section
   if (section) emit('rename-section', section.id, name)
 }
 
-/** The section this run is placed under, gone. */
 const onRemoveSection = (): void => {
   const section = props.run.section
   if (section) emit('remove-section', section.id)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** Where a card let go past the last of this run lands. */
 const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 </script>
 

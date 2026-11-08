@@ -25,7 +25,6 @@ export const createPluginInfo = createMockPluginInfo
 export interface ProgramFixture {
   readonly name: string
   readonly title: string
-  /** Whether it answers where the settings name none. */
   readonly isDefault?: boolean
   readonly models?: readonly { readonly name: string; readonly title: string }[]
 }

@@ -12,9 +12,7 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   label: string
   direction: LinkDirection
-  /** The direction a press of the direction button turns this record to. */
   nextDirection: LinkDirection
-  /** The titles of the first and the second note, which the direction names say. */
   firstTitle: string
   secondTitle: string
 }>()

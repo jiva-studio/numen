@@ -17,40 +17,16 @@ type EmbeddingModel struct {
 	Name       string
 	Dimensions int
 
-	// MaxTokens is the model's truncation limit. Zero means the model did not
-	// report one, and a chunk is then cut at the length the caller requests.
-	//
-	// A chunk is cut in words and bounded in characters, so this is turned into
-	// characters by a floor and not a measurement: text of another script takes
-	// several tokens a word, and a chunk silently truncated is a chunk indexed
-	// for text it does not contain.
 	MaxTokens int
 
-	// Pooling is how the model's output becomes one vector. Two poolings of one
-	// model put a text in two places, so it is part of the identity.
 	Pooling string
 
-	// From is where the vectors are made: the model run on this machine, or the
-	// service reached at one address. One name is run here and served by more
-	// than one place, and each of them answers with numbers of its own.
 	From string
 
-	// Handling is a short value that changes with what the provider does to a text before the model reads
-	// it and to the output after: the prefixes, the model file, the token limit and the normalisation. Two
-	// handlings of one model put a text in two places, so it is part of the identity. It is empty where
-	// the provider keeps none.
 	Handling string
 
-	// MinChunkLength is the fewest bytes a small chunk holds to be given a vector; a
-	// shorter one is searched by its words. Zero gives every small chunk a vector.
-	//
-	// It is not part of the identity and is absent from Recipe: a vector made for a
-	// text is the same vector whatever the minimum is, so changing it makes no
-	// vector stale. It decides which chunks are given one.
 	MinChunkLength int
 
-	// ChunkTokens is the most tokens one chunk may hold, as the plugin sets it; zero when it names
-	// none. It is not part of the identity and is absent from Recipe, like MinChunkLength.
 	ChunkTokens int
 }
 

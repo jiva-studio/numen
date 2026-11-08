@@ -55,8 +55,6 @@ func runSearchCommand(
 	return errors.Join(r.Err(), diagnostics.Err())
 }
 
-// getExcerpt is a passage on one line: the words, with the shape of the file taken
-// out of them.
 func getExcerpt(text string) string {
 	words := strings.Join(strings.Fields(text), " ")
 	runes := []rune(words)

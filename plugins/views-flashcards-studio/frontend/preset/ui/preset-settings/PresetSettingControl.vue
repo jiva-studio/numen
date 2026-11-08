@@ -40,7 +40,6 @@ const levels = LOADS.map((one) => one / WHOLE_LOAD)
 const fieldBounds = computed(() => getFieldLimits(props.field, bounds.value))
 const fieldCount = computed(() => getFieldCount(props.field, settings.value))
 
-// --- Handlers ---
 function onSelectLoad(day: string, level: number) {
   onChooseSetting('load', setLoadOn(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
 }

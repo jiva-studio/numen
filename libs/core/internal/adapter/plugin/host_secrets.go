@@ -19,9 +19,6 @@ func (h *Host) SetKeyStore(store pluginport.KeyStore) {
 	h.keyStore = store
 }
 
-// lockSecrets takes the lock that orders the changes of one plugin's secrets
-// and the Configure calls that deliver them, and returns the call that gives it
-// back.
 func (h *Host) lockSecrets(pluginID string) func() {
 	h.secretLocksMu.Lock()
 	lock, found := h.secretLocks[pluginID]
@@ -73,8 +70,6 @@ func (h *Host) DeletePluginSecret(ctx context.Context, pluginID, name string) er
 	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
 
-// getSecretStore returns the key store once the plugin is known to declare the
-// secret.
 func (h *Host) getSecretStore(pluginID, name string) (pluginport.KeyStore, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -91,13 +86,10 @@ func (h *Host) getSecretStore(pluginID, name string) (pluginport.KeyStore, error
 	return h.keyStore, nil
 }
 
-// getSecretName is the name a secret of a plugin is stored under.
 func getSecretName(pluginID, name string) string {
 	return pluginID + "/" + name
 }
 
-// recordStoredSecret persists and keeps whether the secret of the plugin has a
-// key in the key store.
 func (h *Host) recordStoredSecret(pluginID, name string, isStored bool) error {
 	h.mu.RLock()
 	stored := h.getStoredSecretsLocked(pluginID)
@@ -124,8 +116,6 @@ func (h *Host) recordStoredSecret(pluginID, name string, isStored bool) error {
 	return nil
 }
 
-// getStoredSecretsLocked returns the names of the secrets of the plugin that
-// are recorded as stored, among those its manifest declares.
 func (h *Host) getStoredSecretsLocked(pluginID string) []string {
 	var recorded []string
 	switch target := h.settings[pluginID][pluginport.SettingStoredSecrets].(type) {
@@ -148,11 +138,6 @@ func (h *Host) getStoredSecretsLocked(pluginID string) []string {
 	return stored
 }
 
-// readPluginSecrets reads the keys of the secrets a plugin declares. The store
-// is read only for a secret recorded as stored; any other secret is empty,
-// which clears the key the plugin holds. A secret the store fails to read is
-// left out, so the plugin keeps what it has, and the failure is returned beside
-// the secrets that were read.
 func readPluginSecrets(
 	ctx context.Context, store pluginport.KeyStore, pluginID string, declared, stored []string,
 ) (map[string]string, []error) {
@@ -184,9 +169,6 @@ func readPluginSecrets(
 	return secrets, failures
 }
 
-// getSecretsError returns the secret read failures that are reported to the
-// caller. A machine without a key store is reported once through the error
-// handler and is not returned.
 func (h *Host) getSecretsError(failures []error) error {
 	var notified []error
 	for _, failure := range failures {
@@ -221,7 +203,6 @@ func (h *Host) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
 	}
 }
 
-// runConfigWatchers runs the functions registered for the plugin, each on its own goroutine.
 func (h *Host) runConfigWatchers(pluginID string) {
 	h.mu.RLock()
 	watchers := make([]func(), 0, len(h.configWatchers[pluginID]))

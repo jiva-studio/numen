@@ -29,27 +29,16 @@ import (
 // that is not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
-	// vaults is where the vault gets the row every note of it points at.
-	vaults vaultport.VaultRepository
-	notes  noteport.NoteRepository
-	// queries returns which source type the index holds at a path, and sources
-	// deletes those rows.
+	vaults  vaultport.VaultRepository
+	notes   noteport.NoteRepository
 	queries sourceport.SourceQueries
 	sources sourceport.SourceRepository
-	// now identifies notes modified recently enough to be edited again with the
-	// same modification time.
-	now machineport.Clock
+	now     machineport.Clock
 
-	// Cut is how the notes named are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
-	// Ledger holds the content of notes indexed while their modification time
-	// was too recent to tell a second edit from the first. Refreshes that share
-	// an index share one.
 	Ledger *Ledger
 
-	// Force reads, parses and saves every named note, whatever the index holds
-	// about it.
 	Force bool
 }
 
@@ -112,8 +101,6 @@ func (l *Ledger) Len() int {
 	return len(l.item)
 }
 
-// prune forgets the entries whose file has left the window. The caller holds the
-// lock.
 func (l *Ledger) prune(now time.Time) {
 	for key, entry := range l.item {
 		if now.Sub(entry.stat.ModTime) >= TimestampGranularity {
@@ -131,8 +118,6 @@ func (l *Ledger) drop(v domain.VaultID, path string) {
 	delete(l.item, ledgerKey{v, path})
 }
 
-// isRecent reports whether a file modified at mtime can still be edited again
-// under the same modification time.
 func (u Refresh) isRecent(mtime time.Time) bool {
 	return u.now.Now().Sub(mtime) < TimestampGranularity
 }
@@ -158,15 +143,11 @@ func NewRefresh(
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
 // are now different from what was shown, and the ones that could not be read.
 type RefreshResult struct {
-	Indexed []string
-	Removed []string
-	// LeftAlone is the paths holding a file the vault does not hold as a note.
-	// Nothing was there to look at again, and nothing is missing either.
+	Indexed    []string
+	Removed    []string
 	LeftAlone  []string
 	Unreadable []string
-	// Assets are the paths of sources that are not notes. They changed, and
-	// bringing them up to date is its own step.
-	Assets []string
+	Assets     []string
 }
 
 // GetChangedPaths is every note the caller may need to look at again.
@@ -244,9 +225,6 @@ type refreshRun struct {
 	res      *RefreshResult
 }
 
-// refreshPath files one path under the list of res it belongs to, and adds the
-// note it holds to the group when the index is behind the file. A note indexed
-// is recorded for the ledger: its entry when it is recent, nil when it is not.
 func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) error {
 	v, reader, group, recorded, res := run.v, run.reader, run.group, run.recorded, run.res
 	ref, isNote := u.statNote(ctx, reader, path, res)
@@ -273,10 +251,6 @@ func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) 
 	return nil
 }
 
-// readListedFile is the bytes of the note at path and whether they were read. A
-// file gone since it was looked at is an editor saving through a temporary
-// file, and the save that follows arrives as its own event; any other failure is
-// filed as unreadable.
 func readListedFile(ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
@@ -289,9 +263,6 @@ func readListedFile(ctx context.Context, reader vaultport.VaultReader, path stri
 	return nil, false
 }
 
-// statNote returns the file stat of the file at path and whether it is a note.
-// A path that is not a note is recorded in res under the list stating why; an
-// unreadable file affects only itself.
 func (u Refresh) statNote(
 	ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult,
 ) (domain.FileStat, bool) {
@@ -315,8 +286,6 @@ func (u Refresh) statNote(
 	return domain.FileStat{}, false
 }
 
-// writeLedger puts the recorded entries in the ledger and drops the paths
-// recorded as nil.
 func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 	for path, entry := range recorded {
 		if entry == nil {
@@ -327,10 +296,6 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 	}
 }
 
-// dropSources deletes the rows of every source at a path the vault does not
-// hold. A note is deleted through the note repository; other files are grouped
-// by kind and deleted through their own repository, with their chunks and
-// vectors.
 func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {
 	// A path names one file, and a folder names everything under it.
 	target := make(map[domain.SourceKind][]string)
@@ -354,8 +319,6 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 	return nil
 }
 
-// followRenames moves the sources at removed paths to the asset paths that now
-// hold the same content.
 func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res RefreshResult) error {
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
@@ -368,7 +331,6 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	return err
 }
 
-// isCurrent reports whether the index already holds the note as the file is.
 func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v domain.Vault, ref domain.FileStat) bool {
 	target, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
 	if err != nil {

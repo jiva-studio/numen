@@ -18,7 +18,6 @@ import { isActionsChord } from '../../lib/keys'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** What the lit item offers, in the order it offers them. */
   actions: readonly PaletteAction[]
   words: ActionWords
 }>()
@@ -130,7 +129,6 @@ function goTo(to: number): void {
   activeActionId.value = actions.value[to]?.action.id ?? ''
 }
 
-/** What is lit is brought into sight. Only a key does this. */
 async function reveal(): Promise<void> {
   await nextTick()
   actionRows.get(activeActionId.value)?.element?.scrollIntoView?.({ block: 'nearest' })

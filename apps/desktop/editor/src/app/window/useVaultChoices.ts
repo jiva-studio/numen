@@ -21,15 +21,12 @@ import { WORDS } from '@/shared/words'
 export interface VaultChoicesDeps {
   readonly vaultList: Readonly<Ref<VaultList>>
   readonly words: { readonly add: string }
-  /** The runner the palette and the shortcuts use. */
   readonly runCommand: (id: string, target: CommandTarget) => void
-  /** Shows a vault of the list in this window, as the welcome screen does. */
   readonly openVault: (vault: VaultRef) => void
   readonly getTarget: () => CommandTarget
 }
 
 export interface VaultChoices {
-  /** Empty while the window shows no vault. */
   readonly choices: ComputedRef<readonly TitleChoice[]>
   /** The choice by its id. */
   choose(id: string): void
@@ -55,7 +52,6 @@ export function useVaultChoices(deps: VaultChoicesDeps): VaultChoices {
 }
 
 export interface WindowVaultChoices extends VaultChoices {
-  /** The words of the title for the list. */
   readonly words: { readonly switcher: string; readonly search: string; readonly nothing: string }
 }
 

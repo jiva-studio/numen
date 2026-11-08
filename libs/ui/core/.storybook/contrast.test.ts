@@ -14,7 +14,6 @@ import {
   type Rgb,
 } from './contrast'
 
-/** Reads `#rrggbb`, `#rrggbbaa`, `rgb()` and `rgba()`, the forms jsdom reports; the browser parses the rest. */
 const parse: ParseColour = (css) => {
   if (css === 'transparent') return { r: 0, g: 0, b: 0, a: 0 }
   const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i.exec(css)
@@ -38,7 +37,6 @@ const parse: ParseColour = (css) => {
 const WHITE: Rgb = { r: 255, g: 255, b: 255 }
 const BLACK: Rgb = { r: 0, g: 0, b: 0 }
 
-/** A page of nested boxes, each given its style, with the text in the innermost. */
 function nest(...styles: string[]): HTMLElement {
   document.body.innerHTML = ''
   let parent: HTMLElement = document.body

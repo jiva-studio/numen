@@ -23,7 +23,6 @@ import type { Size } from '@numen/ui'
 
 const VIEWPORT: Size = { width: 900, height: 800 }
 
-/** Every page the same shape, the way a book is. */
 const book = (pages: number): Page[] =>
   Array.from({ length: pages }, () => ({ width: 612, height: 792 }))
 

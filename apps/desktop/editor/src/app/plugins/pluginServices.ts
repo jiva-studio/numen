@@ -33,9 +33,7 @@ export interface PluginServices {
   files?: VaultFiles
   agent?: AgentHost
   buffers?: BufferHost
-  /** The window's store of open notes, which the tabs of the note kind read and write through. */
   noteBuffer?: NoteBuffer
-  /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }
 
@@ -50,14 +48,10 @@ export interface WorkspaceHostDeps extends Omit<PathCommandDeps, 'reportError'> 
   readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt' | 'findFileIcon'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
-  /** The note focused in the tool tab the user was last in. */
   readonly getNoteInFocus: () => NoteRef
-  /** The commands the plugins declare over one note. */
   readonly getNoteCommands: () => readonly MenuEntry[]
   readonly writeMessage: MessageWriter
-  /** A writer of messages under a name of its own. */
   readonly getMessageWriter: (name: string) => MessageWriter
-  /** Today's date as a string. */
   readonly today: () => string
 }
 

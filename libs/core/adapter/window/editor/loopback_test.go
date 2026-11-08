@@ -56,7 +56,6 @@ func (lockedVaults) Remove(domain.VaultID) error { return nil }
 
 func (lockedVaults) RecordOpened(domain.VaultID) error { return nil }
 
-// openLoopback opens the socket a player uses to reach this API, closed with the test.
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()
 	back, err := Listen(t.Context(), api.server, nil)
@@ -73,9 +72,6 @@ func ask(t testing.TB, handler http.Handler, url string) *httptest.ResponseRecor
 	return out
 }
 
-// statOf returns the vault's stat for the file at a path, which is what an
-// address names. A path the vault does not contain still has an address, and
-// some tests check how that address is served.
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.FileStat {
 	t.Helper()
 	ref, err := api.Media.statFile.Execute(t.Context(), v, path)

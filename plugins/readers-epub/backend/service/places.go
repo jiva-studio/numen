@@ -19,8 +19,6 @@ type placedBook struct {
 	book  *epub.Book
 }
 
-// readPlacedBook reads a book of the vault the request works, or returns the one read last while
-// its file is unchanged.
 func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Book, error) {
 	if path == "" {
 		return nil, server.NewAPIError(server.CodeInvalidArgument, "path required")

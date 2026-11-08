@@ -30,8 +30,6 @@ type recogniser interface {
 	Close() error
 }
 
-// newEngineOpener returns what opens the models of the configuration through the library, or the
-// mock where the host runs on mock models.
 func newEngineOpener(library *onnx.Library) engineFactory {
 	return func(ctx context.Context, cfg engine.Config) (recogniser, error) {
 		if os.Getenv(EnvMockML) == "true" {
@@ -54,10 +52,6 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 	return &engines{mu: sync.Mutex{}, cfg: cfg, factory: factory, engine: nil}
 }
 
-// updateConfig applies the settings received from the host. A resolution that is
-// not a positive number is ignored, as is a model the plugin does not provision.
-// The paths of a custom model are received only while the custom model is
-// selected, and are empty in every other case.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -99,8 +93,6 @@ func (e *engines) close() error {
 	return e.closeLocked()
 }
 
-// dropLocked closes the recogniser so the next page reopens it. A close failure
-// is written to standard error, the stream the host keeps for the plugin.
 func (e *engines) dropLocked() {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect engine state."
 	if err := e.closeLocked(); err != nil {
@@ -139,7 +131,6 @@ func Mount(s *server.Server) error {
 	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
 }
 
-// getConfig is the configuration the environment of the process names.
 func getConfig() engine.Config {
 	cfg := engine.Defaults()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
@@ -186,7 +177,6 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	return nil
 }
 
-// newRecogniseCommand recognises the file named by the user and waits for completion.
 func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path, IsUserStarted: true})

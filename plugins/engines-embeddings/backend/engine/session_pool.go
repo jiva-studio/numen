@@ -19,7 +19,6 @@ type sessionPool[S any] struct {
 	once     sync.Once
 }
 
-// newSessionPool creates a pool of lanes over the sessions.
 func newSessionPool[S any](sessions []S, lanes int, destroy func(S)) *sessionPool[S] {
 	lanes = max(lanes, 1)
 	p := &sessionPool[S]{
@@ -36,7 +35,6 @@ func newSessionPool[S any](sessions []S, lanes int, destroy func(S)) *sessionPoo
 	return p
 }
 
-// acquire lends the session of a free lane.
 func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	var zero S
 	var cancelled <-chan struct{}
@@ -68,12 +66,10 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	}
 }
 
-// release takes a lent lane back.
 func (p *sessionPool[S]) release(s S) {
 	p.idle <- s
 }
 
-// close stops lending and destroys all sessions.
 func (p *sessionPool[S]) close() {
 	p.once.Do(func() {
 		close(p.stop)

@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// hasNotice is whether one notice of the file names every word given.
 func hasNotice(notices []string, words ...string) bool {
 	for _, notice := range notices {
 		found := true

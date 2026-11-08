@@ -9,7 +9,6 @@ import { computed, type Directive } from 'vue'
 import { renderCardHtml } from './render'
 
 const props = defineProps<{
-  /** HTML, as written by the user. */
   text: string
 }>()
 

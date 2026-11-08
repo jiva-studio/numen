@@ -15,12 +15,6 @@ import (
 // location, and the test is skipped when the corpus is absent.
 const corpusEnv = "NUMEN_EPUB_CORPUS"
 
-// What the corpus holds, measured. These numbers are the test: a change that
-// moves a book from one tier to another has changed what a reader is shown, and
-// has to be looked at.
-//
-// Half the corpus is empty: sixteen of those twenty books carry no heading
-// at all, and four carry one heading, which names the book.
 func getWantStructure() map[epub.Structure]int {
 	return map[epub.Structure]int{
 		epub.FromNavigation: 16,
@@ -80,8 +74,6 @@ func TestTheCorpusIsRead(t *testing.T) {
 	}
 }
 
-// checkBook verifies the guarantees to callers: the text is the documents in
-// order, and every offset points to the position it states.
 func checkBook(t *testing.T, book *epub.Book) {
 	t.Helper()
 
@@ -142,10 +134,6 @@ func checkBook(t *testing.T, book *epub.Book) {
 	checkMarkup(t, book)
 }
 
-// checkPages verifies that every page of a book begins at a letter boundary
-// and on the stated page. Half of this corpus is in Devanagari or Cyrillic,
-// where a letter is two or three bytes, so a page counted in bytes alone can
-// start in the middle of a letter.
 func checkPages(t *testing.T, book *epub.Book) {
 	t.Helper()
 
@@ -161,11 +149,6 @@ func checkPages(t *testing.T, book *epub.Book) {
 	}
 }
 
-// checkMarkup holds every document to the one property a reader is built on: the
-// words of the markup are the words of the text, at the offsets the text is
-// chunked and searched at. A reader takes an offset off an attribute and never
-// counts one out itself, so a document where the two differ by a byte lights the
-// wrong words.
 func checkMarkup(t *testing.T, book *epub.Book) {
 	t.Helper()
 
@@ -188,9 +171,6 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	}
 }
 
-// checkSpans checks that the text of each node equals the text from its offset
-// to the offset of the next sibling, or to limit for the last sibling, and
-// recurses into the children.
 func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node, limit int) {
 	t.Helper()
 	for i, node := range nodes {
@@ -210,7 +190,6 @@ func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node,
 	}
 }
 
-// getNodeText is the text a document's markup carries, in reading order.
 func getNodeText(nodes []epub.Node) string {
 	var out strings.Builder
 	var walk func([]epub.Node)
@@ -224,7 +203,6 @@ func getNodeText(nodes []epub.Node) string {
 	return out.String()
 }
 
-// corpus is where the books are, or a reason to stand aside.
 func corpus(t *testing.T) []string {
 	t.Helper()
 	root := os.Getenv(corpusEnv)
@@ -245,7 +223,6 @@ func corpus(t *testing.T) []string {
 	return books
 }
 
-// booksUnder is every EPUB file under a folder.
 func booksUnder(root string) ([]string, error) {
 	var books []string
 	err := filepath.WalkDir(root, func(pos string, entry os.DirEntry, err error) error {

@@ -8,10 +8,6 @@ import { readSettings } from '../../support/vault.js'
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
 
-/**
- * Writes an invented executable into the output folder of the test and returns its path. The
- * core takes a path for a file setting only when the file exists.
- */
 const createExecutable = async (): Promise<string> => {
   const path = test.info().outputPath('antigravity', 'bin', 'gemini')
   await mkdir(dirname(path), { recursive: true })
@@ -24,9 +20,7 @@ const FIRST_RENDER_LIMIT_MS = 1_000
 
 declare global {
   interface Window {
-    /** Every path a path setting of the page has shown since the recording began. */
     shownPaths?: string[]
-    /** Milliseconds from the start of the recording until the page drew the plugin's name. */
     firstRenderMs?: number
   }
 }
@@ -39,7 +33,6 @@ const writeSetting = async (page: Page, path: string[], value: unknown): Promise
   expect(answer.ok()).toBe(true)
 }
 
-/** Records every path the page shows, and when the name of `pluginName` is first drawn. */
 const recordPage = async (page: Page, pluginName: string): Promise<void> => {
   await page.evaluate((name) => {
     const startedAt = performance.now()

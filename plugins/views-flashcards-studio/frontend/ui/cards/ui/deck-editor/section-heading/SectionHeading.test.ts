@@ -16,7 +16,6 @@ type Held = ReturnType<typeof mountHeading>
 
 const getBox = (wrapper: Held) => wrapper.get<HTMLInputElement>('input')
 
-/** A name typed into the box and not yet committed. */
 const type = async (wrapper: Held, name: string): Promise<void> => {
   const box = getBox(wrapper)
   box.element.value = name

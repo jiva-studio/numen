@@ -66,8 +66,6 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	p.reportError(streamBody(w, res.Body))
 }
 
-// parseRoute splits a path of the plugin route into the plugin id and the path below it. A path
-// whose rest climbs out of the route, or is not in its clean form, is refused.
 func parseRoute(urlPath string) (id, rest string, ok bool) {
 	tail, found := strings.CutPrefix(urlPath, wire.PluginRoute)
 	if !found {

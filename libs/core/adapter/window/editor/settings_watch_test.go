@@ -18,7 +18,6 @@ type watcher struct {
 	next   chan []*v1.Setting
 }
 
-// watchSettings opens the stream as a window does and waits for the response that opens it.
 func (f *going) watchSettings(t *testing.T) *watcher {
 	t.Helper()
 	stream, err := f.configuring.WatchSettings(t.Context(), connect.NewRequest(&v1.WatchSettingsRequest{}))

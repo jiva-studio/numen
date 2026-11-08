@@ -75,10 +75,6 @@ export interface SettingsWriter {
 
 /** Reports a command's result as one line of text. */
 export interface Voice {
-  /**
-   * Message describing the outcome of a command. Each message replaces the
-   * previous one and is not cleared automatically.
-   */
   readonly writeMessage: MessageWriter
 }
 
@@ -90,14 +86,12 @@ export interface VaultContext {
 
 /** The tabs a command operates on: their files, and where the window navigates. */
 export interface TabContext {
-  /** The open files a command operates on, whichever store holds each. */
   readonly notes: Notes
   readonly navigator: WindowNavigator
 }
 
 /** The runs this build does not support. */
 export interface RunContext {
-  /** The runs this build does not support, as recorded by this window. */
   readonly runSupport: RunSupport
 }
 

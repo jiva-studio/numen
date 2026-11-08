@@ -23,17 +23,12 @@ type ToolClient interface {
 
 // ToolAggregator discovers tools from the host and exposes them through an MCP server.
 type ToolAggregator struct {
-	client    ToolClient
-	mcpServer *sdk.Server
-	mu        sync.RWMutex
-	// registered maps the name of each tool on the MCP server to its declaration.
+	client     ToolClient
+	mcpServer  *sdk.Server
+	mu         sync.RWMutex
 	registered map[string]*sdk.Tool
-	// syncMu is locked for the whole sync, host call included, so the sync that finishes last is the
-	// one that listed last.
-	syncMu sync.Mutex
-	// sentences are the distinct instructions of the tools registered at the latest sync, in listing
-	// order.
-	sentences []string
+	syncMu     sync.Mutex
+	sentences  []string
 }
 
 // NewToolAggregator creates a tool aggregator for the given host client and MCP server.
@@ -91,8 +86,6 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	return nil
 }
 
-// readDeclarations returns the MCP declarations of the listed tools by name, the last one listed
-// under a name winning, and the distinct instructions of the tools in listing order.
 func readDeclarations(listing tools.Listing) (map[string]*sdk.Tool, []string) {
 	declared := make(map[string]*sdk.Tool)
 	var sentences []string
@@ -110,9 +103,6 @@ func readDeclarations(listing tools.Listing) (map[string]*sdk.Tool, []string) {
 	return declared, sentences
 }
 
-// updateTools adds to the MCP server the declared tools that are new or changed since the latest
-// sync, and removes the registered tools that are not declared. Each change makes the MCP server
-// notify the connected sessions that the tool list changed.
 func (a *ToolAggregator) updateTools(declared map[string]*sdk.Tool) {
 	for name, tool := range declared {
 		if previous, isRegistered := a.registered[name]; isRegistered && reflect.DeepEqual(previous, tool) {
@@ -139,7 +129,6 @@ func (a *ToolAggregator) updateTools(declared map[string]*sdk.Tool) {
 	}
 }
 
-// createTool creates the MCP declaration of a host tool. The annotations are the hints of the tool.
 func createTool(wireTool *tools.ToolInfo) *sdk.Tool {
 	hints := wireTool.GetHints()
 	tool := &sdk.Tool{
@@ -164,7 +153,6 @@ func createTool(wireTool *tools.ToolInfo) *sdk.Tool {
 	return tool
 }
 
-// describeToolError is the message for the error code the host returned for the tool.
 func describeToolError(code tools.ErrorCode, name string) string {
 	switch code {
 	case tools.ErrorCodeUnknownTool:
@@ -223,12 +211,10 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 	return result, nil
 }
 
-// newTextContent creates a text content block.
 func newTextContent(text string) *sdk.TextContent {
 	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
 }
 
-// newErrorResult creates a tool result that reports message as an error.
 func newErrorResult(message string) *sdk.CallToolResult {
 	return &sdk.CallToolResult{
 		Meta:              nil,
@@ -240,10 +226,6 @@ func newErrorResult(message string) *sdk.CallToolResult {
 	}
 }
 
-// readInputSchema returns the input schema of a tool as a JSON object of type "object", which MCP
-// requires. A JSON object of another type or none is given the type "object" and keeps its other
-// keys; anything else is replaced by the empty object schema. The same rules are in
-// libs/core/internal/adapter/plugin/agenttoolsbridge/endpoint.go.
 func readInputSchema(raw []byte) json.RawMessage {
 	schema, isObject := readObject(raw)
 	if !isObject {
@@ -260,7 +242,6 @@ func readInputSchema(raw []byte) json.RawMessage {
 	return encoded
 }
 
-// readObject decodes raw as a JSON object, and reports false for anything else.
 func readObject(raw []byte) (map[string]json.RawMessage, bool) {
 	var object map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
@@ -269,7 +250,6 @@ func readObject(raw []byte) (map[string]json.RawMessage, bool) {
 	return object, true
 }
 
-// hasObjectType reports whether the type of the schema is the string "object".
 func hasObjectType(schema map[string]json.RawMessage) bool {
 	var schemaType string
 	return json.Unmarshal(schema["type"], &schemaType) == nil && schemaType == "object"

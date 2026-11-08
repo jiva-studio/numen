@@ -255,7 +255,6 @@ func TestRecogniseUserStartedReadsARecognisedFileAgain(t *testing.T) {
 	}
 }
 
-// getStoreNames is the names of the files of the plugin's folder.
 func (s *scene) getStoreNames(t *testing.T) []string {
 	t.Helper()
 	files, err := s.store.List(t.Context())

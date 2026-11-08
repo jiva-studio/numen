@@ -21,7 +21,6 @@ export const EXPANSION_DURATION = 280
 
 export interface WideBox {
   readonly width: number
-  /** Distance from its midpoint to where the node is placed. */
   readonly offset: number
 }
 

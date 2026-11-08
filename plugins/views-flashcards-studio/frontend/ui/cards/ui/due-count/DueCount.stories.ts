@@ -14,13 +14,11 @@ import { lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
 
 interface Knobs {
-  /** Cards due today. Nothing until it has been counted. */
   due: number | null
   isBare: boolean
   isOnButton: boolean
 }
 
-/** The pill on the surface, and the same pill on a filled button. */
 const renderPills = (args: Knobs) => ({
   components: { DueCount, Button },
   setup: () => ({ args }),
@@ -134,11 +132,6 @@ export const Dark: Story = {
   },
 }
 
-/**
- * The theme the window is set to, drawn against the opposite one the machine prefers. The tokens
- * of the built `@numen/ui` follow `color-scheme` on the root, which is where the window writes
- * its mode, and not `prefers-color-scheme`.
- */
 const drawAgainstSystem =
   (system: 'light' | 'dark', isDark: boolean): NonNullable<Story['play']> =>
   async ({ canvasElement }) => {

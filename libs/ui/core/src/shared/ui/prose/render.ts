@@ -70,7 +70,6 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
   return root
 }
 
-/** The node a block token produces when it is neither an opening nor a closing token. */
 const block = (
   token: Token,
   deadAddresses: BrokenAddresses,
@@ -88,11 +87,6 @@ const block = (
   }
 }
 
-/**
- * The inside of a paragraph: words, and the marks that style them.
- *
- * Every word is a node of its own, keyed by where it falls in the answer.
- */
 const inline = (
   tokens: readonly Token[],
   deadAddresses: BrokenAddresses,
@@ -119,7 +113,6 @@ const inline = (
   return root
 }
 
-/** The node an inline token produces when it is neither an opening nor a closing token. */
 const mark = (token: Token, next: () => number): (VNode | string)[] => {
   switch (token.type) {
     case 'text':
@@ -137,7 +130,6 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
   }
 }
 
-/** The text of inline tokens with their marks removed. */
 const getPlainText = (tokens: readonly Token[]): string =>
   tokens
     .map((token) => {
@@ -149,7 +141,6 @@ const getPlainText = (tokens: readonly Token[]): string =>
     .join('')
 
 /* Stryker disable Regex: splitting by (\s+) or (\S+) with empty filter yields alternating whitespace and non-whitespace runs */
-/** Text, cut into words with the spaces between them kept. */
 const words = (text: string, next: () => number): (VNode | string)[] =>
   text
     .split(/(\s+)/)

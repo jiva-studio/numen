@@ -41,11 +41,9 @@ type PassageQueries interface {
 // how many chunks to return at most and the similarity under which a chunk is
 // not an answer.
 type NearestQuery struct {
-	Recipe string
-	Vector []float32
-	Kinds  []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it, in either Unicode form (NFC or
-	// NFD). Empty limits none.
+	Recipe     string
+	Vector     []float32
+	Kinds      []domain.SourceKind
 	PathPrefix string
 	Limit      int
 	Floor      float64
@@ -54,14 +52,9 @@ type NearestQuery struct {
 // LexicalQuery is a search by words: the words typed, the kinds of source to
 // look in (all where empty) and how many chunks to return at most.
 type LexicalQuery struct {
-	Text  string
-	Kinds []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it, in either
-	// Unicode form (NFC or NFD), and the index applies it before it truncates the
-	// list to Limit. Empty limits none.
+	Text       string
+	Kinds      []domain.SourceKind
 	PathPrefix string
 	Limit      int
-	// IsGrowing marks the last word as possibly still being typed, and it is then
-	// matched by prefix.
-	IsGrowing bool
+	IsGrowing  bool
 }

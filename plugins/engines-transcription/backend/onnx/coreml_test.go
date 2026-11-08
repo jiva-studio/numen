@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
-// grantModel gives the test a shared directory and a model file in it, and returns the model's path.
 func grantModel(t *testing.T) (shared, model string) {
 	t.Helper()
 	shared = t.TempDir()

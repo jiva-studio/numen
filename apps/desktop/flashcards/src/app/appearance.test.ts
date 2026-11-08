@@ -38,7 +38,6 @@ const LIST: ThemeList = {
   mode: THEME_MODE.SYSTEM,
 }
 
-/** A stream that reports nothing and does not end. */
 async function* waits(): AsyncGenerator<readonly string[]> {
   await new Promise<never>(() => undefined)
 }

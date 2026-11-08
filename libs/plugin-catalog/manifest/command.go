@@ -34,7 +34,6 @@ var manifestArgumentPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
 // The host files the command under the id of the plugin and this id.
 var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$`)
 
-// listCommandArgumentTypes returns the types a command argument may have.
 func listCommandArgumentTypes() []string {
 	return []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
 }
@@ -53,8 +52,7 @@ type Context map[string]string
 // ContextCondition holds in a context that has the key with one of the values listed.
 type ContextCondition struct {
 	Key string
-	// Is are the values of the key that meet the condition; ContextAnyValue is any value.
-	Is []string
+	Is  []string
 }
 
 // IsMet reports whether the context has the key with one of the values of the condition.
@@ -65,24 +63,15 @@ func (c ContextCondition) IsMet(context Context) bool {
 
 // Command is one command a manifest declares, which the plugin's backend runs.
 type Command struct {
-	ID    string
-	Title string
-	Icon  string
-	// ContentTypes are the types of the files the command runs over; `*/*` is a file of any type.
-	// A command that names no content type and no note type runs over no file.
+	ID           string
+	Title        string
+	Icon         string
 	ContentTypes []domain.ContentType
-	// NoteTypes are the plugin's own note types of the notes the command runs over.
-	NoteTypes []string
-	// When are the conditions, all of which hold in one context, under which the menu of a file offers
-	// the command over that context. A command with conditions runs over any file, and names no
-	// content type and no note type. The palette has no file context and does not offer it.
-	When      []ContextCondition
-	Arguments []CommandArgument
-	// Scope is CommandScopeNote for a command listed only while a note is in front. Empty is a
-	// command over the window.
-	Scope string
-	// Shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
-	Shortcut string
+	NoteTypes    []string
+	When         []ContextCondition
+	Arguments    []CommandArgument
+	Scope        string
+	Shortcut     string
 }
 
 // CommandArgument is one argument a command takes.
@@ -120,7 +109,6 @@ func (c Command) GetArgument(name string) (CommandArgument, bool) {
 	return CommandArgument{}, false
 }
 
-// listCommandIssues checks the commands the manifest declares.
 func (m Manifest) listCommandIssues() []error {
 	var issues []error
 	observed := map[string]bool{}

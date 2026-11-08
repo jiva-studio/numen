@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// gatherReplies is what the replies put right, as gatherAnswers gathers them.
 func gatherReplies(requested []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	var answers []answer
 	for _, batch := range requested {
@@ -18,7 +17,6 @@ func gatherReplies(requested []Batch, replies map[int]string, maxDistance float6
 	return gatherAnswers(answers)
 }
 
-// makeLine is one stretch of speech as the machine heard it.
 func makeLine(pos int) Line {
 	return Line{Number: pos, Text: []string{
 		"",
@@ -30,8 +28,6 @@ func makeLine(pos int) Line {
 	}[pos]}
 }
 
-// wide and narrow both answer about lines 3 and 4. In wide the two stand
-// further from the end.
 func wide() Batch {
 	return Batch{Number: 0, Lines: []Line{
 		makeLine(1), makeLine(2), makeLine(3), makeLine(4), makeLine(5),
@@ -156,8 +152,6 @@ func TestARefusedReplyIsNoAnswer(t *testing.T) {
 	}
 }
 
-// joinable is a batch of the speech lines from first to last that may be
-// answered in runs.
 func joinable(number, first, last int) Batch {
 	batch := Batch{Number: number, IsJoinable: true}
 	for pos := first; pos <= last; pos++ {
@@ -166,7 +160,6 @@ func joinable(number, first, last int) Batch {
 	return batch
 }
 
-// coveredOnce fails for a line two corrections cover.
 func coveredOnce(t *testing.T, lines map[int]Line) {
 	t.Helper()
 	observed := map[int]int{}
