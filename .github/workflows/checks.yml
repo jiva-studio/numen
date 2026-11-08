@@ -169,6 +169,14 @@ jobs:
       - name: Test the checks against violation fixtures
         run: npm test --prefix tools/lint-layers
 
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/lint-comments/go.mod
+          cache: false
+
+      - name: Check comments on fields, properties and unexported functions
+        run: make lint_comments
+
       # The lint of each package and the Go tests of libs/core and libs/notes run in their own jobs.
       - name: Validate architectural layer boundaries
         run: make check_layers LAYERS_FLAGS="--without-lint --without-go-tests"

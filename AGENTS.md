@@ -52,6 +52,36 @@ Rewrite on sight of any of these:
 
 Comments must be concise, factual, and strictly technical engineering English. Avoid storytelling and literary cadence.
 
+### Where a comment goes
+
+| Place                                                              | Comment                                                                   |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Package (`doc.go`), file header of a module entry                  | yes, what the package or module is for                                    |
+| Type, interface, class                                             | yes, what it represents and its contract                                  |
+| Exported function and method, interface method                     | yes, one sentence of contract: result, errors, side effects               |
+| Struct field, interface or type property, class property, Vue prop | no                                                                        |
+| Unexported function, private method                                | no                                                                        |
+| Inside a function body                                             | only a non-obvious why: an outside constraint, a workaround, an invariant |
+| `.proto` messages and fields                                       | yes, the protocol is a contract between languages                         |
+
+A field states its meaning through its name and type. A fact the name cannot carry goes to the type's comment or into the type itself:
+
+```go
+// Limits bounds one import. A zero MaxFiles imports every file.
+type Limits struct {
+	MaxFiles int
+	Timeout  time.Duration
+	state    struct {
+		mu    sync.Mutex
+		count int
+	}
+}
+```
+
+Exported fields of `libs/plugin-sdk-go` and the properties of `libs/plugin-sdk-ts` keep their comments, because plugin authors read them in the SDK documentation.
+
+`tools/lint-comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
+
 ---
 
 ## 2. Function and method naming (all languages)
