@@ -97,7 +97,7 @@ describe('a shared command that asks for a value', () => {
   it('runs its handler with the values given', async () => {
     const host = createHost()
     usePluginCommands(
-      { fileKinds: async () => new Map() } as unknown as VaultCore,
+      createCommandNoteReader({ fileKinds: async () => new Map() } as unknown as VaultCore),
       host,
       undefined,
       () => [importer],
