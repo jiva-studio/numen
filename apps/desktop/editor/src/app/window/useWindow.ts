@@ -516,7 +516,6 @@ function initWindowKindsAndCommands(
         base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
       return name ? getNamedIcon(name) : undefined
     },
-    getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
   Object.assign(base.pluginServices, getKinds(ctx).services, {

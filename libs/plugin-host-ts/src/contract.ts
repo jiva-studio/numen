@@ -43,7 +43,6 @@ export type {
   FileSelectEvent,
   LinkMarker,
   LinkRole,
-  MenuEntry,
   MessageWriter,
   MountedView,
   NoteNeighbourhood,

@@ -10,7 +10,6 @@ export {
   findShortcutKeys,
 } from './lib/chords/chords'
 export { createCommands } from './lib/commands/table'
-export { getNoteCommands } from './lib/commands/commands'
 export { createInvocation } from './lib/entries/invocation'
 export { createNotes } from './lib/notes/notes'
 export type { FileIcons } from './model/rowIcons'

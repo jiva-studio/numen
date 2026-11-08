@@ -8,6 +8,7 @@ import {
   NOTE_TYPE,
   type CommandTarget,
   type CommandsHost,
+  type SlotHost,
   type OpenFileOptions,
   type VaultNotes,
   type VaultRelations,
@@ -29,6 +30,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
     commands: [] as [string, CommandTarget | undefined][],
+    entries: [] as [string, CommandTarget | undefined][],
     questions: [] as string[],
     errors: [] as string[],
     made: [] as [string, string][],
@@ -53,9 +55,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    getNoteCommands: () => [
-      { id: 'org.example.sample:share.run', text: 'Share the note', group: NOTE_TYPE },
-    ],
     ask: (text) => {
       recorded.questions.push(text)
     },
@@ -113,9 +112,18 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     },
   }
 
+  const slots: SlotHost = {
+    getEntries: (slot, target) => {
+      recorded.entries.push([slot, target])
+      return []
+    },
+    watchEntries: () => ({ dispose: () => undefined }),
+  }
+
   const host: PlexHost = {
     workspace,
     commands,
+    slots,
     notes,
     relations,
     nesting: { isNesting, headings: ref(6) },

@@ -498,6 +498,7 @@ A window has a fixed list of slots, declared once in `libs/protocol/slots.json` 
 | `statusBar.right`      | The end of the status bar.                                     | The plugin of the status bar |
 | `fileTree.context`     | The menu of a row of the file tree, over its file or folder.   | The plugin of the file tree  |
 | `tabStrip.context`     | The menu of a tab, over the file of the tab.                   | The tab strip of the window  |
+| `plexGraph.context`    | The menu of a node of the plex graph, over its note.           | The plugin of the plex graph |
 | `palette.searchResult` | The actions of a search result that is a note, over that note. | The palette                  |
 
 `titleBar` and `statusBar` are the slots of the window itself: each holds one view, the plugin of that bar, which draws the whole bar and the slots inside it. When two enabled plugins place a view in the same window slot, the window draws the view of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to its message log. The window waits for the plugins with an entry in a window slot before it draws itself (see [The start of a window](#the-start-of-a-window)).

@@ -20,10 +20,6 @@ export const getGroupCommands = (
   return commands.filter((one) => one.group === group && !second.has(one.id))
 }
 
-/** The commands over the note in front, in the order they are drawn. */
-export const getNoteCommands = (commands: readonly Command[]): readonly Command[] =>
-  getGroupCommands(commands, 'note')
-
 /**
  * Whether the typed text selects the commands: the field was empty, and
  * the typed character is the command prefix.

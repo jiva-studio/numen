@@ -178,8 +178,6 @@ export interface WorkspaceHost {
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean
-  // The commands the plugins declare over one note, in the words the palette offers them by.
-  getNoteCommands(): readonly MenuEntry[]
   // Sends a question to the agent and shows it to the user.
   ask(text: string): void
   showError(text: string): void
@@ -199,17 +197,6 @@ export interface VaultEntry {
   readonly isFolder: boolean
   readonly isNote: boolean
   readonly type: NoteType
-}
-
-// MenuEntry is one item a menu offers, in the group it is drawn in.
-export interface MenuEntry {
-  readonly id: string
-  readonly text: string
-  readonly detail?: string
-  readonly group: string
-  readonly isDisabled?: boolean
-  readonly parentId?: string
-  readonly children?: readonly MenuEntry[]
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

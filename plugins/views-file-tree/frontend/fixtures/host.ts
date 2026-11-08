@@ -119,7 +119,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    getNoteCommands: () => [],
     ask: () => undefined,
     showError: (text) => {
       recorded.errors.push(text)

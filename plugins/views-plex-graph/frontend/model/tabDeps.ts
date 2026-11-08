@@ -3,8 +3,9 @@
  * notes of the vault.
  */
 import {
-  formatErrorMessage,
+  SLOT,
   type CommandsHost,
+  type SlotHost,
   type VaultNotes,
   type VaultRelations,
   type WorkspaceHost,
@@ -16,6 +17,7 @@ import type { Nesting } from './nesting'
 export interface PlexHost {
   readonly workspace: WorkspaceHost
   readonly commands?: CommandsHost
+  readonly slots?: SlotHost
   readonly notes: VaultNotes
   readonly relations: VaultRelations
   readonly nesting: Nesting
@@ -23,7 +25,7 @@ export interface PlexHost {
 
 /** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
-  { workspace, commands, notes, relations, nesting }: PlexHost,
+  { workspace, commands, slots, notes, relations, nesting }: PlexHost,
   id: string,
 ): PlexTabDeps {
   return {
@@ -50,13 +52,10 @@ export function createPlexTabDeps(
       workspace.syncPath(id, path, title ?? '')
     },
     readHeadings: (paths) => notes.getHeadings(paths),
-    runCommand: (command, path, title) => {
-      commands
-        ?.run(command, { path, title, isFolder: false, others: [], tab: '' })
-        .catch((error: unknown) => workspace.showError(formatErrorMessage(error)))
-    },
-    getNoteCommands: () => workspace.getNoteCommands(),
-    getCommandIcon: (command) => workspace.getCommandIcon(command),
+    getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
+    listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
+    runCommand: (command, target, argument) =>
+      commands?.run(command, target, argument) ?? Promise.resolve(),
     getNoteIcon: (type) =>
       workspace.getEntryIcon({ path: '', name: '', isFolder: false, isNote: true, type }, false),
     openingPath: workspace.openingPath,

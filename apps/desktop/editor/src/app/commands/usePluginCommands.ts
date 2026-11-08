@@ -6,7 +6,6 @@ import { computed, watch } from 'vue'
 import type {
   CommandNote,
   HandlerDeclaration,
-  MenuEntry,
   PluginHost,
   PluginPaletteCommand,
 } from '@numen/plugin-host'
@@ -93,12 +92,6 @@ export function usePluginCommands(
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 
-  /** The commands the plugins declare over one note, in the words the palette offers them by. */
-  const getNoteCommands = (): readonly MenuEntry[] =>
-    getPluginCommands()
-      .filter((cmd) => hasNoteVariable(cmd.when))
-      .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
-
   const getCommandNote = createCommandNoteReader(core)
 
   if (pluginHost) {
@@ -125,7 +118,6 @@ export function usePluginCommands(
   return {
     getPaletteEntries,
     getCommandNote,
-    getNoteCommands,
     pluginWays,
   }
 }

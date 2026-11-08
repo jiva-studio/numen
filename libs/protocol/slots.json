@@ -44,6 +44,11 @@
       "about": "the menu of a tab, over the file of the tab"
     },
     {
+      "name": "plexGraph.context",
+      "owner": "the plugin of the plex graph",
+      "about": "the menu of a node of the plex graph, over its note"
+    },
+    {
       "name": "palette.searchResult",
       "owner": "the palette",
       "about": "the actions of a search result that is a note, over that note"

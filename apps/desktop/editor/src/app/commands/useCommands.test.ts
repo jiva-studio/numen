@@ -365,7 +365,7 @@ describe('a plugin command over a note', () => {
     expect(entry?.icon).toBe(getNamedIcon('waypoints'))
   })
 
-  it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
+  it('offers the keyed commands over the window as ways in', () => {
     const one = setupPlugin([
       SUMMARY,
       GRAPH,
@@ -379,9 +379,6 @@ describe('a plugin command over a note', () => {
         keys: { letter: 'mod+shift+x' },
         icon: getNamedIcon('waypoints'),
       },
-    ])
-    expect(one.getNoteCommands()).toStrictEqual([
-      { id: SUMMARY.id, text: SUMMARY.title, group: 'note' },
     ])
   })
 

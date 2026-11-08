@@ -6,6 +6,8 @@ export const WORDS = {
   plex: 'Plex',
   /** The neighbourhood is being read, and its contents are not known yet. */
   loading: 'Loading…',
+  /** The row of a command of the menu whose items are being read. */
+  loadingItems: 'Loading…',
   /** The menu entry shown when the plex has no content. */
   newNote: 'New note',
   /** The label of the drop preview shown while notes are dragged over the plex. */
@@ -44,12 +46,4 @@ export const WORDS = {
   apply: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
-  /** Menu command labels */
-  read: 'Open note',
-  copy: 'Copy note path',
-  child: 'Create child note',
-  parent: 'Create parent note',
-  jump: 'Create jump note',
-  title: 'Rename note',
-  remove: 'Move note to trash',
 }

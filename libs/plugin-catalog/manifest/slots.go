@@ -26,16 +26,19 @@ const SlotFileTreeContext = "fileTree.context"
 // SlotTabStripContext is the menu of a tab, over the file of the tab, drawn by the tab strip of the window.
 const SlotTabStripContext = "tabStrip.context"
 
+// SlotPlexGraphContext is the menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.
+const SlotPlexGraphContext = "plexGraph.context"
+
 // SlotPaletteSearchResult is the actions of a search result that is a note, over that note, drawn by the palette.
 const SlotPaletteSearchResult = "palette.searchResult"
 
 // Slots are the slots of a window, in the order slots.json lists them.
-var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPaletteSearchResult}
+var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult}
 
 // IsSlot reports whether the name is a slot of a window.
 func IsSlot(name string) bool {
 	switch name {
-	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPaletteSearchResult:
+	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult:
 		return true
 	}
 	return false

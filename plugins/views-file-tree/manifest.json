@@ -74,7 +74,8 @@
         "group": "2-edit",
         "order": 10,
         "when": "!target.isRoot && !target.isMultiple"
-      }
+      },
+      { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

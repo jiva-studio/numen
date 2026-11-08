@@ -260,9 +260,6 @@ beforeEach(() => {
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),
-      getNoteCommands: vi.fn(() => [
-        { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
-      ]),
       pluginWays: ref([]),
     },
     pluginHost: {
@@ -395,9 +392,6 @@ describe('the parts of the window', () => {
   it('hand the kinds what the commands declare of the plugins', async () => {
     useWindow()
 
-    expect(h.args.kinds.getNoteCommands()).toStrictEqual([
-      { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
-    ])
     expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe(
       getNamedIcon('share'),
     )

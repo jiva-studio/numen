@@ -9,7 +9,6 @@ import type {
   BackgroundTaskHost,
   BufferHost,
   CommandsHost,
-  MenuEntry,
   NoteRef,
   VaultFiles,
   VaultNotes,
@@ -60,7 +59,6 @@ export interface WorkspaceHostDeps extends IconHostDeps {
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
   readonly getNoteInFocus: () => NoteRef
-  readonly getNoteCommands: () => readonly MenuEntry[]
   readonly writeMessage: MessageWriter
   readonly getMessageWriter: (name: string) => MessageWriter
   readonly today: () => string
@@ -92,7 +90,6 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     },
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
-    getNoteCommands: () => deps.getNoteCommands(),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),

@@ -225,7 +225,7 @@ export function useCommands(options: CommandsDepsOptions) {
     declaredCommands?.whenContext,
     () => declaredCommands?.handlers.value,
   )
-  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
+  const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
     coverage,
@@ -285,6 +285,5 @@ export function useCommands(options: CommandsDepsOptions) {
     runChoice,
     onKeyDown,
     pluginWays,
-    getNoteCommands,
   }
 }
