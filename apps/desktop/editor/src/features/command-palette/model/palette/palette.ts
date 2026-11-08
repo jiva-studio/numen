@@ -173,7 +173,7 @@ type PaletteArgs =
       NoteLookup,
       PaletteLists,
       RunSupport,
-      Wait?,
+      (Wait | undefined)?,
       (() => readonly Command[])?,
     ]
 
