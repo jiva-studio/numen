@@ -218,7 +218,7 @@ describe('the commands as they open', () => {
     for (const item of commands.groups.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
   })
 
-  it('keeps the commands the words typed leave, and lights where they stand', () => {
+  it('keeps the commands the words typed leave, and lights where they match', () => {
     const { commands } = createPalette()
 
     commands.setTyped('child').catch(rethrow)
@@ -634,7 +634,7 @@ describe('a command that offers a list the window holds', () => {
     })
   })
 
-  it('keeps to the rows the words typed name, and marks where they stand', async () => {
+  it('keeps to the rows the words typed name, and marks where they match', async () => {
     const { commands } = createPalette({}, [], target)
     commands.startCommand(THEME_ID, front())
 
@@ -1187,7 +1187,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     expect(describeGroup(commands.groups).items).toStrictEqual(['physics/Entropy.md'])
   })
 
-  it('draws no failure of a question nobody is asking any more', async () => {
+  it('draws no failure of a superseded query', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('app:note.goTo', front())
     commands.setTyped('e').catch(rethrow)
@@ -1207,7 +1207,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     })
   })
 
-  it('keeps working where only a question nobody is asking has answered', async () => {
+  it('keeps working where only a superseded query has a result', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('app:note.goTo', front())
     commands.setTyped('e').catch(rethrow)
@@ -1293,7 +1293,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 describe('a step that asks for a vault, as the list answers', () => {
   const two = () => installation(vault('physics', 'Physics'), vault('heat', 'Heat'))
 
-  it('holds nothing and is working while the list has not come back', async () => {
+  it('holds nothing and is working while the list has not returned', async () => {
     const { commands } = createSlowPalette()
 
     commands.startCommand('app:vault.open', front())
@@ -1331,7 +1331,7 @@ describe('a step that asks for a vault, as the list answers', () => {
     })
   })
 
-  it('draws no failure of a list nobody is asking for any more', async () => {
+  it('draws no failure of a superseded list request', async () => {
     const { commands, lists } = createSlowPalette()
     commands.startCommand('app:vault.open', front())
     commands.leaveStep()

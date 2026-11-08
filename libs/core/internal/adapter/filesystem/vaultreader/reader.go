@@ -258,7 +258,7 @@ func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 }
 
 // Open is one file, to read a part of. The path is checked by the same rule
-// Read checks it by, and what comes back is the file itself.
+// Read checks it by, and what is returned is the file itself.
 func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
 	return s.openWith(ctx, path, openReadable)
 }

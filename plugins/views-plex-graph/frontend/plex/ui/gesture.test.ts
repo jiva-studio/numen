@@ -89,7 +89,7 @@ describe('the handle', () => {
   })
 })
 
-describe('letting go', () => {
+describe('releasing', () => {
   it('asks for a node in the relation the gesture went towards', async () => {
     const { plex, svg } = mountPlex()
     await takeHold(plex, 'A node')

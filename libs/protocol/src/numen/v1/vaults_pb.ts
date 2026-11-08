@@ -49,7 +49,7 @@ export type Vault = Message<"numen.v1.Vault"> & {
 
   /**
    * Set when nothing is at the path. The vault stays on the list, and the
-   * folder is found again if it comes back.
+   * folder is found again if it returns.
    *
    * @generated from field: bool is_missing = 4;
    */
@@ -110,7 +110,7 @@ export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
 
   /**
    * The folder the dialog opens in. Empty opens wherever this machine opens a
-   * dialog that was told nothing.
+   * dialog that received nothing.
    *
    * @generated from field: string starting_at = 2;
    */
@@ -481,7 +481,7 @@ export const VaultsService: GenService<{
   },
   /**
    * RemoveVault takes a vault off the list and out of the index. The folder
-   * stays where it is unless the request asks for it, and adding it back
+   * keeps its position unless the request asks for it, and adding it back
    * brings back the same vault.
    *
    * @generated from rpc numen.v1.VaultsService.RemoveVault

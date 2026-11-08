@@ -1,5 +1,5 @@
 /**
- * The runs of a book marked where they stand, drawn by the browser's own
+ * The runs of a book marked at their positions, drawn by the browser's own
  * highlight registry.
  *
  * The registry is keyed by name and the name is styled once, so every book on
@@ -35,7 +35,7 @@ export function highlight(entry: string, who: object, ranges: readonly Range[]):
   redraw(entry, books)
 }
 
-/** One book's marked runs taken back, when it goes. */
+/** One book's marked runs removed when it is disposed. */
 export function unhighlight(who: object): void {
   for (const [entry, books] of target) {
     if (!books.delete(who)) continue

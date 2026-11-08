@@ -8,7 +8,7 @@ import (
 
 // QuantisedInt8 names the quantisation of a stored vector's bytes: one signed
 // byte per dimension, at the scale the model is written down with. It is
-// recorded because a blob does not say what it holds.
+// recorded because a blob does not say its contents.
 const QuantisedInt8 = "int8"
 
 // Int8Scale is the value that a stored byte of 127 represents. Bytes on two

@@ -358,7 +358,7 @@ export const WhatAPersonDoesToIt: Story = {
       'Field 1',
     ])
 
-    // The last template is let go over the first, and takes its place.
+    // The last template is dropped over the first, and takes its place.
     const getDrawnTemplates = (): readonly (string | null)[] =>
       [...canvasElement.querySelectorAll('[data-template]')].map((each) =>
         each.getAttribute('data-template'),

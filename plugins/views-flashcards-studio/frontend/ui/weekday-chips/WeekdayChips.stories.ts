@@ -254,7 +254,7 @@ export const EachChipShowsItsState: Story = {
   },
 }
 
-/** Pressing a day offers the levels, and the day it was chosen for comes back with it. */
+/** Pressing a day offers the levels, and the day it was chosen for is returned with it. */
 export const PressingDayOpensLevelMenu: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {

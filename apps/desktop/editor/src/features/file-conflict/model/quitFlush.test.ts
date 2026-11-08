@@ -491,7 +491,7 @@ describe('a page that is closed', () => {
     return { mockStream, signals, core }
   }
 
-  it('lets go of the stream it listens on', async () => {
+  it('releases the stream it listens on', async () => {
     const { signals, core } = createListening()
     const going = createFileFlush(
       core,

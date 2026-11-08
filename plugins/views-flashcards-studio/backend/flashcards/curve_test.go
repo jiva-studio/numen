@@ -285,7 +285,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	}
 }
 
-// A date paces what it holds, so no day of the range is out of reach and the
+// A date paces its contents, so no day of the range is out of reach and the
 // material is through by the day the preset aims at. The card counts learned
 // beside the date take no part in it.
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {

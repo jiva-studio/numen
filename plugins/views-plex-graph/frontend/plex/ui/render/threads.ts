@@ -12,7 +12,7 @@ import type { PlexRelation } from '../../lib/relation'
 
 type Thread = ReturnType<typeof createThreadPath>
 
-/** A line ending in the box letting go there would leave. */
+/** A line ending in the box dropping there would leave. */
 export interface DraggedShape {
   readonly thread: Thread
   readonly ghost: PlacedNode
@@ -53,7 +53,7 @@ export interface ReachGhostOptions {
 
 /**
  * The node a gesture would make, drawn where it would appear so the reader sees
- * it before letting go.
+ * it before dropping.
  */
 export function getReachGhost(
   outcome: Drop | null,

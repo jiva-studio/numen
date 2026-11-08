@@ -71,7 +71,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	if !strings.Contains(target, "mine: keep me verbatim") {
 		t.Errorf("a key nobody owns was rewritten: %q", target)
 	}
-	// The file stat that comes back is the file on disk, so the next write of
+	// The file stat that is returned is the file on disk, so the next write of
 	// it lands.
 	if pos.Size != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", pos)
@@ -300,7 +300,7 @@ func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
 
 // A deck whose cards are already complete is returned unchanged, under either
 // line ending. Any change would be an unintended diff on every save.
-func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
+func TestWritingAnUntouchedDeckChangesNothing(t *testing.T) {
 	body := "\nCards I am learning.\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
 		"\n## ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n\n"

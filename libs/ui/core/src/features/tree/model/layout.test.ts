@@ -78,7 +78,7 @@ describe('following the box', () => {
     expect(layout.virtualRows.value.length).toBeGreaterThan(small)
   })
 
-  it('lets go of the observer when it goes away', () => {
+  it('disconnects the observer when it is removed', () => {
     const { view } = mountLayout(100, 100)
     view.unmount()
     expect(FakeObserver.all[0]?.disconnect).toHaveBeenCalledTimes(1)

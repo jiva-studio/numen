@@ -62,7 +62,7 @@ describe('a key pressed on the list of vaults', () => {
 })
 
 describe('a key pressed while a tab is open', () => {
-  it('goes to the tab, which says whether the page is kept from it', () => {
+  it('goes to the tab, which reports whether the page is kept from it', () => {
     const tab = createTab()
     const openVault = vi.fn()
     const onKeyDown = createWindowKeys({ getTab: () => tab, getVaults: () => VAULTS, openVault })

@@ -354,7 +354,7 @@ describe('a deck whose file moved past what was read', () => {
     expect(observedRanks[1]).toBeNull()
   })
 
-  it('reads the file again when the person takes what it holds', async () => {
+  it('reads the file again when the person accepts its contents', async () => {
     const { decks, tab, getReadCount } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
@@ -523,7 +523,7 @@ describe('a section of a deck the window holds', () => {
     expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots and shoots'])
   })
 
-  it('takes away its heading and nothing else when it goes', async () => {
+  it('removes its heading and nothing else when it is removed', async () => {
     const { tab } = await open({
       sections: [{ name: 'Roots', preamble: '' }],
       cards: CARDS.map((card) => ({ ...card, sectionIndex: 0 })),
@@ -991,7 +991,7 @@ describe('a deck tab closed', () => {
     expect(one.decks.getTitle('Beasts.md')).toBe('Animals')
   })
 
-  it('stays where the file moved past what it holds', async () => {
+  it('stays where the file moved past its contents', async () => {
     const one = await open({ isChanged: true })
     one.tab.addCard('Animal', [], null)
     await one.decks.store.flush()
@@ -1030,7 +1030,7 @@ describe('a deck tab closed', () => {
     expect(state.scheduled.value.path).toBe('')
   })
 
-  it('forgets what it was told about the preset it chose', async () => {
+  it('drops what it received about the preset it chose', async () => {
     const one = await open({ notScheduled: 'unreadable' })
     one.tab.setSchedule('Sanskrit.md')
     await settle()

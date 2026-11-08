@@ -181,7 +181,7 @@ describe('panes', () => {
     ])
   })
 
-  it('calls each part what it holds', () => {
+  it('calls each part by its contents', () => {
     expect(getTemplatePanes(FULL).map((pane) => pane.label)).toEqual([
       'Front',
       'Preview',

@@ -1,5 +1,5 @@
 /**
- * The runs of a book lit where they stand: the one the reader was opened at,
+ * The runs of a book highlighted at their positions: the one the reader was opened at,
  * and the others named with it.
  */
 import { shallowRef } from 'vue'

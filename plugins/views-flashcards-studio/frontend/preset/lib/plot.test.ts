@@ -2,7 +2,7 @@
  * Where the one control's curve is drawn, and where a pointer over it is positioned.
  *
  * The plot is the control, so the same arithmetic runs in both directions: a
- * place put on the line, and a place read back from a pointer.
+ * place on the line, and a place read back from a pointer.
  */
 import { describe, expect, it } from 'vitest'
 

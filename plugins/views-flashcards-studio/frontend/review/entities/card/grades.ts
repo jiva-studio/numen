@@ -1,4 +1,4 @@
-/** How well a card came back, in this window's words and in the schema's. */
+/** How well a card was recalled, in this window's words and in the schema's. */
 import { Rating } from '../../../api/types.js'
 import { getNames } from '../../../api/names'
 

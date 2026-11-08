@@ -386,7 +386,7 @@ describe('the picture', () => {
   })
 })
 
-describe('notes dragged in and let go over the picture', () => {
+describe('notes dragged in and dropped over the picture', () => {
   it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
@@ -532,7 +532,7 @@ describe('the headings a node nests', () => {
     ])
   })
 
-  it('are what the question requested last came back with, whatever order they land in', async () => {
+  it('are what the question requested last returned, whatever order they land in', async () => {
     // The first answer is held up until the second has settled, which is a
     // change followed while a travel is still out.
     const answers: ((target: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
@@ -691,7 +691,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     relation,
     through: through ?? '',
   }))
-  /** An answer the vault is holding back, and what lets it go. */
+  /** An answer the vault is holding back, and what releases it. */
   let pendingGate: Promise<void> | null = null
   let release: () => void = () => undefined
   /** Every note the vault was queried about, in query order. */

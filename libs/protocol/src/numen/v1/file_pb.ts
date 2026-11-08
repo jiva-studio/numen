@@ -300,7 +300,7 @@ export type MoveResult = Message<"numen.v1.MoveResult"> & {
   /**
    * The notes whose link stopped resolving and could not be written again, by
    * name. Each of them still points at the name the file left, and nothing
-   * comes back to it: a move that reports only what it repaired reports a
+   * returns to it: a move that reports only what it repaired reports a
    * vault it did not leave behind.
    *
    * @generated from field: repeated string dangling = 4;
@@ -368,7 +368,7 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   error?: ErrorCode | undefined;
 
   /**
-   * Set when the file has gone and the index could not be updated for it.
+   * Set when the file is gone and the index could not be updated for it.
    * Search answers about it as it read it last, until a walk goes past.
    *
    * @generated from field: bool is_index_outdated = 4;

@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestIsVaultIndexedAnswersWhetherTheIndexCarriesTheVault(t *testing.T) {
+func TestIsVaultIndexedReturnsWhetherTheIndexCarriesTheVault(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	indexed := note.NewIsVaultIndexed(c.db.Queries())

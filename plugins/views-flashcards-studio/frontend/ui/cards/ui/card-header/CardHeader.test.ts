@@ -38,7 +38,7 @@ describe('the strip itself', () => {
     expect(header(mountedHeader).element.tagName).toBe('HEADER')
   })
 
-  it('passes on the taking hold of it and the letting go', async () => {
+  it('passes on the taking hold of it and the releasing', async () => {
     mountedHeader = mountHeader()
     await header(mountedHeader).trigger('dragstart')
     await header(mountedHeader).trigger('dragend')
@@ -64,7 +64,7 @@ describe('a press on something the strip holds', () => {
     expect(header(mountedHeader).attributes('draggable')).toBe('true')
   })
 
-  // A press that began in a box may travel off the strip and be let go
+  // A press that began in a box may travel off the strip and be released
   // anywhere, so the end of it is heard wherever it happens.
   it('may be dragged again once the press is release, wherever that was', async () => {
     mountedHeader = mountHeader({ default: INSIDE })

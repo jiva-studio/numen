@@ -104,7 +104,7 @@ describe('two taps', () => {
     expect(show).toHaveBeenCalledTimes(2)
   })
 
-  it('leave no wait running once the node is gone', () => {
+  it('leave no wait running once the node is removed', () => {
     const { tap: press, scope } = createTapper()
     press(tap(100, 100))
     expect(vi.getTimerCount()).toBe(1)

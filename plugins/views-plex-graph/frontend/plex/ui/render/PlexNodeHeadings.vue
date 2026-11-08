@@ -37,7 +37,7 @@ let carried = 0
 
 /* --------------------------------- Hooks ---------------------------------- */
 // The window opens at the top each time the attention settles afresh, and is
-// left at its current position while the attention leaves.
+// left at its current position while the attention moves away.
 watch(
   () => props.open > 0,
   (now) => {

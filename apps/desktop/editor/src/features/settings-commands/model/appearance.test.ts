@@ -237,7 +237,7 @@ describe('the theme the keyboard is standing on', () => {
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
-  it('is the last row the keyboard landed on, whatever order the files come back in', async () => {
+  it('is the last row the keyboard landed on, whatever order the files are returned in', async () => {
     const one = await startWindow()
 
     one.appearance.previewTheme('preset:dracula')
@@ -313,7 +313,7 @@ describe('the size the keyboard is standing on', () => {
     expect(sizes(one.sheet)).toBe(SIZED)
   })
 
-  it('leaves the theme and the mode where they stand', async () => {
+  it('keeps the theme and the mode unchanged', async () => {
     const one = await startWindow()
 
     one.appearance.previewSize('interfaceScale', 2)
@@ -459,7 +459,7 @@ const createManual = (waits = Infinity) => {
   }
 }
 
-describe('the window before it has been told anything', () => {
+describe('the window before it has received anything', () => {
   it('has no themes, applies no theme, reads as a system pair, and draws at the designed size', () => {
     const { appearance } = createManual()
 
@@ -479,7 +479,7 @@ describe('the window before it has been told anything', () => {
   })
 })
 
-describe('files that come back out of order', () => {
+describe('files that are returned out of order', () => {
   it('leave the theme of the row the keyboard came to rest on', async () => {
     const { appearance, sheet, reads } = createManual()
     await appearance.start()
@@ -545,7 +545,7 @@ describe('the folder when it cannot be followed', () => {
 })
 
 describe('a window that is closed', () => {
-  it('lets go of the folder it listens to', async () => {
+  it('releases the folder it listens to', async () => {
     const { appearance, signals } = createManual()
     await appearance.start()
 

@@ -467,9 +467,9 @@ export const ADeck: Story = {
 
 /**
  * A deck grown past one list: cards standing before the first section, a
- * section holding several, and a section holding none. A card is let go at the
+ * section holding several, and a section holding none. A card is dropped at the
  * head of a section, an empty one included, and a section taken away leaves its
- * cards where they stand.
+ * cards at their positions.
  */
 export const InSections: Story = {
   args: { corpus: 'a deck in sections' },

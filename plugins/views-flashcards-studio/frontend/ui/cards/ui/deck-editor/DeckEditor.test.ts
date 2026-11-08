@@ -223,11 +223,11 @@ describe('DeckEditor', () => {
       expect(getStrip(card, 'llama').attributes('draggable')).toBe('false')
     })
 
-    it('takes the strip up again once the press is let go anywhere at all', async () => {
+    it('takes the strip up again once the press is released anywhere at all', async () => {
       const card = mountDeck()
       await getStrip(card, 'llama').get('button').trigger('pointerdown')
 
-      // The pointer may be let go far outside the strip, and the strip is
+      // The pointer may be released far outside the strip, and the strip is
       // dragged again from there.
       document.body.dispatchEvent(new Event('pointerup', { bubbles: true }))
       await nextTick()
@@ -345,27 +345,27 @@ describe('DeckEditor', () => {
     expect(card.findAll('[data-cut]')).toHaveLength(0)
   })
 
-  it('emits a card let go before another', async () => {
+  it('emits a card dropped before another', async () => {
     const card = mountDeck()
     await dragTo(card, 'yak', 'llama')
     expect(card.emitted('move')).toEqual([['yak', 'llama']])
   })
 
-  it('emits a card let go past the last of them, which is where the plus remains', async () => {
+  it('emits a card dropped past the last of them, which is where the plus remains', async () => {
     const card = mountDeck()
     await dragTo(card, 'llama', null)
     expect(card.emitted('move')).toEqual([['llama', createRunEnd(HEAD)]])
   })
 
-  it('moves nothing where the card let go past the last of them is the last of them', async () => {
+  it('moves nothing where the card dropped past the last of them is the last of them', async () => {
     const card = mountDeck()
     await dragTo(card, 'yak', null)
     expect(card.emitted('move')).toBeUndefined()
   })
 
   // A card is moved to a position, and the caret marks it. A card dropped where
-  // the caret shows no position — the gap between the tiles — stays where it was.
-  it('moves nothing where a card is let go on no place at all', async () => {
+  // the caret shows no position — the gap between the tiles — keeps its position.
+  it('moves nothing where a card is dropped on no place at all', async () => {
     const card = mountDeck()
     await getTile(card, 'llama').get('[data-grip]').trigger('dragstart')
     await card.get('.deck').trigger('dragover')
@@ -382,20 +382,20 @@ describe('DeckEditor', () => {
     expect(card.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing where a card is let go at its current position', async () => {
+  it('moves nothing where a card is dropped at its current position', async () => {
     const card = mountDeck()
     await dragTo(card, 'llama', 'llama')
     expect(card.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing where a drag ends with the card let go nowhere', async () => {
+  it('moves nothing where a drag ends with the card dropped nowhere', async () => {
     const card = mountDeck()
     await dragOff(card, 'yak', null)
     expect(card.emitted('move')).toBeUndefined()
     expect(getTile(card, 'yak').attributes('data-dragged')).toBeUndefined()
   })
 
-  it('moves nothing where a drag over another card ends with it let go nowhere', async () => {
+  it('moves nothing where a drag over another card ends with it dropped nowhere', async () => {
     const card = mountDeck()
     await dragOff(card, 'yak', 'llama')
     expect(card.emitted('move')).toBeUndefined()
@@ -461,7 +461,7 @@ describe('DeckEditor', () => {
     ])
   })
 
-  it('leaves the caret in no box but the one it was put in when a field goes', async () => {
+  it('leaves the caret in no box but the one it was put in when a field is removed', async () => {
     const card = mountDeck()
     const box = getBox(card, 'llama', 'Height').element
     box.focus()
@@ -550,7 +550,7 @@ describe('DeckEditor', () => {
       expect(target.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(true)
     })
 
-    it('moves nothing where the card let go past a section is the last under it', async () => {
+    it('moves nothing where the card dropped past a section is the last under it', async () => {
       const target = mountSectioned()
       const plus = target.get('[data-plus-of="roots"]')
       await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
@@ -573,7 +573,7 @@ describe('DeckEditor', () => {
       ).toEqual(['roots', 'leaves'])
     })
 
-    it('emits a card let go past the last card of a section', async () => {
+    it('emits a card dropped past the last card of a section', async () => {
       const target = mountSectioned()
       const plus = target.get('[data-plus-of="roots"]')
       await getTile(target, 'loose').get('[data-grip]').trigger('dragstart')
@@ -582,7 +582,7 @@ describe('DeckEditor', () => {
       expect(target.emitted('move')).toEqual([['loose', createRunEnd('roots')]])
     })
 
-    it('emits a card let go past the last of those standing under no section', async () => {
+    it('emits a card dropped past the last of those standing under no section', async () => {
       const target = mountSectioned()
       const plus = target.get('[data-plus]')
       await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
@@ -591,13 +591,13 @@ describe('DeckEditor', () => {
       expect(target.emitted('move')).toEqual([['llama', createRunEnd(HEAD)]])
     })
 
-    it('emits a card let go at the head of a section', async () => {
+    it('emits a card dropped at the head of a section', async () => {
       const target = mountSectioned()
       await dragTo(target, 'loose', 'roots')
       expect(target.emitted('move')).toEqual([['loose', 'roots']])
     })
 
-    it('emits a card let go at the head of a section holding none', async () => {
+    it('emits a card dropped at the head of a section holding none', async () => {
       const target = mountSectioned()
       await dragTo(target, 'llama', 'leaves')
       expect(target.emitted('move')).toEqual([['llama', 'leaves']])
@@ -621,7 +621,7 @@ describe('DeckEditor', () => {
         expect(mountDeck().find('[data-head]').exists()).toBe(false)
       })
 
-      it('emit a card let go before the first section', async () => {
+      it('emit a card dropped before the first section', async () => {
         const card = mountSectioned({ cards: INSIDE })
         await dragTo(card, 'yak', HEAD)
         expect(card.emitted('move')).toEqual([['yak', HEAD]])

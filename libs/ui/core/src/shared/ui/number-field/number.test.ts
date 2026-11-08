@@ -53,7 +53,7 @@ describe('what the text evaluates to', () => {
     expect(parseNumber('1 2')).toBeNull()
   })
 
-  it('refuses the words that read as numbers to a machine and to nobody else', () => {
+  it('refuses the words that read as numbers to a machine and to no other reader', () => {
     expect(parseNumber('Infinity')).toBeNull()
     expect(parseNumber('0x10')).toBeNull()
     expect(parseNumber('1e3')).toBeNull()

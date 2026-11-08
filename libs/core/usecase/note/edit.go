@@ -13,7 +13,7 @@ import (
 )
 
 // ErrNoNote is what an operation gets when the vault holds no note at the path
-// it was given. A vault that cannot be reached at all comes back as it arrived.
+// it was given. A vault that cannot be reached at all is returned as it arrived.
 var ErrNoNote = edit.ErrNoNote
 
 // ErrIndexOutdated is returned when a file was written but the index could not be

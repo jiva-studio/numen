@@ -60,7 +60,7 @@ export const usePanels = (deps: PanelsDeps) => {
     open: () => showing.value === 'asking',
     // A panel put away takes the window back to the card only when the window is
     // on it: a card answered with the reading up ends the conversation, and the
-    // reading stays where it is.
+    // reading keeps its position.
     showPanel: (open) => {
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'

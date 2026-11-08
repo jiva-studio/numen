@@ -1,5 +1,5 @@
 /**
- * A reading of a deck file meets the deck on screen: headings come back from the
+ * A reading of a deck file meets the deck on screen: headings are returned from the
  * file, identities stay with the cards and sections they were drawn by, and a
  * card model listing is compared card model by card model.
  */

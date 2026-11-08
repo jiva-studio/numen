@@ -172,7 +172,7 @@ describe('the arrow keys', () => {
     expect(field.get('input').element.value).toBe('0.82')
   })
 
-  it('leave a field nobody may type into at its current position', async () => {
+  it('leave a field that cannot be typed into at its current position', async () => {
     const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
     expect(getEmitted(field)).toEqual([])
@@ -206,7 +206,7 @@ describe('the other keys a spin button answers', () => {
     expect(field.get('input').element.value).toBe('0')
   })
 
-  it('leaves a field nobody may type into at its current position', async () => {
+  it('leaves a field that cannot be typed into at its current position', async () => {
     const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
@@ -221,7 +221,7 @@ describe('the other keys a spin button answers', () => {
   })
 })
 
-// A caller writes what it holds when the field commits, so a field left alone
+// A caller writes its value when the field commits, so a field left alone
 // is a field that has committed nowhere.
 describe('leaving the field', () => {
   /** Every number the field has come to rest at, in the order it rested at them. */
@@ -263,7 +263,7 @@ describe('leaving the field', () => {
   })
 })
 
-describe('what a screen reader is told', () => {
+describe('what a screen reader receives', () => {
   it('is a number with bounds, and where in them it remains', () => {
     const input = mountField().get('input')
     expect(input.attributes('role')).toBe('spinbutton')

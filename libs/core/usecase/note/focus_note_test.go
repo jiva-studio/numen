@@ -41,7 +41,7 @@ func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	}
 }
 
-func TestFocusingNothingOrANoteThatIsNotThereMovesNobody(t *testing.T) {
+func TestFocusingNothingOrANoteThatIsNotThereMovesNoFocus(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}

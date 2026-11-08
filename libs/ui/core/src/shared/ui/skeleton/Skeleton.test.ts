@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import Skeleton from './Skeleton.vue'
 
 describe('the room a placeholder holds', () => {
-  it('is the width of its line and one em high where it is told nothing', () => {
+  it('is the width of its line and one em high where it is given nothing', () => {
     const style = mount(Skeleton).element.style
     expect(style.inlineSize).toBe('100%')
     expect(style.blockSize).toBe('1em')

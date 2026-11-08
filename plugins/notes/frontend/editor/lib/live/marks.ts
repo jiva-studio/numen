@@ -2,7 +2,7 @@
  * What each mark of the markdown is drawn as.
  *
  * is shown as it is written. Standing in it means a selection touches it, so
- * the getMarks come back under the caret and nowhere else. Nothing here changes
+ * the getMarks are returned under the caret and nowhere else. Nothing here changes
  * the text: the file is what was typed, mark for mark.
  */
 import { syntaxTree } from '@codemirror/language'

@@ -24,7 +24,7 @@ type PassageQueries interface {
 	// FindNearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `q.Limit` of them. `q.Vector` is the full precision the model answered
 	// with, and a chunk whose similarity to it is under `q.Floor` is not an answer
-	// and does not come back.
+	// and is not returned.
 	//
 	// `q.Recipe` is what a vector is kept under, which is everything about the
 	// model that decides what a vector is. A name alone finds none of them.

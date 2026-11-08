@@ -377,7 +377,7 @@ func TestForgettingKeepsTheFolderAndReturnsSo(t *testing.T) {
 		t.Errorf("the vault is still on the list:\n%s", items)
 	}
 
-	// The identity stayed in the folder, so the vault that comes back is the one
+	// The identity stayed in the folder, so the vault that is returned is the one
 	// that left.
 	again := s.mustRun("vault", "add", s.vault, "--name", "leaving")
 	if parseIdentity(again) != parseIdentity(added) {

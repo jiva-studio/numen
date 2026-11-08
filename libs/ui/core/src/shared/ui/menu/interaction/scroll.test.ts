@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { createScrollGate } from './scroll'
 
 describe('the scroll gate', () => {
-  it('does not take a scroll before any input as the person’s', () => {
+  it('does not accept a scroll before any input as the person’s', () => {
     const gate = createScrollGate()
     gate.reset()
     expect(gate.isUserScroll()).toBe(false)

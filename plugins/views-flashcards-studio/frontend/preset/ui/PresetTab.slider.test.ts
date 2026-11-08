@@ -43,7 +43,7 @@ describe('the one slider', () => {
     expect(recorded).toStrictEqual(['move 3', 'move 3', 'move 0', 'move 0'])
   })
 
-  it('leaves a keystroke that is nobody’s to the window', async () => {
+  it('leaves a keystroke that no control handles to the window', async () => {
     const { tab, recorded } = mountPresetTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'k' })
     expect(recorded).toStrictEqual([])

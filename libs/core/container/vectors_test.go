@@ -15,7 +15,7 @@ import (
 
 // A container with no configuration builds no embedder, and the machine's own
 // settings are not read here.
-func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
+func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 	if cfg.EmbedderReady() {
 		t.Error("embedder is ready when no plugin host is configured")

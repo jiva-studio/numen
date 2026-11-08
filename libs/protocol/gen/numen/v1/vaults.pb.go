@@ -124,7 +124,7 @@ type Vault struct {
 	// Path is the folder, absolute on this machine.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing is at the path. The vault stays on the list, and the
-	// folder is found again if it comes back.
+	// folder is found again if it returns.
 	IsMissing     bool `protobuf:"varint,4,opt,name=is_missing,json=isMissing,proto3" json:"is_missing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -275,7 +275,7 @@ type ChooseFolderRequest struct {
 	// What the dialog is titled. Empty takes the words the application chooses.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	// The folder the dialog opens in. Empty opens wherever this machine opens a
-	// dialog that was told nothing.
+	// dialog that received nothing.
 	StartingAt    string `protobuf:"bytes,2,opt,name=starting_at,json=startingAt,proto3" json:"starting_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -58,7 +58,7 @@ func FuzzCut(f *testing.F) {
 		}
 
 		// A text that is not UTF-8 has no characters to cut at, and the bounds
-		// are all there is to hold a chunk to.
+		// are the only constraints to hold a chunk to.
 		cuts := utf8.ValidString(text)
 		for _, one := range chunking.Cut(text, parts, sizes, chunking.Legibility{}) {
 			assertChunkInText(t, text, one, cuts, "a large chunk")

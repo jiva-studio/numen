@@ -94,8 +94,7 @@ Options:
                           error-storytelling | domestic-structs | domestic-verbs |
                           masked-primitives | boolean-prefixes | ui-words |
                           prose (Markdown) | ui-strings (strings, manifest.json) | advisory |
-                          phrases (test titles and comments; advisory on a full scan, counted
-                          on added lines with --staged or --changed-since)
+                          phrases (test titles and comments)
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -242,8 +241,8 @@ const DOC_PROSE_RULES = [
   { name: 'idiom: personified or theatrical phrase', re: /\b(?:measures patience|never catches up|lost in the noise|says so plainly|the whole case for|what settles it|argues for|hangs? (?:off|under)|hanging under|of its own accord|brought into line|brings? into line|dragged in|mendable|keeps itself alive|behind (?:a|the) person's back|a guest in|hairball|safety catch|appetites?|takes you to|works seamlessly|navigate smoothly|smooth zooming|pick up where it left off|checks quietly|knows (?:none|nothing) (?:of|about)|calls? (?:it|the \w+) off|put right|putting [\w ]{1,20} right)\b/i, use: 'state the operation: depends on, is placed under, automatically, cancels, fixes' },
   { name: 'ground/door/hole as a figure', re: /\b(?:the ground (?:under|beneath)|the door marked|no door at all|shutting the door|three doors|the hole was)\b/i, use: 'background, port, gap' },
 ]
-// 24. Narrative phrases in test titles, Go test names, t.Run names and comments. A full scan reports them as
-// advisory with a count; --staged and --changed-since fail on the ones on added lines.
+// 24. Narrative phrases in test titles, Go test names, t.Run names and comments. They fail in every mode;
+// --staged and --changed-since count only the ones on added lines.
 // A pointer, caret or focus that leaves an element is the DOM term (pointerleave, focusout), so it is not a departure.
 const DEPARTURE_SUBJECT = String.raw`(?!(?:the|a|an|its) (?:pointer|mouse|cursor|caret|focus)\b)(?:it|they|(?:the|a|an|its|this|that|each|every) [\w-]+(?: [\w-]+)?)`
 const PHRASE_RULES = [
@@ -1624,7 +1623,7 @@ if (isPhraseDiffMode || !isInGitRepo) {
 const advisoryTotal = Object.values(advisory).reduce((sum, items) => sum + items.length, 0)
 const totalIssues =
   (isStrictMode ? advisoryTotal : 0) +
-  (isPhraseDiffMode || isStrictMode ? narrativePhrases.length : 0) +
+  narrativePhrases.length +
   findings.fakeTurnCasts.length +
   findings.participleIdentifiers.length +
   findings.prepositionIdentifiers.length +
@@ -1652,7 +1651,7 @@ const totalIssues =
 const fileCounts = {}
 const countedGroups = {
   ...findings,
-  ...(isPhraseDiffMode || isStrictMode ? { narrativePhrases } : {}),
+  narrativePhrases,
   ...(isStrictMode ? advisory : {}),
 }
 for (const cat of Object.keys(countedGroups)) {
@@ -1732,11 +1731,7 @@ console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${find
 console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
 console.log(`22. Narrative prose in Markdown (wear, hands over, speaks...)  : ${findings.proseDocs.length}`)
 console.log(`23. Narrative prose in strings and manifests a person reads : ${findings.uiStrings.length}`)
-if (isPhraseDiffMode) {
-  console.log(`24. Narrative phrases on added lines (lets go, is told)     : ${narrativePhrases.length}`)
-} else {
-  console.log(`24. Narrative phrases (advisory; counted on added lines)   : ${narrativePhrases.length}`)
-}
+console.log(`24. Narrative phrases (lets go, is told)                    : ${narrativePhrases.length}`)
 for (const rule of PHRASE_RULES) {
   const count = narrativePhrases.filter((item) => item.word === rule.name).length
   if (count > 0) console.log(`      ${rule.name.padEnd(16)}: ${count}`)

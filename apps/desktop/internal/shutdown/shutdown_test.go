@@ -66,7 +66,7 @@ func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	}
 }
 
-func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
+func TestEveryoneAskingAtOnceReleasesOnce(t *testing.T) {
 	var mu sync.Mutex
 	times := 0
 	steps := NewSequence(func() {

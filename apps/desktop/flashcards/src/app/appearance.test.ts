@@ -243,7 +243,7 @@ describe('reading the themes again', () => {
     expect(style(page, 'mode')).toBe(':root { color-scheme: dark; }')
   })
 
-  it('applies the default theme to the page when the applied theme is gone', async () => {
+  it('applies the default theme to the page when the applied theme is removed', async () => {
     const { client, state } = createClient({ ...LIST, applied: DAY.name })
     const { appearance, page } = open(client)
     await appearance.refresh()

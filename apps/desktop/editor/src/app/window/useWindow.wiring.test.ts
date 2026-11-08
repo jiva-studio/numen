@@ -345,7 +345,7 @@ describe('the parts of the window', () => {
     expect(h.args.commands.writeMessage).toBe(h.f.writer)
   })
 
-  it('are told the paths that changed, in every editor and in the commands', async () => {
+  it('receive the paths that changed, in every editor and in the commands', async () => {
     useWindow()
     const paths = ['a.md']
     const renamedItems = new Map([['a.md', 'b.md']])

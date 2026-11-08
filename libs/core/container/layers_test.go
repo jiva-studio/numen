@@ -731,7 +731,7 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 }
 
 // Read against port/ as the whole tree, nothing outside it calls anything, and
-// the rule has to come back with the methods below.
+// the rule has to be restored with the methods below.
 func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	pos := filepath.Join("..", "port")
 	uncalled, err := getUncalledMethods(pos, pos)

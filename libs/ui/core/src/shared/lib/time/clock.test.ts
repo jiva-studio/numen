@@ -1,4 +1,4 @@
-/** When work is put on the screen. */
+/** When work is shown. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { browserClock, getMonotonicNow, onNextFrame } from './clock'
 

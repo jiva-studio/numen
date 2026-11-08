@@ -318,7 +318,7 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 	}
 }
 
-func TestTheCardsComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
+func TestTheCardsAreReturnedInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{"Term.md": getVault()["Term.md"]}
 	var paths []string
@@ -570,7 +570,7 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 }
 
 // Answers are counted per deck as well as per preset, so a deck without answers
-// today does not take the count of another deck on the same preset.
+// today does not accept the count of another deck on the same preset.
 func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getScheduled())
@@ -771,7 +771,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 
 	want := map[string]flashcards.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
-		// as likely to come back as a card gets.
+		// as likely to be recalled as a card gets.
 		"decks/One.md": {Deck: "decks/One.md", ReviewCards: 3, Learned: 1},
 		"decks/Two.md": {Deck: "decks/Two.md", ReviewCards: 2, Learned: 1},
 		// The defaults count by an interval of three weeks, which a card

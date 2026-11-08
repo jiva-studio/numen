@@ -313,7 +313,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Closing joins the passes still running and lets go of the index, and the
+	// Closing joins the passes still running and releases the index, and the
 	// folder the index is in is taken away after this.
 	testsupport.CloseAfter(t, installation)
 
@@ -1069,7 +1069,7 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 	}
 }
 
-// A number the setting does not take is not written, and the settings are left
+// A number the setting does not accept is not written, and the settings are left
 // as they are.
 func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 	f := opening(t, nil, nil, true)

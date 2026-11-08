@@ -54,7 +54,7 @@ type Request struct {
 	Agent string
 	// Model is the model that answers. Empty uses the default.
 	Model string
-	// Instructions are told about the task.
+	// Instructions are notified about the task.
 	Instructions string
 	// Tools are the names of the vault tools the agent may call.
 	Tools []string
@@ -212,7 +212,7 @@ type Program struct {
 	Title string
 	// IsInstalled is whether the program is installed on this machine.
 	IsInstalled bool
-	// IsDefault is set on the program an installation nobody has configured answers with.
+	// IsDefault is set on the program an unconfigured installation answers with.
 	IsDefault bool
 	// Models are the models the program offers. Empty where it offers none.
 	Models []*reasoning.Model

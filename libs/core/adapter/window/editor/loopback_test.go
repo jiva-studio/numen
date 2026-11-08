@@ -161,7 +161,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 }
 
 // A vault this installation does not hold is not a vault to read from.
-func TestAFileOfAVaultNobodyContainsIsRefused(t *testing.T) {
+func TestAFileOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 

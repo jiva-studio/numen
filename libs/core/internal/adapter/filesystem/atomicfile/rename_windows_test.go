@@ -78,7 +78,7 @@ func openHandle(t *testing.T, path string) windows.Handle {
 }
 
 // A file that is never released fails, and the save reports the failure.
-func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
+func TestASaveOverAHandleNothingReleasesIsRefused(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {

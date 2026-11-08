@@ -153,7 +153,7 @@ function reveal(): void {
       :crumb="crumb"
     />
 
-    <!-- What a search came back with, where it came back with nothing. It
+    <!-- What a search returned, where it returned nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
     <span class="sr-only" aria-live="polite" data-palette="announcement">{{ announcement }}</span>

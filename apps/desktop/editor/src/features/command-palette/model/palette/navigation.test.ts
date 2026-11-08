@@ -79,7 +79,7 @@ describe('the palette at its list of commands', () => {
 })
 
 describe('a step taken', () => {
-  it('lets go of what was found, and is named by its depth, command and step', () => {
+  it('releases what was found, and is named by its depth, command and step', () => {
     const { steps, happened } = createSteps()
 
     steps.pushStep(pending('name'))

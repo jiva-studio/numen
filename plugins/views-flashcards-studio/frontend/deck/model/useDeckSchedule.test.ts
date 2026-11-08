@@ -265,7 +265,7 @@ describe('a deck put on a preset', () => {
 })
 
 describe('what is known of a file', () => {
-  it('is let go with the file', async () => {
+  it('is released with the file', async () => {
     const { schedule } = open()
     await schedule.refreshDeckPreset('Animals.md')
 
@@ -295,7 +295,7 @@ describe('what is known of a file', () => {
   })
 })
 
-describe('what a tab was told about its choice', () => {
+describe('what a tab received about its choice', () => {
   it('is returned over the preset, until the tab is forgotten', () => {
     const { schedule } = open()
     schedule.setChoiceMessage('a', 'Told')

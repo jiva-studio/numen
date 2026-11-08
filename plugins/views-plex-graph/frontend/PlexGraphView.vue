@@ -108,7 +108,7 @@ function onDismissLinkInspector() {
       {{ props.state.view.error.value }}
     </p>
 
-    <!-- Until the first neighbourhood lands, an empty plex and one nobody has
+    <!-- Until the first neighbourhood lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <LoadingIndicator v-if="props.state.view.isLoading.value" :label="words.loading" />
 

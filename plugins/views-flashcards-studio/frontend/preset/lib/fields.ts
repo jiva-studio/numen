@@ -101,7 +101,7 @@ export const getGoalField = (goal: Goal): Field => {
  * The settings that give a curve its shape, as one word. The value the knob
  * rides is among them: the range a curve is drawn over runs to it. A day
  * steers nothing unless it is the goal, so it is left out of the other two:
- * choosing a date and coming back does not make their curves worth asking for
+ * choosing a date and returning does not make their curves worth asking for
  * again.
  */
 export const getShapeKey = (settings: Settings): string => {

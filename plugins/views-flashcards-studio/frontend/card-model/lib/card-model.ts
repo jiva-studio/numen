@@ -52,7 +52,7 @@ export const createBufferCardModel = (
 
 /**
  * A card model as one string, which is what the tab holding it is dirty against.
- * The parts are written in a settled order, so a card model that came back
+ * The parts are written in a settled order, so a card model that was returned
  * unchanged reads as the string it went in as.
  */
 export const serializeCardModel = (cardModel: BufferCardModel): string =>

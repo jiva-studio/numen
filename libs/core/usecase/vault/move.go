@@ -59,7 +59,7 @@ func (u Move) Sources() sourceport.SourceRepository {
 
 // Execute moves the path and repairs what pointed at the notes under it.
 //
-// A folder is one rename, so what it holds arrives whole or stays where it was.
+// A folder is one rename, so its contents arrive whole or keep their position.
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {

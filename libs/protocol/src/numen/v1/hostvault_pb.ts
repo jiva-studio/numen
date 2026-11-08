@@ -2549,7 +2549,7 @@ export const HostVaultService: GenService<{
   },
   /**
    * LockVault holds the vault's writers to one caller until UnlockVault, or
-   * until the plugin goes. A caller that finds it held waits for it.
+   * until the plugin stops. A caller that finds it held waits for it.
    *
    * @generated from rpc numen.v1.HostVaultService.LockVault
    */
@@ -2873,7 +2873,7 @@ export const HostVaultService: GenService<{
   },
   /**
    * WatchMoves tells that something moved in some vault of the installation,
-   * until the caller goes. It says nothing of what moved. The first message is
+   * until the caller disconnects. It says nothing of what moved. The first message is
    * sent at once, so that the caller knows the watch is on.
    *
    * @generated from rpc numen.v1.HostVaultService.WatchMoves

@@ -34,7 +34,7 @@ type reviewHandler struct {
 }
 
 // sessions is the run open on each vault, by the vault's identity. One session to a vault: opening
-// another lets go of the one before it, and the file that one wrote is never appended to again.
+// another releases the one before it, and the file that one wrote is never appended to again.
 type sessions struct {
 	mu  sync.Mutex
 	run map[domain.VaultID]*flashcards.LogWriter
@@ -314,7 +314,7 @@ func newWireIntervals(ahead map[review.Rating]time.Duration) *api.Intervals {
 	}
 }
 
-// RecordReview writes down how a card came back.
+// RecordReview writes down how a card was recalled.
 func (h *reviewHandler) RecordReview(
 	ctx context.Context, req *api.RecordReviewRequest,
 ) (*api.RecordReviewResponse, error) {

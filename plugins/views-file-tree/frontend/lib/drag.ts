@@ -14,7 +14,7 @@ const FILES_TYPE = 'Files'
 export const getDragTypes = (transfer: DataTransfer | null | undefined): readonly string[] =>
   [...(transfer?.types ?? [])].filter((type) => type !== FILES_TYPE)
 
-/** The data a drag let go over the tree carries, by type, leaving out types that carry nothing. */
+/** The data a drag dropped over the tree includes, by type, leaving out types that carry nothing. */
 export const readDroppedData = (transfer: DataTransfer | null | undefined): DroppedData => {
   const data: Record<string, string> = {}
   for (const type of getDragTypes(transfer)) {

@@ -50,33 +50,33 @@ describe('isMoved', () => {
   const getRuns = (cards: readonly DeckCard[]) => grid(cards, SECTIONS).runs
   const RUNS = getRuns([card('a', null), card('b', null), card('c', 'roots')])
 
-  it('moves nothing let go on itself', () => {
+  it('moves nothing dropped on itself', () => {
     expect(isMoved(RUNS, 'a', 'a')).toBe(false)
   })
 
-  it('moves nothing let go at the head when it is the first card there', () => {
+  it('moves nothing dropped at the head when it is the first card there', () => {
     expect(isMoved(RUNS, 'a', HEAD)).toBe(false)
     expect(isMoved(RUNS, 'b', HEAD)).toBe(true)
   })
 
-  it('moves a card let go at the head of a deck with no card', () => {
+  it('moves a card dropped at the head of a deck with no card', () => {
     expect(isMoved([], 'a', HEAD)).toBe(true)
   })
 
-  it('moves nothing let go at the end of the run it ends', () => {
+  it('moves nothing dropped at the end of the run it ends', () => {
     expect(isMoved(RUNS, 'c', createRunEnd('roots'))).toBe(false)
     expect(isMoved(RUNS, 'a', createRunEnd('roots'))).toBe(true)
   })
 
-  it('moves a card let go at the end of a run holding none', () => {
+  it('moves a card dropped at the end of a run holding none', () => {
     expect(isMoved(RUNS, 'a', createRunEnd('leaves'))).toBe(true)
   })
 
-  it('moves a card let go at the end of a run that is not there', () => {
+  it('moves a card dropped at the end of a run that is not there', () => {
     expect(isMoved(RUNS, 'a', createRunEnd('gone'))).toBe(true)
   })
 
-  it('moves a card let go before another card, or at the end of nothing', () => {
+  it('moves a card dropped before another card, or at the end of nothing', () => {
     expect(isMoved(RUNS, 'a', 'c')).toBe(true)
     expect(isMoved(RUNS, 'a', null)).toBe(true)
   })

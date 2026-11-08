@@ -96,8 +96,8 @@ describe('what is read belongs to the deck', () => {
   })
 
   // A card answered while the asking is in flight moves the session to another
-  // deck, and what comes back is then about the deck behind it.
-  it('does not take an answer about the deck the session has left', async () => {
+  // deck, and what is returned is then about the deck behind it.
+  it('does not accept an answer about the deck the session has left', async () => {
     const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')

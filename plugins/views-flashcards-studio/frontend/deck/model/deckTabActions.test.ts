@@ -19,7 +19,7 @@ const card = (id: string): BufferCard => ({
 const DECK: BufferDeck = { preamble: '', cards: [card('a'), card('b')], sections: [], tail: '' }
 
 describe('a card moved', () => {
-  it('is stored as the deck with the card let go where it was dropped', () => {
+  it('is stored as the deck with the card moved to where it was dropped', () => {
     const updateDeck = vi.fn<(id: string, deck: BufferDeck) => void>()
     const actions = createDeckTabActions('tab', {
       getDeck: () => DECK,

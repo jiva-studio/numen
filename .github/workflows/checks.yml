@@ -134,7 +134,7 @@ jobs:
 
       # The scan reads files and needs nothing installed.
       - name: Check narrative identifiers, test names, comments, documents and phrases
-        run: make lint_narrative NARRATIVE_BASE=${{ github.event_name == 'pull_request' && 'HEAD^1' || 'HEAD' }}
+        run: make lint_narrative
 
       - if: inputs.code
         uses: ./.github/actions/install-node-modules

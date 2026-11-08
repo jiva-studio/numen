@@ -28,7 +28,7 @@ const TEXT = `# Entropy\n\n${Array.from({ length: 120 }, (_, index) => `${index 
 const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
 /**
- * A tab switched away from and come back to.
+ * A tab switched away from and returned to.
  *
  * Every tab of a pane is rendered and the inactive ones are hidden. The pane
  * signals which tab is visible again, so the tab can remeasure, and the text in

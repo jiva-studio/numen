@@ -346,7 +346,7 @@ describe('how much room the plex has', () => {
     expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
   })
 
-  it('lets go of the watching when it is taken down', () => {
+  it('releases the watching when it is taken down', () => {
     const stop = vi.fn()
     const plex = mountPlex({
       viewport: {

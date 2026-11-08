@@ -19,7 +19,7 @@ describe('where a problem is drawn', () => {
     expect(marks.at.has('c1')).toBe(false)
   })
 
-  it('is the identity the card was drawn under, so two of one card id are told apart', () => {
+  it('is the identity the card was drawn under, so two of one card id are distinguished', () => {
     const marks = createMarks(
       [
         problem({ kind: 'cardIdCarriedTwice', card: 1, text: 'a mark carried twice' }),
@@ -116,7 +116,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     expect(areMarksEqual(createTestMarks(...all()), createTestMarks(...all()))).toBe(true)
   })
 
-  it('is not so where the file is told something else', () => {
+  it('is not so where the file has something else', () => {
     expect(
       areMarksEqual(
         createTestMarks(problem({ text: 'a' })),
@@ -125,7 +125,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     ).toBe(false)
   })
 
-  it('is not so where the file is told more in the same words', () => {
+  it('is not so where the file has more in the same words', () => {
     const one = createTestMarks(problem({ text: 'a' }))
     const other = createTestMarks(problem({ text: 'a' }), problem({ text: 'b' }))
 
@@ -133,14 +133,14 @@ describe('whether two evaluations are wrong in the same way', () => {
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
-  it('is not so where the file is told the same words in another order', () => {
+  it('is not so where the file has the same words in another order', () => {
     const one = createTestMarks(problem({ text: 'a' }), problem({ text: 'b' }))
     const other = createTestMarks(problem({ text: 'b' }), problem({ text: 'a' }))
 
     expect(areMarksEqual(one, other)).toBe(false)
   })
 
-  it('is not so where only a card or a template is told something else', () => {
+  it('is not so where only a card or a template has something else', () => {
     expect(
       areMarksEqual(
         createTestMarks(problem({ card: 0, text: 'a' })),
@@ -163,7 +163,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
-  it('is not so where only a value of a card is told something else', () => {
+  it('is not so where only a value of a card has something else', () => {
     const one = createTestMarks(problem({ card: 0, field: 'Front', text: 'a' }))
 
     expect(
@@ -199,7 +199,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
-  it('is not so where only a field of the file is told something else', () => {
+  it('is not so where only a field of the file has something else', () => {
     expect(
       areMarksEqual(
         createTestMarks(problem({ field: 'Back', text: 'a' })),

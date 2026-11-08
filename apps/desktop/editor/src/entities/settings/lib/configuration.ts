@@ -72,7 +72,7 @@ export interface Model {
   readonly defaultReasoning?: string
 }
 
-/** Every setting currently, where they stand, and the models offered. */
+/** Every setting currently in effect, and the models offered. */
 export interface Configuration {
   readonly jsonContent?: string | undefined
   readonly written: string

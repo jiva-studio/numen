@@ -252,7 +252,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 })
 
-describe('a tab let go alongside a pane', () => {
+describe('a tab dropped alongside a pane', () => {
   it('joins the parent when the parent already divides that way', () => {
     const after = dropTab(
       sideBySide(),
@@ -310,7 +310,7 @@ describe('a tab let go alongside a pane', () => {
   })
 })
 
-describe('a tab let go in the middle of a pane', () => {
+describe('a tab dropped in the middle of a pane', () => {
   it('joins the stack and is shown', () => {
     const after = dropTab(
       sideBySide(),
@@ -334,7 +334,7 @@ describe('a tab let go in the middle of a pane', () => {
   })
 })
 
-describe('a tab let go where it started', () => {
+describe('a tab dropped where it started', () => {
   it('is only shown when it is the only one there', () => {
     const before = sideBySide()
     const after = dropTab(before, { tab: 'chat', onto: 'aside', side: 'left' }, createIdFactory())
@@ -343,7 +343,7 @@ describe('a tab let go where it started', () => {
     expect(after.focus).toBe('aside')
   })
 
-  it('only shows a tab let go in the middle of its own pane, where it was', () => {
+  it('only shows a tab dropped in the middle of its own pane, where it was', () => {
     const after = dropTab(
       oneStack(),
       { tab: 'plex', onto: 'main', side: 'center' },
@@ -367,7 +367,7 @@ describe('a tab let go where it started', () => {
   })
 })
 
-describe('a tab let go on the outer edge', () => {
+describe('a tab dropped on the outer edge', () => {
   it('divides the whole workspace', () => {
     const after = dropOnEdge(withSpare(), { tab: 'notes', side: 'bottom' }, createIdFactory())
 
@@ -402,7 +402,7 @@ describe('closing', () => {
     expect(getFaults(after)).toStrictEqual([])
   })
 
-  it('leaves an empty workspace when the last tab goes', () => {
+  it('leaves an empty workspace when the last tab is removed', () => {
     const after = closeTab(closeTab(oneStack(), 'plex'), 'chat')
 
     expect(isPane(after.root) && after.root.tabs).toStrictEqual([])

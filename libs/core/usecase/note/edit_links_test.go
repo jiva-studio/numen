@@ -143,7 +143,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 			t.Errorf("the note was written anyway:\n%s", body)
 		}
 	})
-	t.Run("a role nobody acts on", func(t *testing.T) {
+	t.Run("a role no one acts on", func(t *testing.T) {
 		t.Parallel()
 		c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
 		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series", To: order, Role: "sibling"})

@@ -8,7 +8,7 @@ import type { FieldValue } from './card'
 import { getDeclaredFields, createSealedMap, type Problems, type InsertionPoint } from './order'
 
 /**
- * Where a card let go at the head of the deck lands: before the first section,
+ * Where a card dropped at the head of the deck lands: before the first section,
  * among the cards standing under none. The deck keeps this identity for itself,
  * and no card and no section may carry it.
  */
@@ -18,7 +18,7 @@ export const HEAD = 'the head of the deck'
 const END = 'the end of '
 
 /**
- * Where a card let go past the last of a run lands: after everything standing
+ * Where a card dropped past the last of a run lands: after everything standing
  * under that heading, and under the heading itself. The run before the first
  * section is named by the head of the deck.
  */

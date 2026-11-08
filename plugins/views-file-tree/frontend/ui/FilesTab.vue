@@ -17,7 +17,7 @@ const props = defineProps<{ state: FilesTabState }>()
 /* --------------------------------- State ---------------------------------- */
 /**
  * The mark the window's drag and drop reads: the attribute it looks a target
- * up by, carrying the folder a file let go there is filed in.
+ * up by, carrying the folder a file dropped there is filed in.
  */
 const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',

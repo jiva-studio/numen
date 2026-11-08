@@ -110,7 +110,7 @@ func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 	}
 }
 
-func TestABatchNothingCameBackAboutInsertsNothingRight(t *testing.T) {
+func TestABatchNothingReturnedAboutInsertsNothingRight(t *testing.T) {
 	if placed, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(placed) != 0 {
 		t.Errorf("a batch with no reply put %v right", placed)
 	}
