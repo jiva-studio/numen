@@ -84,7 +84,7 @@ func isReachable(fn *ast.FuncDecl) bool {
 // The composition root hands out ports. An adapter the compiler holds is bound
 // to one here and never comes back out under its own name.
 func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
-	target, err := os.ReadDir(".")
+	target, err := readTree(".")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func (c Config) Options(opts filesystem.Options) error { return nil }`,
 // TestCompositionRootDefinesNoAdapterStructs verifies that container/ is a pure Composition Root
 // that wires adapters to ports and defines no inline adapter structs with methods of its own.
 func TestCompositionRootDefinesNoAdapterStructs(t *testing.T) {
-	entries, err := os.ReadDir(".")
+	entries, err := readTree(".")
 	if err != nil {
 		t.Fatal(err)
 	}

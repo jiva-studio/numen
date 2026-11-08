@@ -1,10 +1,7 @@
-package container
+package vault
 
 import (
 	"context"
-
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
@@ -12,10 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
-
-// coreFolder is the folder of a vault's store that holds the core's own files.
-const coreFolder = "core"
 
 // NewTextVersions is the text versions of the vaults' files: recorded in the
 // index database, their files in the plugin folders of each vault's store,
@@ -25,10 +20,11 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
-	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), c.Clock())
+	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), c.Clock)
 }
 
-func (c Config) getTextReaders() textport.TextReaders {
+// GetTextReaders returns the text readers configured for this installation.
+func (c Config) GetTextReaders() textport.TextReaders {
 	if c.TextReaders != nil {
 		return c.TextReaders
 	}
@@ -52,7 +48,8 @@ func (c Config) SetPluginTexts() {
 	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
-func (c Config) openPluginData() *textversion.PluginData {
+// OpenPluginData builds the plugin data cleaner for the active text versions.
+func (c Config) OpenPluginData() *textversion.PluginData {
 	if c.TextVersions == nil {
 		return nil
 	}
@@ -64,13 +61,28 @@ func (c Config) openPluginData() *textversion.PluginData {
 	return data
 }
 
-func (c Config) setTextVersionListener(listener textport.VersionListener) {
+// OpenFileText builds the file text reader over text versions.
+func (c Config) OpenFileText() *textversion.FileText {
+	if c.TextVersions == nil {
+		return nil
+	}
+	text, err := textversion.NewFileText(c.TextVersions)
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return text
+}
+
+// SetTextVersionListener sets the listener told of each change of the text versions.
+func (c Config) SetTextVersionListener(listener textport.VersionListener) {
 	if c.TextVersions != nil {
 		c.TextVersions.SetListener(listener)
 	}
 }
 
-func (c Config) reportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
+// ReportTextFilesChanged tells the text versions that the files at paths changed.
+func (c Config) ReportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
 	if c.TextVersions == nil {
 		return nil
 	}

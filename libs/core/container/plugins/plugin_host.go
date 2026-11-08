@@ -1,4 +1,4 @@
-package container
+package plugins
 
 import (
 	"context"
@@ -6,20 +6,25 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
-	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"io/fs"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
+	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -27,6 +32,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -39,7 +46,21 @@ var errSafeMode = errors.New("numen is running in safe mode")
 
 const pluginFailureTaskPrefix = "plugin-failed:"
 
-func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, error) {
+// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+// The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
+// provider NUMEN_ONNX_PROVIDER names (auto when unset).
+func NewPluginHost(target string, dirs ...string) *plugin.Host {
+	host := plugin.NewHost(clock.System{}, target, dirs...)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
+	host.SetDependencies(newDependencies(""))
+	if err := host.Discover(); err != nil {
+		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+	}
+	return host
+}
+
+// ResolvePlugin resolves the plugin manager for capability when available and not in safe mode.
+func (c Config) ResolvePlugin(capability string) (pluginport.PluginManager, error) {
 	if c.PluginHost == nil {
 		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginNotInstalled}
 	}
@@ -52,13 +73,13 @@ func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, erro
 	return c.PluginHost, nil
 }
 
-func (c Config) hasPlugin(capability string) bool {
-	_, err := c.resolvePlugin(capability)
+// HasPlugin reports whether capability is resolved by an active plugin.
+func (c Config) HasPlugin(capability string) bool {
+	_, err := c.ResolvePlugin(capability)
 	return err == nil
 }
 
-// SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
-// In safe mode the host stops every plugin it runs and starts none.
+// SetSafeMode updates safe mode on c and on the plugin host when present.
 func (c Config) SetSafeMode(enabled bool) Config {
 	c.SafeMode = enabled
 	if c.PluginHost != nil {
@@ -88,76 +109,7 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.VaultReaders(), c.getWhenConfig())
-}
-
-// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
-// plugins. Where there is no plugin host there is none.
-func (c Config) OpenChooseTabKind() *tabkind.Choose {
-	if c.PluginHost == nil {
-		return nil
-	}
-	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
-	if err != nil {
-		c.handleError(err)
-		return nil
-	}
-	return choose
-}
-
-// OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
-// and the queue through the host with no window, and answers how to run a command of theirs and
-// how to close what it opened. The close waits until the plugins' work started meanwhile has
-// finished, or ctx ends, and then closes the index.
-func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := c.OpenIndex(ctx)
-	if err != nil {
-		return plugincommand.Run{}, nil, err
-	}
-	_, work, err := c.openPluginWork(db, v)
-	if err != nil {
-		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
-	}
-	return c.GetPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
-}
-
-func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func() error) func() error {
-	return func() error {
-		return errors.Join(work.WaitIdle(ctx), closeIndex())
-	}
-}
-
-// OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
-// with no window, over the index given. The configuration it returns reads the text of a file
-// through the text versions, as a window does.
-func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
-	opened, _, err := c.openPluginWork(db, v)
-	return opened, err
-}
-
-func (c Config) openPluginWork(db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
-	c.SetPluginVaultPath(v.Path)
-	versions, err := c.NewTextVersions(db)
-	if err != nil {
-		return c, nil, err
-	}
-	c.TextVersions = versions
-	registry, err := c.Registry()
-	if err != nil {
-		return c, nil, err
-	}
-	current := func() (domain.Vault, bool) { return v, true }
-	vault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
-	if err != nil {
-		return c, nil, err
-	}
-	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), c.getPluginName)
-	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(work)
-	}
-	c.SetPluginVault(vault)
-	c.SetPluginTexts()
-	return c, work, nil
+	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.VaultReaders, c.GetWhenConfig())
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -210,18 +162,29 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	})
 	c.PluginHost.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
-		c.getResources().pluginChanges.Signal()
+		c.signalPluginChanges()
 	})
 }
 
 // SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
 func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
-	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks, c.getPluginName))
-	}
+	c.OpenPluginWork(tasks, models)
 }
 
-func (c Config) getPluginName(pluginID string) string {
+// OpenPluginWork is SetPluginWork, and returns the work it set.
+func (c Config) OpenPluginWork(tasks *run.Tasks, models *run.Lock) *run.PluginWork {
+	work := run.NewPluginWork(models, tasks, c.GetPluginName)
+	if c.PluginHost != nil {
+		c.PluginHost.SetPluginWork(work)
+	}
+	return work
+}
+
+// GetPluginName returns the manifest name of pluginID, or pluginID if unknown.
+func (c Config) GetPluginName(pluginID string) string {
+	if c.PluginHost == nil {
+		return pluginID
+	}
 	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}
@@ -230,9 +193,9 @@ func (c Config) getPluginName(pluginID string) string {
 
 // SetPluginVault is the vault the plugins use through the host. Without one, a plugin that requires
 // the vault receives an error stating that the host provides none.
-func (c Config) SetPluginVault(vault pluginport.PluginVault) {
+func (c Config) SetPluginVault(v pluginport.PluginVault) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginVault(vault)
+		c.PluginHost.SetPluginVault(v)
 	}
 }
 
@@ -278,19 +241,19 @@ func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
 // index that holds them: the one current names, else the one a call names by identity.
 func (c Config) OpenPluginVault(
-	registry vaultport.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultport.VaultRegistry, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (pluginport.PluginVault, error) {
 	cache, err := c.OpenPluginCache()
 	if err != nil {
 		return nil, err
 	}
-	refresh := makeRefresh(c, db, db.Notes())
+	refresh := c.MakeRefresh(db, db.Notes())
 	queries := db.Queries()
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
+	scenarios := c.BuildNotes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
 	arranger := hostvault.Arranger{
 		Notes:  getNoteChanges(scenarios),
 		Checks: vault.NewStandardGetProblems(db.Problems()),
@@ -300,16 +263,16 @@ func (c Config) OpenPluginVault(
 	}
 	vaults := hostvault.Vault{
 		Current:     current,
-		Readers:     c.VaultReaders(),
-		Writers:     c.VaultWriters(),
+		Readers:     c.VaultReaders,
+		Writers:     c.VaultWriters,
 		Notes:       queries,
 		Links:       db.Links(),
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
 		Arranger:    arranger,
-		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
+		Stores:      derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}},
 		Cache:       cache,
-		Watcher:     c.VaultWatcher(),
+		Watcher:     c.VaultWatcher,
 		Written:     hooks.Written,
 		Vaults:      registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
@@ -382,6 +345,14 @@ func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
 	}
 }
 
+// EmitPluginEvent broadcasts event to the plugin host when present.
+func (c Config) EmitPluginEvent(event string) {
+	if c.PluginHost != nil {
+		var emitter pluginport.PluginEventEmitter = c.PluginHost
+		emitter.EmitEvent(event)
+	}
+}
+
 // credentialsLocator is a key store that keeps its values in a file when the machine has no keychain.
 type credentialsLocator interface {
 	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
@@ -389,8 +360,9 @@ type credentialsLocator interface {
 	GetCredentialsPath(ctx context.Context) string
 }
 
-func (c Config) openSecretLedger() *settings.SecretLedger {
-	return settings.NewSecretLedger(c.getResources().settingsFiles, c.settingsFile, c.readCheckedSettings, c.refreshSettingEvents)
+// OpenSecretLedger opens the secret ledger backed by the settings file.
+func (c Config) OpenSecretLedger() *settingsadapter.SecretLedger {
+	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
 }
 
 // OpenSecrets returns the use cases on the secrets shared between plugins.
@@ -399,10 +371,11 @@ func (c Config) OpenSecrets() *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
-	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.getResources().secretGate)
+	return secret.NewSecrets(c.OpenSecretLedger(), c.KeyStore, plugins, NewSecretID, c.GetCredentialsPath, c.SecretGate)
 }
 
-func (c Config) getCredentialsPath() string {
+// GetCredentialsPath returns the credentials file path when the key store uses a file.
+func (c Config) GetCredentialsPath() string {
 	locator, isLocator := c.KeyStore.(credentialsLocator)
 	if !isLocator {
 		return ""
@@ -410,7 +383,8 @@ func (c Config) getCredentialsPath() string {
 	return locator.GetCredentialsPath(context.Background())
 }
 
-func newSecretID() (string, error) {
+// NewSecretID generates a random identifier for a stored secret.
+func NewSecretID() (string, error) {
 	var random [4]byte
 	if _, err := rand.Read(random[:]); err != nil {
 		return "", fmt.Errorf("read random bytes for the id of a secret: %w", err)
@@ -418,19 +392,46 @@ func newSecretID() (string, error) {
 	return "s" + hex.EncodeToString(random[:]), nil
 }
 
-func (c Config) setSecretSource() {
-	ledger := c.openSecretLedger()
+// SetSecretSource configures the secret ledger and pruner on the plugin host.
+func (c Config) SetSecretSource() {
+	if c.PluginHost == nil {
+		return
+	}
+	ledger := c.OpenSecretLedger()
 	c.PluginHost.SetSecretSource(pluginport.SecretSource{
 		List:  ledger.GetSecrets,
 		Prune: c.OpenSecrets().Prune.Execute,
 	})
 }
 
+func (c Config) signalPluginChanges() {
+	if c.PluginChanges != nil {
+		c.PluginChanges.Signal()
+	}
+}
+
 // WatchPluginChanges reports each time the plugin host applied a batch of settings, which enables,
 // disables and configures plugins, and each time it forgot the failure of a plugin, as after a retry
 // that succeeded. The returned function stops the reports.
 func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
-	return c.getResources().pluginChanges.Subscribe()
+	if c.PluginChanges == nil {
+		return make(chan struct{}), func() {}
+	}
+	return c.PluginChanges.Subscribe()
+}
+
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
+// plugins. Where there is no plugin host there is none.
+func (c Config) OpenChooseTabKind() *tabkind.Choose {
+	if c.PluginHost == nil {
+		return nil
+	}
+	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, c.GetWhenConfig())
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return choose
 }
 
 // commandManifests lists what the manifests of the enabled plugins declare.
@@ -460,18 +461,41 @@ func (c Config) openPluginCommands() pluginCommands {
 	return pluginCommands{manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost)}
 }
 
-func (c Config) openTriggers() *trigger.Triggers {
+// OpenVersionItems is the versions of a file a command offers as its items, over the text versions
+// and the commands of the plugins. Without text versions there is none.
+func (c Config) OpenVersionItems() *textversion.VersionItems {
+	if c.TextVersions == nil {
+		return nil
+	}
+	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
+	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
+	if c.PluginHost != nil && !c.SafeMode {
+		commands, types = c.openPluginCommands(), c.PluginHost
+	}
+	run := plugincommand.NewCommands(commands, types, c.VaultReaders, c.GetWhenConfig()).Run
+	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return items
+}
+
+// OpenTriggers is the triggers of the manifests, run over the files of the vault. Without a plugin
+// host, text versions or outside safe mode there is none.
+func (c Config) OpenTriggers() *trigger.Triggers {
 	if c.PluginHost == nil || c.SafeMode || c.TextVersions == nil {
 		return nil
 	}
 	return trigger.NewTriggers(
-		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders(), c.PluginHost,
-		c.TextVersions, c.getWhenConfig(),
+		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders, c.PluginHost,
+		c.TextVersions, c.GetWhenConfig(),
 	)
 }
 
-func (c Config) getWhenConfig() pluginport.WhenConfig {
-	settings := whenconfig.Settings{App: c.listAppSettings}
+// GetWhenConfig is the settings a condition reads as config.
+func (c Config) GetWhenConfig() pluginport.WhenConfig {
+	settings := whenconfig.Settings{App: c.ListAppSettings}
 	if c.PluginHost != nil {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}

@@ -26,7 +26,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	changes, stop := c.WatchPluginChanges()
 	defer stop()
 
-	c.tellHost([]settingsport.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
+	c.settings().NotifyHost([]settingsport.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
 
 	select {
 	case <-changes:
@@ -43,7 +43,7 @@ func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 	changes, stop := c.WatchPluginChanges()
 	stop()
 
-	c.tellHost(nil)
+	c.settings().NotifyHost(nil)
 
 	select {
 	case <-changes:
