@@ -22,6 +22,8 @@
    content, and the title gives way first. The window buttons overlap the ends of the area and the
    columns keep clear of them with padding. */
 .title-bar__start {
+  position: relative;
+  top: var(--numen-window-edge, 0px);
   display: grid;
   grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
   align-items: center;

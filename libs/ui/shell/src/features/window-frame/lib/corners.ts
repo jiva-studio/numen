@@ -7,17 +7,30 @@ import type { WindowPlatform } from '../model/useWindowFrame'
 export const MAC_RADIUS_EARLIER = 10
 
 /**
- * The corner radius of a macOS 26 window, in points. Windows with a toolbar are rounder than windows
- * with a title bar only, and macOS documents no value, so this is the larger one: content kept
- * clear of it is never clipped.
+ * The corner radius of a macOS 26 window with a hidden title bar, in points, measured on a screenshot
+ * of macOS 26.6.2 (14 to 16). Windows with a toolbar are rounder; macOS documents no value.
  */
-export const MAC_RADIUS_TAHOE = 26
+export const MAC_RADIUS_TAHOE = 16
 
 /** The first macOS version with the larger corner radius. */
 export const MAC_TAHOE_MAJOR = 26
 
+/**
+ * The name of the CSS variable on the document root that holds the width of the hairline macOS
+ * draws along the top edge of the window, as a length: the bar moves its row down by it.
+ */
+export const WINDOW_EDGE_VARIABLE = '--numen-window-edge'
+
+/** The width in points of the top hairline of a macOS window. */
+export const MAC_TOP_EDGE = 1
+
 /** The name of the CSS variable on the document root that holds the radius, as a length. */
 export const WINDOW_RADIUS_VARIABLE = '--numen-window-radius'
+
+/** The width of the top hairline of the window in points: 1 on macOS, none in full screen and elsewhere. */
+export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): number {
+  return platform === 'darwin' && !isFullscreen ? MAC_TOP_EDGE : 0
+}
 
 /** The major number of a version like "26.0" or "15.6.1"; undefined when it is not a number. */
 export function readMajorVersion(version: string | undefined): number | undefined {

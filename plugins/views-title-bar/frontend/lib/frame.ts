@@ -49,9 +49,9 @@ export function getControlsRoom(
  * The room the end of the bar keeps clear of the rounded corner of the window, as a CSS length. The
  * radius is the variable `--numen-window-radius` the window sets on its root (none on Windows and
  * Linux); the status entries are about 20 pixels high, centred in the bar, so their end can come
- * within the radius less 10 pixels of the edge.
+ * within the radius less 8 pixels of the edge.
  */
-export const CORNER_INSET = 'calc(var(--numen-window-radius, 0px) - 10px)'
+export const CORNER_INSET = 'calc(var(--numen-window-radius, 0px) - 8px)'
 
 /** The names of the window buttons, shown as their tooltips. */
 export interface WindowControlsWords {

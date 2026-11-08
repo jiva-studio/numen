@@ -5,7 +5,13 @@
  */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { getWindowRadius, readMajorVersion, WINDOW_RADIUS_VARIABLE } from '../lib/corners'
+import {
+  getWindowEdge as getTopEdge,
+  getWindowRadius,
+  readMajorVersion,
+  WINDOW_EDGE_VARIABLE,
+  WINDOW_RADIUS_VARIABLE,
+} from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 
 /** The operating system of the window, as `runtime.GOOS` names it. */
@@ -100,9 +106,12 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
     getWindowRadius(platform.value, macVersion.value, isFullscreen.value),
   )
   watch(
-    windowRadius,
-    (radius) =>
-      globalThis.document?.documentElement.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`),
+    [windowRadius, () => getTopEdge(platform.value, isFullscreen.value)],
+    ([radius, edge]) => {
+      const root = globalThis.document?.documentElement
+      root?.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`)
+      root?.style.setProperty(WINDOW_EDGE_VARIABLE, `${edge}px`)
+    },
     { immediate: true },
   )
 

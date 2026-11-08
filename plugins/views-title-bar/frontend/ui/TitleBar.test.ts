@@ -112,7 +112,7 @@ describe('the place of the title', () => {
   })
 
   it('keeps the end of the bar clear of the corner radius of the window', () => {
-    document.documentElement.style.setProperty('--numen-window-radius', '26px')
+    document.documentElement.style.setProperty('--numen-window-radius', '16px')
     const wrapper = mountBar({ platform: 'darwin' })
 
     expect(style(wrapper, '--title-bar-corner-inset')).toBe(CORNER_INSET)
