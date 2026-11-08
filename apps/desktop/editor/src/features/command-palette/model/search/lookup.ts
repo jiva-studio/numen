@@ -157,6 +157,7 @@ export function createPassageItem(
       length: one.length,
       actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
       type: one.isNote ? one.type : null,
+      ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
       selector: one.isNote ? null : one.selector,
     },
   }

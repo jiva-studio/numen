@@ -26,7 +26,7 @@ afterEach(() => {
 
 describe('the host of a slot view', () => {
   it('draws nothing without a view', () => {
-    expect(mount(SlotViewHost, { props: { view: null } }).html()).toBe('<!--v-if-->')
+    expect(mount(SlotViewHost, { props: { view: null } }).element.nodeType).toBe(Node.COMMENT_NODE)
   })
 
   it('draws the view with the stylesheet of its plugin, and takes the stylesheet out when the view goes', async () => {
