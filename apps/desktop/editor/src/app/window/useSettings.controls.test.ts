@@ -14,6 +14,8 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { useSettings } from './useSettings'
+import type * as CoreClientModule from '@numen/core-client'
+import type * as SettingsModule from '@/entities/settings'
 
 type Tree = Record<string, Record<string, unknown>>
 
@@ -21,12 +23,12 @@ const file = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
 
 // The reason of a rejected write is the text of the error, as the core sends it for a bad request.
 vi.mock('@numen/core-client', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@numen/core-client')>()),
+  ...(await importOriginal<typeof CoreClientModule>()),
   formatErrorMessage: (error: unknown) => (error as Error).message,
 }))
 
 vi.mock('@/entities/settings', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/entities/settings')>()),
+  ...(await importOriginal<typeof SettingsModule>()),
   themes: {
     getAppearance: async () => {
       const appearance = ((file.current['app'] as Tree)['appearance'] ?? {}) as Record<

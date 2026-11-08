@@ -4,7 +4,13 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { createWindowHost, SLOT, type SlotHost } from '@numen/plugin-host'
+import {
+  createWindowHost,
+  SLOT,
+  type PluginHost,
+  type PluginLoader,
+  type SlotHost,
+} from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -77,7 +83,7 @@ interface WindowCommandsOptions {
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
-  pluginHost: import('@numen/plugin-host').PluginHost
+  pluginHost: PluginHost
   declaredCommands: ReturnType<typeof useDeclaredCommands>
   slots?: SlotHost | undefined
   getAppCommands: () => readonly Command[]
@@ -121,7 +127,7 @@ interface AppLifecycleDeps {
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
-  pluginLoader: import('@numen/plugin-host').PluginLoader
+  pluginLoader: PluginLoader
   waitForDeclaredCommands: () => Promise<void>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
@@ -219,7 +225,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
 }
 
 const getDeclaredCommandsDeps = (
-  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+  hostHolder: { current?: PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) => ({
   isListed: (id: string): boolean =>
@@ -286,7 +292,7 @@ const createWindowHandlers = (
   })
 
 const createDeclaredParts = (
-  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+  hostHolder: { current?: PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) => {
   const itemLists = createCommandItemLists({
@@ -340,7 +346,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes(core)
-  const hostHolder: { current?: import('@numen/plugin-host').PluginHost } = {}
+  const hostHolder: { current?: PluginHost } = {}
   const { itemLists, declaredCommands } = createDeclaredParts(hostHolder, settingsHolder)
   const appCommands: { current?: () => readonly Command[] } = {}
   const slots = createWindowSlots({
@@ -414,6 +420,12 @@ function getKinds(ctx: WindowContext): NonNullable<WindowContext['kinds']> {
   // Stryker disable next-line ConditionalExpression: definite-assignment guard for cyclic window wiring
   if (!ctx.kinds) throw new Error('window kinds are read before they are created')
   return ctx.kinds
+}
+
+function getTabsHold(ctx: WindowContext): TabsHold {
+  // Stryker disable next-line ConditionalExpression: definite-assignment guard for cyclic window wiring
+  if (!ctx.tabsHold) throw new Error('window tabs hold is read before it is created')
+  return ctx.tabsHold
 }
 
 function getVaults(ctx: WindowContext): NonNullable<WindowContext['vaults']> {
@@ -530,8 +542,8 @@ function initWindowKindsAndCommands(
 
   ctx.commands = initWindowCommands({
     tabsHold: {
-      pause: async () => ctx.tabsHold!.pause(),
-      resume: () => ctx.tabsHold!.resume(),
+      pause: async () => getTabsHold(ctx).pause(),
+      resume: () => getTabsHold(ctx).resume(),
     },
     windowTabs: base.windowTabs,
     getTarget,
@@ -778,7 +790,7 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
-const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
+const getPluginViews = (pluginHost: PluginHost) => ({
   titleBarView: pluginHost.getSlotView(SLOT.titleBar),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })

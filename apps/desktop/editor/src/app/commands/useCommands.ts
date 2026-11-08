@@ -3,7 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { SLOT, type SlotHost } from '@numen/plugin-host'
+import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -35,13 +35,14 @@ import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
-import { WORDS } from '@/shared/words'
+import type { WORDS } from '@/shared/words'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
 
 type Words = typeof WORDS
 
-import type { SettingEdit } from '@/entities/settings'
+import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
+import type { Ref } from 'vue'
 
 export interface CommandsDepsOptions {
   core: VaultCore
@@ -64,15 +65,15 @@ export interface CommandsDepsOptions {
   }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
-    plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
+    getModelsAt?: (at: readonly string[]) => readonly Model[]
+    plugins?: Ref<readonly PluginInfo[]>
     getCommittedSetting?: (path: readonly string[]) => unknown
   }
   travel: (path: string) => Promise<void> | void
   leavePath: (from: string, to: string) => Promise<void> | void
   getOpeningNote: () => string
   writeMessage: MessageWriter
-  pluginHost?: import('@numen/plugin-host').PluginHost | undefined
+  pluginHost?: PluginHost | undefined
   slots?: SlotHost
   getAppCommands?: () => readonly Command[]
   declaredCommands?: DeclaredCommands

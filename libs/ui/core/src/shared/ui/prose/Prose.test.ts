@@ -7,11 +7,12 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Prose from './Prose.vue'
+import type * as RenderModule from './render'
 
 const { renderSpy } = vi.hoisted(() => ({ renderSpy: vi.fn() }))
 
 vi.mock('./render', async (importOriginal) => {
-  const original = await importOriginal<typeof import('./render')>()
+  const original = await importOriginal<typeof RenderModule>()
   return {
     ...original,
     render: (...args: Parameters<typeof original.render>) => {

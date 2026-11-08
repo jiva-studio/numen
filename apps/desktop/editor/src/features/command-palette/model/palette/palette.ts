@@ -164,29 +164,29 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
   return { startCommand, getObjection }
 }
 
-type PaletteRestArgs = [
-  Words?,
-  (() => CommandTarget)?,
-  NoteLookup?,
-  PaletteLists?,
-  RunSupport?,
-  Wait?,
-  (() => readonly Command[])?,
-]
+type PaletteArgs =
+  | [CommandPaletteDeps]
+  | [
+      CommandsDeps,
+      Words,
+      () => CommandTarget,
+      NoteLookup,
+      PaletteLists,
+      RunSupport,
+      Wait?,
+      (() => readonly Command[])?,
+    ]
 
-function parsePaletteDeps(
-  coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  args: PaletteRestArgs,
-): CommandPaletteDeps {
-  const [words, targetPoint, knows, lists, runs, wait, getExtraCommands] = args
-  if ('core' in coreOrDeps) return coreOrDeps
+function parsePaletteDeps(args: PaletteArgs): CommandPaletteDeps {
+  if (args.length === 1) return args[0]
+  const [core, words, targetPoint, knows, lists, runs, wait, getExtraCommands] = args
   return {
-    core: coreOrDeps,
-    words: words!,
-    at: targetPoint!,
-    knows: knows!,
-    lists: lists!,
-    runs: runs!,
+    core,
+    words,
+    at: targetPoint,
+    knows,
+    lists,
+    runs,
     // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
     ...(wait !== undefined ? { wait } : {}),
     // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
@@ -385,11 +385,8 @@ function createPalettePresentation(
   return { groups, findTabKind: draws.findTabKind, findCommandIcon, ...execution }
 }
 
-export function useCommandPalette(
-  coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  ...args: PaletteRestArgs
-) {
-  const deps = parsePaletteDeps(coreOrDeps, args)
+export function useCommandPalette(...args: PaletteArgs) {
+  const deps = parsePaletteDeps(args)
   const state = createPaletteState(deps.wait)
   const on = computed<CommandTarget>(() => deps.at())
 

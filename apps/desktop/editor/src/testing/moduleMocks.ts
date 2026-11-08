@@ -8,6 +8,10 @@
 import { vi } from 'vitest'
 import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-host'
 import { declared, mockVaultState, pendingStream } from './answers'
+import type * as SettingsModule from '@/entities/settings'
+import type * as DeclaredCommandsModule from '@/entities/plugin/api/declaredCommands'
+import type * as PluginModule from '@/entities/plugin'
+import type * as BackgroundTasksModule from '@/app/shell/backgroundTasks'
 
 vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
@@ -33,7 +37,7 @@ const themesResponse = {
 vi.mock('@/entities/settings/api/theme', () => themesResponse)
 
 vi.mock('@/entities/settings', async (original) => ({
-  ...(await original<typeof import('@/entities/settings')>()),
+  ...(await original<typeof SettingsModule>()),
   ...themesResponse,
 }))
 
@@ -44,12 +48,12 @@ const declaredCommandsResponse = {
 }
 
 vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({
-  ...(await original<typeof import('@/entities/plugin/api/declaredCommands')>()),
+  ...(await original<typeof DeclaredCommandsModule>()),
   ...declaredCommandsResponse,
 }))
 
 vi.mock('@/entities/plugin', async (original) => ({
-  ...(await original<typeof import('@/entities/plugin')>()),
+  ...(await original<typeof PluginModule>()),
   ...declaredCommandsResponse,
 }))
 
@@ -57,7 +61,7 @@ vi.mock('@/entities/plugin', async (original) => ({
 const windowTasks = vi.hoisted(() => ({ current: undefined as BackgroundTaskHost | undefined }))
 
 vi.mock('@/app/shell/backgroundTasks', async (original) => {
-  const module = await original<typeof import('@/app/shell/backgroundTasks')>()
+  const module = await original<typeof BackgroundTasksModule>()
   return {
     ...module,
     createBackgroundTaskHost: (deps: Parameters<typeof module.createBackgroundTaskHost>[0]) =>

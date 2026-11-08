@@ -45,7 +45,7 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
   for (const name of OPTIONAL_HOOKS) {
     if (registration[name] !== undefined) hooks[name] = registration[name]
   }
-  return hooks as Partial<AnyTabKind>
+  return hooks
 }
 
 /**
