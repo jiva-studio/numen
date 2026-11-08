@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"reflect"
 	"slices"
 	"sync"
 	"time"
@@ -13,25 +14,22 @@ import (
 type ProgramList struct {
 	mu       sync.Mutex
 	programs []agentport.AgentProgram
+	late     []agentport.AgentProgram
 	isAsking bool
+	isLate   bool
 }
 
 // Get starts a listing unless one is running, and returns what the listing found within wait, or
-// else the programs listed before.
-func (l *ProgramList) Get(wait time.Duration, list func() []agentport.AgentProgram) []agentport.AgentProgram {
+// else the programs listed before. When a listing ends after wait with different programs, each
+// function in onLate is called.
+func (l *ProgramList) Get(wait time.Duration, list func() []agentport.AgentProgram, onLate ...func()) []agentport.AgentProgram {
 	ended := make(chan struct{})
 	l.mu.Lock()
 	if l.isAsking {
 		close(ended)
 	} else {
 		l.isAsking = true
-		go func() {
-			found := list()
-			l.mu.Lock()
-			l.programs, l.isAsking = found, false
-			l.mu.Unlock()
-			close(ended)
-		}()
+		go l.runList(ended, list, onLate)
 	}
 	l.mu.Unlock()
 	timer := time.NewTimer(wait)
@@ -42,5 +40,35 @@ func (l *ProgramList) Get(wait time.Duration, list func() []agentport.AgentProgr
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.isAsking {
+		l.isLate = true
+	}
 	return slices.Clone(l.programs)
+}
+
+func (l *ProgramList) runList(ended chan<- struct{}, list func() []agentport.AgentProgram, onLate []func()) {
+	found := list()
+	l.mu.Lock()
+	notify := l.isLate && !reflect.DeepEqual(l.programs, found)
+	if notify {
+		l.late = slices.Clone(found)
+	}
+	l.programs, l.isAsking, l.isLate = found, false, false
+	l.mu.Unlock()
+	close(ended)
+	if !notify {
+		return
+	}
+	for _, fn := range onLate {
+		if fn != nil {
+			fn()
+		}
+	}
+}
+
+// GetLate returns the programs of the last listing that ended after Get timed out.
+func (l *ProgramList) GetLate() []agentport.AgentProgram {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.late)
 }
