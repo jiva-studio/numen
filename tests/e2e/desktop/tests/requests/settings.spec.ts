@@ -13,6 +13,12 @@ const createExecutable = async (): Promise<string> => {
 }
 
 test.describe('The settings file', () => {
+  // Every test of a shard shares the settings: leave the two values as a new vault has them.
+  test.afterEach(async ({ request }) => {
+    await writeSetting(request, [PLUGIN_ID, 'executablePath'], '')
+    await writeSetting(request, ['app', 'appearance', 'textScale'], 1)
+  })
+
   test('stores a path under the id of the plugin and keeps no plugins object', async ({
     request,
   }) => {
