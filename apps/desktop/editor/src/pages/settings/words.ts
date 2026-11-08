@@ -13,7 +13,6 @@ export const WORDS = {
   /** The secrets declared by plugins, on their page and on the field of a plugin. */
   keyPlaceholder: 'Paste a value',
   secretsTitle: 'Secrets',
-  secretsAbout: 'Secrets for plugins are stored here.',
   secretsFile: (path: string) => `Values are kept in ${path}`,
   secretMasked: '••••••••',
   secretReaders: (count: number) =>
@@ -27,6 +26,7 @@ export const WORDS = {
   secretRenameName: 'Name of the secret',
   secretDelete: 'Delete secret',
   secretDiscard: 'Discard',
+  secretSaveFirst: 'Save a value first',
   secretAdd: 'Add secret',
   secretAddGroup: 'Add group',
   secretAllowedTo: 'Allowed to',

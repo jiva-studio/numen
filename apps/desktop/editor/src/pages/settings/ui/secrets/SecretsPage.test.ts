@@ -13,12 +13,14 @@ import {
   enterText,
   findButton,
   findButtons,
+  findNameInput,
   findText,
   maskedInputs,
   positionOf,
   root,
   rowOf,
   sectionOf,
+  typeName,
 } from '@/testing/secretsDom'
 
 const EMBEDDINGS = 'md.numen.sample.embeddings'
@@ -117,8 +119,8 @@ describe('the page of secrets', () => {
 
   it('lists the secrets of a group in priority order', () => {
     const { wrapper } = mountPage()
-    expect(positionOf(findText('Work') as HTMLElement)).toBeLessThan(
-      positionOf(findText('Home') as HTMLElement),
+    expect(positionOf(findNameInput('Work') as HTMLElement)).toBeLessThan(
+      positionOf(findNameInput('Home') as HTMLElement),
     )
     dispose(wrapper)
   })
@@ -169,10 +171,9 @@ describe('the page of secrets', () => {
   it('renames a secret by its id', async () => {
     const { installation, wrapper } = mountPage()
     const work = rowOf('Work')
-    await click(findButton(/rename/i, work))
-    const input = root().querySelector<HTMLInputElement>('input[type="text"], input:not([type])')
-    expect(input?.value).toBe('Work')
-    await enterText(input as HTMLInputElement, 'Office')
+    const input = findNameInput('Work') as HTMLInputElement
+    expect(findButtons(/rename/i, work)).toHaveLength(0)
+    await typeName(input, 'Office')
     expect(installation.renameSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'Office')
     dispose(wrapper)
   })
@@ -212,16 +213,15 @@ describe('the page of secrets', () => {
       `label[title="${description}"] input`,
     ) as HTMLInputElement
 
-  it('lists in a section only the declarations of its group and those with no group', async () => {
+  it('lists a plugin once per name: its declarations of the group, and the ungrouped one only where it has none for the group', async () => {
     const { wrapper } = mountPage()
     await openReaders(rowOf('Work'))
     const titles = Array.from(root().querySelectorAll('label')).map((one) => one.title)
     expect(titles).toStrictEqual([
       'Key of the embeddings service',
-      'Key of the custom embeddings service',
       'Key of the proofreading service',
     ])
-    expect(root().querySelectorAll('input[type="checkbox"]')).toHaveLength(3)
+    expect(root().querySelectorAll('input[type="checkbox"]')).toHaveLength(2)
     dispose(wrapper)
   })
 
@@ -276,8 +276,7 @@ describe('the page of secrets', () => {
     const { installation, wrapper } = mountPage()
     const openrouter = sectionOf('OpenRouter')
     await click(findButton(/add/i, openrouter))
-    const draft = findText('OpenRouter V1') as HTMLElement
-    expect(draft).not.toBeNull()
+    expect(findNameInput('OpenRouter V1')).not.toBeNull()
     await enterText(
       maskedInputs(rowOf('OpenRouter V1'))[0] as HTMLInputElement,
       'made-up-added-value',
@@ -290,11 +289,52 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
+  it('creates a new secret under the name typed into its name input', async () => {
+    const { installation, wrapper } = mountPage()
+    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    await typeName(findNameInput('OpenRouter V1') as HTMLInputElement, 'Staging')
+    await enterText(maskedInputs(rowOf('Staging'))[0] as HTMLInputElement, 'made-up-staging-value')
+    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+      'openrouter',
+      'Staging',
+      'made-up-staging-value',
+    )
+    dispose(wrapper)
+  })
+
+  it('draws a new secret like a saved one, with its plugin list disabled until it exists', async () => {
+    const { wrapper } = mountPage()
+    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    const draft = rowOf('OpenRouter V1')
+    const saved = rowOf('Work')
+    expect(draft.className).toBe(saved.className)
+    expect(findButton(/save a value first/i, draft).hasAttribute('disabled')).toBe(true)
+    expect(findButton(/save a value first/i, draft).title).toBe('Save a value first')
+    expect(
+      findButton(/discard/i, draft)
+        .querySelector('svg')
+        ?.getAttribute('class'),
+    ).toBe(
+      findButton(/delete/i, saved)
+        .querySelector('svg')
+        ?.getAttribute('class'),
+    )
+    dispose(wrapper)
+  })
+
+  it('discards a new secret with its button', async () => {
+    const { wrapper } = mountPage()
+    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    await click(findButton(/discard/i, rowOf('OpenRouter V1')))
+    expect(findNameInput('OpenRouter V1')).toBeNull()
+    dispose(wrapper)
+  })
+
   it('names the second secret of a group with V1', async () => {
     const { wrapper } = mountPage()
     const travel = sectionOf('travel')
     await click(findButton(/add/i, travel))
-    expect(findText('travel V1')).not.toBeNull()
+    expect(findNameInput('travel V1')).not.toBeNull()
     dispose(wrapper)
   })
 

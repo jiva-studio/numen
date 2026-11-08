@@ -11,7 +11,8 @@ import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  secret: Secret
+  /** Absent while the secret does not exist yet: the list is then disabled. */
+  secret?: Secret | undefined
   declarations: readonly Declaration[]
 }>()
 
@@ -21,9 +22,10 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
-const count = computed(
-  () => props.declarations.filter((one) => isAllowed(props.secret, one)).length,
-)
+const count = computed(() => {
+  const secret = props.secret
+  return secret ? props.declarations.filter((one) => isAllowed(secret, one)).length : 0
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(declaration: Declaration, event: Event): void {
@@ -36,7 +38,8 @@ function onToggle(declaration: Declaration, event: Event): void {
     <button
       type="button"
       class="secret-permissions__button"
-      :disabled="declarations.length === 0"
+      :disabled="!secret || declarations.length === 0"
+      :title="secret ? undefined : words.secretSaveFirst"
       :aria-expanded="isOpen"
       @click="isOpen = !isOpen"
     >
@@ -58,7 +61,7 @@ function onToggle(declaration: Declaration, event: Event): void {
       >
         <input
           type="checkbox"
-          :checked="isAllowed(secret, one)"
+          :checked="secret !== undefined && isAllowed(secret, one)"
           @change="(event) => onToggle(one, event)"
         />
         {{ one.pluginName }}
@@ -73,9 +76,12 @@ function onToggle(declaration: Declaration, event: Event): void {
 }
 
 .secret-permissions__button {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.25rem;
+  box-sizing: border-box;
+  inline-size: 100%;
   block-size: var(--numen-action-size);
   padding: 0.25rem 0.625rem;
   background-color: var(--numen-field-bg);

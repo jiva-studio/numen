@@ -160,8 +160,27 @@ describe('the declarations of a section', () => {
     expect(getSectionDeclarations(all, 'travel').map((one) => one.name)).toStrictEqual(['token'])
   })
 
-  it('list a declaration once', () => {
-    expect(getSectionDeclarations([...all, ...all], 'openai')).toHaveLength(2)
+  it('list a plugin once for a name: the ungrouped one is left out where the plugin declares the name for the group', () => {
+    const both = getDeclarations([
+      createPluginInfo('md.numen.sample', 'Sample', {
+        secrets: [
+          { name: 'apiKey', title: 'Key', description: 'Of the group', group: 'openai' },
+          { name: 'apiKey', title: 'Key', description: 'Of no group', group: '' },
+        ],
+      }),
+    ])
+    expect(getSectionDeclarations(both, 'openai').map((one) => one.description)).toStrictEqual([
+      'Of the group',
+    ])
+    expect(getSectionDeclarations(both, 'travel').map((one) => one.description)).toStrictEqual([
+      'Of no group',
+    ])
+  })
+
+  it('list the declarations of a group in the order they are declared', () => {
+    expect(
+      getSectionDeclarations([...all].reverse(), 'openai').map((one) => one.description),
+    ).toStrictEqual(['A token', 'Another key'])
   })
 })
 

@@ -1,38 +1,64 @@
 <script setup lang="ts">
 /**
- * A secret that does not exist yet: its name and a masked field. The secret is created when a
- * value is entered. The empty secret of a group a plugin asks for has no way to be discarded.
+ * A secret that does not exist yet, drawn as a saved one: a name to type, a masked field and a
+ * discard button. The secret is created, under the name typed, when a value is entered. Its
+ * plugin list stays disabled until the secret exists. The empty secret of a group a plugin asks
+ * for has no way to be discarded.
  */
-import { X } from '@lucide/vue'
+import { ref } from 'vue'
+import { Trash2 } from '@lucide/vue'
 import { Button } from '@numen/ui'
+import { trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
+import SecretNameInput from './SecretNameInput.vue'
+import SecretPermissions from './SecretPermissions.vue'
+import SecretRowFrame from './SecretRowFrame.vue'
 import SecretValueInput from './SecretValueInput.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-defineProps<{
+const props = defineProps<{
   name: string
   canDiscard: boolean
   /** Creates the secret and resolves true when it was created; the field then keeps a failed value. */
-  submit?: ((value: string) => Promise<boolean>) | undefined
+  submit?: ((name: string, value: string) => Promise<boolean>) | undefined
 }>()
 
 const emit = defineEmits<{
-  (e: 'create', value: string): void
+  (e: 'create', name: string, value: string): void
   (e: 'discard'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const typedName = ref(props.name)
+
+/* -------------------------------- Handlers -------------------------------- */
+async function onSubmit(value: string): Promise<boolean> {
+  const name = trimGroupName(typedName.value)
+  if (name === '' || !props.submit) return false
+  return props.submit(name, value)
+}
 </script>
 
 <template>
-  <li class="secret-draft">
-    <span class="secret-draft__name">{{ name }}</span>
-    <SecretValueInput
-      :label="words.secretValue(name)"
-      :placeholder="words.keyPlaceholder"
-      :submit="submit"
-      @commit="(value) => emit('create', value)"
-    />
-    <span />
-    <div class="secret-draft__actions">
+  <SecretRowFrame>
+    <template #name>
+      <SecretNameInput v-model="typedName" @cancel="typedName = name" />
+    </template>
+
+    <template #value>
+      <SecretValueInput
+        :label="words.secretValue(typedName)"
+        :placeholder="words.keyPlaceholder"
+        :submit="submit ? onSubmit : undefined"
+        @commit="(value) => emit('create', trimGroupName(typedName), value)"
+      />
+    </template>
+
+    <template #permissions>
+      <SecretPermissions :declarations="[]" />
+    </template>
+
+    <template #actions>
       <Button
         v-if="canDiscard"
         variant="ghost"
@@ -41,33 +67,8 @@ const emit = defineEmits<{
         :title="words.secretDiscard"
         @click="emit('discard')"
       >
-        <X :size="14" aria-hidden="true" />
+        <Trash2 :size="14" aria-hidden="true" />
       </Button>
-    </div>
-  </li>
+    </template>
+  </SecretRowFrame>
 </template>
-
-<style scoped>
-.secret-draft {
-  display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr) 9rem 5.5rem;
-  align-items: center;
-  gap: 0.5rem var(--numen-panel-gap);
-  padding-block: 0.5rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-  list-style: none;
-}
-
-.secret-draft__name {
-  padding-inline: 0.625rem;
-  overflow: hidden;
-  color: var(--numen-ink);
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.secret-draft__actions {
-  min-inline-size: 1.75rem;
-}
-</style>

@@ -5,7 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { Button, ConfirmDialog } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
   createSecretSections,
@@ -19,7 +19,6 @@ import {
 import type { SettingsTabState } from '../../types'
 import { useSecretDeletion } from '../../model/secretDeletion'
 import { WORDS as words } from '../../words'
-import SecretDeleteDialog from './SecretDeleteDialog.vue'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -126,7 +125,6 @@ function getNamesInGroup(group: string): readonly string[] {
     </Button>
 
     <h1 class="secrets-page__title">{{ words.secretsTitle }}</h1>
-    <p class="secrets-page__about">{{ words.secretsAbout }}</p>
     <p v-if="credentialsPath !== ''" class="secrets-page__where">
       {{ words.secretsFile(credentialsPath) }}
     </p>
@@ -155,10 +153,13 @@ function getNamesInGroup(group: string): readonly string[] {
       {{ words.secretAddGroup }}
     </Button>
 
-    <SecretDeleteDialog
+    <ConfirmDialog
       v-if="deletion.target.value"
+      tone="danger"
       :text="deletion.text.value"
       :label="deletion.isGroup.value ? words.secretGroupDelete : words.secretDelete"
+      :confirm-text="words.secretDeleteConfirm"
+      :cancel-text="words.secretDeleteCancel"
       @confirm="deletion.confirm"
       @cancel="deletion.cancel"
     />
@@ -181,15 +182,10 @@ function getNamesInGroup(group: string): readonly string[] {
 }
 
 .secrets-page__title {
-  margin: 0 0 0.5rem;
-  color: var(--numen-ink);
-  font-size: var(--numen-text-3);
-  font-weight: 600;
-}
-
-.secrets-page__about {
   margin: 0 0 var(--settings-apart);
-  color: var(--numen-hushed);
+  color: var(--numen-ink);
+  font-size: var(--numen-title-size);
+  font-weight: 500;
 }
 
 .secrets-page__where {
@@ -201,6 +197,5 @@ function getNamesInGroup(group: string): readonly string[] {
 
 .secrets-page__add {
   align-self: flex-start;
-  margin-inline-start: -0.5rem;
 }
 </style>

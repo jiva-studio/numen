@@ -58,11 +58,19 @@ export const positionOf = (element: Element): number =>
 export const maskedInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="password"]'))
 
-/** Types into an input and commits with Enter. */
+/** Types into an input and commits with Enter, a change and a blur. */
 export async function enterText(input: HTMLInputElement, text: string): Promise<void> {
   input.value = text
   input.dispatchEvent(new Event('input', { bubbles: true }))
   input.dispatchEvent(new Event('change', { bubbles: true }))
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  await flushPromises()
+}
+
+/** Types a name into a name input and commits with Enter. */
+export async function typeName(input: HTMLInputElement, name: string): Promise<void> {
+  input.value = name
+  input.dispatchEvent(new Event('input', { bubbles: true }))
   input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
   await flushPromises()
 }
@@ -90,17 +98,19 @@ const ancestorWhere = (
   throw new Error(`no ancestor of <${element.tagName}> ${nameOf(element)} satisfies the test`)
 }
 
-/**
- * The row of the secret with that name: the smallest element around the name that holds a delete
- * button or a masked input. The last match is taken, as a heading of the same text comes first.
- */
+/** The text inputs in a scope. */
+export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
+  Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="text"]'))
+
+/** The input a secret's name is typed into, by the name it holds, or null where there is none. */
+export const findNameInput = (name: string, scope: ParentNode = root()): HTMLInputElement | null =>
+  textInputs(scope).find((one) => one.value === name) ?? null
+
+/** The row of the secret with that name: the smallest element around its name input that holds a masked input. */
 export const rowOf = (name: string): HTMLElement => {
-  const text = findTexts(name).at(-1)
-  if (text === undefined) throw new Error(`no text ${name} on the page`)
-  return ancestorWhere(
-    text,
-    (one) => findButtons(/delete/i, one).length > 0 || maskedInputs(one).length > 0,
-  )
+  const input = findNameInput(name)
+  if (input === null) throw new Error(`no name input holding ${name} on the page`)
+  return ancestorWhere(input, (one) => maskedInputs(one).length > 0)
 }
 
 /** The section of the group with that name: the smallest element around the name that holds a button to add a secret. */

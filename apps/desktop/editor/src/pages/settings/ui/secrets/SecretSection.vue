@@ -151,7 +151,7 @@ function onMoveDown(index: number): void {
         v-if="section.isAsked && section.secrets.length === 0"
         :name="firstName"
         :can-discard="false"
-        :submit="(value) => create(firstName, value)"
+        :submit="create"
       />
       <SecretRow
         v-for="(secret, index) in section.secrets"
@@ -173,7 +173,7 @@ function onMoveDown(index: number): void {
         :key="name"
         :name="name"
         can-discard
-        :submit="(value) => create(name, value)"
+        :submit="create"
         @discard="emit('discard', name)"
       />
     </ul>
@@ -189,7 +189,7 @@ function onMoveDown(index: number): void {
 .secret-section {
   display: flex;
   flex-direction: column;
-  margin-block-end: var(--settings-apart);
+  margin-block-end: calc(var(--settings-apart) / 2);
   padding: 0.875rem 1rem;
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
@@ -228,8 +228,8 @@ function onMoveDown(index: number): void {
 .secret-section__name {
   margin: 0;
   color: var(--numen-ink);
-  font-size: var(--numen-text-3);
-  font-weight: 600;
+  font-size: var(--numen-title-size);
+  font-weight: 500;
 }
 
 .secret-section__tool {

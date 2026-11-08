@@ -80,18 +80,21 @@ export function createSecretSections(
   ].map((one) => ({ ...one, secrets: secrets.filter((secret) => secret.group === one.group) }))
 }
 
-/** The declarations a section offers: those of its group and those with no group, each once. */
+/**
+ * The declarations a section offers, each plugin once for a name: those of the group, and for a
+ * name the plugin declares no secret of this group for, the one with no group.
+ */
 export function getSectionDeclarations(
   declarations: readonly Declaration[],
   group: string,
 ): readonly Declaration[] {
-  const keys = new Set<string>()
-  return declarations.filter((one) => {
-    const key = `${one.pluginId}/${one.name}/${one.group}`
-    if ((one.group !== '' && one.group !== group) || keys.has(key)) return false
-    keys.add(key)
-    return true
-  })
+  const ownKeys = new Set(
+    declarations.filter((one) => one.group === group).map((one) => `${one.pluginId}/${one.name}`),
+  )
+  return declarations.filter(
+    (one) =>
+      one.group === group || (one.group === '' && !ownKeys.has(`${one.pluginId}/${one.name}`)),
+  )
 }
 
 /** The name of a new group: New group, else the first number after it that no group has. */
