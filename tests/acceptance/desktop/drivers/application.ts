@@ -6,9 +6,12 @@ import {
   getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
-import { getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
+import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
+
+const DELETE_TEXT = 'Delete text'
+const DELETE_TEXT_ID = 'app:version.delete'
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -32,11 +35,12 @@ export class ApplicationDriver {
     const command = page
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
-      .first()
+    if (label === DELETE_TEXT) await this.expectOpenTabHasText()
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)
-    await command.click()
+    await expect(command).toHaveAttribute('data-here', 'true')
+    await page.keyboard.press('Enter')
   }
 
   async enter(value: string): Promise<void> {
@@ -71,6 +75,23 @@ export class ApplicationDriver {
     this.scenario.setVault(vaultName)
     const expected = parseCount(count)
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
+  }
+
+  private async expectOpenTabHasText(): Promise<void> {
+    const { page } = this.scenario
+    const closer = page.getByRole('tab', { selected: true }).getByRole('button').first()
+    const title = ((await closer.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
+    const notePath = await this.findNote(title)
+    await expect
+      .poll(async () => {
+        const answer = await callRPC(page.request, 'CommandService/ListCommandItems', {
+          path: notePath,
+          commands: [{ command: DELETE_TEXT_ID }],
+        })
+        const [list] = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
+        return list?.items?.length ?? 0
+      })
+      .toBeGreaterThan(0)
   }
 
   private listNotesOfType(folder: string, type: string): string[] {
