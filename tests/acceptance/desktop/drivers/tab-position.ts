@@ -16,9 +16,9 @@ const PLACES: Record<TabKind, string> = {
   'Audio Player': 'time',
 }
 
-const getStem = (file: string): string => path.basename(file).replace(/\.[^.]+$/, '')
+export const getStem = (file: string): string => path.basename(file).replace(/\.[^.]+$/, '')
 
-const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const getPanel = (page: Page, file: string): Locator =>
   page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })

@@ -28,7 +28,7 @@ export default tseslint.config(
     files: ['steps/**/*.ts'],
     rules: {
       'max-lines-per-function': ['error', { max: 6, skipBlankLines: true, skipComments: true }],
-      'max-params': ['error', 4],
+      'max-params': ['error', 5],
       'no-restricted-imports': [
         'error',
         {

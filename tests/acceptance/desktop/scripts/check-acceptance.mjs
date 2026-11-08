@@ -20,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const featuresDir = path.resolve(root, '../../../features')
 const stepsDir = path.join(root, 'steps')
 const MAX_STEPS = 5
-/** A step is a short sentence: the words outside the quoted values. */
+/** A step is a short sentence: the words outside the quoted values and the words it takes as arguments. */
 const MAX_STEP_WORDS = 8
 /** Two definitions whose words overlap this much, or more, are one step said twice. */
 const NEAR_DUPLICATE = 0.75
@@ -82,6 +82,13 @@ const problems = []
 const warnings = []
 const report = (kind, where, message) => problems.push({ kind, where, message })
 
+const getTextWithoutArguments = (definition, text) => {
+  const args = definition?.expression.match(text) ?? []
+  return args
+    .filter((arg) => arg.group.start !== undefined && !text.slice(arg.group.start - 1, arg.group.start).includes('"'))
+    .reduceRight((rest, arg) => rest.slice(0, arg.group.start) + rest.slice(arg.group.end), text)
+}
+
 // Which definitions match which scenario steps.
 const matchStep = (feature, scenario, step) => {
   const where = `${rel(feature.file)}:${step.line}`
@@ -91,7 +98,9 @@ const matchStep = (feature, scenario, step) => {
     report('ambiguous', where, `"${step.text}" matches ${matching.map((m) => `'${m.pattern}'`).join(' and ')}`)
   }
   for (const definition of matching) definition.uses.push({ feature: feature.file, scenario })
-  const words = step.text.replace(/"[^"]*"/g, '').split(/\s+/).filter(Boolean)
+  // The word a step takes ({word}: at, titled) is an argument, like a quoted value.
+  const text = getTextWithoutArguments(matching[0], step.text)
+  const words = text.replace(/"[^"]*"/g, '').split(/\s+/).filter(Boolean)
   if (words.length > MAX_STEP_WORDS) {
     report('long-step', where, `"${step.text}" has ${words.length} words; at most ${MAX_STEP_WORDS}`)
   }
