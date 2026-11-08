@@ -173,7 +173,7 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 
 func newCommands(agentTools *Tools) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add("app:file.createText", newRecogniseCommand(agentTools)); err != nil {
+	if err := commands.Add(command.CreateText, newRecogniseCommand(agentTools)); err != nil {
 		return nil, err
 	}
 	return commands, nil

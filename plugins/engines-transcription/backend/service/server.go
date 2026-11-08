@@ -162,7 +162,7 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 
 func newCommands(transcriber *Transcriber) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add("app:file.createText", newTranscribeCommand(transcriber)); err != nil {
+	if err := commands.Add(command.CreateText, newTranscribeCommand(transcriber)); err != nil {
 		return nil, err
 	}
 	return commands, nil

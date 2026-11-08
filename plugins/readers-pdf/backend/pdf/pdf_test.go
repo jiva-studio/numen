@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 
 	"github.com/tetratelabs/wazero"
 
