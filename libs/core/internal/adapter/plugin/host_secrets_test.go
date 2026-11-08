@@ -555,9 +555,9 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.SetSecretSource(allowOne(secretPluginID))
-	host.secrets.mu.Lock()
-	host.secrets.awaitingFirstConfigure[secretPluginID] = true
-	host.secrets.mu.Unlock()
+	host.configure.mu.Lock()
+	host.configure.awaitingFirstConfigure[secretPluginID] = true
+	host.configure.mu.Unlock()
 
 	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)

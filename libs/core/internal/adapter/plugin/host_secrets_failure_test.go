@@ -491,18 +491,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.secrets.lockSecrets(t.Context()); err != nil {
+	if err := host.configure.lockDelivery(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.secrets.isAwaitingFirstConfigure(secretPluginID)
+		return host.configure.isAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
 	go func() { refresh <- host.Refresh(t.Context()) }()
-	host.secrets.unlockSecrets()
+	host.configure.unlockDelivery()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)
