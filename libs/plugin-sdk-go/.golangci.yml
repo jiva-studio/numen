@@ -79,14 +79,23 @@ linters:
         - nilness
 
     gosec:
+      # G101 matches names, G103 flags the unsafe FFI code, G204 flags the agent programs the user configures,
+      # G602 and the taint rules G703-G705 flag paths and addresses the app opens for the user.
       excludes:
+        - G101
+        - G103
         - G104
         - G115
+        - G204
         - G301
         - G302
         - G304
         - G306
         - G404
+        - G602
+        - G703
+        - G704
+        - G705
 
     misspell:
       locale: US
