@@ -32,11 +32,7 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 	if u.types != nil {
 		contentType = u.types.GetContentType(path)
 	}
-	values := pluginport.GetTargetValues(path, string(contentType), string(noteType))
-	if properties == nil {
-		properties = map[string]any{}
-	}
-	values["target.properties"] = properties
+	values := pluginport.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range u.kinds.ListTabKinds() {
 		if one.TabKind.When == "" {

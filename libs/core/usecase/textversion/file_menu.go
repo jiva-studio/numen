@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -50,19 +49,11 @@ type VersionItem struct {
 	IsLive  bool
 }
 
-func getVersionValues(target map[string]any, version domain.TextVersion, isLive bool) map[string]any {
-	values := maps.Clone(target)
-	values["version.kind"] = string(version.Kind)
-	values["version.pluginId"] = version.PluginID
-	values["version.isLive"] = isLive
-	return values
-}
-
-func listVersionItems(condition pluginport.PluginCondition, target map[string]any, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
+func listVersionItems(condition pluginport.PluginCondition, target pluginport.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
 	var items []VersionItem
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
-		if condition.Evaluate(getVersionValues(target, version, isLive)) == pluginport.ConditionTrue {
+		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == pluginport.ConditionTrue {
 			items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
 		}
 	}
@@ -84,7 +75,7 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 	if err != nil {
 		return nil, err
 	}
-	values := pluginport.GetTargetValues(path, string(u.types.GetContentType(path)), "")
+	values := pluginport.NewTargetValues(path, false, u.types.GetContentType(path))
 	return listVersionItems(condition, values, versions, live, hasLive), nil
 }
 

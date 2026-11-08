@@ -260,9 +260,8 @@ func (p *pass) getValues(ctx context.Context, current *file, condition pluginpor
 			noteType, properties = note.Type, maps.Clone(note.Frontmatter)
 		}
 	}
-	values := pluginport.GetTargetValues(current.stat.Path, string(p.triggers.types.GetContentType(current.stat.Path)), string(noteType))
-	values["target.properties"] = properties
-	values["config"] = p.config
+	values := pluginport.NewTargetValues(current.stat.Path, false, p.triggers.types.GetContentType(current.stat.Path)).
+		WithNote(noteType, properties).WithConfig(p.config).Get()
 	if isReadingNote {
 		current.values = values
 	}

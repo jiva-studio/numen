@@ -194,9 +194,8 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 		return nil
 	}
 	noteType, properties := u.readNote(ctx, v, condition, call.Path)
-	values := pluginport.GetTargetValues(call.Path, string(u.getContentType(call.Path)), string(noteType))
-	values["target.properties"] = properties
-	if condition.Evaluate(values) == pluginport.ConditionFalse {
+	values := pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)).WithNote(noteType, properties)
+	if condition.Evaluate(values.Get()) == pluginport.ConditionFalse {
 		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
 			ErrBadArguments, declared.ID, call.Path, declared.When)
 	}
