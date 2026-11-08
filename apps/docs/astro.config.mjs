@@ -67,6 +67,7 @@ export default defineConfig({
           label: 'Settings',
           items: [
             { slug: 'settings' },
+            { slug: 'connections' },
             { slug: 'themes' },
             { slug: 'semantic-search' },
             { slug: 'reader' },

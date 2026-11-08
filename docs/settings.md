@@ -274,6 +274,22 @@ No key is written in this file. An agent plugin that needs one declares it under
 
 A setting of type `string` that declares `options` in its manifest is chosen from them in a list that can be searched, and its value can also be typed.
 
+## Connections
+
+A connection is a place the core sends requests to for plugins, and the way in: a service you pay for, a server you run, or an agent program on this computer. You enter it once, on the Connections page, the row Connections beside System in the list of settings. A connection has an id, a type, a name, and the fields its type declares, such as an address and a key. The model and the reasoning level are not part of it. The Secrets page stays beside it and is unchanged.
+
+The types come from the plugins. A plugin lists them under `contributes.connectionTypes` in its manifest (see [Plugins](plugins/README.md#manifest-fields)). A type is named `<plugin id>/<type id>`, for example `md.numen.connections.llm/openrouter`. The Add dialog lists the types of the enabled plugins and builds its form from the fields of the chosen type. A type that fixes its address shows none, and a type of an agent program has no field but the name. A connection whose type no enabled plugin provides stays in the list as "Type unavailable"; it is not deleted and the plugins skip it.
+
+The name is the text you type, trimmed, at most 64 characters, and unique ignoring case. An empty name is replaced by the title of the type for the first connection of it, and by the title and the lowest free number from 2 for the next ones, such as "OpenRouter 2".
+
+The connections are the section `connections` of `numen.json`, a list in the order they were made, whose entries are `{ "id", "type", "name", "revision", "fields" }`, and `"allowPrivateNetwork": true` where you allowed it. The id is `c` and 8 lowercase hexadecimal digits. `fields` holds the fields you set that are neither secret nor fixed by the type. A field the type no longer declares is kept in the file and ignored; a required field that has no value marks the connection as incomplete. Neither makes the connection invalid. A connection with a bad or repeated id, a bad or repeated name, a type without a plugin id, or a revision below 1 is ignored with a notice and the file is not changed. Only Numen writes this section: a write of the settings from a window or a plugin under `connections` is refused, and an entry edited by hand takes effect.
+
+A secret field is kept in the key store under the entry `connection/<connection id>/<field key>`, never in `numen.json`. The entry holds a fingerprint of the type and the address together with the key, and a key whose fingerprint does not match the connection as it is now is not used and not counted as set. An edit of the address or the type in the file by hand, or a restored file, therefore cannot send a key elsewhere. Changing the address in the dialog removes the stored keys of the connection before it stores the ones you typed. An empty key has no entry. Where the machine has no keychain, the entries are kept in the file next to the settings as described under [Secrets](#secrets).
+
+Every change of a connection, including a change of a key, adds 1 to its `revision`. An update carries the revision it read and is refused with "Another window changed this connection" if the connection has another revision, so two windows cannot overwrite each other.
+
+An address must be an http or https address with a host and no user name or password. A key is sent over http only to this computer (`localhost` or a loopback address). Link-local addresses, which include the metadata address of the clouds, the unspecified address and the metadata host names are refused. A private network address (10.x.x.x, 172.16.x.x to 172.31.x.x, 192.168.x.x, 100.64.x.x to 100.127.x.x and the IPv6 unique local range) is accepted only when you turn on "Allow a private network address" in the connection. A host name other than `localhost` is not resolved by the core, so a provider has to check the address it resolves to.
+
 ## Secrets
 
 A secret is a value such as an API key. You enter it once, on the Secrets page, and choose which plugins may read it. The page is the row Secrets beside System in the list of settings, described as "API keys and tokens for plugins". Nothing is allowed by default: a new secret can be read by no plugin until you allow it.
