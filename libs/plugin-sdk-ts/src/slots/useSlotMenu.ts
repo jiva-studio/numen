@@ -105,6 +105,19 @@ function runRead<T>(
   }
 }
 
+function closeWhenEmpty(
+  menu: ComputedRef<{ readonly items: readonly unknown[] } | null>,
+  close: () => void,
+): void {
+  watch(
+    menu,
+    (next) => {
+      if (next && next.items.length === 0) close()
+    },
+    { flush: 'sync' },
+  )
+}
+
 /**
  * Runs the menu opens of a slot owner. `open` reads the entries and target, synchronously where
  * `read` returns no promise, then the items of every command that offers them. The menu is
@@ -196,13 +209,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
     return { ...found, target: openTarget }
   }
 
-  watch(
-    menu,
-    (next) => {
-      if (next && next.items.length === 0) close()
-    },
-    { flush: 'sync' },
-  )
+  closeWhenEmpty(menu, close)
 
   return { target, menu, open, pick, close, getIcon: (id) => menu.value?.getIcon(id) }
 }
