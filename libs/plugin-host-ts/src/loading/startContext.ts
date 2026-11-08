@@ -81,14 +81,14 @@ export interface StartScope {
 export function createStartScope(): StartScope {
   let isEnded = false
   let isCancelled = false
-  const kept = new Set<Disposable>()
+  const startDisposables = new Set<Disposable>()
   const subscriptionLists = new Set<Disposable[]>()
   const keeper: Keeper = {
     isCancelled: () => !isEnded && isCancelled,
     keep: (value) => {
       if (isEnded || !isDisposable(value)) return
       if (keeper.isCancelled()) value.dispose()
-      else kept.add(value)
+      else startDisposables.add(value)
     },
   }
   const services = new WeakMap<object, object>()
@@ -121,17 +121,17 @@ export function createStartScope(): StartScope {
     isCancelled: keeper.isCancelled,
     cancel: () => {
       isCancelled = true
-      for (const one of kept) one.dispose()
+      for (const one of startDisposables) one.dispose()
       // A pushed disposable is disposed here, so the host does not dispose it a second time.
       for (const list of subscriptionLists) {
-        const rest = list.filter((one) => !kept.has(one))
+        const rest = list.filter((one) => !startDisposables.has(one))
         list.splice(0, list.length, ...rest)
       }
-      kept.clear()
+      startDisposables.clear()
     },
     end: () => {
       isEnded = true
-      kept.clear()
+      startDisposables.clear()
       subscriptionLists.clear()
     },
   }

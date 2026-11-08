@@ -108,8 +108,8 @@ function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   const first = new Map<string, Placed>()
   for (const one of placed) {
     if (one.item.kind !== 'command') continue
-    const held = first.get(one.item.command)
-    if (held === undefined || compareInSlot(one, held) < 0) first.set(one.item.command, one)
+    const current = first.get(one.item.command)
+    if (current === undefined || compareInSlot(one, current) < 0) first.set(one.item.command, one)
   }
   return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
 }

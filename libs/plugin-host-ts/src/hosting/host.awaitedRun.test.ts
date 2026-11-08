@@ -76,7 +76,7 @@ describe('a run the caller awaits', () => {
   })
 })
 
-describe('a run nobody awaits, as from the palette', () => {
+describe('a run without isAwaited, as from the palette', () => {
   it('reports the error of the command and resolves', async () => {
     const { host, onError } = createHost(true)
 
