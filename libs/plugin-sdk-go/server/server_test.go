@@ -889,7 +889,7 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	errsCh := make(chan error, 1)
-	httpSrv := &http.Server{}
+	httpSrv := &http.Server{ReadHeaderTimeout: time.Minute}
 	if err := httpSrv.Close(); err != nil {
 		t.Fatal(err)
 	}
