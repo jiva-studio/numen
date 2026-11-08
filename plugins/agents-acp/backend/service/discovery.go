@@ -43,6 +43,22 @@ func getKnownACPAgents() []knownACPAgent {
 	}
 }
 
+func findACPAgents(lookPath func(string) (string, error)) []acpAgent {
+	if lookPath == nil {
+		return nil
+	}
+	var agents []acpAgent
+	for _, candidate := range getKnownACPAgents() {
+		binaryPath, err := lookPath(candidate.binary)
+		if err != nil || binaryPath == "" {
+			continue
+		}
+		command := append([]string{binaryPath}, candidate.args...)
+		agents = append(agents, acpAgent{Program: candidate.program, Title: candidate.title, Command: command})
+	}
+	return agents
+}
+
 func getExecutableProgramName(path string) string {
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)

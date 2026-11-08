@@ -24,18 +24,16 @@ func (s *agentServer) getACPAgents() []acpAgent {
 	s.mu.RLock()
 	commands := s.commands
 	execPaths := slices.Clone(s.executablePaths)
-	discover := s.discover
+	found := slices.Clone(s.found)
 	s.mu.RUnlock()
 
 	agents := getACPAgentsFromCommands(commands)
-	if discover != nil {
-		for _, candidate := range discover() {
-			hasAgent := slices.ContainsFunc(agents, func(a acpAgent) bool {
-				return a.Program == candidate.Program || (len(a.Command) > 0 && len(candidate.Command) > 0 && a.Command[0] == candidate.Command[0])
-			})
-			if !hasAgent {
-				agents = append(agents, candidate)
-			}
+	for _, candidate := range found {
+		hasAgent := slices.ContainsFunc(agents, func(a acpAgent) bool {
+			return a.Program == candidate.Program || (len(a.Command) > 0 && a.Command[0] == candidate.Command[0])
+		})
+		if !hasAgent {
+			agents = append(agents, candidate)
 		}
 	}
 	for _, execPath := range execPaths {

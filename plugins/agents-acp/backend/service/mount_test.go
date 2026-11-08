@@ -13,6 +13,7 @@ import (
 // The handler a host that links the plugin in serves answers the agent service with the token it
 // was given.
 func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
