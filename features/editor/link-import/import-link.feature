@@ -53,20 +53,20 @@ Feature: Import link
 
     Scenario: A video is downloaded and plays
       Given the person runs the command "Import link"
-      And the person enters "https://www.youtube.com/watch?v=tidalmill01"
+      And the person enters "https://youtu.be/mill01"
       And the person runs the command "Download captions"
       And the person runs the command "Download media"
       And the person enters "Video"
-      When the person plays the recording in the tab for the web address "https://www.youtube.com/watch?v=tidalmill01"
-      Then the recording in the tab for the web address "https://www.youtube.com/watch?v=tidalmill01" is playing
-      And the tab for the web address "https://www.youtube.com/watch?v=tidalmill01" has "The mill pond fills behind the gate."
+      When the person plays the recording in the tab for the web address "https://youtu.be/mill01"
+      Then the recording in the tab for the web address "https://youtu.be/mill01" is playing
+      And the tab for the web address "https://youtu.be/mill01" has "The mill pond fills behind the gate."
 
     Scenario: A video note is opened from the file tree
       Given the person runs the command "Import link"
-      And the person enters "https://www.youtube.com/watch?v=tidalmill02"
+      And the person enters "https://youtu.be/mill02"
       And the person runs the command "Download captions"
       And the person runs the command "Download media"
       And the person enters "Video"
       When the application "editor" starts
-      And the person opens the file at "https---www.youtube.com-watch-v=tidalmill02.md"
-      Then the tab at "https---www.youtube.com-watch-v=tidalmill02.md" has "The mill pond fills behind the gate."
+      And the person opens the file at "https---youtu.be-mill02.md"
+      Then the tab at "https---youtu.be-mill02.md" has "The mill pond fills behind the gate."
