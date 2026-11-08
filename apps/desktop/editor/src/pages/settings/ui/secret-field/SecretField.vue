@@ -125,7 +125,12 @@ function onChoose(id: string): void {
       @close="onClose"
     >
       <template #leading="{ item }">
-        <Check v-if="allowedIds.has(item.id)" :size="14" aria-hidden="true" />
+        <Check
+          class="settings__secret-check"
+          :class="{ 'settings__secret-check--off': !allowedIds.has(item.id) }"
+          :size="14"
+          aria-hidden="true"
+        />
       </template>
       <template #trailing="{ item }">
         <span class="settings__secret-group">{{ groupOf(item.id) }}</span>
@@ -135,6 +140,14 @@ function onChoose(id: string): void {
 </template>
 
 <style scoped>
+.settings__secret-check {
+  flex: none;
+}
+
+.settings__secret-check--off {
+  visibility: hidden;
+}
+
 .settings__secret {
   position: relative;
   display: flex;

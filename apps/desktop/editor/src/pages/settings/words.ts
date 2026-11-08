@@ -16,7 +16,6 @@ export const WORDS = {
   secretsAbout: 'Secrets for plugins are stored here.',
   secretsFile: (path: string) => `Values are kept in ${path}`,
   secretMasked: '••••••••',
-  secretReplace: 'Replace',
   secretReaders: (count: number) =>
     count === 0 ? 'No plugins' : count === 1 ? '1 plugin' : `${count} plugins`,
   secretNewGroupName: 'New group',

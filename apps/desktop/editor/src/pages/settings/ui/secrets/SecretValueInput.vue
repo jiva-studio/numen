@@ -5,15 +5,13 @@
  * With submit, the field keeps the value until submit resolves true, sends no second value while
  * one is in flight, and sends a value that failed again only on Enter.
  */
-import { onMounted, ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   label: string
   placeholder: string
   submit?: ((value: string) => Promise<boolean>) | undefined
-  /** Whether the field takes the focus as it appears. */
-  isFocused?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -22,14 +20,9 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const entry = ref('')
-const field = useTemplateRef<HTMLInputElement>('field')
 const isSending = ref(false)
 /** The value whose last submit failed, until the field changes. */
 let failedValue: string | null = null
-
-onMounted(() => {
-  if (props.isFocused) field.value?.focus()
-})
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onCommit(): Promise<void> {
@@ -70,7 +63,6 @@ async function submitValue(
 
 <template>
   <input
-    ref="field"
     v-model="entry"
     type="password"
     autocomplete="off"

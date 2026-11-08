@@ -33,7 +33,6 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isRenaming = ref(false)
-const isReplacing = ref(false)
 const draftName = ref('')
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 
@@ -83,19 +82,10 @@ function onDelete(event: MouseEvent): void {
       {{ secret.name }}
     </button>
 
-    <div v-if="secret.hasValue && !isReplacing" class="secret-row__stored">
-      <span class="secret-row__masked">{{ words.secretMasked }}</span>
-      <Button variant="ghost" size="small" @click="isReplacing = true">
-        {{ words.secretReplace }}
-      </Button>
-    </div>
     <SecretValueInput
-      v-else
       :label="words.secretValue(secret.name)"
-      :placeholder="words.keyPlaceholder"
-      :is-focused="isReplacing"
+      :placeholder="secret.hasValue ? words.secretMasked : words.keyPlaceholder"
       @commit="(value) => emit('write', value)"
-      @focusout="isReplacing = false"
     />
 
     <SecretPermissions
@@ -180,17 +170,6 @@ function onDelete(event: MouseEvent): void {
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   color: var(--numen-ink);
-}
-
-.secret-row__stored {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.secret-row__masked {
-  color: var(--numen-hushed);
-  letter-spacing: 0.1em;
 }
 
 .secret-row__actions {

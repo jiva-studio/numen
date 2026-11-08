@@ -318,21 +318,17 @@ describe('the page of secrets', () => {
     dispose(other)
   })
 
-  it('shows a stored value as dots with a Replace action and no field', () => {
+  it('always shows the field, with dots as its placeholder while a value is stored', () => {
     const { wrapper } = mountPage([WORK])
-    const row = rowOf('Work')
-    expect(row.textContent).toContain('••••••••')
-    expect(maskedInputs(row)).toHaveLength(0)
-    expect(findButton(/replace/i, row)).toBeTruthy()
+    const input = maskedInputs(rowOf('Work'))[0] as HTMLInputElement
+    expect(input.placeholder).toBe('••••••••')
+    expect(input.value).toBe('')
     dispose(wrapper)
   })
 
-  it('opens an empty field on Replace and writes the value entered', async () => {
+  it('writes a value entered over a stored one', async () => {
     const { installation, wrapper } = mountPage([WORK])
-    await click(findButton(/replace/i, rowOf('Work')))
     const input = maskedInputs(rowOf('Work'))[0] as HTMLInputElement
-    expect(input.value).toBe('')
-    expect(document.activeElement).toBe(input)
     await enterText(input, 'made-up-new-value')
     expect(installation.writeSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'made-up-new-value')
     dispose(wrapper)
@@ -342,7 +338,7 @@ describe('the page of secrets', () => {
     const { wrapper } = mountPage([secret('s00000009', 'Imported', 'openrouter', [], false)])
     const row = rowOf('Imported')
     expect(maskedInputs(row)[0]?.placeholder).toBe('Paste a value')
-    expect(row.textContent).not.toContain('••••••••')
+    expect(maskedInputs(row)[0]?.placeholder).not.toBe('••••••••')
     dispose(wrapper)
   })
 
