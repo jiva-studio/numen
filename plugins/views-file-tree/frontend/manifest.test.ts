@@ -11,7 +11,7 @@ const manifest = JSON.parse(
 ) as {
   permissions: readonly string[]
   contributes: {
-    commands: readonly { id: string; title: string; icon: string }[]
+    commands: readonly { id: string; title: string; icon: string; shortcut?: string }[]
     menus?: readonly { location: string; command: string; group?: string; order?: number }[]
   }
 }
@@ -32,6 +32,14 @@ describe('the manifest', () => {
       title: 'Open file tree',
       icon: 'folder-tree',
     })
+  })
+})
+
+describe('the shortcut', () => {
+  it('opens the file tree on the window key with Shift and E', () => {
+    expect(manifest.contributes.commands.find((one) => one.id === 'tree.open')?.shortcut).toBe(
+      'mod+shift+e',
+    )
   })
 })
 

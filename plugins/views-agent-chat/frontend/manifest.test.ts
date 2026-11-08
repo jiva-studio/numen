@@ -59,7 +59,7 @@ describe('the title bar', () => {
     readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
   ) as {
     contributes: {
-      commands: readonly { id: string; title: string }[]
+      commands: readonly { id: string; title: string; shortcut?: string }[]
       menus?: readonly { location: string; command: string; group?: string; order?: number }[]
     }
   }
@@ -74,6 +74,10 @@ describe('the title bar', () => {
     expect(contributes.commands.find((one) => one.id === 'chat.open')?.title).toBe(
       'Open agent chat',
     )
+  })
+
+  it('opens the chat on the window key with Shift and A', () => {
+    expect(contributes.commands.find((one) => one.id === 'chat.open')?.shortcut).toBe('mod+shift+a')
   })
 
   it('keeps the command that asks about a note out of the title bar, which has no note', () => {

@@ -11,7 +11,13 @@ const manifest = JSON.parse(
 ) as {
   permissions: readonly string[]
   contributes: {
-    commands: readonly { id: string; title: string; icon?: string; scope?: string }[]
+    commands: readonly {
+      id: string
+      title: string
+      icon?: string
+      scope?: string
+      shortcut?: string
+    }[]
     menus?: readonly { location: string; command: string; group?: string; order?: number }[]
   }
 }
@@ -47,6 +53,14 @@ describe('the manifest', () => {
     expect(command).toMatchObject({ title: 'Show note in plex', scope: 'note' })
     expect(Object.keys(command ?? {})).not.toContain('location')
     expect(Object.keys(command ?? {})).not.toContain('menus')
+  })
+})
+
+describe('the shortcut', () => {
+  it('opens the plex on the window key with Shift and X', () => {
+    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')?.shortcut).toBe(
+      'mod+shift+x',
+    )
   })
 })
 
