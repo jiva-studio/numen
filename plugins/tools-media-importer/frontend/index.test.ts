@@ -18,7 +18,10 @@ describe('addresses dropped from outside the window', () => {
     const made: string[] = []
     activate(ctx, async (folder, urls) => {
       made.push(`${folder}: ${urls.join(' ')}`)
-      return { ok: true, value: urls.map((_, i) => `${folder}/link ${i}.md`) }
+      return {
+        ok: true,
+        value: { paths: urls.map((_, i) => `${folder}/link ${i}.md`), failed: [] },
+      }
     })
 
     const [drop] = ctx.getRegisteredDropHandlers()
@@ -29,5 +32,31 @@ describe('addresses dropped from outside the window', () => {
 
     expect(made).toEqual(['talks: https://video.test/clip https://tidal-mills.test/'])
     expect(paths).toEqual(['talks/link 0.md', 'talks/link 1.md'])
+  })
+})
+
+describe('addresses a drop could not make notes for', () => {
+  const drop = async (failed: readonly string[]) => {
+    const errors: string[] = []
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.tools.media.importer',
+      workspace: { showError: (text: string) => errors.push(text) } as never,
+    })
+    activate(ctx, async () => ({ ok: true, value: { paths: ['links/a.md'], failed } }))
+    const paths = await ctx.getRegisteredDropHandlers()[0]?.drop('links', {
+      'text/uri-list': 'https://a.test/',
+    })
+    return { errors, paths }
+  }
+
+  it('are reported once, with the paths of the other notes still returned', async () => {
+    const { errors, paths } = await drop(['https://x.test/', 'https://y.test/'])
+
+    expect(errors).toEqual(['Could not create a note for: https://x.test/, https://y.test/'])
+    expect(paths).toEqual(['links/a.md'])
+  })
+
+  it('report nothing when there are none', async () => {
+    expect((await drop([])).errors).toEqual([])
   })
 })

@@ -2,7 +2,7 @@
  * Wire adapter for the plugin's importer service.
  */
 import { createApi, type ApiError, type Result, UNAVAILABLE } from '@numen/plugin-sdk'
-import type { Links, Outcome } from '../types'
+import type { DroppedLinks, Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { ErrorCode, SERVICE, type Methods } from './importer'
 
@@ -54,13 +54,13 @@ export const links: Links = {
   copyMedia: async (path, kind) => readOutcome(await call('CopyMedia', { path, kind })),
 }
 
-/** Creates a link note of each web address in the folder; returns the paths of the notes. */
+/** Creates a link note of each web address in the folder; returns the paths of the notes and the addresses that failed. */
 export const createLinks = async (
   folder: string,
   urls: readonly string[],
-): Promise<Outcome<readonly string[]>> => {
+): Promise<Outcome<DroppedLinks>> => {
   const result = await call('CreateLinks', { folder, urls })
   return result.ok
-    ? { ok: true, value: result.value.paths }
+    ? { ok: true, value: { paths: result.value.paths, failed: result.value.failed } }
     : { ok: false, error: describeError(result.error) }
 }
