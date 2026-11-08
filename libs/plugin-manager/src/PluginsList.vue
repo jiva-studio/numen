@@ -141,6 +141,7 @@ function isPluginEnabled(pluginId: string): boolean {
 .plugins-list__items {
   display: flex;
   flex-direction: column;
+  gap: 0.125rem;
 }
 
 .plugins-list__empty {

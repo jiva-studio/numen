@@ -30,7 +30,7 @@ function onKeydown(e: KeyboardEvent): void {
 
 <template>
   <div
-    class="plugin-row row-divider system-row"
+    class="plugin-row system-row"
     role="button"
     tabindex="0"
     :aria-label="props.name"
