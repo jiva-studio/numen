@@ -12,13 +12,14 @@ import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from '../items/typeah
 
 /** A rendered row, which takes keyboard focus on request. */
 interface RowHandle {
-  readonly focus: () => void
+  readonly focus: (options?: FocusOptions) => void
 }
 
 export interface MenuKeysState {
   readonly here: Ref<number>
   readonly holdRow: (item: string, row: unknown) => void
   readonly goTo: (pos: number) => void
+  readonly pointTo: (pos: number) => void
   readonly onKey: (event: KeyboardEvent) => void
 }
 
@@ -93,6 +94,13 @@ export function useMenuKeys(
     else menu.value?.focus()
   }
 
+  /** The pointer onto an item: it becomes the active row, without scrolling the menu. */
+  const pointTo = (pos: number): void => {
+    here.value = pos
+    const item = items()[pos]
+    if (item) renderedRows.get(item.id)?.focus({ preventScroll: true })
+  }
+
   /** The word being typed to jump by, which the next letter carries on. */
   let activeTypeahead: Typeahead = NOTHING_TYPED
 
@@ -120,5 +128,5 @@ export function useMenuKeys(
     }
   }
 
-  return { here, holdRow, goTo, onKey }
+  return { here, holdRow, goTo, pointTo, onKey }
 }

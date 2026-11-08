@@ -61,6 +61,7 @@ export interface MenuNavigationState {
   readonly here: Ref<number>
   readonly submenu: MenuSubmenuState
   readonly focusInitial: () => void
+  readonly pointTo: (pos: number) => void
   readonly onKey: (event: KeyboardEvent) => void
   readonly onResetNavigation: () => void
 }
@@ -150,6 +151,7 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     here,
     holdRow,
     goTo,
+    pointTo,
     onKey: onRowKey,
   } = useMenuKeys(() => visibleItems.value, options.menuRef, options.clock, {
     onOpenSubmenu: (item) => onOpenSubmenu(item, 'keyboard'),
@@ -180,6 +182,7 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     focusInitial: () =>
       goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
     onKey: onRowKey,
+    pointTo,
     onResetNavigation,
   }
 }

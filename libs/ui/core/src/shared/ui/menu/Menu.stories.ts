@@ -693,3 +693,32 @@ export const DiagonalMoveIntoSubmenu: Story = {
     await expect(args.onChoose).toHaveBeenCalledWith('archive')
   },
 }
+
+/** The keyboard and the pointer move one active row, so two rows are never lit. */
+export const OneActiveRow: Story = {
+  args: {
+    trigger: 'keyboard',
+    items: [
+      { id: 'open', text: 'Open' },
+      { id: 'captions', text: 'Download captions' },
+      { id: 'media', text: 'Download media' },
+    ],
+  },
+  play: async () => {
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getActive = () => menuElement()!.querySelectorAll('[data-active]')
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(getItem('Download captions')).toHaveAttribute('data-active')
+    await userEvent.hover(getItem('Download media'))
+    await userEvent.pointer({
+      target: getItem('Download media'),
+      coords: { clientX: 30, clientY: 30 },
+    })
+    await waitFor(() => expect(getItem('Download media')).toHaveAttribute('data-active'))
+    await expect(getActive()).toHaveLength(1)
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(getItem('Download captions')).toHaveAttribute('data-active')
+    await expect(getActive()).toHaveLength(1)
+  },
+}

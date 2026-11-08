@@ -15,6 +15,8 @@ defineProps<{
   current: string | null
   hasName: boolean
   hasIcons: boolean
+  /** The row the next Enter activates: the one the keyboard or the pointer came onto last. */
+  isActive: boolean
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -36,7 +38,7 @@ defineSlots<{
 const row = useTemplateRef<HTMLElement>('row')
 
 /* -------------------------------- Helpers --------------------------------- */
-const focus = (): void => row.value?.focus()
+const focus = (options?: FocusOptions): void => row.value?.focus(options)
 
 defineExpose({ focus, getElement: () => row.value })
 </script>
@@ -56,6 +58,7 @@ defineExpose({ focus, getElement: () => row.value })
     :aria-haspopup="item.children && item.children.length > 0 ? 'menu' : undefined"
     :aria-label="item.component ? item.text : undefined"
     tabindex="-1"
+    :data-active="isActive ? '' : undefined"
     :disabled="item.isDisabled"
     @focus="$emit('focus')"
     @mouseenter="$emit('hover', $event)"
@@ -113,8 +116,7 @@ defineExpose({ focus, getElement: () => row.value })
   -webkit-user-select: none;
 }
 
-.menu__item:hover:not(:disabled),
-.menu__item:focus-visible {
+.menu__item[data-active]:not(:disabled) {
   outline: none;
   background: var(--numen-bubble-bg);
 }
@@ -124,8 +126,7 @@ defineExpose({ focus, getElement: () => row.value })
 }
 
 /* Highlighted and focused rows use the primary text color for detail text. */
-.menu__item:hover:not(:disabled) .menu__detail,
-.menu__item:focus-visible .menu__detail {
+.menu__item[data-active]:not(:disabled) .menu__detail {
   color: var(--numen-ink);
 }
 
