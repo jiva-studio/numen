@@ -48,10 +48,33 @@ const CARRIES = new Set<Code>([
   Code.Unimplemented,
 ])
 
+const REPORTED = 'ReportedError'
+
+/**
+ * An error whose message is shown as it is.
+ * Other errors carry backend or platform text and are shown by their code.
+ */
+export class ReportedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = REPORTED
+  }
+}
+
+const isReportedError = (error: unknown): error is { readonly message: string } =>
+  typeof error === 'object' &&
+  error !== null &&
+  'name' in error &&
+  error.name === REPORTED &&
+  'message' in error &&
+  typeof error.message === 'string'
+
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
 export const formatErrorMessage = (error: unknown): string => {
+  const reported = isReportedError(error) ? error.message.trim() : ''
+  if (reported) return reported
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
