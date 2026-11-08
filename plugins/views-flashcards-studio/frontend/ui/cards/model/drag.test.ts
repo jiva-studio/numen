@@ -1,4 +1,3 @@
-/** A drag of something along an order, by the pointer and by the keyboard. */
 import { describe, expect, it, vi } from 'vitest'
 import { useDrag, type DragDeps } from './drag'
 import type { InsertionPoint } from '../lib/order'
@@ -35,31 +34,31 @@ const setup = (isMoved = true) => {
   return { drag: useDrag(deps), move }
 }
 
-describe('useDrag, the pointer', () => {
-  it('holds what was lifted, and nothing before', () => {
+describe('useDrag pointer', () => {
+  it('sets dragged item on startDrag', () => {
     const { drag } = setup()
     expect(drag.dragged.value).toBeNull()
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     expect(drag.dragged.value).toBe('a')
   })
 
-  it('passes the browser the name of what was lifted as plain text', () => {
+  it('writes the dragged item id to dataTransfer as plain text', () => {
     const { drag } = setup()
-    const lifted = dragEvent()
-    drag.lift('a', lifted.press)
-    expect(lifted.data()).toEqual([['text/plain', 'a']])
+    const started = dragEvent()
+    drag.startDrag('a', started.press)
+    expect(started.data()).toEqual([['text/plain', 'a']])
   })
 
-  it('answers a hover over a place that takes it, and says the drop may follow', () => {
+  it('sets hover target and prevents default when dragging', () => {
     const { drag } = setup()
     const overTarget = dragEvent()
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     drag.hover('b', overTarget.press)
     expect(drag.at.value).toBe('b')
     expect(overTarget.prevented()).toBe(1)
   })
 
-  it('answers no hover while nothing is dragged', () => {
+  it('ignores hover when nothing is dragged', () => {
     const { drag } = setup()
     const overTarget = dragEvent()
     drag.hover('b', overTarget.press)
@@ -67,18 +66,18 @@ describe('useDrag, the pointer', () => {
     expect(overTarget.prevented()).toBe(0)
   })
 
-  it('lets go of everything on release', () => {
+  it('clears drag state on release', () => {
     const { drag } = setup()
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     drag.hover('b', dragEvent().press)
     drag.release()
     expect(drag.dragged.value).toBeNull()
     expect(drag.at.value).toBeUndefined()
   })
 
-  it('moves what was dropped where it was let go, and holds nothing after', () => {
+  it('moves the dragged item to the target on drop and clears state', () => {
     const { drag, move } = setup()
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     drag.hover('c', dragEvent().press)
     drag.drop()
     expect(move.mock.calls).toEqual([['a', 'c']])
@@ -86,22 +85,22 @@ describe('useDrag, the pointer', () => {
     expect(drag.at.value).toBeUndefined()
   })
 
-  it('moves nothing dropped where letting go moves nothing', () => {
+  it('does not move on drop when isMoved returns false', () => {
     const { drag, move } = setup(false)
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     drag.hover('c', dragEvent().press)
     drag.drop()
     expect(move).not.toHaveBeenCalled()
   })
 
-  it('moves nothing dropped over nothing that takes it', () => {
+  it('does not move on drop when no target is hovered', () => {
     const { drag, move } = setup()
-    drag.lift('a', dragEvent().press)
+    drag.startDrag('a', dragEvent().press)
     drag.drop()
     expect(move).not.toHaveBeenCalled()
   })
 
-  it('moves nothing dropped when nothing is retained, whatever remains for nowhere', () => {
+  it('does not move on drop when nothing is dragged', () => {
     const move = vi.fn<(dragged: string, target: InsertionPoint) => void>()
     const drag = useDrag<InsertionPoint>({
       order: () => ['a'],
@@ -114,8 +113,8 @@ describe('useDrag, the pointer', () => {
   })
 })
 
-describe('useDrag, the keyboard', () => {
-  it('moves what is retained one place and says the key is taken', () => {
+describe('useDrag keyboard', () => {
+  it('moves the item one step and prevents default', () => {
     const { drag, move } = setup()
     const key = keyEvent()
     drag.step('c', 'up', key.press)
@@ -123,7 +122,7 @@ describe('useDrag, the keyboard', () => {
     expect(key.prevented()).toBe(1)
   })
 
-  it('leaves the key alone where there is no place that way', () => {
+  it('does not move when the item is already at the boundary', () => {
     const { drag, move } = setup()
     const key = keyEvent()
     drag.step('a', 'up', key.press)
@@ -131,7 +130,7 @@ describe('useDrag, the keyboard', () => {
     expect(key.prevented()).toBe(0)
   })
 
-  it('leaves the key alone where the step moves nothing', () => {
+  it('does not move when isMoved returns false', () => {
     const { drag, move } = setup(false)
     const key = keyEvent()
     drag.step('c', 'up', key.press)

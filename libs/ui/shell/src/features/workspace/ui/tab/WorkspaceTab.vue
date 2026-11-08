@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * One tab in a strip: what it is called, what it is carrying, whether it is
- * the one showing, and the handle it is dragged by.
- *
- * A press reports itself and waits. Whether it turns out to be a choice or the
- * start of a drag is settled by what the pointer does next, which the
- * workspace watches.
- */
 import { useTemplateRef } from 'vue'
 import type { TabId } from '../../lib/node'
 /* --------------------------------- Props ---------------------------------- */
@@ -23,16 +15,13 @@ withDefaults(
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  (event: 'lift', pointer: PointerEvent): void
+  (event: 'press', pointer: PointerEvent): void
   (event: 'close'): void
-  /** A menu request on the tab, with the screen position. */
   (event: 'menu', pos: { x: number; y: number }): void
 }>()
 
 defineSlots<{
-  /** Rendered before the name; shows the type of tab. */
   icon(): unknown
-  /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown
 }>()
 
@@ -44,7 +33,7 @@ const onPointerDown = (event: PointerEvent) => {
   if (event.button !== 0) return
   event.preventDefault()
   ;(event.currentTarget as HTMLElement).focus()
-  emit('lift', event)
+  emit('press', event)
 }
 
 function onContextMenu(event: MouseEvent): void {
@@ -73,15 +62,12 @@ defineExpose({ focus: () => root.value?.focus() })
       <slot name="icon" />
     </span>
 
-    <!-- The whole name is on the element, for a title too long to be drawn. -->
     <span class="min-w-0 truncate" :title="title">{{ title }}</span>
 
     <slot v-if="mark" name="mark" :mark="mark">
       <span class="tab__mark shrink-0" role="img" :aria-label="mark" :title="mark" />
     </slot>
 
-    <!-- Reached from the tab it is on, and only from that one: a strip
-         walked with the arrows is one stop, not two for every tab in it. -->
     <button
       class="tab__close rounded-pill shrink-0"
       type="button"
@@ -97,11 +83,8 @@ defineExpose({ focus: () => root.value?.focus() })
 
 <style scoped>
 .tab {
-  /* Strip height and edge padding. The space between the name and the close
-     button is the same, so the close button has equal space on both sides. */
   --height: 1.4rem;
   --pad: 0.4rem;
-  /* The maximum width of a tab before its name is truncated. */
   --widest: 14rem;
 
   block-size: var(--height);
@@ -114,20 +97,16 @@ defineExpose({ focus: () => root.value?.focus() })
   touch-action: none;
 }
 
-/* The one showing is raised, as a node in focus is. */
 .tab[data-showing] {
   background: var(--numen-raised);
   color: var(--numen-ink);
 }
 
-/* The kind-of-tab icon, rendered before the name. The row's own gap is the
-   space after it, so it has equal space on both sides. */
 .tab__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
 }
 
-/* What the tab is carrying, drawn as a dot in the colour of the text. */
 .tab__mark {
   inline-size: 0.45em;
   block-size: 0.45em;
@@ -135,7 +114,6 @@ defineExpose({ focus: () => root.value?.focus() })
   background: currentColor;
 }
 
-/* The keyboard is drawn at its current position, inside the strip, which is clipped. */
 .tab:focus-visible,
 .tab__close:focus-visible {
   outline: none;

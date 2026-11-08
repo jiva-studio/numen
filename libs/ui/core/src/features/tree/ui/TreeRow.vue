@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * One row of a tree: the content drawn beside the name, the name, and the field
- * a new name is typed in. What the row represents, and what a press on it means,
- * are decided by the tree.
- */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import type { TreeRowProps } from './TreeRow.types'
 import { TreeField } from './tree-field'
@@ -13,27 +8,21 @@ const props = defineProps<TreeRowProps>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A name typed and committed. */
   (event: 'rename', name: string): void
-  /** Renaming was cancelled with the name unchanged, and keyboard focus returns to the row. */
   (event: 'abandon'): void
-  /** The field left, the keyboard already somewhere else. */
   (event: 'blur'): void
 }>()
 
 defineSlots<{
-  /** What is drawn between the row's disclosure and its name. */
   default(): unknown
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** The field a name is typed in. */
 const field = useTemplateRef<InstanceType<typeof TreeField>>('field')
 
 const rowStyle = computed(() => ({ '--level': props.row.level }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-/** The keyboard into the field once it is drawn. */
 watch(
   () => props.isRenaming,
   async (on) => {
@@ -55,7 +44,7 @@ watch(
     :data-tree-row="row.id"
     :data-selected="isSelected && !isRenaming ? '' : undefined"
     :data-renaming="isRenaming ? '' : undefined"
-    :data-dragged="isLifted || undefined"
+    :data-dragged="isDragged || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
     :data-before="isDropAbove || undefined"
@@ -76,7 +65,6 @@ watch(
       @abandon="emit('abandon')"
       @blur="emit('blur')"
     />
-    <!-- The whole name is on the element, for one too long to be drawn. -->
     <span v-else class="tree__name min-w-0 truncate" :title="row.name">{{ row.name }}</span>
   </div>
 </template>
@@ -104,22 +92,18 @@ watch(
   background: var(--numen-bubble-bg);
 }
 
-/* A row on its way somewhere, drawn plainly at its current position. */
 .tree__row[data-dragged] {
   opacity: var(--dragged-fade);
 }
 
-/* Keyboard focus indicator. */
 .tree__row:focus-visible {
   outline: none;
 }
 
-/* A row the selection already marks is marked once. */
 .tree__row[data-selected]:focus-visible {
   outline: none;
 }
 
-/* What a drop would land inside: the row. */
 .tree__row[data-into] {
 }
 
@@ -132,7 +116,6 @@ watch(
   background: var(--numen-ring);
 }
 
-/* Spacing between the icon and the name. */
 .tree__icon {
   margin-inline-end: var(--gap);
 }

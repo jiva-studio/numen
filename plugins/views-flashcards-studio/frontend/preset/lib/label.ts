@@ -1,17 +1,3 @@
-/**
- * The text labels of the curve control plot and the space each takes.
- *
- * All geometry is in plot units. A label is positioned against a line or above
- * a mark and evaluates to a box; two overlapping boxes would print over each
- * other, and the plot omits one of them.
- */
-export interface InlinePositionStyle {
-  readonly insetInlineStart?: string
-  readonly insetBlockStart?: string
-  readonly translate?: string
-  readonly [property: `--${string}`]: string | number | undefined
-}
-type CSSProperties = InlinePositionStyle
 import type { Position } from '@numen/ui'
 import {
   BACKLOG_PLOT,
@@ -24,26 +10,37 @@ import {
   type Extent,
 } from './plot'
 
-/** Vertical offset of a mark name above its mark, and half the width of a mark name. */
+/** CSS inline position style for a plot label. */
+export interface InlinePositionStyle {
+  readonly insetInlineStart?: string
+  readonly insetBlockStart?: string
+  readonly translate?: string
+  readonly [property: `--${string}`]: string | number | undefined
+}
+type CSSProperties = InlinePositionStyle
+
+/** Vertical offset of a mark label above its mark. */
 export const AXIS_LABEL_LIFT = 9
+
+/** Half the width of a mark label. */
 export const LABEL = 34
 
-/** Space taken by a number placed against a line, in plot units. */
+/** Width of an axis number label in plot units. */
 export const AXIS_LABEL_WIDTH = 64
+
+/** Height of an axis number label in plot units. */
 export const AXIS_LABEL_HEIGHT = 15
 
-/**
- * Space taken by the callout above the knob, and its distance from the knob.
- * The width and height are the rendered size at the interface's default size,
- * and every other plot element is kept clear of that box. The gap leaves the
- * curve on either side of the knob visible, and is the same on whichever side
- * the callout is placed.
- */
+/** Width of the knob callout in plot units. */
 export const CALLOUT_WIDTH = 104
+
+/** Height of the knob callout in plot units. */
 export const CALLOUT_HEIGHT = 48
+
+/** Vertical gap between the knob and its callout in plot units. */
 export const CALLOUT_GAP = 24
 
-/** Space taken by one label on the plot, in plot units. */
+/** Bounding box of a label in plot units. */
 export interface Box {
   readonly x: number
   readonly y: number
@@ -51,18 +48,14 @@ export interface Box {
   readonly high: number
 }
 
-/** Whether two label boxes do not overlap. */
+/** Returns true when two label boxes do not overlap. */
 export const areBoxesSeparate = (one: Box, two: Box): boolean =>
   one.x + one.wide <= two.x ||
   two.x + two.wide <= one.x ||
   one.y + one.high <= two.y ||
   two.y + two.high <= one.y
 
-/**
- * Whether a number placed at this height does not overlap anything drawn near
- * the edge it is placed at. A number that would overlap the line or a mark is
- * omitted: the axis drops the label and the drawing keeps its own.
- */
+/** Returns true when an axis label at y does not overlap the curve or marks. */
 export const isAxisLabelClear = (
   y: number,
   places: readonly Position[],
@@ -74,10 +67,7 @@ export const isAxisLabelClear = (
   return !places.some(isNear)
 }
 
-/**
- * Position of a mark name: above the mark, shifted inward where the mark is
- * near the left or right edge of the plot so the name stays inside the plot.
- */
+/** Returns the CSS position style for a mark label. */
 export const getMarkNameStyle = (position: Position): CSSProperties => {
   let back = '-50%'
   if (position.x < PLOT_LEFT + LABEL) back = '0'
@@ -89,7 +79,7 @@ export const getMarkNameStyle = (position: Position): CSSProperties => {
   }
 }
 
-/** Space taken by a mark name, which the knob's own figures are kept clear of. */
+/** Returns the bounding box of a mark label. */
 export const getNameBox = (position: Position): Box => {
   let back = LABEL
   if (position.x < PLOT_LEFT + LABEL) back = 0
@@ -102,22 +92,22 @@ export const getNameBox = (position: Position): Box => {
   }
 }
 
-/** Position of a number against one of a plot's own lines, in the plot's space. */
-export const getAxisNumber = (y: number, lift: string, high = PLOT_HEIGHT): CSSProperties => ({
+/** Returns the CSS position style for an axis number. */
+export const getAxisNumber = (y: number, offsetY: string, high = PLOT_HEIGHT): CSSProperties => ({
   insetInlineStart: `${(PLOT_LEFT / PLOT_WIDTH) * 100}%`,
   insetBlockStart: `${(y / high) * 100}%`,
-  translate: `0 ${lift}`,
+  translate: `0 ${offsetY}`,
 })
 
-/** Space taken by that number, which the knob's own figures are kept clear of. */
-export const getAxisNumberBox = (y: number, lift: string): Box => ({
+/** Returns the bounding box of an axis number. */
+export const getAxisNumberBox = (y: number, offsetY: string): Box => ({
   x: PLOT_LEFT,
-  y: lift === '0' ? y : y - AXIS_LABEL_HEIGHT,
+  y: offsetY === '0' ? y : y - AXIS_LABEL_HEIGHT,
   wide: AXIS_LABEL_WIDTH,
   high: AXIS_LABEL_HEIGHT,
 })
 
-/** The callout above the knob: the side it is placed on, the space it takes, and its position. */
+/** Position and bounding box of the knob callout. */
 export interface Callout {
   readonly isUnder: boolean
   readonly box: Box
@@ -125,12 +115,7 @@ export interface Callout {
   readonly tail: CSSProperties
 }
 
-/**
- * Position of the callout above the knob. It is placed above the knob, and
- * below it where above would leave the top of the plot, so it never covers the
- * curve the knob is on. The tail is anchored on the knob and flips with the
- * callout, so the numbers always refer to the knob.
- */
+/** Creates the callout position and bounding box for the knob. */
 export const createCallout = (knob: Position): Callout => {
   const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HEIGHT < PLOT_TOP
   const half = CALLOUT_WIDTH / 2
@@ -158,14 +143,14 @@ export const createCallout = (knob: Position): Callout => {
   }
 }
 
-/** A mark on the plot, and the name displayed above it where it has one. */
+/** Mark on the plot with its label text. */
 export interface Mark {
   readonly key: string
   readonly at: Position
   readonly text: string
 }
 
-/** A mark name that fits: its position and the space it takes. */
+/** Positioned mark label with its bounding box. */
 export interface Label {
   readonly key: string
   readonly text: string
@@ -173,11 +158,7 @@ export interface Label {
   readonly box: Box
 }
 
-/**
- * The names that fit. They are taken in the order the marks stand in, and one
- * that would touch the readout over the knob, or a name already placed, is
- * left off.
- */
+/** Creates non-overlapping labels for the marks. */
 export const createLabels = (marks: readonly Mark[], calloutBox: Box | null): readonly Label[] => {
   const occupiedBoxes: Box[] = calloutBox ? [calloutBox] : []
   const out: Label[] = []
@@ -191,26 +172,21 @@ export const createLabels = (marks: readonly Mark[], calloutBox: Box | null): re
   return out
 }
 
-/** A number read at an edge of the plot: its position and its text. */
+/** Axis height label with its position and bounding box. */
 export interface Height {
   readonly at: CSSProperties
   readonly box: Box
   readonly text: string
 }
 
-/**
- * Axis labels for the plot height, positioned against the lines they are read
- * from. An extent of zero width is one number, displayed once at the foot, where
- * a constant curve is drawn. A number that overlaps the line, a mark or the
- * callout above the knob is omitted: the axis drops the label and the drawing
- * keeps its own.
- */
+/** Context for placing axis height labels. */
 export interface AxisLabelsContext {
   places: readonly Position[]
   marks: readonly Position[]
   calloutBox?: Box | null
 }
 
+/** Creates the axis height labels for a plot extent. */
 export const createAxisLabels = (
   extent: Extent,
   context: AxisLabelsContext,
@@ -218,15 +194,12 @@ export const createAxisLabels = (
 ): readonly Height[] => {
   const { min: least, max: most } = extent
   const { places, marks, calloutBox = null } = context
-  const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
-    const box = getAxisNumberBox(y, lift)
+  const measureHeightAt = (y: number, offsetY: string, value: number): readonly Height[] => {
+    const box = getAxisNumberBox(y, offsetY)
     if (!isAxisLabelClear(y, places, marks)) return []
     if (calloutBox && !areBoxesSeparate(box, calloutBox)) return []
-    return [{ at: getAxisNumber(y, lift), box, text: getText(value) }]
+    return [{ at: getAxisNumber(y, offsetY), box, text: getText(value) }]
   }
-  // An extent of no width has one number and nothing else to read, and it is set
-  // over the line it names. That line is the foot, which is where a run with no
-  // height is drawn.
   if (most === least) {
     return [
       {
@@ -239,18 +212,16 @@ export const createAxisLabels = (
   return [...measureHeightAt(PLOT_TOP, '-100%', most), ...measureHeightAt(PLOT_BOTTOM, '0', least)]
 }
 
-/**
- * Computes the axis height labels for the backlog plot.
- */
+/** Creates the axis height labels for the backlog plot. */
 export const createBacklogAxisLabels = (
   extent: Extent,
   places: readonly Position[],
   formatValue: (value: number) => string,
 ): readonly { at: CSSProperties; text: string }[] => {
   const { min: least, max: most } = extent
-  const createLabel = (y: number, lift: string, value: number) =>
+  const createLabel = (y: number, offsetY: string, value: number) =>
     isAxisLabelClear(y, places, [])
-      ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
+      ? [{ at: getAxisNumber(y, offsetY, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
   if (most === least) {
     return [
@@ -263,10 +234,7 @@ export const createBacklogAxisLabels = (
   ]
 }
 
-/**
- * Position of the knob's own value. It is placed on a line of its own below the
- * plot, so it never overlaps a number read at the plot edges.
- */
+/** Returns the CSS position style for the knob value label. */
 export const getKnobValueStyle = (knob: Position | null): CSSProperties => {
   if (!knob) return {}
   let back = '-50%'

@@ -1,4 +1,3 @@
-/** Keyboard behavior of a pane, and what it announces to a screen reader. */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
@@ -20,7 +19,7 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
   getStripEdge: () => NO_STRIP_EDGE,
   choose: vi.fn(),
   close: vi.fn(),
-  lift: vi.fn(),
+  startTabPress: vi.fn(),
   menu: vi.fn(),
   claim: vi.fn(),
   resize: vi.fn(),
@@ -43,8 +42,8 @@ const panels = (wrapper: ReturnType<typeof mountPane>) => wrapper.findAll('[role
 
 const getFocusedTab = () => document.activeElement?.getAttribute('data-workspace-tab')
 
-describe('what the strip is', () => {
-  it('is a list of tabs, each standing over a panel', () => {
+describe('tab strip', () => {
+  it('renders a tablist and links each tab to its tabpanel', () => {
     const target = mountPane()
 
     expect(target.find('[role="tablist"]').exists()).toBe(true)
@@ -57,17 +56,17 @@ describe('what the strip is', () => {
     }
   })
 
-  it('says which of them is showing', () => {
+  it('sets aria-selected on the active tab', () => {
     const selected = strip(mountPane()).map((tab) => tab.attributes('aria-selected'))
     expect(selected).toStrictEqual(['false', 'true', 'false'])
   })
 
-  it('is stopped at once, at the tab that is showing', () => {
+  it('sets tabindex to 0 only on the active tab', () => {
     const stops = strip(mountPane()).map((tab) => tab.attributes('tabindex'))
     expect(stops).toStrictEqual(['-1', '0', '-1'])
   })
 
-  it('passes each tab what that tab is carrying', () => {
+  it('passes each tab mark from the workspace context', () => {
     const target = mountPane({ marks: { chat: 'unsaved' } })
     const marks = strip(target).map((tab) => {
       const renderedMark = tab.find('.tab__mark')
@@ -77,11 +76,11 @@ describe('what the strip is', () => {
     expect(marks).toStrictEqual([null, 'unsaved', null])
   })
 
-  it('is drawn where the pane holds tabs', () => {
+  it('renders the strip when the pane has tabs', () => {
     expect(mountPane().find('[data-workspace-strip]').exists()).toBe(true)
   })
 
-  it('is not drawn at all where the pane holds none', () => {
+  it('omits the strip when the pane has no tabs', () => {
     expect(
       mountPane({ pane: pane('main', []) })
         .find('[data-workspace-strip]')
@@ -90,28 +89,28 @@ describe('what the strip is', () => {
   })
 })
 
-describe('a pane holding nothing', () => {
+describe('empty pane', () => {
   const mountEmptyPane = (slots: Record<string, string> = {}) =>
     mountPane({ pane: pane('main', []) }, slots)
 
-  it('says so, where the caller says nothing else', () => {
+  it('renders default empty text when no silence slot is provided', () => {
     expect(mountEmptyPane().text()).toContain('Nothing open')
   })
 
-  it('is filled by what the caller draws', () => {
+  it('renders the silence slot when provided', () => {
     const target = mountEmptyPane({ silence: '<p class="welcome">Welcome</p>' })
 
     expect(target.find('.welcome').exists()).toBe(true)
     expect(target.text()).not.toContain('Nothing open')
   })
 
-  it('remains over no panel', () => {
+  it('renders no tabpanels when the pane is empty', () => {
     expect(panels(mountEmptyPane())).toHaveLength(0)
   })
 })
 
-describe('walking the strip', () => {
-  it('steps along with the arrows, and shows what it reaches', async () => {
+describe('strip keyboard navigation', () => {
+  it('moves focus and emits choose on ArrowRight', async () => {
     const target = mountPane()
     await strip(target)[1]?.trigger('keydown', { key: 'ArrowRight' })
 
@@ -119,7 +118,7 @@ describe('walking the strip', () => {
     expect(getFocusedTab()).toBe('notes')
   })
 
-  it('meets its own ends', async () => {
+  it('wraps around from the first tab to the last on ArrowLeft', async () => {
     const target = mountPane({ pane: pane('main', ['plex', 'chat', 'notes'], 'plex') })
     await strip(target)[0]?.trigger('keydown', { key: 'ArrowLeft' })
 
@@ -127,7 +126,7 @@ describe('walking the strip', () => {
     expect(getFocusedTab()).toBe('notes')
   })
 
-  it('goes to either end by Home and End', async () => {
+  it('selects the first and last tab on Home and End', async () => {
     const target = mountPane()
     await strip(target)[1]?.trigger('keydown', { key: 'Home' })
     await strip(target)[0]?.trigger('keydown', { key: 'End' })
@@ -135,7 +134,7 @@ describe('walking the strip', () => {
     expect(target.emitted('choose')).toStrictEqual([['plex'], ['notes']])
   })
 
-  it('leaves every other key to whatever else wants it', async () => {
+  it('ignores non-navigation keys', async () => {
     const target = mountPane()
     await strip(target)[1]?.trigger('keydown', { key: 'ArrowDown' })
     await strip(target)[1]?.trigger('keydown', { key: 'a' })
@@ -144,10 +143,10 @@ describe('walking the strip', () => {
   })
 })
 
-describe('the way out of a panel', () => {
+describe('panel Escape key', () => {
   const inside = '<button class="inside">inside</button>'
 
-  it('is Escape, which lands on the tab the panel is retained under', async () => {
+  it('moves focus from the panel to the active tab on Escape', async () => {
     const tab = mountPane({}, { tab: inside })
     const first = tab.findAll<HTMLButtonElement>('.inside')[1]
 
@@ -157,9 +156,7 @@ describe('the way out of a panel', () => {
     expect(getFocusedTab()).toBe('chat')
   })
 
-  // Closing a tab before the displayed tab shifts its position in the strip, and
-  // the exit focus lands on the tab, not on the position.
-  it('lands on the tab the panel is retained under after a tab before it closed', async () => {
+  it('focuses the active tab after a preceding tab is removed', async () => {
     const tab = mountPane({}, { tab: inside })
     await tab.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
 
@@ -170,7 +167,7 @@ describe('the way out of a panel', () => {
     expect(getFocusedTab()).toBe('chat')
   })
 
-  it('leaves Escape alone where the panel has already acted on it', async () => {
+  it('ignores Escape when defaultPrevented is true', async () => {
     const tab = mountPane({}, { tab: inside })
     const first = tab.findAll<HTMLButtonElement>('.inside')[1]
 
@@ -182,19 +179,19 @@ describe('the way out of a panel', () => {
   })
 })
 
-describe('the tab that is showing', () => {
-  it('is returned as the pane is drawn', () => {
+describe('show event', () => {
+  it('emits show with the active tab on mount', () => {
     expect(mountPane().emitted('show')).toStrictEqual([['chat']])
   })
 
-  it('is returned again when another tab takes its place', async () => {
+  it('emits show when the active tab changes', async () => {
     const target = mountPane()
     await target.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(target.emitted('show')).toStrictEqual([['chat'], ['notes']])
   })
 
-  it('is returned once the panel it remains over is on screen', async () => {
+  it('emits show after the active panel is marked data-showing', async () => {
     const onScreen: boolean[] = []
     const onShow = (tab: string) => {
       const index = ['plex', 'chat', 'notes'].indexOf(tab)
@@ -208,7 +205,7 @@ describe('the tab that is showing', () => {
     expect(onScreen).toStrictEqual([true, true])
   })
 
-  it('is nothing at all where the pane holds nothing', () => {
+  it('does not emit show when the pane has no active tab', () => {
     expect(mountPane({ pane: pane('main', []) }).emitted('show')).toBeUndefined()
   })
 })

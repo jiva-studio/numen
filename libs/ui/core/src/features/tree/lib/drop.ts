@@ -1,28 +1,18 @@
 import type { Row, RowId, ShownRow } from './row'
 
-/**
- * Where held rows would land: inside a row, or above one. Into no row at all
- * is the top level.
- */
+/** Drop target for dragged rows: inside a parent row or before a row. */
 export type RowDropTarget = { readonly into: RowId | null } | { readonly before: RowId }
 
 const getTargetRow = (target: RowDropTarget): RowId | null =>
   'into' in target ? target.into : target.before
 
+/** Vertical pointer offset and row height for drop target calculation. */
 export interface DropMetrics {
   readonly y: number
   readonly height: number
 }
 
-/**
- * What letting go at a height evaluates to.
- *
- * A row that holds is read in three bands: the middle half means into it, and
- * the quarter at either end means between. Every other row is halved, and each
- * half means between. Past the last row is the top level, which is what the
- * tree's own empty area evaluates to. A drop target naming one of the rows being
- * dragged moves nothing and answers nothing.
- */
+/** Returns the row drop target at a vertical offset, or null when the target is one of the dragged rows. */
 export function getRowDropTarget(
   visibleRows: readonly ShownRow[],
   dragIds: readonly RowId[],
@@ -56,7 +46,7 @@ function findBand(
   return next ? { before: next.id } : { into: null }
 }
 
-/** The row a drop target puts what is held inside. Null at the top level. */
+/** Returns the parent row id for a drop target, or null at the root level. */
 export const findHolder = (
   visibleRows: readonly ShownRow[],
   target: RowDropTarget,
@@ -65,23 +55,21 @@ export const findHolder = (
     ? target.into
     : (visibleRows.find((row) => row.id === target.before)?.parent ?? null)
 
-/**
- * Rows cannot be dropped into themselves or into any of their descendants.
- * Everything else is allowed, and the top level rejects nothing.
- */
+/** Returns true when dropping the dragged rows into the target parent row is not allowed. */
 export function isRefused(
   rows: readonly Row[],
   dragIds: readonly RowId[],
   into: RowId | null,
 ): boolean {
-  const lifted = new Set<RowId | null>(dragIds)
-  if (lifted.has(into)) return true
+  const dragged = new Set<RowId | null>(dragIds)
+  if (dragged.has(into)) return true
 
-  const isInsideLifted = (children: readonly Row[], within: boolean): boolean =>
+  const isInsideDragged = (children: readonly Row[], within: boolean): boolean =>
     children.some(
       (row) =>
-        (within && row.id === into) || isInsideLifted(row.rows ?? [], within || lifted.has(row.id)),
+        (within && row.id === into) ||
+        isInsideDragged(row.rows ?? [], within || dragged.has(row.id)),
     )
 
-  return isInsideLifted(rows, false)
+  return isInsideDragged(rows, false)
 }

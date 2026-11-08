@@ -1,13 +1,4 @@
 <script setup lang="ts">
-/**
- * One template of a card model, edited: a strip it is dragged by, holding its
- * name and one row of the fields, and below that one area divided into four
- * parts.
- *
- * Each half is written in its own box, with its evaluated result next to it. A
- * field pressed in the strip is inserted into the half last typed in. The
- * caller owns the template and its problems.
- */
 import { computed, nextTick, shallowRef, type ComponentPublicInstance } from 'vue'
 import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
@@ -37,30 +28,20 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'rename', name: string): void
   (event: 'remove'): void
-  /** The template taken up by the pointer, and let go again. */
-  (event: 'lift', press: DragEvent): void
+  (event: 'drag-start', press: DragEvent): void
   (event: 'release'): void
-  /** The template is moved one position along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
-  /** One half of it, with its current text. */
   (event: 'write', half: Half, text: string): void
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/**
- * The half last typed in, and nothing while neither has been. A box nothing has
- * been typed in holds no caret, so what half the caret is in is one thing and
- */
 const aim = shallowRef<Half | null>(null)
 
-/** The half a field is written into, which is the front until one is typed in. */
 const focusedHalf = computed<Half>(() => aim.value ?? 'front')
 
-/** The two boxes this template is written in, each held by the part drawing it. */
 const front = shallowRef<InstanceType<typeof TemplatePane> | null>(null)
 const back = shallowRef<InstanceType<typeof TemplatePane> | null>(null)
 
-/** The four parts this template's window is divided into. */
 const divided = computed<readonly Pane[]>(() => getPanes(props.template, props.words))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -97,7 +78,7 @@ const isFocused = (pane: Pane): boolean =>
   <article class="template rounded-node bg-raised flex flex-col" :data-template="template.id">
     <CardHeader
       :drag="`${words.drag}: ${template.name}`"
-      @dragstart="emit('lift', $event)"
+      @dragstart="emit('drag-start', $event)"
       @dragend="emit('release')"
       @step="(direction, press) => emit('step', direction, press)"
     >
@@ -114,8 +95,6 @@ const isFocused = (pane: Pane): boolean =>
       </template>
     </CardHeader>
 
-    <!-- One window divided into four: the parts share the lines between them,
-         and the frame around them is the template's own. -->
     <div class="template__body">
       <TemplatePane
         v-for="pane in divided"
@@ -132,14 +111,9 @@ const isFocused = (pane: Pane): boolean =>
 </template>
 
 <style scoped>
-/* The width of the template is what the window inside it is divided by. */
 .template {
-  /* The air a box keeps inside a part of the window, which is what a box put
-     there inherits. */
   --box-air: 0.5rem;
   --box-pad-inline: var(--numen-box-air);
-
-  /* The height of a part in lines before its content makes it taller. */
   --pane-lines: 6;
   --pane-min: calc(var(--pane-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air));
 
@@ -150,8 +124,6 @@ const isFocused = (pane: Pane): boolean =>
   overflow: hidden;
 }
 
-/* The body is one window: the parts are divided by the lines they share, and
-   the frame around them is the template's own. */
 .template__body {
   display: grid;
   grid-template-columns: 1fr;
@@ -159,8 +131,6 @@ const isFocused = (pane: Pane): boolean =>
   background: var(--numen-rule);
 }
 
-/* Two parts to a row from the width at which a part still holds a line of a
-   template: the writing beside its preview, the front above the back. */
 @container (min-width: 36rem) {
   .template__body {
     grid-template-columns: 1fr 1fr;
