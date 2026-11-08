@@ -12,7 +12,7 @@ func TestASettingOfRowsIsShownWithItsOperationAndItsRowLimit(t *testing.T) {
 
 	view := NewPluginSetting(declared, "", nil)
 
-	if view.Operation != "embed" || view.Max == nil || *shown.Max != 2 {
+	if view.Operation != "embed" || view.Max == nil || *view.Max != 2 {
 		t.Errorf("the setting shown = %+v, want operation embed and max 2", view)
 	}
 }

@@ -93,7 +93,10 @@ function update(change: ConnectionChange) {
 }
 
 function getDeleteText(connection: ConnectionInfo): string {
-  const question = words.connectionDeleteAsking(connection.name, connection.secretKeysSet.length > 0)
+  const question = words.connectionDeleteAsking(
+    connection.name,
+    connection.secretKeysSet.length > 0,
+  )
   const usedBy = getUsedByNames(connection.uses)
   const text = usedBy === '' ? question : `${question} ${words.connectionUsedByDeleted(usedBy)}`
   return deleteProblem.value === ''

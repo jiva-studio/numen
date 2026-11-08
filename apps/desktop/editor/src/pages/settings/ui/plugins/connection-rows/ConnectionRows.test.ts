@@ -90,7 +90,7 @@ interface Options {
 const mountRows = (options: Options = {}) => {
   const listModels = options.listModels ?? vi.fn(() => Promise.resolve(asValue(MODELS)))
   const installation = createInstallation({
-    connections: ref(options.connections ?? [WORK, HOME, EMBED_ONLY, RETIRED]),
+    connections: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
     connectionTypes: ref([SERVICE, EMBEDDER]),
     listModels,
     listReasoningLevels: vi.fn(() => Promise.resolve(asValue([]))),
