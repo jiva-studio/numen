@@ -46,6 +46,6 @@ func (u *List) hasValue(ctx context.Context, id string) bool {
 	if u.keys == nil {
 		return false
 	}
-	value, err := u.keys.GetKey(ctx, getEntryName(id))
+	value, err := u.keys.GetKey(ctx, GetEntryName(id))
 	return err == nil && !errors.Is(err, context.Canceled) && value != ""
 }

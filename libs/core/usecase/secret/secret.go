@@ -32,8 +32,9 @@ type operation struct {
 	plugins pluginport.SecretPlugins
 }
 
-// getEntryName returns the name the value of a secret is stored under in the key store.
-func getEntryName(id string) string { return "secret/" + id }
+// GetEntryName returns the name the value of a secret is stored under in the key store, which the
+// host reads it by when it sends the value to a plugin.
+func GetEntryName(id string) string { return "secret/" + id }
 
 func newInvalidError(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, args...))
@@ -46,7 +47,7 @@ func (o operation) setValue(ctx context.Context, id, value string) error {
 	if o.keys == nil {
 		return fmt.Errorf("%w: %w", ErrKeyStore, pluginport.ErrNoKeyStore)
 	}
-	if err := o.keys.SetKey(ctx, getEntryName(id), value); err != nil {
+	if err := o.keys.SetKey(ctx, GetEntryName(id), value); err != nil {
 		return fmt.Errorf("%w: store the value of %s: %w", ErrKeyStore, id, err)
 	}
 	return nil
@@ -57,7 +58,7 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	if o.keys == nil {
 		return nil
 	}
-	if err := o.keys.DeleteKey(ctx, getEntryName(id)); err != nil && !errors.Is(err, pluginport.ErrNoKey) {
+	if err := o.keys.DeleteKey(ctx, GetEntryName(id)); err != nil && !errors.Is(err, pluginport.ErrNoKey) {
 		return fmt.Errorf("%w: delete the value of %s: %w", ErrKeyStore, id, err)
 	}
 	return nil

@@ -283,7 +283,7 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 		if store == nil {
 			return values, pluginport.ErrNoKeyStore
 		}
-		value, err := store.GetKey(ctx, "secret/"+one.ID)
+		value, err := store.GetKey(ctx, secret.GetEntryName(one.ID))
 		switch {
 		case err == nil:
 			values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group, Value: value})
