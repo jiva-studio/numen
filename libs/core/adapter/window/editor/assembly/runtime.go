@@ -172,7 +172,7 @@ func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.Age
 // assembly names none.
 func (e Runtime[H, V]) GetTabKindChoice() *tabkind.Choose {
 	if e.TabKindChoiceFn == nil {
-		return tabkind.NewChoose(nil, nil)
+		return tabkind.NewChoose(nil, nil, nil)
 	}
 	return e.TabKindChoiceFn()
 }

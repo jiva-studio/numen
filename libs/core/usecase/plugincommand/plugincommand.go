@@ -59,13 +59,15 @@ type Commands struct {
 }
 
 // NewCommands makes both scenarios over the commands, which may be nothing, the table that gives a
-// file its type, and the vault files a note's type is read from.
+// file its type, the vault files a note's type is read from, and the settings a condition reads as
+// config; without settings a condition over config is undecided and holds.
 func NewCommands(
 	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
+	config pluginport.WhenConfig,
 ) Commands {
 	return Commands{
 		List: List{commands: commands, types: types},
-		Run:  Run{commands: commands, types: types, readers: readers},
+		Run:  Run{commands: commands, types: types, readers: readers, config: config},
 	}
 }
 
@@ -139,6 +141,7 @@ type Run struct {
 	commands pluginport.PluginCommands
 	types    contenttypeport.ContentTypeTable
 	readers  vaultport.VaultReaders
+	config   pluginport.WhenConfig
 }
 
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
@@ -190,11 +193,11 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
 	}
-	if !condition.HasTargetVariable() {
-		return nil
-	}
 	noteType, properties := u.readNote(ctx, v, condition, call.Path)
 	values := pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)).WithNote(noteType, properties)
+	if u.config != nil && slices.Contains(condition.ListNames(), "config") {
+		values = values.WithConfig(u.config.GetWhenConfig())
+	}
 	if condition.Evaluate(values.Get()) == pluginport.ConditionFalse {
 		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
 			ErrBadArguments, declared.ID, call.Path, declared.When)

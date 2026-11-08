@@ -49,7 +49,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 		}},
 	}}
 	var vaults []domain.Vault
-	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
+	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -185,7 +185,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		PluginID: "md.numen.engines.transcription",
 		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
-	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
+	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -236,7 +236,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		PluginID: "md.numen.links",
 		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
-	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
+	commands := plugincommand.NewCommands(declared, fileTypes{}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {

@@ -79,18 +79,18 @@ func (c Config) StopPlugins(ctx context.Context) error {
 // host they list none.
 func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
-		return plugincommand.NewCommands(nil, nil, nil)
+		return plugincommand.NewCommands(nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders())
+	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders(), c.getWhenConfig())
 }
 
 // GetTabKindChoice is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
 // plugins. Where there is no plugin host it chooses none.
 func (c Config) GetTabKindChoice() *tabkind.Choose {
 	if c.PluginHost == nil {
-		return tabkind.NewChoose(nil, nil)
+		return tabkind.NewChoose(nil, nil, nil)
 	}
-	return tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost)
+	return tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
 }
 
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions

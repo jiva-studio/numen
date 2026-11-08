@@ -44,7 +44,7 @@ func (v *versionItems) RunVersionItem(
 }
 
 func newItemsHandler(items *versionItems) *command.Handler {
-	return command.NewHandler(shownVault{}, plugincommand.NewCommands(conditionalCommands{}, fileTypes{}, nil), items)
+	return command.NewHandler(shownVault{}, plugincommand.NewCommands(conditionalCommands{}, fileTypes{}, nil, nil), items)
 }
 
 func TestListCommands_ListsACommandWithItemsAndMarksIt(t *testing.T) {
@@ -163,7 +163,7 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 
 func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *testing.T) {
 	plugins := &runRecorded{}
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, fileTypes{}, nil), &versionItems{})
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, fileTypes{}, nil, nil), &versionItems{})
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
 		PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "beta",

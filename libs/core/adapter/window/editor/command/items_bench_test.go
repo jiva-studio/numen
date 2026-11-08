@@ -29,7 +29,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(commandbridge.Open(host), host, nil)
+	commands := plugincommand.NewCommands(commandbridge.Open(host), host, nil, nil)
 	return command.NewHandler(shownVault{}, commands, &versionItems{})
 }
 
