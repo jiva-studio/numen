@@ -92,9 +92,9 @@ test.describe('Plugin settings take effect', () => {
 
     await settings.getByRole('button', { name: /^Secrets$/ }).click()
     const section = settings.getByRole('region', { name: 'openai' })
-    const field = section.getByLabel(/^Value of /)
-    await field.fill(value)
-    await field.press('Enter')
+    const valueField = section.getByLabel(/^Value of /)
+    await valueField.fill(value)
+    await valueField.press('Enter')
 
     await expect
       .poll(async () => (await readSecrets(page)).map((one) => one.name))
