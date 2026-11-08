@@ -90,7 +90,10 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     getEntries: slots.hostDeps.getSlotEntries,
     findCommand: slots.hostDeps.findSlotCommand,
     findView: () => undefined,
+    getWhenValues: slots.hostDeps.getSlotWhenValues,
+    whenReader: slots.hostDeps.whenReader,
   })
+  slots.windowValues.current = () => ({ 'window.isVaultOpen': true })
   return { registry, hostDeps: slots.hostDeps, windowValues: slots.windowValues }
 }
 
