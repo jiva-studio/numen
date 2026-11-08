@@ -90,6 +90,7 @@ linters:
 
     misspell:
       locale: US
+      mode: restricted
 
     depguard:
       rules:
