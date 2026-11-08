@@ -17,8 +17,10 @@ import {
   writeNote,
 } from '../../../e2e/desktop/tests/support/vault.js'
 
+
 const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
-/** The warnings the note gives, by the name a scenario uses. */
+
+/** The warnings a note gives, by the name a scenario uses. */
 const WARNINGS: Record<string, string> = {
   change: 'Saving paused: the file changed on disk.',
   removal: 'the note was removed from the vault',
@@ -27,62 +29,45 @@ const WARNINGS: Record<string, string> = {
 /** The ways out of a warning, by the name a scenario uses. */
 const BANNER_CHOICES: Record<string, string> = {
   'keep my text': 'Keep my version',
-  'use the file text': 'Use disk version',
+  'use the saved text': 'Use disk version',
   'save the note again': 'Recreate it',
 }
 
-/** The note the scenario works with. */
+/** A note of the scenario, found by the title the scenario gives it. */
 interface Subject {
   path: string
-  initialText: string
   text: Locator
 }
 
-/** The saves of the window that wait until another program has changed the file. */
+/** The saves of a note that wait until another program has changed its file. */
 interface PausedSaves {
   routes: Route[]
   isPaused: boolean
 }
 
 export class Person {
-  private subject?: Subject
-  private pausedSaves?: PausedSaves
+  private readonly subjects = new Map<string, Subject>()
+  private readonly pausedSaves = new Map<string, PausedSaves>()
   private readonly createdPaths: string[] = []
+  private hasWorkspace = false
 
   constructor(private readonly page: Page) {}
 
-  private getSubject(): Subject {
-    if (!this.subject) throw new Error('the scenario has no open note')
-    return this.subject
+  private getSubject(title: string): Subject {
+    const subject = this.subjects.get(title)
+    if (!subject) throw new Error(`the scenario has no open note "${title}"`)
+    return subject
   }
 
-  async expectHas(subject: string, text: string): Promise<void> {
-    if (subject === 'file') await waitForSavedBody(this.page.request, this.getSubject().path, text)
-    else await expect(this.getSubject().text).toContainText(text)
+  private getBanner(title: string): Locator {
+    return getNotePanel(this.page, this.getSubject(title).path).getByRole('alert')
   }
 
-  async expectLacks(subject: string, text: string): Promise<void> {
-    if (subject === 'file') {
-      expect((await readNote(this.page.request, this.getSubject().path)).body).not.toContain(text)
-    } else {
-      await expect(this.getSubject().text).not.toContainText(text)
-    }
-  }
-
-  async expectWarning(kind: string): Promise<void> {
-    const message = WARNINGS[kind]
-    if (!message) throw new Error(`no warning "${kind}"`)
-    await expect(this.getBanner()).toContainText(message)
-  }
-
-  private getBanner(): Locator {
-    return getNotePanel(this.page, this.getSubject().path).getByRole('alert')
-  }
-
-  private async pauseSaves(): Promise<PausedSaves> {
+  private async pauseSaves(path: string): Promise<PausedSaves> {
     const paused: PausedSaves = { routes: [], isPaused: true }
     await this.page.route(WRITE_NOTE, async (route) => {
-      if (paused.isPaused) paused.routes.push(route)
+      if (!route.request().postData()?.includes(path)) await route.fallback()
+      else if (paused.isPaused) paused.routes.push(route)
       else await route.continue()
     })
     return paused
@@ -95,56 +80,76 @@ export class Person {
     await reply
   }
 
-  // Notes
+  // Things a person does and things that happen to the notes
 
   async openNote(title: string, initialText: string): Promise<void> {
     const path = await createNote(this.page.request, createUniqueTitle(title))
     this.createdPaths.push(path)
     await writeNote(this.page.request, path, `${initialText}\n`)
-    await openWorkspace(this.page)
+    if (!this.hasWorkspace) await openWorkspace(this.page)
+    this.hasWorkspace = true
     const text = await openNote(this.page, path)
     await expect(text).toContainText(initialText)
-    this.subject = { path, initialText, text }
+    this.subjects.set(title, { path, text })
   }
 
-  async writeWithoutSaving(draft: string): Promise<void> {
-    const subject = this.getSubject()
-    this.pausedSaves = await this.pauseSaves()
+  async writeWithoutSaving(draft: string, title: string): Promise<void> {
+    const subject = this.getSubject(title)
+    const paused = await this.pauseSaves(subject.path)
+    this.pausedSaves.set(title, paused)
     await typeAtEnd(this.page, subject.text, ` ${draft}`)
-    await expect.poll(() => this.pausedSaves?.routes.length ?? 0).toBeGreaterThan(0)
+    await expect.poll(() => paused.routes.length).toBeGreaterThan(0)
   }
 
-  async changeNoteOnDisk(text: string): Promise<void> {
-    const subject = this.getSubject()
-    await writeNote(this.page.request, subject.path, `${text}\n`)
-    if (this.pausedSaves) {
-      const paused = this.pausedSaves
-      this.pausedSaves = undefined
+  async changeNoteOnDisk(text: string, title: string): Promise<void> {
+    await writeNote(this.page.request, this.getSubject(title).path, `${text}\n`)
+    const paused = this.pausedSaves.get(title)
+    if (paused) {
+      this.pausedSaves.delete(title)
       await this.resumeSaves(paused)
     }
   }
 
-  async removeNoteFromDisk(): Promise<void> {
-    await destroyNote(this.page.request, this.getSubject().path)
+  async removeNoteFromDisk(title: string): Promise<void> {
+    await destroyNote(this.page.request, this.getSubject(title).path)
   }
 
-  async choose(option: string): Promise<void> {
+  async choose(option: string, title: string): Promise<void> {
     const name = BANNER_CHOICES[option]
     if (!name) throw new Error(`no choice "${option}"`)
-    await this.getBanner().getByRole('button', { name }).click()
+    await this.getBanner(title).getByRole('button', { name }).click()
   }
 
   async leaveVault(): Promise<void> {
-    if (this.pausedSaves) {
-      const paused = this.pausedSaves
-      this.pausedSaves = undefined
+    for (const paused of this.pausedSaves.values()) {
       paused.isPaused = false
       for (const route of paused.routes) await route.continue().catch(() => undefined)
     }
+    this.pausedSaves.clear()
     await this.page.unroute(WRITE_NOTE).catch(() => undefined)
     for (const path of this.createdPaths) await destroyNote(this.page.request, path)
   }
 
-  // Outcomes
+  // What the notes and the files hold
 
+  async expectHas(kind: string, title: string, text: string): Promise<void> {
+    const subject = this.getSubject(title)
+    if (kind === 'saved') await waitForSavedBody(this.page.request, subject.path, text)
+    else await expect(subject.text).toContainText(text)
+  }
+
+  async expectLacks(kind: string, title: string, text: string): Promise<void> {
+    const subject = this.getSubject(title)
+    if (kind === 'saved') {
+      expect((await readNote(this.page.request, subject.path)).body).not.toContain(text)
+    } else {
+      await expect(subject.text).not.toContainText(text)
+    }
+  }
+
+  async expectWarning(title: string, kind: string): Promise<void> {
+    const message = WARNINGS[kind]
+    if (!message) throw new Error(`no warning "${kind}"`)
+    await expect(this.getBanner(title)).toContainText(message)
+  }
 }
