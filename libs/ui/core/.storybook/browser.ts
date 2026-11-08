@@ -84,6 +84,10 @@ export const getStoryBrowser = () => {
     enabled: true,
     headless: true,
     provider: playwright(),
+    // Storybook sets every story to 1200 by 900 unless the story names a viewport. A frame of
+    // another size is resized at its first story, and that resize event can arrive after the
+    // story's play has opened a menu, which closes on a resize.
+    viewport: { width: 1200, height: 900 },
     instances: [
       {
         browser: 'chromium' as const,
