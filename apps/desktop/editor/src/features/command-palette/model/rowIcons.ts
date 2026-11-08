@@ -10,7 +10,7 @@ import type { SearchState } from './search/search'
 /** What the window knows of the files a search turns up. */
 export interface FileIcons {
   /** The icon of the reader that opens a non-note file, or undefined when none does. */
-  findFileIcon?(path: string): Component | undefined
+  findFileIcon?(this: void, path: string): Component | undefined
 }
 
 export function findRowIcon(

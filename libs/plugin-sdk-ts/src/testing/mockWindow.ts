@@ -30,21 +30,26 @@ export function createMockTabWindow(): MockTabWindow {
     scopes.delete(id)
   }
 
+  const createTab = (kind: string, targetPath: string): string => {
+    const registration = kinds.get(kind)
+    if (!registration?.open) throw new Error(`no kind of tab declares ${kind}`)
+    const id = `${kind}:${registration.identity ? registration.identity(targetPath) : crypto.randomUUID()}`
+    if (open.has(id)) return id
+    const scope = effectScope(true)
+    const state = scope.run(() => registration.open?.(targetPath, id))
+    scopes.set(id, scope)
+    open.set(id, { kind: registration, state })
+    return id
+  }
+
   return {
     register: <State>(registration: TabKindRegistration<State>) => {
       kinds.set(registration.kind, registration)
     },
-    openTab: async (kind, targetPath = '') => {
-      const registration = kinds.get(kind)
-      if (!registration?.open) throw new Error(`no kind of tab declares ${kind}`)
-      const id = `${kind}:${registration.identity ? registration.identity(targetPath) : crypto.randomUUID()}`
-      if (open.has(id)) return id
-      const scope = effectScope(true)
-      const state = scope.run(() => registration.open?.(targetPath, id))
-      scopes.set(id, scope)
-      open.set(id, { kind: registration, state })
-      return id
-    },
+    openTab: (kind, targetPath = '') =>
+      new Promise((resolve) => {
+        resolve(createTab(kind, targetPath))
+      }),
     getTabState: <State>(id: string) => (open.get(id)?.state as State | undefined) ?? null,
     each: <State>(kind: string) =>
       [...open]

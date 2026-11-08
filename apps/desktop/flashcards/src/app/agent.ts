@@ -47,9 +47,7 @@ export function createWindowAgent(
     resolveLinks: (text, vault) => resolveTextLinks(links, { text, vault }),
     getUnreachable: () => unreachable.value,
     getSetting: () => undefined,
-    writeSetting: async () => {
-      throw new Error('this window keeps no agent settings')
-    },
+    writeSetting: () => Promise.reject(new Error('this window keeps no agent settings')),
     getModelsAt: () => [],
   }
   return { agent, dispose: () => aborting.abort() }

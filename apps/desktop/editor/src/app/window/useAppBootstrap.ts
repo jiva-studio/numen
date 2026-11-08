@@ -22,7 +22,7 @@ export interface BootstrapDeps {
   closeSettings(): void
   closePlugins?(): void | Promise<void>
   /** Receives the failure of a start or a close that is not awaited. */
-  reportError(error: unknown): void
+  reportError(this: void, error: unknown): void
 }
 
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */

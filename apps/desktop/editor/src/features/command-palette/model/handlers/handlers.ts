@@ -76,7 +76,7 @@ const HANDLERS: Record<string, CommandHandler> = {
 const commandRegistry = new Map<string, CommandHandler>()
 
 export const commands = {
-  registerCommand(id: string, handler: CommandHandler): () => void {
+  registerCommand: (id: string, handler: CommandHandler): (() => void) => {
     commandRegistry.set(id, handler)
     return () => {
       if (commandRegistry.get(id) === handler) {

@@ -54,5 +54,5 @@ export interface Vaults {
    */
   remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
   /** Shows another vault in this window, replacing the current one. */
-  open(id: string): Promise<VaultErrorCode | null>
+  open(this: void, id: string): Promise<VaultErrorCode | null>
 }

@@ -21,115 +21,122 @@ import type { Vaults } from '@/entities/vault'
 
 vi.mock('@/app/vault', () => ({
   vaults: {
-    list: async () => mockVaultList,
-    choose: async () => {
+    list: () => Promise.resolve(mockVaultList),
+    choose: () => {
       requests.chose += 1
-      return ''
+      return Promise.resolve('')
     },
-    add: async () => asValue(null),
-    rename: async () => asValue(null),
-    remove: async () => null,
-    open: async (id: string) => {
+    add: () => Promise.resolve(asValue(null)),
+    rename: () => Promise.resolve(asValue(null)),
+    remove: () => Promise.resolve(null),
+    open: (id: string) => {
       requests.opened.push(id)
-      return null
+      return Promise.resolve(null)
     },
   } satisfies Partial<Vaults>,
   core: {
-    vaults: async () => {
-      if (!mockVaultState.listable) throw new Error('the vaults are not there')
-      return mockVaultList
-    },
-    state: async () => ({
-      id: 'physics',
-      name: 'Vault',
-      path: '/vaults/Physics',
-      scan: {
-        isReady: mockVaultState.isReady,
-        error: mockVaultState.error,
-        unwatchedPath: '',
-      },
-      coverage: {
-        chunkCount: 0n,
-        embeddedCount: BigInt(mockVaultState.embedded),
-        isEmbedding: false,
-      },
-    }),
-    agentUnreachable: async () => '',
-    getInitialOpenPath: async () =>
-      mockVaultState.opening ? { path: mockVaultState.opening } : null,
-    neighbourhood: async (path: string) => ({
-      focus: { path, title: path.replace(/\.md$/, '') },
-      focusType: 'note' as const,
-      related: [],
-      connections: [],
-    }),
-    read: async () => asValue({ body: 'what is written', at: 'a1' }),
-    write: async () => asValue({ body: '', at: 'a2' }),
-    create: async ({ title }: { title: string }) => {
+    vaults: () =>
+      mockVaultState.listable
+        ? Promise.resolve(mockVaultList)
+        : Promise.reject(new Error('the vaults are not there')),
+    state: () =>
+      Promise.resolve({
+        id: 'physics',
+        name: 'Vault',
+        path: '/vaults/Physics',
+        scan: {
+          isReady: mockVaultState.isReady,
+          error: mockVaultState.error,
+          unwatchedPath: '',
+        },
+        coverage: {
+          chunkCount: 0n,
+          embeddedCount: BigInt(mockVaultState.embedded),
+          isEmbedding: false,
+        },
+      }),
+    agentUnreachable: () => Promise.resolve(''),
+    getInitialOpenPath: () =>
+      Promise.resolve(mockVaultState.opening ? { path: mockVaultState.opening } : null),
+    neighbourhood: (path: string) =>
+      Promise.resolve({
+        focus: { path, title: path.replace(/\.md$/, '') },
+        focusType: 'note' as const,
+        related: [],
+        connections: [],
+      }),
+    read: () => Promise.resolve(asValue({ body: 'what is written', at: 'a1' })),
+    write: () => Promise.resolve(asValue({ body: '', at: 'a2' })),
+    create: ({ title }: { title: string }) => {
       requests.made.push(title)
-      return asValue({ path: `${title}.md` })
+      return Promise.resolve(asValue({ path: `${title}.md` }))
     },
-    rename: async (path: string, title: string) => {
+    rename: (path: string, title: string) => {
       requests.renamed.push(`${path} ${title}`)
-      return asValue({ path, title, hasFrontmatter: true, moved: null })
+      return Promise.resolve(asValue({ path, title, hasFrontmatter: true, moved: null }))
     },
-    remove: async (path: string, destroy?: boolean) => {
+    remove: (path: string, destroy?: boolean) => {
       requests.removed.push(`${path} ${destroy ?? false}`)
-      return asValue({ trashed: `.trash/${path}`, dangling: [] })
+      return Promise.resolve(asValue({ trashed: `.trash/${path}`, dangling: [] }))
     },
-    list: async (folder: string) => folders[folder] ?? [],
-    move: async (from: string, to: string) => {
+    list: (folder: string) => Promise.resolve(folders[folder] ?? []),
+    move: (from: string, to: string) => {
       requests.moved.push(`${from} ${to}`)
-      return asValue(null)
+      return Promise.resolve(asValue(null))
     },
-    createFolder: async (path: string) => {
+    createFolder: (path: string) => {
       requests.folders.push(path)
-      return null
+      return Promise.resolve(null)
     },
-    getSettings: async () => ({
-      written: '{}',
-      path: '/vaults/Physics/.numen/settings.json',
-      models: [],
-      plugins: [],
-      app: mockVaultState.app.map(getSettingInForce),
-    }),
-    updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
-      if (mockVaultState.writeError) throw new Error(mockVaultState.writeError)
+    getSettings: () =>
+      Promise.resolve({
+        written: '{}',
+        path: '/vaults/Physics/.numen/settings.json',
+        models: [],
+        plugins: [],
+        app: mockVaultState.app.map(getSettingInForce),
+      }),
+    updateSettings: (edits: readonly { at: readonly string[]; value: string }[]) => {
+      if (mockVaultState.writeError) return Promise.reject(new Error(mockVaultState.writeError))
       for (const one of edits) {
         requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
         keepSetting(one.at.join('.'), JSON.parse(one.value))
       }
+      return Promise.resolve()
     },
     watchSettings: pendingStream,
     watchVaultChanges: pendingStream,
     watchEdits: pendingStream,
     watchTasks: pendingStream,
     watchFocus: outside.stream,
-    writeOpenTabs: async (open: { tabs: readonly Tab[]; activeId: string }) => {
+    writeOpenTabs: (open: { tabs: readonly Tab[]; activeId: string }) => {
       requests.openTabs.push(open)
+      return Promise.resolve()
     },
-    readOpenTabs: async () => mockVaultState.savedTabs,
+    readOpenTabs: () => Promise.resolve(mockVaultState.savedTabs),
     watchQuit: pendingStream,
     reportFlush: () => Promise.resolve(),
-    detachTab: async () => {
-      if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
-      return { ok: true as const, value: undefined }
-    },
+    detachTab: () =>
+      mockVaultState.detachError
+        ? Promise.reject(new Error(mockVaultState.detachError))
+        : Promise.resolve({ ok: true as const, value: undefined }),
     watchTabLinks: pendingStream,
-    cancelTabLinksWatch: async () => undefined,
-    writeTabLinks: async () => undefined,
-    syncTabPath: async () => undefined,
-    readDetachedTab: async (_windowId: string, tabId: string) =>
-      mockVaultState.detachedTab?.id === tabId
-        ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
-        : null,
-    moveTab: async () => ({ ok: true, value: undefined }),
-    acceptTabMove: async () => ({ ok: true, value: undefined }),
-    highlightWindow: async () => undefined,
-    names: async () => mockVaultState.names,
-    search: async () => mockVaultState.passages,
-    fileKinds: async (paths: readonly string[]) =>
-      new Map(paths.map((path) => [path, getFileKind(path)])),
-    headings: async () => new Map(),
+    cancelTabLinksWatch: () => Promise.resolve(),
+    writeTabLinks: () => Promise.resolve(),
+    syncTabPath: () => Promise.resolve(),
+    readDetachedTab: (_windowId: string, tabId: string) =>
+      Promise.resolve(
+        mockVaultState.detachedTab?.id === tabId
+          ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
+          : null,
+      ),
+    moveTab: () => Promise.resolve({ ok: true, value: undefined }),
+    acceptTabMove: () => Promise.resolve({ ok: true, value: undefined }),
+    highlightWindow: () => Promise.resolve(),
+    names: () => Promise.resolve(mockVaultState.names),
+    search: () => Promise.resolve(mockVaultState.passages),
+    fileKinds: (paths: readonly string[]) =>
+      Promise.resolve(new Map(paths.map((path) => [path, getFileKind(path)]))),
+    headings: () => Promise.resolve(new Map()),
   } satisfies Partial<VaultCore>,
 }))
