@@ -229,5 +229,5 @@ The settings of the plugin Title bar.
 
 | | | |
 | --- | --- | --- |
-| `buttons` | text | where the bar draws the minimize, maximize and close buttons on Linux: at the right like Windows, or at the left like macOS. Windows and macOS keep their own place. One of `windows`, `mac`. |
+| `buttons` | text | where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu. One of `mac`, `windows`, `none`. |
 <!-- END AUTOGEN -->
