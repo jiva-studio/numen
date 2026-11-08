@@ -91,7 +91,7 @@ export interface DeclaredCommand {
 export interface DeclaredCommandRun {
   readonly path: string
   readonly values: Readonly<Record<string, string>>
-  readonly argument?: string
+  readonly itemId?: string
   readonly isTargetNamed?: boolean
 }
 
@@ -174,7 +174,7 @@ export async function runDeclaredHandler(
     command: handler.command,
     path: run.path,
     arguments: { ...run.values },
-    ...(run.argument === undefined ? {} : { argument: run.argument }),
+    ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
   })
   if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
     return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
@@ -195,7 +195,7 @@ export async function runDeclaredCommand(
     command: command.id,
     path: isOverTarget(command) || command.hasItems || run.isTargetNamed ? run.path : '',
     arguments: { ...run.values },
-    ...(run.argument === undefined ? {} : { argument: run.argument }),
+    ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
   })
   if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
     return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }

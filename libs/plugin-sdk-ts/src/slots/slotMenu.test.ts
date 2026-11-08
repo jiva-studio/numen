@@ -132,7 +132,7 @@ describe('createSlotMenu', () => {
     })
     expect(menu.getPick(`${CREATE_TEXT.key}#item:md.numen.pdf`)).toStrictEqual({
       command: 'app:file.createText',
-      argument: 'md.numen.pdf',
+      itemId: 'md.numen.pdf',
     })
   })
 
@@ -181,10 +181,10 @@ describe('the pick of a row', () => {
     expect(menu.getPick(RENAME.key)).toStrictEqual({ command: RENAME.command })
   })
 
-  it('runs the command of an item with the item as its argument', () => {
+  it('runs the command of an item with the item as its itemId', () => {
     expect(menu.getPick(`${MOVE.key}#item:w1`)).toStrictEqual({
       command: MOVE.command,
-      argument: 'w1',
+      itemId: 'w1',
     })
   })
 

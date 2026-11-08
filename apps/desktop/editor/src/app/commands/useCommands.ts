@@ -119,11 +119,11 @@ export function createPaletteItems(
     ],
     pluginHost,
     getTarget: options.getTarget,
-    runApp: (id, target, argument) =>
-      runInvocationToEnd(createInvocation(id, target, argument), getCommandDeps()),
-    runPlugin: async (id, target, argument) => {
+    runApp: (id, target, itemId) =>
+      runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps()),
+    runPlugin: async (id, target, itemId) => {
       const note = await getCommandNote(target)
-      await pluginHost?.executeCommand(id, note, { argument, isAwaited: true })
+      await pluginHost?.executeCommand(id, note, { itemId, isAwaited: true })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)

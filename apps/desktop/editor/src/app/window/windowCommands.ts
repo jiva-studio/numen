@@ -12,7 +12,7 @@ interface WindowCommandsDeps {
   readonly getPluginIds: () => readonly string[]
   readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<void>
   readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
-  readonly runWithArgument: (id: string, target: RunTarget, argument: string) => Promise<void>
+  readonly runWithItem: (id: string, target: RunTarget, itemId: string) => Promise<void>
   readonly getTarget: () => CommandTarget
 }
 
@@ -38,7 +38,7 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     }
   }
 
-  /** The run target in the words of the SDK, which the items and a run with an argument take. */
+  /** The run target in the words of the SDK, which the items and a run with an item take. */
   const toRunTarget = (target: CommandTarget): RunTarget => ({
     path: target.path,
     title: target.title,
@@ -51,10 +51,10 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     getIds: () => ids.value,
     watch: (handler) => ({ dispose: watch(ids, handler, { immediate: true }) }),
     listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
-    run: async (id, target, argument) => {
+    run: async (id, target, itemId) => {
       const runTarget = getRunTarget(target)
-      if (argument === undefined) await deps.runCommandToEnd(id, runTarget)
-      else await deps.runWithArgument(id, toRunTarget(runTarget), argument)
+      if (itemId === undefined) await deps.runCommandToEnd(id, runTarget)
+      else await deps.runWithItem(id, toRunTarget(runTarget), itemId)
     },
   }
 }

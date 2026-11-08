@@ -49,8 +49,8 @@ export interface FilesTabDeps {
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the row. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
-  /** Runs a command of the window or of a plugin over the row; with `argument`, the one picked. */
-  runCommand(command: string, target: CommandTarget, argument?: string): Promise<void>
+  /** Runs a command of the window or of a plugin over the row; with `itemId`, the one picked. */
+  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>

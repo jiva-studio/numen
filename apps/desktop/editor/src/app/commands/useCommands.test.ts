@@ -530,7 +530,7 @@ describe('a plugin command with items in the palette', () => {
     expect(rows('second').map((one) => one.id)).toStrictEqual(['w2'])
   })
 
-  it('runs the command with the item picked as its argument', async () => {
+  it('runs the command with the item picked as its itemId', async () => {
     const { executeCommand } = setupItems()
     const call = h.registerCommand.mock.calls.find(([id]) => id === MOVE.id) as [
       string,
@@ -542,7 +542,7 @@ describe('a plugin command with items in the palette', () => {
     expect(executeCommand).toHaveBeenCalledExactlyOnceWith(
       MOVE.id,
       expect.objectContaining({ path: 'Tide.md' }),
-      { argument: 'w2' },
+      { itemId: 'w2' },
     )
   })
 

@@ -233,7 +233,7 @@ function usePlexMenu(options: {
     }
     const choice = nodeMenu.pick(id)
     if (!choice) return
-    deps.runCommand(choice.command, choice.target.target, choice.argument).catch(reportFailure)
+    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
   }
 
   /** The icon of a row, which is the one of the command or submenu of its entry. */

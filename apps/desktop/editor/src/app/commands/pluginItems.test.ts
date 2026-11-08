@@ -137,7 +137,7 @@ describe('a shared command in the palette', () => {
 
   it('keeps its own title where its one item is an item of a handler, in the group of its plugin', async () => {
     const { removeEmptyCommands } = setUp({
-      'app:version.delete': [
+      'app:link.downloadMedia': [
         {
           id: 'md.numen.engines.transcription:t1',
           title: 'transcript',
@@ -146,7 +146,7 @@ describe('a shared command in the palette', () => {
       ],
     })
     const shared = {
-      ...createCommand('app:version.delete'),
+      ...createCommand('app:link.downloadMedia'),
       text: 'Delete text',
       input: 'items' as const,
     }

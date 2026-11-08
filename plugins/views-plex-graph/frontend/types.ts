@@ -125,8 +125,8 @@ export interface PlexTabDeps {
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the note of a node. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
-  /** Runs a command of the menu over the note of a node; with `argument`, the item picked. */
-  runCommand(command: string, target: CommandTarget, argument?: string): Promise<void>
+  /** Runs a command of the menu over the note of a node; with `itemId`, the item picked. */
+  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
   /** The icon the window draws a type of note with. */
   getNoteIcon(type: NoteType): Component | null
   readonly openingPath: Readonly<Ref<string>>

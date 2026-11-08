@@ -44,8 +44,8 @@ export function createFilesTabDeps(
     },
     getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
     listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
-    runCommand: async (command, target, argument) => {
-      await commands?.run(command, target, argument)
+    runCommand: async (command, target, itemId) => {
+      await commands?.run(command, target, itemId)
     },
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),

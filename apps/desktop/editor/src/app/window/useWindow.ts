@@ -35,6 +35,7 @@ import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
 import { createCommandRunner, createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
+import { createVersionCommands } from '../commands/versionCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
 import { createBackendHandlers } from '../commands/backendHandlers'
@@ -400,6 +401,7 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
   tabsHold?: TabsHold
   tabCommands?: TabCommands
+  versionCommands?: ReturnType<typeof createVersionCommands>
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -485,7 +487,7 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
-  base.appCommands.current = () => ctx.tabCommands?.commands ?? []
+  base.appCommands.current = () => getAppCommandList(ctx)
   base.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
@@ -544,7 +546,7 @@ function initWindowKindsAndCommands(
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
     slots: base.pluginHost.slots,
-    getAppCommands: () => ctx.tabCommands?.commands ?? [],
+    getAppCommands: () => getAppCommandList(ctx),
   })
 
   return {
@@ -719,6 +721,22 @@ function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof crea
   return tabCommands
 }
 
+function createWindowVersionCommands(base: WindowCore) {
+  const versionCommands = createVersionCommands({
+    listItems: base.itemLists.listItems,
+    run: (command, path, itemId) =>
+      runDeclaredHandler({ pluginId: '', command }, { path, values: {}, itemId }),
+  })
+  versionCommands.register()
+  return versionCommands
+}
+
+/** The commands of the window over its tabs and over the text versions of a file. */
+const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
+  ...(ctx.tabCommands?.commands ?? []),
+  ...(ctx.versionCommands?.commands ?? []),
+]
+
 const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   bootstrapFailure: bootstrap.failure,
   isStarted: bootstrap.isStarted,
@@ -732,7 +750,7 @@ function createWindowFrameServices(
 ) {
   const { frame } = base
   let tableIds: readonly string[] | undefined
-  const getAppCommands = () => ctx.tabCommands?.commands ?? []
+  const getAppCommands = () => getAppCommandList(ctx)
   const getCommandNote = createCommandNoteReader(base.itemLists)
   const getCommandDeps = () => getCommands(ctx).commandDeps
   const items = createPaletteItems(
@@ -760,7 +778,7 @@ function createWindowFrameServices(
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommandToEnd: runner.runCommandToEnd,
     listItems: items.listCommandItems,
-    runWithArgument: items.runWithArgument,
+    runWithItem: items.runWithItem,
     getTarget: commands.getTarget,
   })
   Object.assign(base.pluginServices, {
@@ -810,6 +828,7 @@ export const useWindow = () => {
   const closeTab = createTabCloser(base)
   const moves = createWindowTabMoves(base, editing, closeTab)
   ctx.tabCommands = createWindowTabCommands(base, moves)
+  ctx.versionCommands = createWindowVersionCommands(base)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {

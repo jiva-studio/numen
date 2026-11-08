@@ -269,7 +269,7 @@ describe('the settings and notices a plugin is given', () => {
       pluginId: 'md.numen.pages',
       command: 'app:file.createText',
       target: expect.objectContaining({ path: 'scan.pdf' }),
-      argument: undefined,
+      itemId: undefined,
     })
   })
 
@@ -282,7 +282,7 @@ describe('the settings and notices a plugin is given', () => {
         getHandlerDeclarations: () => [
           {
             pluginId: 'md.numen.ocr',
-            command: 'app:version.delete',
+            command: 'app:link.downloadMedia',
             title: 'Delete',
             hasItems: true,
           },
@@ -292,12 +292,12 @@ describe('the settings and notices a plugin is given', () => {
     })
     const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
 
-    expect(await pluginHost.listCommandItems('app:version.delete', target)).toStrictEqual([
+    expect(await pluginHost.listCommandItems('app:link.downloadMedia', target)).toStrictEqual([
       { id: 'md.numen.ocr:v1', title: 'Recognition', group: 'md.numen.ocr' },
     ])
     expect(listBackendHandlerItems).toHaveBeenCalledWith(
       'md.numen.ocr',
-      'app:version.delete',
+      'app:link.downloadMedia',
       expect.objectContaining({ path: 'scan.pdf' }),
     )
   })

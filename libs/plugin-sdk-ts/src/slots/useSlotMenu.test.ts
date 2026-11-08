@@ -220,7 +220,7 @@ describe('useSlotMenu', () => {
 
     const choice = state.pick(`${MOVE.key}#item:w1`)
 
-    expect(choice).toStrictEqual({ command: MOVE.command, argument: 'w1', target: TARGET })
+    expect(choice).toStrictEqual({ command: MOVE.command, itemId: 'w1', target: TARGET })
     expect(state.menu.value).toBeNull()
   })
 

@@ -8,7 +8,7 @@ import type { FileKind } from '@/shared/model/fileTypes'
 import type { ItemListRequest } from '@/entities/plugin'
 import { createCommandItemLists } from './commandItemLists'
 
-const DELETE_TEXT = { pluginId: 'org.example.ears', id: 'app:version.delete' }
+const DELETE_TEXT = { pluginId: '', id: 'app:version.delete' }
 const PROOFREAD = { pluginId: 'org.example.ink', id: 'ink.proofread' }
 const SCAN = 'scans/page.png'
 const TALK = 'talks/a.mp3'

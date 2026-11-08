@@ -87,7 +87,7 @@ vi.mock('../commands/useCommands', () => ({
   createPaletteItems: () => ({
     hasCommandItems: () => false,
     listCommandItems: async () => [],
-    runWithArgument: async () => undefined,
+    runWithItem: async () => undefined,
   }),
   createCommandRunner: () => ({
     runCommand: () => undefined,

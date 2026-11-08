@@ -18,10 +18,10 @@ export interface SlotMenuWords {
   readonly loadingText: string
 }
 
-// SlotMenuPick is what a row runs: a command, with the id of an item as its argument.
+// SlotMenuPick is what a row runs: a command, with the id of the item picked.
 export interface SlotMenuPick {
   readonly command: string
-  readonly argument?: string
+  readonly itemId?: string
 }
 
 // SlotMenu is the menu tree of the entries of a slot.
@@ -58,7 +58,7 @@ function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): Me
   const isShared = isSharedCommand(entry.command)
   const children = list.map((item): MenuItem => {
     const id = `${entry.key}${ITEM_MARK}${item.id}`
-    parts.picks.set(id, { command: entry.command, argument: item.id })
+    parts.picks.set(id, { command: entry.command, itemId: item.id })
     return { id, text: item.title, ...(item.group === undefined ? {} : { group: item.group }) }
   })
   const [only] = children

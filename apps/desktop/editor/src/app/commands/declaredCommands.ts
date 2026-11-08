@@ -156,7 +156,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
             path: invocation.file,
             values: invocation.values ?? {},
             ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
-            ...(one.hasItems ? { argument: invocation.name } : {}),
+            ...(one.hasItems ? { itemId: invocation.name } : {}),
           })
           if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
           const { message, openedPath } = outcome.value

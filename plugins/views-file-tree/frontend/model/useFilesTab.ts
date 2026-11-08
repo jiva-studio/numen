@@ -147,7 +147,7 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const chooseMenuItem = (id: string) => {
     const choice = slotMenu.pick(id)
     if (!choice) return
-    deps.runCommand(choice.command, choice.target.target, choice.argument).catch(reportFailure)
+    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
   }
 
   return {

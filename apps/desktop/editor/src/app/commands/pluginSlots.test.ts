@@ -75,6 +75,13 @@ describe('the slot entries of the window', () => {
         order: 20,
         when: '!target.isRoot && !target.isMultiple',
       },
+      {
+        pluginId: 'app',
+        slot: 'fileTree.context',
+        command: 'app:version.delete',
+        group: '3-text',
+        order: 90,
+      },
       { pluginId: 'app', slot: 'fileTree.context', command: 'app:note.trash', group: '9-remove' },
     ])
   })
@@ -224,9 +231,9 @@ describe('a shared command over what the window knows of the target', () => {
       },
       {
         pluginId: TIDE,
-        command: 'app:version.delete',
-        title: 'Delete text',
-        when: "version.pluginId == 'org.example.tide' && version.kind == 'captions'",
+        command: 'app:link.downloadMedia',
+        title: 'Download media',
+        when: "!target.versions.exists(v, v.kind == 'captions')",
         hasItems: true,
       },
     ],
@@ -248,7 +255,7 @@ describe('a shared command over what the window knows of the target', () => {
   })
 
   it('is drawn where a handler depends on the versions of the file', () => {
-    expect(find('app:version.delete', DECK)).toMatchObject({ title: 'Delete text' })
+    expect(find('app:link.downloadMedia', DECK)).toMatchObject({ title: 'Download media' })
   })
 
   it('is drawn where the place has not read the type of the note', () => {

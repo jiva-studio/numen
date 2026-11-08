@@ -1,6 +1,6 @@
 /**
  * The items of a command, whoever owns it: a command of the window that offers them over its
- * target, or a command a plugin registered with items; and the run of one with the argument picked.
+ * target, or a command a plugin registered with items; and the run of one with the item picked.
  */
 import {
   SHARED_COMMANDS,
@@ -14,8 +14,8 @@ interface CommandItemsDeps {
   readonly getAppCommands: () => readonly Command[]
   readonly pluginHost: Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
   readonly getTarget: () => CommandTarget
-  readonly runApp: (id: string, target: CommandTarget, argument: string) => Promise<void>
-  readonly runPlugin: (id: string, target: RunTarget, argument: string) => Promise<void>
+  readonly runApp: (id: string, target: CommandTarget, itemId: string) => Promise<void>
+  readonly runPlugin: (id: string, target: RunTarget, itemId: string) => Promise<void>
   readonly readTarget?: (target: RunTarget) => Promise<RunTarget>
 }
 
@@ -48,9 +48,9 @@ export function createCommandItems(deps: CommandItemsDeps) {
       const noteTarget = isShared && deps.readTarget ? await deps.readTarget(target) : target
       return deps.pluginHost.listCommandItems(id, noteTarget)
     },
-    runWithArgument: (id: string, target: RunTarget, argument: string): Promise<void> =>
+    runWithItem: (id: string, target: RunTarget, itemId: string): Promise<void> =>
       findAppCommand(id)
-        ? deps.runApp(id, toAppTarget(target), argument)
-        : deps.runPlugin(id, target, argument),
+        ? deps.runApp(id, toAppTarget(target), itemId)
+        : deps.runPlugin(id, target, itemId),
   }
 }

@@ -26,7 +26,7 @@ function watchWith<T>(
 export interface MockCommandRun {
   readonly command: string
   readonly target: CommandTarget | undefined
-  readonly argument: string | undefined
+  readonly itemId: string | undefined
 }
 
 // MockCommandsHost is a CommandsHost whose ids a test sets, and whose runs it reads back.
@@ -46,8 +46,8 @@ export function createMockCommandsHost(initial: readonly string[] = []): MockCom
     getIds: () => ids,
     watch: (handler) => watchWith(watchers, handler, ids),
     listItems: async (command) => items.get(command) ?? [],
-    run: async (command, target, argument) => {
-      runs.push({ command, target, argument })
+    run: async (command, target, itemId) => {
+      runs.push({ command, target, itemId })
     },
     setItems: (command, next) => {
       items.set(command, next)

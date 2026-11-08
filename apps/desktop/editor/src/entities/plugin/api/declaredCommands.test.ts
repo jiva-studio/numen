@@ -284,7 +284,7 @@ describe('the items of a command', () => {
     })
   })
 
-  it('run the command over the file with the item picked as its argument', async () => {
+  it('run the command over the file with the item picked as its itemId', async () => {
     request.runPluginCommand.mockResolvedValue({
       error: COMMAND_ERROR_CODE.UNSPECIFIED,
       message: '',
@@ -294,7 +294,7 @@ describe('the items of a command', () => {
     await runDeclaredCommand(proofread, {
       path: 'talks/a.mp3',
       values: {},
-      argument: 'org.example.ears/ears',
+      itemId: 'org.example.ears/ears',
     })
 
     expect(request.runPluginCommand).toHaveBeenLastCalledWith({
@@ -302,7 +302,7 @@ describe('the items of a command', () => {
       command: 'ink.proofread',
       path: 'talks/a.mp3',
       arguments: {},
-      argument: 'org.example.ears/ears',
+      itemId: 'org.example.ears/ears',
     })
   })
 })
@@ -358,7 +358,7 @@ describe('the handlers of shared commands', () => {
 
     const outcome = await runDeclaredHandler(
       { pluginId: 'org.example.ink', command: 'app:version.delete' },
-      { path: 'talks/a.mp3', values: { reason: 'stale' }, argument: 'v1' },
+      { path: 'talks/a.mp3', values: { reason: 'stale' }, itemId: 'v1' },
     )
 
     expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
@@ -367,7 +367,7 @@ describe('the handlers of shared commands', () => {
       command: 'app:version.delete',
       path: 'talks/a.mp3',
       arguments: { reason: 'stale' },
-      argument: 'v1',
+      itemId: 'v1',
     })
   })
 

@@ -481,7 +481,7 @@ describe('a command with items', () => {
     expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
   })
 
-  it('emits run-command with the command and the item picked as its argument', async () => {
+  it('emits run-command with the command and the item picked as its itemId', async () => {
     const wrapper = mountBar({ commands: [MOVE], listItems: async () => items })
 
     await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')

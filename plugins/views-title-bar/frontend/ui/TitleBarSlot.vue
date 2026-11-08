@@ -22,12 +22,12 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run-command', command: string, itemId?: string): void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRunCommand(command: string, argument?: string): void {
-  if (argument === undefined) emit('run-command', command)
-  else emit('run-command', command, argument)
+function onRunCommand(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run-command', command)
+  else emit('run-command', command, itemId)
 }
 
 /* -------------------------------- Helpers --------------------------------- */

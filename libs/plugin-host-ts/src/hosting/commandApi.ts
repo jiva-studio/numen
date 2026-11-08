@@ -1,6 +1,6 @@
 /**
  * The commands the plugins registered, as the window reads and runs them: the palette's list, the
- * items a command offers, running one with its argument, and the plugins' shortcuts.
+ * items a command offers, running one with an item, and the plugins' shortcuts.
  */
 import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
@@ -47,7 +47,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
       note: CommandNote,
       run: CommandRun = {},
     ): Promise<boolean> => {
-      const { argument } = run
+      const { itemId } = run
       if (isSharedCommand(id)) return handlers.runSharedCommand(id, { note, ...run })
       const command = findAvailable(id)
       if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
@@ -57,7 +57,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         entry = registry.commands.value.get(id)
       }
       if (!entry) return false
-      await runCommand(deps, entry, { note, argument, isAwaited: run.isAwaited })
+      await runCommand(deps, entry, { note, itemId, isAwaited: run.isAwaited })
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {

@@ -20,8 +20,8 @@ function createStatusBarView(context: PluginContext) {
     setup: () => {
       const startEntries = useSlotEntries(host, SLOT.statusBarLeft)
       const endEntries = useSlotEntries(host, SLOT.statusBarRight)
-      const onRun = (command: string, argument?: string) => {
-        if (commands) runInBackground(commands.run(command, undefined, argument), reportError)
+      const onRun = (command: string, itemId?: string) => {
+        if (commands) runInBackground(commands.run(command, undefined, itemId), reportError)
       }
       const listItems = (command: string) => commands?.listItems(command) ?? Promise.resolve([])
       return () =>

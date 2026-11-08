@@ -11,7 +11,7 @@ import type { HandlerDeclaration, PluginHostDeps } from './types'
 const SCANS = 'org.example.scans'
 const TIDES = 'org.example.tides'
 const CREATE = 'app:file.createText'
-const DELETE = 'app:version.delete'
+const DOWNLOAD = 'app:link.downloadMedia'
 const SCAN: CommandTarget = {
   path: 'scans/mill.png',
   title: 'mill',
@@ -44,14 +44,14 @@ const HANDLERS: readonly HandlerDeclaration[] = [
   },
   {
     pluginId: SCANS,
-    command: DELETE,
+    command: DOWNLOAD,
     title: 'Delete the reading',
     when: "version.kind == 'reading'",
     hasItems: true,
   },
   {
     pluginId: TIDES,
-    command: DELETE,
+    command: DOWNLOAD,
     title: 'Delete the table',
     when: "version.kind == 'table'",
     hasItems: true,
@@ -92,12 +92,12 @@ describe('a shared command', () => {
   it('runs the handler of the plugin picked in its backend', async () => {
     const { host, runBackendHandler } = createHost()
 
-    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, { argument: TIDES })).toBe(true)
+    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: TIDES })).toBe(true)
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: TIDES,
       command: CREATE,
       target: { ...SCAN, type: '' },
-      argument: undefined,
+      itemId: undefined,
     })
   })
 
@@ -120,19 +120,19 @@ describe('a shared command', () => {
       pluginId: TIDES,
       command: 'app:link.import',
       target: window,
-      argument: undefined,
+      itemId: undefined,
       values: { address: 'https://example.com/tides' },
     })
   })
 
-  it('runs its one matching handler without an argument, and nothing where several match', async () => {
+  it('runs its one matching handler without an itemId, and nothing where several match', async () => {
     const one = createHost(HANDLERS.filter((handler) => handler.pluginId === SCANS))
     expect(await one.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)
     expect(one.runBackendHandler).toHaveBeenCalledWith({
       pluginId: SCANS,
       command: CREATE,
       target: { ...SCAN, type: '' },
-      argument: undefined,
+      itemId: undefined,
     })
 
     const several = createHost()
@@ -143,21 +143,21 @@ describe('a shared command', () => {
   it('offers the items of its handlers in one list, grouped by plugin, and runs the one picked', async () => {
     const { host, runBackendHandler } = createHost()
 
-    expect(await host.listCommandItems(DELETE, SCAN)).toStrictEqual([
+    expect(await host.listCommandItems(DOWNLOAD, SCAN)).toStrictEqual([
       { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
     ])
     await host.executeCommand(
-      DELETE,
+      DOWNLOAD,
       { ...SCAN, type: '' },
       {
-        argument: `${SCANS}:org.example.scans/reading`,
+        itemId: `${SCANS}:org.example.scans/reading`,
       },
     )
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: SCANS,
-      command: DELETE,
+      command: DOWNLOAD,
       target: { ...SCAN, type: '' },
-      argument: 'org.example.scans/reading',
+      itemId: 'org.example.scans/reading',
     })
   })
 
@@ -179,7 +179,7 @@ describe('a shared command', () => {
     expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: `${SCANS}:fast`, title: 'Fast', group: SCANS },
     ])
-    await host.executeCommand(CREATE, { ...SCAN, type: '' }, { argument: `${SCANS}:fast` })
+    await host.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: `${SCANS}:fast` })
     expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast')
     expect(runBackendHandler).not.toHaveBeenCalled()
     expect(host.getPaletteCommands()).toStrictEqual([])

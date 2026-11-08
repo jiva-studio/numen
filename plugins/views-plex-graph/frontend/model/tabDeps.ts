@@ -54,8 +54,8 @@ export function createPlexTabDeps(
     readHeadings: (paths) => notes.getHeadings(paths),
     getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
-    runCommand: (command, target, argument) =>
-      commands?.run(command, target, argument) ?? Promise.resolve(),
+    runCommand: (command, target, itemId) =>
+      commands?.run(command, target, itemId) ?? Promise.resolve(),
     getNoteIcon: (type) =>
       workspace.getEntryIcon({ path: '', name: '', isFolder: false, isNote: true, type }, false),
     openingPath: workspace.openingPath,

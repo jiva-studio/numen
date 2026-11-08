@@ -80,7 +80,7 @@ async function runHandler(
       pluginId: handler.pluginId,
       command: handler.command,
       target: run.note,
-      argument: run.argument,
+      itemId: run.itemId,
       values: run.values,
     })
   } catch (error) {
@@ -113,19 +113,19 @@ async function runSharedCommand(
   command: string,
   run: SharedRun,
 ): Promise<boolean> {
-  const { note, argument, values } = run
+  const { note, itemId, values } = run
   const handlers = listMatching(parts, command, note)
-  if (argument === undefined) {
+  if (itemId === undefined) {
     if (handlers.length !== 1) return false
     await runHandler(parts, handlers[0]!, { note, values, isAwaited: run.isAwaited })
     return true
   }
-  const separator = argument.indexOf(ITEM_SEPARATOR)
-  const pluginId = separator < 0 ? argument : argument.slice(0, separator)
+  const separator = itemId.indexOf(ITEM_SEPARATOR)
+  const pluginId = separator < 0 ? itemId : itemId.slice(0, separator)
   const handler = handlers.find((one) => one.pluginId === pluginId)
   if (!handler) return false
-  const item = separator < 0 ? undefined : argument.slice(separator + 1)
-  await runHandler(parts, handler, { note, argument: item, values, isAwaited: run.isAwaited })
+  const item = separator < 0 ? undefined : itemId.slice(separator + 1)
+  await runHandler(parts, handler, { note, itemId: item, values, isAwaited: run.isAwaited })
   return true
 }
 

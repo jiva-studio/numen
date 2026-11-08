@@ -2,7 +2,7 @@
 /**
  * A button of the bar that opens a menu of slot entries above it: a submenu a plugin placed in a
  * slot, or the items of a command that lists them. The items of the commands of the menu are read as
- * it opens. A pick emits the command of its row and its argument.
+ * it opens. A pick emits the command of its row and the id of its item.
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
 import { ChevronUp } from '@lucide/vue'
@@ -25,7 +25,7 @@ const props = withDefaults(
 )
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const button = useTemplateRef<HTMLElement>('button')
@@ -67,8 +67,8 @@ function onClose(): void {
 function onChoose(id: string): void {
   const pick = slotMenu.pick(id)
   if (!pick) return
-  if (pick.argument === undefined) emit('run', pick.command)
-  else emit('run', pick.command, pick.argument)
+  if (pick.itemId === undefined) emit('run', pick.command)
+  else emit('run', pick.command, pick.itemId)
 }
 
 /* -------------------------------- Helpers --------------------------------- */

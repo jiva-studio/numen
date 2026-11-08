@@ -50,12 +50,10 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
 })
 
 const createCommands = () => {
-  const runs: { command: string; target: RunTarget | undefined; argument?: string }[] = []
+  const runs: { command: string; target: RunTarget | undefined; itemId?: string }[] = []
   return {
-    run: async (id: string, target?: RunTarget, argument?: string) => {
-      runs.push(
-        argument === undefined ? { command: id, target } : { command: id, target, argument },
-      )
+    run: async (id: string, target?: RunTarget, itemId?: string) => {
+      runs.push(itemId === undefined ? { command: id, target } : { command: id, target, itemId })
     },
     listItems: vi.fn(async (_id: string, _target?: RunTarget) => [
       { id: 'window-a', title: 'Atlas' },
@@ -357,7 +355,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     expect(getItemRows(menu)?.map((one) => one.text)).toStrictEqual(['Atlas', 'Tide log'])
   })
 
-  it('runs the command over the tab with the id of the argument picked', async () => {
+  it('runs the command over the tab with the id of the itemId picked', async () => {
     const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
@@ -365,7 +363,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     menu.choose('reef', getItemRows(menu)![1]!.id)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: MOVE.command, target: TARGETS.reef, argument: 'window-b' },
+      { command: MOVE.command, target: TARGETS.reef, itemId: 'window-b' },
     ])
   })
 
@@ -379,7 +377,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     expect(commands.getRuns()).toStrictEqual([])
   })
 
-  it('highlights the window of a move argument under the pointer, and clears the highlight after', async () => {
+  it('highlights the window of a move itemId under the pointer, and clears the highlight after', async () => {
     const { menu, onHighlight } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()

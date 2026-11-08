@@ -38,8 +38,8 @@ export interface CommandsHost {
   // the handler's title; a place draws a single one as a row of that title. Where those handlers
   // offer items of their own, it offers theirs instead, in one list, each in the group of its plugin.
   listItems(command: string, target?: CommandTarget): Promise<readonly CommandItem[]>
-  // Runs the command of the full id over the target; with `argument`, the id of the item picked. A
-  // shared command without an argument runs its one handler whose condition holds over the target,
+  // Runs the command of the full id over the target; with `itemId`, the id of the item picked. A
+  // shared command without an item id runs its one handler whose condition holds over the target,
   // and runs nothing where several or none do.
-  run(command: string, target?: CommandTarget, argument?: string): Promise<void>
+  run(command: string, target?: CommandTarget, itemId?: string): Promise<void>
 }

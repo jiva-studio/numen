@@ -20,8 +20,8 @@ import { WORDS } from '@/shared/words'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
-  /** Runs a command of an entry over the tab; with `argument`, the one picked. */
-  runCommand?(command: string, target: RunTarget, argument?: string): Promise<void>
+  /** Runs a command of an entry over the tab; with `itemId`, the one picked. */
+  runCommand?(command: string, target: RunTarget, itemId?: string): Promise<void>
   /** The items a command of an entry offers over the tab. */
   listItems?(command: string, target: RunTarget): Promise<readonly CommandItem[]>
   /** The tab and the file it shows, which the commands of the entries run over. */
@@ -49,7 +49,7 @@ interface TabMenuTarget {
 
 const getMoveWindow = (tree: SlotMenu | null, id: string | null): string | null => {
   const pick = id === null ? undefined : tree?.getPick(id)
-  return pick?.command === COMMAND.moveTabToWindow ? (pick.argument ?? null) : null
+  return pick?.command === COMMAND.moveTabToWindow ? (pick.itemId ?? null) : null
 }
 
 /** The type the vault files a note as, and its frontmatter where it has any. */
@@ -127,7 +127,7 @@ export function useTabMenu(deps: TabMenuDeps) {
     const choice = slotMenu.pick(id)
     if (!choice) return
     ;(
-      deps.runCommand?.(choice.command, choice.target.target, choice.argument) ?? Promise.resolve()
+      deps.runCommand?.(choice.command, choice.target.target, choice.itemId) ?? Promise.resolve()
     ).catch((error: unknown) => deps.reportError?.(error))
   }
 
@@ -171,8 +171,8 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
   const { windowTabs, slots, commands } = deps
   return useTabMenu({
     slots,
-    runCommand: (command, target, argument) =>
-      commands?.run(command, target, argument) ?? Promise.resolve(),
+    runCommand: (command, target, itemId) =>
+      commands?.run(command, target, itemId) ?? Promise.resolve(),
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),

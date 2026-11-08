@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { WHEN_VARIABLES } from '@numen/plugin-sdk'
-import { parseWhen, type WhenValues } from './when'
+import { getTargetValues, type TargetNote } from './targetValues'
+import { parseWhen, type WhenResult, type WhenValues } from './when'
 
 interface Vectors {
   readonly variables: readonly { readonly name: string; readonly type: string }[]
@@ -11,6 +12,22 @@ interface Vectors {
     readonly when: string
     readonly values: readonly { readonly context: WhenValues; readonly value: boolean }[]
   }[]
+  readonly partial: readonly {
+    readonly when: string
+    readonly values: readonly {
+      readonly context: WhenValues
+      readonly value: boolean | 'unknown'
+    }[]
+  }[]
+  readonly targets: {
+    readonly contentTypes: Readonly<Record<string, string>>
+    readonly cases: readonly {
+      readonly about: string
+      readonly target: { readonly path: string; readonly isFolder: boolean }
+      readonly note?: TargetNote
+      readonly values: Readonly<Record<string, unknown>>
+    }[]
+  }
   readonly invalid: readonly {
     readonly when: string
     readonly about: string
@@ -41,6 +58,22 @@ describe('a when condition', () => {
     for (const { context, value } of example.values) {
       expect(condition.evaluate(context), JSON.stringify(context)).toBe(value)
     }
+  })
+
+  it.each(VECTORS.partial)('$when has its value where variables are left out', (example) => {
+    const condition = read(example.when)
+
+    for (const { context, value } of example.values) {
+      expect(condition.evaluatePartial(context), JSON.stringify(context)).toBe(
+        String(value) as WhenResult,
+      )
+    }
+  })
+
+  it.each(VECTORS.targets.cases)('derives the target values of $about', (one) => {
+    expect(
+      getTargetValues({ ...one.target, others: [] }, VECTORS.targets.contentTypes, one.note),
+    ).toStrictEqual(one.values)
   })
 
   it.each(VECTORS.invalid.filter((one) => !one.isTypeError))(

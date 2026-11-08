@@ -8,6 +8,7 @@ import {
   celEnv,
   celError,
   isCelError,
+  listType,
   mapType,
   parse,
   plan,
@@ -45,6 +46,7 @@ const TYPES: Readonly<Record<string, CelType>> = {
   bool: CelScalar.BOOL,
   string: CelScalar.STRING,
   map: mapType(CelScalar.STRING, CelScalar.DYN),
+  list: listType(mapType(CelScalar.STRING, CelScalar.DYN)),
 }
 
 const ENVIRONMENT = celEnv({
@@ -56,6 +58,7 @@ const DECLARED = new Set<string>(WHEN_VARIABLES.map((one) => one.name))
 const getDefault = (type: string): unknown => {
   if (type === 'bool') return false
   if (type === 'string') return ''
+  if (type === 'list') return []
   return new Map()
 }
 
@@ -114,9 +117,8 @@ function collectNames(expr: Expr, names: Set<string>): void {
 }
 
 function toCelMap(value: unknown): unknown {
-  if (value === null || typeof value !== 'object' || Array.isArray(value) || value instanceof Map) {
-    return value
-  }
+  if (Array.isArray(value)) return value.map(toCelMap)
+  if (value === null || typeof value !== 'object' || value instanceof Map) return value
   return new Map(Object.entries(value).map(([key, one]) => [key, toCelMap(one)]))
 }
 

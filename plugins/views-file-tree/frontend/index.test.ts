@@ -131,7 +131,7 @@ describe('view-file-tree plugin', () => {
           tab: '',
           noteType: 'note',
         },
-        argument: undefined,
+        itemId: undefined,
       },
     ])
   })

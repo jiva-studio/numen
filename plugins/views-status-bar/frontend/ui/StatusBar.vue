@@ -17,12 +17,12 @@ defineProps<{
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRun(command: string, argument?: string): void {
-  if (argument === undefined) emit('run', command)
-  else emit('run', command, argument)
+function onRun(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run', command)
+  else emit('run', command, itemId)
 }
 </script>
 

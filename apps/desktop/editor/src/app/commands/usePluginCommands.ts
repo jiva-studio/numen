@@ -106,7 +106,7 @@ export function usePluginCommands(
             if (invocation.values) {
               await pluginHost.executeCommand(cmd.id, note, { values: invocation.values })
             } else if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
-              await pluginHost.executeCommand(cmd.id, note, { argument: invocation.name })
+              await pluginHost.executeCommand(cmd.id, note, { itemId: invocation.name })
             } else await pluginHost.executeCommand(cmd.id, note)
           }),
         )

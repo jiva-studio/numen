@@ -176,7 +176,7 @@ export interface CommandNote extends CommandTarget {
 // manifest does not declare is never listed.
 export interface CommandRegistration {
   id: string
-  handler: (note: CommandNote, argument?: string) => void | Promise<void>
+  handler: (note: CommandNote, itemId?: string) => void | Promise<void>
   listItems?: (target: CommandTarget) => readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
