@@ -192,11 +192,11 @@ describe('the corner radius of the window', () => {
     }
   }
 
-  it('reads the major version of macOS from the runtime environment', async () => {
+  it('takes the radius of macOS before 26 from the version in the runtime environment', async () => {
     const frame = useWindowFrame(async () => createMacRuntime('15.6.1'))
     await flushPromises()
 
-    expect(frame.macVersion.value).toBe(15)
+    expect(frame.windowRadius.value).toBe(10)
   })
 
   it('sets the radius of macOS 26 on the root', async () => {
@@ -218,7 +218,7 @@ describe('the corner radius of the window', () => {
     const frame = useWindowFrame(async () => createMacRuntime(undefined))
     await flushPromises()
 
-    expect(frame.macVersion.value).toBeUndefined()
+    expect(frame.windowRadius.value).toBe(16)
     expect(readRoot()).toBe('16px')
   })
 

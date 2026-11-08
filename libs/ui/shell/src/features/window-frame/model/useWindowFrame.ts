@@ -51,7 +51,6 @@ export interface WindowFrame {
   readonly isMaximized: Readonly<Ref<boolean>>
   readonly isFullscreen: Readonly<Ref<boolean>>
   readonly windowEdge: Readonly<Ref<FrameEdge>>
-  readonly macVersion: Readonly<Ref<number | undefined>>
   readonly windowRadius: Readonly<Ref<number>>
   minimizeWindow(): Promise<void>
   toggleMaximizeWindow(): Promise<void>
@@ -153,7 +152,6 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
     platform,
     isMaximized,
     isFullscreen,
-    macVersion,
     windowRadius,
     windowEdge: computed(() => getWindowEdge(platform.value, isFullscreen.value)),
     minimizeWindow,
