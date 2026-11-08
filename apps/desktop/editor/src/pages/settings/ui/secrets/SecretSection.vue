@@ -143,6 +143,10 @@ function onMoveDown(index: number): void {
   display: flex;
   flex-direction: column;
   margin-block-end: var(--settings-apart);
+  padding: 0.875rem 1rem;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
 }
 
 .secret-section__header {
