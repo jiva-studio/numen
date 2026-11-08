@@ -21,10 +21,6 @@ const core = "github.com/jiva-studio/numen/libs/core/"
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/apps/"
 
-// isAssembled is what an application takes from the core: the composition root,
-// the adapters it serves something through, and the two languages both are
-// named in, and the contract packages under usecase/, which only re-export port
-// types. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
 		strings.HasPrefix(pkg, "port/") ||
@@ -32,8 +28,6 @@ func isAssembled(pkg string) bool {
 		isContract(pkg)
 }
 
-// isContract reports whether pkg is a contract package of a use case, such as
-// usecase/vault/vaultcontract.
 func isContract(pkg string) bool {
 	return strings.HasPrefix(pkg, "usecase/") && strings.HasSuffix(pkg, "contract")
 }
@@ -45,10 +39,6 @@ type standing struct {
 	file    *ast.File
 }
 
-// named are files every walk below must reach: the desktop's entry point, a
-// file of its internal packages, and the mobile binding. A count measures how
-// much was read, not what, and a walk that stopped at the desktop's border would
-// still satisfy any floor the desktop's own files fill.
 func getNamed() []string {
 	return []string{
 		"desktop/cmd/numen/main.go",
@@ -57,9 +47,6 @@ func getNamed() []string {
 	}
 }
 
-// readSources returns every hand-written Go file of the applications, parsed.
-//
-// Test files are excluded: they live outside the package they exercise.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -147,9 +134,6 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	}
 }
 
-// logging are the words a package that keeps a record is named by, read off the
-// last element of an import path. The standard library holds two of them, and
-// the rest are the libraries reached for when one of those will not do.
 func getLogging() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
@@ -157,7 +141,6 @@ func getLogging() map[string]bool {
 	}
 }
 
-// logs answers whether an import is a logger.
 func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. An entry point names the process's own streams, and the
@@ -216,13 +199,6 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
-// getClaimedPorts are the ports a file declares itself to answer, by the blank
-// name.
-//
-// A blank standing among other names is the same claim as one standing alone,
-// and a declaration inside a function is the same claim as one beside the
-// package's own. A variable that holds a port is not one: it is given what
-// answers the port, and names what it was given.
 func getClaimedPorts(file *ast.File) []string {
 	var target []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -274,7 +250,6 @@ func mount() {
 	}
 }
 
-// getPackage is the package a file belongs to, as the rules name it.
 func getPackage(root, path string) string {
 	target, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
@@ -283,7 +258,6 @@ func getPackage(root, path string) string {
 	return filepath.ToSlash(target)
 }
 
-// application is the one a package belongs to.
 func application(pkg string) string {
 	target, _, _ := strings.Cut(pkg, "/")
 	return target

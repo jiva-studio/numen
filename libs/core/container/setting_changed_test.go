@@ -61,7 +61,6 @@ func (r *recordingHost) listProfiles() []string {
 	return slices.Clone(r.profiles)
 }
 
-// writeEventfulPlugin is a folder holding a plugin that declares the setting `mode`.
 func writeEventfulPlugin(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -84,8 +83,6 @@ func writeEventfulPlugin(t *testing.T) string {
 	return root
 }
 
-// openInstallation is a container reading a settings file of its own, and the plugin host the
-// container tells about each change.
 func openInstallation(t *testing.T, body string) (container.Config, string, *recordingHost) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
@@ -110,7 +107,6 @@ func listen(t *testing.T, cfg container.Config) listener {
 	return listener{changes: changes}
 }
 
-// await is the batch the listener receives next, and fails when none arrives.
 func (l listener) await(t *testing.T) []settingsport.Setting {
 	t.Helper()
 	select {
@@ -125,7 +121,6 @@ func (l listener) await(t *testing.T) []settingsport.Setting {
 	}
 }
 
-// expectNothing fails when the listener receives a change.
 func (l listener) expectNothing(t *testing.T) {
 	t.Helper()
 	select {

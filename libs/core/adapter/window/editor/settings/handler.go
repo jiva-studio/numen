@@ -17,18 +17,15 @@ import (
 // Handler answers every setting read and written, and the keys of the secrets
 // plugins declare, stored and removed.
 type Handler struct {
-	Get   *setting.Get
-	Write *setting.Write
-	// Watch is nil where the build reports no change of a setting.
+	Get          *setting.Get
+	Write        *setting.Write
 	Watch        *setting.Watch
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
-	// PluginData and Vaults are nil where the installation keeps no text versions.
-	PluginData PluginData
-	Vaults     VaultProvider
-	// ChoosePath is nil where the application has no window to put a picker in.
-	ChoosePath *setting.ChoosePluginPath
+	PluginData   PluginData
+	Vaults       VaultProvider
+	ChoosePath   *setting.ChoosePluginPath
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -108,7 +105,6 @@ func GetPresences() map[setting.Presence]v1.Presence {
 	}
 }
 
-// newWireSettings is what choosing a model writes, as the wire carries it.
 func newWireSettings(target []setting.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
@@ -143,8 +139,6 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	return infos
 }
 
-// newWirePluginSettings is the declared settings of an owner, with the options, the visibility and
-// the value the core resolved for each, as the wire carries them.
 func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
 	settings := make([]*v1.PluginSetting, 0, len(target))
 	for _, s := range target {
@@ -202,7 +196,6 @@ func (h *Handler) DeletePluginSecret(
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }
 
-// newWirePluginFailure is why the host suspends a plugin, as the wire carries it, and nil for a plugin it does not.
 func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
@@ -233,7 +226,6 @@ func (h *Handler) RetryPlugin(
 	return connect.NewResponse(reply), nil
 }
 
-// newWireReasoningLevels is the levels of reasoning as the wire carries them.
 func newWireReasoningLevels(target []setting.ReasoningLevel) []*v1.ReasoningLevel {
 	if len(target) == 0 {
 		return nil
@@ -245,7 +237,6 @@ func newWireReasoningLevels(target []setting.ReasoningLevel) []*v1.ReasoningLeve
 	return levels
 }
 
-// newWireOptions is the options of a setting as the wire carries them.
 func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOption {
 	if len(target) == 0 {
 		return nil
@@ -261,7 +252,6 @@ func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
 	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail}
 }
 
-// newWireOptionsBy is the options a setting takes from another, as the wire carries them.
 func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {
 	if target == nil {
 		return nil
@@ -273,7 +263,6 @@ func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingO
 	return &v1.PluginSettingOptionsBy{Setting: target.Setting, Options: options}
 }
 
-// newWireCondition is the condition of a setting as the wire carries it.
 func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingCondition {
 	if target == nil {
 		return nil
@@ -281,7 +270,6 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-// newWireSecrets is the secrets a plugin declares, as the wire carries them.
 func newWireSecrets(target []setting.PluginSecret) []*v1.PluginSecret {
 	secrets := make([]*v1.PluginSecret, 0, len(target))
 	for _, one := range target {
@@ -313,7 +301,6 @@ func (h *Handler) ChoosePluginPath(
 	return connect.NewResponse(reply), nil
 }
 
-// newWireSettingsViews is the settings views of a plugin as the wire carries them.
 func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettingsView {
 	out := make([]*v1.PluginSettingsView, 0, len(views))
 	for _, one := range views {
@@ -322,7 +309,6 @@ func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettin
 	return out
 }
 
-// newWireReaders is the readers of a plugin as the wire carries them.
 func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	out := make([]*v1.PluginReader, 0, len(readers))
 	for _, one := range readers {

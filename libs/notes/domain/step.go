@@ -32,8 +32,6 @@ const (
 
 // ReasoningLevel is one reasoning depth that can be requested from a model.
 type ReasoningLevel struct {
-	// Name is the identifier a task uses to request the level.
-	Name string
-	// Title is the display name of the level.
+	Name  string
 	Title string
 }

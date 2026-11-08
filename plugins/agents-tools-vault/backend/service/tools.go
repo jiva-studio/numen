@@ -17,17 +17,11 @@ var errNoVault = errors.New("the call names no vault")
 
 // Tools provides MCP tools for AI agents interacting with the knowledge vault.
 type Tools struct {
-	// host provides access to every vault registered with the host.
-	host host.Vault
-	// vault is the vault of the call being served.
-	vault host.Vault
-	// texts and search are the text versions and the search index. On the tools they are those of
-	// every vault, and nil until WithLibrary; on the tools of a call they are those of its vault.
+	host   host.Vault
+	vault  host.Vault
 	texts  host.Texts
 	search host.Search
-	// list is the installation's list of vaults. The tools that change the list are registered only
-	// when it is given.
-	list host.VaultList
+	list   host.VaultList
 }
 
 // New creates a Tools instance.
@@ -42,7 +36,6 @@ func (t *Tools) WithVaultList(list host.VaultList) *Tools {
 	return t
 }
 
-// inVault runs the tool on the vault the call names. A call that names no vault returns an error.
 func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, error)) func(context.Context, In) (Out, error) {
 	return func(ctx context.Context, in In) (Out, error) {
 		id := tools.GetVault(ctx)
@@ -129,8 +122,6 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: modTime}, nil
 }
 
-// addTool adds the tool to the registry. tools.Add starts the text of every error of the tool with
-// the tool name.
 func addTool[In, Out any](registry *tools.Registry, spec tools.Spec, run func(context.Context, In) (Out, error)) error {
 	return tools.Add(registry, spec, run)
 }

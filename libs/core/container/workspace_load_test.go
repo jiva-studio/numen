@@ -13,7 +13,6 @@ import (
 // the directory of the module. The rules that walk it share one load and never change it.
 type workspacePackages map[string][]*packages.Package
 
-// listModule returns the packages of the module in dir, one of the directories listWorkspaceModules returns.
 func (w workspacePackages) listModule(t *testing.T, dir string) []*packages.Package {
 	t.Helper()
 	pkgs, ok := w[dir]
@@ -40,7 +39,6 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 	})
 }
 
-// loadWorkspace loads the modules at the same time, a few at once.
 func loadWorkspace(t *testing.T) workspacePackages {
 	t.Helper()
 	dirs := listWorkspaceModules(t)
@@ -73,8 +71,6 @@ func loadWorkspace(t *testing.T) workspacePackages {
 	return byDir
 }
 
-// isTestVariant reports whether pkg is a copy of a package built for its tests: the package with its
-// test files added, its external test package or the generated test main.
 func isTestVariant(pkg *packages.Package) bool {
 	return strings.Contains(pkg.ID, " [") || strings.HasSuffix(pkg.ID, ".test")
 }

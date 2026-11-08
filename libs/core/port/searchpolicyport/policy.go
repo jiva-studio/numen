@@ -20,7 +20,6 @@ type FloorStore interface {
 // Vector is the stored form of the vector.
 type Passage struct {
 	Source int64
-	// Path is the path of the source in the vault.
 	Path   string
 	Vector []byte
 }

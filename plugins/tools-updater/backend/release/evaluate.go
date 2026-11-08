@@ -33,8 +33,7 @@ type Update struct {
 	ReleasedAt  string
 	NotesURL    string
 	DownloadURL string
-	// File is the file of the release for the running platform; nil where the release has none.
-	File *File
+	File        *File
 }
 
 // IsNewer reports whether the manifest names a build newer than the running one. Builds are compared
@@ -96,8 +95,6 @@ func FindPlatformFile(files []File, platform string) *File {
 
 func isMacFile(f File) bool { return f.Platform == PlatformDarwin || f.Platform == "macos" }
 
-// findFile returns the first file the first matching test accepts. The tests run in order of
-// preference.
 func findFile(files []File, tests ...func(File) bool) *File {
 	for _, test := range tests {
 		for i := range files {
@@ -130,7 +127,6 @@ func CompareVersions(a, b string) int {
 	return comparePrerelease(strings.Split(preA, "."), strings.Split(preB, "."))
 }
 
-// splitVersion separates the numeric core of a version from its prerelease.
 func splitVersion(version string) (core []string, prerelease string) {
 	numbers, pre, _ := strings.Cut(strings.TrimPrefix(strings.TrimSpace(version), "v"), "-")
 	return strings.Split(numbers, "."), pre
@@ -146,7 +142,6 @@ func compareNumbers(a, b []string) int {
 	return 0
 }
 
-// getNumber returns the number at the index of the parts, or 0 where there is none.
 func getNumber(parts []string, index int) int {
 	if index >= len(parts) {
 		return 0
@@ -168,8 +163,6 @@ func compareInts(a, b int) int {
 	return 0
 }
 
-// comparePrerelease orders prerelease identifiers: numbers by value and before words, words by
-// spelling, and a shorter list before a longer one that starts with it.
 func comparePrerelease(a, b []string) int {
 	for i := 0; i < min(len(a), len(b)); i++ {
 		if order := compareIdentifier(a[i], b[i]); order != 0 {

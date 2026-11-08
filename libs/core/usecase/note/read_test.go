@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// openNoteRead is a vault on disk and the read that works on it.
 func openNoteRead(t *testing.T, notes map[string]string) (note.Read, domain.Vault) {
 	t.Helper()
 	return note.NewRead(vaultreader.Readers{}), testsupport.NewVault(t, notes)

@@ -22,9 +22,8 @@ const bookReader = "test.books"
 type libraryTexts struct {
 	shelves indexfake.Vaults
 
-	mu    sync.Mutex
-	extra map[string][]placedVersion
-	// books is every version bookReader has made, by path and the hash of the bytes it read.
+	mu        sync.Mutex
+	extra     map[string][]placedVersion
 	books     map[string]placedVersion
 	requested []string
 	failure   error
@@ -40,7 +39,6 @@ func newLibraryTexts(shelves indexfake.Vaults) *libraryTexts {
 	return &libraryTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}, outside: map[string]bool{}}
 }
 
-// put gives a file a version made from its bytes as they are now. The newest put is live.
 func (s *libraryTexts) put(v domain.Vault, path, pluginID string, kind domain.TextKind, parts []domain.TextSegment) domain.TextVersion {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -52,7 +50,6 @@ func (s *libraryTexts) put(v domain.Vault, path, pluginID string, kind domain.Te
 	return version
 }
 
-// drop removes every version a test put on a file.
 func (s *libraryTexts) drop(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -74,7 +71,6 @@ type libraryVaultTexts struct {
 	vault domain.Vault
 }
 
-// findLive is the live version of a file and its parts.
 func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash string) (placedVersion, error) {
 	s := t.texts
 	s.mu.Lock()
@@ -161,7 +157,6 @@ func (t libraryVaultTexts) IsTextSource(_ context.Context, path string) (bool, e
 	return !t.texts.outside[path], nil
 }
 
-// leaveOut makes the file one that has no text versions and no plugin takes.
 func (s *libraryTexts) leaveOut(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

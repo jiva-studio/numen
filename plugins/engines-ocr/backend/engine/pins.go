@@ -11,8 +11,6 @@ const (
 // RecogniserCustom is the recogniser the user selects by its file.
 const RecogniserCustom = "custom"
 
-// getRecognisers returns the recognition models the plugin provisions, by the name the settings give
-// each, with the address each is fetched from. Each carries its alphabet in its metadata.
 func getRecognisers() map[string]string {
 	return map[string]string{
 		"pp-ocrv6-tiny":       recogDefault,

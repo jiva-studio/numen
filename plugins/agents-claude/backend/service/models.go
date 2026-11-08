@@ -37,7 +37,6 @@ type claudeModel struct {
 	EffortLevels   []string `json:"supportedEffortLevels"`
 }
 
-// getLevels returns the depths of reasoning the model supports, from the least to the most.
 func (m claudeModel) getLevels() []reasoning.Level {
 	if !m.SupportsEffort {
 		return nil
@@ -47,13 +46,10 @@ func (m claudeModel) getLevels() []reasoning.Level {
 	return levels
 }
 
-// toProto returns the model in the schema's words.
 func (m claudeModel) toProto() *reasoning.Model {
 	return reasoning.NewModel(m.Value, m.DisplayName, m.getLevels(), "")
 }
 
-// getFallbackModels returns the aliases the program accepts for --model, offered with no depth of
-// reasoning when the program does not answer the request for its models.
 func getFallbackModels() []claudeModel {
 	return []claudeModel{
 		{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
@@ -62,8 +58,6 @@ func getFallbackModels() []claudeModel {
 	}
 }
 
-// parseModels reads the models out of the lines the program writes: the answer to the request
-// named by requestID holds them.
 func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 	scanner := bufio.NewScanner(lines)
 	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,ARITHMETIC_BASE reason="Scanner initial buffer allocation and maximum token size are capacity bounds."
@@ -98,15 +92,12 @@ func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 	return nil, errors.New("the program ended without listing its models")
 }
 
-// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
-// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
 func isStopped(err error) bool {
 	var exit *exec.ExitError
 	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
 		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
 }
 
-// fetchModels queries the program, started as command with env, for the models it offers.
 func fetchModels(ctx context.Context, command, env []string) (models []claudeModel, err error) {
 	ctx, cancel := context.WithTimeout(ctx, modelsTimeout)
 	defer cancel()
@@ -168,7 +159,6 @@ func (s *agentServer) getModelCache() *cache.Cache[[]claudeModel] {
 	return s.models
 }
 
-// getModels returns the current list of models for the command, listing them where none is current.
 func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]claudeModel, error) {
 	key := strings.Join(command, "\x00")
 	modelCache := s.getModelCache()
@@ -190,7 +180,6 @@ func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]c
 	return models, nil
 }
 
-// findModelLevels returns the levels of the model among the current lists, and whether the model is listed.
 func (s *agentServer) findModelLevels(model string) ([]reasoning.Level, bool) {
 	for _, list := range s.getModelCache().Values() {
 		for _, items := range list {

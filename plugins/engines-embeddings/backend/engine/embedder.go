@@ -22,7 +22,6 @@ const (
 	tokenTypeIDs  = "token_type_ids"
 )
 
-// getOutputs returns the outputs a vector is read from, best first.
 func getOutputs(pooling string) []string {
 	if pooling == PoolOutput {
 		return []string{"sentence_embedding"}
@@ -379,7 +378,6 @@ func splitRows(flat []float32, rows, dimensions int, isNormalised bool) ([][]flo
 	return out, nil
 }
 
-// finishVector scales the vector to unit length when the profile says so.
 func finishVector(vector []float32, isNormalised bool) []float32 {
 	if isNormalised {
 		return Normalise(vector)
@@ -387,9 +385,6 @@ func finishVector(vector []float32, isNormalised bool) []float32 {
 	return vector
 }
 
-// chooseOutput returns the output a vector is read from. A model pooled as output answers with
-// sentence_embedding, or with its only output; any other pooling reads last_hidden_state, and a
-// graph without one answers with its only output.
 func chooseOutput(named []string, pooling string) (string, error) {
 	want := getOutputs(pooling)
 	for _, name := range want {

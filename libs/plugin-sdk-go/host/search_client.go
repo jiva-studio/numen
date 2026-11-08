@@ -15,8 +15,7 @@ import (
 
 // SearchClient works the search index and the search floor through HostSearchService.
 type SearchClient struct {
-	rpc numenv1connect.HostSearchServiceClient
-	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
+	rpc   numenv1connect.HostSearchServiceClient
 	vault string
 }
 
@@ -65,8 +64,6 @@ func newSearchRequest[T any](c *SearchClient, msg *T) *connect.Request[T] {
 	return req
 }
 
-// readSearchCallError converts the failure of a call into its error: a vault the host does not know is
-// ErrUnknownVault, and a permission the manifest lacks is ErrPermissionDenied.
 func readSearchCallError(err error) error {
 	if connect.CodeOf(err) == connect.CodePermissionDenied {
 		return fmt.Errorf("%w: %w", ErrPermissionDenied, err)

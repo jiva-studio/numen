@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// writeConfig writes a loader configuration file and returns its path.
 func writeConfig(t *testing.T, pos, content string) string {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {

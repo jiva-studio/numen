@@ -63,7 +63,6 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 	return registry, nil
 }
 
-// getToolVault is the vault the call works, as the host names it.
 func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
 	id := tools.GetVault(ctx)
 	if id == "" {

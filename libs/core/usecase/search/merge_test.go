@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// newRanking is chunks in the order a half returned them.
 func newRanking(chunks ...domain.ChunkID) []domain.Passage {
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, c := range chunks {

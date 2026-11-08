@@ -231,7 +231,6 @@ func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	}
 }
 
-// getPort returns the TCP port the test server listens on.
 func getPort(t *testing.T, srv *httptest.Server) int {
 	t.Helper()
 	addr, isTCP := srv.Listener.Addr().(*net.TCPAddr)

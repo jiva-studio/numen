@@ -56,8 +56,6 @@ func Summarize(similarities []float64) Statistics {
 	}
 }
 
-// getQuantile is the value at fraction p of a sorted sample, interpolating
-// linearly between the two values around it.
 func getQuantile(sorted []float64, p float64) float64 {
 	position := p * float64(len(sorted)-1)
 	lower := int(math.Floor(position))
@@ -66,8 +64,6 @@ func getQuantile(sorted []float64, p float64) float64 {
 	return sorted[lower] + float64((sorted[upper]-sorted[lower])*(position-float64(lower)))
 }
 
-// getBin is the histogram bin of a similarity. Values outside zero to one fall in
-// the first or last bin.
 func getBin(similarity float64) int {
 	// gomutants:disable-next-line BRANCH_IF reason="Clamping maps NaN to bin zero."
 	if math.IsNaN(similarity) {

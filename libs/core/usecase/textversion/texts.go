@@ -105,8 +105,6 @@ func (u *Versions) GetTextRange(ctx context.Context, v domain.Vault, path string
 	return TextRange{Segments: version.GetSegmentsIn(rangeStart, rangeStart+len(raw)), Start: rangeStart, Size: size}, nil
 }
 
-// readText reads a version's file. It returns textport.ErrNoText when the file
-// is missing or has a hash that differs from the one recorded with the version.
 func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.VersionText, error) {
 	files, err := u.files.Open(v)
 	if err != nil {

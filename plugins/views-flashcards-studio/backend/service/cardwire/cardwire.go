@@ -45,11 +45,11 @@ func NewWireSummary(s cards.CardModelSummary) *api.CardModelSummary {
 // heading, and the problem names the deck and the reason.
 func NewRenameResponse(r cards.RenameResult, stat *api.FileStat) *api.RenameCardModelFieldResponse {
 	out := &api.RenameCardModelFieldResponse{
-		Decks:        r.Decks,
-		Cards:        int32(r.Cards),
-		NotWritten:   nil,
-		Error:        api.ErrorCodeUnspecified,
-		At:           stat,
+		Decks:           r.Decks,
+		Cards:           int32(r.Cards),
+		NotWritten:      nil,
+		Error:           api.ErrorCodeUnspecified,
+		At:              stat,
 		IsIndexOutdated: false,
 	}
 	for _, deck := range r.NotWritten {
@@ -101,7 +101,6 @@ func newWireCard(c format.Card, pos string) *api.Card {
 	return out
 }
 
-// section maps the section index to an int32 pointer, returning nil for NoSection.
 func section(pos int) *int32 {
 	if pos == format.NoSection {
 		return nil
@@ -110,7 +109,6 @@ func section(pos int) *int32 {
 	return &index
 }
 
-// sectionOf maps a section pointer to domain section index, returning NoSection for nil.
 func sectionOf(index *int32) int {
 	if index == nil {
 		return format.NoSection
@@ -118,8 +116,6 @@ func sectionOf(index *int32) int {
 	return int(*index)
 }
 
-// newWireProblems is what was wrong with a file, in the order it was found. A check
-// the schema names no fault for is drawn nowhere, and is left out.
 func newWireProblems(problems []format.Problem) []*api.Problem {
 	if len(problems) == 0 {
 		return nil
@@ -133,8 +129,6 @@ func newWireProblems(problems []format.Problem) []*api.Problem {
 	return out
 }
 
-// newWireProblem is one problem as the schema carries it, and nothing for a fault
-// the schema does not name.
 func newWireProblem(p format.Problem) *api.Problem {
 	kind, isNamed := newWireProblemKind(p.Fault)
 	if !isNamed {
@@ -149,7 +143,6 @@ func newWireProblem(p format.Problem) *api.Problem {
 	}
 }
 
-// position converts an optional integer position to an int32 pointer.
 func position(offset int) *int32 {
 	if offset == format.NoPosition {
 		return nil
@@ -158,8 +151,6 @@ func position(offset int) *int32 {
 	return &pos
 }
 
-// newWireProblemKind returns the schema's problem kind for a fault, and
-// whether the schema names it at all.
 func newWireProblemKind(fault format.Fault) (api.ProblemKind, bool) {
 	switch fault {
 	case format.FaultTwoFields:
@@ -205,8 +196,6 @@ func NewDeck(w *api.WriteDeckRequest) format.Deck {
 	return out
 }
 
-// newCards is the cards a client is putting into a deck, in the words the core
-// holds them in.
 func newCards(cs []*api.Card) []format.Card {
 	if len(cs) == 0 {
 		return nil

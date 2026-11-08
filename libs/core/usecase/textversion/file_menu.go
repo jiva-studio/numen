@@ -77,8 +77,6 @@ func (u *FileMenu) GetMenu(ctx context.Context, v domain.Vault, path string) ([]
 	return entries, nil
 }
 
-// findLiveVersion is the live version of the file among its versions. The file is read and hashed
-// only when it has versions.
 func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
@@ -90,7 +88,6 @@ func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path str
 	return u.versions.findLive(ctx, v, versions, contentHash)
 }
 
-// hasRequiredArgument reports whether the command cannot run without a value a menu does not give.
 func hasRequiredArgument(command pluginport.PluginCommand) bool {
 	for _, argument := range command.Arguments {
 		if argument.IsRequired {
@@ -111,7 +108,6 @@ const (
 	ContextKeyPlugin = "version.plugin"
 )
 
-// getVersionContext is the context a command is offered over for the version.
 func getVersionContext(version domain.TextVersion, isLive bool) pluginport.PluginContext {
 	return pluginport.PluginContext{
 		ContextKeyLive:   strconv.FormatBool(isLive),
@@ -120,7 +116,6 @@ func getVersionContext(version domain.TextVersion, isLive bool) pluginport.Plugi
 	}
 }
 
-// listCandidates is the versions in whose context every condition of the command holds.
 func listCandidates(command pluginport.PluginCommand, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []domain.TextVersion {
 	var candidates []domain.TextVersion
 	for _, version := range versions {

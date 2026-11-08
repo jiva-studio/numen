@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// getNote returns one vault of one note.
 func getNote() map[string]string {
 	return map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
 }
@@ -158,8 +157,6 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	}
 }
 
-// receiveFrom is what the channel carries, and a failure saying what did not
-// happen when it carries nothing.
 func receiveFrom[T any](t *testing.T, from <-chan T, what string) T {
 	t.Helper()
 	select {
@@ -172,8 +169,6 @@ func receiveFrom[T any](t *testing.T, from <-chan T, what string) T {
 	}
 }
 
-// makeWatcher returns a watcher whose events the test sends, so vault changes
-// can be simulated without a filesystem or timer.
 func makeWatcher() *waves {
 	return &waves{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
@@ -187,9 +182,6 @@ func (w *waves) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 	return w.changes, w.lostChan, nil
 }
 
-// makeStagedReaders returns readers whose first walk holds every note it has
-// read and whose later walks read straight through. A second walk can then
-// start while the first holds an older copy.
 func makeStagedReaders() *staged {
 	return &staged{
 		VaultReaders: vaultreader.Readers{},
@@ -205,7 +197,6 @@ type staged struct {
 	walks atomic.Int64
 }
 
-// release lets the first walk go on.
 func (s *staged) release() { close(s.first) }
 
 func (s *staged) Open(v domain.Vault) (vaultport.VaultReader, error) {
@@ -239,8 +230,6 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-// makeGatedReaders returns readers that hold each read open once the bytes are
-// read, so a test can change the file while the walk holds a copy.
 func makeGatedReaders() *gate {
 	return &gate{
 		VaultReaders: vaultreader.Readers{},
@@ -257,8 +246,6 @@ type gate struct {
 	until chan struct{}
 }
 
-// forget lets go of the last path read, so what is waited for next is a read
-// that has not happened yet.
 func (g *gate) forget() {
 	select {
 	case <-g.begun:
@@ -266,14 +253,12 @@ func (g *gate) forget() {
 	}
 }
 
-// hold makes every read from now on wait to be released.
 func (g *gate) hold() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.until = make(chan struct{})
 }
 
-// release lets every read waiting, and every read after it, through.
 func (g *gate) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -324,7 +309,6 @@ func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 	return nil, nil, os.ErrPermission
 }
 
-// openVault is a vault and an index of a test's own.
 func openVault(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
 	t.Helper()
 
@@ -345,7 +329,6 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 	}
 }
 
-// titleOf returns the title the index holds for a note.
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 

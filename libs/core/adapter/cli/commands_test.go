@@ -27,12 +27,10 @@ import (
 
 var errRefused = errors.New("rejected on purpose")
 
-// notebook is the vault every command here operates on.
 func getNotebook() domain.Vault {
 	return domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 }
 
-// runWithDeps runs the terminal on the values it is handed.
 func runWithDeps(deps cli.Deps, args ...string) (string, error) {
 	var out bytes.Buffer
 	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return deps })

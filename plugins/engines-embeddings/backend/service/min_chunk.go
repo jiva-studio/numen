@@ -14,9 +14,6 @@ const (
 	maxMinChunkLength     = 1000
 )
 
-// readMinChunkLength returns the shortest piece of text, in bytes, that is given a vector. A value
-// that is no number gives the default, a number with a fraction is cut to its whole part, and a
-// number outside the bounds of the setting is brought to the nearest bound.
 func readMinChunkLength(values map[string]string) int {
 	raw, ok := values[settingMinChunkLength]
 	// gomutants:disable-next-line BRANCH_IF reason="missing key yields empty raw string that ParseFloat rejects"

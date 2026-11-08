@@ -15,7 +15,6 @@ const (
 // cpuCore identifies one physical core by the package that holds it and its number within that package.
 type cpuCore struct{ Package, Core int }
 
-// parseMeminfo reads MemTotal and MemAvailable from the content of /proc/meminfo, in megabytes. A field that is absent is 0.
 func parseMeminfo(content string) (totalMB, availableMB int64) {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
@@ -41,7 +40,6 @@ func parseMeminfo(content string) (totalMB, availableMB int64) {
 	return totalMB, availableMB
 }
 
-// parseCPUList reads a kernel CPU list such as "0-3,8,10-11" into the CPU numbers it names.
 func parseCPUList(content string) ([]int, error) {
 	text := strings.TrimSpace(content)
 	if text == "" {
@@ -70,7 +68,6 @@ func parseCPUList(content string) ([]int, error) {
 	return cpus, nil
 }
 
-// parseTopologyID reads the content of a sysfs topology file, which holds one integer.
 func parseTopologyID(content string) (int, error) {
 	id, err := strconv.Atoi(strings.TrimSpace(content))
 	if err != nil {
@@ -79,7 +76,6 @@ func parseTopologyID(content string) (int, error) {
 	return id, nil
 }
 
-// countCores is the number of distinct physical cores among the cores of a set of logical CPUs.
 func countCores(cores []cpuCore) int {
 	observed := make(map[cpuCore]struct{}, len(cores))
 	for _, core := range cores {
@@ -88,7 +84,6 @@ func countCores(cores []cpuCore) int {
 	return len(observed)
 }
 
-// parseCPUMax reads the content of a cgroup v2 cpu.max file into the number of CPUs the quota allows, rounded up. A file without a quota gives 0.
 func parseCPUMax(content string) int {
 	fields := strings.Fields(content)
 	if len(fields) != 2 || fields[0] == "max" {

@@ -12,7 +12,6 @@ import (
 // Places are where the block elements of a book begin in its Text, and the text nodes its Text was
 // written from, which a place in the Text and its EPUB CFI are found from.
 type Places struct {
-	// Blocks are where each block element begins in the book's Text, ascending.
 	Blocks []int
 	runs   []placedRun
 }
@@ -52,7 +51,6 @@ func (b *Book) readPlaces(docs []Document) Places {
 	return places
 }
 
-// getPackageSteps is the CFI steps through the package document to a document's itemref.
 func (b *Book) getPackageSteps(doc Document) []int {
 	return []int{b.spineStep, b.itemSteps[doc.Spine]}
 }
@@ -104,7 +102,6 @@ func (b *Book) FindOffset(place cfi.CFI) (int, bool) {
 	return 0, false
 }
 
-// findDocumentOffset is the offset a CFI names among the runs of one document.
 func findDocumentOffset(doc Document, runs []placedRun, place cfi.CFI) int {
 	i := sort.Search(len(runs), func(i int) bool { return slices.Compare(runs[i].Steps, place.Document) >= 0 })
 	if i == len(runs) {

@@ -26,7 +26,6 @@ import (
 
 const listenerPlugin = "org.example.relay"
 
-// listenLoopback binds a TCP port on loopback and closes it when the test ends.
 func listenLoopback(t *testing.T) (net.Listener, int) {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -45,7 +44,6 @@ func listenLoopback(t *testing.T) (net.Listener, int) {
 	return ln, addr.Port
 }
 
-// getFreePort returns a loopback port that was free a moment ago.
 func getFreePort(t *testing.T) int {
 	t.Helper()
 	ln, port := listenLoopback(t)
@@ -53,8 +51,6 @@ func getFreePort(t *testing.T) int {
 	return port
 }
 
-// createListenerPlugin writes a plugin under root whose manifest declares the number setting port with
-// defaultPort as its default, the listener name on that setting, and the string setting greeting.
 func createListenerPlugin(t *testing.T, root, name string, defaultPort int) {
 	t.Helper()
 	dir := filepath.Join(root, "relay")
@@ -100,13 +96,11 @@ func (e *echoErrors) get() error {
 	return errors.Join(e.errs...)
 }
 
-// echo writes back what conn reads until the peer closes it, then closes conn.
 func echo(conn net.Conn) error {
 	_, err := io.Copy(conn, conn)
 	return errors.Join(err, conn.Close())
 }
 
-// serveEcho starts a TCP server on loopback that writes back what it reads, and returns its port.
 func serveEcho(t *testing.T) int {
 	t.Helper()
 	var failures echoErrors
@@ -129,8 +123,6 @@ func serveEcho(t *testing.T) int {
 	return port
 }
 
-// startRelayLauncher returns a launcher that starts the idle helper process and reports a ping server
-// on its port and, when listenerToken is not empty, that token in the ready line.
 func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken string) Launcher {
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
@@ -152,7 +144,6 @@ func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken strin
 	}
 }
 
-// teardownAfter stops the plugins of host and closes its listener ports when the test ends.
 func teardownAfter(t *testing.T, host *Host) {
 	t.Helper()
 	t.Cleanup(func() {
@@ -169,8 +160,6 @@ type listenerHost struct {
 	started *atomic.Int32
 }
 
-// newUndiscoveredListenerHost creates a host for a plugin whose listener name takes the port setting
-// with defaultPort as its default, and whose ready line reports listenerToken. It does not discover.
 func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, listenerToken string) listenerHost {
 	t.Helper()
 	root := t.TempDir()
@@ -182,7 +171,6 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	return listenerHost{host: host, port: defaultPort, started: &started}
 }
 
-// discover discovers the plugins of host and fails the test when the listener plugin is not registered.
 func discover(t *testing.T, host *Host) {
 	t.Helper()
 	if err := host.Discover(); err != nil {
@@ -193,8 +181,6 @@ func discover(t *testing.T, host *Host) {
 	}
 }
 
-// newListenerHost creates and discovers a host whose plugin has the listener mcp on the default of its
-// port setting, forwarded to an echo server.
 func newListenerHost(t *testing.T) listenerHost {
 	t.Helper()
 	w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), "listener.mcp="+strconv.Itoa(serveEcho(t)))
@@ -202,7 +188,6 @@ func newListenerHost(t *testing.T) listenerHost {
 	return w
 }
 
-// waitForFailure waits until the plugin is failed and returns its status.
 func waitForFailure(t *testing.T, host *Host) PluginStatus {
 	t.Helper()
 	var status PluginStatus
@@ -222,7 +207,6 @@ func dialLoopback(ctx context.Context, port int) (net.Conn, error) {
 	return dialer.DialContext(ctx, "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 }
 
-// isPortOpen reports whether a TCP connection to the loopback port is accepted.
 func isPortOpen(t *testing.T, port int) bool {
 	t.Helper()
 	conn, err := dialLoopback(t.Context(), port)
@@ -233,8 +217,6 @@ func isPortOpen(t *testing.T, port int) bool {
 	return true
 }
 
-// connectListener dials the loopback port. The connection is closed after 5 seconds, so a read that
-// gets no reply ends the test, and when the test ends.
 func connectListener(t *testing.T, port int) net.Conn {
 	t.Helper()
 	conn, err := dialLoopback(t.Context(), port)
@@ -256,7 +238,6 @@ func connectListener(t *testing.T, port int) net.Conn {
 	return conn
 }
 
-// sendLine writes line to conn and returns the line read back.
 func sendLine(t *testing.T, conn net.Conn, line string) string {
 	t.Helper()
 	if _, err := io.WriteString(conn, line+"\n"); err != nil {
@@ -514,8 +495,6 @@ func TestTeardownAllClosesTheListenerPort(t *testing.T) {
 	plugintest.WaitUntil(t, "the listener port to close", func() bool { return !isPortOpen(t, w.port) })
 }
 
-// writeFixedPortListenerPlugin writes a plugin under root whose manifest declares the listener mcp on
-// the fixed port.
 func writeFixedPortListenerPlugin(t *testing.T, root string, port int) {
 	t.Helper()
 	dir := filepath.Join(root, "relay")
@@ -557,7 +536,6 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	}
 }
 
-// getStoredSettings returns the settings of the listener plugin the host has in memory.
 func getStoredSettings(t *testing.T, host *Host) map[string]any {
 	t.Helper()
 	raw, err := host.GetPluginConfigJSON(listenerPlugin)

@@ -56,8 +56,6 @@ type fakeVaultReaders struct{ reader *fakeVault }
 
 func (f fakeVaultReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return f.reader, nil }
 
-// proseOf is a source's prose of the length given, holding the source's own
-// name once per line so a line number pins the line a passage is read back on.
 func proseOf(source string, lines int) string {
 	var b strings.Builder
 	for i := range lines {
@@ -157,7 +155,6 @@ func TestReadDropsAPassageOfASourceTheVaultNoLongerContains(t *testing.T) {
 	}
 }
 
-// read fills in the passages without a query.
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
 	return u.readForQuery(ctx, v, "", found)
 }

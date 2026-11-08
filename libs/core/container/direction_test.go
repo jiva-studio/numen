@@ -14,20 +14,12 @@ import (
 // wire is the module the schema is generated into.
 const wire = "github.com/jiva-studio/numen/libs/protocol"
 
-// listOutward returns what the core may not be compiled from: an adapter, the place
 func listOutward() []string {
 	return []string{
 		module + "adapter", module + "internal/adapter", module + "container", wire,
 	}
 }
 
-// getRefusedImports is what a package of this module may not be compiled from,
-// and whether it answers for what it names itself.
-//
-// The core answers for the whole of what it is built from. The composition root
-// binds the adapters and is built from them, so it answers for what it names,
-// and the schema is the one thing it may not name. An adapter and what only a
-// test builds answer for nothing; so does a shared adapter library.
 func getRefusedImports(path string) (forbidden []string, named bool) {
 	target := strings.TrimPrefix(path, module)
 	switch {
@@ -42,8 +34,6 @@ func getRefusedImports(path string) (forbidden []string, named bool) {
 	return listOutward(), false
 }
 
-// isEdgeRefused reports whether a package fails the check for the edge it has;
-// inward applies this to the result of getRefusedImports.
 func isEdgeRefused(pkg, dep string) bool {
 	isRefused, _ := getRefusedImports(module + pkg)
 	for _, blocked := range isRefused {
@@ -103,9 +93,6 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	}
 }
 
-// listShippedPlatforms returns the platforms this product is built for. A file kept for one of
-// them is compiled nowhere else, so a listing read on the machine the test runs
-// on is a rule checked against one platform's files. Every platform is read.
 func listShippedPlatforms() []struct{ goos, goarch string } {
 	return []struct{ goos, goarch string }{
 		{"linux", "amd64"},
@@ -128,8 +115,6 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	}
 }
 
-// inward reads the tree as one platform's build resolves it and checks every
-// package against the packages it may be compiled from.
 func inward(t *testing.T, goos, goarch string) {
 	t.Helper()
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")
@@ -149,10 +134,8 @@ func inward(t *testing.T, goos, goarch string) {
 	for {
 		var pkg struct {
 			ImportPath string
-			// Imports is what this package names, and Deps everything it is
-			// compiled from, at whatever remove.
-			Imports []string
-			Deps    []string
+			Imports    []string
+			Deps       []string
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {

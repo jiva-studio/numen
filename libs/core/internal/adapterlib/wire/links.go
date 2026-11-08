@@ -47,8 +47,6 @@ func ResolveAddresses(
 	return out, nil
 }
 
-// getTextLinks is each wikilink of a text, in the order they are written,
-// each raw form once, and the address of each, each address once. Code holds none.
 func getTextLinks(text string) ([]*v1.TextLink, []string) {
 	var links []*v1.TextLink
 	var addresses []string
@@ -74,8 +72,6 @@ func getTextLinks(text string) ([]*v1.TextLink, []string) {
 	return links, addresses
 }
 
-// getWikilinkText is the text a wikilink reads as: what follows its `|`, or
-// everything inside the brackets where it has none.
 func getWikilinkText(inside string) string {
 	if alias := strings.IndexByte(inside, '|'); alias >= 0 {
 		return strings.TrimSpace(inside[alias+1:])

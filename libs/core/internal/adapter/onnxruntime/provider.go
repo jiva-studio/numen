@@ -18,7 +18,6 @@ const (
 	ProviderROCm     Provider = "rocm"
 )
 
-// providerNames maps each accepted spelling to its provider. The empty name is auto.
 func getProviderNames() map[string]Provider {
 	return map[string]Provider{
 		"": ProviderAuto, "auto": ProviderAuto, "cpu": ProviderCPU,
@@ -36,7 +35,6 @@ func ParseProvider(name string) (Provider, error) {
 	return "", fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda, directml, rocm", name)
 }
 
-// isGPU reports whether the provider needs a GPU build of the runtime.
 func (p Provider) isGPU() bool {
 	return p == ProviderCUDA || p == ProviderDirectML || p == ProviderROCm
 }

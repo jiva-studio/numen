@@ -9,8 +9,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getPluginCapture returns the plugin directory a package path belongs to, or "" for any other
-// package. The test binary of a plugin package carries a .test or _test suffix.
 func getPluginCapture(pkgPath string) string {
 	rest, isPlugin := strings.CutPrefix(pkgPath, pluginsPrefix)
 	if !isPlugin {
@@ -21,8 +19,6 @@ func getPluginCapture(pkgPath string) string {
 	return dir
 }
 
-// isForeignToPlugins reports whether a package may be reached by no plugin, directly or through another
-// package: another plugin, the core or an application.
 func isForeignToPlugins(own, pkgPath string) bool {
 	if one := getPluginCapture(pkgPath); one != "" {
 		return one != own
@@ -30,9 +26,6 @@ func isForeignToPlugins(own, pkgPath string) bool {
 	return pkgPath == strings.TrimSuffix(module, "/") || strings.HasPrefix(pkgPath, module) || strings.HasPrefix(pkgPath, numenRoot+"apps/")
 }
 
-// getForeignDependencies returns every package in the import closure of root that the plugin may not
-// reach. The packages root imports directly answer to the whole dependency rule of a plugin; the
-// packages beyond them are the dependencies of the SDK and the protocol, which may use the notes library.
 func getForeignDependencies(root *packages.Package) []string {
 	own := getPluginCapture(root.PkgPath)
 	visited := map[string]bool{}

@@ -17,10 +17,6 @@ const plugins = "github.com/jiva-studio/numen/plugins"
 // terminal is the binary the command line is served through.
 const terminal = apps + "desktop/cmd/numen-cli"
 
-// isLinked reports whether a dependency listing contains a package, matching a
-// dependency equal to the package or under it. A bare prefix match would match
-// adapter/mcpsomething for the tools, and a rule that rejects more than it
-// should is as wrong as one that rejects less.
 func isLinked(deps []string, pkg string) bool {
 	for _, dep := range deps {
 		if dep == pkg || strings.HasPrefix(dep, pkg+"/") {
@@ -49,8 +45,7 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	for {
 		var pkg struct {
 			ImportPath string
-			// Deps is everything the package is compiled from, at any remove.
-			Deps []string
+			Deps       []string
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {

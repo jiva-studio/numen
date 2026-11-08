@@ -15,25 +15,14 @@ import (
 
 // Config is what the runtime is provisioned from.
 type Config struct {
-	// Dir is the models home the downloaded library is kept under. Empty is GetHome, which names the environment folder or fails.
-	Dir string
-	// Provider names the execution provider. Empty is auto.
+	Dir      string
 	Provider string
-	// Offline forbids fetching the archive.
-	Offline bool
-	// Release is the pinned archive. Zero is the release published for this platform.
-	Release Release
-	// Client fetches the archive. Nil follows a redirect only to https.
-	Client *http.Client
-	// Machine lists the folders shared libraries are searched in. Nil is the
-	// folders this platform keeps them in.
-	Machine []string
-	// Check returns an error when this machine cannot open the library at a
-	// path. Nil opens it with the platform loader and requests the API the
-	// plugins call.
-	Check func(targetPath string) error
-	// Clock paces the progress reports.
-	Clock machineport.Clock
+	Offline  bool
+	Release  Release
+	Client   *http.Client
+	Machine  []string
+	Check    func(targetPath string) error
+	Clock    machineport.Clock
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the
@@ -107,8 +96,6 @@ type location struct {
 	skipped  []string
 }
 
-// describeSkipped returns the libraries passed over and why, one per line, or
-// empty when none was.
 func (l location) describeSkipped() string {
 	if len(l.skipped) == 0 {
 		return ""
@@ -116,8 +103,6 @@ func (l location) describeSkipped() string {
 	return "\nthe libraries this machine holds that do not open:\n  " + strings.Join(l.skipped, "\n  ")
 }
 
-// locate returns the library: the one named in the environment, the first one
-// the machine holds that opens, or the pinned release.
 func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, error) {
 	if named := getEnvLibrary(); named != "" {
 		return location{library: named}, nil
@@ -154,7 +139,6 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 	return found, err
 }
 
-// acquire returns the path of the pinned library, verified against its sum.
 func (p *Provisioner) acquire(ctx context.Context, release Release, home string) (string, error) {
 	if release == (Release{}) {
 		_, err := getRelease(runtime.GOOS, runtime.GOARCH)
@@ -185,8 +169,6 @@ func (p *Provisioner) acquire(ctx context.Context, release Release, home string)
 	return library, nil
 }
 
-// fetchArchive leaves the archive at archive holding the pinned sum: it keeps
-// one that does, and replaces one that does not unless fetching is forbidden.
 func (p *Provisioner) fetchArchive(ctx context.Context, release Release, dir, archive string) error {
 	if _, err := os.Stat(archive); err == nil {
 		if verifyFile(archive, release.Sum) == nil {

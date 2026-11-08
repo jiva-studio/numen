@@ -22,11 +22,8 @@ import (
 // notes, running checks and changing the list of vaults, and records the requests.
 type fakeArrangeHost struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
-	mu sync.Mutex
-	// noteError, when set, is the error of every rename of a note.
-	noteError v1.HostVaultErrorCode
-	// vaultsError, when set, is the error of every change of the list of vaults, with vaultsDetail as
-	// its detail.
+	mu           sync.Mutex
+	noteError    v1.HostVaultErrorCode
 	vaultsError  v1.VaultsErrorCode
 	vaultsDetail string
 	requests     []string

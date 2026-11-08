@@ -169,7 +169,6 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	}
 }
 
-// removeValue removes a field from a card and returns the resulting file.
 func removeValue(t *testing.T, raw string, card cardid.ID, field string) string {
 	t.Helper()
 	f, err := format.OpenDeck([]byte(raw))
@@ -724,9 +723,6 @@ func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	}
 }
 
-// rough is a deck body with manually authored formatting: CRLF endings, doubled blank
-// lines, and trailing whitespace on lines. The format writes none of it, and a
-// write preserves all of it.
 func getRough() string {
 	return strings.ReplaceAll(
 		"Cards I am learning.\n\n\n"+
@@ -799,9 +795,6 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 	}
 }
 
-// cardRun is the bytes one card of a body occupies, from its heading to the
-// heading of the next card. Neither card under test is last, so what follows each
-// is always another card's heading.
 func cardRun(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
 	from := strings.Index(body, "## "+getCardHeading(t, body, card))
@@ -815,7 +808,6 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 	return rest
 }
 
-// getCardHeading is the heading line of the card of a card id, without its hashes.
 func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
 	for _, line := range strings.Split(markdown.Normalise(body), "\n") {

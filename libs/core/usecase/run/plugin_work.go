@@ -149,8 +149,6 @@ func (w *PluginWork) ClearPlugin(pluginID string) {
 	}
 }
 
-// getStateLocked returns what the plugin holds, making it on its first call.
-// The caller holds w.mu.
 func (w *PluginWork) getStateLocked(pluginID string) *pluginState {
 	state, isKnown := w.plugins[pluginID]
 	if !isKnown {
@@ -169,7 +167,6 @@ func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + plu
 
 func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
-// units are the units of the list, by the unit a plugin counts in.
 func getUnits() map[pluginport.TaskUnit]Unit {
 	return map[pluginport.TaskUnit]Unit{
 		pluginport.TaskUnitThings:  Things,

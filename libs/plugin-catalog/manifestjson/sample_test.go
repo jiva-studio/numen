@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// writeSamplePlugin writes the folder of a plugin with a valid manifest under dir.
 func writeSamplePlugin(t *testing.T, dir string) {
 	t.Helper()
 	pluginDir := filepath.Join(dir, "sample")

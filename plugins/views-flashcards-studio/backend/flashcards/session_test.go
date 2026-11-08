@@ -141,7 +141,6 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 	}
 }
 
-// review cards is the list of review cards a session returns, in session order.
 func reviewCards(sat flashcards.SessionResult) []review.CardID {
 	out := make([]review.CardID, 0, len(sat.Queue))
 	for _, one := range sat.Queue {
@@ -150,7 +149,6 @@ func reviewCards(sat flashcards.SessionResult) []review.CardID {
 	return out
 }
 
-// getReviewCard is a review card of the one card model these vaults are cut by.
 func getReviewCard(pos int) review.CardID {
 	return review.CardID{Card: cardID(pos), Template: "Say it"}
 }
@@ -220,8 +218,6 @@ func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	}
 }
 
-// openSession returns the session the vault builds at this instant when it is
-// opened over this deck or this preset.
 func (s vaulted) openSession(
 	t *testing.T, day review.Day, now time.Time, pos flashcards.Scope,
 ) (flashcards.SessionResult, error) {
@@ -232,7 +228,6 @@ func (s vaulted) openSession(
 	).Execute(t.Context(), s.vault, pos)
 }
 
-// openSessionByPreset is the session over one preset, and a fatal error where
 func (s vaulted) openSessionByPreset(
 	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.SessionResult {
@@ -415,9 +410,6 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 const term = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
-// preset is a preset note carrying these frontmatter lines. Lines naming no
-// goal are steered by their retention, which is the goal the card counts close
-// the day under.
 func preset(front string) string {
 	if !strings.Contains(front, "goal:") {
 		front = "goal: retention\n" + front
@@ -425,8 +417,6 @@ func preset(front string) string {
 	return "---\ntype: preset\n" + front + "---\n\n# A preset\n"
 }
 
-// deckOf is a deck of as many cards, pointing at the preset named. A deck
-// naming none is written with an empty name.
 func deckOf(pos string, cards int, from int) string {
 	var naming []string
 	if pos != "" {
@@ -435,8 +425,6 @@ func deckOf(pos string, cards int, from int) string {
 	return deckNaming(naming, cards, from)
 }
 
-// deckNaming is a deck of as many cards, naming these presets in the order it
-// names them.
 func deckNaming(pos []string, cards int, from int) string {
 	out := "---\ntype: deck\n"
 	if len(pos) > 0 {
@@ -467,7 +455,6 @@ func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcar
 	return sat
 }
 
-// byDeck is how many review cards of each deck a session holds.
 func byDeck(sat flashcards.SessionResult) map[string]int {
 	out := make(map[string]int)
 	for _, one := range sat.Queue {
@@ -486,7 +473,6 @@ func unseen(sat flashcards.SessionResult) int {
 	return out
 }
 
-// cardID is the card id of this place in a deck, as deckOf writes it.
 func cardID(pos int) string { return fmt.Sprintf("card%06d", pos) }
 
 // Each preset turns its own minutes into a count from its own answer times, so
@@ -904,7 +890,6 @@ func TestWhatIsDueIsWhatTheSessionAsks(t *testing.T) {
 	}
 }
 
-// countQueue is how many review cards a session holds, over every deck.
 func countQueue(sat flashcards.SessionResult) int { return len(sat.Queue) }
 
 // The decks naming no preset are one scope, so a second deck of them is a
@@ -1463,9 +1448,6 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 	}
 }
 
-// getNextAdmittedDay returns the next day of review this preset admits, counting
-// from the day containing now, which is the day the curve plots. A preset that
-// admits no day returns the day it was queried with.
 func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Time {
 	for range 8 {
 		if !p.GetAllowance(day, now, review.Spent{}, 0, 0).IsPaused() {
@@ -1476,8 +1458,6 @@ func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Tim
 	return now
 }
 
-// answersAt returns that many review cards answered this way, this many days
-// before the review day of the vault.
 func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
@@ -1488,8 +1468,6 @@ func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	}
 }
 
-// newSpentToday is a day that is partly spent: review cards due from a month
-// back, some of them answered twice since the day opened.
 func newSpentToday(cards int) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
@@ -1502,8 +1480,6 @@ func newSpentToday(cards int) func(*testing.T, vaulted) {
 	}
 }
 
-// newBacklogVault is a vault whose preset has a debt before it and material it
-// has not begun, so a day has both to choose between.
 func newBacklogVault(t *testing.T, front string) vaulted {
 	t.Helper()
 	s := openVault(t, map[string]string{
@@ -1691,14 +1667,6 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	}
 }
 
-// countDayCards returns how many review cards one whole day of review contains,
-// driven session by session until the day returns no cards, answering every card
-// of each session.
-//
-// A card that returns later in the day is one card, so a review card is counted
-// once however many sessions show it. Each answer is charged at the cost the
-// projection assigns to its kind, so driving the day does not change the day's
-// own computation.
 func (s vaulted) countDayCards(t *testing.T, day review.Day, now time.Time) int {
 	t.Helper()
 	reviewCards := make(map[review.CardID]bool)
@@ -1754,8 +1722,6 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 	}
 }
 
-// minutes returns how long the whole day of review took, driven session by
-// session.
 func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Duration {
 	t.Helper()
 	var out time.Duration
@@ -1881,7 +1847,6 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	}
 }
 
-// when is the instant the divided days below are worked out at.
 func getWhen() time.Time {
 	return time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 }
@@ -1889,11 +1854,8 @@ func getWhen() time.Time {
 // counts is a preset whose day is closed by a count of new cards.
 const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
 
-// deckAt is the path of the deck standing at this place.
 func deckAt(pos int) string { return fmt.Sprintf("decks/D%d.md", pos) }
 
-// newDeckVault is a vault of one preset and as many decks, each holding the
-// cards it is given and none of them answered.
 func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
 	t.Helper()
 	files := map[string]string{"Term.md": term, "Steady.md": preset(front)}
@@ -1916,7 +1878,6 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	return target
 }
 
-// pressDeck returns how many review cards starting a session on one deck returns.
 func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	sat, err := s.openSession(t, getToday(), now, flashcards.Scope{Deck: deck})
@@ -1926,9 +1887,6 @@ func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	return len(sat.Queue)
 }
 
-// reviewDeckSession answers every card one deck returns, session after session
-// until a session returns nothing, and returns how many review cards were
-// answered. A card that returns later in the day is one card.
 func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	reviewCards := make(map[review.CardID]bool)

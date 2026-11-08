@@ -21,11 +21,8 @@ type ImportFailure struct {
 // ImportResult is what a drop came to: what the vault now holds, and what it
 // does not.
 type ImportResult struct {
-	// Imported is each file and folder that was copied in, by the path the vault files
-	// it under.
 	Imported []string
-	// Errors is each file that stayed where it was.
-	Errors []ImportFailure
+	Errors   []ImportFailure
 }
 
 // Import copies files from this machine into a folder of the vault.
@@ -34,10 +31,7 @@ type ImportResult struct {
 // copied, and the source file is left in place.
 type Import struct {
 	writers vaultport.VaultWriters
-	// files reads the imported handles. A handle is a path on a desktop and a
-	// content URI on a phone; this port resolves both, and nothing else in this
-	// type accesses the machine directly.
-	files sourceport.ImportedFiles
+	files   sourceport.ImportedFiles
 }
 
 // NewImport creates an Import from the writers of the target vault and the port
@@ -77,7 +71,6 @@ func (u Import) Execute(
 	return result, nil
 }
 
-// bring copies one file or one whole folder to a path in the vault.
 func (u Import) bring(
 	ctx context.Context,
 	writer vaultport.VaultWriter,
@@ -103,8 +96,6 @@ func (u Import) bring(
 	}
 }
 
-// importFolder makes the folder at a path in the vault and brings each entry of
-// leaves the rest to arrive.
 func (u Import) importFolder(
 	ctx context.Context,
 	writer vaultport.VaultWriter,
@@ -132,7 +123,6 @@ func (u Import) importFolder(
 	return nil
 }
 
-// importFile copies the file at from to a path in the vault.
 func (u Import) importFile(
 	ctx context.Context, writer vaultport.VaultWriter, from, to string, result *ImportResult,
 ) (err error) {

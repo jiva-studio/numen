@@ -20,8 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newMediaClient returns the media services of a window as a client accesses them, over a window whose
-// loopback socket is open.
 func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	t.Helper()
 	api, _ := openRecordingWindow(t, nil)
@@ -88,7 +86,6 @@ const (
 	plainNote = "# A plain note\n"
 )
 
-// newCopyClient is the media of a window whose vault holds a note a plugin keeps a copy of.
 func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceClient {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound, plain: plainNote})

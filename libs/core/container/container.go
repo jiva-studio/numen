@@ -45,75 +45,45 @@ import (
 // Config is what the user may point somewhere else. Empty fields mean the
 // platform's own locations.
 type Config struct {
-	// IndexPath is the index database. The application chooses it; the core
-	// does not start without one.
-	IndexPath    string
-	RegistryPath string
-	ServiceDir   string
-	// SettingsPath specifies the configuration file path.
-	SettingsPath string
-	// ThemesPath specifies the directory for user themes.
-	ThemesPath string
-	// PluginCachePath specifies the cache directory for plugin vault data.
+	IndexPath       string
+	RegistryPath    string
+	ServiceDir      string
+	SettingsPath    string
+	ThemesPath      string
 	PluginCachePath string
 
-	// InterfaceScale and TextScale configure UI and text rendering scales.
-	// When non-zero, they override values defined in the settings file.
 	InterfaceScale, TextScale float64
 
-	// ResolvedCompute is the concrete calculated concurrency and batch limits.
 	ResolvedCompute hardware.ResolvedCompute
 
-	// Hardware specifies hardware specifications detected for the host system.
 	Hardware hardware.Specs
 
-	// Chunks is the chunk size the embedding plugin reports, which every cut of a note takes. NewConfig
-	// makes it.
 	Chunks *ChunkTokens
 
-	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
 
-	// PluginCatalog configures the catalog of plugins. A config with no Target is an installation
-	// with no catalog. The sources the container knows, the plugin folders and the plugins that ship
-	// with the application, are added to the Sources named here.
 	PluginCatalog catalog.Config
 
-	// PluginDirs are the folders the catalog reads plugins from. They are the folders the plugin host
-	// discovers in.
 	PluginDirs []string
 
-	// KeyStore is where the keys of plugin secrets are kept. The application names it; without one
-	// every secret fails with port.ErrNoKeyStore.
 	KeyStore pluginport.KeyStore
 
-	// TextVersions is the text versions of the vaults' files, which the index, the
-	// search and the highlighting read text through. Nil is none, and only notes
-	// have text. NewTextVersions makes it.
 	TextVersions *textversion.Versions
 
-	// TextReaders is where the index, the search and the highlighting read text
-	// versions. Defaults to TextVersions if nil.
 	TextReaders textport.TextReaders
 
-	// ShouldRebuildIndex forces re-indexing of all vault files regardless of index state.
 	ShouldRebuildIndex bool
 
-	// SafeMode disables loading non-essential plugins for emergency recovery.
 	SafeMode bool
 
-	// ErrorHandler receives asynchronous errors.
 	ErrorHandler windowport.ErrorHandler
 
-	// Now provides current time for timestamping and scheduling. Defaults to the system clock if nil.
 	Now machineport.Clock
 
-	// Resources are shared by every part the container assembles. NewResources makes them.
 	Resources *Resources
 
 	agentProvider agentport.AgentProvider
-	// programs keeps the programs the agent plugins listed last.
-	programs *settings.ProgramList
+	programs      *settings.ProgramList
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
@@ -138,7 +108,6 @@ func (c Config) Clock() machineport.Clock {
 	return clock.System{}
 }
 
-// handleError forwards errors to ErrorHandler if configured.
 func (c Config) handleError(err error) {
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
@@ -202,8 +171,6 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	return nil
 }
 
-// checkWrites reports the first entry that its owner does not declare or whose setting does not
-// take the value. Nothing is written where one entry is refused.
 func (c Config) checkWrites(entries []settingsport.Setting) error {
 	declarations := c.getDeclarations()
 	registries := c.getRegistries()
@@ -224,13 +191,10 @@ func (c Config) checkWrites(entries []settingsport.Setting) error {
 	return nil
 }
 
-// isPluginSetting is whether a path leads to a field of the object of a plugin: its first element
-// is the id of the plugin and the second is the key.
 func isPluginSetting(path []string) bool {
 	return len(path) == 2 && path[0] != settings.OwnerApp
 }
 
-// notifyPluginSettings tells the host each plugin setting among the entries and passes the failure to report.
 func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
 	if host == nil {
 		return
@@ -257,7 +221,6 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 	}
 }
 
-// settingsFile resolves the configuration file path.
 func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
@@ -268,7 +231,6 @@ func (c Config) settingsFile() (string, error) {
 	return settings.Path()
 }
 
-// getAdjacentPath resolves a file path relative to the registry directory.
 func (c Config) getAdjacentPath(name string) (string, bool) {
 	if c.RegistryPath == "" {
 		return "", false
@@ -312,7 +274,6 @@ func (c Config) VaultIdentity() vaultport.VaultIdentity {
 // Trash provides trash and recycling operations.
 func (c Config) Trash() machineport.Trash { return trash.New(c.Clock()) }
 
-// vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() vaultconfig.Options {
 	return vaultconfig.Options{
 		ServiceDir: c.ServiceDir,

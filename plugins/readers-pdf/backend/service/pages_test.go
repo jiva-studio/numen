@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// newLinkedPages is the linked handler of the plugin over files.
 func newLinkedPages(t *testing.T, files host.Vault) *httptest.Server {
 	t.Helper()
 	handler, err := server.NewLinkedHandler(map[string]string{
@@ -44,7 +43,6 @@ type page struct {
 	body   []byte
 }
 
-// getPage requests a page at path from web with the plugin's token.
 func getPage(t *testing.T, web *httptest.Server, path string) page {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+path, nil)

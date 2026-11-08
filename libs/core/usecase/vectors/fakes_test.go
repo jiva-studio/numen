@@ -22,7 +22,7 @@ type embedder struct {
 
 	mu        sync.Mutex
 	calls     int
-	seenCount []string // every text passed, in the order it arrived
+	seenCount []string
 }
 
 func (e *embedder) GetModel() embeddingport.EmbeddingModel {
@@ -68,7 +68,6 @@ func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error)
 	return out, nil
 }
 
-// vectorOf is a direction that belongs to one text and no other.
 func vectorOf(text string, dims int) []float32 {
 	sum := fnv.New64a()
 	sum.Write([]byte(text))
@@ -81,14 +80,12 @@ func vectorOf(text string, dims int) []float32 {
 	return out
 }
 
-// newEmbed is the embedding of a library whose books have the versions the stand-in reads.
 func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository) Embed {
 	embed := NewEmbed(readers, chunks, vectors)
 	embed.Texts = bookTexts{readers: readers}
 	return embed
 }
 
-// newExtract is the cut of a library whose books are read by the stand-in.
 func newExtract(
 	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
 ) filetext.Index {

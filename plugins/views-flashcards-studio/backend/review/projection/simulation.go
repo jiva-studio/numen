@@ -31,25 +31,13 @@ const MostShowings = 8
 // admits, and an even load moves cards onto the days carrying least. Both are
 // Preset's, and the session reads them the same way.
 type Simulation struct {
-	By   Scheduler
-	Day  Day
-	Cost AnswerCost
-	// Days is how far ahead it runs, and runs Ahead days when it is zero.
-	Days int
-	// Retains lists the days of the run for which the returning share is computed,
-	// counting the day the run opens as none. A day that is not listed is not
-	// computed, and the projection reports no share for it.
-	//
-	// The share is a pass over every review card of the preset, and it is the only
-	// value that a day computes over the whole material.
+	By      Scheduler
+	Day     Day
+	Cost    AnswerCost
+	Days    int
 	Retains []int
-	// Recalls is what this run assumes about coming back. A run holding none
-	// reads GetModelledRecall.
 	Recalls RecallChance
-	// Spent is what the current day has already used under this preset. The first day
-	// of a run is a real day that may be partly spent, and what remains of it is what
-	// a session opened now would return.
-	Spent Spent
+	Spent   Spent
 }
 
 // GetDurationDays returns how many days this run walks, counting the day it opens
@@ -116,7 +104,6 @@ func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
 	return out
 }
 
-// getDaysToLearn is how many days of review a review card begun on this day needs.
 func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 	var c Schedule
 	days := 0
@@ -136,9 +123,6 @@ func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 	return NeverLearns
 }
 
-// getScheduleAfterShowing returns the schedule of a review card after one
-// showing, at the hour the day opens. A review card the day does not show keeps
-// its schedule.
 func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() && !c.Due.Before(ends) {
 		return c
@@ -146,12 +130,6 @@ func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p 
 	return s.step(c, open, p, on)
 }
 
-// getScheduleAfterDay returns the schedule of a review card after a day of review
-// that answers every showing it contains: an answer that makes the card due before
-// the day closes is shown again, up to MostShowings.
-//
-// It is the day with no budget applied, which is the day in which the learning of
-// a review card is counted.
 func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if !c.IsNew() && !s.Day.IsDue(c, open) {
@@ -162,12 +140,6 @@ func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Sc
 	return c
 }
 
-// canReachGoal reports whether a review card standing here is learned on the day the
-// preset aims at, when every day of review from now to that day answers every
-// showing it falls due for.
-//
-// Nothing paces it: a review card this does not get there is one no pace gets
-// there, because no pace can give it more days than there are.
 func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bool {
 	for range mostAnswers {
 		if !c.IsNew() && !c.Due.Before(delta) {
@@ -188,9 +160,6 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bo
 	return p.IsLearned(c, delta)
 }
 
-// short returns how many of these review cards cannot be learned by the target
-// day of the preset at any pace, plus the count of unbegun material if that
-// cannot be learned either.
 func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -208,12 +177,6 @@ func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.
 	return out
 }
 
-// step is where one projected answer leaves a review card.
-//
-// Both endings are worked out and weighed by how likely the card is to come
-// back, which is the run's own assumption, so a projection follows one card
-// down the middle of what it may do. The phase is the one a card that came back
-// is left in.
 func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() {
 		c.Stability = math.Max(c.Stability, LeastStability)
@@ -234,8 +197,6 @@ func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Sche
 	return out
 }
 
-// getRecallProbability is how likely a review card standing here is to come back at this
-// instant, under the assumption this run was given.
 func (s Simulation) getRecallProbability(c Schedule, pos time.Time) float64 {
 	if s.Recalls == nil {
 		return GetModelledRecall(c, pos)
@@ -277,7 +238,6 @@ type simulationDay struct {
 	on           *DueByDay
 }
 
-// createFalls maps initial schedules to their due day relative to the start day.
 func createFalls(cards []Schedule, days int, on *DueByDay, base int) [][]int {
 	falls := make([][]int, days)
 	for i, c := range cards {
@@ -289,7 +249,6 @@ func createFalls(cards []Schedule, days int, on *DueByDay, base int) [][]int {
 	return falls
 }
 
-// getAnswersMap returns a lookup set of days where retention is calculated.
 func (s Simulation) getAnswersMap(days int) map[int]bool {
 	answers := make(map[int]bool, len(s.Retains))
 	for _, day := range s.Retains {
@@ -300,7 +259,6 @@ func (s Simulation) getAnswersMap(days int) map[int]bool {
 	return answers
 }
 
-// getSortedCards returns schedules sorted by due timestamp.
 func getSortedCards(schedules map[ReviewCardID]Schedule) []Schedule {
 	cards := make([]Schedule, 0, len(schedules))
 	for _, one := range schedules {
@@ -310,7 +268,6 @@ func getSortedCards(schedules map[ReviewCardID]Schedule) []Schedule {
 	return cards
 }
 
-// createProjection initializes projection statistics for the run.
 func (s Simulation) createProjection(
 	days int, schedules map[ReviewCardID]Schedule, unreviewed int, now time.Time, p Preset,
 ) Projection {
@@ -347,7 +304,6 @@ func (s Simulation) createProjection(
 	return out
 }
 
-// getDaysToLearnGoal returns days required to learn cards for date goals.
 func (s Simulation) getDaysToLearnGoal(p Preset, now time.Time) int {
 	if p.Goal == GoalDate {
 		return GetDaysToLearn(s.By, s.Day, p, now)
@@ -355,7 +311,6 @@ func (s Simulation) getDaysToLearnGoal(p Preset, now time.Time) int {
 	return 0
 }
 
-// createEmptyAllowance is the allowance of a day that has not started.
 func createEmptyAllowance() Allowance {
 	return Allowance{
 		Keeps:   review.Budget{New: 0, Reviews: 0, Minutes: 0},
@@ -381,7 +336,6 @@ type simulationSetup struct {
 	unreviewed  int
 }
 
-// createSimulationDay initializes simulation day state across the projected days.
 func (s Simulation) createSimulationDay(in simulationSetup) *simulationDay {
 	days, base, open, p, daysToLearn := in.days, in.base, in.open, in.p, in.daysToLearn
 	cards, falls, on, reckoned, unreviewed := in.cards, in.falls, in.on, in.reckoned, in.unreviewed
@@ -419,7 +373,6 @@ func (s Simulation) createSimulationDay(in simulationSetup) *simulationDay {
 	}
 }
 
-// initLearned initializes learned card tracking for the projection.
 func (s Simulation) initLearned(p Preset, cards []Schedule, out *Projection, open time.Time) *learnedCount {
 	reckoned := newLearnedCount(p, cards, open)
 	out.Learned = reckoned.count
@@ -429,7 +382,6 @@ func (s Simulation) initLearned(p Preset, cards []Schedule, out *Projection, ope
 	return reckoned
 }
 
-// startDay prepares allowances, queues, and budgets for the given day.
 func (d *simulationDay) startDay(today int) {
 	d.today = today
 	d.ends = d.sim.Day.GetEnd(d.open)
@@ -464,27 +416,22 @@ func (d *simulationDay) startDay(today int) {
 	d.again = d.again[:0]
 }
 
-// isDue reports whether unreviewed debt cards remain for the day.
 func (d *simulationDay) isDue() bool {
 	return !d.isDebtDone && d.take < len(d.due)
 }
 
-// hasNew reports whether unseen cards remain to introduce today.
 func (d *simulationDay) hasNew() bool {
 	return !d.isNewDone && d.remaining > 0
 }
 
-// isBacklog reports whether repeated cards remain for today.
 func (d *simulationDay) isBacklog() bool {
 	return !d.isRepeatDone && d.next < len(d.again)
 }
 
-// hasPendingCards reports whether any cards remain to review or introduce.
 func (d *simulationDay) hasPendingCards() bool {
 	return d.isDue() || d.hasNew() || d.isBacklog()
 }
 
-// isDebtNext reports whether the next step should review an existing card.
 func (d *simulationDay) isDebtNext() bool {
 	hasDue := d.isDue()
 	hasNew := d.hasNew()
@@ -492,12 +439,10 @@ func (d *simulationDay) isDebtNext() bool {
 	return repeat || d.admits.IsNextCardDebt(d.observed, d.begun, hasDue, hasNew)
 }
 
-// isRepeat reports whether all initial debt and new cards are exhausted.
 func (d *simulationDay) isRepeat() bool {
 	return !d.isDue() && !d.hasNew()
 }
 
-// getCardIndex returns the card index for the next review step.
 func (d *simulationDay) getCardIndex(repeat bool) int {
 	if repeat {
 		return d.again[d.next]
@@ -505,7 +450,6 @@ func (d *simulationDay) getCardIndex(repeat bool) int {
 	return d.due[d.take]
 }
 
-// stopDebt marks debt or repeat reviews complete for the day.
 func (d *simulationDay) stopDebt(repeat bool) {
 	if repeat {
 		d.isRepeatDone = true
@@ -514,7 +458,6 @@ func (d *simulationDay) stopDebt(repeat bool) {
 	d.isDebtDone = true
 }
 
-// queueNextShowing places a reviewed card in the repeat queue or future bucket.
 func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
 	if d.sim.Day.IsDue(c, d.open) && d.showings[pos] < MostShowings {
 		d.again = append(d.again, pos)
@@ -525,7 +468,6 @@ func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
 	}
 }
 
-// stepDebt processes one card review repetition or debt card.
 func (d *simulationDay) stepDebt() {
 	repeat := d.isRepeat()
 	pos := d.getCardIndex(repeat)
@@ -560,7 +502,6 @@ func (d *simulationDay) stepDebt() {
 	d.queueNextShowing(d.cards[pos], pos)
 }
 
-// stepNew introduces one unseen card into the session.
 func (d *simulationDay) stepNew() {
 	if d.admits.Limits.New != ClosedNothing && d.begun >= d.admits.New {
 		d.closed = d.closed.Add(d.admits.Limits.New)
@@ -585,7 +526,6 @@ func (d *simulationDay) stepNew() {
 	d.queueNextShowing(one, offset)
 }
 
-// finishDay records daily metrics and carries forward remaining repeated cards.
 func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed *time.Duration) {
 	if d.today+1 < d.days {
 		d.falls[d.today+1] = append(d.falls[d.today+1], d.again[d.next:]...)
@@ -616,7 +556,6 @@ func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed 
 	d.open = d.ends
 }
 
-// finalizeProjection calculates daily averages and the remaining due cards.
 func (s Simulation) finalizeProjection(
 	out *Projection, elapsed time.Duration, cards []Schedule, open time.Time,
 ) {
@@ -635,7 +574,6 @@ func (s Simulation) finalizeProjection(
 	}
 }
 
-// simulateDaySession processes a single day.
 func (s Simulation) simulateDaySession(
 	d *simulationDay,
 	today int,

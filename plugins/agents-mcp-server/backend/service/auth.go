@@ -8,8 +8,6 @@ import (
 	"strings"
 )
 
-// hasValidToken reports whether the request has the header Authorization: Bearer <token>. An
-// empty token matches no request.
 func hasValidToken(token string, r *http.Request) bool {
 	if token == "" {
 		return false
@@ -18,8 +16,6 @@ func hasValidToken(token string, r *http.Request) bool {
 	return isBearer && subtle.ConstantTimeCompare([]byte(bearer), []byte(token)) == 1
 }
 
-// isLoopbackOrigin reports whether origin is an http or https URL whose host is localhost or a
-// loopback IP address.
 func isLoopbackOrigin(origin string) bool {
 	parsed, err := url.Parse(origin)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
@@ -33,8 +29,6 @@ func isLoopbackOrigin(origin string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// requireToken rejects a request from a browser page outside the machine with 403, then a request
-// without the token with 401.
 func requireToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {

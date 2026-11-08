@@ -15,8 +15,6 @@ type answer struct {
 	isAnswer bool
 }
 
-// readAnswer returns the answer a reply makes to a batch. A reply the gates
-// refuse is no answer.
 func readAnswer(batch Batch, reply string, maxDistance float64) answer {
 	fixed, past, ok := GetFixedLines(batch, reply, maxDistance)
 	if !ok {
@@ -29,8 +27,6 @@ func readAnswer(batch Batch, reply string, maxDistance float64) answer {
 	return out
 }
 
-// getReachingRuns returns the line each row of the reply begins on whose run
-// ends after the last line of the batch.
 func getReachingRuns(batch Batch, reply string) []int {
 	var starts []int
 	for _, row := range splitRows(reply) {
@@ -41,15 +37,6 @@ func getReachingRuns(batch Batch, reply string) []int {
 	return starts
 }
 
-// gatherAnswers returns the accepted corrections keyed by the first line of
-// each, and the numbers of the batches whose reply ran past the last line they
-// carry, in request order.
-//
-// Where two batches answer for one line, the correction from the batch in which
-// the line is further from the end wins, and on a tie the later batch wins. A
-// correction is kept only if it wins on every line it covers, and a correction
-// that displaces part of a kept run replaces the whole run. No two corrections
-// cover one line. A line no accepted reply covers is not in the result.
 func gatherAnswers(answers []answer) (map[int]Line, []int) {
 	collector := gathering{
 		lines: make(map[int]Line),
@@ -74,18 +61,11 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 
 // gathering is the corrections kept so far.
 type gathering struct {
-	// lines is the kept corrections by their first line.
 	lines map[int]Line
-	// owner is, for each line a kept correction covers, the first line of that
-	// correction.
 	owner map[int]int
-	// best is, for each line a kept correction covers, how many lines follow it
-	// in the batch the correction came from.
-	best map[int]int
+	best  map[int]int
 }
 
-// keep stores the correction when it wins on every line it covers, where after
-// is how many lines follow each line in the batch it came from.
 func (g *gathering) keep(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
 	for pos := first; pos <= last; pos++ {
@@ -104,8 +84,6 @@ func (g *gathering) keep(line Line, after map[int]int) {
 	}
 }
 
-// evict takes the kept correction that begins on the line out, with every line
-// it covers.
 func (g *gathering) evict(first int) {
 	line := g.lines[first]
 	for pos := first; pos <= max(line.Last, line.Number); pos++ {
@@ -115,7 +93,6 @@ func (g *gathering) evict(first int) {
 	delete(g.lines, first)
 }
 
-// countRemainingLines maps each line number to the count of lines following it in the batch.
 func countRemainingLines(lines []Line) map[int]int {
 	remaining := make(map[int]int, len(lines))
 	for i, line := range lines {
@@ -124,7 +101,6 @@ func countRemainingLines(lines []Line) map[int]int {
 	return remaining
 }
 
-// sortLines returns the lines in the order of their numbers.
 func sortLines(lines map[int]Line) []Line {
 	out := make([]Line, 0, len(lines))
 	for _, line := range lines {
@@ -134,8 +110,6 @@ func sortLines(lines map[int]Line) []Line {
 	return out
 }
 
-// splitRows returns the non-empty rows of a reply, with the code fence a model
-// wrapped it in taken off.
 func splitRows(reply string) []string {
 	var rows []string
 	for _, row := range strings.Split(stripFence(reply), "\n") {

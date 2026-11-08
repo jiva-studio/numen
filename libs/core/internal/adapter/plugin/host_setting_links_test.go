@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// newLinkedHost is a host with one plugin whose model chooses its weights, and whose path settings
-// take a dictionary file.
 func newLinkedHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()

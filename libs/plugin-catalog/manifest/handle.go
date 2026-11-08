@@ -43,8 +43,6 @@ func (m Manifest) GetHandle(purpose string) (Handle, bool) {
 	return Handle{}, false
 }
 
-// listHandleIssues checks that each handle has a purpose declared once, that each content type is a
-// type or a mask, and that each note type is one the plugin declares.
 func (m Manifest) listHandleIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -62,8 +60,6 @@ func (m Manifest) listHandleIssues() []error {
 	return issues
 }
 
-// listUndeclaredNoteTypes lists, grouped by declaration kind, each note type
-// that is not a type the plugin declares.
 func (m Manifest) listUndeclaredNoteTypes(kind error, noteTypes []string) []error {
 	var issues []error
 	for _, noteType := range noteTypes {

@@ -15,8 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// newAdd is the use case over a registry of its own, and the registry, which a
-// test reads to see what was written.
 func newAdd(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
@@ -28,7 +26,6 @@ func registryAt(t *testing.T) *appstate.VaultRegistry {
 	return appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 }
 
-// folder makes a directory named name, under a parent of its own.
 func folder(t *testing.T, name string) string {
 	t.Helper()
 	pos := filepath.Join(t.TempDir(), name)

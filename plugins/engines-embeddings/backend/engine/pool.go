@@ -10,13 +10,10 @@ import (
 // referenceLength is the token length at which a full configured batch is one pass.
 const referenceLength = 512
 
-// getAttentionBudget bounds one forward pass by rows * seq^2.
 func getAttentionBudget(batchTexts int) int {
 	return batchTexts * referenceLength * referenceLength
 }
 
-// meanPool turns a model's per-token output into one vector per text: the
-// average of the tokens the mask keeps, at unit length.
 func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
 	out := make([][]float32, rows)
 	backing := make([]float32, rows*dimensions)
@@ -56,7 +53,6 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 	return out
 }
 
-// addRow adds src to dst element by element, eight elements a step.
 func addRow(dst, src []float32) {
 	n := min(len(dst), len(src))
 	d := 0
@@ -84,7 +80,6 @@ type tokenOutput struct {
 	rows, seq, dimensions int
 }
 
-// pool turns a model's per-token output into one vector per text, by the pooling the profile names.
 func pool(kind string, out tokenOutput, isNormalised bool) ([][]float32, error) {
 	switch kind {
 	case PoolMean:
@@ -97,7 +92,6 @@ func pool(kind string, out tokenOutput, isNormalised bool) ([][]float32, error) 
 	return nil, fmt.Errorf("a per-token output cannot be pooled as %q: the model answers one vector per text only as an output named sentence_embedding", kind)
 }
 
-// headPool takes the first token of each text.
 func headPool(flat []float32, rows, seq, dimensions int, isNormalised bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
@@ -109,7 +103,6 @@ func headPool(flat []float32, rows, seq, dimensions int, isNormalised bool) [][]
 	return out
 }
 
-// lastPool takes the last token the mask keeps of each text.
 func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
@@ -132,12 +125,10 @@ type padding struct {
 	ids, mask, types, positions []int64
 }
 
-// newPaddingPool returns a pool of the paddings of batches, reused from one batch to the next.
 func newPaddingPool() *sync.Pool {
 	return &sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil, positions: nil} }}
 }
 
-// padBatch lays a batch out as the model takes it, in a padding taken from paddings.
 func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	seq = roundUpToBucket(getLongest(batch), limit)
@@ -172,7 +163,6 @@ func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int
 	return rows, seq, in
 }
 
-// getLongest is the length of the longest row of a batch.
 func getLongest(batch [][]int) int {
 	longest := 0
 	for _, one := range batch {
@@ -184,7 +174,6 @@ func getLongest(batch [][]int) int {
 // bucketStep is what a length past the smallest buckets is rounded up to a multiple of.
 const bucketStep = 512
 
-// roundUpToBucket rounds a sequence length up to the next discrete boundary.
 func roundUpToBucket(seq, limit int) int {
 	switch {
 	case seq <= 64:
@@ -212,7 +201,6 @@ func resize(s []int64, size int) []int64 {
 	return s[:size]
 }
 
-// getWindow is the most tokens a text keeps for a session on provider.
 func getWindow(provider onnx.Provider, maxTokens int) int {
 	if provider == onnx.ProviderCoreML {
 		return min(maxTokens, referenceLength)

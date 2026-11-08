@@ -131,21 +131,18 @@ func (s *store) strings(query string, args ...any) []string {
 	return out
 }
 
-// rowsOf is the chunk rows a source holds, in order.
 func (s *store) rowsOf(vault domain.VaultID, path string) []int64 {
 	s.t.Helper()
 	return s.ints(`SELECT c.id FROM chunks c JOIN sources s ON s.id = c.source_id
 		JOIN vaults v ON v.id = s.vault_id WHERE v.identifier = ? AND s.path = ? ORDER BY c.id`, string(vault), path)
 }
 
-// paths is every source path a vault holds, in order.
 func (s *store) paths(vault domain.VaultID) []string {
 	s.t.Helper()
 	return s.strings(`SELECT s.path FROM sources s JOIN vaults v ON v.id = s.vault_id
 		WHERE v.identifier = ? ORDER BY s.path`, string(vault))
 }
 
-// cut records a source and the chunks it is cut into.
 func (s *store) cut(vault domain.VaultID, kind, path string, chunks []chunk.Chunk) {
 	s.t.Helper()
 	repo := s.db.Chunks()
@@ -157,8 +154,6 @@ func (s *store) cut(vault domain.VaultID, kind, path string, chunks []chunk.Chun
 	}
 }
 
-// vectorFor is a vector for the chunk row given, addressed by the text the
-// chunk holds.
 func (s *store) vectorFor(row int64, recipe string, fill byte) chunk.Vector {
 	s.t.Helper()
 	var hash []byte
@@ -180,8 +175,6 @@ func withHash(row int64, hash []byte, recipe string, fill byte) chunk.Vector {
 	return chunk.Vector{Chunk: row, Hash: hash, Recipe: recipe, Value: value, Coarse: coarse}
 }
 
-// wantSQLiteError fails unless the error still wraps the database's own error,
-// so callers can inspect what the database reported.
 func wantSQLiteError(t *testing.T, err error, contains string) {
 	t.Helper()
 	if err == nil {
@@ -205,9 +198,6 @@ func canceled(t *testing.T) context.Context {
 
 func isCanceled(err error) bool { return errors.Is(err, context.Canceled) }
 
-// failOn makes the database refuse every statement of one kind on a table with
-// the message "boom". A virtual table is first replaced by an ordinary one of
-// the same columns, since a trigger cannot sit on a virtual table.
 func (s *store) failOn(table, event string) {
 	s.t.Helper()
 	type replacement struct{ columns, fill string }

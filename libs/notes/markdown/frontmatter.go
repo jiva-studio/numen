@@ -13,8 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// render is one node as YAML, ending with the break every block of it ends
-// with.
 func render(node *yaml.Node) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
@@ -30,9 +28,6 @@ func render(node *yaml.Node) (string, error) {
 	return out.String(), nil
 }
 
-// put writes one top-level key and its value, preserving the comment on the
-// key's own line. That comment belongs to the user, including on keys the
-// application owns.
 func (d *Document) put(key string, value *yaml.Node) error {
 	node, err := d.getWritableNode()
 	// gomutants:disable-next-line BRANCH_IF reason="set re-runs getWritableNode and returns the same error before modifying the document"
@@ -53,7 +48,6 @@ func (d *Document) put(key string, value *yaml.Node) error {
 // empty when the mapping has no such key.
 type nodePair struct{ name, value *yaml.Node }
 
-// pair returns the key node and the value node of one mapping key.
 func pair(node *yaml.Node, key string) nodePair {
 	if node == nil || node.Kind != yaml.MappingNode {
 		return nodePair{}
@@ -66,7 +60,6 @@ func pair(node *yaml.Node, key string) nodePair {
 	return nodePair{}
 }
 
-// valueOf is the node one key of an entry holds, or nil when it has no such key.
 func valueOf(item *yaml.Node, key string) *yaml.Node {
 	if item.Kind != yaml.MappingNode {
 		return nil
@@ -79,9 +72,6 @@ func valueOf(item *yaml.Node, key string) *yaml.Node {
 	return nil
 }
 
-// copyLineComment puts the comment written on a key's own line onto the nodes replacing
-// it. A mapping or a list carries it on the key and a scalar on the value, so
-// both are read off both.
 func (p nodePair) copyLineComment(name, value *yaml.Node) {
 	if p.name == nil {
 		return
@@ -92,8 +82,6 @@ func (p nodePair) copyLineComment(name, value *yaml.Node) {
 	}
 }
 
-// set replaces the lines one top-level key occupies, or appends them when the
-// key is not there yet. Empty replacement removes the key.
 func (d *Document) set(key string, rendered []byte) error {
 	node, err := d.getWritableNode()
 	if err != nil {
@@ -132,9 +120,6 @@ func (d *Document) appendKey(node *yaml.Node, rendered []byte) error {
 	return nil
 }
 
-// commit puts a frontmatter block in place of the one standing. A block that
-// comes out of a splice unreadable is not written, and the note keeps the bytes
-// it arrived as.
 func (d *Document) commit(front []byte) error {
 	was, wasMapping := d.front, d.mapping
 	d.front, d.mapping = front, nil
@@ -145,7 +130,6 @@ func (d *Document) commit(front []byte) error {
 	return nil
 }
 
-// splice puts bytes in place of a range of the frontmatter.
 func (d *Document) splice(start, end int, rendered []byte) {
 	// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="slice capacity hint does not alter the appended frontmatter bytes"
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
@@ -154,9 +138,6 @@ func (d *Document) splice(start, end int, rendered []byte) {
 	d.front, d.mapping = append(front, d.front[end:]...), nil
 }
 
-// indent is the whitespace the frontmatter's own keys stand at. A block written
-// in from the margin is a mapping that ends at the first line written flush,
-// and the keys below it become text.
 func (d *Document) indent(node *yaml.Node) string {
 	if node == nil || len(node.Content) == 0 {
 		return ""
@@ -169,8 +150,6 @@ func (d *Document) indent(node *yaml.Node) string {
 	return getIndent(string(d.front[lines[targetLine-1]:lines[targetLine]]))
 }
 
-// indentLines is rendered lines written at the indentation the block's keys
-// stand at. A line with nothing on it takes none.
 func indentLines(rendered []byte, indent string) []byte {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT,BRANCH_IF reason="empty indent or empty input produces the same byte sequence through the loop"
 	if indent == "" || len(rendered) == 0 {
@@ -192,12 +171,6 @@ func indentLines(rendered []byte, indent string) []byte {
 	return out
 }
 
-// span is the byte range one top-level key occupies in the frontmatter,
-// including the lines its value continues onto.
-//
-// It ends at the last line of the key's own value, so a comment, a blank line,
-// or bytes standing inside the delimiters under no key at all are left where
-// they are.
 func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
@@ -236,8 +209,6 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	return lines[keyLine-1], lines[last], true
 }
 
-// endLine is the last line of the frontmatter one node relies on. A value
-// the dash it hangs from, which is the column given here.
 func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	if node == nil || node.Line < 1 {
 		return 0
@@ -289,7 +260,6 @@ func (d *Document) endLineOfScalar(lines []int, node *yaml.Node, column int) int
 	return last
 }
 
-// readMapping is the frontmatter as YAML, or nil when there is none to read.
 func (d *Document) readMapping() (*yaml.Node, error) {
 	if d.mapping != nil {
 		return d.mapping, nil
@@ -325,8 +295,6 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	return node, nil
 }
 
-// getWritableNode returns the frontmatter mapping when one key can be changed
-// without touching another. Other layouts can be read but not written.
 func (d *Document) getWritableNode() (*yaml.Node, error) {
 	if d.isUnterminated {
 		return nil, ErrUnterminated
@@ -363,7 +331,6 @@ var ErrInline = errors.New("this frontmatter is written on one line, and cannot 
 // note stops opening at all.
 var ErrAnchored = errors.New("this frontmatter has a YAML anchor, and cannot be changed a key at a time")
 
-// hasAnchor reports whether anything in a subtree carries an anchor.
 func hasAnchor(node *yaml.Node) bool {
 	if node == nil {
 		return false
@@ -383,8 +350,6 @@ func hasAnchor(node *yaml.Node) bool {
 // Nothing is changed in it.
 var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
 
-// isFlowCollection reports whether a collection is written on one line, which is what puts
-// two keys in one span.
 func isFlowCollection(node *yaml.Node) bool {
 	if node == nil {
 		return false
@@ -393,16 +358,10 @@ func isFlowCollection(node *yaml.Node) bool {
 		(node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode)
 }
 
-// isNullValue reports whether a key has an empty null value, the case where a
-// first entry is written under the key. An explicitly written null occupies its
-// line and does not match.
 func isNullValue(node *yaml.Node) bool {
 	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
 }
 
-// hasFlowStyle reports whether anything in a subtree is written on one line. An
-// entry of the `links:` block is replaced on its own, and that is a line at a
-// time all the way down.
 func hasFlowStyle(node *yaml.Node) bool {
 	if isFlowCollection(node) {
 		return true

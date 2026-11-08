@@ -30,17 +30,12 @@ const (
 // CardModel is a note declaring what a card has and the card templates it is
 // shown through.
 type CardModel struct {
-	Ref    domain.FileStat
-	Fields []string
-	// Preamble is every byte above the first template, down to the one its heading
-	// opens on, and Tail is what the file ends with once the last side has been
-	// read. Both are kept as they were written and neither is any template's.
+	Ref       domain.FileStat
+	Fields    []string
 	Preamble  string
 	Tail      string
 	Templates []CardTemplate
-	// Problems are the faults in the file that could not be repaired. They are
-	// reported and never corrected automatically.
-	Problems []Problem
+	Problems  []Problem
 }
 
 // CardTemplate is one way a card is displayed, as its card model declares it: the
@@ -55,14 +50,9 @@ type CardTemplate struct {
 
 // Deck is a note whose body is cards.
 type Deck struct {
-	Ref domain.FileStat
-	// Preamble is every byte above the first section or card, down to the one
-	// its heading opens on, and Tail is what the file ends with once the last
-	// value has been read. Both are kept as they were written and neither is
-	// any card's.
+	Ref      domain.FileStat
 	Preamble string
 	Tail     string
-	// Sections are the deck's own, in the order they stand in the file.
 	Sections []Section
 	Cards    []Card
 	Problems []Problem
@@ -71,9 +61,7 @@ type Deck struct {
 // Section is a named run of a deck. It is a name and nothing else: no fields, no
 // card model, no schedule, no card id.
 type Section struct {
-	Name string
-	// Nothing lays it out and nothing reads it: it is free text the author wrote about
-	// the deck, and it is preserved verbatim.
+	Name     string
 	Preamble string
 }
 
@@ -82,24 +70,12 @@ const NoSection = -1
 
 // Card is one filled-in set of a card model's fields.
 type Card struct {
-	// Heading is what the card's heading shows, with the card id taken off. It is
-	// the first line of the card's first field, read back, and it holds nothing
-	// of its own.
-	Heading string
-	// Card id is what the card is, for as long as it exists, and it is empty until
-	// the application next writes the deck. It is the ten characters alone: the
-	// caret in front of them is how a heading writes one.
-	CardID cardid.ID
-	// CardModelLink is the target of the lone wikilink under the heading, as it is
-	// written and without its brackets: a name where one picks the card model, and
-	// `note://<identifier>` where none does. A card whose first paragraph is not
-	// one names no card model.
+	Heading       string
+	CardID        cardid.ID
 	CardModelLink string
 	Preamble      string
-	// own, counted from the first. A card standing before the first section
-	// carries NoSection.
-	Section int
-	Values  []Value
+	Section       int
+	Values        []Value
 }
 
 // Value is what a card holds under one field's heading.

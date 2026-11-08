@@ -21,8 +21,6 @@ type Appearance struct {
 	ThemeName string
 	Mode      appearance.ColorScheme
 
-	// InterfaceScale scales UI components and TextScale scales typography.
-	// Zero values preserve default scale multipliers.
 	InterfaceScale, TextScale float64
 }
 
@@ -57,12 +55,8 @@ type Service struct {
 	Catalogue Catalogue
 	Settings  Appearances
 
-	// InterfaceScaleBounds and TextScaleBounds are how far each of the two sizes
-	// goes.
 	InterfaceScaleBounds, TextScaleBounds Bounds
 
-	// DebounceDelay is how long a change to the themes folder is kept before it is
-	// reported. Zero is DefaultHold.
 	DebounceDelay time.Duration
 }
 
@@ -102,7 +96,6 @@ func (s *Service) ListThemes(
 	}), nil
 }
 
-// encodeBounds converts domain Bounds to wire representation.
 func encodeBounds(bounds Bounds) *v1.Bounds {
 	return &v1.Bounds{Min: bounds.Min, Max: bounds.Max}
 }
@@ -210,8 +203,6 @@ func (s *Service) WatchThemes(
 	}
 }
 
-// listDifference returns the names present in only one of the two lists, in
-// the order the lists give them.
 func listDifference(before, after []string) []string {
 	var different []string
 	for _, name := range before {
@@ -231,9 +222,6 @@ func listDifference(before, after []string) []string {
 // is how a handler detects that its client has disconnected.
 const keepaliveInterval = time.Second
 
-// getAppearance is what the settings say, and this product's own palette at the size it
-// was designed at, under the system's choice, where they say nothing or could
-// not be read.
 func (s *Service) getAppearance() Appearance {
 	current := Appearance{
 		ThemeName:      Default,

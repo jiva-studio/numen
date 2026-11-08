@@ -23,17 +23,8 @@ type Log struct{ Stores ports.LogStores }
 // ReviewLog is what a vault's log came to.
 type ReviewLog struct {
 	Answers []review.Answer
-	// order is what History hands out, worked out at the first asking and kept
-	// for the rest of them.
-	order func() review.History
-	// Files are the log files the answers were read from, sorted by name. Any
-	// difference in this list invalidates a cache.
-	//
-	// A run is append-only, so its length indicates whether it has changed. A name
-	// alone does not: the file of an active session keeps its name while it grows.
-	Files []ports.Entry
-	// Skipped is how many lines could not be acted on: a run that stopped
-	// partway, or a line of a version this build does not know.
+	order   func() review.History
+	Files   []ports.Entry
 	Skipped int
 }
 
@@ -49,7 +40,6 @@ func (h ReviewLog) GetHistory() review.History {
 	return h.order()
 }
 
-// newHistory is a function that works its order out at the first asking.
 func newHistory(answers []review.Answer) func() review.History {
 	return sync.OnceValue(func() review.History { return review.OrderAnswers(answers) })
 }
@@ -97,20 +87,10 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 
 // LogFile is one file of the log as it was read.
 type LogFile struct {
-	Answers []review.Answer
-	// Size is the length read, which indicates whether the file has changed. It is
-	// the length read and not the length listed, because a run this machine is writing
-	// grows between the two.
-	Size int
-	// Skipped is how many of its lines could not be acted on.
-	Skipped int
-	// IsGone is a file listed and then taken away by another machine's
-	// synchroniser before it could be read.
-	IsGone bool
-	// IsUnreadable is a file that could not be opened: permissions deny it, or
-	// another program holds it. It is counted among the lines that could not be acted
-	// on and excluded from the files the history was read from, so a schedule computed
-	// without it reports that.
+	Answers      []review.Answer
+	Size         int
+	Skipped      int
+	IsGone       bool
 	IsUnreadable bool
 }
 
@@ -132,7 +112,6 @@ func (u Log) ReadFile(
 	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped, IsGone: false, IsUnreadable: false}, nil
 }
 
-// readLogFiles returns the files of the log, sorted by name.
 func readLogFiles(ctx context.Context, store ports.LogStore) ([]ports.Entry, error) {
 	target, err := store.ListLogs(ctx)
 	if err != nil {
@@ -165,9 +144,8 @@ func (u Log) Open(_ context.Context, v domain.Vault, now time.Time) (*LogWriter,
 
 // LogWriter is one session of review, and the file it appends to.
 type LogWriter struct {
-	store ports.LogStore
-	run   string
-	// answer writes nothing further to it, and every answer after it is
+	store   ports.LogStore
+	run     string
 	stopped error
 }
 

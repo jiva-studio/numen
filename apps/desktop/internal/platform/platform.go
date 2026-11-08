@@ -52,12 +52,8 @@ func GetConfigFor(target string) container.Config {
 	return cfg
 }
 
-// getDevPluginsDirs is the plugin folders of a source checkout, relative to the working directory.
 func getDevPluginsDirs() []string { return []string{"plugins"} }
 
-// getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
-// of the user, and the downloaded packages are kept in the cache folder every window shares. The
-// plugins that ship with the application are offered from the plugin index found in the plugin folders.
 func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
 	config := catalog.Config{Target: target, Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
@@ -69,8 +65,6 @@ func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
 	return config
 }
 
-// getIndexSource is the source over the plugin index of the first plugin folder that holds one. A
-// development run without an index reads the manifests of the plugin folders of the checkout.
 func getIndexSource(pluginDirs []string) *indexsource.Source {
 	// gomutants:disable-next-line
 	indexPaths := make([]string, 0, len(pluginDirs))

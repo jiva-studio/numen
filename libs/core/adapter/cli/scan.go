@@ -61,8 +61,6 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	return r.Err()
 }
 
-// splitRebuildFlag separates `--rebuild-index`, which reads every file whatever
-// the index remembers, from the other arguments.
 func splitRebuildFlag(args []string) (rebuild bool, rest []string) {
 	rest = make([]string, 0, len(args))
 	for _, arg := range args {
@@ -75,7 +73,6 @@ func splitRebuildFlag(args []string) (rebuild bool, rest []string) {
 	return rebuild, rest
 }
 
-// readClock is the time the clock gives, and the zero time where there is no clock.
 func readClock(source machinecontract.Clock) time.Time {
 	if source == nil {
 		return time.Time{}
@@ -83,8 +80,6 @@ func readClock(source machinecontract.Clock) time.Time {
 	return source.Now()
 }
 
-// describeSources describes the extraction of the files that are not notes: the
-// files the plugins read text from. Nothing is reported for a vault holding none.
 func describeSources(r filetext.IndexResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
@@ -97,9 +92,6 @@ func describeSources(r filetext.IndexResult) string {
 	return s
 }
 
-// showProgress prints the passes of a scan as they run. A terminal that prints
-// nothing for a minute looks broken. One group is about half a second, and the
-// line rewrites itself.
 func showProgress(making *vaults.ReadWholeVault, r *reporter) {
 	making.OnNotesProgress = func(res vaults.ScanResult) {
 		r.Printf("  %d indexed\r", res.Indexed)
@@ -114,7 +106,6 @@ func showProgress(making *vaults.ReadWholeVault, r *reporter) {
 	}
 }
 
-// reportMade prints what the text and vector passes did.
 func reportMade(r *reporter, vaultName string, made vaults.ReadWholeVaultResult) {
 	if made.Texts.Seen > 0 {
 		r.Println(describeSources(made.Texts))

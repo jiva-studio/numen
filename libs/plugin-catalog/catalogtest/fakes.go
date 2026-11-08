@@ -16,9 +16,7 @@ import (
 type FakeSource struct {
 	name    string
 	entries []catalog.Entry
-	// Err is returned by every call. The entries are returned with it, as a source that read part of
-	// its place does.
-	Err error
+	Err     error
 }
 
 // NewFakeSource returns a source named name that lists the entries, each carrying the name.
@@ -58,10 +56,8 @@ func (f *FakeSource) Get(ctx context.Context, id string) (catalog.Entry, error) 
 type FakeCache struct {
 	mu       sync.Mutex
 	snapshot *catalog.Snapshot
-	// WriteErr is returned by Write, which then stores nothing.
 	WriteErr error
-	// Writes counts the calls to Write.
-	Writes int
+	Writes   int
 }
 
 // Read returns the snapshot, or catalog.ErrEmptyCache.

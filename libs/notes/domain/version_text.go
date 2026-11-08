@@ -86,8 +86,6 @@ func (t VersionText) GetSelector(offset int) Selector {
 	return t.segments[i].Selector
 }
 
-// findSegment is the index of the last segment that begins at or before an
-// offset, and -1 where none does.
 func (t VersionText) findSegment(offset int) int {
 	return sort.Search(len(t.offsets), func(i int) bool { return t.offsets[i] > offset }) - 1
 }

@@ -50,11 +50,7 @@ type Write struct {
 	writers vaultport.VaultWriters
 	index   IndexUpdater
 	now     machineport.Clock
-	// Bound is the most the file may be, measured as it goes to disk. Zero is
-	// MaxBytes. A caller whose files are read at a bound of their own sets it.
-	Bound int
-	// Drawing receives the edit being applied while a write is in progress. It
-	// is unset when no viewer renders the note.
+	Bound   int
 	Drawing TellEdit
 }
 

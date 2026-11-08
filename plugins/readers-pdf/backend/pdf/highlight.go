@@ -64,8 +64,6 @@ func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []Hi
 	return boxes, nil
 }
 
-// getOrderedPages returns the requested pages, each once and in reading order. A
-// page the document does not have is dropped.
 func getOrderedPages(pages []int, most int) []int {
 	observed := make(map[int]bool, len(pages))
 	out := make([]int, 0, len(pages))
@@ -80,10 +78,6 @@ func getOrderedPages(pages []int, most int) []int {
 	return out
 }
 
-// words returns the locations of the words of one page, as boxes in the document's text.
-// offset is where that page's own text begins in it.
-//
-// A page that cannot be measured, or cannot be read, yields no word locations.
 func (d *document) words(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil}
 	sheet, ok := getSheet(pdfiumMeasurer{worker: d.worker}, page)
@@ -139,8 +133,6 @@ type wordReading struct {
 	length int
 }
 
-// add takes the next character, which begins at the given place in the text. A
-// space ends a word, and so does a character covering nothing.
 func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bool) {
 	if isSpace || mark.Right <= mark.Left || mark.Top <= mark.Bottom {
 		r.finish()
@@ -158,8 +150,6 @@ func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bo
 	r.length += size
 }
 
-// finish ends the word being read, and keeps its box where it has any
-// characters.
 func (r *wordReading) finish() {
 	if r.length > 0 {
 		r.boxes = append(r.boxes, r.sheet.getWordBox(r.index, r.start, r.length, r.word))
@@ -167,8 +157,6 @@ func (r *wordReading) finish() {
 	r.length = 0
 }
 
-// isWordContinued reports whether a character continues the word: it is on
-// the same line, within a space of where the word has reached.
 func isWordContinued(word, mark responses.CharPosition) bool {
 	high := min(word.Top-word.Bottom, mark.Top-mark.Bottom)
 	shared := min(word.Top, mark.Top) - max(word.Bottom, mark.Bottom)
@@ -178,7 +166,6 @@ func isWordContinued(word, mark responses.CharPosition) bool {
 	return mark.Left-word.Right <= wordGap*high && mark.Right > word.Right
 }
 
-// extendWord is the word with one more character in it.
 func extendWord(word, mark responses.CharPosition) responses.CharPosition {
 	return responses.CharPosition{
 		Left:   min(word.Left, mark.Left),
@@ -216,9 +203,6 @@ func (m pdfiumMeasurer) GetPageRotation(request *requests.FPDFPage_GetRotation) 
 	return m.worker.FPDFPage_GetRotation(request)
 }
 
-// getSheet measures one page. The size the library reports is of the page as it is
-// drawn, and a page drawn a quarter turn from the way its text is written is as
-// wide as its text is high.
 func getSheet(measurer pageMeasurer, page requests.Page) (pageGeometry, bool) {
 	size, err := measurer.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
@@ -238,7 +222,6 @@ func getSheet(measurer pageMeasurer, page requests.Page) (pageGeometry, bool) {
 	return sheet, true
 }
 
-// getWordBox is one word of a page, over the fraction of it the word covers.
 func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) HighlightBox {
 	x0, y0 := p.getPagePoint(word.Left, word.Top)
 	x1, y1 := p.getPagePoint(word.Right, word.Bottom)
@@ -254,12 +237,6 @@ func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPos
 	}
 }
 
-// getPagePoint returns where a point of the page falls on the page as rendered: a
-// fraction of it, measured from its top left corner.
-//
-// A page's text is written with the origin at the bottom left corner, and the
-// page is rendered with the origin at the top left and rotated by the page's
-// own rotation.
 func (p pageGeometry) getPagePoint(x, y float64) (float32, float32) {
 	wide, high := p.width, p.height
 	switch p.rotation {
@@ -275,8 +252,6 @@ func (p pageGeometry) getPagePoint(x, y float64) (float32, float32) {
 	return float32(x / wide), float32(y / high)
 }
 
-// clampToPage holds a rectangle to the page it is on. A character set past the edge
-// of the paper is drawn at the edge.
 func clampToPage(f float32) float32 {
 	return min(max(f, 0), 1)
 }

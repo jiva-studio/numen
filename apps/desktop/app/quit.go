@@ -15,12 +15,6 @@ type visibility struct {
 	show func()
 }
 
-// closeWindow reports whether the window may close.
-//
-// The window is hidden first and the vault is flushed in the background. A page
-// holding unsaved text that needs a user decision cancels the close, the window
-// is shown again, and the close is requested again after the user has answered.
-// That wait depends on the user and has no time bound.
 func closeWindow(
 	ctx context.Context,
 	g *vaultFlush,
@@ -57,9 +51,6 @@ func (t *windowTracker) addWindow() {
 	t.count++
 }
 
-// closeSecondaryWindow decrements the window count if there is more than one window.
-// It reports true if this was a secondary window (count > 1) and count was decremented,
-// or false if this is the final window and closing must flush the vault.
 func (t *windowTracker) closeSecondaryWindow() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -70,8 +61,6 @@ func (t *windowTracker) closeSecondaryWindow() bool {
 	return false
 }
 
-// handleWindowClosing handles a window close event. The last window flushes the vault
-// before quitting; secondary windows close without flushing.
 func handleWindowClosing(
 	ctx context.Context,
 	tracker *windowTracker,
@@ -86,13 +75,6 @@ func handleWindowClosing(
 	return closeWindow(ctx, g, s, confirm, retry)
 }
 
-// requestQuit handles a quit that did not come through a window and reports
-// whether the application may exit.
-//
-// It runs on the thread that serves the page, so the window is hidden and the
-// flush runs in a goroutine, and the quit is requested again when the flush
-// ends. A flush that ended awaiting a user decision shows the window again and
-// does not request the quit; the quit follows after the user has answered.
 func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	if g.isFlushed() {
 		return true
@@ -130,9 +112,6 @@ type flushAttempt struct {
 	isFlushed bool
 }
 
-// flushVault settles the vault and answers with whether it did. A settling already
-// running is joined and its answer shared. The settling keeps the values of ctx and runs under
-// quitBound, whether or not ctx is cancelled.
 func (g *vaultFlush) flushVault(ctx context.Context) bool {
 	g.mu.Lock()
 	if g.isDone {
@@ -151,7 +130,6 @@ func (g *vaultFlush) flushVault(ctx context.Context) bool {
 	return this.isFlushed
 }
 
-// isFlushed reports whether the vault has no unwritten work.
 func (g *vaultFlush) isFlushed() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

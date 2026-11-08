@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
-// messageTypes maps each method to a constructor of its request and of its response.
 func getMessageTypes() map[string]struct{ request, response func() any } {
 	return map[string]struct{ request, response func() any }{
 		"ListCardModels":       {func() any { return new(api.ListCardModelsRequest) }, func() any { return new(api.ListCardModelsResponse) }},
@@ -40,8 +39,6 @@ func getMessageTypes() map[string]struct{ request, response func() any } {
 	}
 }
 
-// normalize returns the canonical JSON of raw: two documents with the same content
-// and a different layout compare equal.
 func normalize(t *testing.T, raw []byte) string {
 	t.Helper()
 	var value any

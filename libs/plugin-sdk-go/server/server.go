@@ -187,8 +187,6 @@ func Run(mount func(*Server) error, opts ...Option) {
 	}
 }
 
-// run starts a server, mounts services and serves until shutdown. It returns the exit code: 0 after
-// a clean shutdown, 1 after an error written to errOut, and 2 when that write fails.
 func run(errOut io.Writer, mount func(*Server) error, opts ...Option) int {
 	s := New(opts...)
 	err := mount(s)
@@ -378,7 +376,6 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 	return nil
 }
 
-// newHTTPServer returns the server for plain TCP on loopback, speaking HTTP/1 and unencrypted HTTP/2.
 func (s *Server) newHTTPServer() *http.Server {
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
@@ -390,8 +387,6 @@ func (s *Server) newHTTPServer() *http.Server {
 	}
 }
 
-// notifySignals subscribes to the configured signals and returns the channel and the function that
-// ends the subscription.
 func (s *Server) notifySignals() (<-chan os.Signal, func()) {
 	// gomutants:disable-next-line
 	sigCh := make(chan os.Signal, 1)
@@ -403,9 +398,6 @@ func (s *Server) notifySignals() (<-chan os.Signal, func()) {
 	return sigCh, func() { signal.Stop(sigCh) }
 }
 
-// waitForStop blocks until the context ends, a signal arrives, a shutdown is triggered or standard
-// input closes, and then reports served false. It reports served true with the result when the HTTP
-// server ended on its own first.
 func waitForStop(
 	ctx context.Context, shutdown <-chan struct{}, sigCh <-chan os.Signal, stdinEOF <-chan struct{}, serveErrCh <-chan error,
 ) (served bool, err error) {
@@ -423,7 +415,6 @@ func waitForStop(
 	return false, nil
 }
 
-// serveHTTP serves on listener, sends a failure other than a shutdown to errs, and closes errs.
 func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
 	// gomutants:disable-next-line
 	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -432,7 +423,6 @@ func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
 	close(errs)
 }
 
-// closeListener closes the listener. A listener the HTTP server already closed is not an error.
 func (s *Server) closeListener() error {
 	if err := s.listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 		return fmt.Errorf("close listener: %w", err)
@@ -440,7 +430,6 @@ func (s *Server) closeListener() error {
 	return nil
 }
 
-// authenticate reads the token from standard input when none is configured and exports it.
 func (s *Server) authenticate() error {
 	if s.token == "" && s.stdin != nil {
 		line, err := readTokenLine(s.stdin)
@@ -459,7 +448,6 @@ func (s *Server) authenticate() error {
 	return nil
 }
 
-// announceReady writes the handshake line.
 func (s *Server) announceReady() error {
 	if s.stdout == nil {
 		return nil
@@ -470,7 +458,6 @@ func (s *Server) announceReady() error {
 	return nil
 }
 
-// watchStdin returns a channel closed when standard input reaches end of file.
 func (s *Server) watchStdin() <-chan struct{} {
 	stdinEOF := make(chan struct{})
 	if s.stdin == nil {

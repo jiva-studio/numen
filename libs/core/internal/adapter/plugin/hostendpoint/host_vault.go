@@ -47,7 +47,6 @@ func newVaultEndpoint(endpoint *Endpoint) *vaultEndpoint {
 
 var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
-// begin authorizes a call and returns the plugin that made it and the vault it works. A plugin that
 func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pluginport.PluginVault, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
@@ -60,8 +59,6 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pl
 	return pluginID, vault, nil
 }
 
-// getVault is the vault a call works: the one its Numen-Vault header names, else the one the host
-// shows. It is nil where the host has no vault to offer.
 func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) {
 	vault := e.callers.GetPluginVault()
 	named := header.Get(vaultHeader)
@@ -75,9 +72,6 @@ func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) 
 	return linked, nil
 }
 
-// answer returns the response of a single vault call that ended with err: an error of the vault port,
-// the plugin port or the domain is its code, the end of the caller's context is cancelled, and anything
-// else is an internal error that carries the text of err.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
@@ -91,8 +85,6 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-// getErrorCode returns the HostVaultErrorCode of an error of the vault port, the plugin port or the
-// domain, and false for any other error.
 func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	for _, entry := range getErrorEntries() {
 		if errors.Is(err, entry.err) {
@@ -102,9 +94,6 @@ func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	return 0, false
 }
 
-// getNoteErrorCode returns the HostVaultErrorCode of the error of one note in a batch call: the code
-// getErrorCode gives, else the code of the note error wire.GetErrorCode gives, and false for an error
-// that has neither.
 func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	if code, ok := getErrorCode(err); ok {
 		return code, true
@@ -123,7 +112,6 @@ type errorEntry struct {
 	code v1.HostVaultErrorCode
 }
 
-// getErrorEntries returns the errors of the vault port, the plugin port and the domain with their codes.
 func getErrorEntries() []errorEntry {
 	return []errorEntry{
 		{hostvault.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
@@ -141,7 +129,6 @@ func getErrorEntries() []errorEntry {
 	}
 }
 
-// getNoteErrorCodes returns the HostVaultErrorCode of each error code of a note.
 func getNoteErrorCodes() map[v1.ErrorCode]v1.HostVaultErrorCode {
 	return map[v1.ErrorCode]v1.HostVaultErrorCode{
 		v1.ErrorCode_ERROR_CODE_NOT_FOUND:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND,
@@ -171,8 +158,6 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 }
 
-// readKind returns the source kind for the file that a file stat describes, or
-// none for a file stat with no file.
 func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
@@ -401,7 +386,6 @@ func (e *vaultEndpoint) LockVault(
 	return connect.NewResponse(&v1.LockVaultResponse{Lock: id}), nil
 }
 
-// unlock releases the writers once, on the first call.
 func (e *vaultEndpoint) unlock(id string) {
 	e.mu.Lock()
 	release := e.locks[id]
@@ -659,8 +643,6 @@ func (e *vaultEndpoint) WatchVault(
 	return followVault(ctx, vault, watched, changes, missing, stream)
 }
 
-// followVault sends the changes of the vault until the watch ends, and reports
-// when the window switches to another vault.
 func followVault(
 	ctx context.Context, vault pluginport.PluginVault, watched domain.Vault,
 	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
@@ -688,8 +670,6 @@ func followVault(
 	}
 }
 
-// serveFileRange serves a ReadFile that sets a length: it returns the text of the range, its start and
-// the file stat.
 func serveFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,

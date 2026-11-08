@@ -214,13 +214,10 @@ func FuzzRead(f *testing.F) {
 	})
 }
 
-// oneLine is whether a name is the words of it, single-spaced, and not empty.
 func oneLine(name string) bool {
 	return name != "" && strings.Join(strings.Fields(name), " ") == name
 }
 
-// isAtOrBefore is whether the document of this name begins at or before the
-// offset.
 func isAtOrBefore(documents []epub.Document, pos string, offset int) bool {
 	for _, doc := range documents {
 		if doc.Path == pos && doc.Offset <= offset {
@@ -230,7 +227,6 @@ func isAtOrBefore(documents []epub.Document, pos string, offset int) bool {
 	return false
 }
 
-// hasPart is whether the book names this part, at this offset.
 func hasPart(parts []epub.Part, title string, offset int) bool {
 	for _, part := range parts {
 		if part.Title == title && part.Offset == offset {
@@ -240,7 +236,6 @@ func hasPart(parts []epub.Part, title string, offset int) bool {
 	return false
 }
 
-// clone is the files of a fixture, to be changed without changing the fixture.
 func clone(parts map[string][]byte) map[string][]byte {
 	made := make(map[string][]byte, len(parts))
 	for name, raw := range parts {
@@ -249,7 +244,6 @@ func clone(parts map[string][]byte) map[string][]byte {
 	return made
 }
 
-// flipByte is the file with one byte of it written over by another.
 func flipByte(raw []byte, pos int) []byte {
 	if len(raw) == 0 {
 		return raw
@@ -260,8 +254,6 @@ func flipByte(raw []byte, pos int) []byte {
 	return changed
 }
 
-// renameEntry is the archive with one entry named one thing in the central
-// directory and another in the header the entry itself carries.
 func renameEntry(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
@@ -271,8 +263,6 @@ func renameEntry(raw []byte) []byte {
 	return changed
 }
 
-// overstateEntrySize is the archive with one entry's central directory claiming far more
-// bytes than the entry holds.
 func overstateEntrySize(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
@@ -341,12 +331,6 @@ func FuzzMarkup(f *testing.F) {
 	})
 }
 
-// checkHTML verifies that the markup delivered to a window contains only what a
-// window may receive: nothing executable, no styling, and no address with a
-// scheme the user may not be sent to. The markup is inserted unescaped, so
-// whatever the book contains, this is what the browser parses.
-//
-// The runs give the document's text in the order the markup writes them.
 func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Markup) {
 	t.Helper()
 	root := parseHTML(t, markup.HTML())
@@ -387,8 +371,6 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Ma
 	}
 }
 
-// isSendable reports whether an address the markup carries may name the scheme. A picture written
-// into the markup is the one that is not an address at all.
 func isSendable(scheme string) bool {
 	switch scheme {
 	case "http", "https", "mailto", "tel", "data":
@@ -397,7 +379,6 @@ func isSendable(scheme string) bool {
 	return false
 }
 
-// schemeOf is the scheme an address names, and empty for one that names none.
 func schemeOf(response string) string {
 	head, _, named := strings.Cut(response, ":")
 	if !named || strings.ContainsAny(head, "/?# \t\r\n") {
@@ -406,8 +387,6 @@ func schemeOf(response string) string {
 	return head
 }
 
-// checkNodeShape holds every node to being one thing: an element carries a name and
-// holds what is under it, and a run carries text and holds nothing.
 func checkNodeShape(t *testing.T, doc epub.Document, nodes []epub.Node) {
 	t.Helper()
 	for _, node := range nodes {

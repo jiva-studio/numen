@@ -28,7 +28,6 @@ func TestSpeechIsSplitIntoBatchesOfSize(t *testing.T) {
 	}
 }
 
-// numbers is the lines a run of batches carries, batch by batch.
 func numbers(batches []Batch) [][]int {
 	out := make([][]int, 0, len(batches))
 	for _, batch := range batches {
@@ -41,7 +40,6 @@ func numbers(batches []Batch) [][]int {
 	return out
 }
 
-// makeTranscript is a transcript of count cues, each saying something.
 func makeTranscript(count int) []Line {
 	var cues []Line
 	for i := 0; i < count; i++ {
@@ -216,7 +214,6 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 	}
 }
 
-// cuts is the cut after each of a run of batches but the last.
 func cuts(batches int) []int {
 	out := make([]int, max(batches-1, 0))
 	for item := range out {
@@ -278,7 +275,6 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 	}
 }
 
-// hasLines reports whether a batch holds every line of a run, first to last.
 func hasLines(batch Batch, first, last int) bool {
 	target := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {

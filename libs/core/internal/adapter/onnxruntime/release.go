@@ -23,12 +23,10 @@ type Release struct {
 	LibrarySum string
 }
 
-// newRelease returns the release published as archive, holding library.
 func newRelease(archive, sum, library, librarySum string) Release {
 	return Release{Address: from + archive, Sum: sum, Library: library, LibrarySum: librarySum}
 }
 
-// releases is every platform the runtime is published for.
 func getReleases() map[string]Release {
 	return map[string]Release{
 		"linux/amd64":   newRelease("onnxruntime-linux-x64-"+version+".tgz", "b6deea7f2e22c10c043019f294a0ea4d2a6c0ae52a009c34847640db75ec5580", "libonnxruntime.so", "98b0253652d36c706cd9b873f3e8dc74e107c26cf9694672fb4d88da1c00f250"),
@@ -39,7 +37,6 @@ func getReleases() map[string]Release {
 	}
 }
 
-// getRelease returns the release published for one platform.
 func getRelease(goos, goarch string) (Release, error) {
 	if found, ok := getReleases()[goos+"/"+goarch]; ok {
 		return found, nil
@@ -47,13 +44,10 @@ func getRelease(goos, goarch string) (Release, error) {
 	return Release{}, fmt.Errorf("no onnx runtime is published for %s/%s", goos, goarch)
 }
 
-// getArchiveName returns the file name the archive is kept under.
 func (r Release) getArchiveName() string {
 	return path.Base(r.Address)
 }
 
-// check returns an error when the release cannot pin what it names: an address
-// that is not https, or a sum that is not a sha256.
 func (r Release) check() error {
 	if !strings.HasPrefix(r.Address, "https://") {
 		return fmt.Errorf("%s is not an https address", r.Address)
@@ -69,7 +63,6 @@ func (r Release) check() error {
 	return nil
 }
 
-// isSum reports whether text is a lower-case hex sha256.
 func isSum(text string) bool {
 	if len(text) != 64 {
 		return false

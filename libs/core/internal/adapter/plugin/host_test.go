@@ -36,7 +36,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// newDiscoveredHostAt creates a host for the plugins under root and discovers them.
 func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *Host {
 	t.Helper()
 	host := NewHost(clock, "desktop.editor", root)
@@ -46,8 +45,6 @@ func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *Ho
 	return host
 }
 
-// launchProcess returns a launcher that reports the process of cmd listening
-// on the port the host passes, or on fallback when the host passes none.
 func launchProcess(cmd *exec.Cmd, fallback int) Launcher {
 	return func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if port == 0 {
@@ -57,16 +54,12 @@ func launchProcess(cmd *exec.Cmd, fallback int) Launcher {
 	}
 }
 
-// launchProcessAt returns a launcher that reports the process of cmd listening
-// on port, whatever port the host passes.
 func launchProcessAt(cmd *exec.Cmd, port int) Launcher {
 	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	}
 }
 
-// serveLifecycle starts a server for the lifecycle service of handler and
-// returns its port.
 func serveLifecycle(t *testing.T, handler numenv1connect.PluginLifecycleServiceHandler) int {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -1087,8 +1080,6 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 }
 
-// newHostOfProviders registers three plugins sharing a capability, in an order
-// that is not the order of their ids.
 func newHostOfProviders(t *testing.T) *Host {
 	t.Helper()
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")

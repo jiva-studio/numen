@@ -187,7 +187,6 @@ func TestConvertResponseStepCarriesTheCallNameAndEffect(t *testing.T) {
 	}
 }
 
-// openTestBridge serves the handler as the agent plugin and opens a bridge to it.
 func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *Agent {
 	t.Helper()
 

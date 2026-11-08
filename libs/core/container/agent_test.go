@@ -36,7 +36,6 @@ import (
 type providerServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	programs []*v1.AgentProgram
-	// onlyWith, when set, is the program the plugin lists only under a command line set for it.
 	onlyWith string
 
 	mu        sync.Mutex
@@ -68,21 +67,18 @@ func (s *providerServer) FinishConversation(
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }
 
-// getRequested are the tasks the plugin was given.
 func (s *providerServer) getRequested() []*v1.AskAgentRequest {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.requested)
 }
 
-// getFinished returns the conversations reported to the plugin as ended.
 func (s *providerServer) getFinished() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.finished)
 }
 
-// getCommands returns the command lines reported to the plugin.
 func (s *providerServer) getCommands() []*v1.AgentProgramCommand {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -107,8 +103,6 @@ func (s *providerServer) GetAgentPrograms(
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: s.programs}), nil
 }
 
-// hostWith is a plugin host over plugins that declare the capabilities given, each served by the
-// server with its identifier. A plugin with no server cannot be started.
 func hostWith(t *testing.T, capabilities map[string][]string, servers map[string]*providerServer) *plugin.Host {
 	t.Helper()
 
@@ -167,7 +161,6 @@ const (
 	providerTwo = "md.test.two"
 )
 
-// twoProviders is a host over two plugins that run agent programs, and a third that is no provider.
 func twoProviders(t *testing.T) (*plugin.Host, *providerServer, *providerServer) {
 	t.Helper()
 	one := &providerServer{programs: []*v1.AgentProgram{{

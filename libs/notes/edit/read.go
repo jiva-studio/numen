@@ -44,13 +44,9 @@ type Reader interface {
 
 // Contents is one note as returned by a read.
 type Contents struct {
-	Path    string
-	Outcome ReadOutcome
-	// Body is the prose below the frontmatter, with every line break written as one \n. It is empty
-	// for every outcome but Ok.
-	Body string
-	// FileStat is the file's state when it was queried, before its bytes were read. size is the size at
-	// that time.
+	Path     string
+	Outcome  ReadOutcome
+	Body     string
 	FileStat domain.FileStat
 }
 
@@ -85,8 +81,6 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	return out, nil
 }
 
-// statNote asks the vault what is at path without opening it: a note, a file it ignores, or
-// nothing. It sets the outcome in out and reports stop when the read ends there.
 func statNote(ctx context.Context, files Reader, path string, out *Contents) (target, stop bool, err error) {
 	ref, err := files.StatFile(ctx, path)
 	switch {
@@ -113,7 +107,6 @@ func statNote(ctx context.Context, files Reader, path string, out *Contents) (ta
 	return false, false, nil
 }
 
-// readNoteBytes reads the file and sets the outcome in out when it is missing or not a note.
 func readNoteBytes(ctx context.Context, files Reader, path string, target bool, out *Contents) (raw []byte, stop bool, err error) {
 	raw, err = files.Read(ctx, path)
 	switch {
@@ -129,7 +122,6 @@ func readNoteBytes(ctx context.Context, files Reader, path string, target bool, 
 	return raw, false, nil
 }
 
-// readBody sets the body and the outcome in out from the bytes of a note.
 func readBody(raw []byte, out *Contents) error {
 	// The body is returned in a string field. A browser converts an ill-formed sequence to U+FFFD, and
 	// the next save would write those characters in place of the original bytes.

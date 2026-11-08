@@ -17,21 +17,11 @@ const (
 // FileStat is what a walk of a vault reports before anything is read: enough to
 // decide whether the file has to be read at all, and what would read it.
 type FileStat struct {
-	// Path is relative to the vault root, always with forward slashes, so an index
-	// built on one platform describes the same source on another.
-	Path string
-	// Kind is the file classification. A walk and a stat both report it; a file
-	// stat returned by the index leaves it empty, because the kind is the query.
-	Kind SourceKind
-	Size int64
-	// ModTime is when the file last changed. Each adapter converts at its own
-	// edge: the index and the wire carry nanoseconds since the epoch, and a
-	// stamp in seconds put here matches nothing a walk took.
+	Path    string
+	Kind    SourceKind
+	Size    int64
 	ModTime time.Time
-	// FileID identifies the file on its file system: the inode on Unix. A
-	// stat of one file reports it; a walk, the index and a reader with no such
-	// number leave it zero.
-	FileID FileID
+	FileID  FileID
 }
 
 // FileID is the number a file system assigns to a file, which a rename keeps and a

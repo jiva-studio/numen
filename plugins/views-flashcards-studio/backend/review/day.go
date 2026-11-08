@@ -28,15 +28,10 @@ func Clock(starts time.Duration) string {
 // A card due on a day is due for the whole of it, whatever hour its schedule
 // puts the due time at.
 type Day struct {
-	// Starts is how long past midnight a day begins.
 	Starts time.Duration
-	// In is the zone the day is counted in. A build holding none counts in the
-	// machine's own.
-	In *time.Location
+	In     *time.Location
 }
 
-// zone is where the days are counted. A day naming none counts in the
-// machine's own.
 func (d Day) zone() *time.Location {
 	if d.In == nil {
 		return time.Local
@@ -78,9 +73,6 @@ func (d Day) GetDate(target time.Time) time.Time {
 	return date
 }
 
-// getStartTime is the instant the day of this date begins. The boundary is an
-// hour of the wall clock in the zone the days are counted in, and the day ends
-// at the same hour of the next date.
 func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	h, minute := d.boundary()
 	open := time.Date(y, m, day, h, minute, 0, 0, d.zone())
@@ -93,13 +85,10 @@ func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	return open
 }
 
-// boundary is the hour and minute of the clock a day begins at.
 func (d Day) boundary() (int, int) {
 	return int(d.Starts / time.Hour), int(d.Starts % time.Hour / time.Minute)
 }
 
-// wall is a clock reading with the zone removed, which allows two readings to be
-// subtracted.
 func wall(pos time.Time) time.Time {
 	y, m, day := pos.Date()
 	return time.Date(y, m, day, pos.Hour(), pos.Minute(), 0, 0, time.UTC)

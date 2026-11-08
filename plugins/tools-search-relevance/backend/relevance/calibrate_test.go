@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
 
-// calibrate runs one calibration over the search, with the state the host reports.
 func calibrate(t *testing.T, search host.Search, vault host.NoteLookup) (relevance.Outcome, relevance.Calibration, error) {
 	t.Helper()
 	state, err := search.GetEmbeddingState(t.Context())

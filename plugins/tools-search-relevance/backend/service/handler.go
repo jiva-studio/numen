@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
 
-// begin returns the floors the app works through.
 func (a *App) begin() (*relevance.Floors, error) {
 	floors, _ := a.getFloors()
 	if floors == nil {
@@ -19,7 +18,6 @@ func (a *App) begin() (*relevance.Floors, error) {
 	return floors, nil
 }
 
-// getFloor answers the floor in force for the vault the host shows.
 func (a *App) getFloor(ctx context.Context, _ api.GetFloorRequest) (api.GetFloorResponse, error) {
 	floors, err := a.begin()
 	if err != nil {
@@ -32,7 +30,6 @@ func (a *App) getFloor(ctx context.Context, _ api.GetFloorRequest) (api.GetFloor
 	return convertState(state), nil
 }
 
-// calibrateFloor measures the vault the host shows and keeps the floor that follows.
 func (a *App) calibrateFloor(ctx context.Context, _ api.CalibrateFloorRequest) (api.CalibrateFloorResponse, error) {
 	floors, err := a.begin()
 	if err != nil {
@@ -45,7 +42,6 @@ func (a *App) calibrateFloor(ctx context.Context, _ api.CalibrateFloorRequest) (
 	return api.CalibrateFloorResponse{Outcome: convertOutcome(outcome), State: convertState(state)}, nil
 }
 
-// setFloor puts the floor of the person in force, or returns to the automatic floor.
 func (a *App) setFloor(ctx context.Context, req api.SetFloorRequest) (api.SetFloorResponse, error) {
 	floors, err := a.begin()
 	if err != nil {
@@ -58,7 +54,6 @@ func (a *App) setFloor(ctx context.Context, req api.SetFloorRequest) (api.SetFlo
 	return api.SetFloorResponse{State: convertState(state)}, nil
 }
 
-// probeFloor measures the similarity of the best passage of the vault to a query.
 func (a *App) probeFloor(ctx context.Context, req api.ProbeFloorRequest) (api.ProbeFloorResponse, error) {
 	floors, err := a.begin()
 	if err != nil {
@@ -71,7 +66,6 @@ func (a *App) probeFloor(ctx context.Context, req api.ProbeFloorRequest) (api.Pr
 	return api.ProbeFloorResponse{BestSimilarity: result.BestSimilarity, Floor: result.Floor, DoesPass: result.DoesPass}, nil
 }
 
-// convertError is the failure a client receives for a failed call.
 func convertError(err error) error {
 	switch {
 	case errors.Is(err, host.ErrInvalidFloor):

@@ -35,9 +35,7 @@ func instant(nanos int64) time.Time {
 
 // CardModel is a card model as the list of them names it.
 type CardModel struct {
-	Path string `json:"path" jsonschema:"the card model's path relative to the vault folder"`
-	// Name is the text of a card's wikilink. A link is resolved by path and by filename, so
-	// the name that resolves to this card model is its filename without the extension.
+	Path   string   `json:"path" jsonschema:"the card model's path relative to the vault folder"`
 	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
 	Title  string   `json:"title" jsonschema:"the title of the card model"`
 	Fields []string `json:"fields,omitempty" jsonschema:"the field names of the card model, in order; absent for a card model that could not be read"`
@@ -121,8 +119,6 @@ func newTemplates(templates []format.CardTemplate) []CardTemplate {
 	return out
 }
 
-// getProblems lists the problems of a deck, each on the card it concerns. The position is counted from
-// the deck's first card, whichever range of cards a call requested.
 func getProblems(problems []format.Problem) []Problem {
 	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="Slice length is never negative, and an empty slice with omitempty serializes identically to nil."
 	if len(problems) == 0 {
@@ -135,8 +131,6 @@ func getProblems(problems []format.Problem) []Problem {
 	return out
 }
 
-// countBytes is how many bytes a call will put in a deck. A field's name lands in the file beside its
-// value, so both are measured.
 func countBytes(vs []FieldValue) int {
 	size := 0
 	for _, v := range vs {
@@ -145,12 +139,10 @@ func countBytes(vs []FieldValue) int {
 	return size
 }
 
-// fingerprintOf encodes the state of a deck or a card model when it was read, as returned to an agent.
 func fingerprintOf(ref domain.FileStat) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
 }
 
-// parseFingerprint parses the file stat a caller presents from an earlier read. A tool that modifies a file compares it with the current stat to detect concurrent edits.
 func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
 		return domain.FileStat{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")

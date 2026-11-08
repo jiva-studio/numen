@@ -15,7 +15,6 @@ import (
 // is a bound on a machine under load and not a measurement.
 const waited = 5 * time.Second
 
-// readNames is the names reported next, debounced into one batch by the watcher.
 func readNames(t *testing.T, changed <-chan []string) []string {
 	t.Helper()
 	select {

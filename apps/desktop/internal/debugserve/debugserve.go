@@ -94,9 +94,6 @@ func Serve(
 	return server.Shutdown(shutdownCtx)
 }
 
-// createTLSListener serves TLS on ln with the certificate getCertificate gives,
-// and writes it and its key to the files NUMEN_DEBUG_TLS_CERT and
-// NUMEN_DEBUG_TLS_KEY name.
 func createTLSListener(ln net.Listener, clock Clock) (net.Listener, error) {
 	cert, err := getCertificate(clock)
 	if err != nil {
@@ -122,9 +119,6 @@ func createTLSListener(ln net.Listener, clock Clock) (net.Listener, error) {
 	}), nil
 }
 
-// getCertificate loads the pair NUMEN_DEBUG_TLS_USE_CERT and
-// NUMEN_DEBUG_TLS_USE_KEY name, or generates a self-signed certificate when
-// neither is set.
 func getCertificate(clock Clock) (tls.Certificate, error) {
 	certFile := os.Getenv("NUMEN_DEBUG_TLS_USE_CERT")
 	keyFile := os.Getenv("NUMEN_DEBUG_TLS_USE_KEY")
@@ -176,10 +170,6 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 	}, nil
 }
 
-// writePEMFile writes der to path as one PEM block of blockType, readable by
-// its owner only. The file appears whole: it is written beside path and renamed
-// into place. A part file left from an earlier run is removed rather than
-// written over, so neither its mode nor a symlink in its place reaches path.
 func writePEMFile(path, blockType string, der []byte) error {
 	part := path + ".part"
 	if err := os.Remove(part); err != nil && !errors.Is(err, os.ErrNotExist) {

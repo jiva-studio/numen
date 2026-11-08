@@ -134,8 +134,6 @@ const (
 	shelfDecomposed = "Bücher"
 )
 
-// openShelfIndex is an index of two invented sources, the tea book of the shelf in the folder form
-// given and library/Tea.md, each with a section named Tea and an embedding.
 func openShelfIndex(t *testing.T, shelf string) (*index.DB, string) {
 	t.Helper()
 	db := openIndex(t)

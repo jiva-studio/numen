@@ -44,9 +44,6 @@ func Parse(raw string) (URL, error) {
 	return URL(address.String()), nil
 }
 
-// isTrackingParam reports whether the parameter says where a visitor came from, beside every name
-// beginning `utm_`. Such a parameter is the same page whatever it holds, and a person who pastes
-// one link from two places holds one file about it.
 func isTrackingParam(key string) bool {
 	switch key {
 	case "fbclid", "gclid", "mc_cid", "mc_eid", "si", "ref_src", "ref_url":
@@ -55,7 +52,6 @@ func isTrackingParam(key string) bool {
 	return false
 }
 
-// removeTrackingParams is the query without them.
 func removeTrackingParams(query url.Values) url.Values {
 	for name := range query {
 		folded := strings.ToLower(name)

@@ -57,7 +57,6 @@ func (r restartedAgent) GetAgentPrograms(
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
 }
 
-// newRestartedPlugin serves every service on a port of its own.
 func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	t.Helper()
 	plugin := &restartedPlugin{}
@@ -109,7 +108,6 @@ func (l *restartingLauncher) count() int {
 	return len(l.procs)
 }
 
-// writeRestartedPlugin is a plugin declaring every capability a bridge looks up.
 func writeRestartedPlugin(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

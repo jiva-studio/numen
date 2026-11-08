@@ -55,13 +55,6 @@ func NewFSRSAt(retention float64) FSRS {
 // GetName is the name of the scheduler, which includes a hash of its parameters.
 func (f FSRS) GetName() string { return f.name }
 
-// hashParameters is the parameters as a short name. Every number the
-// arithmetic above reads goes into it under a name of its own, so a weight or a
-// retention that changes is another name and another cache, and a field the
-// library adds, renames or reorders is not.
-//
-// The numbers go in as hexadecimal floats, which are exact and are written the
-// same way at every release.
 func hashParameters(p fsrs.Parameters) string {
 	sum := sha256.New()
 	for _, one := range []struct {
@@ -81,8 +74,6 @@ func hashParameters(p fsrs.Parameters) string {
 	return hex.EncodeToString(sum.Sum(nil)[:4])
 }
 
-// writeNumber writes one number of the parameters into the name being worked
-// out.
 func writeNumber(sum hash.Hash, name string, value float64) {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Any negative precision in strconv.FormatFloat selects shortest-width formatting."
 	sum.Write([]byte(name + "=" + strconv.FormatFloat(value, 'x', -1, 64) + "\n"))
@@ -137,18 +128,11 @@ func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
 // everything no rating decides.
 type atAnswer struct {
 	phase fsrs.State
-	// away is the number of whole days elapsed since the last answer, and zero for a
-	// card that has not been answered.
-	away float64
-	// last is the schedule before the answer, and out is the schedule after the
-	// answer except for the fields the rating decides.
-	last Schedule
-	out  Schedule
+	away  float64
+	last  Schedule
+	out   Schedule
 }
 
-// readAtAnswer builds the atAnswer state of a review card at the instant it is
-// answered. An unanswered card starts in the phase the scheduler begins cards in,
-// with zero stability and zero difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	one := atAnswer{phase: fsrs.New, away: 0, last: newUnansweredSchedule(), out: newUnansweredSchedule()}
 	if !s.IsNew() {
@@ -171,9 +155,6 @@ func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	return one
 }
 
-// getNextFromNew returns the schedule after an answer to a review card that has
-// not been answered. Three of the four ratings schedule it in minutes, and the
-// fourth in days.
 func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.first(r)
@@ -193,10 +174,6 @@ func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedul
 	return out
 }
 
-// getNextFromLearning is where an answer leaves a review card the scheduler is
-// still putting into memory. The two lower ratings leave it where it was and
-// ask again in minutes; the two higher send it away in days and put it into
-// review.
 func (f FSRS) getNextFromLearning(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.getNextDifficulty(one.last.Difficulty, r)
@@ -217,13 +194,6 @@ func (f FSRS) getNextFromLearning(one atAnswer, pos time.Time, r fsrs.Rating) Sc
 	return out
 }
 
-// getNextFromReview returns the schedule after an answer to a review card in the
-// review phase, computed from its recall probability at the answer instant. The
-// Again rating is a lapse and is scheduled again in minutes.
-//
-// Each interval is at least one day longer than the interval below it, so the due
-// day derives from the intervals of the lower ratings and not from the rating's own
-// stability alone.
 func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsrs.Rating) Schedule {
 	d, s := one.last.Difficulty, one.last.Stability
 	out := one.out
@@ -256,45 +226,29 @@ func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsr
 	return out
 }
 
-// getRecall is how likely a review card was to come back at the instant it was
-// answered, on the scheduler's own forgetting curve.
 func (f FSRS) getRecall(one atAnswer) float64 {
 	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
 }
 
-// getInterval returns the number of days an answer schedules a review card of
-// this stability, at the scheduler's target retention.
-//
-// The parameters carry no fuzz, so the interval is exactly the value of this
-// arithmetic, and a review card answered the same way receives the same due day
-// on every launch.
 func (f FSRS) getInterval(stability float64) float64 {
 	out := stability / f.p.Factor * (math.Pow(f.p.RequestRetention, 1/f.p.Decay) - 1)
 	return math.Max(math.Min(math.Round(out), f.p.MaximumInterval), 1)
 }
 
-// first is the difficulty a review card is opened at by the answer that begins it.
 func (f FSRS) first(r fsrs.Rating) float64 {
 	return clampDifficulty(f.p.W[4] - math.Exp(f.p.W[5]*float64(r-1)) + 1)
 }
 
-// getNextDifficulty is where an answer leaves a difficulty, pulled back towards the
-// difficulty an easy answer opens a review card at.
 func (f FSRS) getNextDifficulty(d float64, r fsrs.Rating) float64 {
 	delta := -f.p.W[6] * float64(r-3)
 	next := d + (10.0-d)*delta/9.0
 	return clampDifficulty(f.p.W[7]*f.first(fsrs.Easy) + (1-f.p.W[7])*next)
 }
 
-// getLearningStability is where an answer leaves the stability of a review card
-// the scheduler is still putting into memory.
 func (f FSRS) getLearningStability(s float64, r fsrs.Rating) float64 {
 	return s * math.Exp(f.p.W[17]*(float64(r-3)+f.p.W[18]))
 }
 
-// getStabilityOnRecall is where an answer the review card came back on leaves its
-// stability. The two ratings either side of a good answer carry a weight of
-// their own.
 func (f FSRS) getStabilityOnRecall(d, s, back float64, r fsrs.Rating) float64 {
 	hard, easy := 1.0, 1.0
 	if r == fsrs.Hard {
@@ -311,8 +265,6 @@ func (f FSRS) getStabilityOnRecall(d, s, back float64, r fsrs.Rating) float64 {
 		easy)
 }
 
-// getStabilityOnLapse is where an answer the review card did not come back on
-// leaves its stability.
 func (f FSRS) getStabilityOnLapse(d, s, back float64) float64 {
 	return f.p.W[11] *
 		math.Pow(d, -f.p.W[12]) *
@@ -320,10 +272,8 @@ func (f FSRS) getStabilityOnLapse(d, s, back float64) float64 {
 		math.Exp((1-back)*f.p.W[14])
 }
 
-// clampDifficulty keeps a difficulty inside the scale it is read on.
 func clampDifficulty(d float64) float64 { return math.Min(math.Max(d, 1), 10) }
 
-// daysToDuration converts a number of days into a time.Duration.
 func daysToDuration(one float64) time.Duration {
 	return time.Duration(one) * 24 * time.Hour
 }

@@ -87,7 +87,6 @@ func TestDocumentServerEmptyPath(t *testing.T) {
 	}
 }
 
-// codeOf returns the code of an API error, and the empty code for any other error.
 func codeOf(err error) server.ErrorCode {
 	var failure *server.APIError
 	if errors.As(err, &failure) {
@@ -96,7 +95,6 @@ func codeOf(err error) server.ErrorCode {
 	return ""
 }
 
-// writeFile writes content to path and fails the test when writing fails.
 func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	t.Helper()
 	if err := os.WriteFile(path, content, perm); err != nil {

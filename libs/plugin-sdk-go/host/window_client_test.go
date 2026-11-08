@@ -135,7 +135,6 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 	}
 }
 
-// formatTabs is the tabs with the place each points at, for a failure message.
 func formatTabs(tabs []host.OpenTab) string {
 	var b strings.Builder
 	for _, tab := range tabs {

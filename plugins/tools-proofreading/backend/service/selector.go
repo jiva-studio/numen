@@ -17,7 +17,6 @@ type segmentSelector struct {
 	Boxes [][4]float32 `json:"boxes,omitempty"`
 }
 
-// encode returns the selector as the JSON a segment carries.
 func (s segmentSelector) encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {
@@ -26,7 +25,6 @@ func (s segmentSelector) encode() (domain.Selector, error) {
 	return domain.Selector(raw), nil
 }
 
-// readSegmentSelector reads the keys of a segment's selector. An empty selector has none.
 func readSegmentSelector(raw domain.Selector) (segmentSelector, error) {
 	var out segmentSelector
 	if raw == "" {

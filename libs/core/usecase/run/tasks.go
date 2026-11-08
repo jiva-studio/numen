@@ -104,8 +104,6 @@ func (t *Tasks) List() []Task {
 	return t.list()
 }
 
-// list is the tasks in the order they were first seen. The caller holds the
-// lock.
 func (t *Tasks) list() []Task {
 	out := make([]Task, 0, len(t.order))
 	for _, id := range t.order {
@@ -141,11 +139,6 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 	return watcher
 }
 
-// notifyWatchers hands the list to everybody watching, dropping what a listener has not
-// read yet.
-//
-// The caller holds the lock from the change through the telling, so the last
-// list a listener is left holding is the newest one.
 func (t *Tasks) notifyWatchers() {
 	list := t.list()
 	for _, watcher := range t.waiting {

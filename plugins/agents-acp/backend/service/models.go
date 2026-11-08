@@ -17,7 +17,6 @@ const acpListLimit = 15 * time.Second
 // acpFailureBackoff is how long an agent that failed to list is left alone.
 const acpFailureBackoff = 30 * time.Second
 
-// getACPAgents returns the agents the server was given, else those the settings name.
 func (s *agentServer) getACPAgents() []acpAgent {
 	if s.acpAgents != nil {
 		return s.acpAgents()
@@ -84,12 +83,10 @@ func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 
 // acpListing is what an agent reports for a session: its models and the one it answers with.
 type acpListing struct {
-	Models  []acpModel `json:"models"`
-	Current string     `json:"current"`
-	// Levels are the depths of reasoning the agent reports for the current model, and Level the one it
-	// works at.
-	Levels []reasoning.Level `json:"levels,omitempty"`
-	Level  string            `json:"level,omitempty"`
+	Models  []acpModel        `json:"models"`
+	Current string            `json:"current"`
+	Levels  []reasoning.Level `json:"levels,omitempty"`
+	Level   string            `json:"level,omitempty"`
 }
 
 func newACPModelCache(isAsync bool) *cache.Cache[acpListing] {
@@ -124,7 +121,6 @@ func (s *agentServer) getACPListing(ctx context.Context, agent acpAgent) acpList
 	return listing
 }
 
-// readACPListing opens a session with the agent and returns the models it reports for it.
 func readACPListing(ctx context.Context, agent acpAgent) (listing acpListing, err error) {
 	asking, stop := context.WithTimeout(ctx, acpListLimit)
 	defer stop()

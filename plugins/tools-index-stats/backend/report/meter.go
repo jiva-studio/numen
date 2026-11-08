@@ -21,12 +21,8 @@ type Counts struct {
 
 // Reading is what the meter derives from the observations so far.
 type Reading struct {
-	// Speed is the vectors made each second over the window, and HasSpeed is whether chunks wait and
-	// the meter has watched them for at least a second.
-	Speed    float64
-	HasSpeed bool
-	// ChangedAt is when an observation last differed from the one before it, and HasChanged is
-	// whether one did since the meter started.
+	Speed      float64
+	HasSpeed   bool
 	ChangedAt  time.Time
 	HasChanged bool
 }
@@ -84,7 +80,6 @@ func (m *Meter) Observe(now time.Time, counts Counts) Reading {
 	return derived
 }
 
-// keepRecent returns the samples that are inside the window at the time.
 func (m *Meter) keepRecent(now time.Time) []sample {
 	recent := m.samples[:0]
 	for _, one := range m.samples {

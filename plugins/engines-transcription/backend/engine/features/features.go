@@ -73,8 +73,6 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 	return out, frames
 }
 
-// normalise brings one band to zero mean and unit deviation over time. The
-// spread is of the values themselves, not of an estimate drawn from them.
 func normalise(row []float32) {
 	var sum float64
 	for _, v := range row {
@@ -94,8 +92,6 @@ func normalise(row []float32) {
 	}
 }
 
-// applyPreemphasis boosts the high frequencies of one segment. The first sample is
-// unchanged, having no predecessor.
 func applyPreemphasis(samples []float32) []float64 {
 	out := make([]float64, len(samples))
 	for i, v := range samples {
@@ -108,10 +104,6 @@ func applyPreemphasis(samples []float32) []float64 {
 	return out
 }
 
-// spectrogram is the power in each frequency bin of each frame.
-//
-// The signal is reflected by half a window at each end, so a frame is centred on
-// every hop from the first sample to the last.
 func spectrogram(x []float64, workers int) ([]float64, int) {
 	if len(x) == 0 {
 		return nil, 0
@@ -152,8 +144,6 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 	return out, frames
 }
 
-// padReflect is one signal with by samples of itself mirrored onto each end, the
-// edge sample not repeated.
 func padReflect(x []float64, delta int) []float64 {
 	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="slice capacity preallocation does not alter reflected elements"
 	out := make([]float64, 0, len(x)+2*delta)
@@ -168,8 +158,6 @@ func padReflect(x []float64, delta int) []float64 {
 	return out
 }
 
-// getMirroredIndex folds an index back into a signal of n samples, mirroring at each
-// end as often as it takes.
 func getMirroredIndex(i, n int) int {
 	if n == 1 {
 		return 0
@@ -182,8 +170,6 @@ func getMirroredIndex(i, n int) int {
 	return i
 }
 
-// getHannWindow returns the analysis window: a periodic raised cosine over the window's own
-// length, sitting in the middle of the transform.
 func getHannWindow() []float64 {
 	out := make([]float64, fftSize)
 	offset := (fftSize - windowSize) / 2
@@ -201,9 +187,6 @@ type melFilter struct {
 	weights  []float64
 }
 
-// getMelBank returns the mel bank: for each band, what share of each frequency bin it
-// carries. The triangles are laid out on the Slaney mel scale and each is
-// scaled by the width of the frequencies it spans.
 func getMelBank() []melFilter {
 	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="bins at and above Nyquist have non-positive filter weight"
 	bins := fftSize/2 + 1
@@ -255,7 +238,6 @@ const (
 	melKnee   = 1000.0
 )
 
-// getMelStep returns the width of one mel above the knee, in the logarithm of hertz.
 func getMelStep() float64 {
 	return math.Log(6.4) / 27.0
 }
@@ -276,8 +258,6 @@ func melToHz(mel float64) float64 {
 	return mel * melLinear
 }
 
-// fft transforms one frame in place with the twiddles of getTwiddles. The size is a power of two,
-// which is the only size this is ever given.
 func fft(a, w []complex128) {
 	n := len(a)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at i == n the bit-reversed index is 0 so i < j is false"
@@ -304,8 +284,6 @@ func fft(a, w []complex128) {
 	}
 }
 
-// getTwiddles returns the roots of unity one transform turns on, each computed from
-// its own angle.
 func getTwiddles() []complex128 {
 	out := make([]complex128, fftSize/2)
 	for k := range out {

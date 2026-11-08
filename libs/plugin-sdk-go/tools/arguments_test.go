@@ -22,8 +22,6 @@ type countIn struct {
 	Count int `json:"count,omitempty"`
 }
 
-// newShelvingRegistry adds shelve_book, whose title is required, and shelf_count, which requires
-// nothing. runs counts the calls of either run function.
 func newShelvingRegistry(t *testing.T) (registry *Registry, runs *atomic.Int32) {
 	t.Helper()
 	registry = New()
@@ -52,8 +50,6 @@ func invoke(t *testing.T, registry *Registry, name string, arguments []byte) *Ca
 	return res
 }
 
-// assertRefusedNaming fails the test unless the call returned an error result whose text
-// names property, and the run function was not called.
 func assertRefusedNaming(t *testing.T, res *CallResponse, runs *atomic.Int32, property string) {
 	t.Helper()
 	if res.GetError() != ErrorCodeUnspecified {
@@ -158,8 +154,6 @@ type catalogRuns struct {
 	last atomic.Pointer[catalogInput]
 }
 
-// newCatalogRegistry adds catalog_update, whose place, place.title, links and the target of each
-// link are required and every other argument is optional. It records the arguments of each run.
 func newCatalogRegistry(t *testing.T) (*Registry, *catalogRuns) {
 	t.Helper()
 	registry := New()
@@ -174,8 +168,6 @@ func newCatalogRegistry(t *testing.T) (*Registry, *catalogRuns) {
 	return registry, runs
 }
 
-// runCatalog calls catalog_update with the arguments and returns what it ran with, failing the
-// test when the call returned an error.
 func runCatalog(t *testing.T, arguments string) catalogInput {
 	t.Helper()
 	registry, runs := newCatalogRegistry(t)

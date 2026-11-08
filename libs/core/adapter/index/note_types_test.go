@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveTypedNote stores one note with the type its file declares.
 func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string, kind domain.NoteType) {
 	t.Helper()
 

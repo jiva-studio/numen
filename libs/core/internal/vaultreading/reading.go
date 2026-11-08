@@ -15,40 +15,23 @@ import (
 
 // A Task is one unit of work as presented to the user.
 type Task struct {
-	// ID identifies the work, so a repeated report of the same work replaces
-	// the earlier one.
 	ID string
 
-	// Title is the work, in the words to show: "Indexing a file".
 	Title string
-	// About is what it is on, and is empty for work that is on nothing in
-	// particular.
 	About string
 
-	// Count and Total are how far it has got, when there is a total to count
-	// against. Both zero is work that is running with nothing to count.
 	Count, Total int64
 
-	// Error is why the work failed. A failed task stays in the list until its
-	// creator removes it.
 	Error string
 
-	// IsUserStarted is set for work the user started and expects a report on.
 	IsUserStarted bool
 
-	// Kind is the sort of entry: work, or a message of the core. A notice is neither running nor
-	// failed, and About is the message.
 	Kind Kind
 
-	// Unit is what Count and Total are counted in.
 	Unit Unit
 
-	// PluginID is the plugin that reported the task, and PluginName its name
-	// from the manifest. Both are empty for the core's own work.
 	PluginID, PluginName string
 
-	// Cancel stops the work. The work takes its task out of the list once it
-	// has stopped. Nil is work that cannot be cancelled.
 	Cancel context.CancelFunc
 }
 
@@ -75,40 +58,40 @@ const (
 
 // ScanResult reports what a scan did, in the terms the user cares about.
 type ScanResult struct {
-	Notes      int // notes found in the vault
-	Assets     int // sources of another kind found in the vault
-	Indexed    int // parsed and written, because they were new or had changed
-	Unchanged  int // skipped on size and modification time alone
-	Removed    int // in the index, no longer on disk
-	Vanished   int // walked, but gone by the time it was read
-	Unreadable int // walked, present, and the read failed
+	Notes      int
+	Assets     int
+	Indexed    int
+	Unchanged  int
+	Removed    int
+	Vanished   int
+	Unreadable int
 }
 
 // IndexResult reports what indexing did.
 type IndexResult struct {
-	Seen          int    // files with text found in the vault
-	Recorded      int    // new or changed, so unembedded their text
-	Unchanged     int    // skipped on size and modification time alone
-	Extracted     int    // read, chunked and written
-	Chunks        int    // chunks written, of both sizes
-	Unreadable    int    // read, and no live text version
-	Removed       int    // held by the index, no longer in the vault
-	Outdated      int    // cut from a version that is no longer the live one
-	Vanished      int    // named by the index, vanished by the time it was read
-	CurrentSource string // the source open now
+	Seen          int
+	Recorded      int
+	Unchanged     int
+	Extracted     int
+	Chunks        int
+	Unreadable    int
+	Removed       int
+	Outdated      int
+	Vanished      int
+	CurrentSource string
 }
 
 // EmbedResult reports what embedding did.
 type EmbedResult struct {
-	Pending       int      // chunks found with no vector from the model in use
-	Embedded      int      // chunks that now carry one
-	Reused        int      // chunks whose cached vector was claimed
-	Vanished      int      // whose source the vault no longer holds
-	Displaced     int      // whose place is not in the text their source holds now
-	Skipped       int      // left without a vector, since a person cancelled the indexing of their source
-	CurrentSource string   // the source being embedded now: the first of Active, or the next one to be read
-	Active        []string // the sources of the batches being embedded now, oldest first
-	IsBusy        bool     // somebody else is embedding this vault, and nothing was done
+	Pending       int
+	Embedded      int
+	Reused        int
+	Vanished      int
+	Displaced     int
+	Skipped       int
+	CurrentSource string
+	Active        []string
+	IsBusy        bool
 }
 
 // NoteScanner scans the notes of a vault.
@@ -138,19 +121,12 @@ type ReadWholeVault struct {
 	texts   TextIndexer
 	vectors VectorEmbedder
 
-	// OnNotesProgress, if set, is called as notes are scanned.
 	OnNotesProgress func(ScanResult)
 
-	// OnTextsProgress, if set, is called as each file is opened and as each one
-	// is written.
 	OnTextsProgress func(IndexResult)
 
-	// OnVectorsProgress, if set, is called as each source is embedded.
 	OnVectorsProgress func(EmbedResult)
 
-	// IsTextSkipped, if set, names the sources the text pass leaves uncut, and
-	// IsVectorSkipped the sources, with their content hash, whose chunks the
-	// vector pass leaves without vectors.
 	IsTextSkipped   func(path string) bool
 	IsVectorSkipped func(path, hash string) bool
 }
@@ -275,8 +251,6 @@ func MoveRenamedSources(
 	return moved, nil
 }
 
-// findSameContent is the index of the removed source whose content the file at
-// path holds, and -1 where none does or the file cannot be read.
 func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []sourceport.SourceText) int {
 	ref, err := reader.StatFile(ctx, path)
 	if err != nil || !slices.ContainsFunc(removed, func(old sourceport.SourceText) bool { return old.Size == ref.Size }) {

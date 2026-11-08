@@ -2,7 +2,6 @@ package service
 
 import "testing"
 
-// batch is a page as it was read, misreadings and all.
 func batch() Batch {
 	return Batch{Number: 7, Lines: []Line{
 		{Number: 10, Text: "the Sodërby gardin hcdge. "},

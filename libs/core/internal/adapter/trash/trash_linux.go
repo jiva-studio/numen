@@ -23,13 +23,10 @@ const suffix = ".trashinfo"
 // deletedAt is the form the note writes the time in, in local time.
 const deletedAt = "2006-01-02T15:04:05"
 
-// moveToTrash puts the folder in the trash the desktop reads.
 func moveToTrash(path string, deletedOn time.Time) error {
 	return moveToUserOrVolumeTrash(path, getUserTrashDir(), deletedOn)
 }
 
-// getUserTrashDir is the trash of this login. It is empty where the machine will not say
-// where this person's data lives.
 func getUserTrashDir() string {
 	data := os.Getenv("XDG_DATA_HOME")
 	if !filepath.IsAbs(data) {
@@ -42,9 +39,6 @@ func getUserTrashDir() string {
 	return filepath.Join(data, "Trash")
 }
 
-// moveToUserOrVolumeTrash puts the folder in the trash of this login, and in the trash at the root
-// of its own volume when a rename cannot reach the first. A volume that has no
-// trash and takes none cannot receive the folder.
 func moveToUserOrVolumeTrash(path, home string, deletedOn time.Time) error {
 	if home != "" {
 		if err := moveIntoTrash(home, path, path, deletedOn); !errors.Is(err, syscall.EXDEV) {
@@ -66,8 +60,6 @@ func moveToUserOrVolumeTrash(path, home string, deletedOn time.Time) error {
 	return moveIntoTrash(dir, path, from, deletedOn)
 }
 
-// getVolumeRoot is the root of the volume the folder is on: the last directory on the
-// way up that is still on the folder's device.
 func getVolumeRoot(path string) (string, error) {
 	var folder syscall.Stat_t
 	if err := syscall.Lstat(path, &folder); err != nil {
@@ -90,8 +82,6 @@ func getVolumeRoot(path string) (string, error) {
 	}
 }
 
-// isVolumeRoot tells whether a folder is the root of its volume: its parent cannot be looked
-// at, or lies on another device than dev.
 func isVolumeRoot(parent string, dev uint64) (bool, error) {
 	var up syscall.Stat_t
 	err := syscall.Lstat(parent, &up)
@@ -106,9 +96,6 @@ func isVolumeRoot(parent string, dev uint64) (bool, error) {
 	return up.Dev != dev, nil
 }
 
-// getVolumeTrashDir returns the trash directory at the root of a mounted
-// volume: the per-user directory inside the shared `.Trash` when that is a
-// sticky directory, and the user's own `.Trash-<uid>` when it is not.
 func getVolumeTrashDir(top string, uid int) (string, error) {
 	shared := filepath.Join(top, ".Trash")
 	if info, err := os.Lstat(shared); err == nil && info.IsDir() && info.Mode()&os.ModeSticky != 0 {
@@ -124,11 +111,6 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 	return mine, nil
 }
 
-// moveIntoTrash moves the folder into one trash directory under a name nothing
-// there holds, and records where it came from beside it.
-//
-// The note is written first: the name is this deletion's before anything moves
-// under it. A move that fails takes the note back with it.
 func moveIntoTrash(dir, path, from string, deletedOn time.Time) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
@@ -155,9 +137,6 @@ func moveIntoTrash(dir, path, from string, deletedOn time.Time) error {
 	return nil
 }
 
-// reserveTrashName is a free name in one trash directory and the open note that holds
-// it. Two deletions of folders called the same thing race for the note, and the
-// one that creates it has the name.
 func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 	for n := 1; ; n++ {
 		targetName := name
@@ -177,9 +156,6 @@ func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 	}
 }
 
-// formatTrashInfo returns the info file content for a trashed folder: its
-// original path and deletion time. The path is URL-encoded, and is relative to
-// the volume root for a trash at that root.
 func formatTrashInfo(from string, deletedOn time.Time) string {
 	return "[Trash Info]\n" +
 		"Path=" + (&url.URL{Path: from}).EscapedPath() + "\n" +

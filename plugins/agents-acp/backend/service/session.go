@@ -54,44 +54,31 @@ type acpModel struct {
 // file system and no terminal, and offers the tools of the run as its one MCP server. It grants the
 // permission to call one of those tools and rejects every other.
 type acpSession struct {
-	cmd      *exec.Cmd
-	stdin    io.WriteCloser
-	lines    *bufio.Scanner
-	stderr   *tailBuffer
-	stop     context.CancelFunc
-	cleanDir func() error
-	dir      string
-	program  string
-	nextID   int
-	id       string
-	canClose bool
-	// hasHTTPServers is set where the agent takes MCP servers over HTTP.
+	cmd            *exec.Cmd
+	stdin          io.WriteCloser
+	lines          *bufio.Scanner
+	stderr         *tailBuffer
+	stop           context.CancelFunc
+	cleanDir       func() error
+	dir            string
+	program        string
+	nextID         int
+	id             string
+	canClose       bool
 	hasHTTPServers bool
-	// tools is where the run's tools are served and which of them the agent may call.
-	tools toolEndpoint
-	// models are what the agent reports for the session, current is the one it answers with, and
-	// modelOption is the id of its model config option, empty where it reports models the older way.
-	models      []acpModel
-	current     string
-	modelOption string
-	// thoughtOption is the id of the config option of the category thought_level, empty where the agent
-	// reports none; thoughtLevels are its values and thoughtCurrent the one the session works at. They
-	// hold for the current model.
+	tools          toolEndpoint
+	models         []acpModel
+	current        string
+	modelOption    string
 	thoughtOption  string
 	thoughtLevels  []reasoning.Level
 	thoughtCurrent string
-	// answer is the text of the agent's message chunks.
-	answer strings.Builder
-	// calls are the tool calls of the session the agent reported, by id.
-	calls map[string]*acpCall
-	// words are the declarations of the run's tools, which a call is shown by.
-	words map[string]toolcall.Declaration
-	// report sends a step of the run as it happens. Nil sends none.
-	report func(*agentrun.Response) error
+	answer         strings.Builder
+	calls          map[string]*acpCall
+	words          map[string]toolcall.Declaration
+	report         func(*agentrun.Response) error
 }
 
-// openACPSession starts the agent, initializes the connection and opens a session in an empty
-// folder of its own, with the tools at the endpoint. An empty endpoint gives the session no tools.
 func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*acpSession, error) {
 	if len(agent.Command) == 0 {
 		return nil, fmt.Errorf("no command starts %s", agent.Program)
@@ -179,7 +166,6 @@ func (s *acpSession) initialize() error {
 	return nil
 }
 
-// create opens the session with the run's tools and reads the models the agent reports for it.
 func (s *acpSession) create() error {
 	servers, err := s.listServers()
 	if err != nil {
@@ -217,7 +203,6 @@ func (s *acpSession) create() error {
 	return nil
 }
 
-// readConfigOptions takes the thought level and the model from the select options the agent reports.
 func (s *acpSession) readConfigOptions(options []acpConfigOption) {
 	for _, option := range options {
 		if option.Category == "thought_level" && option.Type == "select" {
@@ -229,7 +214,6 @@ func (s *acpSession) readConfigOptions(options []acpConfigOption) {
 	}
 }
 
-// setModel makes the session answer with the model, one of those the agent reports.
 func (s *acpSession) setModel(model string) error {
 	if model == "" || model == s.current {
 		return nil
@@ -255,8 +239,6 @@ func (s *acpSession) setModel(model string) error {
 	return nil
 }
 
-// setReasoning makes the session work at the level, one the agent reports for its current model. A level
-// the agent does not report is not set.
 func (s *acpSession) setReasoning(level string) error {
 	if level == "" || level == s.thoughtCurrent || !reasoning.Contains(s.thoughtLevels, level) {
 		return nil
@@ -279,8 +261,6 @@ func (s *acpSession) hasModel(model string) bool {
 	return false
 }
 
-// ask sends one prompt, the system text first where there is one, and returns the text of the
-// agent's message chunks once the turn ends.
 func (s *acpSession) ask(system, prompt string) (string, error) {
 	var blocks []map[string]any
 	for _, text := range []string{system, prompt} {
@@ -308,9 +288,6 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	return strings.TrimSpace(s.answer.String()), nil
 }
 
-// close ends the session where the agent can, then the agent, and removes the session folder. The
-// agent is given process.ExitGrace to exit on the end of its input before its process group is
-// killed. A stopped agent is not an error.
 func (s *acpSession) close() error {
 	var err error
 	if s.canClose && s.id != "" {
@@ -331,8 +308,6 @@ func (s *acpSession) close() error {
 	return err
 }
 
-// isStopped reports whether err is what Wait returns for an agent that was stopped: no error, a
-// non-zero exit status, the cancellation of the agent's context, or a process that is already gone.
 func isStopped(err error) bool {
 	var exit *exec.ExitError
 	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
@@ -364,7 +339,6 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
-// call sends a request and returns its result. What the agent sends meanwhile is handled as it
 func (s *acpSession) handleMessage(msg rpcMessage, targetID, method string) (bool, json.RawMessage, error) {
 	if msg.Method != "" && len(msg.ID) > 0 {
 		return false, nil, s.answerRequest(msg)
@@ -381,7 +355,6 @@ func (s *acpSession) handleMessage(msg rpcMessage, targetID, method string) (boo
 	return false, nil, nil
 }
 
-// comes: session updates are read, and requests of the agent are answered.
 func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 	s.nextID++
 	id := strconv.Itoa(s.nextID)
@@ -408,8 +381,6 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 		fmt.Errorf("%s exited before answering %s", s.program, method), s.stderr.String()))
 }
 
-// answerRequest grants the permission to call one of the run's tools, rejects every other, and
-// serves none of the agent's other methods.
 func (s *acpSession) answerRequest(request rpcMessage) error {
 	reply := rpcRequest{JSONRPC: "", ID: request.ID, Method: "", Params: nil, Result: nil, Error: nil}
 	if request.Method == "session/request_permission" {
@@ -423,7 +394,6 @@ func (s *acpSession) answerRequest(request rpcMessage) error {
 	return nil
 }
 
-// readUpdate reports the tool calls of this session and appends the text of its message chunks.
 func (s *acpSession) readUpdate(params json.RawMessage) error {
 	if step := s.readToolStep(params); step != nil && s.report != nil {
 		return s.report(step)
@@ -439,8 +409,6 @@ func (s *acpSession) readUpdate(params json.RawMessage) error {
 	return nil
 }
 
-// readChunk returns the text of an agent message chunk for this session. Any other update, and one
-// that cannot be read, is no chunk.
 func (s *acpSession) readChunk(params json.RawMessage) (string, bool) {
 	var update struct {
 		SessionID string `json:"sessionId"`
@@ -487,7 +455,6 @@ type acpOptionValue struct {
 	Options []acpOptionValue `json:"options"`
 }
 
-// getModels returns the values of the option, groups flattened.
 func (o acpConfigOption) getModels() []acpModel {
 	var models []acpModel
 	var walk func([]acpOptionValue)
@@ -503,7 +470,6 @@ func (o acpConfigOption) getModels() []acpModel {
 	return models
 }
 
-// getLevels returns the values of the option as levels of reasoning, in the order the agent lists them.
 func (o acpConfigOption) getLevels() []reasoning.Level {
 	var levels []reasoning.Level
 	for _, one := range o.getModels() {

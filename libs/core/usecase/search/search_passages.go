@@ -24,13 +24,9 @@ type PassageFinder interface {
 
 // PassageQuery is a passage search request.
 type PassageQuery struct {
-	Query string
-	// Limit is the maximum number of passages to return. Zero or less means the default of the search,
-	// and a limit above MaxSearchedPassages is MaxSearchedPassages.
-	Limit int
-	// Kinds are the kinds of source to search. Empty means every kind.
-	Kinds []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it. Empty limits none.
+	Query      string
+	Limit      int
+	Kinds      []domain.SourceKind
 	PathPrefix string
 }
 
@@ -69,8 +65,6 @@ func (u *SearchPassages) Execute(ctx context.Context, v domain.Vault, q PassageQ
 	return found, nil
 }
 
-// getExcerpt returns at most MaxPassageBytes of the text around the hit, starting a quarter of that
-// before it, and never splits a character.
 func getExcerpt(text string, hitAt int) string {
 	if len(text) <= MaxPassageBytes {
 		return text

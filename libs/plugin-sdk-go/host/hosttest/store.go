@@ -183,8 +183,6 @@ func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
 	return d.stat(filePath)
 }
 
-// removeAfterFailure removes the temporary file left by the failure cause and returns cause, joined
-// with the removal error when removing fails.
 func removeAfterFailure(name string, cause error) error {
 	if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return errors.Join(cause, err)

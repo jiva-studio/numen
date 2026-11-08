@@ -21,7 +21,6 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-// getStatement returns the statement in sql/<name>.sql.
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // kind is what a note is among the sources the index holds. Everything this
@@ -37,9 +36,6 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// exec runs a named statement and reports which one failed. A bare driver
-// error from one of the many statements in a transaction does not locate the
-// schema fault.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
@@ -110,9 +106,6 @@ func saveNote(
 	return nil
 }
 
-// saveSourceAndNote stores the source and note rows and gives the source row,
-// clearing the derived rows of a source that already existed. The source keeps the
-// recipe of the cut that made the chunks.
 func saveSourceAndNote(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
 ) (int64, error) {
@@ -150,7 +143,6 @@ func saveSourceAndNote(
 	return row, nil
 }
 
-// insertLinks stores what a note points at, in the order it names them.
 func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links []domain.Link) error {
 	for i, l := range links {
 		if _, err := tx.ExecContext(ctx, getStatement("insert_link"), row, i,
@@ -182,7 +174,6 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	})
 }
 
-// removeNote deletes the note at a path, and its rows in the virtual tables.
 func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) error {
 	var row int64
 	err := tx.QueryRowContext(ctx, getStatement("identify"), vault, path).Scan(&row)
@@ -203,12 +194,6 @@ func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path
 	return exec(ctx, tx, "delete_source", row)
 }
 
-// encodeFrontmatter stores what was found as JSON, or nothing when there was no
-// frontmatter at all — which is different from an empty one.
-//
-// YAML can hold things JSON cannot: a NaN, a non-string key, a value that
-// refers to itself. The note is still a note, so a failure here comes back as
-// a reason, and the caller records it beside the note.
 func encodeFrontmatter(n domain.Note) (value any, problem string) {
 	if n.Frontmatter == nil {
 		return nil, ""
@@ -220,9 +205,6 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 	return string(raw), ""
 }
 
-// noteType is the type declared by the note's file. A note whose file declares
-// no type is a plain note, and the column holds one of the four values either
-// way.
 func noteType(n domain.Note) domain.NoteType {
 	if n.Type == "" {
 		return domain.TypeNote
@@ -230,8 +212,6 @@ func noteType(n domain.Note) domain.NoteType {
 	return n.Type
 }
 
-// newNullable stores an empty string as NULL, so "nothing was written" and "an
-// empty value was written" remain distinguishable.
 func newNullable(s string) any {
 	if s == "" {
 		return nil

@@ -19,9 +19,6 @@ type modelOpening struct {
 // errModelSuperseded ends an opening whose model the settings changed while it ran.
 var errModelSuperseded = errors.New("the model was changed while it opened")
 
-// getEmbedder returns the open model, and opens it when none is. The open runs apart from the
-// caller: a caller that gives up leaves it running, and a call that only reads the model info or
-// applies a setting never waits for it.
 func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error) {
 	for {
 		emb, err := s.waitForOpening(ctx)
@@ -52,7 +49,6 @@ func (s *embeddingServer) waitForOpening(ctx context.Context) (textEmbedder, err
 	}
 }
 
-// startOpeningLocked starts loading the model with the settings in force.
 func (s *embeddingServer) startOpeningLocked(caller context.Context) *modelOpening {
 	localInfo := s.modelInfo
 	if !s.isMock {
@@ -78,7 +74,6 @@ func (s *embeddingServer) startOpeningLocked(caller context.Context) *modelOpeni
 	return op
 }
 
-// finishOpening records the model an opening loaded, unless the settings retired the opening.
 func (s *embeddingServer) finishOpening(op *modelOpening, emb textEmbedder, err error, limits runLimits) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -108,8 +103,6 @@ func (s *embeddingServer) finishOpening(op *modelOpening, emb textEmbedder, err 
 	op.emb = emb
 }
 
-// retireOpeningLocked drops a model that is loading, so that the next batch loads the model the
-// settings name now.
 func (s *embeddingServer) retireOpeningLocked() {
 	if s.opening != nil {
 		s.opening.cancel()

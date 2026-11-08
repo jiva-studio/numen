@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 )
 
-// newCountingServer is a books on files that counts the files it reads.
 func newCountingServer(t *testing.T, files *hosttest.Vault) (*BookServer, *atomic.Int64) {
 	t.Helper()
 	books := NewBookServer(files)

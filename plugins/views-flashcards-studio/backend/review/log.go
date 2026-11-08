@@ -57,20 +57,12 @@ type CardID struct {
 // It carries its own identifier, so a revocation references it exactly and
 // two answers given in the same millisecond remain distinct.
 type Answer struct {
-	ID string
-	// ReviewCard is which card was shown, through which review card. It is empty on an
-	// answer that takes another back.
+	ID         string
 	ReviewCard CardID
 	At         time.Time
-	// Rating is how well the card came back. It is zero on an answer that takes
-	// another back.
-	Rating Rating
-	// Took is how long the card was displayed, recorded to the millisecond. No
-	// schedule uses it today; it cannot be measured later.
-	Took time.Duration
-	// Undoes is the identifier of the answer this one takes back, and is empty
-	// on an answer of a card.
-	Undoes string
+	Rating     Rating
+	Took       time.Duration
+	Undoes     string
 }
 
 // IsUndo reports whether this line takes an answer back and not giving
@@ -157,8 +149,6 @@ func Read(raw []byte) (answers []Answer, skipped int) {
 	return answers, skipped
 }
 
-// whole counts a file that holds no newline at all: either nothing, or one line
-// that did not land.
 func whole(raw []byte) int {
 	if len(bytes.TrimSpace(raw)) == 0 {
 		return 0
@@ -166,7 +156,6 @@ func whole(raw []byte) int {
 	return 1
 }
 
-// newNoAnswer returns the answer returned where a line holds none.
 func newNoAnswer() Answer {
 	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Answer value."
 	return Answer{

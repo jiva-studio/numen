@@ -19,8 +19,6 @@ type Family struct {
 	// Default is the level the model works at where a task names none.
 	Default string
 
-	// variants is the name of the listed model by level. The family of no levels holds its own name
-	// under the empty level.
 	variants map[string]string
 }
 
@@ -94,7 +92,6 @@ func Fold(models []Listed) []Family {
 	return families
 }
 
-// newFamily is the family of the models listed once per level.
 func newFamily(title string, listings []Listed, names []string) Family {
 	levels := NewLevels(names...)
 	Sort(levels)
@@ -108,8 +105,6 @@ func newFamily(title string, listings []Listed, names []string) Family {
 	}
 }
 
-// getFamilyName is the name the listed models share once the level is taken from the end of each,
-// else the name of the first.
 func getFamilyName(listings []Listed, levels []string) string {
 	shared := ""
 	for place, one := range listings {

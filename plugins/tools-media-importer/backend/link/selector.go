@@ -12,7 +12,6 @@ type timeSelector struct {
 	T []float64 `json:"t,omitempty"`
 }
 
-// encode returns the selector as the JSON a segment carries.
 func (s timeSelector) encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {

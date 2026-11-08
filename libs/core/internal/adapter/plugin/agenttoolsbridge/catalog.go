@@ -46,8 +46,6 @@ func (c *Catalog) CallTool(
 	return c.plugins.callTool(ctx, allowed[index], arguments, callScope{vault: vault})
 }
 
-// listAllowed returns the tools of the other plugins for which the caller has the effect permission
-// and all required permissions.
 func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	permissions := c.plugins.getPermissions(callerID)
 	all := c.plugins.listTools(ctx, c.server, callerID)
@@ -60,7 +58,6 @@ func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	return allowed
 }
 
-// hasAll reports whether the permissions contain every required one.
 func hasAll(permissions, required []string) bool {
 	for _, one := range required {
 		if !slices.Contains(permissions, one) {

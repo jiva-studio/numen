@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// openWriter opens an empty vault for writing.
 func openWriter(t *testing.T) (vaultport.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
@@ -323,11 +322,8 @@ func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 // checked against the resolved target of the write, not only the requested name.
 func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	for _, item := range []struct {
-		name  string
-		makes string
-		// sentinel is what the rejection carries, where the error is the
-		// vault's answer about what it holds. A link into the application's
-		// own folder fails before that question is reached.
+		name     string
+		makes    string
 		sentinel error
 	}{
 		{"the service folder", ".numen/vault.yml", nil},
@@ -494,7 +490,6 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	}
 }
 
-// errorOf returns only the error of a write.
 func errorOf(_ domain.FileStat, err error) error { return err }
 
 // A vault may be reached through a link: a home folder on another disk, a
@@ -612,8 +607,6 @@ func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
 	}
 }
 
-// sameFile reports whether two names refer to one file. A filesystem that
-// distinguishes capitalisation reports false for two spellings of an existing name.
 func sameFile(t *testing.T, one, other string) bool {
 	t.Helper()
 	first, err := os.Lstat(one)

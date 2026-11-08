@@ -20,8 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// openListEndpoint opens the host endpoint over a host lending the vault of rivers and the list, with
-// md.numen.a granted vault:manage, and returns the endpoint and a client calling it.
 func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
 	hostCallers := newCallers(nil)

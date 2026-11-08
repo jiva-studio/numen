@@ -17,8 +17,6 @@ import (
 // test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
-// newCompilation returns a cache of the compiled PDFium in the folder of the test binary, closed when the
-// test ends.
 func newCompilation(t testing.TB) wazero.CompilationCache {
 	t.Helper()
 	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
@@ -33,7 +31,6 @@ func newCompilation(t testing.TB) wazero.CompilationCache {
 	return compilation
 }
 
-// newWorkers returns a pool that is closed when the test ends.
 func newWorkers(t testing.TB) *Workers {
 	t.Helper()
 	workers := NewWorkers()
@@ -94,13 +91,11 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 	}
 }
 
-// where reads a fixture and returns the highlight boxes for some of its pages.
 func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
 	return whereOn(t, newWorkers(t), name, pages...)
 }
 
-// whereOn is where on the pool given.
 func whereOn(t *testing.T, workers *Workers, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
@@ -167,7 +162,6 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 
 func isSpace(r rune) bool { return strings.ContainsRune(" \t\r\n\f", r) }
 
-// pagesOf is every page of a fixture.
 func pagesOf(t *testing.T, workers *Workers, name string) []int {
 	t.Helper()
 	book, _ := whereOn(t, workers, name)

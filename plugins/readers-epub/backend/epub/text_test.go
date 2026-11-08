@@ -234,8 +234,6 @@ const twoDocumentOpf = `<?xml version="1.0"?>
   <spine toc="ncx"><itemref idref="a"/><itemref idref="b"/></spine>
 </package>`
 
-// readOne reads a book of one document holding the markup, and that document
-// again as the markup a window draws.
 func readOne(t *testing.T, markup string) (*epub.Book, *epub.Markup) {
 	t.Helper()
 	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{"OEBPS/one.xhtml": markup}))

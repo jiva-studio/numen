@@ -70,7 +70,6 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 	}
 }
 
-// load makes the engine. Nothing here is held under the lock.
 func (r *Runtime[E]) load(libPath string, load func(libPath string) (E, error)) (E, error) {
 	if libPath == "" {
 		var none E
@@ -79,7 +78,6 @@ func (r *Runtime[E]) load(libPath string, load func(libPath string) (E, error)) 
 	return load(libPath)
 }
 
-// record runs every hook and keeps the engine when none fails. The lock is the caller's.
 func (r *Runtime[E]) record(engine E, libPath string) error {
 	var failures []error
 	for _, hook := range r.hooks {

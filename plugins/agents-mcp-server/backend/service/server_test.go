@@ -224,7 +224,6 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 	}
 }
 
-// serveOnLoopback serves srv on a listener bound to 127.0.0.1:0.
 func serveOnLoopback(t *testing.T, srv *Server) {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -329,7 +328,6 @@ func TestServerCloseClosesConnectionWithoutRequest(t *testing.T) {
 	}
 }
 
-// isPeerClosed reports whether the end of a net.Pipe opposite to peer has been closed.
 func isPeerClosed(t *testing.T, peer net.Conn) bool {
 	t.Helper()
 	err := peer.SetReadDeadline(time.Unix(1, 0))
@@ -346,8 +344,6 @@ func isPeerClosed(t *testing.T, peer net.Conn) bool {
 	return false
 }
 
-// waitPeerClosed fails the test with msg unless the end of a net.Pipe opposite to peer is closed
-// within five seconds.
 func waitPeerClosed(t *testing.T, peer net.Conn, msg string) {
 	t.Helper()
 	err := peer.SetReadDeadline(clock.System{}.Now().Add(5 * time.Second))

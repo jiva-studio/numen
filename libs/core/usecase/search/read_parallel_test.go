@@ -22,13 +22,12 @@ import (
 // sees as the most decoded sources held at once.
 type concurrentVault struct {
 	*fakeVault
-	mu     sync.Mutex
-	hold   time.Duration
-	active int
-	peak   int
-	reads  map[string]int
-	failAt string
-	// blockOthers makes every read but failAt's wait for its context to end.
+	mu          sync.Mutex
+	hold        time.Duration
+	active      int
+	peak        int
+	reads       map[string]int
+	failAt      string
 	blockOthers bool
 }
 
@@ -72,9 +71,6 @@ func (c *concurrentVault) Read(ctx context.Context, path string) ([]byte, error)
 	return []byte(raw), nil
 }
 
-// manySources is `count` sources of ten lines each, and a ranking of them that
-// scatters two passages of every source: the first pass names each source's
-// first line, the second pass names the sixth line of each in the reverse order.
 func manySources(count int) (map[string]string, []domain.Passage) {
 	content := make(map[string]string, count)
 	var found []domain.Passage
@@ -238,7 +234,6 @@ func TestRead_StopsOnContextCancelWithoutLeakedGoroutines(t *testing.T) {
 	waitForGoroutines(t, before)
 }
 
-// waitForGoroutines waits for the goroutines to be no more than `before`.
 func waitForGoroutines(t *testing.T, before int) {
 	t.Helper()
 	deadline := testsupport.GetMachine().Now().Add(5 * time.Second)

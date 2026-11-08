@@ -58,7 +58,6 @@ func NewAppOver(hosts Hosts, clk relevance.Clock) *App {
 	}
 }
 
-// openFromEnv connects to the host the environment names.
 func openFromEnv() (Hosts, error) {
 	endpoint, err := hostcall.FromEnv()
 	if err != nil {
@@ -93,7 +92,6 @@ func (a *App) Mount(s *server.Server) error {
 	return service.Err()
 }
 
-// getFloors returns the floors and the queue, and nil before the app is mounted.
 func (a *App) getFloors() (*relevance.Floors, host.Queue) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -125,22 +123,18 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	return nil
 }
 
-// wasChecked is whether a check of a vault succeeded since the plugin started.
 func (a *App) wasChecked() bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.isChecked
 }
 
-// markChecked records that a check of a vault succeeded.
 func (a *App) markChecked() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.isChecked = true
 }
 
-// reportFailure lists the failure of a measurement as a task and returns it, joined with the failure
-// of listing it. A measurement that was cancelled is no failure to list.
 func (a *App) reportFailure(ctx context.Context, queue host.Queue, failure error) error {
 	if errors.Is(failure, context.Canceled) {
 		return failure

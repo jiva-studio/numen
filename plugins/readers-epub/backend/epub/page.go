@@ -10,8 +10,6 @@ import "unicode/utf8"
 // about this many.
 const lettersPerPage = 1024
 
-// computePageBytes returns how many bytes of the text make a page of
-// lettersPerPage letters.
 func computePageBytes(text string) int {
 	letters := utf8.RuneCountInString(text)
 	if letters == 0 {

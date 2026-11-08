@@ -238,8 +238,6 @@ func (h *noteHandler) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-// getLinks converts the links of a request into the links a note is written
-// with, and fails the whole request if any link cannot be written.
 func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
@@ -255,11 +253,6 @@ func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 	return out, nil
 }
 
-// newDomainLink is one link as the note it is written in declares it.
-//
-// The window names the note at the other end by the path it is filed under.
-// How much of that path the link carries is `note.GetAddress`: a name where it
-// means one note, and the path where it would mean another.
 func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
@@ -281,7 +274,6 @@ func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link
 	}, nil
 }
 
-// getAddress is the note at the other end as a link carries it.
 func (h *noteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
 	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
 }
@@ -305,9 +297,6 @@ func convertRelationToWire(s domain.Relation) v1.Relation {
 	}
 }
 
-// convertFileStatToWire is a file as the schema carries it. Nothing is carried for the
-// zero value: a caller is given a file stat only where there is a file behind
-// it.
 func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	if ref.IsZero() {
 		return nil
@@ -315,9 +304,6 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// newBaseline converts the baseline a client last read of a note. A nil
-// baseline disables the comparison, and the write overwrites the current
-// content.
 func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 	if baseline == nil {
 		return nil
@@ -325,8 +311,6 @@ func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 	return &note.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
 }
 
-// convertFileStatFromWire converts a wire file stat to the core representation.
-// The kind is left empty because it is determined when the file is fetched.
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
@@ -454,7 +438,6 @@ func (h *noteHandler) RenameNote(
 	return connect.NewResponse(out), nil
 }
 
-// newWireNameSource is which of the two a rename wrote, as the schema carries it.
 func newWireNameSource(delta note.NameSource) v1.NameSource {
 	switch delta {
 	case note.ByFrontmatter:
@@ -466,7 +449,6 @@ func newWireNameSource(delta note.NameSource) v1.NameSource {
 	}
 }
 
-// newMoveResult is what the file did, as the schema carries it.
 func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,

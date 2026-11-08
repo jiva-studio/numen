@@ -10,15 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// scalarSpan returns the byte range one scalar occupies. Changing a value in that
-// range leaves the rest of its line unchanged: a trailing comment, the spacing, and the
-// other keys of the entry.
-//
-// The span covers the whole token, including quotes.
-//
-// A scalar spanning several lines, with `|`, with `>`, or a quoted scalar
-// continued across a line break, is not one token on one line. Its link is left
-// unchanged and reported as a problem.
 func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 	start, ok = d.readScalarStart(node)
 	if !ok {
@@ -82,9 +73,6 @@ func isEscapedSingleQuote(front []byte, offset int, quote byte) bool {
 	return quote == '\'' && offset+1 < len(front) && front[offset+1] == '\''
 }
 
-// findQuotedEnd is where a quoted scalar ends, counting from the quote it opens
-// with. Inside a single-quoted one a doubled quote is a quote; inside a
-// double-quoted one a backslash escapes what follows.
 func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	if front[start] != quote {
 		return 0, false
@@ -110,8 +98,6 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	return 0, false
 }
 
-// scalar returns a value spelled as YAML requires. A name containing `[`, `#`,
-// `&` or a word YAML parses as a number is written to the file as text.
 func scalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
@@ -128,9 +114,6 @@ func scalar(value string) (string, error) {
 	return strings.TrimRight(out.String(), "\n"), nil
 }
 
-// scalarLike returns a value spelled in the style of the value it replaces. The quoting
-// style of the user's frontmatter is preserved. A style the value cannot be
-// written in falls back to the YAML spelling.
 func scalarLike(value string, style yaml.Style) (string, error) {
 	if style == 0 {
 		return scalar(value)

@@ -9,12 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// counts text: in UTF-16 code units. The spans come in order and do not
-// overlap.
-//
-// Case is folded and nothing else is. A span begins where a word begins, and
-// ends where one ends; the last word typed may still be growing, so it matches
-// a word by its opening, which is the rule the index matched it by.
 func spans(text, query string) []domain.UnitRange {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
@@ -43,26 +37,17 @@ func spans(text, query string) []domain.UnitRange {
 	return mergeRanges(offset)
 }
 
-// isWordRune reports whether r can be part of a word, so the runes adjacent to
-// a match distinguish a whole word from letters inside one. Chinese, Japanese
-// and Korean characters are excluded: those scripts have no word-internal
-// letters to distinguish from a boundary, so every character is a word.
 func isWordRune(r rune) bool { return (unicode.IsLetter(r) || unicode.IsDigit(r)) && !isCJKRune(r) }
 
-// isCJKRune is a character of a Chinese, Japanese or Korean script.
 func isCJKRune(r rune) bool {
 	return unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) ||
 		unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r)
 }
 
-// isWordStart and isWordEnd say whether a span beginning or ending here is a whole
-// word's beginning or end. The ends of the text are both.
 func isWordStart(runes []rune, pos int) bool { return pos == 0 || !isWordRune(runes[pos-1]) }
 
 func isWordEnd(runes []rune, pos int) bool { return pos == len(runes) || !isWordRune(runes[pos]) }
 
-// mergeRanges is the spans in the order they stand, with ones that touch or overlap
-// made into one. Two words typed can name the same characters.
 func mergeRanges(pos []domain.UnitRange) []domain.UnitRange {
 	if len(pos) < 2 {
 		return pos
@@ -81,12 +66,6 @@ func mergeRanges(pos []domain.UnitRange) []domain.UnitRange {
 	return out
 }
 
-// getFoldedRunes is the text one rune at a time with case dropped, and where each of
-// those runes begins for something counting in UTF-16 code units.
-//
-// A rune at a time: folding a whole string can change how many characters it
-// holds. The offsets run one longer than the text, so the end of the last rune
-// is among them.
 func getFoldedRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
@@ -111,15 +90,6 @@ const (
 	leading  = 60
 )
 
-// getTextAround is the part of a passage worth drawing: the words about the
-// first span that matched, or about the hit itself when no word matched at all.
-//
-// A passage is the whole of the window enclosing its hit, which for a note is
-// the whole note. A hit by meaning relies on no word, so `from` is where the
-// chunk that matched begins and is what the window opens near.
-//
-// The spans move with the text and the ones left outside are dropped, so what
-// comes back addresses what comes back.
 func getTextAround(text string, spans []domain.UnitRange, from int) (string, []domain.UnitRange) {
 	runes, units := getRunes(text)
 	total := units[len(runes)]
@@ -167,9 +137,6 @@ func getTextAround(text string, spans []domain.UnitRange, from int) (string, []d
 	return snippet, clippedSpans
 }
 
-// getRunes is the text one rune at a time, and where each of those runes begins
-// for something counting in UTF-16 code units. The offsets run one longer than
-// the text, so the end of the last rune is among them.
 func getRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
@@ -186,8 +153,6 @@ func getRunes(text string) ([]rune, []int) {
 	return runes, append(units, pos)
 }
 
-// getOpeningRune is the rune the window opens on: the last one beginning at or
-// before the offset given, so a cut never lands inside a character.
 func getOpeningRune(units []int, pos int) int {
 	for i := 1; i < len(units); i++ {
 		if units[i] > pos {
@@ -197,8 +162,6 @@ func getOpeningRune(units []int, pos int) int {
 	return len(units) - 1
 }
 
-// getClosingRune is the rune the window closes before: the first one beginning
-// at or after the offset given.
 func getClosingRune(units []int, pos int) int {
 	for i := range units {
 		if units[i] >= pos {
@@ -214,11 +177,6 @@ func getClosingRune(units []int, pos int) int {
 // the words that can open it.
 const reach = 8 * glancing
 
-// nearby is the part of a passage the window is cut from, and where the hit
-//
-// A passage is the whole of the window enclosing its hit, which for a section
-// of a book is the whole section. What is read is what a window can be cut
-// from.
 func nearby(text string, index int) (string, int) {
 	from, to := index-reach, index+reach
 	if from < 0 {

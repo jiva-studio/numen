@@ -53,7 +53,6 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	return Folder{Entries: entries, Types: types}, nil
 }
 
-// readMissingTypes adds the type of each note the types leave out, read from the note itself.
 func readMissingTypes(
 	ctx context.Context, reader vaultport.VaultReader, entries []domain.Entry,
 	refs map[string]domain.FileStat, types map[string]domain.NoteType,

@@ -183,7 +183,6 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	return out, nil
 }
 
-// checkPaths rejects a batch of no paths.
 func checkPaths(paths []string) error {
 	if len(paths) == 0 {
 		return errors.New("paths is required")
@@ -191,7 +190,6 @@ func checkPaths(paths []string) error {
 	return nil
 }
 
-// getPathList returns the paths, or an empty list for none, so the result always has the field.
 func getPathList(paths []string) []string {
 	if paths == nil {
 		return []string{}

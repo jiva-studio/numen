@@ -106,8 +106,6 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 	}
 }
 
-// writeEmbeddingPlugin installs a plugin with the manifest given and returns
-// the host that discovered it.
 func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 	t.Helper()
 	tmp := t.TempDir()

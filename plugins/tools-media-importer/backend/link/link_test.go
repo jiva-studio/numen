@@ -93,7 +93,6 @@ func newWorld(t *testing.T) *world {
 	return w
 }
 
-// create makes the link note of an address, and gives the texts its file as the host would.
 func (w *world) create(t *testing.T, address string) link.Link {
 	t.Helper()
 	made, err := w.links.Create(t.Context(), "", "links", address)
@@ -275,7 +274,6 @@ func TestTheTextIsStoredInTheCommonFormatAlone(t *testing.T) {
 	}
 }
 
-// deleteVersion deletes the live version of a link and its file, as the host does on a user's request.
 func (w *world) deleteVersion(t *testing.T, made link.Link) {
 	t.Helper()
 	if err := w.store.Delete(t.Context(), made.Key+".jsonl"); err != nil {
@@ -334,7 +332,6 @@ func TestFetchText_BackgroundFetchPopulatesNewLink(t *testing.T) {
 	}
 }
 
-// edit rewrites the note of a link with user-authored text below the frontmatter.
 func (w *world) edit(t *testing.T, made link.Link) link.Link {
 	t.Helper()
 	content, _ := w.vault.Content(made.Path)

@@ -42,8 +42,6 @@ func newVault(folder string) domain.Vault {
 	return domain.Vault{ID: "vlt-search", Name: "shelf", Path: folder}
 }
 
-// createSearchDeps is a terminal whose only vault is the folder given and whose
-// index answers as given. words is why the search runs by words alone.
 func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(newVault(folder)),
@@ -56,7 +54,6 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 	}
 }
 
-// runWithStderr runs the terminal and captures stderr separately from stdout.
 func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr string, err error) {
 	var answer, aside bytes.Buffer
 	t.Helper()

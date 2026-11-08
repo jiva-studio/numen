@@ -153,11 +153,8 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 	}
 }
 
-// levelNothing is a no-op reconciler: the queries in these tests use only what
-// the schema carries, and no index backs them.
 func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
-// openEditor is a vault with a read and a save on it and nothing behind them.
 func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
@@ -546,7 +543,6 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 	}
 }
 
-// newTabLinks returns a tab links registry on the real clock.
 func newTabLinks(t *testing.T) *tablinks.Registry {
 	t.Helper()
 	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)

@@ -34,12 +34,6 @@ type migration struct {
 	body    string
 }
 
-// migrate brings the database up to the newest migration.
-//
-// Each migration runs in its own transaction together with the version bump, so
-// a failure leaves the database at the last version that fully applied rather
-// than half-way through one.
-// An index at a version no migration carries is reported and not changed.
 func migrate(ctx context.Context, db *sql.DB, file string) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -61,10 +55,6 @@ func migrate(ctx context.Context, db *sql.DB, file string) error {
 	return nil
 }
 
-// checkVersion reads the version of the index and answers it when this build
-// can use the index: a file with no schema at all, or one at the version of a
-// migration it carries. Any other version is an error naming the file, the
-// number it holds and the number expected.
 func checkVersion(ctx context.Context, db *sql.DB, file string, available []migration) (int, error) {
 	var current int
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
@@ -83,7 +73,6 @@ func checkVersion(ctx context.Context, db *sql.DB, file string, available []migr
 	return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: it is left as it is", file, current, newest)
 }
 
-// isEmpty holds for a database with no table, index or view in it.
 func isEmpty(ctx context.Context, db *sql.DB) (bool, error) {
 	var objects int
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM sqlite_master").Scan(&objects); err != nil {
@@ -92,9 +81,6 @@ func isEmpty(ctx context.Context, db *sql.DB) (bool, error) {
 	return objects == 0, nil
 }
 
-// checkFile reads the version of the index file over a connection of its own
-// that sets nothing, so a file this build cannot use is not changed, not even
-// in its journal mode.
 func checkFile(ctx context.Context, file string) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -108,8 +94,6 @@ func checkFile(ctx context.Context, file string) error {
 	return errors.Join(checked, plain.Close())
 }
 
-// createBookkeeping creates the table that records applied migrations. It is not
-// one of the numbered migrations because it records whether they ran.
 func createBookkeeping(ctx context.Context, tx *sqlwrite.Transaction) error {
 	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
@@ -146,9 +130,6 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	})
 }
 
-// loadMigrations reads the embedded files in file-name order, which is version
-// order for the zero-padded names. A file that does not start with a number
-// fails the load.
 func loadMigrations() ([]migration, error) {
 	entries, err := fs.ReadDir(files, "migration")
 	if err != nil {
@@ -181,8 +162,6 @@ func parseVersion(name string) (int, error) {
 	return version, nil
 }
 
-// splitStatements cuts a file on semicolons. This is deliberately not a SQL parser:
-// a statement that needs more than this does not belong in a migration.
 func splitStatements(raw string) []string {
 	var out []string
 	for _, chunk := range strings.Split(raw, ";") {

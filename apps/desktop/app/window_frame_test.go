@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// hasSystemFrame is whether the windows of this platform keep the system title bar.
 func hasSystemFrame() bool { return runtime.GOOS == "darwin" }
 
 func TestMainWindowOptions_DropsSystemFrame(t *testing.T) {

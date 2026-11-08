@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalogtest"
 )
 
-// getEpoch returns the instant every test of the cache starts at.
 func getEpoch() time.Time { return time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC) }
 
 type clock struct{ now time.Time }

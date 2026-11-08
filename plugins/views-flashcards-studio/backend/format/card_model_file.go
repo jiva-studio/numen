@@ -78,9 +78,6 @@ func (f *CardModelFile) RenameField(from, to string) error {
 	return f.replacePlaceholders(from, to)
 }
 
-// replacePlaceholders replaces the old name with the new name in every
-// `{{Field}}` placeholder. The markdown around the braces is user content and is
-// unchanged.
 func (f *CardModelFile) replacePlaceholders(from, to string) error {
 	body := f.doc.Body()
 	content := "{{" + to + "}}"
@@ -109,10 +106,6 @@ func (f *CardModelFile) AddTemplate(template CardTemplate) error {
 	return f.doc.SpliceBody(pos, pos, insert(body, pos, formatTemplate(template)))
 }
 
-// formatTemplate is the markdown one template is written as: its heading, the lead
-// beneath it, and each side the template has under a heading of its name. A template
-// missing a side is written missing it, and it is the template that lays out
-// nothing.
 func formatTemplate(template CardTemplate) string {
 	blocks := []string{headingLine(2, template.Name)}
 	if lead := trimBlankLines(markdown.Normalise(template.Preamble)); lead != "" {

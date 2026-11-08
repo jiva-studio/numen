@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-// makeIndex is an index in a folder of its own.
 func makeIndex(t *testing.T) *container.Index {
 	t.Helper()
 	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
@@ -45,7 +44,6 @@ func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
 
 func (unit) Close() error { return nil }
 
-// missingVault is a vault whose folder is not there.
 func missingVault(t *testing.T) domain.Vault {
 	t.Helper()
 	return domain.Vault{ID: "gone", Path: filepath.Join(t.TempDir(), "absent")}
@@ -122,7 +120,6 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-// unembeddedTo is how many small chunks of the vault the model has no vector for.
 func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
 	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
@@ -132,9 +129,6 @@ func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embed
 	return len(unembedded)
 }
 
-// unembeddedAfterAModelSwitch returns the number of chunks that still need a vector
-// from the first model after the vault was indexed by a second model and then
-// by the first model again.
 func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
@@ -179,8 +173,6 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 	}
 }
 
-// makeSwitchedIndex is an index whose vault was made searchable by one model,
-// and the vault, ready to be made searchable by another.
 func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)

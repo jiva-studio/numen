@@ -14,8 +14,6 @@ import (
 // The window requests /plugin/md.numen.tools.media.importer/embed?address=<web address>.
 const embedPattern = "embed"
 
-// getEmbedPage is the page below the plugin route that frames the player of the video at the
-// address, and empty where no player is known for it.
 func getEmbedPage(link address.URL) string {
 	if _, ok := address.GetPlayerURL(link); !ok {
 		return ""
@@ -35,7 +33,6 @@ const embedPage = `<!doctype html>
 </body></html>
 `
 
-// serveEmbed answers the page that frames the player of the video at the query's address.
 func serveEmbed(w http.ResponseWriter, r *http.Request) {
 	parsed, err := address.Parse(r.URL.Query().Get("address"))
 	if err != nil {

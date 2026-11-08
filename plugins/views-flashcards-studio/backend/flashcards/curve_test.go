@@ -21,8 +21,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// newStudiedNotes returns a vault with one preset, a deck of `cards` cards linked
-// to it, and a second deck linked to no preset.
 func newStudiedNotes(cards int) map[string]string {
 	deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
 	for i := range cards {
@@ -40,11 +38,6 @@ func newStudiedNotes(cards int) map[string]string {
 	}
 }
 
-// newReviewedVault is that vault with a history behind it: a dozen of its card
-// review cards answered three times each in the months before the day the curves are
-// drawn on, and the rest of them unbegun.
-//
-// A curve is computed from past review costs in this vault.
 func newReviewedVault(t *testing.T, cards int) vaulted {
 	t.Helper()
 	s := openVault(t, newStudiedNotes(cards))
@@ -61,7 +54,6 @@ func newReviewedVault(t *testing.T, cards int) vaulted {
 	return s
 }
 
-// curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	u := flashcards.NewProjectCurve(
 		s.standings, s.schedules, s.presets,
@@ -71,7 +63,6 @@ func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	return u
 }
 
-// noon is a fixed time of day, so curves are identical across test runs.
 func getNoon() time.Time {
 	return time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 }
@@ -462,7 +453,6 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 	}
 }
 
-// inRange verifies that points fall within valid grid indices.
 func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 	t.Helper()
 	marks := map[string]flashcards.CurvePoint{"now": c.Now, "suggested": c.Suggested}
@@ -642,8 +632,6 @@ func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	}
 }
 
-// getLearned returns the learned count at every place of the curve of these
-// settings, omitting consecutive repeated values.
 func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 	t.Helper()
 	got, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -1218,8 +1206,6 @@ func TestProjectCurve_IsDeterministic(t *testing.T) {
 	}
 }
 
-// atOnceGoals returns one preset per goal, so all three grid-evaluation loops are
-// exercised.
 func atOnceGoals() []struct {
 	name   string
 	preset review.Preset
@@ -1247,15 +1233,10 @@ func atOnceGoals() []struct {
 	}
 }
 
-// describeCurve formats every scalar and every series of a curve as a string, so
-// curves are compared by value and not by pointer identity.
 func describeCurve(c projection.Curve) string {
 	return fmt.Sprintf("%v", c)
 }
 
-// curveLoad is the vault the window's requests are measured on, with its decks
-// pointing at two presets: one deck points at the first and the other nineteen
-// at the second.
 func curveLoad(cards int) map[string]string {
 	const settings = "goal: minutes_a_day\nminutes_a_day: 20\nnew_a_day: 8\n" +
 		"reviews_a_day: 45\nretention: 0.87\n"
@@ -1274,8 +1255,6 @@ func curveLoad(cards int) map[string]string {
 	return out
 }
 
-// curveWhole is the vault of twenty decks with every one of them pointing at
-// one preset, so the curve of that preset is drawn over the whole of it.
 func curveWhole(cards int) map[string]string {
 	out := loadDeck(cards)
 	out["Whole.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -1404,10 +1383,6 @@ func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 // it by identifier.
 const sanskrit = "01M02ACGM0FYMSXNDP29C90JNR"
 
-// newPointedNotes is a vault of three presets and five decks. Three decks name
-// one preset — one of them by its identifier and two by its name — one deck
-// names another preset, one names none, and the third preset is named by
-// nothing.
 func newPointedNotes() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
@@ -1425,12 +1400,10 @@ func newPointedNotes() map[string]string {
 	}
 }
 
-// createPresetLink is the `links:` block of a deck naming its preset.
 func createPresetLink(to string) string {
 	return "links:\n  - to: " + to + "\n    role: ref\n    type: preset\n"
 }
 
-// newPointingDeck is a deck of cards cards, the first of them numbered from.
 func newPointingDeck(links string, from, cards int) string {
 	out := "---\ntype: deck\n" + links + "---\n"
 	for i := from; i < from+cards; i++ {
@@ -1441,13 +1414,6 @@ func newPointingDeck(links string, from, cards int) string {
 	return out
 }
 
-// recordHistoryAnswers writes the same history into a vault: two cards of every deck
-// answered three times each in the months before the day the curves are drawn
-// on, with the times answers have — a middle of a few seconds and a tail of
-// interruptions.
-//
-// Two vaults given this hold one history, so a curve over either is drawn from
-// the same answers.
 func recordHistoryAnswers(t *testing.T, s vaulted) {
 	t.Helper()
 	for _, days := range []int{150, 120, 90} {
@@ -1459,8 +1425,6 @@ func recordHistoryAnswers(t *testing.T, s vaulted) {
 	}
 }
 
-// The decks a curve is worked out over are the decks pointing at the preset,
-// and how many of them there are is counted the same way.
 func countScheduled(t *testing.T, s vaulted, path string) (decks []string, reviewCards int) {
 	t.Helper()
 	target, err := s.standings.GetDeckPaths(t.Context(), s.vault)
@@ -1562,7 +1526,6 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
-// curveOf is a curve in one line of a failure.
 func curveOf(c projection.Curve) string {
 	return fmt.Sprintf("%d decks, %d review cards, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,

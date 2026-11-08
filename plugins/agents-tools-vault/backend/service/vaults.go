@@ -92,8 +92,6 @@ func (t *Tools) listVaults(ctx context.Context, _ VaultListInput) (VaultListOutp
 	return out, nil
 }
 
-// getVaultEntries returns the vaults of the installation from the vault list, or from the host when the
-// tools have no vault list, where IsMissing is always false.
 func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) {
 	if t.list != nil {
 		return t.list.GetVaultList(ctx)

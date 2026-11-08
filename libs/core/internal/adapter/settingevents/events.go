@@ -21,16 +21,11 @@ func JoinPath(path []string) string { return strings.Join(path, pathSeparator) }
 
 // Source is where the events come from.
 type Source struct {
-	// Read answers the values in force. A file that cannot be read is an error and changes nothing.
-	Read func() (Values, error)
-	// Initial answers the values the first reader starts from where Read fails.
+	Read    func() (Values, error)
 	Initial func() Values
-	// Report receives the errors of reading and watching.
-	Report func(error)
-	// Hub places the watch of the folder of the file.
-	Hub *watchhub.Hub
-	// Path is the settings file.
-	Path string
+	Report  func(error)
+	Hub     *watchhub.Hub
+	Path    string
 }
 
 // Events delivers the settings that change to the readers subscribed. The file is watched while
@@ -38,10 +33,9 @@ type Source struct {
 type Events struct {
 	mu          sync.Mutex
 	subscribers map[*subscriber]struct{}
-	// values is what the readers were last told. It is nil while no reader is subscribed.
-	values Values
-	source Source
-	stop   func()
+	values      Values
+	source      Source
+	stop        func()
 }
 
 // New returns events with no reader.
@@ -74,7 +68,6 @@ func (e *Events) Subscribe(source Source) (<-chan []settingsport.Setting, func()
 	}
 }
 
-// begin watches the file and takes the values the first reader starts from. The caller holds mu.
 func (e *Events) begin(source Source) {
 	e.source = source
 	e.stop = watchFile(source.Hub, source.Path, source.Report, e.refreshAfterSave)
@@ -86,7 +79,6 @@ func (e *Events) begin(source Source) {
 	e.values = values
 }
 
-// end stops the watch once the last reader left. The caller holds mu.
 func (e *Events) end() {
 	if e.stop != nil {
 		e.stop()
@@ -137,7 +129,6 @@ func (e *Events) Refresh(read func() (Values, error)) {
 // removed is the value of a setting that no longer holds one: the null that resets a setting.
 const removed = "null"
 
-// merge is the keys of both sets of values.
 func merge(first, second Values) map[string]struct{} {
 	keys := make(map[string]struct{}, len(first)+len(second))
 	for key := range first {

@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// getRoute requests path from handler with the given bearer token, or none when empty.
 func getRoute(t *testing.T, handler http.Handler, method, path, token string) (int, string) {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), method, path, nil)

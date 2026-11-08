@@ -16,15 +16,9 @@ var ErrSyntax = errors.New("cfi: invalid syntax")
 
 // A CFI is a place in an EPUB publication.
 type CFI struct {
-	// Package is the steps from the package element to the itemref of the spine: the spine's
-	// index among the package's children, then the itemref's index among the spine's.
-	Package []int
-	// Document is the steps from the root element of the spine item's document to the node. An
-	// even step is an element, an odd step a run of character data between elements.
+	Package  []int
 	Document []int
-	// Offset is the character offset inside the text node, in UTF-16 code units, and -1 when the
-	// CFI names no character.
-	Offset int
+	Offset   int
 }
 
 // String is the CFI as the spec writes it, such as "epubcfi(/6/4!/4/2/1:12)".
@@ -72,7 +66,6 @@ func Parse(s string) (CFI, error) {
 	return CFI{Package: parent.indirected, Document: parent.steps, Offset: parent.offset}, nil
 }
 
-// readEnd reads what follows the first path: a range start and the comma that opens its end, or nothing.
 func (p *parser) readEnd(parent path, s string) (path, error) {
 	if p.peek() != ',' {
 		if p.pos != len(p.in) {
@@ -103,7 +96,6 @@ type path struct {
 	offset     int
 }
 
-// mergeRange appends the local path of a range's start to its parent path.
 func mergeRange(parent, start path) path {
 	if start.hasBang {
 		parent.indirected = slices.Concat(parent.steps, start.indirected)
@@ -130,8 +122,6 @@ func (p *parser) peek() byte {
 	return p.in[p.pos]
 }
 
-// readPath reads steps, at most one indirection, and an optional terminal offset, up to a comma
-// or the end.
 func (p *parser) readPath() (path, error) {
 	read := path{indirected: nil, steps: nil, hasBang: false, offset: -1}
 	for {
@@ -183,7 +173,6 @@ func (p *parser) readInteger() (int, error) {
 	return strconv.Atoi(p.in[start:p.pos])
 }
 
-// skipAssertion skips one bracketed assertion, where ^ escapes the character after it.
 func (p *parser) skipAssertion() {
 	if p.peek() != '[' {
 		return
@@ -200,7 +189,6 @@ func (p *parser) skipAssertion() {
 	}
 }
 
-// skipSpatial skips a temporal or spatial offset, up to a comma or the end.
 func (p *parser) skipSpatial() {
 	for p.pos < len(p.in) && p.in[p.pos] != ',' {
 		if p.in[p.pos] == '[' {

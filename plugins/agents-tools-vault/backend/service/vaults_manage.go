@@ -161,7 +161,6 @@ func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutp
 	return VaultOpenOutput{ID: string(target.ID), Name: target.Name, Path: target.Path}, nil
 }
 
-// findOtherVault finds the vault the address names, and rejects the current vault.
 func (t *Tools) findOtherVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	target, err := t.findVault(ctx, address)
 	if err != nil {
@@ -173,7 +172,6 @@ func (t *Tools) findOtherVault(ctx context.Context, address string) (host.VaultE
 	return target, nil
 }
 
-// findVault finds the vault of the list whose identifier, name or folder is the address, in that order.
 func (t *Tools) findVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	address = strings.TrimSpace(address)
 	if address == "" {

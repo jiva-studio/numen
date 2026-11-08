@@ -53,7 +53,6 @@ func newStoreHost(t *testing.T) storeHost {
 	return storeHost{vault: vault, url: server.URL, client: server.Client()}
 }
 
-// newClient is a client calling the store as the plugin the token names.
 func (h storeHost) newClient(token string) numenv1connect.HostStoreServiceClient {
 	return numenv1connect.NewHostStoreServiceClient(h.client, h.url, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }

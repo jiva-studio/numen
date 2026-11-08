@@ -190,7 +190,6 @@ func TestTheEndpointIsTheFeedOfTheChannelOrTheSettingOfTheCustomChannel(t *testi
 // configurePath is the path of the call with which the host supplies the settings of a plugin.
 const configurePath = "/numen.v1.PluginLifecycleService/Configure"
 
-// post calls the path of the plugin with a JSON body and returns the status and the body of the answer.
 func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+path, strings.NewReader(body))

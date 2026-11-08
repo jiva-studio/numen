@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-// readTestManifest is a plugin with two models, the languages of each, a provider and the settings
-// of its remote service.
 func readTestManifest(t *testing.T) Manifest {
 	t.Helper()
 	m, err := manifestjson.Read(strings.NewReader(`{

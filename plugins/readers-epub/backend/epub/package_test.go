@@ -25,7 +25,6 @@ const (
 	containerFoot = `</rootfiles></container>`
 )
 
-// buildOpf is a package document of the metadata, manifest and spine given.
 func buildOpf(metadata, manifest, spine string) string {
 	return `<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
@@ -40,7 +39,6 @@ const twoItems = `<item id="a" href="one.xhtml" media-type="application/xhtml+xm
 
 const twoRefs = `<spine><itemref idref="a"/><itemref idref="b"/></spine>`
 
-// buildNCX is a navigation control file naming the two chapters with the titles given.
 func buildNCX(first, second string) string {
 	return `<?xml version="1.0"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>
@@ -319,7 +317,6 @@ func TestAPackageThatCannotBeRead(t *testing.T) {
 	})
 }
 
-// padChapter is a chapter of exactly size bytes.
 func padChapter(word string, size int) []byte {
 	head, foot := "<html><body><p>"+word+"</p>", "</body></html>"
 	return []byte(head + strings.Repeat(" ", size-len(head)-len(foot)) + foot)

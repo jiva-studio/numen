@@ -40,8 +40,6 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 // readingTheModel is the ID of the task that reports a read of the embedding model that failed.
 const readingTheModel = "read embedding model"
 
-// newModelReadReporter reports a read of the embedding model that fails after a setting of the plugin
-// as a task with the failure as its reason. It reports nothing where there are no tasks.
 func newModelReadReporter(tasks *run.Tasks) func(error) {
 	if tasks == nil {
 		return nil
@@ -51,7 +49,6 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 	}
 }
 
-// openEmbedder opens the embedding plugin. onReadError, when set, receives each failed read of its model.
 func (c Config) openEmbedder(ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
 	host, err := c.resolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, completionport.ErrUnavailable) {
@@ -71,8 +68,6 @@ func (c Config) openEmbedder(ctx context.Context, onReadError func(error)) (embe
 	return bridge, bridge.Close, nil
 }
 
-// followChunkTokens holds the chunk size the embedder reports in the cell, and again each time the
-// embedder announces a change of its model.
 func followChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
 	cell.Set(embedder.GetModel().ChunkTokens)
 	onChange(func() { cell.Set(embedder.GetModel().ChunkTokens) })

@@ -16,7 +16,6 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-// getStatement returns the statement in sql/<name>.sql.
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
@@ -32,9 +31,6 @@ func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error
 	return err
 }
 
-// forgetting is the order a vault is taken out in. The five virtual tables go
-// first: nothing cascades into one, and the numbers four of them are addressed
-// by are read from the tables the last statement takes away.
 func getForgetting() []string {
 	return []string{
 		"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",

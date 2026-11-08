@@ -384,8 +384,6 @@ func TestStoreWriterLimitsAndChunks(t *testing.T) {
 	}
 }
 
-// createTestLinks returns Links over a fresh test vault with hooked host
-// services and a stub fetcher; copyMaxSize backs Settings.CopyMaxSize.
 func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStore, ht *hookTexts, hq *hookQueue, sf *stubFetcher, copyMaxSize *int64) {
 	v = hosttest.New("Mills")
 	hv = &hookVault{Vault: v}

@@ -19,7 +19,6 @@ const (
 	linuxCPUMaxPath     = "/sys/fs/cgroup/cpu.max"
 )
 
-// readPlatformHardware reads memory and CPU topology from procfs and sysfs. The CPUs counted are those the process may run on, limited by the cgroup v2 CPU quota of the root of the cgroup mount; cgroup v1 and memory limits are not read.
 func readPlatformHardware() Specs {
 	var hw Specs
 	if content, err := os.ReadFile(linuxMeminfoPath); err == nil {
@@ -46,7 +45,6 @@ type linuxCores struct {
 	performance []cpuCore
 }
 
-// readLinuxCores lists the core of every CPU in the process affinity, and separately those of the performance CPUs of a hybrid chip.
 func readLinuxCores() linuxCores {
 	allowed := readAffinity()
 	performance := readPerformanceCPUs()
@@ -91,7 +89,6 @@ func readCPUCore(dir string) (cpuCore, error) {
 	return core, nil
 }
 
-// readAffinity is the set of CPUs the process may run on, or nil when it cannot be read.
 func readAffinity() map[int]bool {
 	var set unix.CPUSet
 	if err := unix.SchedGetaffinity(0, &set); err != nil {
@@ -106,7 +103,6 @@ func readAffinity() map[int]bool {
 	return allowed
 }
 
-// readPerformanceCPUs is the set of CPUs the kernel lists as performance CPUs of a hybrid chip; it is empty on other chips.
 func readPerformanceCPUs() map[int]bool {
 	content, err := os.ReadFile(linuxPerformanceCPU)
 	if err != nil {

@@ -51,8 +51,6 @@ func StopByCancel(cancel context.CancelFunc) func() error {
 	}
 }
 
-// stopAll stops each work and waits for its reader to finish. It returns the joined errors of the
-// stop functions that ran.
 func stopAll(works []*Work) error {
 	var failures []error
 	for _, w := range works {
@@ -87,7 +85,6 @@ func ForwardResponses(ctx context.Context, work *Work, send func(*Response) erro
 	}
 }
 
-// joinStopError stops the work and returns cause, joined with the stop error when stopping fails.
 func joinStopError(cause error, work *Work) error {
 	if stopErr := work.Stop(); stopErr != nil {
 		return errors.Join(cause, stopErr)

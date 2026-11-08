@@ -18,10 +18,8 @@ type refusingIdentity struct {
 	vaultreader.Identity
 	checkReadable error
 	ensure        error
-	// ensureAs, when set, is the identity every folder is given.
-	ensureAs domain.VaultID
-	// vaultID, when set, answers GetVaultID.
-	vaultID func(root string) (domain.VaultID, bool, error)
+	ensureAs      domain.VaultID
+	vaultID       func(root string) (domain.VaultID, bool, error)
 }
 
 func (r refusingIdentity) CheckReadable(root string) error {

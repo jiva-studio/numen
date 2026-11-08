@@ -33,17 +33,11 @@ var errNoVault = errors.New("no vault is open")
 
 // Config is what the backend is made from.
 type Config struct {
-	// Vault is the vault the host lets the plugin work.
-	Vault host.Vault
-	// Store is the plugin's own folder of the store of each vault.
-	Store host.Store
-	// DayStart is how long past midnight a day of review begins. Left nil, it is the default.
-	DayStart func() time.Duration
-	// Now is what time it is.
-	Now ports.Clock
-	// Cores is how many decks are parsed at once. Left zero, one for each CPU.
-	Cores int
-	// Scheduler is the algorithm that schedules a card. Left nil, FSRS.
+	Vault     host.Vault
+	Store     host.Store
+	DayStart  func() time.Duration
+	Now       ports.Clock
+	Cores     int
 	Scheduler ports.ScheduleAlgorithm
 }
 
@@ -56,22 +50,19 @@ type Backend struct {
 	cfg    Config
 	runs   sessions
 
-	// scenariosStore is the scenarios, made again when the settings change.
 	scenariosStore atomic.Pointer[Scenarios]
 }
 
 // Scenarios is everything the backend does to the cards of a vault, built against the settings in
 // force.
 type Scenarios struct {
-	cards    cards.Scenarios
-	deckedit deckedit.Scenarios
-	flash    flashcards.Scenarios
-	day      review.Day
-	// neighbourhood is what a deck is joined to, with the text of each.
+	cards         cards.Scenarios
+	deckedit      deckedit.Scenarios
+	flash         flashcards.Scenarios
+	day           review.Day
 	neighbourhood flashcards.ShowNeighbourhood
 }
 
-// scenarios is what the backend does to the cards under the settings in force.
 func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
 
 // New makes the backend over the host's vault.
@@ -92,7 +83,6 @@ func (b *Backend) Reconfigure(dayStart func() time.Duration) {
 	b.scenariosStore.Store(b.build(dayStart))
 }
 
-// build makes the scenarios for a day that begins at dayStart.
 func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	cfg, wired, now := b.cfg, b.ports, b.now
 	cores := cfg.Cores
@@ -139,7 +129,6 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	}
 }
 
-// getCurrentVault is the vault a question is answered over. A host showing none has no vault to
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 	v, err := b.vault.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {
@@ -151,7 +140,6 @@ func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 	return v, nil
 }
 
-// getVault returns the vault with an identity, as the host reports it.
 func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error) {
 	v, err := b.vault.With(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
@@ -163,7 +151,6 @@ func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error)
 	return v, nil
 }
 
-// getTitle is what the vault calls the note at a path. A path with no note is called nothing.
 func (b *Backend) getTitle(ctx context.Context, v domain.Vault, path string) string {
 	if path == "" {
 		return ""

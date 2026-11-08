@@ -67,28 +67,16 @@ func PluginName(pluginID, themeID string) string {
 
 // Theme is one theme as the list refers to it.
 type Theme struct {
-	// Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
-	// `plugin:org.example.themes/dark`, and it identifies the theme in
-	// later requests.
 	Name string
 
-	// Title is what the theme is listed as: the file name without the origin and
-	// without `.css`, or the name a plugin gives the theme.
 	Title string
 
 	Origin Origin
 
-	// IsPinned is set for a theme declaring `color-scheme` itself, or a plugin
-	// theme declaring an appearance. Light and dark are that theme's own, and the
-	// mode has nothing left to choose.
 	IsPinned bool
 
-	// PluginID is the plugin that contributes the theme. Empty for the other
-	// origins.
 	PluginID string
 
-	// Appearance is the color scheme a plugin theme declares: light, dark, or
-	// empty for a theme that follows the mode.
 	Appearance string
 }
 
@@ -154,8 +142,6 @@ func (c Catalogue) Themes() []Theme {
 	return append(themes, c.getOwnThemes()...)
 }
 
-// getPluginThemes returns the themes of the enabled plugins as their manifests
-// declare them. The stylesheets are read when a theme is applied.
 func (c Catalogue) getPluginThemes() []Theme {
 	if c.plugins == nil {
 		return nil
@@ -189,8 +175,6 @@ func (c Catalogue) ListPluginThemeNames() []string {
 // HasPlugins reports whether the catalogue reads plugin themes from a source.
 func (c Catalogue) HasPlugins() bool { return c.plugins != nil }
 
-// getOwnThemes returns the user's themes, read flat: one level, names ending
-// `.css`. A folder is not a theme and neither is `dracula.css.bak`.
 func (c Catalogue) getOwnThemes() []Theme {
 	if c.dir == "" {
 		return nil
@@ -283,11 +267,6 @@ func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	return name, ""
 }
 
-// splitName takes a name apart into the origin it comes from and the file it names.
-//
-// A name resolves to a file inside the themes folder and nowhere else, so the
-// half after the origin is a filename and nothing else: `mine:../../.ssh/id_rsa`
-// names no theme.
 func splitName(name string) (Origin, string, error) {
 	origin, title, found := strings.Cut(name, ":")
 	if found && isPlainName(title) {
@@ -301,7 +280,6 @@ func splitName(name string) (Origin, string, error) {
 	return "", "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 }
 
-// isPlainName is a name that stays in the folder it is joined to.
 func isPlainName(title string) bool {
 	if title == "" || title == "." || title == ".." {
 		return false
@@ -312,7 +290,6 @@ func isPlainName(title string) bool {
 	return title == filepath.Base(title)
 }
 
-// read is a theme's file, bounded.
 func read(path string) (_ string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -330,8 +307,6 @@ func read(path string) (_ string, err error) {
 	return string(text), nil
 }
 
-// declaresColorScheme reports whether a theme declares `color-scheme` itself.
-// Comments are stripped first, so a mention in a comment does not count.
 func declaresColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
 
 func stripComments(css string) string {
@@ -351,7 +326,6 @@ func stripComments(css string) string {
 	}
 }
 
-// hasDeclared looks for a property being set: the name, and a colon after it.
 func hasDeclared(css, property string) bool {
 	for pos := 0; ; {
 		found := strings.Index(css[pos:], property)

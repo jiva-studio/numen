@@ -325,10 +325,6 @@ func excerpt(text string, pos int) string {
 	return text[pos:end]
 }
 
-// tinyBook zips the committed fixture into an EPUB.
-//
-// replace maps a path in the archive to the fixture file that fills it, adding
-// the path when the fixture has no such file; omit drops paths.
 func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
 	tb.Helper()
 	parts := tinyParts(tb)
@@ -345,14 +341,11 @@ func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
 	return buildReversedArchive(tb, parts)
 }
 
-// tinyParts is the committed fixture as the files it is made of.
 func tinyParts(tb testing.TB) map[string][]byte {
 	tb.Helper()
 	return partsIn(tb, filepath.Join("testdata", "tiny"))
 }
 
-// partsIn is a committed fixture book as the files it is made of, named as the
-// archive names them.
 func partsIn(tb testing.TB, root string) map[string][]byte {
 	tb.Helper()
 
@@ -378,11 +371,6 @@ func partsIn(tb testing.TB, root string) map[string][]byte {
 	return parts
 }
 
-// buildReversedArchive writes the files into one archive.
-//
-// The mimetype entry comes first because the specification requires it. The
-// remaining files are written in reverse, so the archive order differs from the
-// book order.
 func buildReversedArchive(tb testing.TB, parts map[string][]byte) []byte {
 	tb.Helper()
 	names := slices.Sorted(maps.Keys(parts))
@@ -412,7 +400,6 @@ func buildReversedArchive(tb testing.TB, parts map[string][]byte) []byte {
 	return out.Bytes()
 }
 
-// archiveOrder is the order the entries were written in.
 func archiveOrder(t *testing.T, raw []byte) []string {
 	t.Helper()
 	archive, err := zip.NewReader(bytes.NewReader(raw), int64(len(raw)))
@@ -426,7 +413,6 @@ func archiveOrder(t *testing.T, raw []byte) []string {
 	return names
 }
 
-// intersect keeps the members of names that are wanted, in the order of names.
 func intersect(names, wanted []string) []string {
 	var out []string
 	for _, name := range names {
@@ -467,7 +453,6 @@ func TestADocumentLargerThanAChapterIsLeftUnread(t *testing.T) {
 	}
 }
 
-// buildArchive is an archive of exactly the parts given.
 func buildArchive(t *testing.T, parts map[string][]byte) []byte {
 	t.Helper()
 
@@ -610,7 +595,6 @@ func TestAnEncryptedBook(t *testing.T) {
 	}
 }
 
-// buildSpineArchive is an archive of one package document and the files it names.
 func buildSpineArchive(t *testing.T, opf string, files map[string]string) []byte {
 	t.Helper()
 	parts := map[string][]byte{

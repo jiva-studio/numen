@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-// encodeWav is a wav file of one signal: a header saying what the samples are,
-// and the samples.
 func encodeWav(rate, channels int, samples []int16) []byte {
 	var body []byte
 	for _, one := range samples {

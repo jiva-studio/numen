@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// newRouteHost is a host running one plugin, org.example.reader, at the server given.
 func newRouteHost(t *testing.T, plugin *httptest.Server) *servingHost {
 	t.Helper()
 	return &servingHost{

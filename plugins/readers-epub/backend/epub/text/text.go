@@ -17,27 +17,18 @@ import (
 type Extractor struct {
 	out []byte
 
-	// path is the document being read, and starts holds the offset at which each
-	// document begins, so an href with no fragment still resolves to an offset.
 	path   string
 	starts map[string]int
 
-	// anchors maps "document#id" to the offset the element with that id begins
-	// at. This is how a navigation entry that points inside a document lands.
 	anchors map[string]int
 
 	headings   []Part
 	pagebreaks []Page
 
-	// markup gathers the elements of the document being read, and is nil when
-	// only the text is wanted.
 	markup *builder
 
-	// preformattedDepth counts the pre elements open around the text being written.
 	preformattedDepth int
 
-	// isPlacing records where each block element begins and the text node each text was written
-	// from into places.
 	isPlacing bool
 	places    Places
 }
@@ -122,14 +113,12 @@ func (x *Extractor) writeNode(n *html.Node) {
 	}
 }
 
-// writeCellGap sets a cell off from the one before it by a space.
 func (x *Extractor) writeCellGap(n *html.Node) {
 	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
 		x.write(" ")
 	}
 }
 
-// writeLineBreak ends the line for a br element.
 func (x *Extractor) writeLineBreak(n *html.Node) {
 	x.breakLine()
 	// begins.
@@ -138,7 +127,6 @@ func (x *Extractor) writeLineBreak(n *html.Node) {
 	}
 }
 
-// startBlock ends the line before a block and notes where the block begins.
 func (x *Extractor) startBlock() {
 	x.breakLine()
 	if x.isPlacing {
@@ -152,8 +140,6 @@ func (x *Extractor) writeChildren(n *html.Node) {
 	}
 }
 
-// write appends text. A run of space is one space, and text inside a pre element
-// is kept as it was written.
 func (x *Extractor) write(text string) {
 	start := len(x.out)
 	if x.preformattedDepth > 0 {
@@ -392,7 +378,6 @@ func (t *tokenizer) handleEndTag() {
 	}
 }
 
-// tokenize reads markup into text using a streaming HTML tokenizer.
 func (x *Extractor) tokenize(raw []byte) {
 	t := tokenizer{
 		x: x,
@@ -420,8 +405,6 @@ func (x *Extractor) tokenize(raw []byte) {
 	}
 }
 
-// closeFrame records the heading and the page break an element that has ended
-// carried, and leaves a pre element.
 func (x *Extractor) closeFrame(f frame) {
 	if f.atom == atom.Pre {
 		x.preformattedDepth--
@@ -442,7 +425,6 @@ func (x *Extractor) closeFrame(f frame) {
 	}
 }
 
-// isVoidTag reports whether an HTML element has no closing tag.
 func isVoidTag(key atom.Atom) bool {
 	switch key {
 	case atom.Area, atom.Base, atom.Br, atom.Col, atom.Embed, atom.Hr, atom.Img, atom.Input,
@@ -452,7 +434,6 @@ func isVoidTag(key atom.Atom) bool {
 	return false
 }
 
-// isSkipped reports whether the content of the element is not text of the book.
 func isSkipped(key atom.Atom) bool {
 	switch key {
 	case atom.Head, atom.Script, atom.Style, atom.Title:
@@ -519,8 +500,6 @@ func (x *Extractor) GetPages(entries []Entry) []Page {
 	return out
 }
 
-// findOffset returns the text offset an href names: its fragment's anchor, or
-// the start of its document. The result is false when neither is known.
 func (x *Extractor) findOffset(ref string) (int, bool) {
 	target, fragment := href.Split(ref)
 	if fragment != "" {
@@ -544,7 +523,6 @@ func GetAttribute(n *html.Node, name string) string {
 	return ""
 }
 
-// parseHeadingLevel returns the level of a heading element, and 0 for anything else.
 func parseHeadingLevel(a atom.Atom) int {
 	switch a {
 	case atom.H1:
@@ -563,7 +541,6 @@ func parseHeadingLevel(a atom.Atom) int {
 	return 0
 }
 
-// isBlock reports whether the text of the element relies on a line of its own.
 func isBlock(key atom.Atom) bool {
 	switch key {
 	case atom.Address, atom.Article, atom.Aside, atom.Blockquote, atom.Body, atom.Caption, atom.Dd,

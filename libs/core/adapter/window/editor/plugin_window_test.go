@@ -24,8 +24,6 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-// newBoundWindow is a state showing a vault of one PDF and one note, the window bound to it, and
-// what a WatchFocus subscriber of the state receives.
 func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domain.Place) {
 	t.Helper()
 	state := &State{Places: newPlaceBroadcaster()}
@@ -122,8 +120,6 @@ type activateFixture struct {
 	focus  <-chan *v1.WatchFocusResponse
 }
 
-// newActivateFixture is a bound window with the tabs tab-1 (active) and tab-2 of one PDF and a note
-// reported, and a WatchFocus subscriber that is known to be subscribed.
 func newActivateFixture(t *testing.T) activateFixture {
 	t.Helper()
 	state, window, _ := newBoundWindow(t)
@@ -153,8 +149,6 @@ func newActivateFixture(t *testing.T) activateFixture {
 	return f
 }
 
-// waitSubscribed requests a place until the stream delivers one, so the stream handler is subscribed
-// before the test requests anything else.
 func (f activateFixture) waitSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
@@ -174,7 +168,6 @@ func (f activateFixture) waitSubscribed(t *testing.T) {
 	}
 }
 
-// reportTabs reports the tabs of the window with the active id, as the window does on every change.
 func (f activateFixture) reportTabs(t *testing.T, activeID string) {
 	t.Helper()
 	if _, err := f.api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -189,8 +182,6 @@ func (f activateFixture) reportTabs(t *testing.T, activeID string) {
 	}
 }
 
-// receiveTabID is the next focus request that names a tab id, or nil when none arrives within the
-// wait. Keepalives and places are skipped.
 func (f activateFixture) receiveTabID(t *testing.T, wait time.Duration) *v1.WatchFocusResponse {
 	t.Helper()
 	deadline := time.After(wait)
@@ -215,7 +206,6 @@ type activationResult struct {
 	err  error
 }
 
-// startActivation runs ActivateTab of the id in the background.
 func (f activateFixture) startActivation(ctx context.Context, id string) <-chan activationResult {
 	results := make(chan activationResult, 1)
 	go func() {

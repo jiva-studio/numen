@@ -35,7 +35,6 @@ func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, un
 	}
 }
 
-// applyCoreML enables Core ML on arm64. An explicit request for it that fails is an error; under auto the CPU is used.
 func (l *Library) applyCoreML(opts *ort.SessionOptions, requested Provider, units ComputeUnits, modelPath string) (Provider, error) {
 	if runtime.GOARCH != "arm64" {
 		return ProviderCPU, nil
@@ -93,9 +92,6 @@ type ortAPIProviderTable struct {
 	SessionOptionsAppendExecutionProvider uintptr
 }
 
-// appendCoreMLCached appends CoreML with compiled models kept in the cache
-// directory. It reports false when anything it needs is missing, and leaves the
-// options untouched.
 func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits, modelPath string) bool {
 	dir, err := GetCoreMLCacheDir(modelPath)
 	if err != nil {

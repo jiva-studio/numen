@@ -63,14 +63,12 @@ func (t *Texts) SetPageSize(segments int) {
 	h.pageSize = segments
 }
 
-// getPageSize returns the number of segments a page of ReadText holds.
 func (h *textHost) getPageSize() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.pageSize
 }
 
-// getWorld is the texts of the vault, made empty on first use.
 func (h *textHost) getWorld(vault domain.VaultID) *textWorld {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -114,7 +112,6 @@ func (t *Texts) GetStore(pluginID string) host.Store {
 	return t.world.getStore(pluginID)
 }
 
-// getStore is GetStore; the caller holds the lock.
 func (w *textWorld) getStore(pluginID string) host.Store {
 	store, ok := w.stores[pluginID]
 	if !ok {
@@ -221,8 +218,6 @@ func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersion
 	return page, nil
 }
 
-// readSegments returns every segment of the version, or host.ErrNotExist for a version that is
-// missing or whose file no longer has the hash it was recorded with.
 func (t *Texts) readSegments(ctx context.Context, path string, id domain.TextVersionID) ([]domain.TextSegment, error) {
 	w := t.world
 	w.mu.Lock()
@@ -238,7 +233,6 @@ func (t *Texts) readSegments(ctx context.Context, path string, id domain.TextVer
 	return segments, nil
 }
 
-// readFile returns the segments of a version's file and the hash of its bytes. The caller has the lock.
 func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domain.TextSegment, string, error) {
 	raw, err := w.getStore(v.PluginID).Read(ctx, v.File)
 	if err != nil {

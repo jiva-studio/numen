@@ -97,7 +97,6 @@ func (f *faint) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-// countDiffering is how many bytes of two coarse forms are not the same.
 func countDiffering(a, b []byte) int {
 	var n int
 	for i := range a {

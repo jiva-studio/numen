@@ -30,7 +30,6 @@ func readWireQuestion(wire *v1.CompletionQuestion) completionport.Question {
 	}
 }
 
-// already states.
 func readRefusalDetail(err error) string {
 	text := err.Error()
 	for _, sentinel := range []error{completionport.ErrNoRoute, completionport.ErrUnavailable} {

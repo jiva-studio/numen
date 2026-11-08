@@ -10,9 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// typedSeeds are inputs a user types into a search box: words, punctuation
-// FTS5 treats as syntax, its own operators, an unclosed quote, a column
-// reference, a phrase, other scripts, and the empty string.
 func getTypedSeeds() []string {
 	return []string{
 		"entropy",
@@ -106,9 +103,6 @@ func FuzzExpression(f *testing.F) {
 	})
 }
 
-// words reads the literals of an expression back into the words they stand for,
-// failing unless every one of them is a closed FTS5 string and the whole
-// expression is nothing but those literals with a single space between them.
 func words(t *testing.T, expression string, growing bool) []string {
 	t.Helper()
 	if growing {

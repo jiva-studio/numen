@@ -155,9 +155,6 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	}
 }
 
-// newTargetedNotes is a vault of two presets asking for different shares of the
-// cards, with a deck of one card under each. Neither evens its days out, so
-// what separates two cards here is the target each is placed under.
 func newTargetedNotes(high, low float64) map[string]string {
 	return map[string]string{
 		"Term.md": term,
@@ -172,7 +169,6 @@ func newTargetedNotes(high, low float64) map[string]string {
 	}
 }
 
-// The two review cards of the targeted vault, answered alike.
 func getUnderHigh() review.CardID {
 	return review.CardID{Card: "k7m2xq9fzp", Template: "Say it"}
 }
@@ -181,9 +177,6 @@ func getUnderLow() review.CardID {
 	return review.CardID{Card: "zpqrstvwxy", Template: "Say it"}
 }
 
-// answerBothAlike takes both cards through the same answers at the same
-// moments, far enough for each to be learned, so what separates their schedules
-// is the preset each is placed under.
 func answerBothAlike(t *testing.T, s vaulted) {
 	t.Helper()
 	for day := range 3 {
@@ -415,8 +408,6 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 	}
 }
 
-// dayFrom is how many days of review stand between the one holding from and the
-// one holding at.
 func dayFrom(from, pos time.Time) int {
 	open := from
 	for i := range 400 {
@@ -609,17 +600,11 @@ func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
 // loadCounts is the calls one request made to the store, the cache and the
 // scheduler. Each of these is work a request does once, so each is counted.
 type loadCounts struct {
-	// Listed is how many times the log folder was listed, and Opened how many
-	// run files were read.
-	Listed int
-	Opened int
-	// Consulted is how many times the cache was read, and Rewritten how many
-	// times it was written.
+	Listed    int
+	Opened    int
 	Consulted int
 	Rewritten int
-	// Dated is how many times the scheduler was called for the date following an
-	// answer.
-	Dated int
+	Dated     int
 }
 
 // countingStores counts the calls a use case makes to one vault's store.
@@ -704,14 +689,11 @@ type loaded struct {
 	reviewCards int
 }
 
-// load builds a vault of cards cards, answered on days days, perDay answers to
-// a day and one run file to a day.
 func load(tb testing.TB, cards, days, perDay int) loaded {
 	tb.Helper()
 	return loadAt(tb, vaulttest.NewClock(), cards, days, perDay)
 }
 
-// loadAt is load with every request reading the time from now.
 func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 	tb.Helper()
 
@@ -747,13 +729,11 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 	}
 }
 
-// logRead is this vault's answers, read the way a request reads them.
 func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	tb.Helper()
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }
 
-// countLoads runs one request with the counters reset and returns the counts.
 func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	tb.Helper()
 	*l.on = loadCounts{}
@@ -763,8 +743,6 @@ func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	return *l.on
 }
 
-// loadDeck builds a vault with one card model, one review card and the given
-// number of cards, spread over twenty decks.
 func loadDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": getVault()["Term.md"]}
@@ -784,7 +762,6 @@ func loadDeck(cards int) map[string]string {
 	return out
 }
 
-// createCardID returns one card's id, in the alphabet the application writes them in.
 func createCardID(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
@@ -795,10 +772,6 @@ func createCardID(n int) string {
 	return string(out)
 }
 
-// loadAnswers writes a run file for each of the days days of review before the
-// one holding now, each holding perDay answers over the vault's cards. A day's
-// answers begin at noon of that day in the zone the days are counted in, so
-// all of them fall inside one day of review.
 func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay int) {
 	tb.Helper()
 	ctx := tb.Context()

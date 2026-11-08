@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// windowsRecord builds a RelationProcessorCore record with one group mask.
 func windowsRecord(efficiencyClass byte, mask uint64, maskSize int) []byte {
 	size := 32 + maskSize
 	record := make([]byte, size)

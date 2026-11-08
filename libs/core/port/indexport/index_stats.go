@@ -9,7 +9,6 @@ import (
 // ExtensionCount is the sources of one file extension and the chunks that can carry a vector among
 // the chunks they hold.
 type ExtensionCount struct {
-	// Extension is in lower case, without the dot, and empty for a source with none.
 	Extension string
 	Sources   int64
 	Chunks    int64
@@ -17,18 +16,14 @@ type ExtensionCount struct {
 
 // IndexCounts is what the index holds for one vault under one recipe.
 type IndexCounts struct {
-	// Chunks is how many chunks can carry a vector, and Vectors how many of them do.
-	Chunks  int64
-	Vectors int64
-	// Sources is the notes and files of the vault, and Extensions splits them by file extension, the
-	// extension with the most sources first.
+	Chunks     int64
+	Vectors    int64
 	Sources    int64
 	Extensions []ExtensionCount
 }
 
 // IndexSizes is the space the index takes on disk, in bytes.
 type IndexSizes struct {
-	// Database is the whole index database, and Vectors the tables that hold vectors.
 	Database int64
 	Vectors  int64
 }

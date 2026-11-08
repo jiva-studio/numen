@@ -47,7 +47,6 @@ const roots = "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    typ
 
 const terms = "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n"
 
-// pointed is that vault, as every test here opens it.
 func getPointed() map[string]string {
 	return map[string]string{
 		"Sanskrit.md":    sanskrit,
@@ -56,7 +55,6 @@ func getPointed() map[string]string {
 	}
 }
 
-// settings is what a preset holds, as a write hands them over.
 func settings() *api.Settings {
 	return &api.Settings{
 		Goal:        api.GoalMinutesADay,

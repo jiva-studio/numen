@@ -71,8 +71,6 @@ func addWindowTabList(registry *tools.Registry, on Host) error {
 	})
 }
 
-// readWindowTabs returns the tabs the window last reported, each with the place it is open at, and
-// the active one. A host with no window has none.
 func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	if on.Window == nil {
 		return nil, "", nil
@@ -91,8 +89,6 @@ func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	return tabs, activeID, nil
 }
 
-// newTabInfo converts a tab to its tool output, with the place its reader reported. The tab is
-// active when its id is the active id.
 func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
 	return TabInfo{
 		TabID:    tab.ID,
@@ -104,8 +100,6 @@ func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
 	}
 }
 
-// newPlace converts the place a reader reported to its tool output, nil for a tab whose reader
-// reported none.
 func newPlace(place *host.TabPlace) *Place {
 	if place == nil || *place == (host.TabPlace{}) {
 		return nil

@@ -11,18 +11,10 @@ import (
 
 // Options are what a vault on disk may be configured with.
 type Options struct {
-	// ServiceDir is the folder the application keeps its own files in. Empty
-	// means the default.
-	ServiceDir string
-	// Ignore lists the patterns the vault excludes, in `.gitignore` syntax. Empty
-	// means the default.
-	Ignore []string
-	// DebounceDelay is how long changes are kept before they are reported. Zero means
-	// the default.
+	ServiceDir    string
+	Ignore        []string
 	DebounceDelay time.Duration
-	// MaxNoteBytes is the most a note may be and still be read whole. Zero
-	// means the default.
-	MaxNoteBytes int64
+	MaxNoteBytes  int64
 }
 
 // DefaultDebounceDelay is how long events are held before they are acted on. One save

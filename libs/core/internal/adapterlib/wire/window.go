@@ -51,15 +51,10 @@ func (r *Reason) Why() string {
 // Both windows share this implementation, so tasks have one wire shape and the
 // quit drain is implemented once.
 type Window struct {
-	// Named is the window this answers for, which a question names to reach it.
 	Named string
 
-	// Tasking is the set of running tasks. A nil value reports an empty list.
 	Tasking *run.Tasks
 
-	// Vault is the identity of the vault this window has in front of the
-	// person. Nil is a window open on the installation, which answers with
-	// none.
 	Vault func() string
 
 	clients flushCoordinator
@@ -205,7 +200,6 @@ func (w *Window) CancelTask(
 	return connect.NewResponse(&v1.CancelTaskResponse{}), nil
 }
 
-// checkWindowName returns an error unless the request names this window.
 func (w *Window) checkWindowName(named string) error {
 	if named == w.Named {
 		return nil
@@ -267,7 +261,6 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 // CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
 
-// describeTasks converts tasks to their schema form.
 func describeTasks(list []run.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {
@@ -289,7 +282,6 @@ func describeTasks(list []run.Task) []*v1.Task {
 	return out
 }
 
-// convertUnit converts a task unit to its schema form.
 func convertUnit(in run.Unit) v1.Unit {
 	switch in {
 	case run.Bytes:
@@ -315,7 +307,6 @@ const (
 	flushUnsaved
 )
 
-// parseFlushResult converts a client's flush result to the internal flush state.
 func parseFlushResult(result v1.FlushResult) flushState {
 	switch result {
 	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
@@ -342,29 +333,22 @@ type flushCoordinator struct {
 
 // client is one browser tab connected to the window, with its flush state.
 type client struct {
-	flushTokens chan string
-	state       flushState
-	// isDisconnected marks a client whose stream ended in the flushUnsaved state.
-	// It receives no tokens and records no state; a newly connected client replaces it.
+	flushTokens    chan string
+	state          flushState
 	isDisconnected bool
 }
 
 // flushRequest is one flush request to all clients, with its progress.
 type flushRequest struct {
-	// allWritten closes once every client has written its work.
-	allWritten chan struct{}
-	// questionRaised closes once a client holds work awaiting a user decision.
+	allWritten     chan struct{}
 	questionRaised chan struct{}
-	// superseded closes once another request replaces this one.
-	superseded chan struct{}
+	superseded     chan struct{}
 
-	// The flush coordinator's lock guards these fields.
 	isAllWrittenSignaled bool
 	isQuestionSignaled   bool
 	isSuperseded         bool
 }
 
-// isPending reports whether a client is awaiting a user decision.
 func (r *flushRequest) isPending() bool {
 	select {
 	case <-r.questionRaised:
@@ -374,7 +358,6 @@ func (r *flushRequest) isPending() bool {
 	}
 }
 
-// isWritten reports whether every client has written its work.
 func (r *flushRequest) isWritten() bool {
 	select {
 	case <-r.allWritten:
@@ -384,8 +367,6 @@ func (r *flushRequest) isWritten() bool {
 	}
 }
 
-// registerClient registers a client and returns its flush token, the channel on
-// which it receives flush tokens, and a function that unregisters it.
 func (l *flushCoordinator) registerClient() (string, <-chan string, func()) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -412,12 +393,10 @@ func (l *flushCoordinator) registerClient() (string, <-chan string, func()) {
 	return token, p.flushTokens, func() { l.disconnectClient(token, p) }
 }
 
-// isRunning reports whether a request is running. The lock is held.
 func (l *flushCoordinator) isRunning() bool {
 	return l.current != nil && !l.current.isSuperseded
 }
 
-// disconnectClient unregisters a client, or marks it disconnected if it is flushUnsaved.
 func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -438,9 +417,6 @@ func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.updateProgress()
 }
 
-// startRequest begins a request: every client receives a write request, and
-// states from the previous request are cleared. A running request is superseded
-// and its waiters are released.
 func (l *flushCoordinator) startRequest() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -468,7 +444,6 @@ func (l *flushCoordinator) startRequest() *flushRequest {
 	return l.current
 }
 
-// endRequest ends the running request and releases its waiters.
 func (l *flushCoordinator) endRequest() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -481,7 +456,6 @@ func (l *flushCoordinator) endRequest() {
 	l.current = nil
 }
 
-// getRunning is the request running, or nothing.
 func (l *flushCoordinator) getRunning() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -492,7 +466,6 @@ func (l *flushCoordinator) getRunning() *flushRequest {
 	return l.current
 }
 
-// recordFlush records what one page has left.
 func (l *flushCoordinator) recordFlush(token string, response flushState) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -503,8 +476,6 @@ func (l *flushCoordinator) recordFlush(token string, response flushState) {
 	l.updateProgress()
 }
 
-// updateProgress signals allWritten or questionRaised on the running request
-// when the client states warrant it. The lock is held.
 func (l *flushCoordinator) updateProgress() {
 	r := l.current
 	if r == nil || r.isSuperseded {
@@ -528,7 +499,6 @@ func (l *flushCoordinator) updateProgress() {
 	close(r.allWritten)
 }
 
-// convertKind converts the kind of a task to its schema form.
 func convertKind(in run.Kind) v1.TaskKind {
 	if in == run.KindNotice {
 		return v1.TaskKind_TASK_KIND_NOTICE

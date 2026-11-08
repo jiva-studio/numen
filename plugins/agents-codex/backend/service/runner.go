@@ -25,8 +25,6 @@ const (
 
 var errNoOutput = errors.New("the program ended without output")
 
-// getDisabledFeatures returns the tools of Codex's own that a run naming no tool is started
-// without.
 func getDisabledFeatures() []string {
 	return []string{
 		"shell_tool", "unified_exec", "view_image", "multi_agent", "apps", "browser_use",
@@ -205,7 +203,6 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 	}
 }
 
-// newSpec builds the Codex CLI invocation for the request.
 func newSpec(req *agentrun.Request, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
@@ -257,9 +254,6 @@ func makeCodexCommand(runCtx context.Context, req *agentrun.Request, customPath 
 	return exec.CommandContext(runCtx, binName, args...)
 }
 
-// makeAnswerCommand is the run of the Codex CLI that gives one answer: no MCP server, none of the
-// tools Codex has of its own that can be turned off, nothing the user's configuration adds, a
-// sandbox that writes nothing and an empty folder to run in. The folder goes when the run does.
 func makeAnswerCommand(runCtx context.Context, req *agentrun.Request, customPath ...string) (*exec.Cmd, func() error, error) {
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
@@ -286,7 +280,6 @@ func makeAnswerCommand(runCtx context.Context, req *agentrun.Request, customPath
 	return cmd, cleanDir, nil
 }
 
-// appendModelArguments adds the model the request names and the reasoning level it requests.
 func appendModelArguments(args []string, req *agentrun.Request) []string {
 	if model := req.Model; model != "" && model != "default" {
 		args = append(args, "--model", model)

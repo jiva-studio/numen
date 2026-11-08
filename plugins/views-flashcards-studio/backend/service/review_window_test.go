@@ -25,11 +25,6 @@ const bothWays = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" 
 const oneWay = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
-// newCardModelDeck is a deck of as many cards cut by one card model, pointing at the
-// preset named. A deck naming none is written with an empty name.
-//
-// Each deck is written from a card id of its own: a card id names a card, and two
-// decks writing one card id are writing one card.
 func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if pos != "" {
@@ -44,10 +39,6 @@ func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	return out
 }
 
-// lived is a vault at realistic size: two presets and the defaults, four decks
-// between them, and review cards in the hundreds.
-//
-// Verbs uses the two-template card model, so it holds twice as many review cards as cards.
 func getLived() map[string]string {
 	return map[string]string{
 		"Both.md": bothWays,
@@ -63,7 +54,6 @@ func getLived() map[string]string {
 	}
 }
 
-// The review cards of the lived vault, by the deck they stand in.
 func getReviewCardsIn() map[string]int {
 	return map[string]int{
 		"decks/Verbs.md": 300,
@@ -73,7 +63,6 @@ func getReviewCardsIn() map[string]int {
 	}
 }
 
-// underSanskrit and underGrammar are the decks each preset schedules.
 func getUnderSanskrit() []string {
 	return []string{"decks/Nouns.md", "decks/Verbs.md"}
 }
@@ -82,18 +71,14 @@ func getUnderGrammar() []string {
 	return []string{"decks/Roots.md"}
 }
 
-// reviewDay is the day the counts of this file stand in: a boundary four hours
-// past midnight, counted in one zone whatever machine runs the test.
 func getReviewDay() review.Day {
 	return review.Day{Starts: 4 * time.Hour, In: time.UTC}
 }
 
-// firstMorning is the instant the history begins at, well inside its review day.
 func getFirstMorning() time.Time {
 	return time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 }
 
-// setNow synchronizes window time, review day calculation, and scenario clocks to now.
 func setNow(handler *API, now time.Time) {
 	pos := clock.NewFake(now)
 	handler.now = pos
@@ -104,7 +89,6 @@ func setNow(handler *API, now time.Time) {
 	handler.scenarios().flash.GetReviewDays = handler.scenarios().flash.GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
 }
 
-// runDays simulates consecutive daily review sessions across a vault.
 func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
 	t.Helper()
 	for day := range days {
@@ -139,7 +123,6 @@ func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
 	}
 }
 
-// getVaultCount returns the cards due summary for one vault.
 func getVaultCount(t *testing.T, handler *API, v domain.Vault) *api.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, handler).Vaults {
@@ -154,8 +137,6 @@ func getVaultCount(t *testing.T, handler *API, v domain.Vault) *api.VaultCardsDu
 	return nil
 }
 
-// countSessionCards returns how many review cards the deck screen offers under
-// one preset: the cards of every deck that preset schedules, due and new.
 func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range due.Decks {
@@ -168,7 +149,6 @@ func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 	return out
 }
 
-// readPresetConfig reads the preset configuration stored at path.
 func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
 	found, err := handler.scenarios().flash.Presets.Read(t.Context(), v, path)
@@ -178,8 +158,6 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 	return found.Settings
 }
 
-// writePreset writes settings into the preset at path, as the window does when
-// the control is released.
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
 	if _, err := handler.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
@@ -187,8 +165,6 @@ func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p revi
 	}
 }
 
-// getCurve is what these settings come to over the whole range of their goal,
-// drawn by the simulator this window's own pieces make.
 func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) *api.Curve {
 	t.Helper()
 	target, err := curves(handler).Execute(t.Context(), v, path, p)
@@ -198,8 +174,6 @@ func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.
 	return presetwire.ConvertCurveToWire(target)
 }
 
-// curves is the simulator behind the one control of a preset, standing on the
-// day the window relies on.
 func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
 		handler.scenarios().flash.Schedules.ReviewCards(),
@@ -224,10 +198,9 @@ func curves(handler *API) flashcards.ProjectCurve {
 // over the projected days.
 func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 	for _, one := range []struct {
-		what   string
-		goal   review.Goal
-		places []int
-		// steered puts the value at a place of the grid into the settings.
+		what    string
+		goal    review.Goal
+		places  []int
 		steered func(p *review.Preset, value float64)
 	}{
 		{
@@ -288,8 +261,6 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	}
 }
 
-// sole are the decks that are the only deck of their preset, so the daily budget
-// allocated to that preset went to this deck.
 func getSole() map[string]bool {
 	return map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 }

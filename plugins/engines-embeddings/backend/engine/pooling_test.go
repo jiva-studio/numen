@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
-// twoRows is the per-token output of two texts of three dimensions: the first holds three tokens and
-// the second two, with a padding token after them.
 func twoRows() (flat []float32, mask []int64) {
 	flat = []float32{
 		1, 0, 0, // row 0, token 0

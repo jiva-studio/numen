@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
-// withoutAgentsAnywhere empties PATH and HOME, where the programs are searched for first.
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())

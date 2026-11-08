@@ -78,8 +78,6 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	return out, nil
 }
 
-// addSiblings adds the other children of every parent, which is the definition of a
-// sibling. Each parent is queried in turn.
 func (u ShowNeighbourhood) addSiblings(ctx context.Context, cache *linkCache, targetSet *neighbourSet) error {
 	for _, parent := range targetSet.getAll() {
 		if parent.Relation != domain.RelationParent {
@@ -102,11 +100,6 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, cache *linkCache, ta
 	return nil
 }
 
-// getNeighbours returns everything one note is joined to, from both ends of its links.
-//
-// The end at which a link was written does not determine the graph's shape:
-// `parent: B` in A and `child: A` in B are the same edge, so the role is read
-// together with the direction in which the link was found.
 func (u ShowNeighbourhood) getNeighbours(ctx context.Context, cache *linkCache, path string) (*neighbourSet, error) {
 	found := &neighbourSet{}
 
@@ -183,9 +176,6 @@ type neighbourSet struct {
 	targetPath map[string]int
 }
 
-// add records a neighbour under the highest-ranked relation it qualifies for,
-// replacing a lesser one recorded earlier: a pair who are each other's parent
-// is drawn once, and always the same way round.
 func (s *neighbourSet) add(neighbour domain.Neighbour) {
 	if s.targetPath == nil {
 		s.targetPath = map[string]int{}
@@ -201,8 +191,6 @@ func (s *neighbourSet) add(neighbour domain.Neighbour) {
 	}
 }
 
-// remove deletes a note from the drawing order. Nothing is added to the relations
-// afterwards.
 func (s *neighbourSet) remove(path string) {
 	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
 }

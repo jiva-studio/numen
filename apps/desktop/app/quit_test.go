@@ -26,7 +26,6 @@ func (s *screen) mark(what string) {
 	s.events = append(s.events, what)
 }
 
-// was is what has happened to the window so far.
 func (s *screen) was() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -39,10 +38,8 @@ type settler struct {
 	mu        sync.Mutex
 	answers   []bool
 	callCount int
-	// begun is written to as each settling starts.
-	begun chan struct{}
-	// until holds each settling there until a test lets it through.
-	until chan struct{}
+	begun     chan struct{}
+	until     chan struct{}
 }
 
 func newSettler(answers ...bool) *settler {

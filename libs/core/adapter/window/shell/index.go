@@ -19,8 +19,6 @@ type IndexVault func(ctx context.Context, v domain.Vault) error
 type indexRuns struct {
 	mu sync.Mutex
 
-	// indexVault is how a vault is brought up to date in the index, and closing
-	// signals when those runs end.
 	indexVault IndexVault
 	closing    <-chan struct{}
 
@@ -29,7 +27,6 @@ type indexRuns struct {
 	failures map[domain.VaultID]string
 }
 
-// setIndexer is how a vault is indexed from now on, and the life those runs have.
 func (r *indexRuns) setIndexer(ctx context.Context, read IndexVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -41,7 +38,6 @@ func (r *indexRuns) setIndexer(ctx context.Context, read IndexVault) {
 	r.indexVault = read
 }
 
-// clear lets go of why a vault could not be indexed, and that it was indexed at all.
 func (r *indexRuns) clear(id domain.VaultID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -49,10 +45,6 @@ func (r *indexRuns) clear(id domain.VaultID) {
 	delete(r.indexed, id)
 }
 
-// tryStart claims a vault for indexing. It returns the indexer and the life to
-// run it under where this call is the one that begins it, and no indexer where
-// the vault has been indexed, is being indexed, could not be indexed, or where this
-// window indexes nothing.
 func (r *indexRuns) tryStart(
 	v domain.Vault,
 ) (read IndexVault, closing <-chan struct{}, underway bool, reason string) {
@@ -77,7 +69,6 @@ func (r *indexRuns) tryStart(
 	return r.indexVault, r.closing, true, ""
 }
 
-// record is what one indexing came to: the vault is indexed, or it is why it is not.
 func (r *indexRuns) record(v domain.Vault, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -102,12 +93,6 @@ func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
 	a.indexRuns.setIndexer(ctx, read)
 }
 
-// startIndexing brings a vault up to date in the index. It reports whether an indexing of
-// that vault is running, and why the last one failed, if it did.
-//
-// A vault is indexed once for the lifetime of the window, and the watcher keeps it current
-// afterwards. One vault is indexed at most once at a time however many counts request it,
-// and a failed indexing is not restarted until the vault changes.
 func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
 	read, closing, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
@@ -131,12 +116,6 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 	return true, ""
 }
 
-// runIndexing indexes one vault and reports it as work for as long as it runs. A finished
-// indexing wakes the counts, which puts the vault's numbers on the page.
-//
-// target is true when the index already carries the vault. A vault the index does not
-// carry has nothing to show until indexing completes, so its work is displayed
-// immediately; for a carried vault the work is displayed only once it has lasted.
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
 	pos := run.Task{
 		ID:            "indexing\t" + string(v.ID),

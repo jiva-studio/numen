@@ -10,7 +10,6 @@ import (
 
 // acpCall is one tool call of a session as the agent reported it so far.
 type acpCall struct {
-	// name is the programmatic name of the tool, without the prefix of an MCP server.
 	name       string
 	title      string
 	arguments  string
@@ -28,9 +27,6 @@ type acpToolCall struct {
 	RawInput      json.RawMessage `json:"rawInput"`
 }
 
-// readToolStep records what a tool_call or tool_call_update of this session reports about the call, and
-// returns the resulting step: the call, as far as it is known, or its end once it completed or failed.
-// Any other update is no step. A call is reported finished once.
 func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
 	var update struct {
 		SessionID string      `json:"sessionId"`
@@ -61,7 +57,6 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
 	}}
 }
 
-// update takes in what the agent reported of the call.
 func (c *acpCall) update(reported acpToolCall) {
 	if reported.Name != nil && *reported.Name != "" {
 		c.name = readToolName(*reported.Name)
@@ -74,7 +69,6 @@ func (c *acpCall) update(reported acpToolCall) {
 	}
 }
 
-// getShownName is the tool by its name, else by the title the agent gave the call.
 func (c *acpCall) getShownName() string {
 	if c.name != "" {
 		return c.name
@@ -82,8 +76,6 @@ func (c *acpCall) getShownName() string {
 	return c.title
 }
 
-// readToolName is the name of a tool without the prefix an agent gives a tool of an MCP server,
-// mcp__<server>__<tool>.
 func readToolName(name string) string {
 	if tool, isServed := strings.CutPrefix(name, "mcp__"+serverName+"__"); isServed {
 		return tool

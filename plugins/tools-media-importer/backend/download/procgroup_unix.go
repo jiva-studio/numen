@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-// setProcessGroup puts the run in a process group of its own and makes cancelling it
-// ask the whole group to stop, then force the group to stop after stopGrace.
 func setProcessGroup(running *exec.Cmd) {
 	running.SysProcAttr = new(syscall.SysProcAttr)
 	running.SysProcAttr.Setpgid = true

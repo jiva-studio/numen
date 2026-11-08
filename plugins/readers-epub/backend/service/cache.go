@@ -26,11 +26,10 @@ var errReadFile = errors.New("read file")
 // A bookCache keeps open the most recently read books, each opened once while its
 // file is unchanged.
 type bookCache struct {
-	// readFile reads the file at a path of the vault.
 	readFile func(ctx context.Context, files host.Vault, path string) ([]byte, domain.FileStat, error)
 
 	mu       sync.Mutex
-	books    []*cachedBook // least recently read first
+	books    []*cachedBook
 	isClosed bool
 }
 
@@ -52,14 +51,10 @@ type cachedBook struct {
 	mtime   int64
 	archive *epub.Archive
 
-	// readers is how many requests are reading, and evicted is whether the cache
-	// dropped the book.
 	readers int
 	evicted bool
 }
 
-// acquire returns the cached book at path, opening it when the cache has none for the
-// file as it is now. The caller returns it with release.
 func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domain.VaultID, path string) (*cachedBook, error) {
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
@@ -83,7 +78,7 @@ func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domai
 			return book, nil
 		}
 		c.evict(book)
-	// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break exits the loop once the matching key has been removed and evicted"
+		// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break exits the loop once the matching key has been removed and evicted"
 		break
 	}
 
@@ -120,7 +115,6 @@ func (c *bookCache) openBook(ctx context.Context, files host.Vault, key, path st
 	}, nil
 }
 
-// evict drops a book from the cache. The caller has the lock.
 func (c *bookCache) evict(book *cachedBook) {
 	book.evicted = true
 	if book.readers == 0 {
@@ -128,7 +122,6 @@ func (c *bookCache) evict(book *cachedBook) {
 	}
 }
 
-// release returns a book acquired.
 func (c *bookCache) release(book *cachedBook) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

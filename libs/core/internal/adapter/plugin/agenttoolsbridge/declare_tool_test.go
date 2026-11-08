@@ -16,14 +16,11 @@ import (
 // plugins/agents-mcp-server/backend/service/declare_tool_test.go: both readers declare a tool
 // identically.
 type schemaCase struct {
-	name   string
-	schema []byte
-	// input is the input schema the client is given.
-	input string
-	// isInputAsListed is true where the input schema is the listed bytes unchanged.
+	name            string
+	schema          []byte
+	input           string
 	isInputAsListed bool
-	// output is the output schema the client is given, and empty where it is left out.
-	output string
+	output          string
 }
 
 func getSchemaCases() []schemaCase {
@@ -65,7 +62,6 @@ func getSchemaCases() []schemaCase {
 	}
 }
 
-// assertDeclaredSchemas fails the test unless the declared tool carries the schemas of the case.
 func assertDeclaredSchemas(t *testing.T, tc schemaCase, declared *sdk.Tool) {
 	t.Helper()
 	input, err := json.Marshal(declared.InputSchema)
@@ -110,12 +106,11 @@ func TestTheRunEndpointDeclaresTheSchemasOfATool(t *testing.T) {
 // the annotations an MCP client is given. The same table is in
 // plugins/agents-mcp-server/backend/service/declare_tool_test.go.
 type hintCase struct {
-	name     string
-	effect   v1.ToolEffect
-	step     v1.ToolStep
-	requires []string
-	hints    *v1.ToolHints
-	// readOnly, idempotent, destructive and openWorld are the annotations the client is given.
+	name                                         string
+	effect                                       v1.ToolEffect
+	step                                         v1.ToolStep
+	requires                                     []string
+	hints                                        *v1.ToolHints
 	readOnly, idempotent, destructive, openWorld bool
 }
 
@@ -149,7 +144,6 @@ func getHintCases() []hintCase {
 	}
 }
 
-// describeAnnotations writes the hints of annotations, with nil for an unset hint.
 func describeAnnotations(annotations *sdk.ToolAnnotations) string {
 	if annotations == nil {
 		return "no annotations"

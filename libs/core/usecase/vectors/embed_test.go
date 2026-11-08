@@ -21,7 +21,6 @@ import (
 // written in the place of the other is visible.
 const dimensions = 32
 
-// cutBooks extracts one vault's books and answers with the chunks that need a vector.
 func cutBooks(t testing.TB, index *indexfake.Store, shelf *indexfake.Library, v domain.Vault) []indexfake.Chunk {
 	t.Helper()
 	if _, err := (newExtract(indexfake.Vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {

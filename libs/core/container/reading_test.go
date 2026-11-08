@@ -15,8 +15,6 @@ import (
 // entropy is the whole of the note the vault below holds.
 const entropy = "Entropy is the measure of disorder.\n"
 
-// makeScannedVault is a vault holding one note, and a configuration whose index
-// has been built from it. Nothing here is on the machine's own paths.
 func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	t.Helper()
 
@@ -53,8 +51,6 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	return cfg, vault
 }
 
-// read is the index of that configuration, opened again beside the one that
-// built it.
 func read(t *testing.T, cfg container.Config) *container.Index {
 	t.Helper()
 	db, err := cfg.OpenIndex(t.Context())

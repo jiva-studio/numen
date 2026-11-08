@@ -8,12 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 )
 
-// getShortPieceLengths returns the lengths of the small chunks of the fixture: one below 40, one just
-// below, one at and one above.
 func getShortPieceLengths() []int { return []int{5, 39, 40, 41} }
 
-// cutPieces cuts one source with a large chunk and a small chunk of each length. The text of each
-// small chunk is its own, so the hashes differ.
 func cutPieces(t *testing.T, db *DB) {
 	t.Helper()
 	ctx := t.Context()
@@ -37,7 +33,6 @@ func cutPieces(t *testing.T, db *DB) {
 	}
 }
 
-// embedPieces cuts the pieces and gives every small chunk a vector.
 func embedPieces(t *testing.T, db *DB, recipe string) {
 	t.Helper()
 	cutPieces(t, db)

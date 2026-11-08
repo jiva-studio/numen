@@ -126,7 +126,6 @@ func FuzzRead(f *testing.F) {
 	})
 }
 
-// hasPart is whether the outline holds this part, at this offset.
 func hasPart(parts []pdf.Part, title string, offset int) bool {
 	for _, part := range parts {
 		if part.Title == title && part.Offset == offset {
@@ -136,7 +135,6 @@ func hasPart(parts []pdf.Part, title string, offset int) bool {
 	return false
 }
 
-// flipByte is the file with one byte of it written over by another.
 func flipByte(raw []byte, pos int) []byte {
 	if len(raw) == 0 {
 		return raw

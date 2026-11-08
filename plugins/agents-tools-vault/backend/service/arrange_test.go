@@ -70,8 +70,6 @@ type vaultProblemsOutput struct {
 	Checks   []string       `json:"checks"`
 }
 
-// newSkyVault is an invented vault of astronomy notes, with one file that is not a note and one
-// note whose identifier does not parse.
 func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(skyVault)
@@ -88,8 +86,6 @@ func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	return v, registry
 }
 
-// callTool calls the tool on the vault and returns its structured result, failing the test when the
-// tool is unknown or rejects.
 func callTool(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) []byte {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -105,7 +101,6 @@ func callTool(t *testing.T, registry *tools.Registry, vaultID, name, arguments s
 	return res.GetResult().GetStructured()
 }
 
-// requireRejection calls the tool and fails the test unless the tool is known and rejects the call.
 func requireRejection(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -384,12 +379,10 @@ func TestVaultListMarksAVaultWithoutItsFolderAsMissing(t *testing.T) {
 	}
 }
 
-// getDefaultChecks is the checks vault_problem_list runs when the call names none.
 func getDefaultChecks() []string {
 	return []string{"parse", "frontmatter", "ambiguous"}
 }
 
-// filterProblems is the problems the check found.
 func filterProblems(problems []vaultProblem, check string) []vaultProblem {
 	var out []vaultProblem
 	for _, p := range problems {
@@ -503,7 +496,6 @@ func TestVaultProblemListOfAnUnknownCheckNameReturnsTheHostError(t *testing.T) {
 	}
 }
 
-// getArrangeToolNames returns the note_list group: the tools that list, title and resolve notes, list vaults and check problems.
 func getArrangeToolNames() []string {
 	return []string{"note_list", "note_title_list", "note_resolve", "vault_list", "vault_problem_list"}
 }

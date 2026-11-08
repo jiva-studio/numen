@@ -26,7 +26,6 @@ type Model struct {
 	DefaultReasoning string
 }
 
-// listLevelNames returns the level names from the least reasoning to the most.
 func listLevelNames() []string {
 	return []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 }

@@ -22,8 +22,6 @@ type queueEndpoint struct {
 
 var _ numenv1connect.HostQueueServiceHandler = (*queueEndpoint)(nil)
 
-// begin authenticates the call and returns the plugin that made it and the
-// queue it works.
 func (e *queueEndpoint) begin(header http.Header) (string, pluginport.PluginWork, error) {
 	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
 	if err != nil {
@@ -122,7 +120,6 @@ func (e *queueEndpoint) FinishTask(
 	return connect.NewResponse(&v1.FinishTaskResponse{}), nil
 }
 
-// isTaskFinished reports whether a report ends its task: the task failed, or it counted to its total.
 func isTaskFinished(task *v1.Task) bool {
 	return task.GetError() != "" || (task.GetTotal() > 0 && task.GetDone() >= task.GetTotal())
 }

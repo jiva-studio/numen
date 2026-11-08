@@ -48,7 +48,6 @@ func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
 	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
-// newFloorErrorReporter reports a store of floors that cannot be read as a task.
 func newFloorErrorReporter(state *State) func(error) {
 	return func(err error) {
 		state.reportTask(run.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
@@ -58,9 +57,6 @@ func newFloorErrorReporter(state *State) func(error) {
 // errNoProgress is the error of a window that cannot report vector progress.
 var errNoProgress = errors.New("index progress is unknown")
 
-// newIndexWorker is the indexing of the vaults this window shows, over the
-// embedder the installation holds. still is how long the vault has to have been
-// quiet before a note that was written is embedded.
 func newIndexWorker(
 	made Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
@@ -96,13 +92,6 @@ type indexJob struct {
 	out     io.Writer
 }
 
-// startIndexing starts the watch and the first scan together, and returns a
-// function that waits for both to stop.
-//
-// The watch runs alongside the scan: changes reach the window only through it.
-//
-// A vault that cannot be watched stays usable: the application keeps working
-// and reports that changes will not appear automatically.
 func startIndexing(ctx context.Context, made Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
@@ -132,8 +121,6 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 	return refresh, running.Wait
 }
 
-// newErrorReporter reports errors to the window, and clears the reported error
-// when a later attempt succeeds.
 func newErrorReporter(state *State) windowport.ErrorHandler {
 	return func(err error) {
 		if err == nil {
@@ -144,8 +131,6 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 	}
 }
 
-// newChangeReporter reports changes to the window and wakes the passes that
-// process them.
 func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client shows every file in the vault, so an asset is reported as a note is.
@@ -164,7 +149,6 @@ func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets
 	}
 }
 
-// watchVault runs the watch until it stops.
 func watchVault(ctx context.Context, state *State, run func(context.Context), unwatched error) {
 	run(ctx)
 	// No changes reach the window once the watch stops, so the vault is not
@@ -179,12 +163,6 @@ type modelWatcher interface {
 	OnModelChange(fn func())
 }
 
-// followModel records the model of the embedder again and wakes the passes over the file
-// texts each time the embedder reports that its model changed. A write of any other
-// setting does neither.
-//
-// recut, when given, runs each time the chunk size the model reports differs from the last one seen, so the vault
-// session is built again and the notes are cut at the new size.
 func followModel(embedder embeddingport.Embedder, state *State, worker *indexing.Worker, recut func()) {
 	watcher, ok := embedder.(modelWatcher)
 	if !ok {

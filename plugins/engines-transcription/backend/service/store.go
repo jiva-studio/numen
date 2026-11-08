@@ -13,7 +13,6 @@ import (
 // textKind labels the text versions the plugin creates.
 const textKind domain.TextKind = "transcript"
 
-// getTranscriptionKey is the key of what the model heard in a recording: the hash of its bytes.
 func getTranscriptionKey(fileHash string) string { return fileHash }
 
 // transcripts are the transcripts kept in the plugin's folder of a vault's store, in the common
@@ -28,7 +27,6 @@ func getFileName(key string) string    { return key + ".jsonl" }
 func getPartialName(key string) string { return key + ".partial.jsonl" }
 func getReachedName(key string) string { return key + ".reached" }
 
-// isWholeFile reports whether the version is kept in the whole transcript file of its key.
 func isWholeFile(version domain.TextVersion) bool { return version.File == getFileName(version.Key) }
 
 // reached is how far a partial transcript got: the millisecond of the recording, and the size of
@@ -38,7 +36,6 @@ type reached struct {
 	Size int64 `json:"size"`
 }
 
-// hasWhole reports whether the whole transcript is kept under the key.
 func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	_, err := t.store.Read(ctx, getFileName(key))
 	if errors.Is(err, host.ErrNotExist) {
@@ -47,9 +44,6 @@ func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	return err == nil, err
 }
 
-// readReached is how far a transcription before this one got, in milliseconds. The bytes of the
-// partial transcript past the size recorded with it are a batch that did not land whole, and are
-// cut away. A partial transcript with no record of its progress starts again from zero.
 func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 	raw, err := t.store.Read(ctx, getReachedName(key))
 	if errors.Is(err, host.ErrNotExist) {
@@ -78,8 +72,6 @@ func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 	return progress.MS, nil
 }
 
-// appendBatch adds a batch of cues to the partial transcript, and records that it reached the
-// millisecond given.
 func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcript.Cue, ms int) error {
 	segments, err := transcript.GetSegments(cues)
 	// gomutants:disable-next-line BRANCH_IF reason="transcript.GetSegments on finite integer timestamps cannot fail"
@@ -101,7 +93,6 @@ func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcr
 	return t.store.Write(ctx, getReachedName(key), raw)
 }
 
-// finish keeps the partial transcript whole under the key and removes the record of its progress.
 func (t transcripts) finish(ctx context.Context, key string) error {
 	if err := t.store.Rename(ctx, getPartialName(key), getFileName(key)); err != nil {
 		return err

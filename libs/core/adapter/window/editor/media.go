@@ -57,8 +57,6 @@ func (h *mediaHandler) GetMediaSource(
 	}), nil
 }
 
-// getCopyFileStat is what an address of a copy names: the file it is played in place of, and the
-// size of the copy.
 func getCopyFileStat(path string, size int64) domain.FileStat {
 	return domain.FileStat{Path: path, Size: size}
 }
@@ -78,7 +76,6 @@ func (h *mediaHandler) GetPageSource(
 // errNoPlugin reports a request that names no plugin id.
 var errNoPlugin = errors.New("the request names no plugin")
 
-// getMediaType is the content type a file is served as, and empty where nothing names one.
 func getMediaType(types *file.GetMediaType, path string) string {
 	if types == nil {
 		return ""

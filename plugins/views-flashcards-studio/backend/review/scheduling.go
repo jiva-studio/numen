@@ -49,8 +49,6 @@ func (s *DueByDay) GetDayNumber(pos time.Time) int {
 	return int(s.day.GetDate(pos).Unix() / int64(24*time.Hour/time.Second))
 }
 
-// weekday is the day of the week a numbered day of review falls on. The day the
-// clock is counted from was a Thursday.
 func weekday(number int) time.Weekday {
 	return time.Weekday(((number+int(time.Thursday))%7 + 7) % 7)
 }
@@ -90,7 +88,6 @@ func (p Preset) GetDueDay(s *DueByDay, now, due time.Time) time.Time {
 	return p.computeDueDay(s, now, due)
 }
 
-// computeDueDay is where the day is chosen.
 func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	if s == nil {
 		return due
@@ -121,9 +118,6 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 
-// getWeight is how much a numbered day of review needs another card: the share
-// of the load its day of the week carries, divided by the cards already due on
-// it plus one.
 func (p Preset) getWeight(s *DueByDay, day int) float64 {
 	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
@@ -132,8 +126,6 @@ func (p Preset) getWeight(s *DueByDay, day int) float64 {
 // intervals from one length to another.
 type slack struct{ from, to, factor float64 }
 
-// getSlacks returns the tolerance by interval length: the longer the interval, the larger the
-// tolerance in days.
 func getSlacks() []slack {
 	return []slack{
 		{2.5, 7, 0.15},
@@ -142,8 +134,6 @@ func getSlacks() []slack {
 	}
 }
 
-// window is the days either side of an interval a card may be put on, counted
-// from the answer, and whether the window holds more than one day.
 func window(away time.Duration) (first, last int, opens bool) {
 	days := away.Hours() / 24
 	if days < EvenFrom || days > EvenTo {

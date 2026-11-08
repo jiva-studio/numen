@@ -9,9 +9,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// lockFile waits for the exclusive lock on the first byte of the file at path, creating the file
-// when it is missing, and returns the function that releases it. Windows drops the lock when the
-// handle closes.
 func lockFile(path string) (func() error, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {

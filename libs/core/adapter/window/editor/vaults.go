@@ -28,7 +28,6 @@ type vaultsHandler struct {
 	rename      *vaults.Rename
 	remove      *vaults.Remove
 
-	// chooseFolder is nil where the application has no window to put a dialog in.
 	chooseFolder *vaults.ChooseFolder
 }
 
@@ -161,8 +160,6 @@ func (s *vaultsHandler) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-// convertVaultToWire is one vault as the schema carries it. A folder that is not
-// there to be found is marked, and the vault stays on the list.
 func (s *vaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
@@ -170,9 +167,6 @@ func (s *vaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
 	}
 }
 
-// vaultsErrorCodeBy returns the error code for a vault-list error and whether
-// the error maps to one. Any other error is a failure of the list, the index or
-// the host.
 func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaults.ErrUnreadable):
@@ -318,8 +312,6 @@ func (h *workspaceHandler) WatchFocus(
 	}
 }
 
-// receiveFocus waits for the next message of the focus stream: a keepalive at each tick, a tab id
-// to make active, or a place. It reports false once the context ends or a subscription closes.
 func receiveFocus(
 	ctx context.Context, tick <-chan time.Time, places <-chan domain.Place, tabIDs <-chan string,
 ) (*v1.WatchFocusResponse, bool) {
@@ -336,8 +328,6 @@ func receiveFocus(
 	}
 }
 
-// convertByteRangesToWire returns the ranges as the window receives them, in 32-bit offsets. A
-// range whose start or end exceeds 32 bits is left out.
 func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
@@ -349,7 +339,6 @@ func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	return out
 }
 
-// convertTabPlaceFromWire returns the place a reader reported for a tab, nil when it reported none.
 func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
 	if place == nil {
 		return nil

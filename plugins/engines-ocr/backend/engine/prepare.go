@@ -19,11 +19,6 @@ func NewLibrary() *onnx.Library {
 	return onnx.NewLibrary(bindRuntime)
 }
 
-// bindRuntime binds the go-ocr runtime to the library at libPath. paddle.NewEngine binds the
-// runtime, rejects an empty model or dictionary path, and only then reads the dictionary, so a
-// dictionary that does not exist shows the binding succeeded; any other error is a failed binding.
-// The missing files lie in a private directory made for the probe, so no other user can plant a
-// file there.
 func bindRuntime(libPath string) (err error) {
 	probe, err := os.MkdirTemp("", "numen-ocr-bind-probe-")
 	if err != nil {
@@ -37,8 +32,6 @@ func bindRuntime(libPath string) (err error) {
 	return fmt.Errorf("bind the runtime at %s: %w", libPath, bindErr)
 }
 
-// newProbeConfig returns the configuration bindRuntime opens an engine with: every model and
-// dictionary path is set and names a file that does not exist in probeDir.
 func newProbeConfig(libPath, probeDir string) paddle.Config {
 	return paddle.Config{
 		OnnxRuntimeLibPath: libPath,

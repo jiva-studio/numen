@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
-// newEventHandler is what the run calls with each event of the Codex output.
 func newEventHandler(r *reader) func(map[string]any) {
 	return func(event map[string]any) { handleCodexEvent(r, event) }
 }
@@ -45,7 +44,6 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 	}
 }
 
-// getToolName is the tool an mcp_tool_call item names: its tool, else its name.
 func getToolName(item map[string]any) string {
 	if tool := getString(item, "tool"); tool != "" {
 		return tool

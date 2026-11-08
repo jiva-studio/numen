@@ -25,7 +25,6 @@ type dependencyEndpoint struct {
 
 var _ numenv1connect.DependencyServiceHandler = (*dependencyEndpoint)(nil)
 
-// begin authenticates the call and returns what provisions the dependencies.
 func (e *dependencyEndpoint) begin(header http.Header) (pluginport.DependencyCatalog, error) {
 	if _, err := e.endpoint.authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
@@ -102,8 +101,6 @@ func (e *dependencyEndpoint) ProvisionDependency(
 	}
 }
 
-// finishStream sends what is left of the statuses and, for a run that failed
-// without reporting it, the failure.
 func (e *dependencyEndpoint) finishStream(
 	stream *connect.ServerStream[v1.ProvisionDependencyResponse], updates chan pluginport.DependencyStatus, req pluginport.DependencyRequirement, runErr error,
 ) error {
@@ -126,8 +123,6 @@ func (e *dependencyEndpoint) finishStream(
 	return nil
 }
 
-// sendLatest sends the status on the channel. A lagging receiver gets the
-// newest status, not every one.
 func sendLatest(updates chan pluginport.DependencyStatus, status pluginport.DependencyStatus) {
 	for {
 		select {

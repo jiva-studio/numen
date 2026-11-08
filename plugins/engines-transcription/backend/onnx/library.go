@@ -28,7 +28,6 @@ func GetLibraryName() string {
 	return getLibraryName(runtime.GOOS)
 }
 
-// getLibraryName returns what the library is called on an operating system.
 func getLibraryName(goos string) string {
 	switch goos {
 	case "darwin":
@@ -56,17 +55,12 @@ func FindInstalled(name, pkg string) []string {
 
 var versionPart = regexp.MustCompile(`[0-9]+`)
 
-// sortNewestFirst orders package store paths by the numbers in the package name
-// that follows the store hash, highest first. The newest package links the
-// newest C library, and the library loaded first fixes the C library every
-// later one resolves against.
 func sortNewestFirst(paths []string) {
 	slices.SortStableFunc(paths, func(a, b string) int {
 		return -slices.Compare(getVersion(a), getVersion(b))
 	})
 }
 
-// getVersion returns the numbers in the store package name of a path.
 func getVersion(path string) []int {
 	rel, err := filepath.Rel("/nix/store", path)
 	if err != nil {
@@ -86,7 +80,6 @@ func getVersion(path string) []int {
 	return out
 }
 
-// getLibraryDirectories returns where this machine keeps shared libraries.
 func getLibraryDirectories() []string {
 	out := filepath.SplitList(os.Getenv("LD_LIBRARY_PATH"))
 	if home, err := os.UserHomeDir(); err == nil {
@@ -105,7 +98,6 @@ func getLibraryDirectories() []string {
 	)
 }
 
-// findMatching returns the regular files one pattern names.
 func findMatching(pattern string) []string {
 	found, err := filepath.Glob(pattern)
 	// gomutants:disable-next-line BRANCH_IF reason="filepath.Glob returns nil slice on error so falling through also returns nil"

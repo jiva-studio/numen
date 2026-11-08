@@ -103,7 +103,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	}
 }
 
-// writeUsage writes the usage text and the commands the enabled plugins declare.
 func writeUsage(out io.Writer, deps Deps) error {
 	r := newReporter(out)
 	r.Print(usage)
@@ -111,11 +110,6 @@ func writeUsage(out io.Writer, deps Deps) error {
 	return r.Err()
 }
 
-// parseInterspersed collects positional arguments wherever they appear.
-//
-// The standard flag package stops at the first non-flag argument, which makes
-// `vault add <path> --name x` silently drop the flag: the order people type is
-// not the order the parser expects.
 func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 	var positional []string
 	for {

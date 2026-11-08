@@ -39,15 +39,10 @@ const (
 // ReadResult is one range of a file returned by a read.
 type ReadResult struct {
 	Outcome ReadOutcome
-	// Text is the range that was read. It is empty for every outcome but Ok.
-	Text string
-	// Start and Length are the returned range: the requested range clamped
-	// to the file and aligned to character boundaries.
-	Start  int
-	Length int
-	// Whole is the length of the file in bytes, which locates the range
-	// within the file.
-	Whole int
+	Text    string
+	Start   int
+	Length  int
+	Whole   int
 }
 
 // Read returns a range of one file's bytes, addressed by its path from the
@@ -100,8 +95,6 @@ func (u Read) Execute(
 	return readRange(file, path, start, length)
 }
 
-// checkRange returns the length a read requests, where zero means the maximum a
-// single read returns, or the error for a range no read can serve.
 func checkRange(path string, start, length int) (int, error) {
 	if start < 0 {
 		return 0, fmt.Errorf("a range of %s begins at %d", path, start)
@@ -115,8 +108,6 @@ func checkRange(path string, start, length int) (int, error) {
 	return length, nil
 }
 
-// readRange reads length bytes of file from start, held within the file and cut
-// at whole characters.
 func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, error) {
 	var out ReadResult
 	whole, err := file.Seek(0, io.SeekEnd)
@@ -149,9 +140,6 @@ func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, 
 	return out, nil
 }
 
-// getReadOutcome is what the vault names at this path among the entries of the
-// folder above it: Ok for a file, AFolder for a folder, LeftAlone for a path it
-// does not report at all.
 func getReadOutcome(ctx context.Context, reader vaultport.VaultReader, path string) (ReadOutcome, error) {
 	clean := pathpkg.Clean(strings.ReplaceAll(path, `\`, "/"))
 	folder := pathpkg.Dir(clean)

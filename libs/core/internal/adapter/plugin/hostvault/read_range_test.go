@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// riverFiles is an invented vault of a text about rivers, a long log, a file of bytes that are not
-// UTF-8 and a folder of notes.
 func riverFiles() map[string]string {
 	return map[string]string{
 		"Rivers.txt":      "the Danube flows east",

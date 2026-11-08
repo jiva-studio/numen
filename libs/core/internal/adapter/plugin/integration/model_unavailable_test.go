@@ -48,7 +48,6 @@ func (h *stubModelHost) Release(string)                          { h.released.Ad
 func (h *stubModelHost) CheckPluginPermission(_, _ string) error { return nil }
 func (h *stubModelHost) GetVaultPath() string                    { return "" }
 
-// newDownModelHost is a host whose plugin process is not listening.
 func newDownModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
@@ -57,7 +56,6 @@ func newDownModelHost(t *testing.T) *stubModelHost {
 	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
-// newSilentModelHost is a host whose plugin accepts a request and never answers it.
 func newSilentModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {

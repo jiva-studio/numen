@@ -12,7 +12,6 @@ import (
 
 const searchRecipe = "local|bge|1024|512|mean|int8@0.4"
 
-// newSearch is the search of a host that shows the vault "physics", knows "chemistry", and runs the model.
 func newSearch() *hosttest.Search {
 	search := hosttest.NewSearch("physics", "chemistry")
 	search.SetModel(hosttest.SearchModel{Name: "bge", Recipe: searchRecipe, FloorHint: 0.4})
@@ -20,8 +19,6 @@ func newSearch() *hosttest.Search {
 	return search
 }
 
-// passagesOf is n passages, each on a note of its own, whose vector leans further to the second axis
-// the later it comes.
 func passagesOf(n int) []hosttest.SearchPassage {
 	out := make([]hosttest.SearchPassage, n)
 	for i := range out {

@@ -66,8 +66,6 @@ func NewLifecycleServer(shutdownCh chan struct{}, opts ...LifecycleOption) *Life
 	return ls
 }
 
-// shutdown runs the shutdown callback and signals termination. The signal is sent even when the
-// callback fails.
 func (s *LifecycleServer) shutdown() error {
 	var closeErr error
 	if s.onShutdown != nil {
@@ -77,7 +75,6 @@ func (s *LifecycleServer) shutdown() error {
 	return closeErr
 }
 
-// configure stores the values and invokes the registered configure callback.
 func (s *LifecycleServer) configure(ctx context.Context, values map[string]string) error {
 	s.mu.Lock()
 	if s.config == nil {

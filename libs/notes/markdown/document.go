@@ -36,14 +36,12 @@ func IsFrontmatterStart(text string) bool {
 // replaced, and the rest of the file is never rewritten.
 type Document struct {
 	bom            []byte
-	open           []byte // the opening `---` line, with its ending
-	front          []byte // between the delimiters, each line with its own ending
-	closeDelimiter []byte // the closing `---` line, with its ending
+	open           []byte
+	front          []byte
+	closeDelimiter []byte
 	body           []byte
 	eol            string
-	// mapping is the frontmatter parsed, held until the frontmatter changes.
-	mapping *yaml.Node
-	// isUnterminated is a file that opens with the delimiter and never closes it.
+	mapping        *yaml.Node
 	isUnterminated bool
 }
 

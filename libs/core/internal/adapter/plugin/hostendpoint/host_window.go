@@ -27,7 +27,6 @@ type windowEndpoint struct {
 
 var _ numenv1connect.HostWindowServiceHandler = (*windowEndpoint)(nil)
 
-// begin authorizes a window call and returns the window, nil where the host has none.
 func (e *windowEndpoint) begin(header http.Header) (pluginport.PluginWindow, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
 		return nil, err
@@ -35,9 +34,6 @@ func (e *windowEndpoint) begin(header http.Header) (pluginport.PluginWindow, err
 	return e.endpoint.callers.GetPluginWindow(), nil
 }
 
-// mapWindowError maps the error of a window call to a code: an error the protocol names is a code, an
-// argument the use case rejects is invalid, the end of the caller's context is cancelled, and
-// anything else is internal.
 func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {
 	switch {
 	case err == nil:
@@ -146,8 +142,6 @@ func (e *windowEndpoint) ActivateTab(
 	}), nil
 }
 
-// convertTabToWire returns the tab as a plugin reads it: with the place its reader reported. The
-// state its kind saved is private to the plugin of the kind and is not sent.
 func convertTabToWire(tab domain.Tab) *v1.OpenTab {
 	out := &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
 	if place := tab.Place; place != nil {
@@ -162,7 +156,6 @@ func convertTabToWire(tab domain.Tab) *v1.OpenTab {
 	return out
 }
 
-// clampToInt32 returns n, or the nearest 32-bit integer where n does not fit in one.
 func clampToInt32(n int) int32 {
 	return int32(max(min(n, math.MaxInt32), math.MinInt32))
 }

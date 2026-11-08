@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// waits is how long a rename rests before each further attempt.
 func getWaits() []time.Duration {
 	return []time.Duration{10 * time.Millisecond, 40 * time.Millisecond, 160 * time.Millisecond}
 }

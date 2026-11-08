@@ -62,8 +62,6 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	return moved, nil
 }
 
-// getWikilinkSuffix is the part of a wikilink that is not the address: the
-// fragment and the alias, in the order they were written.
 func getWikilinkSuffix(inside string) string {
 	target := inside
 	if alias := strings.IndexByte(target, '|'); alias >= 0 {

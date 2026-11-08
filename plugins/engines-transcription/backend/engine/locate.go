@@ -57,10 +57,6 @@ func resolveFileName(repoAddress, defaultFileName string) string {
 	return defaultFileName
 }
 
-// locateModel finds a model file by checking:
-// 1. Explicit path in settings
-// 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
-// 3. Plugin directory / models folder fallback (only if repo address is provided)
 func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string) (string, error) {
 	if explicitPath != "" {
 		if _, err := os.Stat(explicitPath); err != nil {
@@ -84,7 +80,6 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-// findInEnv is the file the variable names, empty when it is unset or the file is missing.
 func findInEnv(envVar string) string {
 	// gomutants:disable-next-line BRANCH_IF reason="os.Getenv returns empty for an empty variable name"
 	if envVar == "" {

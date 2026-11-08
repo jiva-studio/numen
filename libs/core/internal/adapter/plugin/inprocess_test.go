@@ -31,8 +31,6 @@ const (
 	secondBuiltInID = "md.example.second"
 )
 
-// newBuiltInManifest is the manifest.json of an agent plugin that declares the apiKey secret, a
-// model setting and the runtimes given.
 func newBuiltInManifest(id string, runtimes ...string) []byte {
 	declared := ""
 	if len(runtimes) > 0 {

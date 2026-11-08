@@ -39,17 +39,11 @@ func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 type ProjectCurve struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	// presets identifies which preset schedules each deck. A build without links
-	// projects every deck of the vault.
-	presets Presets
-	day     review.Day
-	now     ports.Clock
-	// By is the scheduler asking for a share of the cards to come back. A build
-	// holding none reads FSRS.
-	By func(retention float64) review.Scheduler
-	// Cores is how many places of a curve are worked out at once. A build
-	// holding none works one place at a time.
-	Cores int
+	presets     Presets
+	day         review.Day
+	now         ports.Clock
+	By          func(retention float64) review.Scheduler
+	Cores       int
 }
 
 // NewProjectCurve is what a preset's one control is projected through: what
@@ -66,8 +60,6 @@ func NewProjectCurve(
 	}
 }
 
-// checkGoal is what is wrong with the value the goal moves, and is nil where
-// number.
 func checkGoal(p review.Preset) error {
 	var value float64
 	var bounds review.Bounds
@@ -168,17 +160,12 @@ func (u ProjectCurve) Execute(
 
 // scheduledCards is the review cards a preset schedules.
 type scheduledCards struct {
-	// decks records for each requested deck whether the preset schedules it.
-	decks map[string]bool
-	// schedules is the schedule of each review card that has been answered.
-	schedules map[review.CardID]review.Schedule
-	// presetMap is the review cards the preset is costed from.
-	presetMap map[review.CardID]string
-	// unseen is how many of the review cards have not been answered.
+	decks      map[string]bool
+	schedules  map[review.CardID]review.Schedule
+	presetMap  map[review.CardID]string
 	unreviewed int
 }
 
-// readScheduledCards picks out of review cards the ones the preset at path schedules.
 func (u ProjectCurve) readScheduledCards(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
@@ -213,17 +200,6 @@ func (u ProjectCurve) readScheduledCards(
 	return out, nil
 }
 
-// scheduled is the decks a curve of the preset at path is worked out over.
-//
-// A deck names its preset with an entry of its `links:` block, so what points
-// at that note is what the preset could schedule, and the rest of the vault is
-// left unread. Which of them the preset does schedule is the answer of the reads:
-// a deck naming two presets is scheduled by the first.
-//
-// A preset standing in no note is the defaults, and nothing points at those.
-// The decks they schedule are the decks naming no preset, which is a question
-// only the decks answer: every one of them is read, and the curve of the
-// defaults pays for the whole vault.
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	decks, err := u.reviewCards.GetDeckPaths(ctx, v)
 	if err != nil || path == "" || u.presets.links == nil {
@@ -250,8 +226,6 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 	return out, nil
 }
 
-// countPointingDecks returns how many of these decks name the preset at path.
-// requested holds what has already been determined from the cards.
 func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	decks []string, requested map[string]bool,
@@ -273,15 +247,6 @@ func (u ProjectCurve) countPointingDecks(
 	return out, nil
 }
 
-// computePlaces computes every place of a grid concurrently.
-//
-// No place reads another's result: a run receives the schedules already produced
-// from the answers, reads only those, and writes only what it returns. Each
-// result is stored at the place it belongs to.
-//
-// A failing place does not stop the others, and the error returned is that of the
-// earliest failing place. A request with no remaining waiter ends because each
-// place's run reads the context it was given.
 func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {
 	failed := make([]error, count)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Worker semaphore capacity affects concurrency bound only."
@@ -306,7 +271,6 @@ func (u ProjectCurve) computePlaces(count int, each func(index int) error) error
 	return nil
 }
 
-// getScheduler is the scheduler asking for a share of the cards to come back.
 func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
 	if u.By != nil {
 		return u.By(retention)

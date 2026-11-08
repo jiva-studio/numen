@@ -49,10 +49,10 @@ func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
 
 // RenameResult reports the note's current name and what happened to the file.
 type RenameResult struct {
-	Path  string // where the note is filed now
+	Path  string
 	Title string
 	By    NameSource
-	Moved *MoveResult // nil when the file is not at a different path
+	Moved *MoveResult
 }
 
 // errFilenameNamesIt ends the edit without writing. A note its filename names
@@ -106,8 +106,6 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	return res, err
 }
 
-// checkTarget returns vaultport.ErrAlreadyExists when the rename will move the note and another
-// file is at the path it moves to, so the title is not written for a move that cannot happen.
 func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string, source NameSource) error {
 	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return nil

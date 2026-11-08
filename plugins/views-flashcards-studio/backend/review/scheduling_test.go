@@ -14,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// makeDueByDay is a table of the days of review, loaded with as many review cards
-// on each of these many days past an instant.
 func makeDueByDay(d review.Day, pos time.Time, on map[int]int) *review.DueByDay {
 	out := review.NewDueByDay(d)
 	for day, cards := range on {
@@ -145,14 +143,6 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 }
 
-// scheduling lists every function that places a card's day: the session that
-// distributes the cards, and the projection drawn next to a control. Both go
-// through AssignDueDay, and that is the whole list.
-//
-// A function is one arithmetic however many times its body is called: the projection
-// places a card it has begun and a card it has answered again, and they are one
-// step. A third function here would be a third arithmetic, kept consistent with
-// these two only by tests and drifting whenever one of them changes.
 func getScheduling() []string {
 	return []string{"History.Replay", "Simulation.step"}
 }
@@ -255,10 +245,6 @@ func TestGetCallers_MatchesOnlyCallsToAssignDueDay(t *testing.T) {
 	}
 }
 
-// getCallers is every function of a file whose body calls this one, named by
-// the type it is a method of and by its own name. A function calling it more
-// than once is named once: what the rule counts is arithmetics and not call
-// sites.
 func getCallers(file *ast.File, name string) []string {
 	var out []string
 	for _, decl := range file.Decls {
@@ -284,8 +270,6 @@ func getCallers(file *ast.File, name string) []string {
 	return out
 }
 
-// countDeclarations is how many functions of a file are declared under this
-// name.
 func countDeclarations(file *ast.File, name string) int {
 	out := 0
 	for _, decl := range file.Decls {
@@ -296,7 +280,6 @@ func countDeclarations(file *ast.File, name string) int {
 	return out
 }
 
-// getFuncName is what a function is called, a method by the type it is of.
 func getFuncName(pos *ast.FuncDecl) string {
 	if pos.Recv == nil || len(pos.Recv.List) == 0 {
 		return pos.Name.Name

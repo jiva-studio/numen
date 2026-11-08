@@ -17,13 +17,10 @@ import (
 
 // Rename is which field of which card model is being renamed, and to what.
 type Rename struct {
-	// CardModel is where the card model is filed.
 	CardModel string
 	From      string
 	To        string
-	// FileStat is the card model as the caller read it. A card model that has
-	// changed since is left alone, and no deck is written.
-	FileStat domain.FileStat
+	FileStat  domain.FileStat
 }
 
 // UnwrittenDeck is one deck a rename did not reach. It keeps the old heading.
@@ -34,14 +31,9 @@ type UnwrittenDeck struct {
 
 // RenameResult reports what a rename changed and what it did not.
 type RenameResult struct {
-	// CardModel is the file stat of the card model after the write, which the
-	// caller presents at its next write.
-	CardModel domain.FileStat
-	// Decks is every deck a heading was rewritten in, and Cards is how many
-	// headings that was.
-	Decks []string
-	Cards int
-	// NotWritten is one entry per deck the rename could not be written to.
+	CardModel  domain.FileStat
+	Decks      []string
+	Cards      int
 	NotWritten []UnwrittenDeck
 }
 
@@ -61,12 +53,9 @@ type RenameField struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
 	notes   TypeQueries
-	// 	// links resolves the wikilink by which a card names its card model, which
-	// 	// identifies the card model that generates the card.
-	links ports.LinkQueries
-	index note.IndexUpdater
-	// now is when this is happening. An identifier written here carries it.
-	now ports.Clock
+	links   ports.LinkQueries
+	index   note.IndexUpdater
+	now     ports.Clock
 }
 
 // TypeQueries is the single index query a rename needs. The rename runs entirely
@@ -112,8 +101,6 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 	return u
 }
 
-// createIdentifier is the identifier a file this rename writes is to carry
-// where it carries none.
 func (u RenameField) createIdentifier() (string, error) {
 	return ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
 }
@@ -161,8 +148,6 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 	return nil
 }
 
-// rename is the whole of the writing, under this vault's write lock from before
-// the card model is read until after the last deck is replaced.
 func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (result RenameResult, err error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
@@ -215,7 +200,6 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 	return out, nil
 }
 
-// writeCardModelField writes the new name where the card model declares the field.
 func (u RenameField) writeCardModelField(
 	ctx context.Context, reader ports.VaultReader, writer ports.VaultWriter, in Rename,
 ) (domain.FileStat, error) {
@@ -246,8 +230,6 @@ func (u RenameField) writeCardModelField(
 	return writer.Write(ctx, in.CardModel, f.Bytes(), expectedFp)
 }
 
-// writeIdentifier writes an identifier into a file that carries none, which is
-// what the application changing what a note holds does.
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	identifier, err := u.createIdentifier()
 	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
@@ -258,11 +240,6 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	return err
 }
 
-// getDeckPaths returns every deck the vault holds, by path. The index answers which notes
-// those are, in one question and without a file being opened.
-//
-// This runs under the vault's write lock, so a question per note in the vault
-// is every other write in the application waiting behind it.
 func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string, error) {
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
@@ -270,24 +247,14 @@ func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string
 // deckWriter is the read and write of one deck. A failure on one deck is reported
 // as one error and the later decks are still written.
 type deckWriter struct {
-	reader ports.VaultReader
-	writer ports.VaultWriter
-	links  ports.LinkQueries
-	vault  domain.Vault
-	// 	// read opens the card models that generate this deck's cards, and determines
-	// 	// which of a card's fields is first.
+	reader          ports.VaultReader
+	writer          ports.VaultWriter
+	links           ports.LinkQueries
+	vault           domain.Vault
 	read            Read
 	writeIdentifier func(func(string) (bool, error)) error
 }
 
-// rename rewrites the heading in every card of this deck the card model cuts, and
-// reports how many it rewrote. A deck holding none of them is not written.
-//
-// A card is cut by the card model its own wikilink lands on, which is what reading
-// the deck against its card models holds to.
-//
-// whole: it is given an identifier where it carried none, and every card
-// of it is given its card id and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.StatFile(ctx, path)
 	if err != nil {

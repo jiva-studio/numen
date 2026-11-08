@@ -245,8 +245,6 @@ func isStruct(t reflect.Type) bool {
 	return t.Kind() == reflect.Struct
 }
 
-// createSchema creates the JSON schema of a struct, and an object schema without properties for
-// any other type. The schema of a pointer to a struct has the type object alone.
 func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
 	if !isStruct(t) {
 		return &jsonschema.Schema{Type: typeObject}, nil
@@ -259,8 +257,6 @@ func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
-// schemaOf is the JSON schema of a struct as a JSON object, and an empty object schema for any
-// other type.
 func schemaOf(t reflect.Type) ([]byte, error) {
 	schema, err := createSchema(t)
 	if err != nil {
@@ -269,8 +265,6 @@ func schemaOf(t reflect.Type) ([]byte, error) {
 	return json.Marshal(schema)
 }
 
-// writeResult is what a tool answered, as a structured result where it is an object and as text
-// where it is not.
 func writeResult(out any) *v1.ToolResult {
 	encoded, err := json.Marshal(out)
 	if err != nil {
@@ -395,9 +389,6 @@ type Hints struct {
 	OpenWorld bool
 }
 
-// createHints returns the hints of the tool spec describes: a read-only tool is read-only and
-// idempotent, a read-write tool of the step Remove is destructive, and a tool that requires
-// network:outbound reaches the open world.
 func createHints(spec Spec) Hints {
 	return Hints{
 		ReadOnly:    spec.Effect == ReadOnly,

@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// enqueueAfter starts the plugin's work while the lock is held and returns once
-// it waits, with the channel its turn arrives on.
 func enqueueAfter(
 	t *testing.T, ctx context.Context, work *PluginWork, pluginID string, isUserStarted bool,
 ) (<-chan pluginport.Lease, <-chan error) {

@@ -30,8 +30,6 @@ func NewErase(identity vaultport.VaultIdentity, trash machineport.Trash, unregis
 // EraseResult reports what happened to the folder. Only Erase can tell whether
 // the folder was already missing, so the caller receives it from here.
 type EraseResult struct {
-	// IsTrashed is whether the folder went to the trash. A vault whose folder had
-	// already gone leaves nothing to move, and only its entry and its rows go.
 	IsTrashed bool
 }
 

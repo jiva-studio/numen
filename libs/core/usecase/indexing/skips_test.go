@@ -13,12 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// heldWords is the vocabulary of the note whose indexing a person cancels.
 func getHeldWords() []string {
 	return []string{"lighthouse", "beacon", "keeper", "lantern", "reef", "fog", "signal", "cliff"}
 }
 
-// afterWords is the vocabulary of that note once it is edited.
 func getAfterWords() []string {
 	return []string{"orchard", "pear", "ladder", "basket", "bloom", "frost", "graft", "hedge"}
 }

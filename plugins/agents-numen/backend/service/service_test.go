@@ -16,7 +16,6 @@ import (
 
 const testToken = "plugin-token"
 
-// startPlugin serves the plugin on a free port and returns where it answers.
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	stdin, hold := io.Pipe()

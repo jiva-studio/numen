@@ -33,8 +33,6 @@ type textCall struct {
 	vault    domain.Vault
 }
 
-// begin authorizes a call and finds the vault it works: the one its Numen-Vault header names, else
-// the one the host shows.
 func (e *textEndpoint) begin(header http.Header, permission string) (textCall, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
@@ -57,8 +55,6 @@ func (e *textEndpoint) begin(header http.Header, permission string) (textCall, e
 	return call, nil
 }
 
-// answerText sorts the failure of a text call: an answer the protocol names is
-// a code, the end of the caller's context is cancelled, and anything else is internal.
 func answerText(ctx context.Context, err error) (v1.TextErrorCode, error) {
 	if err == nil {
 		return v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED, nil
@@ -167,8 +163,6 @@ func (e *textEndpoint) ReadText(
 	}), nil
 }
 
-// serveTextRange serves a ReadText that sets a length: it returns the segments of the range, the start of the first
-// and the size of the whole text.
 func serveTextRange(ctx context.Context, call textCall, req *v1.ReadTextRequest) (*connect.Response[v1.ReadTextResponse], error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,

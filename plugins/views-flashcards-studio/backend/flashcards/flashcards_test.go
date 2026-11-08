@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// One vault of two card models and two decks. The animal card model has two review cards, so
-// each of its cards is two review cards; the term card model has one.
 func getVault() map[string]string {
 	return map[string]string{
 		"Animal.md": "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n" +
@@ -48,8 +46,7 @@ type vaulted struct {
 	logs      ports.LogStores
 	notes     ports.NoteQueries
 	links     ports.LinkQueries
-	// scan updates the index for what the vault now holds.
-	scan func(ctx context.Context, v domain.Vault, paths []string) error
+	scan      func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 func openVault(t testing.TB, notes map[string]string) vaulted {
@@ -91,7 +88,6 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	}
 }
 
-// write puts a file into the vault and updates the index for it, which is
 func write(t *testing.T, s vaulted, path, body string) {
 	t.Helper()
 	pos := filepath.Join(s.vault.Path, filepath.FromSlash(path))
@@ -103,8 +99,6 @@ func write(t *testing.T, s vaulted, path, body string) {
 	}
 }
 
-// remove deletes a file from the vault and updates the index, as an external
-// deletion of a note does.
 func remove(t *testing.T, s vaulted, path string) {
 	t.Helper()
 	if err := os.Remove(filepath.Join(s.vault.Path, filepath.FromSlash(path))); err != nil {
@@ -153,9 +147,6 @@ func (s vaulted) run(t *testing.T, pos time.Time) sitting {
 	return newSitting(run, clock.NewFake(pos))
 }
 
-// runNamed is a run whose file is named for one instant and whose answers were
-// given at another, which is what a run written on another machine and carried
-// here by a synchroniser looks like.
 func (s vaulted) runNamed(t *testing.T, named, reviewedAt time.Time) sitting {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
@@ -175,8 +166,6 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.
 	)
 }
 
-// session is a session whose presets read nothing, so every deck of the vault
-// is scheduled by the defaults.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
@@ -184,7 +173,6 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 	)
 }
 
-// today is the day a session is counted in, on this machine.
 func getToday() review.Day {
 	return review.Day{Starts: review.DayStartTime}
 }
@@ -244,8 +232,6 @@ func TestACardIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Error("card not found in vault")
 }
 
-// handwritten is a deck of one card with no card id, as a manually written deck
-// is until the application writes one.
 func getHandwritten() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
@@ -273,8 +259,6 @@ func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	}
 }
 
-// mixed is a deck with prose, a section, one card that carries a card id and one
-// that does not.
 func getMixed() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
@@ -346,7 +330,6 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	}
 }
 
-// getModTime is when a file of the vault was last written.
 func getModTime(t *testing.T, v domain.Vault, path string) time.Time {
 	t.Helper()
 	pos, err := os.Stat(filepath.Join(v.Path, filepath.FromSlash(path)))
@@ -910,8 +893,6 @@ type plantedCard struct {
 
 func formatTime(pos time.Time) string { return pos.UTC().Format(review.TimestampLayout) }
 
-// rewrite changes the cache a vault holds, so a test can set what a cache
-// claims and check whether it was trusted.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
 	raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID)

@@ -83,8 +83,6 @@ func (r *endpointRun) Stop() error {
 	return errors.Join(r.Run.Stop(), r.endpoint.close(context.Background()))
 }
 
-// appendToolSentences returns the instructions followed, after an empty line, by the distinct
-// instruction sentences of the tools in listing order, joined with one space.
 func appendToolSentences(instructions string, available []tool) string {
 	var sentences []string
 	for _, one := range available {
@@ -104,7 +102,6 @@ func appendToolSentences(instructions string, available []tool) string {
 	}
 }
 
-// getStepKind returns the step kind under which a tool call is displayed.
 func getStepKind(spec *v1.PluginTool) domain.StepKind {
 	switch spec.GetStep() {
 	case v1.ToolStep_TOOL_STEP_SEARCH:

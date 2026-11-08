@@ -61,8 +61,6 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	}
 }
 
-// isWatchingFolder reports whether a folder watch goroutine is running, which
-// means the folder registration is still held.
 func isWatchingFolder() bool {
 	var stacks strings.Builder
 	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {
@@ -71,8 +69,6 @@ func isWatchingFolder() bool {
 	return strings.Contains(stacks.String(), "theme.Catalogue.debounce")
 }
 
-// wrapWithProcessContext serves the handler the way the window does: the request context is the
-// process's own, and ends when the application ends and at no other moment.
 func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entered <- struct{}{}

@@ -53,8 +53,6 @@ type ncxPoint struct {
 	Children []ncxPoint `xml:"navPoint"`
 }
 
-// readNCXNavMap reads the navigation control file's navMap, depth first, which is
-// the order the entries are read in.
 func readNCXNavMap(raw []byte, base string) []text.Entry {
 	var document struct {
 		Points []ncxPoint `xml:"navMap>navPoint"`
@@ -69,9 +67,6 @@ func readNCXNavMap(raw []byte, base string) []text.Entry {
 	return out
 }
 
-// readNCXPageList reads the pages of the printed book. A page is named by its value
-// when it has one; the label of a page target is often decoration around the
-// number.
 func readNCXPageList(raw []byte, base string) []text.Entry {
 	var document struct {
 		Targets []ncxPoint `xml:"pageList>pageTarget"`
@@ -104,9 +99,6 @@ func appendPoint(out []text.Entry, point ncxPoint, base string) []text.Entry {
 	return out
 }
 
-// readNavDocument reads an EPUB 3 navigation document: the links of its table of
-// contents, in document order. A document with no table of contents is read for
-// its links.
 func readNavDocument(raw []byte, base string) []text.Entry {
 	root, err := html.Parse(bytes.NewReader(raw))
 	// gomutants:disable-next-line BRANCH_IF reason="html.Parse on bytes.NewReader never errors"
@@ -120,8 +112,6 @@ func readNavDocument(raw []byte, base string) []text.Entry {
 	return appendLinks(nil, from, base)
 }
 
-// findTableOfContents returns the nav element marked as the table of contents,
-// and nil when there is none.
 func findTableOfContents(n *html.Node) *html.Node {
 	if n.DataAtom == atom.Nav {
 		if words.HasToken(text.GetAttribute(n, "epub:type"), "toc") || words.HasToken(text.GetAttribute(n, "role"), "doc-toc") {
@@ -148,7 +138,6 @@ func appendLinks(out []text.Entry, n *html.Node, base string) []text.Entry {
 	return out
 }
 
-// collectText returns the text a node holds, whatever markup it is wrapped in.
 func collectText(n *html.Node) string {
 	var b bytes.Buffer
 	var walk func(*html.Node)

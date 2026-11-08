@@ -23,8 +23,6 @@ const recipe = "local|bge-m3|1024|512|mean|int8@0.4"
 
 func getStart() time.Time { return time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC) }
 
-// newIndex is the search of a host that runs a model and holds a vault of 13100 chunks, 12480 of
-// which carry a vector.
 func newIndex() *hosttest.Search {
 	search := hosttest.NewSearch("physics")
 	search.SetModel(hosttest.SearchModel{Name: "bge-m3", Recipe: recipe, FloorHint: 0})
@@ -151,7 +149,6 @@ func (failingIndex) GetIndexStats(context.Context) (host.IndexStats, error) {
 	return host.IndexStats{}, errHostUnreachable
 }
 
-// post calls the path of the plugin with a JSON body and returns the status and the body of the answer.
 func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+path, strings.NewReader(body))

@@ -94,9 +94,6 @@ func parseNoteType(fm map[string]any) (domain.NoteType, string) {
 	return domain.NoteType(name), ""
 }
 
-// splitFrontmatter returns the YAML block and the body. The opening delimiter
-// must be the first line: a `---` further down is a horizontal rule, and
-// parsing it as frontmatter would consume the note.
 func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	// A byte order mark is stripped for the comparison and kept in the body,
 	// because the body is what gets indexed and searched, not what gets parsed.
@@ -152,9 +149,6 @@ func Body(raw []byte) string {
 	return string(body)
 }
 
-// headings scans the body line by line, so each heading records the byte offset
-// its line begins at as well as the line number. The offset is counted over the
-// raw bytes, and a carriage return is dropped from the text only.
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence
@@ -198,8 +192,6 @@ func parseHeading(text string) (level int, heading string, ok bool) {
 	return n, trimClosingMarks(content), true
 }
 
-// trimClosingMarks removes the trailing blanks and the closing hashes of a heading, and keeps the
-// first character when nothing else is left.
 func trimClosingMarks(content string) string {
 	text := strings.TrimRight(content, " \t")
 	text = strings.TrimRight(text, "#")
@@ -210,8 +202,6 @@ func trimClosingMarks(content string) string {
 	return text
 }
 
-// title prefers an explicit frontmatter title and falls back to the filename —
-// which is what the user sees in a file manager, so it is never empty.
 func title(n domain.Note, notePath string) string {
 	if t, ok := n.Frontmatter["title"].(string); ok && strings.TrimSpace(t) != "" {
 		return strings.TrimSpace(t)

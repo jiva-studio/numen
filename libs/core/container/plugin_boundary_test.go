@@ -20,13 +20,10 @@ import (
 // plugin, and a module under it is one too.
 const pluginsPrefix = "github.com/jiva-studio/numen/plugins/"
 
-// isPlugin reports whether a package is compiled from a plugin.
 func isPlugin(importPath string) bool {
 	return strings.HasPrefix(importPath, pluginsPrefix)
 }
 
-// getPluginRequirements returns every requirement and replacement of a go.mod that names a plugin:
-// a module under pluginsPrefix, or a folder below a folder named plugins.
 func getPluginRequirements(file *modfile.File) []string {
 	var named []string
 	for _, required := range file.Require {
@@ -44,7 +41,6 @@ func getPluginRequirements(file *modfile.File) []string {
 	return named
 }
 
-// parseGoMod parses the text of a go.mod written by a test.
 func parseGoMod(t *testing.T, text string) *modfile.File {
 	t.Helper()
 	file, err := modfile.Parse("go.mod", []byte(text), nil)
@@ -92,8 +88,6 @@ func TestPluginBoundaryRule_DetectsPluginImports(t *testing.T) {
 	}
 }
 
-// listPackages is what one module's build resolves on one platform, and what
-// each package of it is compiled from.
 func listPackages(t *testing.T, dir, goos, goarch string) []listed {
 	t.Helper()
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")

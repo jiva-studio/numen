@@ -246,8 +246,6 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	}
 }
 
-// waitUntil returns once the condition holds, and fails the test where it does not within five
-// seconds.
 func waitUntil(t *testing.T, condition func() bool) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)

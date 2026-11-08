@@ -42,20 +42,18 @@ type sentRequest struct {
 // where it is set, is the data of the events that answer the first request. rejectsStream answers
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
 type fakeChat struct {
-	mu      sync.Mutex
-	replies []message
-	script  []string
-	status  int
-	finish  string
-	models  []string
-	// parameters are the parameters each model lists as supported, by model.
+	mu            sync.Mutex
+	replies       []message
+	script        []string
+	status        int
+	finish        string
+	models        []string
 	parameters    map[string][]string
 	rejectsStream bool
 	ignoresStream bool
 	requests      []sentRequest
 	replyCount    int
-	// t receives the failures of the handlers the fake serves.
-	t testing.TB
+	t             testing.TB
 }
 
 func (f *fakeChat) serveModels(w http.ResponseWriter) {
@@ -114,7 +112,6 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 	return srv
 }
 
-// getPieces is the data of the events that stream the reply, ending with [DONE].
 func (f *fakeChat) getPieces(reply message) []string {
 	var events []string
 	addDelta := func(delta map[string]any, finish any) {
@@ -148,7 +145,6 @@ func (f *fakeChat) getPieces(reply message) []string {
 	return append(events, "[DONE]")
 }
 
-// writeEvents writes each data as one server-sent event, flushing after each.
 func writeEvents(t testing.TB, w http.ResponseWriter, data []string) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	flusher, ok := w.(http.Flusher)
@@ -165,7 +161,6 @@ func writeEvents(t testing.TB, w http.ResponseWriter, data []string) {
 	}
 }
 
-// encodeJSON writes value as JSON to w and reports a failure to t.
 func encodeJSON(t testing.TB, w io.Writer, value any) {
 	t.Helper()
 	if err := json.NewEncoder(w).Encode(value); err != nil {
@@ -173,7 +168,6 @@ func encodeJSON(t testing.TB, w io.Writer, value any) {
 	}
 }
 
-// decodeJSON reads the JSON in r into target and reports a failure to t.
 func decodeJSON(t testing.TB, r io.Reader, target any) {
 	t.Helper()
 	if err := json.NewDecoder(r).Decode(target); err != nil {
@@ -187,14 +181,12 @@ func (f *fakeChat) getRequests() []sentRequest {
 	return append([]sentRequest(nil), f.requests...)
 }
 
-// newCallReply is a reply of the model that calls the tool with the arguments.
 func newCallReply(id, tool, args string) message {
 	call := toolCall{ID: id, Type: "function"}
 	call.Function.Name, call.Function.Arguments = tool, args
 	return message{Role: "assistant", ToolCalls: []toolCall{call}}
 }
 
-// newTextReply is a model reply containing the text.
 func newTextReply(text string) message {
 	return message{Role: "assistant", Content: newText(text)}
 }
@@ -242,7 +234,6 @@ func (v *fakeVault) getCalls() []string {
 	return append([]string(nil), v.calls...)
 }
 
-// newTask is a task that may call note_read, on the vault at url.
 func newTask(url, prompt string) *agentrun.Request {
 	return &agentrun.Request{
 		Prompt:           prompt,
@@ -266,7 +257,6 @@ func ask(t *testing.T, s *Server, task *agentrun.Request) []*agentrun.Response {
 	return steps
 }
 
-// describeSteps writes the steps out one word each, a run of pieces of the transcript as one.
 func describeSteps(steps []*agentrun.Response) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
@@ -288,7 +278,6 @@ func describeSteps(steps []*agentrun.Response) string {
 	return strings.Join(words, " ")
 }
 
-// getSpoken is every piece of the transcript, in the order it was sent.
 func getSpoken(steps []*agentrun.Response) []string {
 	var response []string
 	for _, one := range steps {

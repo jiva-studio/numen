@@ -7,10 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// listSpliceSeeds returns notes a write has to come through byte for byte: a document
-// end standing inside the delimiters, a block scalar carrying a line that opens
-// with `#`, a list written flush with its key, keys and values written in other
-// scripts, and the plain shapes around them.
 func listSpliceSeeds() []string {
 	return []string{
 		"---\ntitle: Old\n---\nbody\n",
@@ -116,8 +112,6 @@ func FuzzSetBody(f *testing.F) {
 	})
 }
 
-// checkWriteInsideKey fails unless the bytes a write replaced all belong to the
-// lines one top-level key owns.
 func checkWriteInsideKey(t *testing.T, before, after, key string) {
 	t.Helper()
 	from, to := getChangedRun(before, after)
@@ -134,8 +128,6 @@ func checkWriteInsideKey(t *testing.T, before, after, key string) {
 	}
 }
 
-// getChangedRun returns the range of the note that a write replaced: the bytes
-// after the common prefix of both versions and before their common suffix.
 func getChangedRun(before, after string) (int, int) {
 	from := 0
 	for from < len(before) && from < len(after) && before[from] == after[from] {
@@ -152,9 +144,6 @@ func getChangedRun(before, after string) (int, int) {
 	return from, to
 }
 
-// getOwnedLines returns the widest range of frontmatter that one top-level key
-// owns: the key's own line, and the following lines that are indented under it
-// or continue it as a list. It reports found=false when the key is absent.
 func getOwnedLines(note, key string) (start, end int, found bool) {
 	var starts []int
 	var lines []string

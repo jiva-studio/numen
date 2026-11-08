@@ -597,7 +597,6 @@ func TestServerRejectsEmptyToken(t *testing.T) {
 	}
 }
 
-// waitServe waits for the server goroutine to finish and fails the test when Serve returned an error.
 func waitServe(t *testing.T, serveErrCh <-chan error) {
 	t.Helper()
 	if err := <-serveErrCh; err != nil {

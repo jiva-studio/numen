@@ -68,7 +68,6 @@ func TestCheckPinned(t *testing.T) {
 	}
 }
 
-// cacheSnapshot writes a snapshot of owner/repo at revision under the models folder.
 func cacheSnapshot(t *testing.T, revision string, files map[string]string) string {
 	t.Helper()
 	home := t.TempDir()

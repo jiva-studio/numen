@@ -18,9 +18,6 @@ type generatedSetting struct {
 	value    string
 }
 
-// fillGeneratedSettings gives every setting of an enabled plugin that asks for a generated value and
-// holds none or "" a new value, in memory first and then through the persist handler. A value
-// already held is kept, so a call made again while persisting generates nothing.
 func (h *Host) fillGeneratedSettings() {
 	h.mu.Lock()
 	persist := h.persistHandler
@@ -50,8 +47,6 @@ func (h *Host) fillGeneratedSettings() {
 	}
 }
 
-// storeGeneratedSettingsLocked stores a new token in memory for each of the settings that asks for
-// one and holds no value, and returns the tokens stored.
 func (h *Host) storeGeneratedSettingsLocked(pluginID string, settings []manifest.Setting) ([]generatedSetting, []error) {
 	var filled []generatedSetting
 	var failed []error
@@ -73,8 +68,6 @@ func (h *Host) storeGeneratedSettingsLocked(pluginID string, settings []manifest
 	return filled, failed
 }
 
-// forgetGeneratedSetting removes a generated value that could not be persisted, unless the setting
-// has changed since.
 func (h *Host) forgetGeneratedSetting(one generatedSetting) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -83,13 +76,11 @@ func (h *Host) forgetGeneratedSetting(one generatedSetting) {
 	}
 }
 
-// hasValue reports whether the stored values hold the key with a value other than "".
 func hasValue(stored map[string]any, key string) bool {
 	value, ok := stored[key]
 	return ok && value != nil && value != ""
 }
 
-// createToken returns tokenBytes random bytes in lowercase hex.
 func createToken() (string, error) {
 	raw := make([]byte, tokenBytes)
 	if _, err := rand.Read(raw); err != nil {

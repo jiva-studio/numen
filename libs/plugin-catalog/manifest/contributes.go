@@ -18,51 +18,30 @@ var (
 
 // TabKind is a kind of tab the plugin's frontend registers.
 type TabKind struct {
-	// Kind is the id the frontend registers the kind under.
-	Kind string
-	// Title is the name of the kind that a tab of it is shown with.
+	Kind  string
 	Title string
-	// Icon is the kebab-case name of an icon of the application's icon set. Empty is a kind without one.
-	Icon string
+	Icon  string
 }
 
 // StatusView is a component of the plugin's frontend that the window draws in its status bar.
 type StatusView struct {
-	// ID is the id the frontend registers the component under.
 	ID string
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
 type Contributes struct {
-	// TabKinds are the kinds of tab the plugin registers.
-	TabKinds []TabKind
-	// Feature names what the plugin provides, in the words a placeholder for an unavailable tab uses.
-	Feature string
-	// Category groups the plugin in lists. Empty is a plugin in no category.
-	Category string
-	// Themes are the stylesheets the plugin adds to the list of themes.
-	Themes []Theme
-	// StatusViews are the components the window draws in its status bar.
-	StatusViews []StatusView
-	// Handles are the capabilities the plugin takes part in for files and notes of some types.
-	Handles []Handle
-	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
-	// registers it under.
-	Readers []Reader
-	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
-	// each. A note of a type no plugin declares is kept as an ordinary note is.
-	NoteTypes []NoteType
-	// FrameOrigins are the https origins the plugin's pages frame, such as a video site's player. The
-	// window's frame-src names them while the plugin is enabled.
+	TabKinds     []TabKind
+	Feature      string
+	Category     string
+	Themes       []Theme
+	StatusViews  []StatusView
+	Handles      []Handle
+	Readers      []Reader
+	NoteTypes    []NoteType
 	FrameOrigins []string
-	// Commands are the commands the plugin declares, whichever part of the plugin runs them. The
-	// palette and the command line list them; a command is run by the frontend when the frontend
-	// registers a handler for it and by the backend otherwise.
-	Commands []Command
-	// Menus place commands in the named places the window draws.
-	Menus []Menu
-	// Listeners are the TCP ports on 127.0.0.1 the host binds for the plugin while it is enabled.
-	Listeners []Listener
+	Commands     []Command
+	Menus        []Menu
+	Listeners    []Listener
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.
@@ -99,9 +78,6 @@ func (c Contributes) ListTabKinds() []string {
 	return kinds
 }
 
-// listContributionIssues checks that each kind of tab has a unique id and a title, that the icons and
-// the category are written as the application names them, that each status view has a unique id, and
-// that a plugin registering tabs or status views has a frontend to register them from.
 func (m Manifest) listContributionIssues() []error {
 	var issues []error
 	c := m.Contributes
@@ -122,7 +98,6 @@ func (m Manifest) listContributionIssues() []error {
 	return append(issues, m.listFrameIssues()...)
 }
 
-// listFrontendIssues checks that a plugin registering tabs or status views has a frontend to register them from.
 func (m Manifest) listFrontendIssues() []error {
 	var issues []error
 	if len(m.Contributes.TabKinds) > 0 && !m.HasFrontend() {
@@ -134,7 +109,6 @@ func (m Manifest) listFrontendIssues() []error {
 	return issues
 }
 
-// listTabKindIssues checks that each kind of tab has a unique id and a title and an icon written as the application names it.
 func listTabKindIssues(kinds []TabKind) []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -156,8 +130,6 @@ func listTabKindIssues(kinds []TabKind) []error {
 	return issues
 }
 
-// listStatusViewIssues checks that each status view has an id written as the frontend registers it
-// and that no id is declared twice.
 func listStatusViewIssues(views []StatusView) []error {
 	var issues []error
 	observed := map[string]bool{}

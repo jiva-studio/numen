@@ -27,9 +27,6 @@ func (h *Host) SetStorageRoots(cacheRoot, dataRoot string) {
 	h.storage = storageRoots{cache: cacheRoot, data: dataRoot}
 }
 
-// getStorageVars creates the cache directory and the data directory of a plugin and returns the
-// variables that name them. The cache directory is emptied when the version of the plugin differs
-// from the one that filled it. A host with no storage roots grants no directory.
 func (h *Host) getStorageVars(pluginID string) ([]string, error) {
 	h.mu.RLock()
 	roots := h.storage
@@ -71,8 +68,6 @@ func (h *Host) getStorageVars(pluginID string) ([]string, error) {
 	return vars, nil
 }
 
-// removeCacheDir deletes the cache directory of a plugin that is no longer installed. The data
-// directory stays: it holds what the user made.
 func (h *Host) removeCacheDir(pluginID string) {
 	h.mu.RLock()
 	root := h.storage.cache
@@ -89,7 +84,6 @@ func getPluginStorageDir(root, pluginID string) string {
 	return filepath.Join(root, "plugins", pluginID)
 }
 
-// checkStorageID rejects an id that would name a directory outside its own folder.
 func checkStorageID(pluginID string) error {
 	if pluginID == "" || pluginID == "." || pluginID == ".." || strings.ContainsAny(pluginID, `/\`) {
 		return fmt.Errorf("plugin id %q does not name a storage directory", pluginID)

@@ -13,9 +13,6 @@ import (
 // byteOrderMark is what another editor may put in front of a note's first line.
 const byteOrderMark = "\uFEFF"
 
-// listTheirs returns frontmatter blocks whose keys this application does not own: the
-// user's own keys, a comment, a list, a flow sequence, a key with no value, and
-// a key whose value would parse as a mapping if it were not quoted.
 func listTheirs() []string {
 	return []string{
 		"mine: keep me verbatim\n",
@@ -29,9 +26,6 @@ func listTheirs() []string {
 	}
 }
 
-// ours are the keys this application owns, as a note that has been written here
-// already carries them.
-// listIdentifiers returns ULIDs, which is what an owned `id` holds.
 func listIdentifiers() []string {
 	return []string{
 		"01J8F3K2M9QRSTVWXYZ0123456",
@@ -49,8 +43,6 @@ func listOurs() []string {
 	}
 }
 
-// drawNote generates a note: a frontmatter block of some of those keys in some
-// order, and prose under it.
 func drawNote(t *rapid.T) (raw string, foreign []string) {
 	blocks := append(append([]string{}, listTheirs()...), listOurs()...)
 	order := rapid.Permutation(blocks).Draw(t, "keys")
@@ -149,8 +141,6 @@ func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 	})
 }
 
-// checkForeignKeysKept fails unless every line of every key the application does
-// not own is present in the output, in the order it had in the input.
 func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote string) {
 	t.Helper()
 	if len(foreign) == 0 {

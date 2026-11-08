@@ -30,9 +30,6 @@ func newQueue(limit int) *queue {
 	return &queue{maxBound: limit, woke: make(chan struct{}, 1)}
 }
 
-// put takes one event. At the bound the events waiting are dropped and the
-// overflow remembered: a rescan answers for all of them and for the event that
-// did not fit.
 func (q *queue) put(event notify.EventInfo) {
 	q.mu.Lock()
 	if len(q.events) >= q.maxBound {
@@ -44,7 +41,6 @@ func (q *queue) put(event notify.EventInfo) {
 	q.wake()
 }
 
-// stop records that the watcher's channel is closed and no more events are coming.
 func (q *queue) stop() {
 	q.mu.Lock()
 	q.isDone = true
@@ -52,8 +48,6 @@ func (q *queue) stop() {
 	q.wake()
 }
 
-// wake signals one edge: the woken goroutine empties the queue, so a wake that
-// does not fit is a wake already pending.
 func (q *queue) wake() {
 	select {
 	case q.woke <- struct{}{}:
@@ -61,7 +55,6 @@ func (q *queue) wake() {
 	}
 }
 
-// take empties the queue and reports whether it overflowed since the last take.
 func (q *queue) take() (events []notify.EventInfo, finished, completed bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -70,7 +63,6 @@ func (q *queue) take() (events []notify.EventInfo, finished, completed bool) {
 	return events, finished, completed
 }
 
-// forwardEvents moves events out of the watcher's channel as fast as they arrive.
 func forwardEvents(ctx context.Context, raw <-chan notify.EventInfo, into *queue) {
 	for {
 		select {

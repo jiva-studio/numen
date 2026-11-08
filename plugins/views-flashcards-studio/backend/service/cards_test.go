@@ -36,7 +36,6 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	}
 }
 
-// onDisk is what the vault holds at a path.
 func onDisk(t *testing.T, root, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
@@ -66,8 +65,6 @@ const dividedRun = "# Camelids\n\nwhat a person wrote about their own deck\n\n" 
 
 const dividedDeck = "---\ntype: deck\n---\n\n" + dividedRun
 
-// getFieldValue returns the value a card holds under one field. A card has no
-// name, so tests use the field value to identify a card.
 func getFieldValue(card *api.Card, field string) string {
 	for _, v := range card.Values {
 		if v.Field == field {
@@ -609,7 +606,6 @@ func TestACardNamesItsCardModelTheWayALinkNamesANote(t *testing.T) {
 	}
 }
 
-// card model is what the window reads a card model as.
 func cardModel(t *testing.T, f *cutting, path string) *api.ReadCardModelResponse {
 	t.Helper()
 	answer, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
@@ -847,7 +843,6 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	}
 }
 
-// codeOf returns the API error code of err, or the empty code when err is not an API error.
 func codeOf(err error) server.ErrorCode {
 	var failure *server.APIError
 	if errors.As(err, &failure) {

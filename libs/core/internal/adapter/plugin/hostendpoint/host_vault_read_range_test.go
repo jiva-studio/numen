@@ -20,8 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// newDiskReadClient serves the vault endpoint over an invented vault of rivers on this machine,
-// worked as the host works it for a plugin.
 func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	v := testsupport.NewVault(t, map[string]string{

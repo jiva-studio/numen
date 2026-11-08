@@ -47,14 +47,16 @@ const (
 // The errors of reading and writing a note.
 var (
 	ErrNoNote         = edit.ErrNoNote
-	ErrIndexOutdated     = edit.ErrIndexOutdated
+	ErrIndexOutdated  = edit.ErrIndexOutdated
 	ErrTooLarge       = edit.ErrTooLarge
 	ErrBodyUnwritable = edit.ErrBodyUnwritable
 )
 
 // WrapIndexOutdated wraps err as a failure to bring the index up to date after a
 // write. A caller distinguishes it from a write that never landed.
-func WrapIndexOutdated(err error, paths ...string) error { return edit.WrapIndexOutdated(err, paths...) }
+func WrapIndexOutdated(err error, paths ...string) error {
+	return edit.WrapIndexOutdated(err, paths...)
+}
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.
 func CheckSize(path string, size, limit int) error { return edit.CheckSize(path, size, limit) }
@@ -163,8 +165,7 @@ type Write struct {
 	writers ports.VaultWriters
 	index   IndexUpdater
 	now     ports.Clock
-	// Bound is the most the file may be, measured as it goes to disk. Zero is MaxBytes.
-	Bound int
+	Bound   int
 }
 
 // NewWrite is the writer a note goes to disk through.

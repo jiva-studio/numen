@@ -23,33 +23,22 @@ import (
 
 // A Book is one PDF file, read.
 type Book struct {
-	// Title is the name the document's metadata gives it, and is empty for the
-	// many that carry none.
 	Title string
 
-	// Text is every page's text layer, in order, as one stream.
 	Text string
 
-	// Pages are the pages of the document, ascending by offset. Unlike a book
-	// made for a screen, a PDF always has them.
 	Pages []Page
 
-	// Parts are the outline entries, ascending by offset. Structure records their
-	// source.
 	Parts []Part
 
-	// Structure names the tier that produced Parts.
 	Structure Structure
 }
 
 // A Part is a named division of the document.
 type Part struct {
-	Title string
-	// Offset is where the named text begins in the document's Text.
+	Title  string
 	Offset int
-	// Level is the depth of the outline entry a part came from, counting from
-	// one. The depth an outline chose carries no meaning of its own.
-	Level int
+	Level  int
 }
 
 // A Page is one page of the document, at the offset where its text begins.
@@ -117,7 +106,6 @@ func (w *Workers) Read(raw []byte) (*Book, error) {
 	return readBook(doc)
 }
 
-// readBook reads the open document and closes it.
 func readBook(doc *document) (book *Book, err error) {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="readBook releases the worker and closes the document on return"
 	defer func() { err = errors.Join(err, doc.Close()) }()
@@ -164,14 +152,9 @@ func readBook(doc *document) (book *Book, err error) {
 
 // A Location is where an offset in the text falls.
 type Location struct {
-	// Part is the nearest name at or before the offset, and empty when the
-	// offset precedes every name.
-	Part string
-	// PartOffset is where that part begins.
+	Part       string
 	PartOffset int
-	// the first. It is known for every page, and it is the one thing a page is
-	// called.
-	Page int
+	Page       int
 }
 
 // Locate answers where one offset in the document's text is.
@@ -187,13 +170,10 @@ func (b *Book) Locate(offset int) Location {
 	return loc
 }
 
-// getPrecedingIndex is the index of the last item at or before an offset, and -1 when
-// there is none. The items are ascending by offset.
 func getPrecedingIndex(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
 }
 
-// normalizeSpaces is one line of text: the words of a name, single-spaced.
 func normalizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }

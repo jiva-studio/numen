@@ -8,15 +8,8 @@ import (
 // ImportedFile is one item the user supplied to this application, by the name
 // the source machine gives it.
 type ImportedFile struct {
-	// Name is what it is called, which is the name it lands under in the vault.
-	Name string
-	// Handle is what it is opened by. A path on a desktop and a content URI on
-	// a phone: whatever produced it is what can read it.
-	Handle string
-	// IsFolder is whether everything under it is imported with it, and File
-	// whether bytes can be read from it. A device, a socket or a link is
-	// neither, and stays where it is. A listing names what it holds and reports
-	// neither; GetImportedFile supplies both for each file.
+	Name     string
+	Handle   string
 	IsFolder bool
 	IsFile   bool
 }

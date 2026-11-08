@@ -19,7 +19,6 @@ var (
 	pixelValue  = regexp.MustCompile(`^(\d+)px$`)
 )
 
-// readDrawnBarHeight returns the declared height of the bar in the page, as written.
 func readDrawnBarHeight(t *testing.T) string {
 	t.Helper()
 	css, err := os.ReadFile(filepath.FromSlash(barStyles))

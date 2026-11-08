@@ -11,15 +11,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// getDefaultChecks returns the checks that run when none is named. dangling is opt-in.
 func getDefaultChecks() []notesdomain.Check {
 	return []notesdomain.Check{
 		notesdomain.CheckParse, notesdomain.CheckFrontmatter, notesdomain.CheckAmbiguous,
 	}
 }
 
-// getCheckList returns the name of every check, dangling last, separated by commas, as the host
-// lists them.
 func getCheckList() string {
 	names := make([]string, 0, len(getDefaultChecks())+1)
 	for _, check := range append(getDefaultChecks(), notesdomain.CheckDangling) {
@@ -56,7 +53,6 @@ func (v *Vault) GetProblems(ctx context.Context, checks []string) (host.VaultPro
 	return out, nil
 }
 
-// findProblems returns the problems one check finds in the notes. The caller has the lock.
 func (v *Vault) findProblems(notes map[string]domain.Note, check notesdomain.Check) []domain.VaultProblem {
 	var out []domain.VaultProblem
 	for _, notePath := range sortedPaths(notes) {
@@ -77,8 +73,6 @@ func (v *Vault) findProblems(notes map[string]domain.Note, check notesdomain.Che
 	return out
 }
 
-// findLinkProblems returns the links of the note that resolve to several notes, for the ambiguous check, or
-// none, for the dangling check. The caller has the lock.
 func (v *Vault) findLinkProblems(
 	notes map[string]domain.Note, notePath string, check notesdomain.Check,
 ) []domain.VaultProblem {

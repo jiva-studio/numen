@@ -28,15 +28,12 @@ import (
 // The window renames a note and takes one out of the vault. What the vault
 // answers is what the window has to be able to say about either.
 
-// isGone reports whether a file is absent from disk.
 func isGone(t *testing.T, root, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(root, filepath.FromSlash(path)))
 	return os.IsNotExist(err)
 }
 
-// waitForScan waits for the first read of the vault, which is what puts the notes
-// already on disk into the index and the links they carry with them.
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
 	testsupport.WaitFor(t, f.installation.State.Ready.Load)
@@ -84,9 +81,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 // applies the one setting to all three.
 func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync note.SyncTitleAndFilename
-		// at is where the renamed note is filed, and called what the moved one
-		// is called.
+		sync   note.SyncTitleAndFilename
 		posVal string
 		called string
 	}{
@@ -130,8 +125,6 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	}
 }
 
-// oneName writes into the settings whether a note's title and the name of its
-// file are kept as one name.
 func oneName(t *testing.T, f *going, preserved bool) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -690,7 +683,6 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	}
 }
 
-// onDisk is what the vault holds at a path.
 func onDisk(t *testing.T, root, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
@@ -702,7 +694,6 @@ func onDisk(t *testing.T, root, path string) string {
 
 const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 
-// getResolved returns where each address resolved, keyed by requested address.
 func getResolved(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
 	delta := map[string]*v1.ResolvedAddress{}
@@ -1143,7 +1134,6 @@ func TestEveryRoleTheSchemaNamesIsSavedBelowThatWord(t *testing.T) {
 // The window renders the vault as folders and files and supports moving them;
 // it reports vault state for both.
 
-// getEntries returns the contents of one vault folder.
 func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	t.Helper()
 	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: pos}))
@@ -1153,7 +1143,6 @@ func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	return answer.Msg.GetEntries()
 }
 
-// getEntryNames is the entries by name, in the order they arrived.
 func getEntryNames(entries []*v1.Entry) []string {
 	out := make([]string, 0, len(entries))
 	for _, entry := range entries {
@@ -1162,7 +1151,6 @@ func getEntryNames(entries []*v1.Entry) []string {
 	return out
 }
 
-// folder reports whether a folder exists on disk.
 func folder(t *testing.T, root, path string) bool {
 	t.Helper()
 	info, err := os.Stat(filepath.Join(root, filepath.FromSlash(path)))
@@ -1487,8 +1475,6 @@ func TestMorePathsThanActiveAnswersAtOnceAreRefused(t *testing.T) {
 	}
 }
 
-// getKindsByPath returns the kind the vault holds at each of those paths, keyed
-// by path.
 func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.FileKind {
 	t.Helper()
 	answer, err := f.client.ListFileKinds(t.Context(),

@@ -39,7 +39,6 @@ func (g graph) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]d
 	return g.in[to], nil
 }
 
-// writes is a link of the note at from, to the note at to.
 func createOutgoingLink(to string, role domain.LinkRole, label string) domain.ResolvedLink {
 	return domain.ResolvedLink{
 		Link: domain.Link{Role: role, Label: label},
@@ -47,8 +46,6 @@ func createOutgoingLink(to string, role domain.LinkRole, label string) domain.Re
 	}
 }
 
-// writtenIn returns a link written by the note at from, as seen from the note
-// it points at.
 func writtenIn(from string, role domain.LinkRole) domain.ResolvedLink {
 	return domain.ResolvedLink{Link: domain.Link{Role: role}, From: from}
 }

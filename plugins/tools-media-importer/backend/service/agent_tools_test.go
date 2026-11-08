@@ -85,10 +85,8 @@ func (s fakeSites) Download(ctx context.Context, address string, into io.Writer)
 // read the vault's files.
 type textVault struct {
 	host.Vault
-	// texts is the texts of this vault, nil for a vault not in the fixture.
 	texts *hosttest.Texts
-	// all is the texts of every vault of the fixture, by identity.
-	all map[domain.VaultID]*hosttest.Texts
+	all   map[domain.VaultID]*hosttest.Texts
 }
 
 func (v textVault) Create(ctx context.Context, path string, content []byte) error {
@@ -116,7 +114,6 @@ type importFixture struct {
 	registry  *tools.Registry
 }
 
-// newImportFixture returns the fixture whose copies wait until release is closed.
 func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	t.Helper()
 	vault := hosttest.New("Mills")
@@ -153,7 +150,6 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	}
 }
 
-// newUnblockedFixture returns the fixture whose copies run at once.
 func newUnblockedFixture(t *testing.T) *importFixture {
 	t.Helper()
 	release := make(chan struct{})
@@ -161,7 +157,6 @@ func newUnblockedFixture(t *testing.T) *importFixture {
 	return newImportFixture(t, release)
 }
 
-// invokeAtOnce calls the tool and fails the test when the call does not return within callDeadline.
 func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tools.CallResponse {
 	t.Helper()
 	type answer struct {
@@ -226,7 +221,6 @@ func (s *importFixture) importURL(t *testing.T, vault string, in importArguments
 	return out
 }
 
-// getLinkNotes returns the link notes the vault contains.
 func getLinkNotes(t *testing.T, vault *hosttest.Vault) []string {
 	t.Helper()
 	vault.Reindex()

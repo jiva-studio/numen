@@ -22,14 +22,10 @@ func FoldName(name string) string {
 	return foldGeneral(name)
 }
 
-// foldGeneral is the fold of any name.
 func foldGeneral(name string) string {
 	return norm.NFC.String(cases.Fold().String(norm.NFC.String(name)))
 }
 
-// foldASCII folds a name made only of ASCII, where composing changes nothing and
-// folding lower-cases A to Z. ok is false for any other name, and a name already
-// folded is returned as it is.
 func foldASCII(name string) (folded string, ok bool) {
 	hasUpper := false
 	for i := 0; i < len(name); i++ {

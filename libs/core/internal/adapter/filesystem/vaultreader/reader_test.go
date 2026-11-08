@@ -69,7 +69,6 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	}
 }
 
-// walkKinds returns the source kind for each path a walk found.
 func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]domain.SourceKind {
 	t.Helper()
 	src, err := vaultreader.Open(root, opts)
@@ -219,7 +218,6 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 	}
 }
 
-// listNames is the names of what one folder holds, in the order they came back.
 func listNames(t *testing.T, src *vaultreader.VaultReader, folder string) []string {
 	t.Helper()
 	entries, err := src.List(t.Context(), folder)

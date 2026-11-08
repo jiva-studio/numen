@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// windowOn is a window open on a vault of this test's own.
 func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 

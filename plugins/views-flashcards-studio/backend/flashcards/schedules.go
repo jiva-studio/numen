@@ -21,14 +21,8 @@ import (
 const keptVersion = 2
 
 type scheduleCache struct {
-	V int `json:"v"`
-	// By is the assignment this was computed under: which scheduler applies to which
-	// review card. A schedule computed under one assignment is not reused under
-	// another.
-	By string `json:"by"`
-	// Files are the log files this was worked out from, each with the length it
-	// had. A run is appended to under one name, so a name alone would call a
-	// cache current while the answers written after it were never counted.
+	V           int              `json:"v"`
+	By          string           `json:"by"`
 	Files       []cachedFile     `json:"files"`
 	ReviewCards []cachedSchedule `json:"templates"`
 }
@@ -59,22 +53,13 @@ type cachedSchedule struct {
 // already counted, and a schedule depends on the order of the answers, so
 // nothing can be added to what the later ones produced.
 type Schedules struct {
-	logs ports.LogStores
-	// Cache is where the working out is remembered. A build holding none works
-	// it out at every launch.
-	Cache     ports.ScheduleStore
-	scheduler review.Scheduler
-	// day defines where one day of review ends and the next begins, which determines
-	// the day on which a card placed by its preset lands.
-	day review.Day
-	// reviewCards and presets determine which preset schedules each review card, so a
-	// card is computed at the retention its own preset requests. A build without
-	// either computes every card with By.
+	logs        ports.LogStores
+	Cache       ports.ScheduleStore
+	scheduler   review.Scheduler
+	day         review.Day
 	reviewCards ListReviewCards
 	presets     Presets
-	// At is the scheduler asking for a share of the cards to come back. A build
-	// holding none reads FSRS.
-	At func(retention float64) review.Scheduler
+	At          func(retention float64) review.Scheduler
 }
 
 // NewSchedules is what a vault's cards are placed through: where its answers
@@ -114,8 +99,6 @@ type assignment struct {
 	mark   string
 }
 
-// createPlainAssignment returns every review card on the one scheduler, at the preset a deck naming
-// none is scheduled by.
 func (u Schedules) createPlainAssignment() assignment {
 	return assignment{
 		policy: review.ScheduleBy(u.scheduler),
@@ -123,8 +106,6 @@ func (u Schedules) createPlainAssignment() assignment {
 	}
 }
 
-// getDayStartMark returns the hour and location a day of review begins at, as a name a cache is filed
-// under. A day beginning elsewhere puts a card on another day.
 func (u Schedules) getDayStartMark() string {
 	in := "local"
 	if u.day.In != nil {
@@ -133,11 +114,6 @@ func (u Schedules) getDayStartMark() string {
 	return "day\t" + review.Clock(u.day.Starts) + "\t" + in
 }
 
-// getAssignment is the scheduler each review card is worked out by, over a
-// run of reads of this vault's presets of its own.
-//
-// A review card whose deck names no preset is worked out at the defaults, and so
-// is every card of a vault nothing has read yet.
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
 	if u.presets.links == nil || u.reviewCards.notes == nil {
 		return u.createPlainAssignment(), nil
@@ -152,8 +128,6 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 	return u.getAssignmentFrom(ctx, v, u.presets.OpenReads(), reviewCards)
 }
 
-// getAssignmentFrom is the same, from the cards and the run of reads of the presets a
-// caller already holds.
 func (u Schedules) getAssignmentFrom(
 	ctx context.Context, v domain.Vault, reads *PresetReads, reviewCards []ReviewCard,
 ) (assignment, error) {
@@ -197,9 +171,6 @@ func (u Schedules) getAssignmentFrom(
 	return out, nil
 }
 
-// getMark returns one name for an assignment, independent of the order in which
-// it was walked. It is a digest because a vault with many cards names many review
-// cards, and the mark is only compared for equality with the current one.
 func getMark(lines []string) string {
 	slices.Sort(lines)
 	sum := sha256.New()
@@ -210,7 +181,6 @@ func getMark(lines []string) string {
 	return hex.EncodeToString(sum.Sum(nil))
 }
 
-// getScheduler is the scheduler asking for a share of the cards to come back.
 func (u Schedules) getScheduler(retention float64) review.Scheduler {
 	if u.At != nil {
 		return u.At(retention)
@@ -258,21 +228,10 @@ func (u Schedules) GetFromLog(
 	return u.getSchedulesCached(ctx, v, log, asks), nil
 }
 
-// getSchedules returns the schedules of the review cards of one assignment from a
-// log the caller has already read.
-//
-// Callers hold the review cards of one preset. A cache is discarded when the
-// assignment it was computed under changes, so the two results are never the same
-// answer and the cache is neither read nor written.
 func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.CardID]review.Schedule {
 	return replaySchedules(u.day, target, asks)
 }
 
-// getSchedulesCached is getSchedules with the replay result stored for the next
-// launch.
-//
-// Callers on the same log and the same assignment share the cache, so the second
-// call receives what the first computed.
 func (u Schedules) getSchedulesCached(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.CardID]review.Schedule {
@@ -282,8 +241,6 @@ func (u Schedules) getSchedulesCached(
 	return u.replayAndRemember(ctx, v, target, asks)
 }
 
-// replayAndRemember computes the schedules from the answers and stores the
-// result. Callers use it after finding the cache out of date.
 func (u Schedules) replayAndRemember(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.CardID]review.Schedule {
@@ -292,16 +249,12 @@ func (u Schedules) replayAndRemember(
 	return out
 }
 
-// replaySchedules returns the schedule of every review card from the answers, for
-// callers that only read them.
 func replaySchedules(
 	d review.Day, target ReviewLog, asks assignment,
 ) map[review.CardID]review.Schedule {
 	return target.GetHistory().Replay(d, asks.policy)
 }
 
-// readRemembered is what was worked out last time, when it was worked out from
-// the runs the vault now holds and under the targets now in force.
 func (u Schedules) readRemembered(
 	ctx context.Context, v domain.Vault, files []ports.Entry, mark string,
 ) (map[review.CardID]review.Schedule, bool) {
@@ -338,8 +291,6 @@ func (u Schedules) readRemembered(
 	return out, true
 }
 
-// read reports whether a cache was computed from exactly the current log: the
-// same files, each with the length it was read at.
 func read(was []cachedFile, files []ports.Entry) bool {
 	if len(was) != len(files) {
 		return false
@@ -352,9 +303,6 @@ func read(was []cachedFile, files []ports.Entry) bool {
 	return true
 }
 
-// remember puts the working out where the next launch will find it. A cache
-// that could not be written is a launch that works it out again, so nothing
-// here is reported.
 func (u Schedules) remember(
 	ctx context.Context, v domain.Vault, files []ports.Entry, mark string,
 	out map[review.CardID]review.Schedule,

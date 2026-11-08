@@ -86,7 +86,6 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 	return output, nil
 }
 
-// cacheInfo writes the output of the probe of pos to a file. Later runs of getTarget load that file.
 func (v *ytDLP) cacheInfo(pos string, output []byte) error {
 	tempFile, err := os.CreateTemp("", "numen-info-*.json")
 	if err != nil {
@@ -270,7 +269,6 @@ func getMediaType(name string) string {
 	return "application/octet-stream"
 }
 
-// getAudioMediaType is the media type of an audio extension, empty for any other.
 func getAudioMediaType(extension string) string {
 	switch extension {
 	case ".aac":

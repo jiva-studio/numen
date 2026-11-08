@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// listVaultTools lists the tools of a registry that has the tools that manage the list of vaults.
 func listVaultTools(t *testing.T) tools.Listing {
 	t.Helper()
 	_, _, registry := newTwoVaults(t)
@@ -20,8 +19,6 @@ func listVaultTools(t *testing.T) tools.Listing {
 	return listing
 }
 
-// joinToolInstructions is the distinct instruction sentences of the listed tools, in listing order,
-// joined with one space.
 func joinToolInstructions(listing tools.Listing) string {
 	var sentences []string
 	for _, one := range listing.Tools {
@@ -34,7 +31,6 @@ func joinToolInstructions(listing tools.Listing) string {
 	return strings.Join(sentences, " ")
 }
 
-// hasToolName reports whether the text names the tool as a whole word.
 func hasToolName(text, name string) bool {
 	return regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`).MatchString(text)
 }

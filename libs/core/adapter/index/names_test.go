@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveNamedNote puts one note in, with the headings given inside it.
 func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string, headings ...string) {
 	t.Helper()
 
@@ -24,7 +23,6 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	}
 }
 
-// getNames is the names one vault answers a query with.
 func getNames(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
 	t.Helper()
 
@@ -35,8 +33,6 @@ func getNames(t *testing.T, db *DB, vault domain.Vault, query string) []domain.N
 	return found
 }
 
-// describeMatch returns the name of a match, with the matched runs wrapped in
-// brackets, so a test reads what the user would see.
 func describeMatch(m domain.NameMatch) string {
 	text := m.Title
 	if m.Heading != "" {

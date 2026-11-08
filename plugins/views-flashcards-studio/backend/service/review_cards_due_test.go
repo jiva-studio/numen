@@ -123,9 +123,6 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	}
 }
 
-// learnedDecks is a vault of two decks: one on a preset that counts a card
-// learned while it is likely to be recalled, and one naming no preset, which
-// counts by the defaults and their three weeks.
 func getLearnedDecks() map[string]string {
 	return map[string]string{
 		"Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -266,8 +263,6 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	})
 }
 
-// benchDeck is one card model with one review card and cards cards, spread
-// over twenty decks like a typical vault.
 func benchDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": getDeck()["Term.md"]}
@@ -287,7 +282,6 @@ func benchDeck(cards int) map[string]string {
 	return out
 }
 
-// benchMark is one card's id, in the alphabet the application writes them in.
 func benchMark(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
@@ -298,8 +292,6 @@ func benchMark(n int) string {
 	return string(out)
 }
 
-// benchAnswers writes one run file for each of the last days days, each holding
-// perDay answers over the vault's cards.
 func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDay int) {
 	b.Helper()
 	ctx := b.Context()

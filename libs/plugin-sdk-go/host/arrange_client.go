@@ -11,14 +11,10 @@ import (
 
 var _ VaultList = (*Client)(nil)
 
-// getVaultsError returns the error of the error code of a change of the list of vaults, nil when
-// there is none. The detail field has the core's error text.
 func getVaultsError(code v1.VaultsErrorCode, detail string) error {
 	return addDetail(readVaultsError(code), detail)
 }
 
-// addDetail returns the error with the detail as its text, matching the error with errors.Is. An empty
-// detail leaves the error as it is.
 func addDetail(err error, detail string) error {
 	if err == nil || detail == "" {
 		return err
@@ -51,13 +47,10 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	}
 }
 
-// getNoteError returns the error of the error code of one note, nil when there is none. The detail
-// field has the core's error text.
 func getNoteError(code v1.HostVaultErrorCode, detail string) error {
 	return addDetail(fail(code), detail)
 }
 
-// readMove converts a move of the wire; the file is at To exactly when To is set.
 func readMove(m *v1.MoveResult) domain.MoveResult {
 	return domain.MoveResult{
 		From:     m.GetFrom(),
@@ -275,7 +268,6 @@ func (c *Client) RemoveLinks(
 	return readFileStat(res.Msg.GetStat()), nil
 }
 
-// checkRole rejects a role the wire has no value for, which it would send as no role.
 func checkRole(role domain.LinkRole) error {
 	if role != "" && writeRole(role) == v1.Role_ROLE_UNSPECIFIED {
 		return fmt.Errorf("%q is not a role a link can have", role)

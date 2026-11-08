@@ -13,18 +13,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-// lastInstant is the last instant an index can stamp a source with.
 func getLastInstant() time.Time { return time.Unix(0, math.MaxInt64) }
 
-// farFuture is past 2^62 nanoseconds since the epoch.
 func getFarFuture() time.Time { return time.Date(2250, 1, 1, 0, 0, 0, 0, time.UTC) }
 
 func getThisYear() time.Time { return time.Date(2024, 3, 1, 12, 0, 0, 0, time.UTC) }
 
 func getLongAgo() time.Time { return time.Date(2020, 7, 1, 8, 30, 0, 0, time.UTC) }
 
-// saveThroughPort puts one book in through the source port, cut into a large
-// chunk holding one small chunk for each text given.
 func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos time.Time, texts ...string) {
 	t.Helper()
 	small := make([]domain.Chunk, 0, len(texts))
@@ -43,9 +39,6 @@ func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos 
 	}
 }
 
-// numberRowsPast2To62 makes every source and chunk written after it take a row
-// number past 2^62, by holding a source and a chunk at that number in the
-// second vault.
 func numberRowsPast2To62(t *testing.T, db *DB) {
 	t.Helper()
 	const past = int64(1)<<62 + 1
@@ -61,7 +54,6 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 	}
 }
 
-// getUnembeddedPassages returns every chunk of a vault that needs a vector, fetched in one page.
 func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
 	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel(), "", 1000)
@@ -71,8 +63,6 @@ func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Pa
 	return unembedded
 }
 
-// getUnembeddedPassagesPaged returns every chunk of a vault that needs a vector, fetched in pages
-// of the given size, each page continuing from the cursor returned by the previous one.
 func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
 	t.Helper()
 	var visited []domain.Passage

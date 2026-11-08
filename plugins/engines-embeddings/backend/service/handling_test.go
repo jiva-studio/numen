@@ -32,7 +32,6 @@ func (r recording) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	return r.MockEmbedder.Embed(ctx, texts)
 }
 
-// newRecordingServer returns a server whose local model records what it reads.
 func newRecordingServer(t *testing.T) (*embeddingServer, *[]string) {
 	t.Helper()
 	srv := newEmbeddingServer()

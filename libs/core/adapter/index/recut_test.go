@@ -16,11 +16,8 @@ import (
 // chunks that carry the vectors, once inside each section the note's headings
 // name. These tests are about what a second cut of the same note keeps.
 
-// wordsOf is a body of n words, each distinct from every other, so a chunk is
-// identifiable by its content and no two chunks of one note have the same text.
 func wordsOf(n int) string { return wordsBetween(0, n) }
 
-// wordsBetween is the words from one point in that body to another.
 func wordsBetween(from, to int) string {
 	out := make([]string, 0, to-from)
 	for i := from; i < to; i++ {
@@ -29,9 +26,6 @@ func wordsBetween(from, to int) string {
 	return strings.Join(out, " ")
 }
 
-// createSections is a body of n words under a heading every per of them. At 48 words
-// a section holds what one small chunk is cut at, so a section is one chunk
-// and an edit inside it is recognisable.
 func createSections(n, per int) string {
 	var parts []string
 	for pos := 0; pos < n; pos += per {
@@ -40,15 +34,11 @@ func createSections(n, per int) string {
 	return strings.Join(parts, "\n\n")
 }
 
-// insertWordBefore is the body with a word put in front of the word at that
-// point. The words after it keep their spelling and move.
 func insertWordBefore(body string, pos int) string {
 	word := "word" + spellNumber(pos)
 	return strings.Replace(body, word, "wordzz "+word, 1)
 }
 
-// spellNumber writes a number in letters, so each word consists of letters only
-// and chunks made of these words read as text.
 func spellNumber(i int) string {
 	digits := []byte(strconv.Itoa(i))
 	for item, d := range digits {
@@ -57,7 +47,6 @@ func spellNumber(i int) string {
 	return string(digits)
 }
 
-// noteAt is one note as the index holds it, with the body given.
 func noteAt(path, title, body string) domain.Note {
 	return domain.Note{
 		FileStat: domain.FileStat{Path: path, Size: int64(len(body)), ModTime: getWalked()},
@@ -66,15 +55,10 @@ func noteAt(path, title, body string) domain.Note {
 	}
 }
 
-// parseNote is one note as the parser produces it, so the headings a cut is
-// bounded by are the ones the file names and their offsets are the parser's.
 func parseNote(path, body string) domain.Note {
 	return markdown.Parse(domain.FileStat{Path: path, Size: int64(len(body)), ModTime: getWalked()}, []byte(body))
 }
 
-// noParts is the same note with nothing naming a section in it. A note that
-// names no part is one division over its whole body, and its chunks tile from
-// the first word of the note.
 func noParts(n domain.Note) domain.Note {
 	n.Headings = nil
 	return n
@@ -101,9 +85,6 @@ func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	return len(unembedded)
 }
 
-// smallChunks is the chunks of one note that carry a vector, in the order they
-// sit in the file. The vault is named as well as the path: one database holds
-// every vault, and two vaults here hold a note at the same path.
 func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	t.Helper()
 	return rowsOf(t, db, `SELECT c.id FROM chunks c
@@ -113,7 +94,6 @@ func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 
 	                      ORDER BY c.start, c.length`, vault.ID, path)
 }
 
-// largeChunk is the chunk enclosing a note, which is the note itself.
 func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	t.Helper()
 	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
@@ -126,7 +106,6 @@ func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	return rows[0]
 }
 
-// chunksIn is how many chunks one vault holds, of both sizes.
 func chunksIn(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	return countRows(t, db, `SELECT COUNT(*) FROM chunks c JOIN vaults v ON v.id = c.vault_id
@@ -159,8 +138,6 @@ func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	return out
 }
 
-// hasVector reports whether one chunk has a vector, in the table and in the
-// coarse index.
 func hasVector(t *testing.T, db *DB, chunk int64) bool {
 	t.Helper()
 	stored := countRows(t, db, `SELECT COUNT(*) FROM chunks c
@@ -319,15 +296,9 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 // cost is what one save of a note costs the model, and how much of what the
 // index held survived it.
 type cost struct {
-	// requested is the number of vectors the save left to create, preserved the chunks that
-	// had a vector and still do, and was and now the number of chunks with a
-	// vector before and after the save.
 	requested, preserved, was, now int
 }
 
-// costOf saves a note, embeds every chunk of it, saves the note as edited, and
-// reports what the second save cost. A chunk that kept its row is asserted to
-// have kept its vector with it.
 func costOf(t *testing.T, before, after domain.Note) cost {
 	t.Helper()
 	db := openDB(t)
@@ -564,8 +535,6 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	checkVaultsAnswerOnlyForThemselves(t, db)
 }
 
-// locationsOf is what the chunks of one note are called, in the order they sit
-// in the file. A small chunk is named after the section it was cut inside.
 func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 	rows, err := db.read.QueryContext(t.Context(), `SELECT COALESCE(c.location, '') FROM chunks c
@@ -766,8 +735,6 @@ func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
 	}
 }
 
-// checkVaultsAnswerOnlyForThemselves checks that a word search in one vault
-// finds nothing written in the other.
 func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
 	t.Helper()
 	for _, ask := range []struct {

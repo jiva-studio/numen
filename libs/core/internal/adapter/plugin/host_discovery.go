@@ -55,8 +55,6 @@ func (h *Host) discoverPlugins() error {
 	return nil
 }
 
-// registerDiscoveredLocked registers the discovered plugins and returns the ids to stop, which are the plugins
-// that left the disk and the running ones whose manifest changed.
 func (h *Host) registerDiscoveredLocked(discovered []manifest.Discovered) []string {
 	present := make(map[string]bool, len(discovered))
 	var stale []string
@@ -79,8 +77,6 @@ func (h *Host) registerDiscoveredLocked(discovered []manifest.Discovered) []stri
 	return stale
 }
 
-// removeDiskPluginLocked unregisters a plugin that left the disk. A built-in plugin of the same id
-// takes its place.
 func (h *Host) removeDiskPluginLocked(pluginID string) {
 	delete(h.onDisk, pluginID)
 	if builtIn, ok := h.getBuiltInLocked(pluginID); ok {
@@ -91,7 +87,6 @@ func (h *Host) removeDiskPluginLocked(pluginID string) {
 	delete(h.plugins, pluginID)
 }
 
-// isCoveredByProblemLocked reports whether a failed scan hides the directory of a registered plugin.
 func (h *Host) isCoveredByProblemLocked(pluginID string) bool {
 	dir := h.plugins[pluginID].Dir
 	for _, problem := range h.problems {
@@ -115,7 +110,6 @@ func (h *Host) registerSupervisorLocked(p manifest.Discovered) {
 	sup.SetActivationPolicy(h.activation)
 }
 
-// retirePlugin stops a plugin whose manifest changed or vanished and forgets its supervisor once it is unregistered.
 func (h *Host) retirePlugin(pluginID string) {
 	if err := h.stopPlugin(context.Background(), pluginID); err != nil {
 		h.reportError(err)

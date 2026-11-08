@@ -25,7 +25,6 @@ const (
 	CodeInternal           ErrorCode = "internal"
 )
 
-// getStatus returns the HTTP status that answers a method failing with the code.
 func (c ErrorCode) getStatus() int {
 	switch c {
 	case CodeInvalidArgument:
@@ -60,8 +59,6 @@ func (e *APIError) Error() string {
 	return string(e.Code) + ": " + e.Message
 }
 
-// toAPIError returns err as the failure a client reads: an APIError as it is, any other error as an
-// internal failure with its text.
 func toAPIError(err error) *APIError {
 	var failure *APIError
 	if errors.As(err, &failure) {
@@ -183,7 +180,6 @@ func writeFailure(w http.ResponseWriter, failure *APIError) {
 	logWriteError(json.NewEncoder(w).Encode(failure))
 }
 
-// logWriteError records a failed response write; the client has usually disconnected.
 func logWriteError(err error) {
 	if err != nil {
 		slog.Debug("server: write response", "error", err)

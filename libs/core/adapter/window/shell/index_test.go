@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// unread is a vault the index does not carry.
 func getUnread() domain.Vault {
 	return domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
 }

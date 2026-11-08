@@ -61,12 +61,8 @@ func readFixtures(t *testing.T) []goldenFixture {
 	return fixtures
 }
 
-// sourcePath is the path of the note of a source. The numbers are padded so that the paths sort in
-// the order the fixture records the titles.
 func sourcePath(source int64) string { return fmt.Sprintf("note-%05d.md", source) }
 
-// coreCosine is the cosine of the angle between a query vector and a stored vector of signed bytes,
-// summed and rounded the way the core does it.
 func coreCosine(query, stored []float32) float64 {
 	if len(query) != len(stored) || len(query) == 0 {
 		return 0
@@ -117,8 +113,6 @@ func coreCosine(query, stored []float32) float64 {
 	return dot / math.Sqrt(remaining*right)
 }
 
-// hostOf is a host whose index holds the passages of the fixture and whose vault holds a note for
-// each title, in the order they were recorded.
 func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 	search := hosttest.NewSearch("physics")
 	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe})

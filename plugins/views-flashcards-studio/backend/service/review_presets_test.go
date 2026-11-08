@@ -18,9 +18,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 )
 
-// elsewhere is a second vault whose deck at decks/Words.md is scheduled by its own
-// preset, Grammar. The vault a request names selects the preset, since the path
-// alone does not distinguish the two.
 func getElsewhere() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -33,7 +30,6 @@ func getElsewhere() map[string]string {
 	}
 }
 
-// getDeckPreset is the preset one vault's deck is scheduled by.
 func getDeckPreset(t *testing.T, handler *API, v domain.Vault, path string) *api.Preset {
 	t.Helper()
 	out, err := handler.GetVaultDeckPreset(t.Context(),
@@ -71,7 +67,6 @@ func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
 	}
 }
 
-// handwritten is a vault holding a preset that no deck names yet.
 func getHandwritten() map[string]string {
 	return map[string]string{
 		"Term.md":        getDeck()["Term.md"],
@@ -176,8 +171,6 @@ func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
 	}
 }
 
-// newWordDeck is a deck of as many cards naming this preset. A deck naming none
-// is written with an empty name.
 func newWordDeck(pos string, cards int, from int) string {
 	out := "---\ntype: deck\n"
 	if pos != "" {
@@ -192,8 +185,6 @@ func newWordDeck(pos string, cards int, from int) string {
 	return out
 }
 
-// presetted is one vault of two presets a deck each, and a third nothing points
-// at. Each preset holds two cards a day.
 func getPresetted() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -208,7 +199,6 @@ func getPresetted() map[string]string {
 	}
 }
 
-// newPresetName is the preset a request names, as the window sends it.
 func newPresetName(preset string) *string { return &preset }
 
 // The window draws a tile per preset, and pressing one opens a session over the

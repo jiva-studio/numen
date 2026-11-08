@@ -28,7 +28,6 @@ func (closeRefusal) Prepare(string) (driver.Stmt, error) { return nil, errors.Ne
 func (c closeRefusal) Close() error                      { return c.err }
 func (closeRefusal) Begin() (driver.Tx, error)           { return nil, errors.New("no transactions") }
 
-// poolRefusing is a pool with one open connection that answers a close with err.
 func poolRefusing(t *testing.T, err error) *sql.DB {
 	t.Helper()
 	pool := sql.OpenDB(refusingToClose{err})

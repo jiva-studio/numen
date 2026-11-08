@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 )
 
-// stopFileWatch follows a file of the vault and lets it go again.
 func stopFileWatch(t *testing.T, hub *watchhub.Hub, path string) {
 	t.Helper()
 	ctx, stop := context.WithCancel(t.Context())
@@ -24,13 +23,10 @@ func stopFileWatch(t *testing.T, hub *watchhub.Hub, path string) {
 	}
 }
 
-// getNestedFixture is the vault the tests of a watch inside a watched vault start from.
 func getNestedFixture() map[string]string {
 	return map[string]string{"Note.md": "# Note\n", "settings/numen.json": "{}"}
 }
 
-// nextAfterFixture is the first batch that names a path the fixture did not write. The watch may
-// still report the files of the fixture being created, as a batch of its own.
 func nextAfterFixture(next func() []string) []string {
 	for {
 		got := next()

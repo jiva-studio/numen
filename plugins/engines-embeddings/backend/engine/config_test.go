@@ -291,7 +291,6 @@ func TestGetPassBytesAndMemoryBounds(t *testing.T) {
 	}
 }
 
-// newTestConfig returns the configuration of a model the plugin ships a profile for.
 func newTestConfig(t *testing.T, id string) (ModelInfo, LocalModel) {
 	t.Helper()
 	profiles, err := GetShippedProfiles()

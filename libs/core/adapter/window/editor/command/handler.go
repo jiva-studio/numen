@@ -89,7 +89,6 @@ func getErrorCode(err error) v1.CommandErrorCode {
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 }
 
-// newWireCommand is a command as the schema carries it.
 func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
@@ -120,7 +119,6 @@ func getContentTypeTexts(types []domain.ContentType) []string {
 	return out
 }
 
-// newWireMenu is a menu entry as the schema carries it.
 func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
 	wire := &v1.PluginMenu{
 		PluginId: entry.PluginID,
@@ -135,7 +133,6 @@ func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
 	return wire
 }
 
-// clampToInt32 narrows an order to the 32 bits the schema carries.
 func clampToInt32(value int) int32 {
 	if value > math.MaxInt32 {
 		return math.MaxInt32

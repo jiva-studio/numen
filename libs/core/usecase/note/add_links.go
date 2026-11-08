@@ -15,7 +15,6 @@ type LinkAddition struct {
 	FileStat domain.FileStat
 	Link     domain.Link
 
-	// FileStatError is why the caller's file stat could not be read. It is
 	FileStatError error
 }
 
@@ -90,7 +89,6 @@ func newLinkGroups() *linkGroups {
 	}
 }
 
-// add groups the i-th addition under its note and returns the reason it was
 func (g *linkGroups) add(i int, add LinkAddition) error {
 	if err := CheckWritable(add.Link); err != nil {
 		return err

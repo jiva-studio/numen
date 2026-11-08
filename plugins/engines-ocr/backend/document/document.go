@@ -44,9 +44,8 @@ type Document interface {
 // Reader opens documents. It starts one PDFium worker with the first PDF and keeps it for its
 // life.
 type Reader struct {
-	mu      sync.Mutex
-	workers pdfium.Pool
-	// compilationCache holds the compiled PDFium for the worker that starts; nil compiles it there.
+	mu               sync.Mutex
+	workers          pdfium.Pool
 	compilationCache wazero.CompilationCache
 }
 

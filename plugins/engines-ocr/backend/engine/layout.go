@@ -117,8 +117,6 @@ func (l *Layout) Regions(page image.Image) ([]Region, error) {
 	return Distinct(l.collectRegions(data, bounds), l.overlap), nil
 }
 
-// collectRegions reads the rows of the model output, keeping those of a known label, a score at the minimum and
-// a rectangle inside the page.
 func (l *Layout) collectRegions(data []float32, bounds image.Rectangle) []Region {
 	regions := make([]Region, 0, len(data)/columns)
 	for i := 0; i+columns <= len(data); i += columns {

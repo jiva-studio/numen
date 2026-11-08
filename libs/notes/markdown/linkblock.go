@@ -16,8 +16,6 @@ import (
 // in the error and left as written.
 var ErrNotOwned = fmt.Errorf("this link has something the application does not own")
 
-// isOwnedKey reports whether key is one an entry of the `links:` block may carry.
-// Anything else is content the application does not own.
 func isOwnedKey(key string) bool {
 	switch key {
 	case "to", "role", "type", "note", "label", "marker":
@@ -34,14 +32,9 @@ func isOwnedKey(key string) bool {
 type entry struct {
 	link       domain.Link
 	start, end int
-	// isReadable is whether the application can interpret this entry. An entry it
-	// cannot interpret is user content and is never rewritten.
 	isReadable bool
-	// isOwned is whether every key in it is one the application owns.
-	isOwned bool
-	// address is the node holding where the link goes, so changing it is a
-	// change to that scalar.
-	address *yaml.Node
+	isOwned    bool
+	address    *yaml.Node
 }
 
 // block is the `links:` key: its location, its contents, and its layout, so a new
@@ -191,9 +184,6 @@ func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
 	return nil
 }
 
-// findRecords returns the entries that go to the target of the link, or to one of
-// the addresses also given, under the type of the link. An entry the application
-// cannot rewrite is reported as ErrNotOwned.
 func findRecords(entries []entry, link domain.Link, also []domain.Address) ([]entry, error) {
 	var found []entry
 	for _, e := range entries {
@@ -225,7 +215,6 @@ func (d *Document) RemoveTargetLinks(target domain.Address, role domain.LinkRole
 	})
 }
 
-// removeEntries removes every entry whose link matches, and the block when no entry is left.
 func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 	b, err := d.block()
 	if err != nil {
@@ -251,14 +240,6 @@ func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 	return removed, nil
 }
 
-// SetLinkOfType makes the block name one note under a `type`.
-//
-// The first entry with that type is pointed at the address and keeps its role and
-// the user's text; any further entry with that type is removed, so a note has one
-// target per type. An empty address removes all of them, and an empty block is
-// removed with them.
-//
-// An entry the parser cannot read is left as written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
 	remainingCount := 0
@@ -445,7 +426,6 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 	return moved, nil
 }
 
-// renderEntry writes one entry, indented as the block already is.
 func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
@@ -482,7 +462,6 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	}
 }
 
-// linkOf reads one entry of the block, taking what it can and leaving the rest.
 func linkOf(item *yaml.Node) domain.Link {
 	var l domain.Link
 	if item.Kind != yaml.MappingNode {
@@ -508,8 +487,6 @@ func linkOf(item *yaml.Node) domain.Link {
 	return l
 }
 
-// isReadable is whether the application can act on an entry at all: somewhere to
-// go, a role it has decided on, and a marker that is absent or one it draws.
 func isReadable(item *yaml.Node) bool {
 	// gomutants:disable-next-line BRANCH_IF reason="linkOf returns a zero Link with empty Target.Value when item is not a MappingNode"
 	if item.Kind != yaml.MappingNode {
@@ -519,7 +496,6 @@ func isReadable(item *yaml.Node) bool {
 	return l.Target.Value != "" && domain.IsKnownRole(l.Role) && domain.IsWritableMarker(l.Marker)
 }
 
-// hasOnlyOwnedKeys is whether every key in an entry is one the application owns.
 func hasOnlyOwnedKeys(item *yaml.Node) bool {
 	if item.Kind != yaml.MappingNode {
 		return false
@@ -532,9 +508,6 @@ func hasOnlyOwnedKeys(item *yaml.Node) bool {
 	return true
 }
 
-// keepLinkNotation returns a name in the notation of the name it replaces. Double
-// brackets are the user's link notation, and an alias after `|` or a heading after
-// `#` belongs to the user: only the target changes.
 func keepLinkNotation(was, to string) string {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT reason="any string with both [[ prefix and ]] suffix has length at least 4"
 	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {

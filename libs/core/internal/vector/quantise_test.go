@@ -293,7 +293,6 @@ func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
 	}
 }
 
-// getCosine is the cosine of the angle between two vectors, summed in float64.
 func getCosine(query []float32, stored []int8) float64 {
 	var dot, remaining, right float64
 	for i := range query {

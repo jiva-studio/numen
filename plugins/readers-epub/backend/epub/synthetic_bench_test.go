@@ -20,7 +20,6 @@ const (
 	syntheticMostBytes    = 300 << 10
 )
 
-// createSyntheticBook is an archive of chapters of 50 to 300 KB of prose.
 func createSyntheticBook(tb testing.TB) []byte {
 	tb.Helper()
 	rng := rand.New(rand.NewSource(426))

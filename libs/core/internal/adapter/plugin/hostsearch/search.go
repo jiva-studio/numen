@@ -19,16 +19,12 @@ import (
 
 // Search is pluginport.PluginSearch over the index of the installation and the model that fills it.
 type Search struct {
-	// Embedder is the model that fills the index. Nil is an installation with no model, and every
-	// call that needs one returns ErrNoModel.
 	Embedder embeddingport.Embedder
 	Samples  searchpolicyport.Samples
 	Nearest  searchpolicyport.Nearest
 	Progress indexport.IndexProgress
-	// Stats reads what the index holds for GetIndexStats.
-	Stats  *Stats
-	Policy search.FloorPolicy
-	// Passages is the passage search, over the same index and the model in Embedder.
+	Stats    *Stats
+	Policy   search.FloorPolicy
 	Passages *search.SearchPassages
 }
 
@@ -40,7 +36,6 @@ func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q pluginport
 	})
 }
 
-// getRecipe is the recipe of the model in use, or ErrNoModel.
 func (s Search) getRecipe() (string, error) {
 	if s.Embedder == nil {
 		return "", pluginport.ErrNoModel
@@ -48,7 +43,6 @@ func (s Search) getRecipe() (string, error) {
 	return s.Embedder.GetModel().Recipe(), nil
 }
 
-// checkRecipe returns nil when the recipe is the one of the model in use.
 func (s Search) checkRecipe(recipe string) error {
 	current, err := s.getRecipe()
 	if err != nil {
@@ -168,8 +162,6 @@ func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe s
 	return pluginport.PluginSimilaritySample{PassageCount: len(passages), SourceCount: len(sources), Rows: rows}, nil
 }
 
-// compare is the similarity of the query with each passage that belongs to another note than the
-// query's, in the order of the passages.
 func compare(query pluginport.PluginSimilarityQuery, passages []searchpolicyport.Passage) ([]float64, error) {
 	if len(query.Vector) == 0 {
 		return nil, nil

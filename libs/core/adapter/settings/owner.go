@@ -79,9 +79,6 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	return wrapAt(label, checkValue(settings[index], registries, value))
 }
 
-// getSettingName returns the key a declaration lists the setting under: the dotted path for the owner
-// app, and the one segment for a plugin. It returns no name, and no error, for a path that is outside
-// the check or that leads to a field the host keeps.
 func getSettingName(owner string, key []string, value any) (string, error) {
 	if owner == OwnerApp {
 		if isOutsideDeclaration(key[0]) {
@@ -98,7 +95,6 @@ func getSettingName(owner string, key []string, value any) (string, error) {
 	return key[0], nil
 }
 
-// wrapAt names the setting an error is about.
 func wrapAt(label string, err error) error {
 	if err == nil {
 		return nil
@@ -106,8 +102,6 @@ func wrapAt(label string, err error) error {
 	return fmt.Errorf("%q: %w", label, err)
 }
 
-// checkHostField checks a field the host keeps in the object of a plugin, and reports whether the
-// name is one.
 func checkHostField(name string, value any) (reserved bool, err error) {
 	switch name {
 	case fieldEnabled:
@@ -121,8 +115,6 @@ func checkHostField(name string, value any) (reserved bool, err error) {
 	return false, nil
 }
 
-// checkValue returns why a declared setting does not accept the value. A null value resets the
-// setting and is always taken.
 func checkValue(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
 	if value == nil {
 		return nil
@@ -144,7 +136,6 @@ func checkValue(declared pluginport.PluginManifestSetting, registries Registries
 	return nil
 }
 
-// checkNumber checks a number against the bounds the declaration gives.
 func checkNumber(declared pluginport.PluginManifestSetting, value any) error {
 	number, isNumber := toNumber(value)
 	if !isNumber || math.IsNaN(number) || math.IsInf(number, 0) {
@@ -163,7 +154,6 @@ func formatLimit(limit *float64, unbounded string) string {
 	return fmt.Sprint(*limit)
 }
 
-// toNumber returns the value as a float where it is a number of any Go type.
 func toNumber(value any) (float64, bool) {
 	switch number := value.(type) {
 	case float64:
@@ -178,8 +168,6 @@ func toNumber(value any) (float64, bool) {
 	return 0, false
 }
 
-// checkOption checks that the value is one of the options of an enum: its own list, or the values
-// of the registry it lists them from. Options that follow another setting take any text here.
 func checkOption(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
 	text, isText := value.(string)
 	if !isText {
@@ -265,8 +253,6 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	}
 }
 
-// dropInvalidApp puts the default in force of every setting of the shell whose value the check
-// with the registries refuses.
 func (f *File) dropInvalidApp(declared Declarations, registries Registries) {
 	for _, one := range readAppDeclaration() {
 		path := append([]string{OwnerApp}, strings.Split(one.Key, ".")...)
@@ -281,7 +267,6 @@ func (f *File) dropInvalidApp(declared Declarations, registries Registries) {
 	}
 }
 
-// resetApp puts the default of a setting of the shell in force.
 func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 	switch declared.Key {
 	case keyTheme:
@@ -301,7 +286,6 @@ func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 	}
 }
 
-// isListOfTexts reports whether a decoded value is a list whose items are all text.
 func isListOfTexts(value any) bool {
 	items, isList := value.([]any)
 	if !isList {

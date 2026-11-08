@@ -27,12 +27,6 @@ type candidate struct {
 	order      int
 }
 
-// rerank orders candidates by their full-precision similarity to the query,
-// nearest first, and keeps only those at or above the floor.
-//
-// A candidate with no comparable vector in the index cannot be compared and is
-// not a result. A vector that is read and does not compare is a corrupt row,
-// and is reported as an error.
 func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
 	ranked, err := q.rankCandidates(ctx, recipe, query, candidates, of, floor)
 	if err != nil {
@@ -48,7 +42,6 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	return out, nil
 }
 
-// rankCandidates is rerank with the similarity of each candidate kept.
 func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
 	if len(candidates) == 0 {
 		return nil, nil

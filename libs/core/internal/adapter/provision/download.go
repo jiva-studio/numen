@@ -38,7 +38,6 @@ type transfer struct {
 	onProgress func(count, total int64)
 }
 
-// newClient returns a client that follows a redirect only to another https address.
 func newClient() *http.Client {
 	return &http.Client{
 		CheckRedirect: func(request *http.Request, via []*http.Request) error {
@@ -53,10 +52,6 @@ func newClient() *http.Client {
 	}
 }
 
-// fetch leaves at dest a file that holds the checksum. The bytes arrive in a
-// .tmp.<uuid> file beside dest; one a failed run left is continued with an HTTP
-// Range request, and the file is renamed into place only once its checksum
-// matches.
 func (t transfer) fetch(ctx context.Context) error {
 	dir := filepath.Dir(t.dest)
 	part, err := claimPartial(dir)
@@ -73,8 +68,6 @@ func (t transfer) fetch(ctx context.Context) error {
 	return renameWithRetry(ctx, part, t.dest, t.backoff)
 }
 
-// claimPartial returns the file the bytes of this run go to: the first
-// partial a failed run left, or a new one. Any other partial is removed.
 func claimPartial(dir string) (string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -99,7 +92,6 @@ func claimPartial(dir string) (string, error) {
 	return filepath.Join(dir, tempPrefix+uuid.NewString()), nil
 }
 
-// append continues the partial from where it ends, then checks the checksum.
 func (t transfer) append(ctx context.Context, part string) (err error) {
 	hasher := sha256.New()
 	offset, err := hashExisting(part, hasher)
@@ -137,7 +129,6 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	return t.finish(hasher, offset+byteCount)
 }
 
-// newRequest asks for the file, from offset on where the partial holds bytes already.
 func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
 	if err != nil {
@@ -149,8 +140,6 @@ func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, 
 	return request, nil
 }
 
-// store writes the body to the partial, from its start where offset is zero and after
-// its end otherwise, feeding the hash too. It returns the bytes written.
 func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, total int64) (int64, error) {
 	flags := os.O_WRONLY | os.O_CREATE
 	if offset == 0 {
@@ -169,8 +158,6 @@ func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, t
 	return byteCount, err
 }
 
-// finish checks the checksum of the whole file. A file that does not hold it is
-// an error that ends the run.
 func (t transfer) finish(hasher hash.Hash, size int64) error {
 	if found := hex.EncodeToString(hasher.Sum(nil)); found != t.sum {
 		return fmt.Errorf("%w: %s holds %s, and %s is pinned", ErrChecksum, t.address, found, t.sum)
@@ -181,7 +168,6 @@ func (t transfer) finish(hasher hash.Hash, size int64) error {
 	return nil
 }
 
-// hashExisting feeds the bytes the file holds to the hash and returns how many there are.
 func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 	file, err := os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -194,8 +180,6 @@ func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 	return io.Copy(hasher, file)
 }
 
-// copyProgress copies the body to the writer and reports how far it has got no
-// more often than progressInterval.
 func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
 	buffer := make([]byte, 64*1024)
 	var byteCount int64
@@ -230,8 +214,6 @@ type statusError struct {
 
 func (e *statusError) Error() string { return fmt.Sprintf("fetching %s: %s", e.address, e.status) }
 
-// isTransient reports whether another attempt may succeed: a broken
-// connection or a server that is busy, and never a checksum that failed.
 func isTransient(err error) bool {
 	if errors.Is(err, ErrChecksum) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false

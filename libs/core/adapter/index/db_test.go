@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// walked is the modification time that the scan reports for every file these tests add.
 func getWalked() time.Time { return time.Unix(0, 1) }
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
@@ -173,10 +172,8 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	}
 }
 
-// narrowRecipe is what a model of the width given writes its vectors under.
 func narrowRecipe(dims int) string { return "model/" + strconv.Itoa(dims) }
 
-// embedAtWidth cuts one source and embeds its small chunks at the width given.
 func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	t.Helper()
 	ctx := t.Context()

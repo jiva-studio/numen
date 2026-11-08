@@ -25,8 +25,7 @@ const eventFilePrefix = "onFile:"
 // plugins are queried once for each file of a vault, and listing the extensions
 // of a mask reads the whole table.
 type contentTypeCache struct {
-	mu sync.Mutex
-	// key names the enabled plugins and their versions the rest was computed for.
+	mu         sync.Mutex
 	key        string
 	extensions map[domain.ContentType][]string
 	opened     map[string]map[string][]string
@@ -74,7 +73,6 @@ func (h *Host) getLookupLocked() contentTypeLookup {
 	return lookup
 }
 
-// getKey names the enabled plugins and their versions.
 func (l contentTypeLookup) getKey() string {
 	var key strings.Builder
 	for _, p := range l.plugins {
@@ -90,8 +88,6 @@ func (l contentTypeLookup) getContentType(name string) domain.ContentType {
 	return l.table.GetContentType(name)
 }
 
-// openCacheLocked is the cache, emptied where the enabled plugins changed since it was filled. The
-// caller unlocks it.
 func (h *Host) openCacheLocked(lookup contentTypeLookup) *contentTypeCache {
 	h.typeCache.mu.Lock()
 	if key := lookup.getKey(); h.typeCache.key != key || h.typeCache.extensions == nil {
@@ -124,9 +120,6 @@ func (l contentTypeLookup) listExtensionsCached(cache *contentTypeCache, mask do
 	return candidates
 }
 
-// listOpenedExtensionsLocked lists, by reader id, the extensions of the files each reader of the
-// plugin opens: those of its types where it is the default reader ChooseHandler picks among the
-// readers of every enabled plugin.
 func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 	lookup := h.getLookupLocked()
 	cache := h.openCacheLocked(lookup)
@@ -156,7 +149,6 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 	return out
 }
 
-// listReaderInfosLocked is each reader of the plugin with the extensions of the files it opens.
 func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []pluginport.PluginReaderInfo {
 	if len(manifest.Contributes.Readers) == 0 {
 		return nil
@@ -169,8 +161,6 @@ func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []plugi
 	return out
 }
 
-// isOpeningFileLocked reports whether the event is a window opening a file whose type a reader or
-// a handle of the plugin takes, and the plugin has a backend to start.
 func (h *Host) isOpeningFileLocked(p manifest.Discovered, event string) bool {
 	extension, ok := strings.CutPrefix(event, eventFilePrefix)
 	if !ok || extension == "" {

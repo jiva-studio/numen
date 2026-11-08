@@ -34,11 +34,9 @@ const (
 
 // PluginEmbeddingState is the model in use and how far a vault is embedded under it.
 type PluginEmbeddingState struct {
-	Recipe string
-	Model  string
-	// FloorHint is the starting floor the plugin of the model reports, zero when it has none.
-	FloorHint float64
-	// ChunkCount is how many chunks of the vault can carry a vector, and EmbeddedCount how many do.
+	Recipe        string
+	Model         string
+	FloorHint     float64
 	ChunkCount    int64
 	EmbeddedCount int64
 }
@@ -63,12 +61,9 @@ type PluginSimilarityQuery struct {
 
 // PluginSimilaritySample is the cosine similarity of each query with the sampled passages of the vault.
 type PluginSimilaritySample struct {
-	// PassageCount is how many passages were sampled, and SourceCount how many sources they come from.
 	PassageCount int
 	SourceCount  int
-	// Rows holds, for each query in the order given, its similarity with each sampled passage of another
-	// source. A query with no vector has an empty row.
-	Rows [][]float64
+	Rows         [][]float64
 }
 
 // PluginFloorSource is where the floor a search applies comes from.
@@ -85,9 +80,8 @@ const (
 
 // PluginSearchFloor is the floor a search applies to a vault under a recipe, and the sources it was chosen from.
 type PluginSearchFloor struct {
-	Floor  float64
-	Source PluginFloorSource
-	// Stored, Hint and Default are the floor of each source, zero where the source has none.
+	Floor   float64
+	Source  PluginFloorSource
 	Stored  float64
 	Hint    float64
 	Default float64
@@ -125,13 +119,9 @@ type PluginPassageSearch interface {
 
 // PluginPassageQuery is a passage search request.
 type PluginPassageQuery struct {
-	Query string
-	// Limit is the maximum number of passages to return. Zero means the default of the search.
-	Limit int
-	// Kinds are the kinds of source to search. Empty means every kind.
-	Kinds []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it, in either Unicode form (NFC or
-	// NFD). Empty limits none.
+	Query      string
+	Limit      int
+	Kinds      []domain.SourceKind
 	PathPrefix string
 }
 
@@ -160,7 +150,6 @@ type PluginSearchHost interface {
 
 // PluginExtensionStats is the sources of one file extension and the chunks they hold.
 type PluginExtensionStats struct {
-	// Extension is in lower case, without the dot, and empty for a source with none.
 	Extension string
 	Sources   int64
 	Chunks    int64
@@ -168,19 +157,13 @@ type PluginExtensionStats struct {
 
 // PluginIndexStats is what the index of a vault holds, and the space it takes.
 type PluginIndexStats struct {
-	// Recipe, Model and Dimensions identify the model in use.
-	Recipe     string
-	Model      string
-	Dimensions int64
-	// Chunks is how many chunks can carry a vector, and Vectors how many of them do.
-	Chunks  int64
-	Vectors int64
-	// Sources is the notes and files of the vault, and Extensions splits them by file extension, the
-	// extension with the most sources first.
-	Sources    int64
-	Extensions []PluginExtensionStats
-	// DatabaseBytes is the size of the index database on disk, and VectorBytes the size of the tables
-	// that hold vectors.
+	Recipe        string
+	Model         string
+	Dimensions    int64
+	Chunks        int64
+	Vectors       int64
+	Sources       int64
+	Extensions    []PluginExtensionStats
 	DatabaseBytes int64
 	VectorBytes   int64
 }

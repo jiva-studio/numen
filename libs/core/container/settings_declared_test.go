@@ -107,8 +107,6 @@ func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 
 const relayPlugin = "org.example.relay"
 
-// writeRelayPlugin puts a plugin in a folder whose listener relay takes its port from the setting
-// port, with defaultPort as its default, and returns the folder.
 func writeRelayPlugin(t *testing.T, defaultPort int) string {
 	t.Helper()
 	root := t.TempDir()
@@ -134,7 +132,6 @@ func writeRelayPlugin(t *testing.T, defaultPort int) string {
 	return root
 }
 
-// listenOnLoopback binds a free loopback port until the test ends and returns it.
 func listenOnLoopback(t *testing.T) (net.Listener, int) {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")

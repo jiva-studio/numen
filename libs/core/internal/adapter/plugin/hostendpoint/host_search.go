@@ -28,14 +28,11 @@ var _ numenv1connect.HostSearchServiceHandler = (*searchEndpoint)(nil)
 // searchCall is an authorized search call: the search index and the vault it works. Search is nil
 // where the host has no search index.
 type searchCall struct {
-	search pluginport.PluginSearch
-	vault  domain.Vault
-	// hasVault is whether the host has a vault to offer the call.
+	search   pluginport.PluginSearch
+	vault    domain.Vault
 	hasVault bool
 }
 
-// begin authorizes a call that needs the permission and finds the search index. A call that names a
-// vault by its Numen-Vault header works that vault, else the one the host shows.
 func (e *searchEndpoint) begin(header http.Header, permission string, needsVault bool) (searchCall, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), permission); err != nil {
 		return searchCall{}, err
@@ -52,8 +49,6 @@ func (e *searchEndpoint) begin(header http.Header, permission string, needsVault
 	return call, nil
 }
 
-// getRefusal is the error code a call that cannot be served is answered with, and zero for a call
-// that can.
 func (c searchCall) getRefusal(needsVault bool) v1.HostSearchErrorCode {
 	switch {
 	case c.search == nil:
@@ -64,8 +59,6 @@ func (c searchCall) getRefusal(needsVault bool) v1.HostSearchErrorCode {
 	return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
 }
 
-// answerSearch sorts the failure of a search call: an answer the protocol names is a code, the end
-// of the caller's context is cancelled, and anything else is internal.
 func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error) {
 	if err == nil {
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED, nil
@@ -250,8 +243,6 @@ func (e *searchEndpoint) SearchPassages(
 	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
 }
 
-// writePassages converts the passages to the wire. A passage whose end or line exceeds int32 returns an
-// error, not a wrapped offset.
 func writePassages(found []domain.Passage) ([]*v1.Passage, error) {
 	passages := make([]*v1.Passage, len(found))
 	for i, one := range found {

@@ -53,7 +53,6 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 	return best, true
 }
 
-// findIndex returns the index of `want` in keys, or -1 when it is absent.
 func findIndex(keys []string, want string) int {
 	for i, key := range keys {
 		if key == want {

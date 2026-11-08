@@ -86,9 +86,8 @@ func (memoryFile) Close() error { return nil }
 
 // mapsVersions is the one version of the maps and the row a scan wrote for them.
 type mapsVersions struct {
-	source textport.ContentHash
-	hasRow bool
-	// findFailure and saveFailure, where set, are what the index returns instead.
+	source      textport.ContentHash
+	hasRow      bool
 	findFailure error
 	saveFailure error
 }
@@ -217,7 +216,6 @@ func getScannedMaps() textport.ContentHash {
 	return textport.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
-// checkLive fails the test unless the listing has the one version of the maps, live.
 func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {
 	t.Helper()
 	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {

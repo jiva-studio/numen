@@ -61,8 +61,6 @@ func compareNumbers(a, b uint64) int {
 	return 0
 }
 
-// comparePrerelease orders two prerelease lists: a version without one follows any with one, and a
-// shorter list precedes a longer one it begins.
 func comparePrerelease(a, b []string) int {
 	if len(a) == 0 || len(b) == 0 {
 		return compareNumbers(uint64(len(b)), uint64(len(a)))
@@ -75,8 +73,6 @@ func comparePrerelease(a, b []string) int {
 	return compareNumbers(uint64(len(a)), uint64(len(b)))
 }
 
-// compareIdentifier orders two prerelease identifiers: numeric ones by value and before alphanumeric
-// ones, which are ordered by their characters.
 func compareIdentifier(a, b string) int {
 	left, errLeft := strconv.ParseUint(a, 10, 64)
 	right, errRight := strconv.ParseUint(b, 10, 64)

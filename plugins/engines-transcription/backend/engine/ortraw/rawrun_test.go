@@ -17,7 +17,6 @@ type fakeRuntime struct {
 	run      *Graph
 }
 
-// readFirstPointer reads the first pointer of the array that address holds.
 func readFirstPointer(address uintptr) unsafe.Pointer {
 	array := *(*unsafe.Pointer)(unsafe.Pointer(&address))
 	return *(*unsafe.Pointer)(array)

@@ -8,10 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 
-// getWebSeeds returns seed address shapes: the two fetched schemes and several
-// unfetched ones, a video address in each sharing format, a page address with a
-// tracking parameter, an address with credentials, and bytes that are not an
-// address.
 func getWebSeeds() []string {
 	return []string{
 		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -30,7 +26,6 @@ func getWebSeeds() []string {
 	}
 }
 
-// hasUserInfo reports whether an address carries a name or a password before its host.
 func hasUserInfo(raw string) bool {
 	parsed, err := url.Parse(raw)
 	return err != nil || parsed.User != nil

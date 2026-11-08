@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 )
 
-// read is the section as the file gives it over the defaults.
 func read(t *testing.T, file string) settings.Agent {
 	t.Helper()
 	var target settings.Agent

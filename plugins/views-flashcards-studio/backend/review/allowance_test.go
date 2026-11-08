@@ -63,8 +63,6 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	}
 }
 
-// getBudget is what a preset keeps for a day of the week, read off the day
-// that admits it.
 func getBudget(p review.Preset, day time.Weekday) review.Budget {
 	pos := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
 	for pos.Weekday() != day {
@@ -113,8 +111,6 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	}
 }
 
-// drawAllowance is a day standing at a share of itself for the debt, drawn over
-// the whole of what the share may be.
 func drawAllowance(t *rapid.T) review.Allowance {
 	return review.Allowance{Backlog: rapid.IntRange(0, review.AllBacklog).Draw(t, "backlog")}
 }

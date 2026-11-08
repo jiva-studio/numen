@@ -395,7 +395,6 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	}
 }
 
-// front is a preset's frontmatter, as the parser returns it.
 func front(t *testing.T, output string) map[string]any {
 	t.Helper()
 	var out map[string]any
@@ -667,14 +666,10 @@ func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 	}
 }
 
-// lastAnswer is the instant the schedules below were last answered at.
 func getLastAnswer() time.Time {
 	return time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 }
 
-// genSchedule generates the schedule of one review card after the answers so far:
-// the interval until it is due, and its stability. A card that was never answered
-// is generated like any other, and is distinguished only by having no last answer.
 func genSchedule(t *rapid.T) review.Schedule {
 	// Whole days as often as the minutes between them: an interval is counted in
 	// days, so the day it falls exactly on is the case that decides the rule.
@@ -690,9 +685,6 @@ func genSchedule(t *rapid.T) review.Schedule {
 	return out
 }
 
-// ruleNamed generates a preset's three settings for the rule, over the whole
-// range each may take and beyond both ends of it: a value that a rule cannot hold
-// is what a manually authored preset can contain.
 func ruleNamed(t *rapid.T) review.Preset {
 	return review.Preset{
 		Rule: review.LearnedRule(rapid.SampledFrom([]string{

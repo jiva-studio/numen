@@ -7,8 +7,7 @@ package domain
 // fall. A note is a place with no spans, and so is a document requested at its
 // beginning.
 type Place struct {
-	Path string
-	// Ranges are the runs, over the text the source is read as.
+	Path   string
 	Ranges []ByteRange
 }
 

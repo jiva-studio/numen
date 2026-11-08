@@ -49,7 +49,6 @@ type record struct {
 	Copy       string          `json:"copy,omitempty"`
 }
 
-// getKind returns the text kind a fetch produced: captions, or the prose of an article.
 func getKind(fetched download.Text) domain.TextKind {
 	if len(fetched.Cues) > 0 {
 		return kindCaptions
@@ -57,8 +56,6 @@ func getKind(fetched download.Text) domain.TextKind {
 	return kindArticle
 }
 
-// getSegments is what was fetched as the segments of a text version: one segment to a caption, with
-// its span in seconds as its selector, or the prose whole.
 func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	if len(fetched.Cues) == 0 {
 		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}, nil
@@ -75,8 +72,6 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	return segments, nil
 }
 
-// writeText keeps the text under the key with its record, and clears the mark of an address that
-// publishes none.
 func (f folder) writeText(ctx context.Context, key string, segments []domain.TextSegment, rec record) error {
 	if err := host.WriteText(ctx, f.store, key+textExt, segments); err != nil {
 		return err
@@ -84,7 +79,6 @@ func (f folder) writeText(ctx context.Context, key string, segments []domain.Tex
 	return errors.Join(f.writeRecord(ctx, key, rec), f.store.Delete(ctx, key+noneExt))
 }
 
-// hasText reports whether the text of the key is kept.
 func (f folder) hasText(ctx context.Context, key string) (bool, error) {
 	return f.isKept(ctx, key+textExt)
 }
@@ -98,7 +92,6 @@ func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 	return f.store.Write(ctx, key+recordExt, raw)
 }
 
-// findRecord is the record kept under the key, and false where none is.
 func (f folder) findRecord(ctx context.Context, key string) (record, bool, error) {
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
@@ -112,14 +105,11 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 
-// readRecord is the record kept under the key, and the zero record where none is kept.
 func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	rec, _, err := f.findRecord(ctx, key)
 	return rec, err
 }
 
-// markNoText marks the key as an address that publishes no text, and clears the title, producer and
-// kind an earlier fetch recorded. The record keeps the address and the copy.
 func (f folder) markNoText(ctx context.Context, key string) error {
 	rec, hasRecord, err := f.findRecord(ctx, key)
 	if err != nil {
@@ -134,7 +124,6 @@ func (f folder) markNoText(ctx context.Context, key string) error {
 	return f.store.Write(ctx, key+noneExt, nil)
 }
 
-// isNone reports whether the key is marked as an address that publishes no text.
 func (f folder) isNone(ctx context.Context, key string) (bool, error) {
 	return f.isKept(ctx, key+noneExt)
 }
@@ -147,7 +136,6 @@ func (f folder) isKept(ctx context.Context, name string) (bool, error) {
 	return err == nil, err
 }
 
-// findCopy is the name and size of the copy kept under the hash, and false where none is.
 func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool, error) {
 	files, err := f.store.List(ctx)
 	if err != nil {
@@ -162,13 +150,11 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
-// isCopyOf reports whether a file of the folder is the whole copy kept under the hash.
 func isCopyOf(name, hash string) bool {
 	ext := path.Ext(name)
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
 }
 
-// isCopyExt reports whether a copy is kept in the container of the extension.
 func isCopyExt(ext string) bool {
 	switch ext {
 	case ".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac":
@@ -177,7 +163,6 @@ func isCopyExt(ext string) bool {
 	return false
 }
 
-// deleteCopy takes away the copy kept under the hash, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	files, err := f.store.List(ctx)
 	if err != nil {

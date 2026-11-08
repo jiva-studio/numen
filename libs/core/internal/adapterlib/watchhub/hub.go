@@ -28,7 +28,6 @@ type follower struct {
 	watch       *placed
 }
 
-// isFollowing reports whether an event at path is the follower's.
 func (f *follower) isFollowing(path string) bool {
 	if f.isRecursive {
 		return isWithin(path, f.dir)
@@ -47,7 +46,6 @@ type placed struct {
 	followers map[*follower]struct{}
 }
 
-// isCovering reports whether the watch delivers the events a follower of dir requires.
 func (p *placed) isCovering(dir string, isRecursive bool) bool {
 	if p.isRecursive {
 		return isWithin(dir, p.dir)
@@ -55,8 +53,6 @@ func (p *placed) isCovering(dir string, isRecursive bool) bool {
 	return dir == p.dir && !isRecursive
 }
 
-// forward hands each event to the followers it is for, until the watch is inner away. A follower
-// that is not reading loses the event, as notify itself does.
 func (p *placed) forward() {
 	for {
 		select {
@@ -102,7 +98,6 @@ type Hub struct {
 	placed map[*placed]struct{}
 }
 
-// newHub is a hub placing its watches through the system given.
 func newHub(watches system) *Hub {
 	return &Hub{system: watches, placed: make(map[*placed]struct{})}
 }
@@ -139,8 +134,6 @@ func (h *Hub) Watch(dir string, isRecursive bool, c chan<- notify.EventInfo) (st
 	return h.newStop(one), nil
 }
 
-// place puts a watch over dir that takes over every watch at or under it, and over the one above it
-// when that one watches its own folder alone.
 func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	dir, isRecursive, inner := h.getInnerWatches(dir, isRecursive)
 
@@ -165,8 +158,6 @@ func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	return nil
 }
 
-// getInnerWatches is the folder and the depth a new watch is placed at to serve a follower of dir,
-// and the watches it takes over.
 func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*placed) {
 	for p := range h.placed {
 		if isWithin(dir, p.dir) {
@@ -186,8 +177,6 @@ func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*pl
 	return dir, isRecursive, inner
 }
 
-// start registers the watch with the system and forwards its events. A stopped
-// watch is started again on new channels.
 func (h *Hub) start(p *placed) error {
 	target := p.dir
 	if p.isRecursive {
@@ -203,15 +192,12 @@ func (h *Hub) start(p *placed) error {
 	return nil
 }
 
-// unplace takes a watch away from the operating system and from the hub.
 func (h *Hub) unplace(p *placed) {
 	h.system.Stop(p.raw)
 	close(p.quit)
 	delete(h.placed, p)
 }
 
-// newStop returns the function that detaches the follower; repeated calls have
-// no further effect. A watch with no remaining followers is stopped.
 func (h *Hub) newStop(one *follower) func() {
 	var once sync.Once
 	return func() {
@@ -230,7 +216,6 @@ func (h *Hub) newStop(one *follower) func() {
 	}
 }
 
-// add puts a follower on the watch.
 func (p *placed) add(one *follower) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -238,8 +223,6 @@ func (p *placed) add(one *follower) {
 	p.followers[one] = struct{}{}
 }
 
-// getCanonicalPath is the absolute path of dir with its links resolved, which is how notify names
-// the paths of its events.
 func getCanonicalPath(dir string) (string, error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
@@ -252,7 +235,6 @@ func getCanonicalPath(dir string) (string, error) {
 	return resolved, nil
 }
 
-// isWithin reports whether path is dir or under it.
 func isWithin(path, dir string) bool {
 	if path == dir {
 		return true

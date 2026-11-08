@@ -205,7 +205,6 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 	}
 }
 
-// newSpec builds the Antigravity CLI invocation for the request.
 func newSpec(req *agentrun.Request, reg *agentrun.Registry, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
@@ -268,9 +267,6 @@ func makeAntigravityCommand(
 	return cmd, nil, nil
 }
 
-// makeAnswerCommand is the run of the Antigravity CLI that gives one answer: no MCP server, no
-// permission granted beforehand, and an empty folder to run in. The home and the folder go when the
-// run does.
 func makeAnswerCommand(
 	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func() error, error) {

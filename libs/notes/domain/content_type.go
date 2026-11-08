@@ -51,7 +51,6 @@ func (t ContentType) Matches(other ContentType) bool {
 	return t == other
 }
 
-// getWidth orders types from the narrowest: a type, a mask of one top-level type, every type.
 func (t ContentType) getWidth() int {
 	switch {
 	case t == AnyContentType:
@@ -80,10 +79,9 @@ func (r HandlerRank) IsValid() bool {
 // ContentHandler is one way a plugin declares to handle files of a type.
 type ContentHandler struct {
 	PluginID string
-	// ID names the handler among those of its plugin.
-	ID   string
-	Type ContentType
-	Rank HandlerRank
+	ID       string
+	Type     ContentType
+	Rank     HandlerRank
 }
 
 // ChooseHandler is the default handler of a file of the type, and false where none of the candidates

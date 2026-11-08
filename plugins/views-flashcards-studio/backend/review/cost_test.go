@@ -12,13 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// makeAnswers is a history of as many review cards, each answered as many times,
-// at the time the caller gives for each answer.
-//
-// The first two answers to a review card are of one still being learned and every
-// answer after them is of one that comes round in days, so a history of card
-// review cards answered three times each holds twice as many of the first kind as of
-// the second.
 func makeAnswers(
 	pos time.Time, reviewCards, each int, took func(reviewCard, step int) time.Duration,
 ) []review.Answer {
@@ -166,7 +159,6 @@ func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	}
 }
 
-// getCost is the cost of the answers taken as one group.
 func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
 	underMap := make(map[review.CardID]string)
@@ -180,16 +172,11 @@ func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost 
 	return review.GetDefaultCost()
 }
 
-// drawDivision generates the amount each of a preset's decks has due and the
-// budget to divide between them. The budget range covers values above the total
-// due and below any single share, so both ends of the division are generated as
-// often as the middle.
 func drawDivision(t *rapid.T) (int, []int) {
 	demands := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "demands")
 	return rapid.IntRange(0, 1200).Draw(t, "budget"), demands
 }
 
-// getTotalDemand returns the total due across a set of decks.
 func getTotalDemand(demands []int) int {
 	out := 0
 	for _, one := range demands {

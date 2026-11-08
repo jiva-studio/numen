@@ -415,8 +415,6 @@ func TestADeckPastTheCardBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
 	}
 }
 
-// A vault of three decks: two scheduled by a preset that gives Saturday half
-// the load, and one naming no preset at all.
 func getScheduled() map[string]string {
 	return map[string]string{
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -434,8 +432,6 @@ func getScheduled() map[string]string {
 	}
 }
 
-// saturday is a day the Sanskrit preset gives half the load, at an hour well
-// inside it.
 func getSaturday() time.Time {
 	return time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 }
@@ -643,15 +639,11 @@ func (r replaying) Next(
 	return r.Scheduler.Next(s, pos, rating)
 }
 
-// answer writes one correct answer for a card and returns its line. Every card
-// of this vault is shown through the one review card.
 func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Good, took)
 }
 
-// answerAgain writes one failed answer for a card, which makes the card due
-// again in the same session.
 func answerAgain(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Again, took)
@@ -746,16 +738,10 @@ func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	}
 }
 
-// learnedHour is an hour well inside a review day, on a day every preset here
-// carries the whole of its load.
 func getLearnedHour() time.Time {
 	return time.Date(2026, 9, 2, 10, 0, 0, 0, time.Local)
 }
 
-// A vault of three decks: two on a preset that counts a card learned while it
-// is likely to be recalled, and one naming no preset at all. A card answered a
-// moment ago is learned under the first rule and not under the second, so the
-// same answer counts differently in the decks either side of it.
 func getLearnedVault() map[string]string {
 	return map[string]string{
 		"Term.md":        term,
@@ -1030,8 +1016,6 @@ func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	}
 }
 
-// writeConflictedCopies puts a copy of every run beside it, under the name a
-// synchroniser that met a conflict leaves.
 func writeConflictedCopies(t *testing.T, s vaulted) {
 	t.Helper()
 	for _, name := range getRunFiles(t, s) {
@@ -1045,7 +1029,6 @@ func writeConflictedCopies(t *testing.T, s vaulted) {
 	}
 }
 
-// getRunFiles is the files the plugin's folder of the vault holds.
 func getRunFiles(t *testing.T, s vaulted) []string {
 	t.Helper()
 	entries, err := s.env.Store.List(t.Context())
@@ -1059,7 +1042,6 @@ func getRunFiles(t *testing.T, s vaulted) []string {
 	return out
 }
 
-// spaces is a file of one length holding nothing that reads as an answer.
 func spaces(n int) []byte {
 	out := make([]byte, n)
 	for item := range out {
@@ -1125,9 +1107,6 @@ type countedCachedRun struct {
 	IDs  []string                `json:"ids"`
 }
 
-// writeCache writes a cache over the vault's counting. The runs are the ones
-// the last counting wrote, so the cache records this vault's file lengths, and the
-// test supplies the per-day tallies.
 func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tally) {
 	t.Helper()
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
@@ -1314,7 +1293,6 @@ func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	}
 }
 
-// busy is an index that cannot be updated, which is what a second writer
 func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
@@ -1379,9 +1357,6 @@ func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	}
 }
 
-// reading opens one index and returns the use case that reads it, together
-// with a way to write another vault into it. One index for every vault is what
-// the application runs, so a scoping test has somewhere to leak to.
 func reading(
 	t *testing.T,
 ) (flashcards.ShowNeighbourhood, func(notes map[string]string) domain.Vault) {
@@ -1400,8 +1375,6 @@ func reading(
 	), add
 }
 
-// readNeighbourhood is one vault of notes, and what its deck turns out to be
-// joined to.
 func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
 	t.Helper()
 	u, add := reading(t)
@@ -1419,8 +1392,6 @@ func getNeighbourhood(
 	return out
 }
 
-// getWrittenLinks is how each entry was addressed, which is all a link that
-// reached no note ever has.
 func getWrittenLinks(j flashcards.Neighbourhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {

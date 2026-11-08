@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// line returns n words on one line, so a test about words is independent of
-// line handling.
 func line(n int) string {
 	rotation := []string{"hedge", "gate", "shed", "compost", "marrow"}
 	out := make([]string, n)
@@ -252,9 +250,6 @@ func TestSplitNothing(t *testing.T) {
 	}
 }
 
-// assertCutRules asserts the invariants of every cut, for any sizes: a chunk
-// contains its own words, is within the chunk enclosing it, carries the name of
-// the part it is in, and does not cross a part boundary.
 func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
 	s := sizes.Resolve()
@@ -301,8 +296,6 @@ func wordBounded(t *testing.T, text string, c Chunk) {
 	}
 }
 
-// assertWithinParts asserts that no chunk runs across a part: a boundary
-// strictly inside a chunk is structure the cut ignored.
 func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 	t.Helper()
 	for _, item := range bounds {
@@ -312,7 +305,6 @@ func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 	}
 }
 
-// assertPartName asserts a chunk carries the name of the last part at or before it.
 func assertPartName(t *testing.T, parts []domain.PartStart, c Chunk) {
 	t.Helper()
 	ordered := append([]domain.PartStart(nil), parts...)
@@ -328,7 +320,6 @@ func assertPartName(t *testing.T, parts []domain.PartStart, c Chunk) {
 	}
 }
 
-// boundaries are the offsets that separate one division from the next.
 func boundaries(text string, parts []domain.PartStart) []int {
 	var out []int
 	for _, p := range parts {
@@ -385,7 +376,6 @@ func isSame(a, b []Chunk) bool {
 	return true
 }
 
-// flatten is every small chunk, in the order the text carries them.
 func flatten(out []Chunk) []Chunk {
 	var small []Chunk
 	for _, large := range out {

@@ -34,13 +34,11 @@ type part struct {
 	Section string       `json:"section,omitempty"`
 }
 
-// getRecordName returns the store file name of the progress of a path's recognition.
 func getRecordName(path string) string {
 	sum := sha256.Sum256([]byte(path))
 	return hex.EncodeToString(sum[:]) + ".progress.json"
 }
 
-// getVersionName returns the store file name of the text version of a path's recognition.
 func getVersionName(path string) string {
 	sum := sha256.Sum256([]byte(path))
 	return hex.EncodeToString(sum[:]) + ".jsonl"
@@ -49,7 +47,6 @@ func getVersionName(path string) string {
 // textKind labels the text versions the plugin creates.
 const textKind domain.TextKind = "recognition"
 
-// readRecord returns the progress of the path's recognition, or nil when there is none.
 func readRecord(ctx context.Context, store host.Store, path string) (*record, error) {
 	raw, err := store.Read(ctx, getRecordName(path))
 	if errors.Is(err, host.ErrNotExist) {
@@ -76,13 +73,10 @@ func writeRecord(ctx context.Context, store host.Store, rec *record) error {
 	return nil
 }
 
-// isFor reports whether the record was made from the content hash with the recipe.
 func (r *record) isFor(inputHash, recipe string) bool {
 	return r != nil && r.InputHash == inputHash && r.Recipe == recipe
 }
 
-// getTextSegments is the segments of one page as the version file holds them: the page counted
-// from 1 and the rectangles of each segment in its selector.
 func (r *record) getTextSegments(index int) ([]domain.TextSegment, error) {
 	out := make([]domain.TextSegment, 0, len(r.Pages[index]))
 	for _, one := range r.Pages[index] {
@@ -95,7 +89,6 @@ func (r *record) getTextSegments(index int) ([]domain.TextSegment, error) {
 	return out, nil
 }
 
-// getText is the whole text of the record, as the host joins its parts.
 func (r *record) getText() (domain.VersionText, error) {
 	var segments []domain.TextSegment
 	for index := range r.Pages {
@@ -114,9 +107,6 @@ func (r *record) getText() (domain.VersionText, error) {
 // blockGap ends every block of a page.
 const blockGap = "\n\n"
 
-// newPage returns the parts of one recognised page. Each block is split at the start of each box, so
-// every part has the rectangle of its line; a block without boxes is one part without rectangles. A
-// heading block starts a section named by its text.
 func newPage(bounds image.Rectangle, blocks []Block) []part {
 	var out []part
 	for _, block := range blocks {
@@ -133,7 +123,6 @@ func newPage(bounds image.Rectangle, blocks []Block) []part {
 	return out
 }
 
-// newBlockParts returns the parts of one non-empty block, split at the start of each box.
 func newBlockParts(bounds image.Rectangle, block Block) []part {
 	boxes := append([]Box(nil), block.Boxes...)
 	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Range.Start < boxes[j].Range.Start })
@@ -160,7 +149,6 @@ func clampSpan(offset, length int) int {
 	return min(max(offset, 0), length)
 }
 
-// getFractions is a rectangle of the page in fractions of it.
 func getFractions(page, rect image.Rectangle) [4]float32 {
 	wide, high := float32(page.Dx()), float32(page.Dy())
 	if wide <= 0 || high <= 0 {

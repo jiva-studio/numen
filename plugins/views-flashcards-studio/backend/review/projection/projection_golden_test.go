@@ -23,7 +23,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// isUpdating reports whether the run was asked to write the projections down again.
 func isUpdating() bool {
 	return flag.Lookup(updateFlag).Value.String() == "true"
 }
@@ -63,7 +62,6 @@ func TestAProjectionAnswersWhatItIsSavedDownAs(t *testing.T) {
 	}
 }
 
-// line is one line of a reading, and empty past the end of it.
 func line(lines []string, i int) string {
 	if i >= len(lines) {
 		return ""
@@ -71,17 +69,14 @@ func line(lines []string, i int) string {
 	return lines[i]
 }
 
-// goldenDay counts days in UTC, so the golden file is identical on every machine.
 func getGoldenDay() review.Day {
 	return review.Day{Starts: review.DayStartTime, In: time.UTC}
 }
 
-// goldenNow is the instant the projections open on.
 func getGoldenNow() time.Time {
 	return time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
 }
 
-// projections is every projection this file holds, written out.
 func projections(t *testing.T) string {
 	t.Helper()
 	delta := review.NewFSRS()
@@ -119,9 +114,6 @@ func projections(t *testing.T) string {
 	return out.String()
 }
 
-// goldenDays lists every day of a run, which are the days the projections
-// report the returning share for, so the golden file records the complete
-// output of a run.
 func goldenDays(days int) []int {
 	out := make([]int, days)
 	for i := range out {
@@ -130,8 +122,6 @@ func goldenDays(days int) []int {
 	return out
 }
 
-// writeProjection puts one projection down, every scalar and every series of
-// it.
 func writeProjection(out *strings.Builder, p projection.Projection) {
 	fmt.Fprintf(out, "days %d cards %d seen %d due %d clears %d learned %d learns %d short %d\n",
 		p.Days, p.ReviewCards, p.Seen, p.Due, p.Clears, p.Learned, p.Learns, p.Short)
@@ -146,8 +136,6 @@ func writeProjection(out *strings.Builder, p projection.Projection) {
 	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained)))
 }
 
-// getRetainedShares is the share that came back on each day the run answers
-// for, in order.
 func getRetainedShares(one projection.RetentionByDay) []float64 {
 	days := one.Days()
 	out := make([]float64, 0, len(days))
@@ -216,11 +204,6 @@ type goldenMaterial struct {
 	unreviewed int
 }
 
-// goldenMaterials is the set of vaults the projections are computed over:
-// an empty vault, a material with no begun cards, a large debt, a material
-// answered in varied ways, and a vault where the day ends with both overdue
-// cards and unbegun cards remaining, where the split of the day's budget
-// between them determines the result.
 func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	return []goldenMaterial{
 		{name: "an empty vault", schedules: nil, unreviewed: 0},
@@ -231,13 +214,6 @@ func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	}
 }
 
-// goldenAt is a material in which each card was answered a varying number of
-// times, some long overdue and some due in the coming weeks.
-//
-// The overdue part has its due day set before the answer that produced it,
-// which a real vault never holds: a due day is computed forward from the time
-// of an answer. It is a stress case, and the figures recorded for "a large
-// debt" do not represent a real vault.
 func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.CardID]review.Schedule {
 	out := make(map[review.CardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
@@ -270,10 +246,6 @@ type goldenPreset struct {
 	preset review.Preset
 }
 
-// goldenPresets is the spread of settings: each goal, each rule for what counts
-// as learned, a week with a light day and a day at nothing, a day spent new
-// material first, a preset that schedules nothing, and each counting of what a
-// day's budget is spent on set against the same settings at the other.
 func goldenPresets() []goldenPreset {
 	light := map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
 	return []goldenPreset{

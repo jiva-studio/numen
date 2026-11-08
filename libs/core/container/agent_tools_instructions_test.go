@@ -57,7 +57,6 @@ func getInstructionsAt(id string, permissions []string, served *toolPluginFixtur
 	}
 }
 
-// newToolWithInstructions is a tool of a test plugin that has the instruction sentences given.
 func newToolWithInstructions(name string, effect v1.ToolEffect, sentences []string, servers ...v1.ToolServer) *v1.PluginTool {
 	tool := newPluginTool(name, effect, servers...)
 	tool.Instructions = sentences
@@ -72,14 +71,10 @@ func newReadOnlyTool(name string, sentences ...string) *v1.PluginTool {
 	return newToolWithInstructions(name, v1.ToolEffect_TOOL_EFFECT_READ_ONLY, sentences)
 }
 
-// newMCPCaller is the plugin that serves the tools of the others outside Numen: it has vault:read
-// only.
 func newMCPCaller() testPlugin {
 	return testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}}
 }
 
-// openToolsOfHost serves the host endpoint and returns a client calling its PluginToolService as
-// the MCP plugin.
 func openToolsOfHost(t *testing.T, host *plugin.Host) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	t.Cleanup(func() {
@@ -255,8 +250,6 @@ func TestReadingCatalogListsOnlyReadingToolsWithSentences(t *testing.T) {
 	}
 }
 
-// runInApp runs a task with the instructions on the agent of the editor over the host, and returns
-// the instructions the agent plugin received.
 func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	t.Helper()
 	agent := &toolAgent{}

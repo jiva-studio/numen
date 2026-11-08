@@ -62,8 +62,6 @@ type resampleSpan struct {
 	kernel  kernel
 }
 
-// fill works out the output samples from start up to end, and stops early when
-// the context ends.
 func (s resampleSpan) fill(ctx context.Context, start, end int) {
 	for i := start; i < end; i++ {
 		// gomutants:disable-next-line EXPRESSION_REMOVE,ARITHMETIC_BASE,INVERT_NEGATIVES,INTEGER_INCREMENT,INTEGER_DECREMENT,CONDITIONALS_NEGATION,BRANCH_IF reason="periodic cancellation check is a performance optimization backed by the post-Wait check"
@@ -97,7 +95,6 @@ type kernel struct {
 	step   float64
 }
 
-// buildKernel works the kernel out over its whole reach.
 func buildKernel(cutoff, reach float64) kernel {
 	step := float64(kernelSteps)
 	target := make([]float64, int(reach*step)+2)
@@ -108,9 +105,6 @@ func buildKernel(cutoff, reach float64) kernel {
 	return kernel{values: target, step: step}
 }
 
-// getValueAt is the kernel at a distance, between the two steps it falls
-// between. The kernel is even, so a distance either side of nothing reads the
-// same.
 func (w kernel) getValueAt(d float64) float64 {
 	pos := math.Abs(d) * w.step
 	i := int(pos)
@@ -121,7 +115,6 @@ func (w kernel) getValueAt(d float64) float64 {
 	return w.values[i]*(1-part) + w.values[i+1]*part
 }
 
-// getSinc is the interpolating kernel, one at nothing.
 func getSinc(x float64) float64 {
 	if x == 0 {
 		return 1
@@ -129,7 +122,6 @@ func getSinc(x float64) float64 {
 	return math.Sin(math.Pi*x) / (math.Pi * x)
 }
 
-// getBlackmanWindow brings the kernel to nothing at the edge of its reach.
 func getBlackmanWindow(t float64) float64 {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Blackman window is zero at t == -1 and t == 1"
 	if t < -1 || t > 1 {

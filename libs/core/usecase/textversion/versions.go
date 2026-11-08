@@ -70,7 +70,6 @@ func (u *Versions) SetListener(listener textport.VersionListener) {
 	u.listener = listener
 }
 
-// reportChanged notifies the listener that the versions of a file changed.
 func (u *Versions) reportChanged(v domain.Vault, path string) {
 	u.mu.Lock()
 	listener := u.listener
@@ -106,8 +105,6 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 	})
 }
 
-// saveVersion checks a version against its file and the other versions of its
-// path, and records it.
 func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.TextVersion, error) {
 	if err := checkVersionFields(version); err != nil {
 		return domain.TextVersion{}, err
@@ -143,7 +140,6 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	return version, nil
 }
 
-// checkVersionFields reports a version that lacks a path, key, kind or file.
 func checkVersionFields(version domain.TextVersion) error {
 	if version.Path == "" || version.Key == "" || version.Kind == "" || version.File == "" {
 		return fmt.Errorf("%w: path %q, key %q, kind %q, file %q",
@@ -152,7 +148,6 @@ func checkVersionFields(version domain.TextVersion) error {
 	return nil
 }
 
-// checkVersionSource reports a source that is the version itself or is no version of the path.
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
 	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
 		return fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
@@ -198,8 +193,6 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, conte
 	return listing, nil
 }
 
-// findLive is the live version among a file's versions: the newest one with a
-// valid chain whose file still has the hash it was recorded with.
 func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []domain.TextVersion, contentHash string) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
@@ -346,7 +339,6 @@ func (u *Versions) hasPlugin(pluginID string) bool {
 	return slices.ContainsFunc(u.plugins.GetTextPlugins(), func(plugin textport.TextPlugin) bool { return plugin.ID == pluginID })
 }
 
-// markRequested records a request, and reports whether it was not recorded before.
 func (u *Versions) markRequested(key request) bool {
 	u.mu.Lock()
 	defer u.mu.Unlock()

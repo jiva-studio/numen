@@ -172,12 +172,6 @@ func ReadCardModel(n domain.Note) CardModel {
 	return r.cardModel
 }
 
-// fields returns what the frontmatter declares, in the order the user supplies
-// them. Names are compared as written, and the first of two with the same name is
-// kept.
-//
-// An entry that is not a name is not a field, and every template that places it
-// reports a problem. A card model with no field cuts nothing, and reports that.
 func fields(frontmatter map[string]any) ([]string, []Problem) {
 	var list []any
 	if declared, isList := frontmatter[fieldsKey].([]any); isList {

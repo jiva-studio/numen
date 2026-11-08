@@ -44,23 +44,15 @@ var ErrNoProfile = errors.New("no profile for the model")
 // The shipped table is profiles.json beside this file, and a file in the profiles folder of the
 // plugin data directory adds a profile or changes one by its id.
 type Profile struct {
-	// ID is the Hugging Face repository of a local model, and the model name of a remote one.
-	ID string `json:"id"`
-	// Aliases are other names the settings may use for the model.
-	Aliases []string `json:"aliases,omitempty"`
-	Title   string   `json:"title"`
-	// Tier says in a few words what the model is for, such as "default, CPU". A profile with a tier is
-	// listed in the settings.
-	Tier   string `json:"tier,omitempty"`
-	SizeMB int    `json:"sizeMB,omitempty"`
-	// Remote marks a model that a service runs. Its texts get no prefix.
-	Remote     bool `json:"remote,omitempty"`
-	Dimensions int  `json:"dims"`
-	// MaxTokens is the longest text the model takes. A local model reads at most MaxChunkTokens.
-	MaxTokens int `json:"maxTokens"`
-	// Pooling is mean, cls, last, or output.
-	Pooling string `json:"pooling"`
-	// Normalise scales a vector to unit length. Absent means true.
+	ID             string            `json:"id"`
+	Aliases        []string          `json:"aliases,omitempty"`
+	Title          string            `json:"title"`
+	Tier           string            `json:"tier,omitempty"`
+	SizeMB         int               `json:"sizeMB,omitempty"`
+	Remote         bool              `json:"remote,omitempty"`
+	Dimensions     int               `json:"dims"`
+	MaxTokens      int               `json:"maxTokens"`
+	Pooling        string            `json:"pooling"`
 	Normalise      *bool             `json:"normalise,omitempty"`
 	QueryPrefix    string            `json:"queryPrefix,omitempty"`
 	DocumentPrefix string            `json:"documentPrefix,omitempty"`
@@ -219,7 +211,6 @@ func ReadProfiles(data []byte) ([]Profile, error) {
 	return out, nil
 }
 
-// splitProfiles returns the profiles of a file, an array or a single one, undecoded.
 func splitProfiles(data []byte) ([]json.RawMessage, error) {
 	text := bytes.TrimSpace(data)
 	if !bytes.HasPrefix(text, []byte("[")) {
@@ -314,7 +305,6 @@ func (t *Profiles) WithUserProfiles(dir string, report func(file string, err err
 	return out
 }
 
-// readUserFile returns the profiles of one file, each laid over the profile of its id.
 func (t *Profiles) readUserFile(path string) ([]Profile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -335,9 +325,6 @@ func (t *Profiles) readUserFile(path string) ([]Profile, error) {
 	return out, nil
 }
 
-// layer returns the profile one entry of a user file makes: the entry over the profile of its id, field
-// by field. The pins of a profile belong to its file, so a profile that names another file and gives no
-// pins of its own has none.
 func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 	var head struct {
 		ID string `json:"id"`
@@ -358,8 +345,6 @@ func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 	return p, p.Validate()
 }
 
-// dropStalePins removes the pins of the shipped profile from p when its entry names another model file
-// and gives no pins of its own.
 func dropStalePins(p *Profile, base Profile, entry json.RawMessage) {
 	if p.OnnxFile == base.OnnxFile || bytes.Contains(entry, []byte(`"sha256"`)) {
 		return

@@ -48,8 +48,6 @@ func newUpdater(fetcher Fetcher) *updater {
 	}
 }
 
-// getEndpoint returns the feed of the channel the settings name. The Custom channel asks the
-// endpoint setting, which is empty until the person sets it; the other channels ignore the setting.
 func getEndpoint(values map[string]string) string {
 	switch strings.TrimSpace(values["channel"]) {
 	case ChannelCustom:
@@ -61,8 +59,6 @@ func getEndpoint(values map[string]string) string {
 	}
 }
 
-// configure applies the settings the host supplies. A check runs only after the first call, and a
-// change of the endpoint discards the result of the earlier checks.
 func (u *updater) configure(values map[string]string) {
 	endpoint := getEndpoint(values)
 	u.mu.Lock()
@@ -75,7 +71,6 @@ func (u *updater) configure(values map[string]string) {
 	u.status = api.Status{State: api.StateUnchecked, Update: nil}
 }
 
-// getConfigured returns the endpoint, and false before the host has configured the plugin.
 func (u *updater) getConfigured() (string, bool) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -96,8 +91,6 @@ func (u *updater) getStatus(context.Context, api.GetStatusRequest) (api.Status, 
 	return u.status, nil
 }
 
-// check requests the manifest and compares it with the running build. An endpoint that does not
-// answer with a manifest is the unreachable state and no failure of the call.
 func (u *updater) check(ctx context.Context, req api.CheckRequest) (api.Status, error) {
 	endpoint, ok := u.getConfigured()
 	if !ok {
@@ -118,7 +111,6 @@ func (u *updater) check(ctx context.Context, req api.CheckRequest) (api.Status, 
 	return status, nil
 }
 
-// newCurrent returns the running build the frontend reported.
 func newCurrent(app api.App) (release.Current, error) {
 	switch app.Platform {
 	case release.PlatformDarwin, release.PlatformWindows, release.PlatformLinux:
@@ -131,7 +123,6 @@ func newCurrent(app api.App) (release.Current, error) {
 	return release.Current{Version: app.Version, Build: release.Build(app.Build), Platform: app.Platform}, nil
 }
 
-// newStatus returns what the manifest says to the running build.
 func newStatus(manifest release.Manifest, current release.Current) api.Status {
 	update, ok := release.Evaluate(manifest, current)
 	if !ok {
@@ -155,7 +146,6 @@ func newUpdate(update release.Update) *api.Update {
 	}
 }
 
-// mount registers the updater API on s. The fetcher requests the release manifest.
 func mount(s *server.Server, fetcher Fetcher) error {
 	u := newUpdater(fetcher)
 	s.SetUpdateConfig(u.configure)

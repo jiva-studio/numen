@@ -61,18 +61,13 @@ type VectorsReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
-	Reading  OpenReading
-	Embedder embeddingport.Embedder
-	// VectorCounts is nil when the number of pending vectors is unknown; every pass then
-	// assumes some vectors are pending.
+	Reading      OpenReading
+	Embedder     embeddingport.Embedder
 	VectorCounts GetVectorCounts
-	// VectorsReady is nil where nobody is told.
 	VectorsReady VectorsReady
 	Events       Events
-	// Quiet is how long the vault has to have been still before a note that was
-	// written is embedded, and After is the timer that counts it.
-	Quiet time.Duration
-	After func(time.Duration) <-chan time.Time
+	Quiet        time.Duration
+	After        func(time.Duration) <-chan time.Time
 }
 
 // Worker keeps the index of a vault in sync with its content, one pass at a
@@ -124,8 +119,6 @@ func (w *Worker) WakeNotes() { signal(w.notes) }
 // person cancelled. The vault calls it for every path it reports changed.
 func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
 
-// openReading opens the passes over v with the sources a person cancelled
-// left out.
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
 ) (vaultreading.ReadWholeVault, error) {
@@ -145,13 +138,11 @@ type taskCancel struct {
 	isRequested atomic.Bool
 }
 
-// newTaskCancel returns the context a pass runs under and its cancel.
 func newTaskCancel(ctx context.Context) (context.Context, *taskCancel) {
 	inner, stop := context.WithCancel(ctx)
 	return inner, &taskCancel{stop: stop}
 }
 
-// request is the cancel the task reports.
 func (c *taskCancel) request() {
 	c.isRequested.Store(true)
 	c.stop()
@@ -179,8 +170,6 @@ func (c *currentSources) get() []string {
 	return slices.Clone(c.paths)
 }
 
-// getEmbeddingSources returns the sources the vector pass is embedding in the report: those of the
-// batches in flight, or the source it names when none is.
 func getEmbeddingSources(res vaultreading.EmbedResult) []string {
 	if len(res.Active) > 0 {
 		return res.Active
@@ -230,7 +219,6 @@ func (s *Session) ReportVersionsChanged(v domain.Vault, path string) {
 	s.RequestCut(v, path)
 }
 
-// drain is every source waiting, and leaves none behind.
 func (s *Session) drain() map[string]domain.Vault {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -249,10 +237,9 @@ func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read Re
 
 // pass is the indexing of one vault, on the one goroutine that runs it.
 type pass struct {
-	worker  *Worker
-	session *Session
-	v       domain.Vault
-	// isRebuild is true when the next pass over the file texts indexes every file again.
+	worker    *Worker
+	session   *Session
+	v         domain.Vault
 	isRebuild bool
 }
 
@@ -285,8 +272,6 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 	}
 }
 
-// readNotes is the walk, and the notes written while it ran read once more. It
-// answers whether the vault was read.
 func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	events := p.worker.events
 	defer events.FinishTask(WalkingNotes)
@@ -308,15 +293,12 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-// indexSources indexes the file texts, in full when the first launch requested it.
 func (p *pass) indexSources(ctx context.Context) {
 	request := p.isRebuild
 	p.isRebuild = false
 	p.indexTexts(ctx, request)
 }
 
-// embedRecognised cuts and embeds what has been read of a document while the
-// rest of it is still being read.
 func (p *pass) embedRecognised(ctx context.Context) {
 	target := p.session.drain()
 	if len(target) == 0 {
@@ -328,9 +310,6 @@ func (p *pass) embedRecognised(ctx context.Context) {
 	p.embed(ctx)
 }
 
-// indexTexts cuts the text versions of every file in the vault and then embeds
-// what was cut. A file that will not read is one file, and an embedder that is
-// not configured is the ordinary case.
 func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.openReading(ctx, p.v, rebuild)
@@ -380,9 +359,6 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	p.embed(ctx)
 }
 
-// cutSource cuts one source again from its current text. A failure affects
-// only that source; the next batch retries it. A source a person cancelled is
-// not cut.
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	if p.worker.skips.isTextSkipped(path) {
 		return
@@ -406,13 +382,6 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	}
 }
 
-// embed creates the vectors for the chunks of the vault that lack one, and
-// reads no file the index does not already hold a chunk of.
-//
-// A recognition batch of pages, a note written, and a change of the sources (a book added, or
-// the embedding model changed), stop the pass at its current position. The
-// vectors already created are kept, and the resumed pass queries the index for
-// the chunks that still lack a vector, under the recipe in force by then.
 func (p *pass) embed(ctx context.Context) {
 	w := p.worker
 	if w.embedder == nil {
@@ -433,8 +402,6 @@ func (p *pass) embed(ctx context.Context) {
 	}
 }
 
-// reportVectorsReady tells the worker's listener that the pass has left no vector pending but the
-// vectors of the sources a person cancelled. A stopped pass tells nobody.
 func (p *pass) reportVectorsReady(ctx context.Context) {
 	w := p.worker
 	if w.vectorsReady == nil || ctx.Err() != nil {
@@ -446,18 +413,12 @@ func (p *pass) reportVectorsReady(ctx context.Context) {
 // vectorPlan is what a vector pass must create, computed once before the pass starts. Chunks are
 // discovered a few hundred at a time, so a total derived during the pass would keep growing.
 type vectorPlan struct {
-	// pending is the number of vectors to create, the chunks of the sources a person cancelled left
-	// out; zero where the counts are unknown.
 	pending    int64
 	hasPending bool
-	// skipped is the number of chunks of the sources a person cancelled that pending leaves out, and
-	// generation the list of those sources it was counted for.
 	skipped    int64
 	generation uint64
 }
 
-// planVectors returns what a vector pass over v must create. A vault whose only chunks without a
-// vector belong to sources a person cancelled has none pending.
 func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
 	plan := vectorPlan{generation: w.skips.getGeneration()}
 	plan.skipped = w.skips.getSkippedChunks()
@@ -476,9 +437,6 @@ func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
 	return plan
 }
 
-// getTotal returns the number of vectors the pass counts its progress against once res is known: the
-// pending of the plan less the chunks of cancelled sources this pass found beyond those the plan left
-// out. Zero is a total that is unknown.
 func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
 	if plan.pending == 0 {
 		return 0
@@ -487,12 +445,6 @@ func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
 	return max(int64(res.Embedded), plan.pending-found)
 }
 
-// stopOnWake returns the context a pass runs under, which is cancelled when a
-// wake signal is pending on any of the channels given, and the function that
-// ends the pass.
-//
-// A wake signal is restored after it is consumed, so the calling loop still
-// receives it.
 func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, func()) {
 	underCtx, end := context.WithCancel(ctx)
 	var watchers sync.WaitGroup
@@ -514,8 +466,6 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 	}
 }
 
-// makeVectors creates the pending vectors of a vault, reporting the source being
-// embedded. It reports whether the pass ended with no vector pending.
 func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	events := p.worker.events
 	failed := func(err error) {

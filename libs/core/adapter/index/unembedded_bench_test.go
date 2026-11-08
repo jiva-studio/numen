@@ -21,18 +21,14 @@ import (
 // chunksPerPage is the page size the walk requests, as usecase/source does.
 const chunksPerPage = 200
 
-// benchVault holds every chunk these benchmarks read.
 func getBenchVault() domain.Vault { return domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"} }
 
-// benchModel is a model with no embeddings, so every chunk lacks a vector for it.
 func getBenchModel() embeddingport.EmbeddingModel {
 	return embeddingport.EmbeddingModel{
 		Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
 	}
 }
 
-// openUnembeddedDB is an index holding one vault of `sources` sources, each cut
-// into a large chunk with `per` small ones inside it, and no vectors at all.
 func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	tb.Helper()
 	ctx := tb.Context()

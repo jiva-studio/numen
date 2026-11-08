@@ -305,7 +305,6 @@ func (b *Bus) Close(ctx context.Context) error {
 	}
 }
 
-// beginDispatch registers an asynchronous dispatch and reports false once the bus is closed.
 func (b *Bus) beginDispatch() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()

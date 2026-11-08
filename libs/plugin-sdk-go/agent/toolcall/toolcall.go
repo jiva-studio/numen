@@ -79,7 +79,6 @@ func Describe(words map[string]Declaration, name, call, args string) *ToolCall {
 	return described
 }
 
-// readRange is the run of a source's text a call names, read once the arguments parse whole.
 func readRange(args string) *Range {
 	var parsed map[string]any
 	// gomutants:disable-next-line BRANCH_IF reason="an unparsed map leaves length zero, which returns nil on the range check"
@@ -93,7 +92,6 @@ func readRange(args string) *Range {
 	return &Range{Start: int32(start), End: int32(start + length)}
 }
 
-// readAbout is what a call is about, read from the arguments as far as they have arrived.
 func readAbout(words Declaration, args string) string {
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
@@ -111,8 +109,6 @@ func readAbout(words Declaration, args string) string {
 	return ""
 }
 
-// describeCollection is the first element of a collection by the name it holds, and how many
-// others there are.
 func describeCollection(value []any, inside string) string {
 	if len(value) == 0 {
 		return ""
@@ -136,8 +132,6 @@ func describeCollection(value []any, inside string) string {
 	return first
 }
 
-// readCallDetails is what an undeclared call is about, the file it names and the span inside it,
-// read from the arguments whole or as far as they have arrived.
 func readCallDetails(args string) (string, string, *Range) {
 	// gomutants:disable-next-line BRANCH_IF reason="empty args fails unmarshal and every partial field lookup, returning empty details"
 	if args == "" {
@@ -177,7 +171,6 @@ func readCallDetails(args string) (string, string, *Range) {
 	return about, path, span
 }
 
-// readWholeCallDetails is readCallDetails for arguments that parse whole.
 func readWholeCallDetails(parsed map[string]any, args string) (string, string, *Range) {
 	path, _ := readFirstString(parsed, "path", "file")
 	about, hasAbout := readFirstString(parsed, "query", "about", "title")
@@ -200,7 +193,6 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 	return about, path, &Range{Start: int32(from), End: int32(from + length)}
 }
 
-// readNumber returns the number under key, or 0 when the key is absent or not a number.
 func readNumber(values map[string]any, key string) float64 {
 	if number, ok := values[key].(float64); ok {
 		return number
@@ -208,7 +200,6 @@ func readNumber(values map[string]any, key string) float64 {
 	return 0
 }
 
-// readText returns value when it is a string, or "" otherwise.
 func readText(value any) string {
 	if text, ok := value.(string); ok {
 		return text
@@ -216,7 +207,6 @@ func readText(value any) string {
 	return ""
 }
 
-// readFirstString returns the first of keys whose value in parsed is a string.
 func readFirstString(parsed map[string]any, keys ...string) (string, bool) {
 	for _, key := range keys {
 		if value, ok := parsed[key].(string); ok {

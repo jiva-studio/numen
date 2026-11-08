@@ -11,11 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-// vault builds a root the rules can be queried about: a folder of notes, the
-// application's own folder, a link that stays inside, a link that leaves, and a
-// link into the application's own folder. The links make the check more than a
-// text check: a path that reads as the vault's can still resolve elsewhere in
-// the filesystem.
 func vault(tb testing.TB) string {
 	tb.Helper()
 	root := tb.TempDir()
@@ -106,15 +101,6 @@ func FuzzInside(f *testing.F) {
 	})
 }
 
-// checkRule fails unless an accepting rule returned a path under the root, both
-// as spelled and with every link resolved, and unless a rejecting rule returned
-// nothing.
-//
-// Where the path resolves determines which of the two rules may accept it. A
-// link is a second spelling of a location, and locations are divided between the
-// two rules, so a path spelled as the vault's that resolves into the
-// application's folder belongs to the application and resolveVaultPath may not
-// accept it.
 func checkRule(t *testing.T, root, path, rule string, application bool, target, resolved string, err error) {
 	t.Helper()
 	if err != nil {
@@ -137,12 +123,6 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 	}
 }
 
-// configSeeds are the shapes a vault's configuration arrives in: what
-// Initialize writes, one that names what to leave alone, one a sync truncated
-// mid-write, an identifier with a character the alphabet has not got, one a
-// letter short, a name written twice, an object holding nothing, a bare null,
-// the file as something other than an object, and bytes that are no
-// configuration at all.
 func getConfigSeeds() []string {
 	return []string{
 		"{\n  \"v\": 1,\n  \"id\": \"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"\n}\n",

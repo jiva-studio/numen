@@ -103,7 +103,6 @@ func newCallers(completer completionport.Completer) *callers {
 	}
 }
 
-// newHostClient serves the endpoint's handler and returns a client calling it with the token.
 func newHostClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostServiceClient {
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers}

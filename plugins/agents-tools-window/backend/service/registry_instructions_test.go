@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// listWindowTools lists the tools from the handler the host starts, where the plugin mounts its
-// registry.
 func listWindowTools(t *testing.T) tools.Listing {
 	t.Helper()
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})

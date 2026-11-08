@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// isolateHome points every directory a test could reach through the
-// environment at a folder of its own.
 func isolateHome(t *testing.T) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
@@ -73,7 +71,6 @@ func (f flawed) Open(ctx context.Context, handle string) (io.ReadCloser, error) 
 	return f.handedOver.Open(ctx, handle)
 }
 
-// aFolderOfTwo is a folder holding a picture and a note, by handle.
 func aFolderOfTwo() handedOver {
 	return handedOver{
 		names: map[string]string{

@@ -100,8 +100,6 @@ func ParseAddress(raw string) Address {
 	return Address{Scheme: SchemeName, Value: target}
 }
 
-// isScheme keeps a title with a colon in it from being read as an address. A
-// scheme is letters, digits, `+`, `-` and `.`, and a name is anything else.
 func isScheme(s string) bool {
 	if s == "" {
 		return false
@@ -123,22 +121,12 @@ type Link struct {
 	Target Address
 	Role   LinkRole
 
-	// Type is open vocabulary, and a value is only introduced together with the
-	// code that reads it.
 	Type string
 
-	// Why the link exists, in the author's words.
 	Why string
 
-	// Label is the user's name for this relationship, in a few words, rendered
-	// along the line between the two notes. It is not a copy of anything: no
-	// field carries the target's name, because a name kept alongside an address
-	// is a cache in the file the address is written in.
 	Label string
 
-	// Marker is what is drawn at the end of the line that points at Target. The
-	// absent marker draws nothing; the marker of the record in the other note
-	// belongs to the other end.
 	Marker LinkMarker
 }
 
@@ -147,9 +135,8 @@ type Link struct {
 // names the records that carry none.
 type LinkKey struct {
 	Target Address
-	// Role narrows the address to one role. Empty matches every role.
-	Role LinkRole
-	Type string
+	Role   LinkRole
+	Type   string
 }
 
 // ResolvedLink is a link together with what it currently points at. "Currently"
@@ -158,18 +145,11 @@ type LinkKey struct {
 type ResolvedLink struct {
 	Link
 
-	// From is the note the link is written in; To is the note it resolves to,
-	// empty when nothing does.
 	From string
 	To   string
 
-	// ToVault is the vault the target turned out to be in. Empty when the link
-	// resolved to nothing, and equal to the vault the link was written in for
-	// every ordinary link.
 	ToVault VaultID
 
-	// IsAmbiguous is set when several notes answer to the name. The link still
-	// resolves — to the nearest one — but the vault has a question in it.
 	IsAmbiguous bool
 }
 
@@ -197,7 +177,6 @@ type Backlink struct {
 // means is a fact about where the notes sit.
 type AmbiguousLink struct {
 	ResolvedLink
-	// Candidates is every note that answers to the name, the chosen one among them.
 	Candidates []string
 }
 

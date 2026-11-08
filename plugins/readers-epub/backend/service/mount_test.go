@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// codeOf returns the code a method failing with err answers.
 func codeOf(err error) server.ErrorCode {
 	if err == nil {
 		return ""

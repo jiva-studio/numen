@@ -43,7 +43,6 @@ func (e invalidFocusError) Error() string { return e.err.Error() }
 
 func (e invalidFocusError) Unwrap() []error { return []error{e.err, pluginport.ErrInvalidFocus} }
 
-// getVault returns the open vault, or ErrNoWindow when the window shows none.
 func (w pluginWindow) getVault() (domain.Vault, error) {
 	v := w.state.GetCurrentVault()
 	if v.Path == "" {

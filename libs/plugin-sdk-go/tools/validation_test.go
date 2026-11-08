@@ -152,8 +152,6 @@ func TestAFailureTextNamesNoGoTypeOrValidatorKeyword(t *testing.T) {
 	}
 }
 
-// assertPlainFailureText fails the test when text holds a Go type, struct or field name, a
-// formatting artefact of fmt or reflect, or a keyword prefix of jsonschema-go.
 func assertPlainFailureText(t *testing.T, text string) {
 	t.Helper()
 	for _, fragment := range []string{

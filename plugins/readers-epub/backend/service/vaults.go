@@ -14,12 +14,10 @@ import (
 
 type requestVaultKey struct{}
 
-// withRequestVault returns ctx carrying the vault the request's Numen-Vault header names.
 func withRequestVault(ctx context.Context, header http.Header) context.Context {
 	return context.WithValue(ctx, requestVaultKey{}, host.GetRequestVault(header))
 }
 
-// getRequestVault returns the vault ctx carries, and empty where it names none.
 func getRequestVault(ctx context.Context) domain.VaultID {
 	if id, ok := ctx.Value(requestVaultKey{}).(domain.VaultID); ok {
 		return id
@@ -27,7 +25,6 @@ func getRequestVault(ctx context.Context) domain.VaultID {
 	return ""
 }
 
-// getVault returns the vault ctx names, and the shown vault where it names none.
 func getVault(ctx context.Context, files host.Vault) host.Vault {
 	if id := getRequestVault(ctx); id != "" {
 		return files.With(id)
@@ -35,7 +32,6 @@ func getVault(ctx context.Context, files host.Vault) host.Vault {
 	return files
 }
 
-// readVaultError turns a host vault error into an API error.
 func readVaultError(path string, err error) error {
 	if errors.Is(err, host.ErrOutside) {
 		return server.NewAPIError(server.CodePermissionDenied, fmt.Sprintf("path traversal outside allowed scope: %v", vault.ErrOutsideVault))

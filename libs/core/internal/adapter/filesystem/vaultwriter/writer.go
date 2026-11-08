@@ -202,13 +202,6 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 	return nil
 }
 
-// resolveNotePath returns the filesystem path of a note and rejects a path that is
-// not a writable note of this vault.
-//
-// The second check applies because an agent drives the writer. Containment alone
-// leaves every other file in the folder writable and removable (attachments, the
-// state of other tools, the repository containing the vault), while the reader
-// reports those paths as nonexistent.
 func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
@@ -220,7 +213,6 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	return target, nil
 }
 
-// resolvePath returns the filesystem path of a file or folder.
 func (w *VaultWriter) resolvePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
@@ -232,9 +224,6 @@ func (w *VaultWriter) resolvePath(path string) (string, error) {
 	return target, nil
 }
 
-// resolveNoteFile returns the file holding the bytes of a note, under the same
-// rules as resolveNotePath. A note that is a link to another file in the vault
-// has its bytes at the target, and a rename replaces the target.
 func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	resolved, err := vaultconfig.ResolveLinks(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
@@ -255,16 +244,10 @@ func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	return resolved, nil
 }
 
-// getContainedPath is only that: somewhere in this vault. Where a note goes when
-// it is taken out of the vault's sight is such a place and is deliberately not a
-// note.
 func (w *VaultWriter) getContainedPath(path string) (string, error) {
 	return vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 }
 
-// openRoot is the vault as a handle, and a place in it as a name that handle
-// takes. Every step of a write is made through the handle, so a folder swapped
-// not by a rule read a moment before. The caller closes the handle.
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 	name, err := w.getRelativeName(target)
 	if err != nil {
@@ -277,7 +260,6 @@ func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// getRelativeName is a place on this machine as a name under the vault's root.
 func (w *VaultWriter) getRelativeName(target string) (string, error) {
 	name, err := filepath.Rel(w.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
@@ -291,9 +273,6 @@ func (w *VaultWriter) getRelativeName(target string) (string, error) {
 // what writes there.
 const TrashDir = ".trash"
 
-// isOurs is a folder this application keeps for itself inside the vault: the one
-// it writes its own state into, and the one a note goes to when it is taken out
-// of the vault's sight.
 func (w *VaultWriter) isOurs(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
@@ -304,9 +283,6 @@ func (w *VaultWriter) isOurs(path string) bool {
 	return false
 }
 
-// isReachable reports whether the writer may create or remove the file or folder
-// at path. Paths matched by the vault ignore rules are not reachable; folders
-// the application manages are.
 func (w *VaultWriter) isReachable(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if w.isOurs(clean) {
@@ -323,8 +299,6 @@ func (w *VaultWriter) isReachable(path string) bool {
 	return true
 }
 
-// isWritableNote reports whether the path names a note the writer may write: a
-// note outside what the vault ignores and outside the service folder.
 func (w *VaultWriter) isWritableNote(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if !w.opts.IsNote(pathpkg.Base(clean)) {
@@ -424,8 +398,6 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	return streamReplace(ctx, root, name, content)
 }
 
-// streamReplace streams content beside the target and renames it over the top, by the
-// same rules replace writes bytes it already holds.
 func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) (err error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := atomicfile.CreateTempFile(root, dir, atomicfile.GetTempPattern(filepath.Base(target)))
@@ -456,9 +428,6 @@ func streamReplace(ctx context.Context, root *os.Root, target string, content io
 	return atomicfile.SyncDirectory(root, dir)
 }
 
-// getWriteMode is the mode a note is written with and an error where the write
-// must not go ahead: the path is a folder, or the note is not the one the caller
-// has seen.
 func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
 	info, err := root.Stat(name)
 	switch {
@@ -483,8 +452,6 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 	}
 }
 
-// checkMoveTarget returns an error when a file already exists at the target
-// name and is not the source itself.
 func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
 	there, err := root.Lstat(arrives)
 	if errors.Is(err, fs.ErrNotExist) {

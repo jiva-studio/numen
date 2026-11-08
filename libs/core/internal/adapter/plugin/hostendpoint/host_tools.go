@@ -32,7 +32,6 @@ type toolEndpoint struct {
 
 var _ numenv1connect.PluginToolServiceHandler = (*toolEndpoint)(nil)
 
-// begin authorizes the call and returns the plugin that made it and the tools it is offered.
 func (e *toolEndpoint) begin(header http.Header) (string, PluginTools, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultRead)
 	if err != nil {
@@ -80,7 +79,6 @@ func (e *toolEndpoint) CallTool(
 	return connect.NewResponse(res), nil
 }
 
-// getVaultID is the identity of the vault a call works, empty where the host has none to offer.
 func (e *Endpoint) getVaultID(header http.Header) (domain.VaultID, error) {
 	vault, err := e.getVault(header)
 	if err != nil || vault == nil {

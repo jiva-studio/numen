@@ -17,7 +17,6 @@ import (
 // module is the base import path prefix for core packages.
 const module = "github.com/jiva-studio/numen/libs/core/"
 
-// getDriving returns driving adapters that expose external interfaces and call use cases.
 func getDriving() map[string]bool {
 	return map[string]bool{
 		"adapter/cli":              true,
@@ -174,22 +173,14 @@ func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	}
 }
 
-// isMachinery reports whether a package is the composition root or a test fixture.
 func isMachinery(pkg string) bool {
 	return pkg == "container" || strings.HasPrefix(pkg, "internal/test")
 }
 
-// isShared reports whether a package is a shared adapter library.
 func isShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
 }
 
-// getTheMachine returns the packages that expose the machine and the world beyond it:
-// the process's files and children, sockets, and the kernel. A scenario obtains
-// each of these through a port.
-//
-// net/url is excluded. Parsing and building addresses is string arithmetic and
-// dials nothing.
 func getTheMachine() map[string]bool {
 	return map[string]bool{
 		"os": true, "os/exec": true, "net": true, "net/http": true, "syscall": true,
@@ -200,12 +191,8 @@ func getTheMachine() map[string]bool {
 // is one operating system's own calls and error numbers.
 const systemCalls = "golang.org/x/sys/"
 
-// isTheMachine answers whether an import is the machine.
 func isTheMachine(to string) bool { return getTheMachine()[to] || strings.HasPrefix(to, systemCalls) }
 
-// getLooking returns the functions of path/filepath that are not path arithmetic.
-// Each queries the filesystem, and Abs resolves against the folder the process
-// started in, which a scenario must not depend on.
 func getLooking() map[string]bool {
 	return map[string]bool{
 		"EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true, "Abs": true,
@@ -271,8 +258,6 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	}
 }
 
-// listTransports returns the wire protocols, database drivers, schema generators and network
-// handlers. An inner layer defines the ports for them and imports none of them.
 func listTransports() []string {
 	return []string{
 		"connectrpc.com",
@@ -282,7 +267,6 @@ func listTransports() []string {
 	}
 }
 
-// isTransport answers whether an import is a transport, a database driver or a wire schema.
 func isTransport(to string) bool {
 	for _, one := range listTransports() {
 		if to == one || strings.HasPrefix(to, one+"/") {
@@ -366,9 +350,6 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 	}
 }
 
-// getLogging returns the words a package that keeps a record is named by, read off the
-// last element of an import path. The standard library holds two of them, and
-// the rest are the libraries reached for when one of those will not do.
 func getLogging() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
@@ -376,7 +357,6 @@ func getLogging() map[string]bool {
 	}
 }
 
-// logs answers whether an import is a logger.
 func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. A log is a record for a reader who was not present; the
@@ -441,11 +421,8 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	}
 }
 
-// isClockRead reports whether a function of time reads the machine's clock.
 func isClockRead(name string) bool { return name == "Now" || name == "Since" }
 
-// isTimerArm reports whether a function of time arms one of the machine's timers. The rest of the
-// package is arithmetic over a given instant.
 func isTimerArm(name string) bool {
 	switch name {
 	case "After", "AfterFunc", "NewTimer", "NewTicker", "Tick":
@@ -454,8 +431,6 @@ func isTimerArm(name string) bool {
 	return false
 }
 
-// getClockReads are the calls in a file that read the machine's clock or arm its
-// timers, each written time.Name. The local name of the import is not read.
 func getClockReads(file *ast.File) (reads, arms []string) {
 	ast.Inspect(file, func(node ast.Node) bool {
 		pos, is := node.(*ast.SelectorExpr)
@@ -523,7 +498,6 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	}
 }
 
-// getNumbered returns the types a machine's own counter is spelled in.
 func getNumbered() map[string]bool {
 	return map[string]bool{
 		"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
@@ -535,13 +509,10 @@ func getNumbered() map[string]bool {
 // identity records an ID field: containing type, field name, and field type.
 type identity struct{ in, field, spelled string }
 
-// identities are the exported struct fields of one file whose names end in ID.
 func identities(file *ast.File) []identity {
 	return getFieldsNamed(file, "ID")
 }
 
-// getTypeName is a type as it is written, and empty for one this rule reads
-// nothing into.
 func getTypeName(pos ast.Expr) string {
 	switch target := pos.(type) {
 	case *ast.Ident:
@@ -614,13 +585,6 @@ type Thing struct {
 	}
 }
 
-// getClaimedPorts are the ports a file declares itself to answer, by the blank
-// name.
-//
-// A blank standing among other names is the same claim as one standing alone,
-// and a declaration inside a function is the same claim as one beside the
-// package's own. A variable that holds a port is not one: it is given the
-// adapter, and names what it was given.
 func getClaimedPorts(file *ast.File) []string {
 	var target []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -802,12 +766,6 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	}
 }
 
-// getUncalledMethods returns the methods declared by port/'s interfaces that no
-// non-test file outside port/ names as a selector.
-//
-// A selector is the form of a method call site regardless of the receiver's
-// type, so matching is on the name alone: an interface the core calls through
-// a variable never writes port.X at the call site.
 func getUncalledMethods(root, dir string) ([]string, error) {
 	declared, err := methodsIn(dir)
 	if err != nil {
@@ -851,9 +809,6 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 	return uncalled, nil
 }
 
-// methodsIn are the methods the exported interfaces of a folder declare, each
-// keyed as Interface.Method and giving the method's own name. An embedded
-// interface is the other one's declaration and is read there.
 func methodsIn(dir string) (map[string]string, error) {
 	target, err := readTree(dir)
 	if err != nil {
@@ -899,10 +854,6 @@ func methodsIn(dir string) (map[string]string, error) {
 	return declared, nil
 }
 
-// getUnnamedTypes are the exported types port/ declares that no file of the
-// tree outside it names as port.X. onlyPorts reads the interfaces alone.
-//
-// The tests are read: a type a test alone still names is named.
 func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 	declared, err := getDeclaredTypes(dir)
 	if err != nil {
@@ -953,8 +904,6 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 	return unnamed, nil
 }
 
-// getDeclaredTypes returns the exported types a folder's files declare, each
-// flagged as an interface or not.
 func getDeclaredTypes(dir string) (map[string]bool, error) {
 	target, err := readTree(dir)
 	if err != nil {
@@ -988,7 +937,6 @@ func getDeclaredTypes(dir string) (map[string]bool, error) {
 	return declared, nil
 }
 
-// getLayers returns the folders the tree is laid out in.
 func getLayers() map[string]bool {
 	return map[string]bool{
 		"adapter": true, "container": true, "domain": true, "port": true, "usecase": true,
@@ -1067,7 +1015,6 @@ import (
 	}
 }
 
-// getPackage is the package a file belongs to, as the rules name it.
 func getPackage(root, path string) string {
 	target, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
@@ -1076,13 +1023,11 @@ func getPackage(root, path string) string {
 	return filepath.ToSlash(target)
 }
 
-// isAdapter reports whether a package is an adapter.
 func isAdapter(pkg string) bool {
 	return strings.HasPrefix(pkg, "adapter/") ||
 		strings.HasPrefix(pkg, "internal/adapter/")
 }
 
-// getRefusal returns why one package may not import another.
 func getRefusal(from, to string) string {
 	switch {
 	case isAdapter(from) || isShared(from):
@@ -1112,7 +1057,6 @@ func getRefusal(from, to string) string {
 	return ""
 }
 
-// isAmong reports whether a package is one of these or is placed under one.
 func isAmong(these []string, pkg string) bool {
 	for _, one := range these {
 		if pkg == one || strings.HasPrefix(pkg, one+"/") {
@@ -1122,26 +1066,17 @@ func isAmong(these []string, pkg string) bool {
 	return false
 }
 
-// isAssembled reports whether a package is one the composition root assembles:
-// an adapter, a scenario, or one of the two language packages they are named in.
 func isAssembled(to string) bool {
 	return to == "container" || to == "domain" || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
-// sibling reports whether two packages belong to one adapter: its own folder and
-// every package under it, which share the settings section they are built from.
 func sibling(from, to string) bool { return family(from) == family(to) }
 
-// listGrouping returns the folders that contain adapters and are not adapters themselves:
-// adapter/ itself, the compiler-restricted internal folder, and the folder
-// holding one adapter per window. A package directly under any of them is an adapter.
 func listGrouping() []string {
 	return []string{"adapter", "internal/adapter", "adapter/window", "internal/adapterlib"}
 }
 
-// family is the adapter a package belongs to: the package directly under its
-// grouping folder, and every package beneath that.
 func family(pkg string) string {
 	depth := 2
 	for _, one := range listGrouping() {
@@ -1227,8 +1162,6 @@ func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 	}
 }
 
-// getInstants are the fields of a struct whose names end in Time, by the type
-// each is written in.
 func getInstants(file *ast.File) []identity {
 	return getFieldsNamed(file, "Time")
 }
@@ -1294,7 +1227,6 @@ type Reading struct {
 	}
 }
 
-// getMethodIdentities extracts ID parameters and return types from interface methods.
 func getMethodIdentities(file *ast.File) []identity {
 	var found []identity
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -1461,7 +1393,6 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	}
 }
 
-// getPackageDir returns the filesystem path for a package name.
 func getPackageDir(pos string) string {
 	if pos == "domain" {
 		return filepath.Join("..", "..", "notes", "domain")
@@ -1478,7 +1409,6 @@ func (e treeEntry) Name() string { return e.name }
 // IsDir reports false: a tree entry is a file.
 func (e treeEntry) IsDir() bool { return false }
 
-// readTree reads every file under a folder and the folders beneath it.
 func readTree(dir string) ([]treeEntry, error) {
 	var found []treeEntry
 	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
@@ -1495,18 +1425,14 @@ func readTree(dir string) ([]treeEntry, error) {
 	return found, err
 }
 
-// isUnder reports whether a package is a folder or is within it.
 func isUnder(pkg, folder string) bool {
 	return pkg == folder || strings.HasPrefix(pkg, folder+"/")
 }
 
-// isPortName reports whether a name is one under which a file imports a package
-// of port/: the folder name each of them is declared as.
 func isPortName(name string) bool {
 	return slices.Contains(getPortNames(), name)
 }
 
-// getPortNames are the names of the packages under port/.
 func getPortNames() []string {
 	entries, err := os.ReadDir(getPackageDir("port"))
 	if err != nil {
@@ -1699,8 +1625,6 @@ func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
 	}
 }
 
-// getFieldsNamed returns the exported struct fields of one file whose names
-// end in suffix.
 func getFieldsNamed(file *ast.File, suffix string) []identity {
 	var found []identity
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -1724,7 +1648,6 @@ func getFieldsNamed(file *ast.File, suffix string) []identity {
 	return found
 }
 
-// parseSourceFiles parses each Go file directly in dir, tests excluded.
 func parseSourceFiles(t *testing.T, dir string) []*ast.File {
 	t.Helper()
 	entries, err := readTree(dir)

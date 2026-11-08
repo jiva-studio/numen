@@ -216,8 +216,6 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 	return r.Err()
 }
 
-// confirmErase describes what erasing does and reads the reply from the
-// terminal it was invoked on. Only "yes" confirms.
 func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
 	r := newReporter(out)
 	r.Printf("erase %s?\n  %s goes to the trash\n"+
@@ -252,7 +250,6 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	return r.Err()
 }
 
-// findVault resolves the user's input against the list opened for it.
 func findVault(deps Deps, nameOrPath string) (domain.Vault, error) {
 	vaults, err := deps.Vaults()
 	if err != nil {

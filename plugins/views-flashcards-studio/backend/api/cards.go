@@ -88,7 +88,6 @@ type Value struct {
 
 // ListCardModelsRequest is the request of the ListCardModels method.
 type ListCardModelsRequest struct {
-	// Limit is the largest number of card models to return; a value of zero or less selects the maximum.
 	Limit int32 `json:"limit"`
 }
 
@@ -107,8 +106,8 @@ type CreateCardModelRequest struct {
 
 // CreateCardModelResponse is the response of the CreateCardModel method.
 type CreateCardModelResponse struct {
-	Path         string    `json:"path"`
-	Error        ErrorCode `json:"error,omitempty"`
+	Path            string    `json:"path"`
+	Error           ErrorCode `json:"error,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
@@ -136,8 +135,8 @@ type WriteCardModelRequest struct {
 
 // WriteCardModelResponse is the response of the WriteCardModel method.
 type WriteCardModelResponse struct {
-	Error        ErrorCode `json:"error,omitempty"`
-	At           *FileStat `json:"at,omitempty"`
+	Error           ErrorCode `json:"error,omitempty"`
+	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
@@ -151,11 +150,11 @@ type RenameCardModelFieldRequest struct {
 
 // RenameCardModelFieldResponse is the response of the RenameCardModelField method.
 type RenameCardModelFieldResponse struct {
-	Decks        []string         `json:"decks"`
-	Cards        int32            `json:"cards"`
-	NotWritten   []*UnwrittenDeck `json:"notWritten"`
-	Error        ErrorCode        `json:"error,omitempty"`
-	At           *FileStat        `json:"at,omitempty"`
+	Decks           []string         `json:"decks"`
+	Cards           int32            `json:"cards"`
+	NotWritten      []*UnwrittenDeck `json:"notWritten"`
+	Error           ErrorCode        `json:"error,omitempty"`
+	At              *FileStat        `json:"at,omitempty"`
 	IsIndexOutdated bool             `json:"isIndexOutdated"`
 }
 
@@ -173,10 +172,9 @@ type CreateDeckRequest struct {
 
 // CreateDeckResponse is the response of the CreateDeck method.
 type CreateDeckResponse struct {
-	Path  string    `json:"path"`
-	Error ErrorCode `json:"error,omitempty"`
-	// IsIndexOutdated reports that the file was written and the index did not follow.
-	IsIndexOutdated bool `json:"isIndexOutdated"`
+	Path            string    `json:"path"`
+	Error           ErrorCode `json:"error,omitempty"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // ReadDeckRequest is the request of the ReadDeck method.
@@ -189,8 +187,7 @@ type ReadDeckResponse struct {
 	Deck  *Deck     `json:"deck,omitempty"`
 	Error ErrorCode `json:"error,omitempty"`
 	At    *FileStat `json:"at,omitempty"`
-	// Bound is the size limit in bytes that a deck failed against; zero for any other outcome.
-	Bound int64 `json:"bound"`
+	Bound int64     `json:"bound"`
 }
 
 // WriteDeckRequest is the request of the WriteDeck method.
@@ -205,9 +202,8 @@ type WriteDeckRequest struct {
 
 // WriteDeckResponse is the response of the WriteDeck method.
 type WriteDeckResponse struct {
-	Error ErrorCode `json:"error,omitempty"`
-	At    *FileStat `json:"at,omitempty"`
-	// Bound is the size limit in bytes that a deck failed against; zero for any other outcome.
-	Bound        int64 `json:"bound"`
-	IsIndexOutdated bool  `json:"isIndexOutdated"`
+	Error           ErrorCode `json:"error,omitempty"`
+	At              *FileStat `json:"at,omitempty"`
+	Bound           int64     `json:"bound"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }

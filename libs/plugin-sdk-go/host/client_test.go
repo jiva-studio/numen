@@ -20,12 +20,11 @@ import (
 // answering is a host that serves a few calls and records the callers.
 type answering struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
-	code       v1.HostVaultErrorCode
-	authHeader string
-	unlocked   string
-	named      string
-	baselines  []*v1.HostFileStat
-	// watchFailure, when set, ends each watch after its first message.
+	code         v1.HostVaultErrorCode
+	authHeader   string
+	unlocked     string
+	named        string
+	baselines    []*v1.HostFileStat
 	watchFailure error
 }
 

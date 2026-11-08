@@ -13,7 +13,6 @@ import (
 
 const gardenToken = "garden-token-4417"
 
-// newServedHandler serves the handler of a server whose token is token.
 func newServedHandler(t *testing.T, token string) (*Server, string) {
 	t.Helper()
 	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
@@ -32,8 +31,6 @@ type httpResponse struct {
 	Header     http.Header
 }
 
-// sendRequest sends a request of the method to target with the headers and returns the status and
-// the headers of the response.
 func sendRequest(t *testing.T, method, target string, headers map[string]string) httpResponse {
 	t.Helper()
 	var body io.Reader

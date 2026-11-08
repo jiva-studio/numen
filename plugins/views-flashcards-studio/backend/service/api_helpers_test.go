@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
-// codeOf returns the API error code of err, or the empty code when err is not an API error.
 func codeOf(err error) server.ErrorCode {
 	var failure *server.APIError
 	if errors.As(err, &failure) {
@@ -30,8 +29,6 @@ type messageStream[Res any] struct {
 	err      error
 }
 
-// openStream runs the stream method under a cancellable context and delivers its messages to the
-// returned stream one at a time.
 func openStream[Req, Res any](
 	ctx context.Context, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
@@ -101,7 +98,6 @@ func (c reviewClient) WatchReloads(
 	return openStream(ctx, req, c.reviewHandler.WatchReloads)
 }
 
-// hasCause reports whether err is an API error whose message carries the text of target.
 func hasCause(err error, target error) bool {
 	var failure *server.APIError
 	return errors.As(err, &failure) && strings.Contains(failure.Message, target.Error())

@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
 )
 
-// readFrontendSource is the text of the sources of a plugin's frontend that are not tests.
 func readFrontendSource(t *testing.T, dir string) string {
 	t.Helper()
 	var all strings.Builder

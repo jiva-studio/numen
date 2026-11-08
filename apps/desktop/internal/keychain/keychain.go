@@ -51,9 +51,6 @@ func (Store) DeleteKey(ctx context.Context, name string) error {
 	return readError(name, err)
 }
 
-// await returns when the call does or the context ends. A call the context ends
-// on is left to finish by itself: the keychain offers no way to stop it, and a
-// write may still land.
 func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 	type outcome struct {
 		value T
@@ -84,9 +81,6 @@ func check(ctx context.Context, name string) error {
 	return nil
 }
 
-// readError maps a keychain failure to the core's own: a missing key is
-// port.ErrNoKey, and an unreachable keychain is port.ErrNoKeyStore with the
-// machine's error message.
 func readError(name string, err error) error {
 	switch {
 	case err == nil:

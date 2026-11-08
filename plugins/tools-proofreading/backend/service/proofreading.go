@@ -115,7 +115,6 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	return Result{Lines: len(lines), Corrected: len(corrections), Uncorrected: uncorrected, Version: version}, nil
 }
 
-// findSource is the version of the file the id names, or its live version where the id is empty.
 func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
 	listing, err := texts.ListVersions(ctx, filePath)
 	if err != nil {
@@ -139,7 +138,6 @@ func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePat
 	return domain.TextVersion{}, fmt.Errorf("%s of %s: %w", id, filePath, host.ErrNotExist)
 }
 
-// readParts is every page of the version's text, in order.
 func readParts(ctx context.Context, texts host.Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
 	var parts []domain.TextSegment
 	for cursor := ""; ; {
@@ -155,8 +153,6 @@ func readParts(ctx context.Context, texts host.Texts, version domain.TextVersion
 	}
 }
 
-// correct queries the model about the lines as their selectors place them: timed cues as speech, one
-// window at a time, and the lines of each page as a scan.
 func (p *Proofreading) correct(
 	ctx context.Context, parts []domain.TextSegment, lines []Line, task *host.Task,
 ) ([]Line, int, error) {
@@ -166,8 +162,6 @@ func (p *Proofreading) correct(
 	return p.correctScan(ctx, readPages(parts, lines), task)
 }
 
-// correctSpeech queries the model about the lines one window at a time. A correction is kept from a window if it
-// begins before the next window's first line, and the next window starts after the last line kept.
 func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *host.Task) ([]Line, int, error) {
 	cfg := p.getConfig()
 	var out []Line
@@ -196,7 +190,6 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 	}
 }
 
-// correctScan queries the model about the lines of each page in turn.
 func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *host.Task) ([]Line, int, error) {
 	cfg := p.getConfig()
 	var out []Line
@@ -216,7 +209,6 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *hos
 	return out, uncorrected, nil
 }
 
-// getLastLine is the last line a correction answers for.
 func getLastLine(line Line) int {
 	if line.IsJoined() {
 		return line.Last
@@ -224,8 +216,6 @@ func getLastLine(line Line) int {
 	return line.Number
 }
 
-// readLines is the parts as numbered lines, one to a part and counted from one, with the space
-// around each part's words left out.
 func readLines(parts []domain.TextSegment) []Line {
 	lines := make([]Line, len(parts))
 	for i, part := range parts {
@@ -234,8 +224,6 @@ func readLines(parts []domain.TextSegment) []Line {
 	return lines
 }
 
-// readPages is the lines in a batch for each run of lines on one page, numbered by the page. The
-// lines are numbered as readLines numbers the parts.
 func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
@@ -253,7 +241,6 @@ func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	return out
 }
 
-// isTimed reports whether the first segment is placed by a time range of a recording.
 func isTimed(parts []domain.TextSegment) bool {
 	if len(parts) == 0 {
 		return false

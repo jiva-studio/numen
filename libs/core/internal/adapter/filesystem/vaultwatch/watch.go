@@ -32,8 +32,7 @@ func NewHub() *Hub { return watchhub.NewHub() }
 // Watcher follows vaults on disk.
 type Watcher struct {
 	Options vaultconfig.Options
-	// Hub places the watches. Every watcher of a container shares the container's hub.
-	Hub *Hub
+	Hub     *Hub
 }
 
 // WatchVault follows one vault and reports the sources that change in it.
@@ -106,9 +105,6 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	return moved, nil
 }
 
-// relayFileEvents reports each event under the file's name until the context
-// ends, then stops the watch and closes the report. At most one message is
-// pending: a listener that has not read the last one will query anyway.
 func relayFileEvents(ctx context.Context, raw chan notify.EventInfo, stop func(), name string, moved chan<- struct{}) {
 	defer close(moved)
 	defer stop()

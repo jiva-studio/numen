@@ -43,7 +43,6 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }
 
-// contentTypes are the types the host gives the names of the tests.
 func getContentTypes() map[string]domain.ContentType {
 	return map[string]domain.ContentType{
 		".md":   "text/markdown",

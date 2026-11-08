@@ -24,23 +24,12 @@ type Move struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries
-	// names counts the notes filed under a name, which decides whether a repaired
-	// link to that name resolves to this note or to another one.
-	names NameQueries
-	// sources is the index's file registry. A move records that the file at one
-	// path is now at another.
+	names   NameQueries
 	sources sourceport.SourceRepository
 	index   IndexUpdater
-	// now is when this is happening. Bringing a note's title into line with its
-	// filename is an edit, and an edit stamps the identifier a note arrived
-	// without.
-	now machineport.Clock
-	// Drawing receives the note's new path; every view showing the note
-	// under its old name follows it. Nil sends no notification.
+	now     machineport.Clock
 	Drawing TellMove
-	// Sync reports, for each rename, whether a note's title and filename are kept
-	// identical. Nil keeps them identical.
-	Sync SyncSetting
+	Sync    SyncSetting
 }
 
 // NewMove returns a Move that files a note at another path. It takes the vault
@@ -129,8 +118,6 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	return u.RepairLinks(ctx, v, from, to, pointing)
 }
 
-// moveInIndex records in the index that the file at one path is now at
-// another. The bytes do not change, so nothing is read.
 func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) error {
 	return u.sources.MoveSources(ctx, v.ID, from, to)
 }
@@ -173,8 +160,6 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 	return res, nil
 }
 
-// rewriteLink rewrites one link that does not resolve and records the note
-// containing it in res.
 func (u Move) rewriteLink(
 	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *MoveResult,
 ) error {
@@ -205,9 +190,6 @@ func (u Move) rewriteLink(
 	return nil
 }
 
-// getAddress returns the address by which a link resolves to the note at path,
-// as the vault resolves it now that the file is there. An empty result means no
-// link resolves to the note, and the repair changes nothing.
 func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
 	to, err := GetAddress(ctx, u.names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
@@ -219,12 +201,6 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 	return to.Value, nil
 }
 
-// getLanding returns where one link resolves now, evaluated in the note that
-// contains it. Resolution is always current, never the state at the time the
-// backlinks were read.
-//
-// exists reports whether the link is still present in that note. A link removed
-// since the backlinks were read must not be reported as moved.
 func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, exists bool, err error) {
 	links, err := u.links.GetLinks(ctx, v.ID, was.From)
 	if err != nil {
@@ -251,15 +227,6 @@ const (
 	linkDangling
 )
 
-// repair writes `destination` over an address that does not resolve. Only
-// the address changes, and only in the note containing it.
-//
-// It reports whether the link was rewritten and, if not, whether the note still
-// contains it: when the note cannot be written, the unresolved link remains and
-// the caller must be able to name it.
-//
-// It reads and writes a note that may be open elsewhere, so it holds the vault
-// write lock across both.
 func (u Move) repair(
 	ctx context.Context, v domain.Vault, in string, address domain.Address, destination string,
 ) (linkState, error) {

@@ -145,10 +145,6 @@ func Uninterrupted(ctx context.Context) (context.Context, error) {
 	return context.WithoutCancel(ctx), nil
 }
 
-// useStatement calls run with the prepared statement for this text, preparing
-// it on first use. The transaction owns the statement and closes it on commit
-// and on rollback. One transaction is written by one goroutine, because the
-// pool has a single write connection.
 func useStatement[T any](
 	ctx context.Context, t *Transaction, query string, run func(*sql.Stmt) (T, error),
 ) (T, error) {
@@ -178,8 +174,6 @@ func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Resul
 	return out, err
 }
 
-// retry runs a write again when the database is locked. It applies only to a
-// write that has made no change when it reports the lock.
 func retry(ctx context.Context, write func() error) error {
 	var err error
 	for ask := range asks {
@@ -197,8 +191,6 @@ func retry(ctx context.Context, write func() error) error {
 	return err
 }
 
-// isLocked reports whether the database was locked by another writer. The
-// extended result codes carry the primary code in their low byte.
 func isLocked(err error) bool {
 	var response *sqlite.Error
 	if !errors.As(err, &response) {

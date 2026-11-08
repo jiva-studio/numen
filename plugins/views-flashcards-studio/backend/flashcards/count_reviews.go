@@ -17,38 +17,23 @@ import (
 const countedVersion = 2
 
 type countCache struct {
-	V int `json:"v"`
-	// Runs are the log files this was worked out from, each with the length it
-	// had and what it came to. A run is appended to and never rewritten, so a
-	// file of the same name and length holds the same answers.
+	V    int         `json:"v"`
 	Runs []cachedRun `json:"runs"`
 }
 
 type cachedRun struct {
-	Name string `json:"name"`
-	Size int    `json:"size"`
-	// Days is what this run alone came to.
+	Name string                  `json:"name"`
+	Size int                     `json:"size"`
 	Days map[string]review.Tally `json:"days"`
-	// IDs are the identifiers its lines carry, which identify an answer that
-	// another run also holds as the same answer.
-	IDs []string `json:"ids"`
+	IDs  []string                `json:"ids"`
 }
 
 // ReviewCounts is how much of a vault was answered, and when.
 type ReviewCounts struct {
-	// Days is how many answers were given on each day, by the name of the day:
-	// the year, the month and the day it began on.
-	Days map[string]review.Tally
-	// Due is how many review cards fall due on each day still to come, keyed by the
-	// same day names. A card due today, or due and overdue, is not included, because
-	// an overdue card is not upcoming.
-	Due map[string]int
-	// Retained is how much of what came round in days came back on each day. A
-	// review card the scheduler is still putting into memory is not in it.
+	Days     map[string]review.Tally
+	Due      map[string]int
 	Retained map[string]review.RecallTally
-	// Streak is how many days up to now were reviewed without a gap.
-	Streak int
-	// Answered is how many answers the vault holds altogether.
+	Streak   int
 	Answered int
 }
 
@@ -64,12 +49,8 @@ type ReviewCounts struct {
 // the order of every answer before it, so a schedule arriving late is the whole
 // history read again.
 type CountReviews struct {
-	logs ports.LogStores
-	// Cache is where the counting is remembered. A build holding none counts the
-	// whole log at every launch.
-	Cache ports.ScheduleStore
-	// schedules holds the state each review card is in after its answers, from
-	// which the number of cards due on each upcoming day is computed.
+	logs      ports.LogStores
+	Cache     ports.ScheduleStore
 	schedules Schedules
 	day       review.Day
 	now       ports.Clock
@@ -142,22 +123,14 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 // reviewCounter is the state of one counting over the runs of a log.
 type reviewCounter struct {
-	// was is what was counted last time, by the name of the run.
-	was map[string]cachedRun
-	// now is what this counting remembers.
-	now countCache
-	out ReviewCounts
-	// seen holds every identifier already counted. One identifier is one answer
-	// over the whole log, so a line another run was counted for is not counted
-	// again.
+	was        map[string]cachedRun
+	now        countCache
+	out        ReviewCounts
 	countedIDs map[string]bool
-	// coming is whether the upcoming cards are computed from the whole history, so
-	// that every run is read and the result is passed on.
-	coming bool
-	log    ReviewLog
+	coming     bool
+	log        ReviewLog
 }
 
-// countFile adds one run of the log to the counting.
 func (u CountReviews) countFile(
 	ctx context.Context, log Log, store ports.LogStore, file ports.Entry, run *reviewCounter,
 ) error {
@@ -201,9 +174,6 @@ func (u CountReviews) countFile(
 	return nil
 }
 
-// addDays puts the days a run adds to the counting into it and marks the run's
-// lines as counted. What a run came to on its own is what is kept, and what
-// the run adds is what no other run has been counted for.
 func (run *reviewCounter) addDays(ids []string, days map[string]review.Tally) {
 	for _, id := range ids {
 		run.countedIDs[id] = true
@@ -214,8 +184,6 @@ func (run *reviewCounter) addDays(ids []string, days map[string]review.Tally) {
 	}
 }
 
-// addTallies adds the answers of two tallies, which is how the runs of one day
-// are combined: the answers of two sessions on one day make one day.
 func addTallies(one, other review.Tally) review.Tally {
 	return review.Tally{
 		Answered: one.Answered + other.Answered,
@@ -226,8 +194,6 @@ func addTallies(one, other review.Tally) review.Tally {
 	}
 }
 
-// collectIdentifiers returns what every line of a run is named by, the lines taking an
-// answer back among them.
 func collectIdentifiers(answers []review.Answer) []string {
 	out := make([]string, 0, len(answers))
 	for _, a := range answers {
@@ -236,7 +202,6 @@ func collectIdentifiers(answers []review.Answer) []string {
 	return out
 }
 
-// isRepeated reports whether a run carries a line another run was counted for.
 func isRepeated(ids []string, countedIDs map[string]bool) bool {
 	for _, id := range ids {
 		if countedIDs[id] {
@@ -246,7 +211,6 @@ func isRepeated(ids []string, countedIDs map[string]bool) bool {
 	return false
 }
 
-// getUncounted is the lines of a run no other run was counted for.
 func getUncounted(answers []review.Answer, countedIDs map[string]bool) []review.Answer {
 	out := make([]review.Answer, 0, len(answers))
 	for _, a := range answers {
@@ -257,15 +221,6 @@ func getUncounted(answers []review.Answer, countedIDs map[string]bool) []review.
 	return out
 }
 
-// getDueAndRetained returns how many cards fall due on each day still to come,
-// and how many of the cards that came due in days were recalled, per past day.
-//
-// The answers are the data the days were counted from, so the whole log is opened
-// once for the screen.
-//
-// A card due today, or due and overdue, is not in the upcoming count. Where a card
-// falls is computed from the answers like everything else, so the day shown is
-// the day the card would be shown.
 func (u CountReviews) getDueAndRetained(
 	ctx context.Context, v domain.Vault, target ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
@@ -290,8 +245,6 @@ func (u CountReviews) getDueAndRetained(
 	return falls, target.GetHistory().GetRetained(u.schedules.scheduler, u.day), nil
 }
 
-// readRemembered is what was counted last time, by the name of the run it was
-// counted from. A cache of another shape is nothing remembered.
 func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
 	if u.Cache == nil {
 		return nil
@@ -311,9 +264,6 @@ func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[st
 	return out
 }
 
-// remember puts the counting where the next launch will find it. A cache that
-// could not be written is a launch that counts again, so the failure is written to the standard
-// error stream of the plugin process and the count goes on.
 func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
 	if u.Cache == nil {
 		return

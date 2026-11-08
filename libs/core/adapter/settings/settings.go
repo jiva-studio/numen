@@ -41,9 +41,6 @@ type Document interface {
 
 // Titles is whether a note's title and its filename are kept in sync.
 type Titles struct {
-	// SyncTitleAndFilename is whether renaming either the title or the filename
-	// updates the other. A file that omits it keeps them identical; a file with false
-	// allows them to differ.
 	SyncTitleAndFilename *bool `json:"syncTitleAndFilename"`
 }
 
@@ -125,8 +122,6 @@ func warn(into Document, response string, about ...any) {
 	into.AddNotice(fmt.Sprintf(response, about...))
 }
 
-// write puts the settings where they are read from, beside the file and
-// renamed over the top.
 func (f *Files) write(path string, target Document) error {
 	raw, err := json.MarshalIndent(target, "", "  ")
 	if err != nil {

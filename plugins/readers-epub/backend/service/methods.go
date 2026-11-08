@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 )
 
-// mountMethods mounts the methods of the md.numen.readers.epub service on s. A method works the vault the
-// Numen-Vault header of its request names.
 func mountMethods(s *server.Server, books *BookServer) error {
 	a := s.NewAPI(api.Service)
 	server.Handle(a, "GetBook", withVault(books.GetBook))
@@ -22,8 +20,6 @@ func mountMethods(s *server.Server, books *BookServer) error {
 	return a.Err()
 }
 
-// withVault returns fn with the vault of the request header in its context and its failures as API
-// errors.
 func withVault[Req, Res any](fn func(ctx context.Context, req Req) (Res, error)) func(ctx context.Context, req Req) (Res, error) {
 	return func(ctx context.Context, req Req) (Res, error) {
 		res, err := fn(withRequestVault(ctx, server.GetHeader(ctx)), req)
@@ -35,8 +31,6 @@ func withVault[Req, Res any](fn func(ctx context.Context, req Req) (Res, error))
 	}
 }
 
-// toAPIError returns err as the failure a client reads: an APIError as it is, a changed file as a
-// failed precondition, and any other error as an internal failure.
 func toAPIError(err error) *server.APIError {
 	var failure *server.APIError
 	if errors.As(err, &failure) {
@@ -48,7 +42,6 @@ func toAPIError(err error) *server.APIError {
 	return server.NewAPIError(server.CodeInternal, err.Error())
 }
 
-// getStatus returns the HTTP status that answers a failure of the code.
 func getStatus(code server.ErrorCode) int {
 	switch code {
 	case server.CodeInvalidArgument:

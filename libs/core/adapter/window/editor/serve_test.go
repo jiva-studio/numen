@@ -42,7 +42,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// bindNotes binds the note and search handlers to the queries and links of the index in db.
 func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
 	neighbourhood := note.NewShowNeighbourhood(links, queries)
@@ -83,7 +82,6 @@ func (unwatchable) WatchVault(context.Context, domain.Vault) (<-chan []string, <
 // which simulates a vault that takes minutes to read.
 type waiting struct {
 	vaultport.VaultReaders
-	// begun carries the path of a read that is under way.
 	begun chan string
 	until chan struct{}
 	once  sync.Once
@@ -97,7 +95,6 @@ func newSlowWait() *waiting {
 	}
 }
 
-// release lets every read through, from now on.
 func (w *waiting) release() { w.once.Do(func() { close(w.until) }) }
 
 func (w *waiting) Open(v domain.Vault) (vaultport.VaultReader, error) {
@@ -176,15 +173,11 @@ type behind struct {
 	recordedVal <-chan change
 }
 
-// opening puts a vault, an index, a scan and a watch together the way Open
-// does, with the pieces a test drives in place of the ones a window gets.
 func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
 	return openingWith(t, notes, watcher, readers, nil, quietPeriod)
 }
 
-// openingWith is the same, with the model that fills the index for meaning and
-// how long the vault has to have been still before a note is embedded.
 func openingWith(
 	t *testing.T,
 	notes map[string]string,
@@ -244,8 +237,6 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 	}
 }
 
-// save puts a body into a note the way the window does: through the handler a
-// save lands in.
 func save(t *testing.T, f *behind, path, body string) {
 	t.Helper()
 	out, err := f.api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{Path: path, Body: body}))
@@ -257,7 +248,6 @@ func save(t *testing.T, f *behind, path, body string) {
 	}
 }
 
-// sendChange delivers a change to the watch.
 func sendChange(t *testing.T, watcher *hand, paths ...string) {
 	t.Helper()
 	select {
@@ -279,8 +269,6 @@ func next[T any](t *testing.T, from <-chan T) T {
 	}
 }
 
-// waitFor waits for something the work behind the window does in its own
-// time.
 func waitFor(t *testing.T, what string, is func() bool) {
 	t.Helper()
 	for range 500 {
@@ -475,7 +463,6 @@ func (s *saying) Write(p []byte) (int, error) {
 	return s.outMsg.Write(p)
 }
 
-// getBooks returns the number of books each pass processed, one entry per pass.
 func (s *saying) getBooks(t *testing.T) []int {
 	t.Helper()
 
@@ -564,11 +551,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	}
 }
 
-// newBareServices is the handlers of a window standing on nothing, with no use
-// case bound.
 func newBareServices() *Services { return createServices(&State{}) }
 
-// newThemedServices is that window, with these themes.
 func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 	services := newBareServices()
 	services.Themes = themes
@@ -719,8 +703,6 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	})
 }
 
-// newThemeClient returns a theme client that connects to the window through the same
-// handler that serves its other requests.
 func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
@@ -734,8 +716,6 @@ func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServ
 	return numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 }
 
-// newConfig is a configuration whose files are all in one folder of a test's
-// own, which is what pointing the registry somewhere does.
 func newConfig(t *testing.T) container.Config {
 	t.Helper()
 	return container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})

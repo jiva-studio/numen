@@ -30,14 +30,10 @@ func write(t *testing.T, body string) string {
 	return path
 }
 
-// openAt is the file as the installation reads it: the sections this adapter
-// owns, and the section each adapter is configured by, which is read into that
-// adapter's own shape where every adapter is bound.
 func openAt(path string) (container.Settings, error) {
 	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
-// newDocument is the complete settings file of an unconfigured installation.
 func newDocument() *container.Settings {
 	target := container.DefaultSettings()
 	return &target

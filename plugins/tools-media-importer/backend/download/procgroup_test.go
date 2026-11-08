@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-// waitFor polls until the condition holds or the deadline passes.
 func waitFor(t *testing.T, what string, holds func() bool) {
 	t.Helper()
 	const attempts = 3000
@@ -42,9 +41,6 @@ func readPID(path string) (int, bool) {
 	return pid, err == nil
 }
 
-// A script that starts a child of its own and then waits for it, the way
-// yt-dlp waits for ffmpeg. The child's output is detached, so only the process
-// group links them.
 func spawningScript(t *testing.T) program {
 	t.Helper()
 	pos := filepath.Join(t.TempDir(), "tool")

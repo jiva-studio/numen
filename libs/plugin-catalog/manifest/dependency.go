@@ -34,8 +34,6 @@ type DependencyRequirement struct {
 	ChecksumSHA256 string
 	Metadata       map[string]string
 
-	// PluginDir is the folder of the plugin that declares the requirement. A
-	// provisioner looks beside it first.
 	PluginDir string
 }
 

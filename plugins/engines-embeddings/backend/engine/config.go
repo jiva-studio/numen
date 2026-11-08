@@ -38,27 +38,22 @@ type LocalModel struct {
 	Provider       string `json:"provider"`
 	ShouldDownload bool   `json:"download"`
 
-	// Revision is the commit of the repository the files are fetched at. Empty means the default branch.
-	Revision string `json:"revision"`
-	// Sums maps a path inside the repository to the sha256 its file must hold.
-	Sums map[string]string `json:"sums"`
+	Revision string            `json:"revision"`
+	Sums     map[string]string `json:"sums"`
 }
 
 // ModelInfo describes the embedding model properties exposed to clients.
 type ModelInfo struct {
-	Name        string  `json:"name"`
-	Dimensions  int     `json:"dimensions"`
-	MaxTokens   int     `json:"max_tokens"`
-	Pooling     string  `json:"pooling"`
-	From        string  `json:"from"`
-	Concurrency int     `json:"concurrency"`
-	FloorHint   float64 `json:"floor_hint"`
-	// Handling is what is done to a text before the model reads it and to the output after.
-	Handling Handling `json:"handling"`
-	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector, and 0 embeds every piece.
-	MinChunkLength int `json:"min_chunk_length"`
-	// ChunkTokens is the most tokens one chunk of a note may hold, and 0 names none.
-	ChunkTokens int `json:"chunk_tokens"`
+	Name           string   `json:"name"`
+	Dimensions     int      `json:"dimensions"`
+	MaxTokens      int      `json:"max_tokens"`
+	Pooling        string   `json:"pooling"`
+	From           string   `json:"from"`
+	Concurrency    int      `json:"concurrency"`
+	FloorHint      float64  `json:"floor_hint"`
+	Handling       Handling `json:"handling"`
+	MinChunkLength int      `json:"min_chunk_length"`
+	ChunkTokens    int      `json:"chunk_tokens"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.

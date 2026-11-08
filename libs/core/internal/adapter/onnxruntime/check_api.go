@@ -16,7 +16,6 @@ type apiBase struct {
 	getAPI uintptr
 }
 
-// getAPIBase serves no apiVersion table.
 func checkAPI(getAPIBase uintptr) error {
 	var getBase func() *apiBase
 	purego.RegisterFunc(&getBase, getAPIBase)

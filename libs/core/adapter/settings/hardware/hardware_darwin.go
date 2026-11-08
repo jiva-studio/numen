@@ -9,7 +9,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// readPlatformHardware reads memory and CPU counts through sysctl. The performance CPUs are those of the highest-ranked performance level; free memory is not reported by sysctl and stays unknown.
 func readPlatformHardware() Specs {
 	var hw Specs
 	if bytes, err := unix.SysctlUint64("hw.memsize"); err == nil {

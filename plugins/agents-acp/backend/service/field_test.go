@@ -2,8 +2,6 @@ package service
 
 import "testing"
 
-// getField returns object[key] as a T and fails the test when object is not a JSON object or holds
-// no T under key.
 func getField[T any](t *testing.T, object any, key string) T {
 	t.Helper()
 	var zero T

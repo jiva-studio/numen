@@ -20,7 +20,6 @@ import (
 // videoAddress is an address the mock downloader takes for a video site.
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
-// newMockLinks is the links of an empty vault, reaching video sites through the mock downloader.
 func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	t.Helper()
 	vault := hosttest.New("Mills")
@@ -35,15 +34,12 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	return links, store, hosted
 }
 
-// newMockCommands is the plugin's commands over an empty vault, reaching video sites through the
-// mock downloader.
 func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 	t.Helper()
 	commands, store, _ := newMockCommandsWithLinks(t)
 	return commands, store
 }
 
-// newMockCommandsWithLinks is newMockCommands with the links, to wait for the work they do in the background.
 func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *link.Links) {
 	t.Helper()
 	links, store, hosted := newMockLinks(t)
@@ -112,7 +108,6 @@ func TestImportCommands_DeleteAndDownloadCopyAndText(t *testing.T) {
 	}
 }
 
-// hasCopy reports whether the plugin's folder keeps a copy of a video.
 func hasCopy(t *testing.T, store *hosttest.Store) bool {
 	t.Helper()
 	files, err := store.List(t.Context())

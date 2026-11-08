@@ -7,7 +7,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// isClosed reports whether a channel has been closed, without waiting on it.
 func isClosed(c <-chan struct{}) bool {
 	select {
 	case <-c:

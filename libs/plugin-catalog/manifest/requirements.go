@@ -23,7 +23,6 @@ var ErrIncompatible = errors.New("plugin is incompatible with the application")
 // IncompatibleError is a plugin that an application cannot run, and why.
 type IncompatibleError struct {
 	Reason IncompatibleReason
-	// Detail states the requirement the application fails.
 	Detail string
 }
 
@@ -39,15 +38,12 @@ func (e *IncompatibleError) Is(target error) bool {
 
 // Environment is the application a plugin is checked against.
 type Environment struct {
-	// Target is the window the plugin is loaded into.
 	Target string
 }
 
 // Requirements are what a plugin requires of the application that runs it.
 type Requirements struct {
-	// Targets are the windows the plugin runs in. Empty is every window.
-	Targets []string
-	// Protocol is the plugin protocol the plugin uses. Zero is the first.
+	Targets  []string
 	Protocol int
 }
 

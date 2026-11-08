@@ -138,8 +138,6 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	return out, nil
 }
 
-// start runs the recognition of the file in the background, and returns running when another run
-// has locked the file.
 func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	key := string(vault) + "\x00" + path
 	t.mu.Lock()

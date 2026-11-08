@@ -21,9 +21,6 @@ import (
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = module + "internal/adapter/"
 
-// getRetainedAdapters is every place src returns an adapter the compiler holds,
-// listed in full. A method on an unexported receiver is left out: it is not part
-// of the root's interface to outside callers.
 func getRetainedAdapters(name, src string) []string {
 	f, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
@@ -72,8 +69,6 @@ func getRetainedAdapters(name, src string) []string {
 	return findings
 }
 
-// isReachable is whether a declaration is one something outside the package can
-// reach: a plain function, or a method on a type it can name.
 func isReachable(fn *ast.FuncDecl) bool {
 	if fn.Recv == nil || len(fn.Recv.List) == 0 {
 		return true

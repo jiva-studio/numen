@@ -17,7 +17,6 @@ import (
 
 const initializeParams = `{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"orchard","version":"1"}}`
 
-// sendInitialize writes an initialize request of the id on the connection and reads its response.
 func sendInitialize(t *testing.T, conn sdk.Connection, number int) *jsonrpc.Response {
 	t.Helper()
 	id, err := jsonrpc.MakeID(float64(number))
@@ -73,8 +72,6 @@ func TestSecondInitializeReturnsAnError(t *testing.T) {
 	}
 }
 
-// postInitialize posts an initialize request of the id to the server, in the session given, and
-// returns the status, the body and the session of the response.
 func postInitialize(t *testing.T, url string, number int, session string) (status int, body, sessionID string) {
 	t.Helper()
 	payload := fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"method":"initialize","params":%s}`, number, initializeParams)

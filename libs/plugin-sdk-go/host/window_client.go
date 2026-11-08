@@ -13,8 +13,6 @@ import (
 
 var _ Window = (*Client)(nil)
 
-// readWindowCallError returns the error of a failed window call: a permission the manifest
-// lacks returns ErrPermissionDenied, and an argument the host rejects keeps its connect code.
 func readWindowCallError(err error) error {
 	if connect.CodeOf(err) == connect.CodePermissionDenied {
 		return fmt.Errorf("%w: %w", ErrPermissionDenied, err)
@@ -48,8 +46,6 @@ func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error
 // errPassageOutOfRange is returned for a passage whose start or length exceeds 32 bits.
 var errPassageOutOfRange = errors.New("host: passage start or length exceeds 32 bits")
 
-// writePassageSpans converts the passages to wire spans, and returns an error for one outside the
-// 32-bit range.
 func writePassageSpans(passages []PassageSpan) ([]*v1.PassageSpan, error) {
 	spans := make([]*v1.PassageSpan, 0, len(passages))
 	for _, passage := range passages {
@@ -104,7 +100,6 @@ func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, e
 	return readOpenTab(res.Msg.GetTab()), res.Msg.GetActiveId(), nil
 }
 
-// readOpenTab returns the tab with the place its reader reported.
 func readOpenTab(tab *v1.OpenTab) OpenTab {
 	out := OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle()}
 	if place := tab.GetPlace(); place != nil {

@@ -77,9 +77,6 @@ func TestAReviewCardMeansTheSameOnEverySurfaceItIsShownOn(t *testing.T) {
 	}
 }
 
-// corpusOf reads the table and rejects one that would pass without testing
-// anything: a file that is empty, that declares no templates, that does not state
-// its purpose, or that names one template twice.
 func corpusOf(t *testing.T) table {
 	t.Helper()
 

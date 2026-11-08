@@ -14,15 +14,12 @@ const writingDiagnostics = "writing diagnostics"
 // closingResources is the entry for a file or response body that could not be closed.
 const closingResources = "closing a file"
 
-// writeDiagnostic writes a formatted line to out. A failed write is reported
-// through report as a failed task.
 func writeDiagnostic(report func(run.Task), out io.Writer, format string, a ...any) {
 	if _, err := fmt.Fprintf(out, format, a...); err != nil {
 		report(run.Task{ID: writingDiagnostics, Title: "Writing diagnostics", Error: err.Error()})
 	}
 }
 
-// closeAndReport closes c. A failed close is reported through report as a failed task.
 func closeAndReport(report func(run.Task), c io.Closer) {
 	if err := c.Close(); err != nil {
 		report(run.Task{ID: closingResources, Title: "Closing a file", Error: err.Error()})

@@ -40,14 +40,13 @@ type DeckCardsDue struct {
 
 // PresetCardsDue is the review count of the decks of one preset and what the current day has used.
 type PresetCardsDue struct {
-	Preset         string `json:"preset"`
-	Title          string `json:"title"`
-	Decks          int32  `json:"decks"`
-	Cards          int32  `json:"cards"`
-	PendingReviews int32  `json:"pendingReviews"`
-	PendingNew     int32  `json:"pendingNew"`
-	Reviewed       int32  `json:"reviewed"`
-	// DurationMs is the time spent reviewing in the current day in milliseconds.
+	Preset          string     `json:"preset"`
+	Title           string     `json:"title"`
+	Decks           int32      `json:"decks"`
+	Cards           int32      `json:"cards"`
+	PendingReviews  int32      `json:"pendingReviews"`
+	PendingNew      int32      `json:"pendingNew"`
+	Reviewed        int32      `json:"reviewed"`
 	DurationMs      int64      `json:"durationMs"`
 	ReviewedNew     int32      `json:"reviewedNew"`
 	ReviewedReviews int32      `json:"reviewedReviews"`
@@ -89,18 +88,15 @@ type WatchCardsDueRequest struct {
 
 // WatchCardsDueResponse is the response of the WatchCardsDue method.
 type WatchCardsDueResponse struct {
-	// Vaults lists every known vault; sent first and again while no count has arrived.
-	Vaults []*VaultCardsDue `json:"vaults"`
-	Day    string           `json:"day"`
-	// Counted is the count of one vault, sent as soon as it is worked out.
-	Counted *VaultCardsDue `json:"counted,omitempty"`
+	Vaults  []*VaultCardsDue `json:"vaults"`
+	Day     string           `json:"day"`
+	Counted *VaultCardsDue   `json:"counted,omitempty"`
 }
 
 // StartSessionRequest is the request of the StartSession method.
 type StartSessionRequest struct {
-	Vault string `json:"vault"`
-	Deck  string `json:"deck"`
-	// Preset selects the decks of one preset; the path may be empty for the default preset. Absent selects no preset.
+	Vault  string  `json:"vault"`
+	Deck   string  `json:"deck"`
 	Preset *string `json:"preset,omitempty"`
 }
 
@@ -114,13 +110,12 @@ type StartSessionResponse struct {
 
 // RecordReviewRequest is the request of the RecordReview method.
 type RecordReviewRequest struct {
-	Vault    string `json:"vault"`
-	Run      string `json:"run"`
-	CardID   string `json:"cardId"`
-	Template string `json:"template"`
-	Rating   Rating `json:"rating"`
-	// DurationMs is the time spent on the card in milliseconds.
-	DurationMs int64 `json:"durationMs"`
+	Vault      string `json:"vault"`
+	Run        string `json:"run"`
+	CardID     string `json:"cardId"`
+	Template   string `json:"template"`
+	Rating     Rating `json:"rating"`
+	DurationMs int64  `json:"durationMs"`
 }
 
 // RecordReviewResponse is the response of the RecordReview method.
@@ -196,7 +191,6 @@ type WatchReloadsRequest struct {
 
 // WatchReloadsResponse is the response of the WatchReloads method.
 type WatchReloadsResponse struct {
-	// Reload is true when the vault changed; false messages only show the stream is open.
 	Reload bool `json:"reload"`
 }
 

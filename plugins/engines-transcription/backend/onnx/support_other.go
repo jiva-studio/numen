@@ -4,7 +4,6 @@ package onnx
 
 import "syscall"
 
-// preloadCppRuntime is nothing where the runtime carries what it needs beside it.
 func preloadCppRuntime() {}
 
 func loadLibrary(name string) (uintptr, error) {

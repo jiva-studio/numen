@@ -16,7 +16,6 @@ type Walks struct {
 	turns map[domain.VaultID]chan struct{}
 }
 
-// turn is this vault's turn, made where the set does not hold one yet.
 func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -31,9 +30,6 @@ func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
 	return target
 }
 
-// startOne takes the vault's turn and answers with the release of it. Walks of
-// different vaults do not wait on each other, and neither do walks that share
-// no turns.
 func (w *Walks) startOne(ctx context.Context, vaultID domain.VaultID) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err

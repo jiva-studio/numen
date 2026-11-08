@@ -96,9 +96,6 @@ func addWindowTabActivate(registry *tools.Registry, on Host) error {
 	})
 }
 
-// activateWindowTab makes the open tab with the id the active tab and returns it as the window
-// reports it. A tab the window has not reported is an error, and the window is not called. A tab the
-// window does not show in time is an error in plain text.
 func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
 	if on.Window == nil {
 		return TabInfo{}, host.ErrNoWindow
@@ -124,7 +121,6 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 	return newTabInfo(tab, activeID), nil
 }
 
-// focusFile opens the file in the window at the passages and highlights them.
 func focusFile(ctx context.Context, on Host, path string, passages []host.PassageSpan) error {
 	if on.Window == nil {
 		return host.ErrNoWindow
@@ -132,7 +128,6 @@ func focusFile(ctx context.Context, on Host, path string, passages []host.Passag
 	return on.Window.FocusPassages(ctx, path, passages)
 }
 
-// isNotePath reports whether the path names a note of the vault.
 func isNotePath(filePath string) bool {
 	return strings.EqualFold(path.Ext(filePath), domain.NoteExtension)
 }

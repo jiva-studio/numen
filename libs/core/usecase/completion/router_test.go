@@ -68,7 +68,6 @@ type run struct{ steps chan agentport.Step }
 func (r *run) GetSteps() <-chan agentport.Step { return r.steps }
 func (r *run) Stop() error                     { return nil }
 
-// ask returns a question with one user message, as a plugin sends it.
 func ask(text string) completionport.Question {
 	return completionport.Question{Messages: []completionport.Message{{Role: "user", Text: text}}}
 }
