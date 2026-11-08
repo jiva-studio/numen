@@ -1,7 +1,7 @@
 import { Given, Then, When } from '../support/bdd.js'
 
-Given('a note {string} is open', async ({ person }, title: string) => {
-  await person.openNote(title)
+Given('the note {string} is open with {string}', async ({ person }, title: string, text: string) => {
+  await person.openNote(title, text)
 })
 
 Given('the person writes {string}', async ({ person }, text: string) => {
@@ -12,7 +12,7 @@ Given('another program writes {string} in the note', async ({ person }, text: st
   await person.changeNoteOnDisk(text)
 })
 
-Given('another program removes/removed the note', async ({ person }) => {
+Given('another program removes the note', async ({ person }) => {
   await person.removeNoteFromDisk()
 })
 
@@ -40,10 +40,6 @@ Then('the note keeps {string}', async ({ person }, text: string) => {
   await person.expectNoteHas(text)
 })
 
-Then('the note keeps its text', async ({ person }) => {
-  await person.expectNoteKeepsOwnText()
-})
-
 Then('the note warns that the file changed', async ({ person }) => {
   await person.expectConflictReported()
 })
@@ -58,8 +54,4 @@ Then('the file has {string}', async ({ person }, text: string) => {
 
 Then('the file does not have {string}', async ({ person }, text: string) => {
   await person.expectFileLacks(text)
-})
-
-Then('the file is back with the text', async ({ person }) => {
-  await person.expectNoteRecreated()
 })

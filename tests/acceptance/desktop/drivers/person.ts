@@ -68,10 +68,9 @@ export class Person {
 
   // Notes
 
-  async openNote(title: string): Promise<void> {
+  async openNote(title: string, initialText: string): Promise<void> {
     const path = await createNote(this.page.request, createUniqueTitle(title))
     this.createdPaths.push(path)
-    const initialText = 'Old text'
     await writeNote(this.page.request, path, `${initialText}\n`)
     await openWorkspace(this.page)
     const text = await openNote(this.page, path)
@@ -129,10 +128,6 @@ export class Person {
     await expect(this.getSubject().text).toContainText(text)
   }
 
-  async expectNoteKeepsOwnText(): Promise<void> {
-    await this.expectNoteHas(this.getSubject().initialText)
-  }
-
   async expectNoteLacks(text: string): Promise<void> {
     await expect(this.getSubject().text).not.toContainText(text)
   }
@@ -151,10 +146,5 @@ export class Person {
 
   async expectFileLacks(text: string): Promise<void> {
     expect((await readNote(this.page.request, this.getSubject().path)).body).not.toContain(text)
-  }
-
-  async expectNoteRecreated(): Promise<void> {
-    const subject = this.getSubject()
-    await waitForSavedBody(this.page.request, subject.path, subject.initialText)
   }
 }

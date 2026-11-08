@@ -2,7 +2,7 @@ Feature: A note that changes on disk
   A person writes a note. Another program changes the same file.
 
   Background:
-    Given a note "Shopping list" is open
+    Given the note "Shopping list" is open with "tea"
 
   Scenario: The note follows a change on disk
     When another program writes "milk" in the note
@@ -38,9 +38,9 @@ Feature: A note that changes on disk
   Scenario: A removed file keeps the text in the note
     When another program removes the note
     Then the note warns that the file is gone
-    And the note keeps its text
+    And the note keeps "tea"
 
-  Scenario: A removed note can come back
-    Given another program removed the note
+  Scenario: The person saves a removed note to its file again
+    Given another program removes the note
     When the person saves the note again
-    Then the file is back with the text
+    Then the file has "tea"
