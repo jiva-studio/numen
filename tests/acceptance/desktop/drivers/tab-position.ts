@@ -36,7 +36,6 @@ const detectKind = async (panel: Locator): Promise<TabKind | undefined> => {
   return undefined
 }
 
-/** The kind of the tab, once it is drawn; fails when the kind has no such place. */
 const readKind = async (panel: Locator, file: string, place: string): Promise<TabKind> => {
   let kind: TabKind | undefined
   await expect

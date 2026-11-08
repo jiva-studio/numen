@@ -147,7 +147,6 @@ export const destroyIndexedNote = async (
   await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
-/** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
 const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
   const vault = getVaultPath()
   const trash = path.join(vault, '.trash')
