@@ -185,7 +185,7 @@ func checkOption(declared pluginport.PluginManifestSetting, registries Registrie
 }
 
 // GetOwner returns the values stored under an owner, the plugin id or OwnerApp.
-func (f File) GetOwner(owner string) map[string]any {
+func (f *File) GetOwner(owner string) map[string]any {
 	if owner != OwnerApp {
 		return maps.Clone(f.Plugins[owner])
 	}
@@ -205,7 +205,7 @@ func (f File) GetOwner(owner string) map[string]any {
 
 // GetValue returns the value in force at a path: the stored value, else the default its owner
 // declares. The first element of the path is the owner.
-func (f File) GetValue(path ...string) (any, bool) {
+func (f *File) GetValue(path ...string) (any, bool) {
 	if len(path) < 2 {
 		return nil, false
 	}

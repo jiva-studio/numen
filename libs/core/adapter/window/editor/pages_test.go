@@ -70,8 +70,8 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 	}
 }
 
-func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
-	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+func getResponse(tb testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequestWithContext(tb.Context(), http.MethodGet, "/", nil)
 	r.URL.Path = path
 	out := httptest.NewRecorder()
 	handler.ServeHTTP(out, r)
@@ -521,8 +521,8 @@ func makePluginFixture(t *testing.T) *pluginFixture {
 	}
 }
 
-func (f *pluginFixture) serveRequest(t testing.TB, method, path string) *httptest.ResponseRecorder {
-	r := httptest.NewRequestWithContext(t.Context(), method, path, nil)
+func (f *pluginFixture) serveRequest(tb testing.TB, method, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequestWithContext(tb.Context(), method, path, nil)
 	w := httptest.NewRecorder()
 	f.handler.ServeHTTP(w, r)
 	return w

@@ -93,6 +93,7 @@ func TestLoad(t *testing.T) {
 }
 
 func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
+	t.Helper()
 	const (
 		readers  = 4
 		duration = 15 * time.Second

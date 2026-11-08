@@ -394,17 +394,17 @@ func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
 // compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
-func newWorkers(t testing.TB) *pdf.Workers {
-	t.Helper()
+func newWorkers(tb testing.TB) *pdf.Workers {
+	tb.Helper()
 	workers := pdf.NewWorkers()
 	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	workers.SetCompilationCache(compilation)
-	t.Cleanup(func() {
-		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(t.Context()))); err != nil {
-			t.Error(err)
+	tb.Cleanup(func() {
+		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(tb.Context()))); err != nil {
+			tb.Error(err)
 		}
 	})
 	return workers

@@ -132,9 +132,9 @@ func inward(t *testing.T, goos, goarch string) {
 	decoder := json.NewDecoder(bytes.NewReader(items))
 	for {
 		var pkg struct {
-			ImportPath string
-			Imports    []string
-			Deps       []string
+			ImportPath string   `json:"ImportPath"`
+			Imports    []string `json:"Imports"`
+			Deps       []string `json:"Deps"`
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {

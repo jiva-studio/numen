@@ -203,7 +203,9 @@ func listWorkspaceModules(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	var work struct {
-		Use []struct{ DiskPath string }
+		Use []struct {
+			DiskPath string `json:"DiskPath"`
+		} `json:"Use"`
 	}
 	if err := json.Unmarshal(output, &work); err != nil {
 		t.Fatal(err)

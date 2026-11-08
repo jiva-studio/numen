@@ -62,6 +62,7 @@ func TestTheLocalSourceSatisfiesTheSourceContract(t *testing.T) {
 }
 
 func TestADisabledPluginIsListedWithItsState(t *testing.T) {
+	t.Helper()
 	dir := t.TempDir()
 	for _, entry := range catalogtest.OnDiskEntries() {
 		writePlugin(t, dir, entry.ID, manifestOf(entry))

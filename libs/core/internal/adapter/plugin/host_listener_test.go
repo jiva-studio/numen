@@ -420,6 +420,7 @@ func TestPortSettingChangedToUnbindablePortKeepsOldPortAndStatus(t *testing.T) {
 	values := map[string]func(t *testing.T) any{
 		"port 80": func(*testing.T) any { return float64(80) },
 		"a taken port": func(t *testing.T) any {
+			t.Helper()
 			_, takenPort := listenLoopback(t)
 			return float64(takenPort)
 		},
@@ -608,6 +609,7 @@ func TestUnbindablePortSettingIsNotStoredAndOthersUpdate(t *testing.T) {
 	values := map[string]func(t *testing.T) any{
 		"port 80": func(*testing.T) any { return float64(80) },
 		"a taken port": func(t *testing.T) any {
+			t.Helper()
 			_, takenPort := listenLoopback(t)
 			return float64(takenPort)
 		},

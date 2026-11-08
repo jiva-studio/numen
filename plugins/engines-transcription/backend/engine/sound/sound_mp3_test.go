@@ -98,15 +98,15 @@ func writeGranules(random *rand.Rand, main *bitWriter) {
 	}
 }
 
-func decodeMP3Whole(t testing.TB, raw []byte) []float32 {
-	t.Helper()
+func decodeMP3Whole(tb testing.TB, raw []byte) []float32 {
+	tb.Helper()
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	body, err := io.ReadAll(decoder)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	stereo := make([]float32, len(body)/2)
 	for i := range stereo {

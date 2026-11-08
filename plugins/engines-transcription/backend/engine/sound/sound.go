@@ -126,7 +126,7 @@ func parseWav(raw []byte) (riffWave, error) {
 
 		switch kind {
 		case "fmt ":
-			if err := out.readFormat(body); err != nil {
+			if err := readWaveFormat(&out, body); err != nil {
 				return out, err
 			}
 			observed = true
@@ -146,7 +146,7 @@ func parseWav(raw []byte) (riffWave, error) {
 	return out, nil
 }
 
-func (w *riffWave) readFormat(body []byte) error {
+func readWaveFormat(w *riffWave, body []byte) error {
 	if len(body) < 16 {
 		return fmt.Errorf("the wav recording's header is %d bytes", len(body))
 	}

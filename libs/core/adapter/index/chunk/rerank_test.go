@@ -17,14 +17,14 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queries, []int64, []float32) {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "rerank_test.db")
+func setupTestDB(ctx context.Context, tb testing.TB, count int, dims int) (*Queries, []int64, []float32) {
+	tb.Helper()
+	path := filepath.Join(tb.TempDir(), "rerank_test.db")
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
-	testsupport.CloseAfter(t, db)
+	testsupport.CloseAfter(tb, db)
 
 	schema := `
 	CREATE TABLE chunks (
@@ -56,7 +56,7 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 		PRIMARY KEY (hash, recipe)
 	);`
 	if _, err := db.ExecContext(ctx, schema); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	query := make([]float32, dims)
@@ -66,41 +66,41 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			t.Error(err)
+			tb.Error(err)
 		}
 	}()
 
 	stmtSource, err := tx.PrepareContext(ctx, `INSERT INTO sources (id, vault_id, path, kind, size, mtime, hash, recipe, producer) VALUES (?, 1, ?, ?, 1000, 1, ?, 'epub', '')`)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer func() {
 		if err := stmtSource.Close(); err != nil {
-			t.Error(err)
+			tb.Error(err)
 		}
 	}()
 
 	stmtChunk, err := tx.PrepareContext(ctx, `INSERT INTO chunks (id, vault_id, source_id, start, length, location, text, hash, parent) VALUES (?, 1, ?, ?, ?, 'loc', 'text', ?, 0)`)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer func() {
 		if err := stmtChunk.Close(); err != nil {
-			t.Error(err)
+			tb.Error(err)
 		}
 	}()
 
 	stmtVector, err := tx.PrepareContext(ctx, `INSERT INTO vectors (hash, recipe, embedding) VALUES (?, 'recipe1', ?)`)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer func() {
 		if err := stmtVector.Close(); err != nil {
-			t.Error(err)
+			tb.Error(err)
 		}
 	}()
 
@@ -112,14 +112,14 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 		}
 		sourceHash := fmt.Sprintf("src-%04d", i)
 		if _, err := stmtSource.ExecContext(ctx, i, fmt.Sprintf("path/%d", i), sourceKind, sourceHash); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 
 		chunkHashBytes := sha256.Sum256([]byte(fmt.Sprintf("chunk-%d", i)))
 		chunkHashHex := hex.EncodeToString(chunkHashBytes[:])
 
 		if _, err := stmtChunk.ExecContext(ctx, i, i, 0, 100, chunkHashHex); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 
 		vec := make([]float32, dims)
@@ -138,13 +138,13 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 		}
 
 		if _, err := stmtVector.ExecContext(ctx, chunkHashBytes[:], stored); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 		candidates = append(candidates, int64(i))
 	}
 
 	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return NewQueries(db), candidates, query

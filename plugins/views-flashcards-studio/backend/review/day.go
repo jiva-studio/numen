@@ -151,11 +151,11 @@ func (d Day) GetName(target time.Time) string {
 // The ratings are kept apart because a day of fifty failed answers differs
 // from a day of fifty successful ones, and both have the same total.
 type Tally struct {
-	Answered int
-	Again    int
-	Hard     int
-	Good     int
-	Easy     int
+	Answered int `json:"Answered"`
+	Again    int `json:"Again"`
+	Hard     int `json:"Hard"`
+	Good     int `json:"Good"`
+	Easy     int `json:"Easy"`
 }
 
 // GetDayTallies is what was answered on each day, by the name of the day.

@@ -52,6 +52,7 @@ func TestTheIndexSourceSatisfiesTheSourceContract(t *testing.T) {
 }
 
 func TestTheFirstIndexThatExistsIsRead(t *testing.T) {
+	t.Helper()
 	dir := t.TempDir()
 	entries := catalogtest.AvailableEntries()
 	second := filepath.Join(dir, "second.json")

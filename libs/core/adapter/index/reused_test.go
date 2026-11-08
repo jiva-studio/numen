@@ -70,6 +70,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 		{
 			name: "the same book in a second vault",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
+				t.Helper()
 				book(t, db, getFirst(), "library/tale.epub", 0x0f)
 				cutBook(t, db, getSecond(), "library/tale.epub")
 				return getSecond(), "library/tale.epub"
@@ -78,6 +79,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 		{
 			name: "the same book at a second path",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
+				t.Helper()
 				book(t, db, getFirst(), "library/tale.epub", 0x0f)
 				cutBook(t, db, getFirst(), "copies/tale.epub")
 				return getFirst(), "copies/tale.epub"
@@ -86,6 +88,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 		{
 			name: "a second copy whose first is gone",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
+				t.Helper()
 				book(t, db, getFirst(), "library/tale.epub", 0x0f)
 				cutBook(t, db, getFirst(), "copies/tale.epub")
 				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
@@ -97,6 +100,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 		{
 			name: "a book removed and put back",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
+				t.Helper()
 				book(t, db, getFirst(), "library/tale.epub", 0x0f)
 				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
