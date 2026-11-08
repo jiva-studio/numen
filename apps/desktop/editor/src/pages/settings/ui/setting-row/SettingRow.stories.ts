@@ -38,6 +38,15 @@ const SECTIONS = [
   },
 ]
 
+const MENUS = [
+  {
+    pluginId: 'md.numen.sample',
+    name: 'apiKey',
+    group: 'openrouter',
+    secrets: SECTIONS[0]?.secrets ?? [],
+  },
+]
+
 const LONG_NAME = 'Maximum number of recognition sessions kept open at the same time'
 const LONG_DETAIL =
   'Parallel ONNX recognition sessions used for every scanned page of every document in the vault queue'
@@ -50,6 +59,7 @@ const rows = (width: string) => () => ({
     longDetail: LONG_DETAIL,
     declaration: DECLARATION,
     sections: SECTIONS,
+    menus: MENUS,
   }),
   template: `
     <div class="numen" style="container-type:inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
@@ -73,7 +83,7 @@ const rows = (width: string) => () => ({
           <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" style="flex:1 1 auto" />
         </span>
       </SettingRow>
-      <SecretField at="secret" name="Key: apiKey" detail="The key of the service." :declaration="declaration" :sections="sections" />
+      <SecretField at="secret" name="Key: apiKey" detail="The key of the service." :declaration="declaration" :sections="sections" :menus="menus" />
     </div>
   `,
 })
