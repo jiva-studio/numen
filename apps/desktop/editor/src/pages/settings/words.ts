@@ -14,8 +14,7 @@ export const WORDS = {
   keyPlaceholder: 'Paste a value',
   secretsFile: (path: string) => `Values are kept in ${path}`,
   secretMasked: '••••••••',
-  secretReaders: (count: number) =>
-    count === 0 ? 'No plugins' : count === 1 ? '1 plugin' : `${count} plugins`,
+  secretNoReaders: 'No plugins',
   secretNewGroupName: 'New group',
   secretDefault: 'Default',
   secretValue: (name: string) => `Value of ${name}`,
@@ -32,7 +31,6 @@ export const WORDS = {
   secretAddGroup: 'Add group',
   secretAllowedTo: 'Allowed to',
   secretSearchPlugins: 'Search plugins',
-  secretNoPlugins: 'No plugin to choose',
   secretGroupActions: 'Group actions',
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',
@@ -50,7 +48,6 @@ export const WORDS = {
   secretDeleteCancel: 'Cancel',
   secretChoose: 'Choose a secret',
   secretSearch: 'Search secrets',
-  secretNothing: 'No secret to choose',
   secretOpenPage: 'Open the page of secrets',
   secretFieldNone: 'No secret allowed',
   /** The label of the action that opens a plugin's settings. */

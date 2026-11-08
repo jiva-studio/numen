@@ -217,13 +217,14 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  const openReaders = (row: HTMLElement) => click(findButton(/plugin/i, row))
+  const getReaders = (row: HTMLElement) =>
+    row.querySelector<HTMLElement>('button[data-slot="select"]') as HTMLElement
+  const openReaders = (row: HTMLElement) => click(getReaders(row))
   const optionOf = (pluginName: string) =>
     Array.from(root().querySelectorAll<HTMLElement>('[role="option"]')).find(
       (one) => one.textContent?.trim() === pluginName,
     ) as HTMLElement
-  const isMarked = (option: HTMLElement) =>
-    option.querySelector('.secret-permissions__check--off') === null
+  const isMarked = (option: HTMLElement) => option.getAttribute('aria-current') === 'true'
   const optionNames = () =>
     Array.from(root().querySelectorAll('[role="option"]')).map((one) => one.textContent?.trim())
 
@@ -241,10 +242,10 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('reads the number of plugins that may read the secret on the button', () => {
+  it('reads the plugin that may read the secret on the button, and the stand-in where none may', () => {
     const { wrapper } = mountPage()
-    expect(findButton(/plugin/i, rowOf('Work')).textContent).toContain('1 plugin')
-    expect(findButton(/plugin/i, rowOf('Home')).textContent).toContain('No plugins')
+    expect(getReaders(rowOf('Work')).textContent).toContain('Embeddings')
+    expect(getReaders(rowOf('Home')).textContent).toContain('No plugins')
     dispose(wrapper)
   })
 

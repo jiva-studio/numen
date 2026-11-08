@@ -122,7 +122,7 @@ export const WideTextControlsShareOneWidth: Story = {
   play: async ({ canvasElement }) => {
     const widths = [
       ...canvasElement.querySelectorAll(
-        '.settings__choice, .settings__text-input, .settings__secret-input',
+        '.settings__choice, .settings__text-input, .settings__secret',
       ),
     ].map((one) => Math.round(one.getBoundingClientRect().width))
     const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)

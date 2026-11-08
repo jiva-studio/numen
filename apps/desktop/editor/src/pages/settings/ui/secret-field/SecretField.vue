@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * The secret one declaration of a plugin reads: a masked field that shows no value and takes none,
- * and an arrow that opens the secrets to choose from. A click on a secret allows the declaration
- * to read it, or stops it, as the check box on the page of secrets does. Where the declared group
- * has no secret, an icon button beside the name opens the page of secrets.
+ * The secret one declaration of a plugin reads: a select of the secrets, each under the name of
+ * its group. Choosing a secret allows the declaration to read it, or stops it, as the check box
+ * on the page of secrets does. Where the declared group has no secret, an icon button beside the
+ * name opens the page of secrets.
  */
-import { computed, ref, useTemplateRef } from 'vue'
-import { Check, ChevronDown, KeyRound } from '@lucide/vue'
-import { Button, SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
+import { computed } from 'vue'
+import { KeyRound } from '@lucide/vue'
+import { getServiceInfo } from '@numen/core-client'
+import { Button, Select, type SelectChoice } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
   getMenuSecrets,
@@ -34,41 +35,28 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const trigger = useTemplateRef<HTMLElement>('trigger')
-const anchor = ref<{ x: number; y: number; width: number } | null>(null)
-const query = ref('')
-
 const secrets = computed(() => getMenuSecrets(props.sections, props.declaration))
-const items = computed<readonly ListItem[]>(() =>
-  secrets.value.map((one) => ({ id: one.id, text: one.name })),
+const choices = computed<readonly SelectChoice[]>(() =>
+  secrets.value.map((one) => ({
+    id: one.id,
+    text: one.name,
+    ...(one.group === '' ? {} : { detail: getServiceInfo(one.group).title || one.group }),
+  })),
 )
-const allowedIds = computed(
-  () =>
-    new Set(secrets.value.filter((one) => isAllowed(one, props.declaration)).map((one) => one.id)),
+const allowedIds = computed(() =>
+  secrets.value.filter((one) => isAllowed(one, props.declaration)).map((one) => one.id),
 )
-const summary = computed(() => {
-  const names = secrets.value.filter((one) => allowedIds.value.has(one.id)).map((one) => one.name)
-  return names.length === 0 ? words.secretFieldNone : names.join(', ')
-})
 /** The id SettingRow gives the name it labels the field by. */
 const labelledBy = computed(() => `settings-${props.at}`)
 const hasOwnSecrets = computed(() => hasGroupSecrets(props.sections, props.declaration))
-const groupOf = (id: string): string => secrets.value.find((one) => one.id === id)?.group ?? ''
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpen(): void {
-  const box = measureRect(trigger.value)
-  anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0, width: box?.width ?? 0 }
-}
-
-function onClose(): void {
-  anchor.value = null
-  query.value = ''
-}
-
-function onChoose(id: string): void {
+/** The select hands on the new list of allowed ids: the one that came or went is the one toggled. */
+function onSelect(next: readonly string[]): void {
+  const added = next.find((id) => !allowedIds.value.includes(id))
+  const id = added ?? allowedIds.value.find((one) => !next.includes(one))
   const secret = secrets.value.find((one) => one.id === id)
-  if (secret) emit('toggle', secret, !allowedIds.value.has(id))
+  if (secret) emit('toggle', secret, added !== undefined)
 }
 </script>
 
@@ -86,112 +74,23 @@ function onChoose(id: string): void {
       </Button>
     </template>
 
-    <span ref="trigger" class="settings__secret">
-      <input
-        type="password"
-        readonly
-        autocomplete="off"
-        :placeholder="summary"
-        :aria-labelledby="labelledBy"
-        class="settings__secret-input"
-        @click="onOpen"
-      />
-      <Button
-        variant="ghost"
-        size="icon-small"
-        class="settings__secret-choose"
-        aria-haspopup="listbox"
-        :aria-expanded="anchor !== null"
-        :aria-label="words.secretChoose"
-        :title="words.secretChoose"
-        @click="onOpen"
-      >
-        <ChevronDown :size="14" aria-hidden="true" />
-      </Button>
-    </span>
-
-    <SearchableListPopup
-      v-if="anchor"
-      :model-value="null"
-      @update:model-value="() => undefined"
-      v-model:query="query"
-      :items="items"
-      :label="words.secretChoose"
-      :placeholder="words.secretSearch"
-      :empty-text="words.secretNothing"
-      :at="{ x: anchor.x, y: anchor.y }"
-      :asking="anchor.width"
-      :from="trigger"
-      @select="onChoose"
-      @close="onClose"
-    >
-      <template #leading="{ item }">
-        <Check
-          class="settings__secret-check"
-          :class="{ 'settings__secret-check--off': !allowedIds.has(item.id) }"
-          :size="14"
-          aria-hidden="true"
-        />
-      </template>
-      <template #trailing="{ item }">
-        <span class="settings__secret-group">{{ groupOf(item.id) }}</span>
-      </template>
-    </SearchableListPopup>
+    <Select
+      class="settings__secret"
+      is-multiple
+      :selected="allowedIds"
+      :choices="choices"
+      :placeholder="words.secretFieldNone"
+      :name="words.secretChoose"
+      :search-name="words.secretSearch"
+      :aria-labelledby="labelledBy"
+      @update:selected="onSelect"
+    />
   </SettingRow>
 </template>
 
 <style scoped>
-.settings__secret-check {
-  flex: none;
-}
-
-.settings__secret-check--off {
-  visibility: hidden;
-}
-
 .settings__secret {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem;
   inline-size: var(--settings-choice);
-  min-inline-size: 0;
   max-inline-size: 100%;
-}
-
-.settings__secret-input {
-  box-sizing: border-box;
-  inline-size: var(--settings-choice);
-  block-size: var(--numen-action-size);
-  flex: 1 1 100%;
-  min-inline-size: 0;
-  max-inline-size: 24rem;
-  padding: 0.25rem 2rem 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--numen-text-2);
-}
-
-.settings__secret-input:focus {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.settings__secret-choose {
-  position: absolute;
-  inset-block-start: calc((var(--numen-action-size) - 1.5rem) / 2);
-  inset-inline-end: 0.25rem;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  color: var(--numen-hushed);
-}
-
-.settings__secret-group {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 </style>

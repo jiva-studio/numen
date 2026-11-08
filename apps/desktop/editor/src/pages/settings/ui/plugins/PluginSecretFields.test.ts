@@ -1,10 +1,11 @@
 /**
- * The secret fields on the page of a plugin: a masked field with an arrow for each declaration, a
- * menu of the secrets with a search, and a button to the page of secrets where the declared group
+ * The secret fields on the page of a plugin: a select of the secrets for each declaration, with a
+ * search over the secrets, and a button to the page of secrets where the declared group
  * has none. The plugin, the secrets and every value here are invented.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { getServiceInfo } from '@numen/core-client'
 import { mount } from '@vue/test-utils'
 import PluginDetail from './PluginDetail.vue'
 import SettingsTab from '../SettingsTab.vue'
@@ -17,7 +18,6 @@ import {
   findButtons,
   findText,
   maskedInputs,
-  positionOf,
   root,
 } from '@/testing/secretsDom'
 
@@ -61,23 +61,34 @@ const mountDetail = (secrets = [WORK, HOME, CHAT, SPARE, MINE]) => {
   return { installation, initialPluginId, wrapper }
 }
 
-/** The field of a declaration: the smallest element around its title that holds a masked input. */
+/** The CSS selector of the select button in a row. */
+const SELECT = 'button[data-slot="select"]'
+
+/** The field of a declaration: the smallest element around its title that holds a select. */
 const fieldOf = (title: string): HTMLElement => {
   let one = (findText(title) as HTMLElement).parentElement
-  while (one !== null && maskedInputs(one).length === 0) one = one.parentElement
+  while (one !== null && one.querySelector(SELECT) === null) one = one.parentElement
   if (one === null) throw new Error(`no field for ${title}`)
   return one
 }
 
 const openMenu = async (title: string): Promise<void> => {
-  await click(findButton(/choose/i, fieldOf(title)))
+  await click(fieldOf(title).querySelector(SELECT) as HTMLElement)
 }
 
+/** The rows of the list the select opened, in order: the name of each secret. */
+const optionNames = (): string[] =>
+  Array.from(root().querySelectorAll('[role="option"] .searchable-list__text')).map((one) =>
+    (one.textContent ?? '').trim(),
+  )
+
+/** The row of the secret with that name in the list the select opened. */
 const menuItem = (name: string): HTMLElement => {
-  const text = findText(name) as HTMLElement
-  return (text.closest(
-    '[role="menuitemcheckbox"], [role="menuitem"], [role="option"], [role="checkbox"], label, button, li',
-  ) ?? text) as HTMLElement
+  const found = Array.from(root().querySelectorAll<HTMLElement>('[role="option"]')).filter(
+    (one) => one.querySelector('.searchable-list__text')?.textContent?.trim() === name,
+  )
+  if (found.length !== 1) throw new Error(`${found.length} rows named ${name}`)
+  return found[0] as HTMLElement
 }
 
 beforeEach(() => {
@@ -97,51 +108,61 @@ afterEach(() => {
 })
 
 describe('the secret field of a declaration', () => {
-  it('is a masked field with an arrow that opens a menu', async () => {
+  it('is a select that opens the list of secrets', async () => {
     const { wrapper } = mountDetail()
-    expect(maskedInputs(fieldOf('API key'))).toHaveLength(1)
-    expect(findButtons(/choose/i, fieldOf('API key'))).toHaveLength(1)
-    expect(findText('Work')).toBeNull()
+    expect(fieldOf('API key').querySelectorAll(SELECT)).toHaveLength(1)
+    expect(optionNames()).toStrictEqual([])
     await openMenu('API key')
-    expect(findText('Work')).not.toBeNull()
+    expect(optionNames()).not.toHaveLength(0)
     dispose(wrapper)
   })
 
-  it('takes no typed value', async () => {
+  it('shows the secrets allowed and the stand-in where there is none', () => {
+    const { wrapper } = mountDetail()
+    expect(fieldOf('API key').querySelector(SELECT)?.textContent?.trim()).toBe('Chat')
+    expect(fieldOf('Organization').querySelector(SELECT)?.textContent?.trim()).toBe(
+      'No secret allowed',
+    )
+    dispose(wrapper)
+  })
+
+  it('has no field to type a value into, and shows no secret value', async () => {
     const { installation, wrapper } = mountDetail()
-    const input = maskedInputs(fieldOf('API key'))[0] as HTMLInputElement
-    await enterText(input, 'made-up-typed-value')
+    expect(fieldOf('API key').querySelectorAll('input')).toHaveLength(0)
+    expect(maskedInputs()).toHaveLength(0)
+    await openMenu('API key')
     expect(installation.createSecret).not.toHaveBeenCalled()
     expect(installation.writeSecret).not.toHaveBeenCalled()
-    expect(root().innerHTML).not.toContain('made-up-typed-value')
     dispose(wrapper)
   })
 
-  it('shows no secret value', () => {
+  it('puts the group of each secret under its name', async () => {
     const { wrapper } = mountDetail()
-    for (const input of maskedInputs()) {
-      expect(input.value).toBe('')
-    }
+    await openMenu('API key')
+    const details = Array.from(root().querySelectorAll('[role="option"]')).map((one) =>
+      one.querySelector('.searchable-list__detail')?.textContent?.trim(),
+    )
+    expect(details).toStrictEqual([
+      getServiceInfo('openai').title,
+      getServiceInfo('openai').title,
+      getServiceInfo('openrouter').title,
+      getServiceInfo('openrouter').title,
+      getServiceInfo('travel').title,
+    ])
     dispose(wrapper)
   })
 
   it('puts the secrets of the declared group on top and the others below in the order of the page', async () => {
     const { wrapper } = mountDetail()
     await openMenu('API key')
-    const order = ['Chat', 'Spare', 'Work', 'Home', 'Personal'].map((name) =>
-      positionOf(findText(name) as HTMLElement),
-    )
-    expect(order).toStrictEqual([...order].sort((a, b) => a - b))
+    expect(optionNames()).toStrictEqual(['Chat', 'Spare', 'Work', 'Home', 'Personal'])
     dispose(wrapper)
   })
 
   it('shows all the secrets in the order of the page for a declaration with no group', async () => {
     const { wrapper } = mountDetail()
     await openMenu('Organization')
-    const order = ['Chat', 'Spare', 'Work', 'Home', 'Personal'].map((name) =>
-      positionOf(findText(name) as HTMLElement),
-    )
-    expect(order).toStrictEqual([...order].sort((a, b) => a - b))
+    expect(optionNames()).toStrictEqual(['Chat', 'Spare', 'Work', 'Home', 'Personal'])
     dispose(wrapper)
   })
 
@@ -152,9 +173,7 @@ describe('the secret field of a declaration', () => {
       'input[type="search"], input[placeholder*="earch" i]',
     ) as HTMLInputElement
     await enterText(search, 'hom')
-    expect(findText('Home')).not.toBeNull()
-    expect(findText('Work')).toBeNull()
-    expect(findText('Personal')).toBeNull()
+    expect(optionNames()).toStrictEqual(['Home'])
     dispose(wrapper)
   })
 
@@ -219,7 +238,7 @@ describe('the page of a plugin', () => {
       attachTo: document.body,
       props: { state: { installation }, plugin },
     })
-    expect(maskedInputs()).toHaveLength(3)
+    expect(root().querySelectorAll(SELECT)).toHaveLength(3)
     dispose(wrapper)
   })
 })
