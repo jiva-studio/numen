@@ -148,7 +148,7 @@ export const destroyIndexedNote = async (
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
+const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
   const vault = getVaultPath()
   const trash = path.join(vault, '.trash')
   if (!fs.existsSync(trash)) return []
@@ -268,11 +268,6 @@ export const readOwner = async (
   owner: string,
 ): Promise<Record<string, unknown>> =>
   ((await readSettings(request))[owner] ?? {}) as Record<string, unknown>
-
-/** Whether a note's title and the name of its file are kept as one name. */
-export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>
-  ((await readOwner(request, 'app'))['naming'] as { syncTitleAndFilename?: boolean } | undefined)
-    ?.syncTitleAndFilename !== false
 
 /** A title no other test or earlier run uses, so a retry starts from a vault without it. */
 export const createUniqueTitle = (words: string): string =>
