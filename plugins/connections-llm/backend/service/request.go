@@ -20,7 +20,11 @@ const maxResponseBytes = 64 << 20
 
 // send makes one request to the service of the call and decodes a successful answer into out. A
 // failure is a connection failure with a reason, or the error of the context of the call.
-func (s *Service) send(ctx context.Context, call connection.Call, operation, method, path string, in, out any) error {
+// endpoint names the operation a request is made for, which sets its time limit, and the method and
+// path it uses.
+type endpoint struct{ operation, method, path string }
+
+func (s *Service) send(ctx context.Context, call connection.Call, target endpoint, in, out any) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -32,13 +36,13 @@ func (s *Service) send(ctx context.Context, call connection.Call, operation, met
 	if err != nil {
 		return connection.NewStopError(connection.ReasonBadRequest)
 	}
-	isLoopbackRequired := base.Scheme == "http" && key != ""
+	isLoopbackRequired := base.Scheme == schemeHTTP && key != ""
 
-	limit, cancel := context.WithTimeout(ctx, s.getLimit(call, operation))
+	limit, cancel := context.WithTimeout(ctx, s.getLimit(call, target.operation))
 	defer cancel()
 	limit = context.WithValue(limit, loopbackOnlyKey{}, isLoopbackRequired)
 
-	request, err := newRequest(limit, method, base, path, key, in)
+	request, err := newRequest(limit, target, base, key, in)
 	if err != nil {
 		return connection.NewStopError(connection.ReasonUnknown)
 	}
@@ -60,11 +64,11 @@ func (s *Service) send(ctx context.Context, call connection.Call, operation, met
 	return nil
 }
 
-func newRequest(ctx context.Context, method string, base *url.URL, path, key string, in any) (*http.Request, error) {
-	endpoint := *base
-	endpoint.RawQuery, endpoint.Fragment = "", ""
-	endpoint.Path = strings.TrimSuffix(endpoint.Path, "/") + path
-	endpoint.RawPath = ""
+func newRequest(ctx context.Context, target endpoint, base *url.URL, key string, in any) (*http.Request, error) {
+	address := *base
+	address.RawQuery, address.Fragment = "", ""
+	address.Path = strings.TrimSuffix(address.Path, "/") + target.path
+	address.RawPath = ""
 
 	var body io.Reader
 	if in != nil {
@@ -74,7 +78,7 @@ func newRequest(ctx context.Context, method string, base *url.URL, path, key str
 		}
 		body = bytes.NewReader(data)
 	}
-	request, err := http.NewRequestWithContext(ctx, method, endpoint.String(), body)
+	request, err := http.NewRequestWithContext(ctx, target.method, address.String(), body)
 	if err != nil {
 		return nil, err
 	}

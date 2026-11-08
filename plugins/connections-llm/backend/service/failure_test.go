@@ -109,7 +109,7 @@ func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 
 func TestACallThatIsAlreadyCancelledNeverReachesTheService(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	_, err := New().Embed(ctx, newCall("openrouter", address, testKey, "m"), []string{"a"})
 	if !errors.Is(err, context.Canceled) {

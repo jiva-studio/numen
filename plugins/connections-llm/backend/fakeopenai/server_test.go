@@ -11,7 +11,7 @@ import (
 
 func post(t *testing.T, handler http.Handler, path, key, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
 	if key != "" {
 		request.Header.Set("Authorization", "Bearer "+key)
 	}
@@ -73,7 +73,15 @@ func TestADelayedRequestIsCountedAsAbortedWhenTheClientLeaves(t *testing.T) {
 	ts := httptest.NewServer(fake)
 	defer ts.Close()
 	client := &http.Client{Timeout: 50 * time.Millisecond}
-	if _, err := client.Get(ts.URL + "/models"); err == nil {
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+"/models", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := client.Do(request)
+	if err == nil {
+		if closeErr := response.Body.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
 		t.Fatal("want a timeout")
 	}
 	select {

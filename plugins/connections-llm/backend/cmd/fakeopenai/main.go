@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -21,12 +22,12 @@ func main() {
 	retryAfter := flag.String("retry-after", "", "Retry-After header sent with the status")
 	flag.Parse()
 
-	fake := fakeopenai.New(fakeopenai.Config{APIKey: *key, Dimensions: *dimensions})
+	fake := fakeopenai.New(fakeopenai.Config{APIKey: *key, Dimensions: *dimensions, Models: nil, IsLabelled: false, EmbeddingModels: nil})
 	if *status != 0 {
 		fake.Fail("/chat/completions", *status, *retryAfter)
 		fake.Fail("/embeddings", *status, *retryAfter)
 	}
-	listener, err := net.Listen("tcp", *address)
+	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *address)
 	if err != nil {
 		log.Fatal(err)
 	}

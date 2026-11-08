@@ -35,7 +35,7 @@ func newCall(typeID, address, key, model string) connection.Call {
 
 func newContext(t *testing.T) context.Context {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	t.Cleanup(cancel)
 	return ctx
 }

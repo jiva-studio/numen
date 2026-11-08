@@ -16,6 +16,11 @@ import (
 // DefaultDimensions is the width of a vector when Config sets none.
 const DefaultDimensions = 8
 
+const (
+	modelKey  = "model"
+	objectKey = "object"
+)
+
 // Model is a model the server lists. Name is the label OpenRouter gives; an empty Name leaves the
 // label out.
 type Model struct {
@@ -65,7 +70,7 @@ func New(config Config) *Server {
 	if config.Dimensions <= 0 {
 		config.Dimensions = DefaultDimensions
 	}
-	return &Server{config: config, behavior: map[string]behavior{}, aborted: make(chan struct{}, 64)}
+	return &Server{config: config, mu: sync.Mutex{}, requests: nil, behavior: map[string]behavior{}, aborted: make(chan struct{}, 64)}
 }
 
 // Fail makes a path answer status with an empty body and the header Retry-After. A status of 0 clears it.
@@ -114,16 +119,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if one.status != 0 {
-		if one.retryAfter != "" {
-			w.Header().Set("Retry-After", one.retryAfter)
-		}
-		w.WriteHeader(one.status)
+		writeStatus(w, one)
 		return
 	}
-	if s.config.APIKey != "" && r.Header.Get("Authorization") != "Bearer "+s.config.APIKey {
-		writeJSON(w, http.StatusUnauthorized, map[string]any{"error": map[string]any{"message": "invalid key"}})
+	if !s.isAuthorized(r) {
+		writeError(w, http.StatusUnauthorized, "invalid key")
 		return
 	}
+	s.route(w, r, path, body)
+}
+
+func writeStatus(w http.ResponseWriter, one behavior) {
+	if one.retryAfter != "" {
+		w.Header().Set("Retry-After", one.retryAfter)
+	}
+	w.WriteHeader(one.status)
+}
+
+func (s *Server) isAuthorized(r *http.Request) bool {
+	return s.config.APIKey == "" || r.Header.Get("Authorization") == "Bearer "+s.config.APIKey
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]any{"error": map[string]any{"message": message}})
+}
+
+func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body []byte) {
 	switch {
 	case r.Method == http.MethodPost && path == "/chat/completions":
 		s.serveChat(w, body)
@@ -172,13 +193,13 @@ type chatRequest struct {
 func (s *Server) serveChat(w http.ResponseWriter, body []byte) {
 	var request chatRequest
 	if err := json.Unmarshal(body, &request); err != nil || request.Model == "" || len(request.Messages) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]any{"message": "model and messages are required"}})
+		writeError(w, http.StatusBadRequest, "model and messages are required")
 		return
 	}
 	last := request.Messages[len(request.Messages)-1].Content
 	writeJSON(w, http.StatusOK, map[string]any{
-		"id":    "chatcmpl-fake",
-		"model": request.Model,
+		"id":     "chatcmpl-fake",
+		modelKey: request.Model,
 		"choices": []any{map[string]any{
 			"index":         0,
 			"message":       map[string]any{"role": "assistant", "content": "echo: " + last},
@@ -195,14 +216,14 @@ type embeddingsRequest struct {
 func (s *Server) serveEmbeddings(w http.ResponseWriter, body []byte) {
 	var request embeddingsRequest
 	if err := json.Unmarshal(body, &request); err != nil || request.Model == "" || len(request.Input) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]any{"message": "model and input are required"}})
+		writeError(w, http.StatusBadRequest, "model and input are required")
 		return
 	}
 	data := make([]any, len(request.Input))
 	for i, text := range request.Input {
-		data[i] = map[string]any{"object": "embedding", "index": i, "embedding": s.Vector(text)}
+		data[i] = map[string]any{objectKey: "embedding", "index": i, "embedding": s.Vector(text)}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "model": request.Model, "data": data})
+	writeJSON(w, http.StatusOK, map[string]any{objectKey: "list", modelKey: request.Model, "data": data})
 }
 
 // Vector returns the vector the server answers for a text: unit length and the same for the same text.
@@ -225,7 +246,7 @@ func (s *Server) Vector(text string) []float32 {
 func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabelled, isEmbedding bool) {
 	data := make([]any, len(models))
 	for i, model := range models {
-		entry := map[string]any{"id": model.ID, "object": "model"}
+		entry := map[string]any{"id": model.ID, objectKey: "model"}
 		if isLabelled {
 			entry["name"] = model.Name
 			output := "text"

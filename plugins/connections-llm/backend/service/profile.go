@@ -15,12 +15,14 @@ type embeddingProfile struct {
 	pooling    string
 }
 
-var embeddingProfiles = []embeddingProfile{
-	{[]string{"openai/text-embedding-3-small", "text-embedding-3-small"}, 1536, 8191, "cls"},
-	{[]string{"openai/text-embedding-3-large", "text-embedding-3-large"}, 3072, 8191, "cls"},
-	{[]string{"openai/text-embedding-ada-002", "text-embedding-ada-002"}, 1536, 8191, "cls"},
-	{[]string{"baai/bge-m3"}, 1024, 8192, "cls"},
-	{[]string{"qwen/qwen3-embedding-8b"}, 4096, 32768, "cls"},
+func listEmbeddingProfiles() []embeddingProfile {
+	return []embeddingProfile{
+		{[]string{"openai/text-embedding-3-small", "text-embedding-3-small"}, 1536, 8191, poolingCLS},
+		{[]string{"openai/text-embedding-3-large", "text-embedding-3-large"}, 3072, 8191, poolingCLS},
+		{[]string{"openai/text-embedding-ada-002", "text-embedding-ada-002"}, 1536, 8191, poolingCLS},
+		{[]string{"baai/bge-m3"}, 1024, 8192, poolingCLS},
+		{[]string{"qwen/qwen3-embedding-8b"}, 4096, 32768, poolingCLS},
+	}
 }
 
 // GetModelProfile returns what the plugin knows of an embedding model from its table, with no request.
@@ -35,7 +37,7 @@ func (s *Service) GetModelProfile(_ context.Context, call connection.Call) (conn
 	}
 	profile := connection.ModelProfile{Source: pluginID + "/" + call.Type + " " + base.Scheme + "://" + base.Host + strings.TrimSuffix(base.Path, "/")}
 	name := strings.ToLower(strings.TrimSpace(call.Model))
-	for _, one := range embeddingProfiles {
+	for _, one := range listEmbeddingProfiles() {
 		if slices.Contains(one.ids, name) {
 			profile.IsKnown, profile.Dimensions, profile.MaxTokens, profile.Pooling = true, one.dimensions, one.maxTokens, one.pooling
 			break

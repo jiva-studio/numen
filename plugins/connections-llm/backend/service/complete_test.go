@@ -38,11 +38,17 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	if err := json.Unmarshal(sent[0].Body, &body); err != nil {
 		t.Fatal(err)
 	}
-	messages, _ := body["messages"].([]any)
-	if body["model"] != "openai/gpt-4o-mini" || len(messages) != 2 || body["temperature"] != 0.25 || body["max_tokens"] != float64(300) {
+	messages, ok := body["messages"].([]any)
+	if !ok || len(messages) != 2 {
+		t.Fatalf("body = %s", sent[0].Body)
+	}
+	if body["model"] != "openai/gpt-4o-mini" || body["temperature"] != 0.25 || body["max_tokens"] != float64(300) {
 		t.Errorf("body = %s", sent[0].Body)
 	}
-	first, _ := messages[0].(map[string]any)
+	first, ok := messages[0].(map[string]any)
+	if !ok {
+		t.Fatalf("first message = %v", messages[0])
+	}
 	if first["role"] != "system" || first["content"] != "You proofread." {
 		t.Errorf("first message = %v", first)
 	}
@@ -95,8 +101,8 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 		check func(body map[string]any) bool
 	}{
 		"openrouter": {"openai/gpt-5", func(body map[string]any) bool {
-			reasoning, _ := body["reasoning"].(map[string]any)
-			return reasoning["effort"] == "low"
+			reasoning, ok := body["reasoning"].(map[string]any)
+			return ok && reasoning["effort"] == "low"
 		}},
 		"openai": {"gpt-5-mini", func(body map[string]any) bool { return body["reasoning_effort"] == "low" }},
 	}

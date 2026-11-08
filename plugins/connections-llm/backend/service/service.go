@@ -20,6 +20,10 @@ const (
 
 	operationComplete = "complete"
 	operationEmbed    = "embed"
+	operationList     = "list"
+
+	schemeHTTP = "http"
+	poolingCLS = "cls"
 
 	settingRequestTimeout = "requestTimeout"
 	fieldBaseURL          = "baseUrl"
@@ -42,7 +46,7 @@ type Service struct {
 
 // New creates a service with the default limits.
 func New() *Service {
-	return &Service{served: map[string]struct{}{}, clients: newClients()}
+	return &Service{mu: sync.Mutex{}, timeout: 0, served: map[string]struct{}{}, clients: newClients()}
 }
 
 // Provider returns the roles the service fills.

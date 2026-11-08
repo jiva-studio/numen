@@ -27,7 +27,7 @@ func parseAddress(address string, hasKey bool) (*url.URL, error) {
 	if err != nil {
 		return nil, &refusedError{"the address is not a URL"}
 	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+	if parsed.Scheme != schemeHTTP && parsed.Scheme != "https" {
 		return nil, &refusedError{"the address must start with http:// or https://"}
 	}
 	host := strings.TrimSuffix(strings.ToLower(parsed.Hostname()), ".")
@@ -40,7 +40,7 @@ func parseAddress(address string, hasKey bool) (*url.URL, error) {
 	if isForbiddenHost(host) {
 		return nil, &refusedError{"the address names a host that is not allowed"}
 	}
-	if parsed.Scheme == "http" && hasKey && !isLoopbackHost(host) {
+	if parsed.Scheme == schemeHTTP && hasKey && !isLoopbackHost(host) {
 		return nil, &refusedError{"a key is sent over http only to this computer"}
 	}
 	return parsed, nil
@@ -67,13 +67,11 @@ func isForbiddenHost(host string) bool {
 	return err == nil && isForbiddenAddress(ip.Unmap().WithZone(""))
 }
 
-var metadataAddresses = []netip.Addr{netip.MustParseAddr("100.100.100.200"), netip.MustParseAddr("fd00:ec2::254")}
-
 func isForbiddenAddress(ip netip.Addr) bool {
-	for _, one := range metadataAddresses {
-		if ip == one {
-			return true
-		}
+	switch ip.String() {
+	case "100.100.100.200", "fd00:ec2::254":
+		return true
+	default:
 	}
 	return ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast()
 }
@@ -96,8 +94,8 @@ func controlDial(ctx context.Context, _, address string, _ syscall.RawConn) erro
 	if err != nil {
 		return &refusedError{fmt.Sprintf("the dialed address %q is not an IP address", address)}
 	}
-	isLoopbackRequired, _ := ctx.Value(loopbackOnlyKey{}).(bool)
-	return checkResolved(target.Addr(), isLoopbackRequired)
+	isLoopbackRequired, ok := ctx.Value(loopbackOnlyKey{}).(bool)
+	return checkResolved(target.Addr(), ok && isLoopbackRequired)
 }
 
 // clients holds one client for requests that may go to any allowed address and one for requests that

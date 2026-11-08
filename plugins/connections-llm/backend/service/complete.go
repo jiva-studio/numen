@@ -47,7 +47,7 @@ func (s *Service) Complete(ctx context.Context, call connection.Call, request co
 	for i, message := range request.Messages {
 		messages[i] = chatMessage{Role: message.Role, Content: message.Text}
 	}
-	body := chatBody{Model: call.Model, Messages: messages, Temperature: request.Temperature}
+	body := chatBody{Model: call.Model, Messages: messages, Temperature: request.Temperature, MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil}
 	if call.Type == typeOpenAI {
 		body.MaxCompletionTokens = request.MaxTokens
 	} else {
@@ -60,7 +60,7 @@ func (s *Service) Complete(ctx context.Context, call connection.Call, request co
 	}
 
 	var answer chatAnswer
-	if err := s.send(ctx, call, operationComplete, http.MethodPost, "/chat/completions", body, &answer); err != nil {
+	if err := s.send(ctx, call, endpoint{operationComplete, http.MethodPost, "/chat/completions"}, body, &answer); err != nil {
 		return connection.CompleteResult{}, err
 	}
 	if len(answer.Choices) == 0 {
@@ -70,23 +70,23 @@ func (s *Service) Complete(ctx context.Context, call connection.Call, request co
 	return connection.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
 }
 
-var reasoningLevels = []connection.ReasoningLevel{{Value: "low", Title: "Low"}, {Value: "medium", Title: "Medium"}, {Value: "high", Title: "High"}}
-
-var openAIReasoningModels = []string{"o1", "o3", "o4", "gpt-5"}
-
 // getReasoningLevels returns the levels a model of a type takes: every model of OpenRouter, the
 // reasoning models of OpenAI, and none for other servers, which give no list of levels.
 func getReasoningLevels(typeID, model string) []connection.ReasoningLevel {
 	switch typeID {
 	case typeOpenRouter:
-		return slices.Clone(reasoningLevels)
+		return listReasoningLevels()
 	case typeOpenAI:
 		name := strings.ToLower(strings.TrimSpace(model))
-		for _, prefix := range openAIReasoningModels {
+		for _, prefix := range []string{"o1", "o3", "o4", "gpt-5"} {
 			if strings.HasPrefix(name, prefix) {
-				return slices.Clone(reasoningLevels)
+				return listReasoningLevels()
 			}
 		}
 	}
 	return nil
+}
+
+func listReasoningLevels() []connection.ReasoningLevel {
+	return []connection.ReasoningLevel{{Value: "low", Title: "Low"}, {Value: "medium", Title: "Medium"}, {Value: "high", Title: "High"}}
 }

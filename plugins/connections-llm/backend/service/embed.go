@@ -27,7 +27,7 @@ func (s *Service) Embed(ctx context.Context, call connection.Call, texts []strin
 		return nil, ctx.Err()
 	}
 	var answer embedAnswer
-	if err := s.send(ctx, call, operationEmbed, http.MethodPost, "/embeddings", embedBody{Model: call.Model, Input: texts}, &answer); err != nil {
+	if err := s.send(ctx, call, endpoint{operationEmbed, http.MethodPost, "/embeddings"}, embedBody{Model: call.Model, Input: texts}, &answer); err != nil {
 		return nil, err
 	}
 	if len(answer.Data) != len(texts) {

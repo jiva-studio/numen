@@ -30,7 +30,7 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 		return []connection.Model{}, nil
 	}
 	var answer modelsAnswer
-	if err := s.send(ctx, call, "list", http.MethodGet, path, nil, &answer); err != nil {
+	if err := s.send(ctx, call, endpoint{operationList, http.MethodGet, path}, nil, &answer); err != nil {
 		return nil, err
 	}
 	models := make([]connection.Model, 0, len(answer.Data))
