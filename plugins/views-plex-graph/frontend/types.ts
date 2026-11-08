@@ -115,6 +115,7 @@ export interface PlexView {
 
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
+  readonly tabId: string
   readonly editor: PlexEditor
   readonly isReady: Readonly<Ref<boolean>>
   readonly isNesting: Readonly<Ref<boolean>>
@@ -122,7 +123,7 @@ export interface PlexTabDeps {
   openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
   readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
-  /** The entries of the slot `plexGraph.context` over the note of a node. */
+  /** The entries of the slot `plexGraph.context` over the note of a node, or over the canvas. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the note of a node. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>

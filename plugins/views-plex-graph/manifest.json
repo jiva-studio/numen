@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -30,6 +30,11 @@
         "icon": "waypoints",
         "when": "target.isNote",
         "shortcut": "mod+shift+p"
+      },
+      {
+        "id": "graph.createNote",
+        "title": "New note",
+        "when": "target.isRoot"
       }
     ],
     "slots": [
@@ -51,6 +56,13 @@
       { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
       { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
       { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      {
+        "slot": "plexGraph.context",
+        "command": "graph.createNote",
+        "group": "0-new",
+        "order": 10,
+        "when": "target.isRoot"
+      },
       { "slot": "plexGraph.context", "command": "app:note.open", "group": "0-open", "order": 10 },
       { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
       {
