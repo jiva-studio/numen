@@ -14,7 +14,7 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 
 - One line `Feature: <title>` naming the behaviour area.
 - An optional description of one to three lines: a sentence of why, or "As a ... I want ... So that ...".
-- No Goals, Non-goals or Invariants sections. A rule the product must keep is a scenario. A `Rule:` block may group scenarios.
+- No Goals, Non-goals or Invariants sections. A rule the product must keep is a scenario. A `Rule:` block groups the scenarios of one rule: use it when a feature holds more than one rule, and name it with a plain sentence of what must hold. A feature of one or two scenarios needs no Rule.
 
 ## 3. Scenarios
 

@@ -37,16 +37,17 @@ const rel = (file) => path.relative(root, file).split(path.sep).join('/')
 const parser = new Parser(new AstBuilder(IdGenerator.uuid()), new GherkinClassicTokenMatcher())
 const features = walk(featuresDir, '.feature').map((file) => {
   const doc = parser.parse(fs.readFileSync(file, 'utf8'))
-  const scenarios = (doc.feature?.children ?? [])
+  // A Rule groups scenarios and may hold a background of its own: read them with the feature's.
+  const children = (doc.feature?.children ?? []).flatMap((child) => (child.rule ? child.rule.children : [child]))
+  const getSteps = (steps) => steps.map((step) => ({ text: step.text, line: step.location.line }))
+  const scenarios = children
     .flatMap((child) => (child.scenario ? [child.scenario] : []))
     .map((scenario) => ({
       name: scenario.name,
       line: scenario.location.line,
-      steps: scenario.steps.map((step) => ({ text: step.text, line: step.location.line })),
+      steps: getSteps(scenario.steps),
     }))
-  const background = (doc.feature?.children ?? []).flatMap((child) =>
-    child.background ? child.background.steps.map((step) => ({ text: step.text, line: step.location.line })) : [],
-  )
+  const background = children.flatMap((child) => (child.background ? getSteps(child.background.steps) : []))
   return { file, name: doc.feature?.name ?? '', scenarios, background }
 })
 
