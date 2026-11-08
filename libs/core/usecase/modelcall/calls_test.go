@@ -29,7 +29,6 @@ type setup struct {
 	two   connection.Entry
 }
 
-// newSetup makes two connections and gives the consumer both as rows of the operation, the first one first.
 func newSetup(t *testing.T, operation string) *setup {
 	t.Helper()
 	w := modelcalltest.New()
@@ -117,7 +116,7 @@ func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 func TestAStopSetsNoCooldown(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.Fail(addressOne, stop(connectionport.FailureReasonBadRequest))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	if _, err := s.complete(t); err != nil {
 		t.Fatal(err)
@@ -175,7 +174,7 @@ func TestARowSetAsideEarlierStillAppearsInTheErrorWithItsReason(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
 	s.world.Provider.FailAlways(addressTwo, tryNext(connectionport.FailureReasonRateLimited, 0))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	_, err := s.complete(t)
 
@@ -248,7 +247,7 @@ func TestTheKeysGoOnlyToThePluginThatProvidesTheType(t *testing.T) {
 	}
 }
 
-func TestNothingTheConsumerReceivesHoldsAKey(t *testing.T) {
+func TestNothingTheConsumerReceivesContainsAKey(t *testing.T) {
 	for name, arrange := range map[string]func(*setup){
 		"an answer": func(*setup) {},
 		"every row failed": func(s *setup) {
@@ -321,9 +320,9 @@ func TestEveryProviderOpenedIsReleased(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonTimeout, 0))
 
-	_, _ = s.complete(t)
+	s.attempt(t)
 	s.world.Provider.FailAlways(addressTwo, stop(connectionport.FailureReasonBadRequest))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	if opened, released := len(s.world.Source.Opened()), s.world.Source.Released(); opened != released {
 		t.Errorf("opened %d providers and released %d", opened, released)
@@ -423,7 +422,7 @@ func TestARowThatNamesNoConnectionIsSkipped(t *testing.T) {
 
 func TestACallIsRefusedWhenTheConnectionChangedWhileItsKeyWasRead(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Keys.OnGet = func() { s.world.ChangeRevision(s.one.ID) }
+	s.world.Keys.OnGet = func() { s.world.ChangeRevision(t, s.one.ID) }
 
 	_, err := s.complete(t)
 
@@ -516,5 +515,12 @@ func TestACompleteRequestReachesTheProviderWhole(t *testing.T) {
 	if got.Operation != "complete" || got.Request.MaxTokens != 50 || got.Request.Temperature == nil || *got.Request.Temperature != 0.3 ||
 		len(got.Request.Messages) != 2 || got.Request.Messages[1].Text != "u" {
 		t.Errorf("call = %+v", got)
+	}
+}
+
+func (s *setup) attempt(t *testing.T) {
+	t.Helper()
+	if _, err := s.complete(t); err != nil {
+		t.Logf("complete: %v", err)
 	}
 }

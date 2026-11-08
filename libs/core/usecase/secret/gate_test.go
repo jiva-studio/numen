@@ -78,8 +78,8 @@ func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
 	second := make(chan error, 1)
 	go func() { second <- f.secrets.Move.Execute(t.Context(), "s00000001", "") }()
 	select {
-	case <-watch:
-		t.Fatal("the file watch passed the gate while the plugins were being configured")
+	case err := <-watch:
+		t.Fatalf("the file watch passed the gate while the plugins were being configured: %v", err)
 	case <-blocker.entered:
 		t.Fatal("the second operation reached its refresh while the first one was configuring")
 	case <-time.After(100 * time.Millisecond):

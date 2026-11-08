@@ -11,14 +11,16 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// adapter serves the roles of a Provider. A cancelled call answers with the status code Canceled, and any
+// other error with a served failure; the text of an error that is no failure kind never leaves the provider.
 type adapter struct {
 	numenv1connect.UnimplementedProviderServiceHandler
 	provider Provider
 }
 
 func (a *adapter) Complete(
-	ctx context.Context, request *connect.Request[v1.ProviderCompleteRequest],
-) (*connect.Response[v1.ProviderCompleteResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceCompleteRequest],
+) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
 	if a.provider.Completer == nil {
 		return a.UnimplementedProviderServiceHandler.Complete(ctx, request)
 	}
@@ -35,83 +37,83 @@ func (a *adapter) Complete(
 		Messages: messages, Temperature: temperature, MaxTokens: int(request.Msg.GetMaxTokens()),
 	})
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderCompleteResponse {
-			return &v1.ProviderCompleteResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceCompleteResponse {
+			return &v1.ProviderServiceCompleteResponse{Failure: failure}
 		})
 	}
-	return connect.NewResponse(&v1.ProviderCompleteResponse{Text: result.Text}), nil
+	return connect.NewResponse(&v1.ProviderServiceCompleteResponse{Text: result.Text}), nil
 }
 
 func (a *adapter) Embed(
-	ctx context.Context, request *connect.Request[v1.ProviderEmbedRequest],
-) (*connect.Response[v1.ProviderEmbedResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceEmbedRequest],
+) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
 	if a.provider.Embedder == nil {
 		return a.UnimplementedProviderServiceHandler.Embed(ctx, request)
 	}
 	vectors, err := a.provider.Embedder.Embed(ctx, readCall(request.Msg.GetCall()), request.Msg.GetTexts())
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderEmbedResponse {
-			return &v1.ProviderEmbedResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceEmbedResponse {
+			return &v1.ProviderServiceEmbedResponse{Failure: failure}
 		})
 	}
 	wire := make([]*v1.FloatVector, len(vectors))
 	for i, one := range vectors {
 		wire[i] = &v1.FloatVector{Values: one}
 	}
-	return connect.NewResponse(&v1.ProviderEmbedResponse{Vectors: wire}), nil
+	return connect.NewResponse(&v1.ProviderServiceEmbedResponse{Vectors: wire}), nil
 }
 
 func (a *adapter) ListModels(
-	ctx context.Context, request *connect.Request[v1.ProviderListModelsRequest],
-) (*connect.Response[v1.ProviderListModelsResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceListModelsRequest],
+) (*connect.Response[v1.ProviderServiceListModelsResponse], error) {
 	if a.provider.Models == nil {
 		return a.UnimplementedProviderServiceHandler.ListModels(ctx, request)
 	}
 	models, err := a.provider.Models.ListModels(ctx, readCall(request.Msg.GetCall()), request.Msg.GetOperation())
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderListModelsResponse {
-			return &v1.ProviderListModelsResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceListModelsResponse {
+			return &v1.ProviderServiceListModelsResponse{Failure: failure}
 		})
 	}
 	wire := make([]*v1.ProviderModel, len(models))
 	for i, one := range models {
 		wire[i] = &v1.ProviderModel{Id: one.ID, Title: one.Title, Operations: one.Operations}
 	}
-	return connect.NewResponse(&v1.ProviderListModelsResponse{Models: wire}), nil
+	return connect.NewResponse(&v1.ProviderServiceListModelsResponse{Models: wire}), nil
 }
 
 func (a *adapter) ListReasoningLevels(
-	ctx context.Context, request *connect.Request[v1.ProviderListReasoningLevelsRequest],
-) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceListReasoningLevelsRequest],
+) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error) {
 	if a.provider.Models == nil {
 		return a.UnimplementedProviderServiceHandler.ListReasoningLevels(ctx, request)
 	}
 	levels, err := a.provider.Models.ListReasoningLevels(ctx, readCall(request.Msg.GetCall()))
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderListReasoningLevelsResponse {
-			return &v1.ProviderListReasoningLevelsResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceListReasoningLevelsResponse {
+			return &v1.ProviderServiceListReasoningLevelsResponse{Failure: failure}
 		})
 	}
 	wire := make([]*v1.ProviderReasoningLevel, len(levels))
 	for i, one := range levels {
 		wire[i] = &v1.ProviderReasoningLevel{Value: one.Value, Title: one.Title}
 	}
-	return connect.NewResponse(&v1.ProviderListReasoningLevelsResponse{Levels: wire}), nil
+	return connect.NewResponse(&v1.ProviderServiceListReasoningLevelsResponse{Levels: wire}), nil
 }
 
 func (a *adapter) GetModelProfile(
-	ctx context.Context, request *connect.Request[v1.ProviderGetModelProfileRequest],
-) (*connect.Response[v1.ProviderGetModelProfileResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceGetModelProfileRequest],
+) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error) {
 	if a.provider.Profiles == nil {
 		return a.UnimplementedProviderServiceHandler.GetModelProfile(ctx, request)
 	}
 	profile, err := a.provider.Profiles.GetModelProfile(ctx, readCall(request.Msg.GetCall()))
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderGetModelProfileResponse {
-			return &v1.ProviderGetModelProfileResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceGetModelProfileResponse {
+			return &v1.ProviderServiceGetModelProfileResponse{Failure: failure}
 		})
 	}
-	return connect.NewResponse(&v1.ProviderGetModelProfileResponse{
+	return connect.NewResponse(&v1.ProviderServiceGetModelProfileResponse{
 		IsKnown:        profile.IsKnown,
 		Dimensions:     int32(profile.Dimensions),
 		MaxTokens:      int32(profile.MaxTokens),
@@ -123,22 +125,20 @@ func (a *adapter) GetModelProfile(
 }
 
 func (a *adapter) ProbeEmbeddingWidth(
-	ctx context.Context, request *connect.Request[v1.ProviderProbeEmbeddingWidthRequest],
-) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error) {
+	ctx context.Context, request *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest],
+) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error) {
 	if a.provider.Profiles == nil {
 		return a.UnimplementedProviderServiceHandler.ProbeEmbeddingWidth(ctx, request)
 	}
 	width, err := a.provider.Profiles.ProbeEmbeddingWidth(ctx, readCall(request.Msg.GetCall()))
 	if err != nil {
-		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderProbeEmbeddingWidthResponse {
-			return &v1.ProviderProbeEmbeddingWidthResponse{Failure: failure}
+		return failed(ctx, err, func(failure *v1.ProviderFailure) *v1.ProviderServiceProbeEmbeddingWidthResponse {
+			return &v1.ProviderServiceProbeEmbeddingWidthResponse{Failure: failure}
 		})
 	}
-	return connect.NewResponse(&v1.ProviderProbeEmbeddingWidthResponse{Dimensions: int32(width)}), nil
+	return connect.NewResponse(&v1.ProviderServiceProbeEmbeddingWidthResponse{Dimensions: int32(width)}), nil
 }
 
-// failed answers a call that returned an error: a cancelled call by its status code, any other by a
-// served failure. The text of an error that is no failure kind never leaves the provider.
 func failed[R any](ctx context.Context, err error, respond func(*v1.ProviderFailure) *R) (*connect.Response[R], error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)

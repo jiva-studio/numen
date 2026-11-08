@@ -41,14 +41,14 @@ func (h *Host) discoverPlugins() error {
 	h.problems = problems
 	h.installed = all
 	h.hasScanned = true
-	discovered, refused := h.refuseBuiltInProviderIDsLocked(discovered)
+	discovered, rejected := h.filterBuiltInProviderIDsLocked(discovered)
 	stalePlugins := h.registerDiscoveredLocked(discovered)
 	h.mu.Unlock()
 
 	for _, problem := range problems {
 		h.reportError(problem.Err)
 	}
-	for _, err := range refused {
+	for _, err := range rejected {
 		h.reportError(err)
 	}
 	for _, id := range stalePlugins {
@@ -130,21 +130,20 @@ func (h *Host) retirePlugin(pluginID string) {
 	}
 }
 
+// errProviderIDTaken is a plugin found on disk under the id of a built-in plugin that provides connection
+// types, which is left out because the keys of a connection go to the plugin that provides its type.
 var errProviderIDTaken = errors.New("a built-in plugin of this id provides connection types")
 
-// refuseBuiltInProviderIDsLocked leaves out the plugins found on disk under the id of a built-in plugin
-// that provides connection types, because the keys of a connection go to the plugin that provides its
-// type. It returns the plugins to register and the refusals.
-func (h *Host) refuseBuiltInProviderIDsLocked(discovered []manifest.Discovered) ([]manifest.Discovered, []error) {
+func (h *Host) filterBuiltInProviderIDsLocked(discovered []manifest.Discovered) ([]manifest.Discovered, []error) {
 	var kept []manifest.Discovered
-	var refused []error
+	var rejected []error
 	for _, p := range discovered {
 		builtIn, isBuiltIn := h.getBuiltInLocked(p.Manifest.ID)
 		if isBuiltIn && len(builtIn.plugin.Manifest.Contributes.ConnectionTypes) > 0 {
-			refused = append(refused, fmt.Errorf("%w: refused the plugin in %s", errProviderIDTaken, p.Dir))
+			rejected = append(rejected, fmt.Errorf("%w: rejected the plugin in %s", errProviderIDTaken, p.Dir))
 			continue
 		}
 		kept = append(kept, p)
 	}
-	return kept, refused
+	return kept, rejected
 }

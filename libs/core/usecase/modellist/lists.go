@@ -82,12 +82,12 @@ func failed(ctx context.Context, reason connectionport.FailureReason) error {
 
 func readReason(err error) connectionport.FailureReason {
 	var tryNext *connectionport.TryNextError
-	var stopped *connectionport.StopError
+	var stopError *connectionport.StopError
 	switch {
 	case errors.As(err, &tryNext):
 		return tryNext.Reason
-	case errors.As(err, &stopped):
-		return stopped.Reason
+	case errors.As(err, &stopError):
+		return stopError.Reason
 	}
 	return connectionport.FailureReasonUnreachable
 }

@@ -20,7 +20,6 @@ type modelEndpoint struct {
 
 var _ numenv1connect.HostModelServiceHandler = (*modelEndpoint)(nil)
 
-// begin names the calling plugin and the calls that serve it. A host with no calls has no connection.
 func (e *modelEndpoint) begin(header string) (string, modelcallport.ModelCalls, error) {
 	pluginID, err := e.endpoint.authenticate(header)
 	if err != nil {
@@ -49,8 +48,8 @@ func (noCalls) GetEmbeddingProfile(context.Context, string) (modelcallport.Embed
 }
 
 func (e *modelEndpoint) Complete(
-	ctx context.Context, request *connect.Request[v1.HostModelCompleteRequest],
-) (*connect.Response[v1.HostModelCompleteResponse], error) {
+	ctx context.Context, request *connect.Request[v1.HostModelServiceCompleteRequest],
+) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	pluginID, calls, err := e.begin(request.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
@@ -67,14 +66,14 @@ func (e *modelEndpoint) Complete(
 		if !served {
 			return nil, readModelStatus(ctx, err)
 		}
-		return connect.NewResponse(&v1.HostModelCompleteResponse{Error: code, Detail: detail, Failures: failures}), nil
+		return connect.NewResponse(&v1.HostModelServiceCompleteResponse{Error: code, Detail: detail, Failures: failures}), nil
 	}
-	return connect.NewResponse(&v1.HostModelCompleteResponse{Text: result.Text}), nil
+	return connect.NewResponse(&v1.HostModelServiceCompleteResponse{Text: result.Text}), nil
 }
 
 func (e *modelEndpoint) Embed(
-	ctx context.Context, request *connect.Request[v1.HostModelEmbedRequest],
-) (*connect.Response[v1.HostModelEmbedResponse], error) {
+	ctx context.Context, request *connect.Request[v1.HostModelServiceEmbedRequest],
+) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
 	pluginID, calls, err := e.begin(request.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
@@ -85,18 +84,18 @@ func (e *modelEndpoint) Embed(
 		if !served {
 			return nil, readModelStatus(ctx, err)
 		}
-		return connect.NewResponse(&v1.HostModelEmbedResponse{Error: code, Detail: detail, Failures: failures}), nil
+		return connect.NewResponse(&v1.HostModelServiceEmbedResponse{Error: code, Detail: detail, Failures: failures}), nil
 	}
 	wire := make([]*v1.FloatVector, len(vectors))
 	for i, one := range vectors {
 		wire[i] = &v1.FloatVector{Values: one}
 	}
-	return connect.NewResponse(&v1.HostModelEmbedResponse{Vectors: wire}), nil
+	return connect.NewResponse(&v1.HostModelServiceEmbedResponse{Vectors: wire}), nil
 }
 
 func (e *modelEndpoint) GetEmbeddingProfile(
-	ctx context.Context, request *connect.Request[v1.HostModelGetEmbeddingProfileRequest],
-) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error) {
+	ctx context.Context, request *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest],
+) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error) {
 	pluginID, calls, err := e.begin(request.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
@@ -107,9 +106,9 @@ func (e *modelEndpoint) GetEmbeddingProfile(
 		if !served {
 			return nil, readModelStatus(ctx, err)
 		}
-		return connect.NewResponse(&v1.HostModelGetEmbeddingProfileResponse{Error: code, Detail: detail, Failures: failures}), nil
+		return connect.NewResponse(&v1.HostModelServiceGetEmbeddingProfileResponse{Error: code, Detail: detail, Failures: failures}), nil
 	}
-	return connect.NewResponse(&v1.HostModelGetEmbeddingProfileResponse{
+	return connect.NewResponse(&v1.HostModelServiceGetEmbeddingProfileResponse{
 		Model:          profile.Model,
 		Source:         profile.Source,
 		Pooling:        profile.Pooling,
@@ -120,8 +119,6 @@ func (e *modelEndpoint) GetEmbeddingProfile(
 	}), nil
 }
 
-// writeModelError turns a failure of the calls into the served error code with the connections and
-// reasons it names. It reports false for an error that is a status code.
 func writeModelError(ctx context.Context, err error) (v1.HostModelErrorCode, string, []*v1.HostModelFailure, bool) {
 	if ctx.Err() != nil {
 		return v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED, "", nil, false

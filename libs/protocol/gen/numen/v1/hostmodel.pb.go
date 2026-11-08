@@ -184,7 +184,7 @@ func (x *HostModelMessage) GetText() string {
 	return ""
 }
 
-type HostModelCompleteRequest struct {
+type HostModelServiceCompleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Messages      []*HostModelMessage    `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
 	Temperature   *float64               `protobuf:"fixed64,2,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
@@ -193,20 +193,20 @@ type HostModelCompleteRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelCompleteRequest) Reset() {
-	*x = HostModelCompleteRequest{}
+func (x *HostModelServiceCompleteRequest) Reset() {
+	*x = HostModelServiceCompleteRequest{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelCompleteRequest) String() string {
+func (x *HostModelServiceCompleteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelCompleteRequest) ProtoMessage() {}
+func (*HostModelServiceCompleteRequest) ProtoMessage() {}
 
-func (x *HostModelCompleteRequest) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceCompleteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -218,33 +218,33 @@ func (x *HostModelCompleteRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelCompleteRequest.ProtoReflect.Descriptor instead.
-func (*HostModelCompleteRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceCompleteRequest.ProtoReflect.Descriptor instead.
+func (*HostModelServiceCompleteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *HostModelCompleteRequest) GetMessages() []*HostModelMessage {
+func (x *HostModelServiceCompleteRequest) GetMessages() []*HostModelMessage {
 	if x != nil {
 		return x.Messages
 	}
 	return nil
 }
 
-func (x *HostModelCompleteRequest) GetTemperature() float64 {
+func (x *HostModelServiceCompleteRequest) GetTemperature() float64 {
 	if x != nil && x.Temperature != nil {
 		return *x.Temperature
 	}
 	return 0
 }
 
-func (x *HostModelCompleteRequest) GetMaxTokens() int32 {
+func (x *HostModelServiceCompleteRequest) GetMaxTokens() int32 {
 	if x != nil {
 		return x.MaxTokens
 	}
 	return 0
 }
 
-type HostModelCompleteResponse struct {
+type HostModelServiceCompleteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	Error         HostModelErrorCode     `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostModelErrorCode" json:"error,omitempty"`
@@ -254,20 +254,20 @@ type HostModelCompleteResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelCompleteResponse) Reset() {
-	*x = HostModelCompleteResponse{}
+func (x *HostModelServiceCompleteResponse) Reset() {
+	*x = HostModelServiceCompleteResponse{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelCompleteResponse) String() string {
+func (x *HostModelServiceCompleteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelCompleteResponse) ProtoMessage() {}
+func (*HostModelServiceCompleteResponse) ProtoMessage() {}
 
-func (x *HostModelCompleteResponse) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceCompleteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -279,60 +279,60 @@ func (x *HostModelCompleteResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelCompleteResponse.ProtoReflect.Descriptor instead.
-func (*HostModelCompleteResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceCompleteResponse.ProtoReflect.Descriptor instead.
+func (*HostModelServiceCompleteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *HostModelCompleteResponse) GetText() string {
+func (x *HostModelServiceCompleteResponse) GetText() string {
 	if x != nil {
 		return x.Text
 	}
 	return ""
 }
 
-func (x *HostModelCompleteResponse) GetError() HostModelErrorCode {
+func (x *HostModelServiceCompleteResponse) GetError() HostModelErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostModelCompleteResponse) GetDetail() string {
+func (x *HostModelServiceCompleteResponse) GetDetail() string {
 	if x != nil {
 		return x.Detail
 	}
 	return ""
 }
 
-func (x *HostModelCompleteResponse) GetFailures() []*HostModelFailure {
+func (x *HostModelServiceCompleteResponse) GetFailures() []*HostModelFailure {
 	if x != nil {
 		return x.Failures
 	}
 	return nil
 }
 
-type HostModelEmbedRequest struct {
+type HostModelServiceEmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Texts         []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelEmbedRequest) Reset() {
-	*x = HostModelEmbedRequest{}
+func (x *HostModelServiceEmbedRequest) Reset() {
+	*x = HostModelServiceEmbedRequest{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelEmbedRequest) String() string {
+func (x *HostModelServiceEmbedRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelEmbedRequest) ProtoMessage() {}
+func (*HostModelServiceEmbedRequest) ProtoMessage() {}
 
-func (x *HostModelEmbedRequest) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -344,19 +344,19 @@ func (x *HostModelEmbedRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelEmbedRequest.ProtoReflect.Descriptor instead.
-func (*HostModelEmbedRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceEmbedRequest.ProtoReflect.Descriptor instead.
+func (*HostModelServiceEmbedRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *HostModelEmbedRequest) GetTexts() []string {
+func (x *HostModelServiceEmbedRequest) GetTexts() []string {
 	if x != nil {
 		return x.Texts
 	}
 	return nil
 }
 
-type HostModelEmbedResponse struct {
+type HostModelServiceEmbedResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Vectors       []*FloatVector         `protobuf:"bytes,1,rep,name=vectors,proto3" json:"vectors,omitempty"`
 	Error         HostModelErrorCode     `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostModelErrorCode" json:"error,omitempty"`
@@ -366,20 +366,20 @@ type HostModelEmbedResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelEmbedResponse) Reset() {
-	*x = HostModelEmbedResponse{}
+func (x *HostModelServiceEmbedResponse) Reset() {
+	*x = HostModelServiceEmbedResponse{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelEmbedResponse) String() string {
+func (x *HostModelServiceEmbedResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelEmbedResponse) ProtoMessage() {}
+func (*HostModelServiceEmbedResponse) ProtoMessage() {}
 
-func (x *HostModelEmbedResponse) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -391,59 +391,59 @@ func (x *HostModelEmbedResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelEmbedResponse.ProtoReflect.Descriptor instead.
-func (*HostModelEmbedResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceEmbedResponse.ProtoReflect.Descriptor instead.
+func (*HostModelServiceEmbedResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *HostModelEmbedResponse) GetVectors() []*FloatVector {
+func (x *HostModelServiceEmbedResponse) GetVectors() []*FloatVector {
 	if x != nil {
 		return x.Vectors
 	}
 	return nil
 }
 
-func (x *HostModelEmbedResponse) GetError() HostModelErrorCode {
+func (x *HostModelServiceEmbedResponse) GetError() HostModelErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostModelEmbedResponse) GetDetail() string {
+func (x *HostModelServiceEmbedResponse) GetDetail() string {
 	if x != nil {
 		return x.Detail
 	}
 	return ""
 }
 
-func (x *HostModelEmbedResponse) GetFailures() []*HostModelFailure {
+func (x *HostModelServiceEmbedResponse) GetFailures() []*HostModelFailure {
 	if x != nil {
 		return x.Failures
 	}
 	return nil
 }
 
-type HostModelGetEmbeddingProfileRequest struct {
+type HostModelServiceGetEmbeddingProfileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelGetEmbeddingProfileRequest) Reset() {
-	*x = HostModelGetEmbeddingProfileRequest{}
+func (x *HostModelServiceGetEmbeddingProfileRequest) Reset() {
+	*x = HostModelServiceGetEmbeddingProfileRequest{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelGetEmbeddingProfileRequest) String() string {
+func (x *HostModelServiceGetEmbeddingProfileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelGetEmbeddingProfileRequest) ProtoMessage() {}
+func (*HostModelServiceGetEmbeddingProfileRequest) ProtoMessage() {}
 
-func (x *HostModelGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -455,12 +455,12 @@ func (x *HostModelGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelGetEmbeddingProfileRequest.ProtoReflect.Descriptor instead.
-func (*HostModelGetEmbeddingProfileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceGetEmbeddingProfileRequest.ProtoReflect.Descriptor instead.
+func (*HostModelServiceGetEmbeddingProfileRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{6}
 }
 
-type HostModelGetEmbeddingProfileResponse struct {
+type HostModelServiceGetEmbeddingProfileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// model is the model of the row that answered.
 	Model          string `protobuf:"bytes,1,opt,name=model,proto3" json:"model,omitempty"`
@@ -478,20 +478,20 @@ type HostModelGetEmbeddingProfileResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) Reset() {
-	*x = HostModelGetEmbeddingProfileResponse{}
+func (x *HostModelServiceGetEmbeddingProfileResponse) Reset() {
+	*x = HostModelServiceGetEmbeddingProfileResponse{}
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) String() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostModelGetEmbeddingProfileResponse) ProtoMessage() {}
+func (*HostModelServiceGetEmbeddingProfileResponse) ProtoMessage() {}
 
-func (x *HostModelGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Message {
+func (x *HostModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -503,75 +503,75 @@ func (x *HostModelGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Messa
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostModelGetEmbeddingProfileResponse.ProtoReflect.Descriptor instead.
-func (*HostModelGetEmbeddingProfileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostModelServiceGetEmbeddingProfileResponse.ProtoReflect.Descriptor instead.
+func (*HostModelServiceGetEmbeddingProfileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetModel() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetSource() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetSource() string {
 	if x != nil {
 		return x.Source
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetPooling() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetPooling() string {
 	if x != nil {
 		return x.Pooling
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetQueryPrefix() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetQueryPrefix() string {
 	if x != nil {
 		return x.QueryPrefix
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetDocumentPrefix() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetDocumentPrefix() string {
 	if x != nil {
 		return x.DocumentPrefix
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetDimensions() int32 {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetDimensions() int32 {
 	if x != nil {
 		return x.Dimensions
 	}
 	return 0
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetMaxTokens() int32 {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetMaxTokens() int32 {
 	if x != nil {
 		return x.MaxTokens
 	}
 	return 0
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetError() HostModelErrorCode {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetError() HostModelErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetDetail() string {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetDetail() string {
 	if x != nil {
 		return x.Detail
 	}
 	return ""
 }
 
-func (x *HostModelGetEmbeddingProfileResponse) GetFailures() []*HostModelFailure {
+func (x *HostModelServiceGetEmbeddingProfileResponse) GetFailures() []*HostModelFailure {
 	if x != nil {
 		return x.Failures
 	}
@@ -588,27 +588,27 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\":\n" +
 	"\x10HostModelMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\xa8\x01\n" +
-	"\x18HostModelCompleteRequest\x126\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"\xaf\x01\n" +
+	"\x1fHostModelServiceCompleteRequest\x126\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1a.numen.v1.HostModelMessageR\bmessages\x12%\n" +
 	"\vtemperature\x18\x02 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
 	"\n" +
 	"max_tokens\x18\x03 \x01(\x05R\tmaxTokensB\x0e\n" +
-	"\f_temperature\"\xb3\x01\n" +
-	"\x19HostModelCompleteResponse\x12\x12\n" +
+	"\f_temperature\"\xba\x01\n" +
+	" HostModelServiceCompleteResponse\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x122\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x126\n" +
-	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"-\n" +
-	"\x15HostModelEmbedRequest\x12\x14\n" +
-	"\x05texts\x18\x01 \x03(\tR\x05texts\"\xcd\x01\n" +
-	"\x16HostModelEmbedResponse\x12/\n" +
+	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"4\n" +
+	"\x1cHostModelServiceEmbedRequest\x12\x14\n" +
+	"\x05texts\x18\x01 \x03(\tR\x05texts\"\xd4\x01\n" +
+	"\x1dHostModelServiceEmbedResponse\x12/\n" +
 	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\x122\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x126\n" +
-	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"%\n" +
-	"#HostModelGetEmbeddingProfileRequest\"\xfd\x02\n" +
-	"$HostModelGetEmbeddingProfileResponse\x12\x14\n" +
+	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\",\n" +
+	"*HostModelServiceGetEmbeddingProfileRequest\"\x84\x03\n" +
+	"+HostModelServiceGetEmbeddingProfileResponse\x12\x14\n" +
 	"\x05model\x18\x01 \x01(\tR\x05model\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x18\n" +
 	"\apooling\x18\x03 \x01(\tR\apooling\x12!\n" +
@@ -627,11 +627,11 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"!HOST_MODEL_ERROR_CODE_UNSPECIFIED\x10\x00\x12'\n" +
 	"#HOST_MODEL_ERROR_CODE_NO_CONNECTION\x10\x01\x12$\n" +
 	" HOST_MODEL_ERROR_CODE_ALL_FAILED\x10\x02\x12\"\n" +
-	"\x1eHOST_MODEL_ERROR_CODE_REJECTED\x10\x032\xa9\x02\n" +
-	"\x10HostModelService\x12S\n" +
-	"\bComplete\x12\".numen.v1.HostModelCompleteRequest\x1a#.numen.v1.HostModelCompleteResponse\x12J\n" +
-	"\x05Embed\x12\x1f.numen.v1.HostModelEmbedRequest\x1a .numen.v1.HostModelEmbedResponse\x12t\n" +
-	"\x13GetEmbeddingProfile\x12-.numen.v1.HostModelGetEmbeddingProfileRequest\x1a..numen.v1.HostModelGetEmbeddingProfileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x1eHOST_MODEL_ERROR_CODE_REJECTED\x10\x032\xd4\x02\n" +
+	"\x10HostModelService\x12a\n" +
+	"\bComplete\x12).numen.v1.HostModelServiceCompleteRequest\x1a*.numen.v1.HostModelServiceCompleteResponse\x12X\n" +
+	"\x05Embed\x12&.numen.v1.HostModelServiceEmbedRequest\x1a'.numen.v1.HostModelServiceEmbedResponse\x12\x82\x01\n" +
+	"\x13GetEmbeddingProfile\x124.numen.v1.HostModelServiceGetEmbeddingProfileRequest\x1a5.numen.v1.HostModelServiceGetEmbeddingProfileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostmodel_proto_rawDescOnce sync.Once
@@ -648,32 +648,32 @@ func file_numen_v1_hostmodel_proto_rawDescGZIP() []byte {
 var file_numen_v1_hostmodel_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_hostmodel_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_hostmodel_proto_goTypes = []any{
-	(HostModelErrorCode)(0),                      // 0: numen.v1.HostModelErrorCode
-	(*HostModelFailure)(nil),                     // 1: numen.v1.HostModelFailure
-	(*HostModelMessage)(nil),                     // 2: numen.v1.HostModelMessage
-	(*HostModelCompleteRequest)(nil),             // 3: numen.v1.HostModelCompleteRequest
-	(*HostModelCompleteResponse)(nil),            // 4: numen.v1.HostModelCompleteResponse
-	(*HostModelEmbedRequest)(nil),                // 5: numen.v1.HostModelEmbedRequest
-	(*HostModelEmbedResponse)(nil),               // 6: numen.v1.HostModelEmbedResponse
-	(*HostModelGetEmbeddingProfileRequest)(nil),  // 7: numen.v1.HostModelGetEmbeddingProfileRequest
-	(*HostModelGetEmbeddingProfileResponse)(nil), // 8: numen.v1.HostModelGetEmbeddingProfileResponse
-	(*FloatVector)(nil),                          // 9: numen.v1.FloatVector
+	(HostModelErrorCode)(0),                             // 0: numen.v1.HostModelErrorCode
+	(*HostModelFailure)(nil),                            // 1: numen.v1.HostModelFailure
+	(*HostModelMessage)(nil),                            // 2: numen.v1.HostModelMessage
+	(*HostModelServiceCompleteRequest)(nil),             // 3: numen.v1.HostModelServiceCompleteRequest
+	(*HostModelServiceCompleteResponse)(nil),            // 4: numen.v1.HostModelServiceCompleteResponse
+	(*HostModelServiceEmbedRequest)(nil),                // 5: numen.v1.HostModelServiceEmbedRequest
+	(*HostModelServiceEmbedResponse)(nil),               // 6: numen.v1.HostModelServiceEmbedResponse
+	(*HostModelServiceGetEmbeddingProfileRequest)(nil),  // 7: numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	(*HostModelServiceGetEmbeddingProfileResponse)(nil), // 8: numen.v1.HostModelServiceGetEmbeddingProfileResponse
+	(*FloatVector)(nil),                                 // 9: numen.v1.FloatVector
 }
 var file_numen_v1_hostmodel_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.HostModelCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
-	0,  // 1: numen.v1.HostModelCompleteResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 2: numen.v1.HostModelCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
-	9,  // 3: numen.v1.HostModelEmbedResponse.vectors:type_name -> numen.v1.FloatVector
-	0,  // 4: numen.v1.HostModelEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 5: numen.v1.HostModelEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
-	0,  // 6: numen.v1.HostModelGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
-	1,  // 7: numen.v1.HostModelGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
-	3,  // 8: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelCompleteRequest
-	5,  // 9: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelEmbedRequest
-	7,  // 10: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelGetEmbeddingProfileRequest
-	4,  // 11: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelCompleteResponse
-	6,  // 12: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelEmbedResponse
-	8,  // 13: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelGetEmbeddingProfileResponse
+	2,  // 0: numen.v1.HostModelServiceCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
+	0,  // 1: numen.v1.HostModelServiceCompleteResponse.error:type_name -> numen.v1.HostModelErrorCode
+	1,  // 2: numen.v1.HostModelServiceCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
+	9,  // 3: numen.v1.HostModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	0,  // 4: numen.v1.HostModelServiceEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
+	1,  // 5: numen.v1.HostModelServiceEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
+	0,  // 6: numen.v1.HostModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
+	1,  // 7: numen.v1.HostModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
+	3,  // 8: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelServiceCompleteRequest
+	5,  // 9: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelServiceEmbedRequest
+	7,  // 10: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	4,  // 11: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelServiceCompleteResponse
+	6,  // 12: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelServiceEmbedResponse
+	8,  // 13: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelServiceGetEmbeddingProfileResponse
 	11, // [11:14] is the sub-list for method output_type
 	8,  // [8:11] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name

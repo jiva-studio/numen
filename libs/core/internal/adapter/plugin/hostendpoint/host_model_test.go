@@ -76,7 +76,7 @@ func (c *recordingClient) Do(request *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	body, readErr := io.ReadAll(response.Body)
-	_ = response.Body.Close()
+	readErr = errors.Join(readErr, response.Body.Close())
 	c.mu.Lock()
 	fmt.Fprintf(&c.received, "%v %s", response.Header, body)
 	c.mu.Unlock()
@@ -101,7 +101,7 @@ func TestCompleteIsAskedForThePluginTheTokenNames(t *testing.T) {
 	client, _ := newModelClient(t, calls, "token-b")
 	temperature := 0.4
 
-	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelCompleteRequest{
+	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{
 		Messages: []*v1.HostModelMessage{{Role: "user", Text: "u"}}, Temperature: &temperature, MaxTokens: 33,
 	}))
 
@@ -119,7 +119,7 @@ func TestCompleteIsAskedForThePluginTheTokenNames(t *testing.T) {
 
 func TestACallWithoutAKnownTokenIsUnauthenticated(t *testing.T) {
 	client, _ := newModelClient(t, &scriptedCalls{}, "no-such-token")
-	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelEmbedRequest{Texts: []string{"a"}}))
+	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Errorf("code = %v, want unauthenticated", connect.CodeOf(err))
 	}
@@ -129,7 +129,7 @@ func TestEmbedReturnsTheVectorsInOrder(t *testing.T) {
 	calls := &scriptedCalls{vectors: [][]float32{{1, 2}, {3, 4}}}
 	client, _ := newModelClient(t, calls, "token-a")
 
-	response, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelEmbedRequest{Texts: []string{"a", "b"}}))
+	response, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a", "b"}}))
 
 	if err != nil || len(response.Msg.GetVectors()) != 2 || response.Msg.GetVectors()[1].GetValues()[0] != 3 {
 		t.Errorf("Embed = %v, %v", response, err)
@@ -145,7 +145,7 @@ func TestGetEmbeddingProfileReturnsTheProfile(t *testing.T) {
 	}}
 	client, _ := newModelClient(t, calls, "token-a")
 
-	response, err := client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelGetEmbeddingProfileRequest{}))
+	response, err := client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelServiceGetEmbeddingProfileRequest{}))
 
 	msg := response.Msg
 	if err != nil || msg.GetModel() != "te3" || msg.GetSource() != "openrouter" || msg.GetPooling() != "mean" || msg.GetQueryPrefix() != "q" ||
@@ -156,7 +156,7 @@ func TestGetEmbeddingProfileReturnsTheProfile(t *testing.T) {
 
 func TestAHostWithNoModelCallsAnswersNoConnection(t *testing.T) {
 	client, _ := newModelClient(t, nil, "token-a")
-	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelCompleteRequest{}))
+	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 	if err != nil || response.Msg.GetError() != v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION {
 		t.Errorf("Complete = %v, %v, want a served NO_CONNECTION", response, err)
 	}
@@ -164,7 +164,7 @@ func TestAHostWithNoModelCallsAnswersNoConnection(t *testing.T) {
 
 func TestNoConnectionIsAServedErrorCode(t *testing.T) {
 	client, _ := newModelClient(t, &scriptedCalls{err: connectionport.ErrNoConnection}, "token-a")
-	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelCompleteRequest{}))
+	response, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 	if err != nil || response.Msg.GetError() != v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION {
 		t.Errorf("Complete = %v, %v", response, err)
 	}
@@ -176,7 +176,7 @@ func TestAllFailedIsAServedErrorCodeThatNamesEachConnection(t *testing.T) {
 	}}
 	client, _ := newModelClient(t, &scriptedCalls{err: fmt.Errorf("embed: %w", failure)}, "token-a")
 
-	response, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelEmbedRequest{Texts: []string{"a"}}))
+	response, err := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))
 
 	if err != nil || response.Msg.GetError() != v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_ALL_FAILED {
 		t.Fatalf("Embed = %v, %v", response, err)
@@ -194,7 +194,7 @@ func TestAllFailedIsAServedErrorCodeThatNamesEachConnection(t *testing.T) {
 func TestARejectionIsAServedErrorCodeThatNamesTheConnection(t *testing.T) {
 	client, _ := newModelClient(t, &scriptedCalls{err: &connectionport.RejectedError{ConnectionName: "OpenRouter", Reason: "bad request"}}, "token-a")
 
-	response, err := client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelGetEmbeddingProfileRequest{}))
+	response, err := client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelServiceGetEmbeddingProfileRequest{}))
 
 	if err != nil || response.Msg.GetError() != v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_REJECTED ||
 		len(response.Msg.GetFailures()) != 1 || response.Msg.GetFailures()[0].GetConnectionName() != "OpenRouter" ||
@@ -205,7 +205,7 @@ func TestARejectionIsAServedErrorCodeThatNamesTheConnection(t *testing.T) {
 
 func TestAnyOtherFailureIsAStatusCode(t *testing.T) {
 	client, _ := newModelClient(t, &scriptedCalls{err: errors.New("the settings are unreadable")}, "token-a")
-	_, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelCompleteRequest{}))
+	_, err := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("code = %v, want internal", connect.CodeOf(err))
 	}
@@ -215,16 +215,16 @@ func TestACancelledCallReachesTheCallsAndReturnsCanceled(t *testing.T) {
 	calls := &scriptedCalls{started: make(chan struct{})}
 	client, _ := newModelClient(t, calls, "token-a")
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
+	outcome := make(chan error, 1)
 	go func() {
-		_, err := client.Complete(ctx, connect.NewRequest(&v1.HostModelCompleteRequest{}))
-		done <- err
+		_, err := client.Complete(ctx, connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
+		outcome <- err
 	}()
 	<-calls.started
 
 	cancel()
 
-	if err := <-done; connect.CodeOf(err) != connect.CodeCanceled {
+	if err := <-outcome; connect.CodeOf(err) != connect.CodeCanceled {
 		t.Errorf("code = %v, want canceled: %v", connect.CodeOf(err), err)
 	}
 }
@@ -266,9 +266,10 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		arrange(world)
 		client, recording := newModelClient(t, modelcall.NewCalls(world.Connections, world.Rows, world.Source, world.Clock, world.Notices), "token-b")
 
-		_, _ = client.Complete(t.Context(), connect.NewRequest(&v1.HostModelCompleteRequest{}))
-		_, _ = client.Embed(t.Context(), connect.NewRequest(&v1.HostModelEmbedRequest{Texts: []string{"a"}}))
-		_, _ = client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelGetEmbeddingProfileRequest{}))
+		_, completeErr := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
+		_, embedErr := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))
+		_, profileErr := client.GetEmbeddingProfile(t.Context(), connect.NewRequest(&v1.HostModelServiceGetEmbeddingProfileRequest{}))
+		t.Logf("calls: %v; %v; %v", completeErr, embedErr, profileErr)
 
 		if received := recording.received.String(); strings.Contains(received, "sk-") {
 			t.Errorf("%s: the consumer received a key: %s", name, received)

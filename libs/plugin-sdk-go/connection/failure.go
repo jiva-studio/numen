@@ -34,6 +34,8 @@ func (r Reason) String() string {
 		return "timeout"
 	case ReasonBadRequest:
 		return "bad request"
+	case ReasonUnknown:
+		return "unknown"
 	}
 	return "unknown"
 }

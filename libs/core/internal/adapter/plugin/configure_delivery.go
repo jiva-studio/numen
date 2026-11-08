@@ -23,21 +23,15 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	// getExtra returns the entries added to the call by their owner, or nil when nothing is added.
-	// It runs after mu is released.
-	getExtra func() configureExtra
+	getExtra   func() configureExtra
 }
 
 // configureExtra is the part of a Configure call that its owner adds to the settings.
 type configureExtra struct {
-	// signature identifies what read sends. A plain refresh skips a plugin that was given this signature.
-	signature string
-	// isComplete is false when the signature could not be determined; the plugin is then always sent.
-	isComplete bool
-	// isConfigureOptional is true when a plugin without a Configure method is not an error.
+	signature           string
+	isComplete          bool
 	isConfigureOptional bool
-	// read returns the entries to send, with an error when some of them could not be read.
-	read func(ctx context.Context) ([]*v1.ConfigureSecrets, error)
+	read                func(ctx context.Context) ([]*v1.ConfigureSecrets, error)
 }
 
 func (s configSnapshot) resolveExtra() configureExtra {

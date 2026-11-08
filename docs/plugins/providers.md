@@ -10,12 +10,12 @@ The manifest lists the types under `contributes.connectionTypes` (see [the manif
 
 `plugin-sdk-go/connection` has one interface for each role, and a `Provider` struct that lists the roles a plugin fills. `connection.Mount(s, provider)` serves them on the plugin server; a role left nil answers as not served.
 
-| Role            | Methods                                       | Operation                          |
-| --------------- | --------------------------------------------- | ---------------------------------- |
-| `Completer`     | `Complete`                                    | `complete`                         |
-| `Embedder`      | `Embed`                                       | `embed`                            |
-| `ModelLister`   | `ListModels`, `ListReasoningLevels`           | the editor lists models and levels |
-| `ProfileReader` | `GetModelProfile`, `ProbeEmbeddingWidth`      | `embed`                            |
+| Role            | Methods                                  | Operation                          |
+| --------------- | ---------------------------------------- | ---------------------------------- |
+| `Completer`     | `Complete`                               | `complete`                         |
+| `Embedder`      | `Embed`                                  | `embed`                            |
+| `ModelLister`   | `ListModels`, `ListReasoningLevels`      | the editor lists models and levels |
+| `ProfileReader` | `GetModelProfile`, `ProbeEmbeddingWidth` | `embed`                            |
 
 Every method receives a `Call`: the type, the fields that are not secret with the fixed values of the type, the secret fields, the model and the reasoning level. The core reads the secrets once for the call, from a snapshot of the connection, and refuses the call if the connection was edited meanwhile. `Secret` prints, logs and encodes without its value; read it from the `Value` field, send it to the service and keep it nowhere. The model is the name the person typed or chose: do not check it against the list of the service. `Embed` returns raw vectors, and the plugin that asks applies the prefixes of the profile.
 
@@ -27,10 +27,10 @@ The calls `SubmitJob`, `GetJobStatus` and `FetchJobResult` are in the schema for
 
 A call returns a result, one of two failures, or the error of its context. A failure carries a reason from a fixed list, and the core never sees an HTTP code or a text from the service.
 
-| Failure                        | Meaning                                              | Constructor                                |
-| ------------------------------ | ---------------------------------------------------- | ------------------------------------------ |
-| try the next                   | this connection cannot serve now                     | `NewTryNextError(reason, retryAfter)`      |
-| stop                           | the request itself is wrong                          | `NewStopError(reason)`                     |
+| Failure      | Meaning                          | Constructor                           |
+| ------------ | -------------------------------- | ------------------------------------- |
+| try the next | this connection cannot serve now | `NewTryNextError(reason, retryAfter)` |
+| stop         | the request itself is wrong      | `NewStopError(reason)`                |
 
 A try-next failure is a rejected key (401, 403: `ReasonKeyRejected`), a payment required (402: `ReasonPaymentRequired`), a rate limit (429: `ReasonRateLimited`, with its Retry-After as `retryAfter`), a service that cannot be reached or answers 502, 503 or 504 (`ReasonUnreachable`) and a timeout (`ReasonTimeout`). A stop is a missing model (404) or any other 4xx (`ReasonBadRequest`) and a 500 (`ReasonUnknown`). An error that is neither is a stop of unknown reason, and its text does not leave the plugin. A cancelled call returns `ctx.Err()`, which travels as the status code `Canceled`: the outbound request of the provider carries the same `ctx`, so a cancelled call ends the request to the service.
 

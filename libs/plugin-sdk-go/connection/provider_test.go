@@ -39,9 +39,9 @@ func newProviderClient(t *testing.T, provider Provider) numenv1connect.ProviderS
 	return numenv1connect.NewProviderServiceClient(server.Client(), server.URL)
 }
 
-func newCompleteRequest() *connect.Request[v1.ProviderCompleteRequest] {
+func newCompleteRequest() *connect.Request[v1.ProviderServiceCompleteRequest] {
 	temperature := 0.25
-	return connect.NewRequest(&v1.ProviderCompleteRequest{
+	return connect.NewRequest(&v1.ProviderServiceCompleteRequest{
 		Call: &v1.ProviderCall{
 			Type: "openrouter", Model: "m", Reasoning: "low", Fields: map[string]string{"baseUrl": "https://x"},
 			Secrets: []*v1.ProviderSecret{{Key: "apiKey", Value: "sk-1"}},
@@ -114,7 +114,7 @@ func TestACancelledCallReturnsTheStatusCodeNotAFailure(t *testing.T) {
 
 func TestARoleTheProviderLacksIsUnimplemented(t *testing.T) {
 	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{}})
-	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderEmbedRequest{Call: &v1.ProviderCall{}, Texts: []string{"a"}}))
+	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderServiceEmbedRequest{Call: &v1.ProviderCall{}, Texts: []string{"a"}}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("code = %v, want unimplemented: %v", connect.CodeOf(err), err)
 	}
@@ -149,25 +149,25 @@ func TestEveryRoleIsServedOverTheWire(t *testing.T) {
 	client := newProviderClient(t, Provider{Embedder: roles, Models: roles, Profiles: roles})
 	call := &v1.ProviderCall{Model: "m"}
 
-	embedded, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderEmbedRequest{Call: call, Texts: []string{"a", "b"}}))
+	embedded, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderServiceEmbedRequest{Call: call, Texts: []string{"a", "b"}}))
 	if err != nil || len(embedded.Msg.GetVectors()) != 2 || embedded.Msg.GetVectors()[1].GetValues()[0] != 1 {
 		t.Errorf("Embed = %v, %v", embedded, err)
 	}
-	models, err := client.ListModels(t.Context(), connect.NewRequest(&v1.ProviderListModelsRequest{Call: call, Operation: "embed"}))
+	models, err := client.ListModels(t.Context(), connect.NewRequest(&v1.ProviderServiceListModelsRequest{Call: call, Operation: "embed"}))
 	if err != nil || len(models.Msg.GetModels()) != 2 || models.Msg.GetModels()[0].GetOperations()[0] != "embed" {
 		t.Errorf("ListModels = %v, %v", models, err)
 	}
-	levels, err := client.ListReasoningLevels(t.Context(), connect.NewRequest(&v1.ProviderListReasoningLevelsRequest{Call: call}))
+	levels, err := client.ListReasoningLevels(t.Context(), connect.NewRequest(&v1.ProviderServiceListReasoningLevelsRequest{Call: call}))
 	if err != nil || len(levels.Msg.GetLevels()) != 1 || levels.Msg.GetLevels()[0].GetValue() != "low" {
 		t.Errorf("ListReasoningLevels = %v, %v", levels, err)
 	}
-	profile, err := client.GetModelProfile(t.Context(), connect.NewRequest(&v1.ProviderGetModelProfileRequest{Call: call}))
+	profile, err := client.GetModelProfile(t.Context(), connect.NewRequest(&v1.ProviderServiceGetModelProfileRequest{Call: call}))
 	if err != nil || !profile.Msg.GetIsKnown() || profile.Msg.GetDimensions() != 3 || profile.Msg.GetMaxTokens() != 8191 ||
 		profile.Msg.GetPooling() != "mean" || profile.Msg.GetQueryPrefix() != "q: " || profile.Msg.GetDocumentPrefix() != "d: " ||
 		profile.Msg.GetSource() != "openrouter" {
 		t.Errorf("GetModelProfile = %v, %v", profile, err)
 	}
-	probe, err := client.ProbeEmbeddingWidth(t.Context(), connect.NewRequest(&v1.ProviderProbeEmbeddingWidthRequest{Call: call}))
+	probe, err := client.ProbeEmbeddingWidth(t.Context(), connect.NewRequest(&v1.ProviderServiceProbeEmbeddingWidthRequest{Call: call}))
 	if err != nil || probe.Msg.GetDimensions() != 5 {
 		t.Errorf("ProbeEmbeddingWidth = %v, %v", probe, err)
 	}
@@ -175,7 +175,7 @@ func TestEveryRoleIsServedOverTheWire(t *testing.T) {
 
 func TestTheReservedJobCallsAreUnimplemented(t *testing.T) {
 	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{}})
-	_, err := client.SubmitJob(t.Context(), connect.NewRequest(&v1.ProviderSubmitJobRequest{Call: &v1.ProviderCall{}}))
+	_, err := client.SubmitJob(t.Context(), connect.NewRequest(&v1.ProviderServiceSubmitJobRequest{Call: &v1.ProviderCall{}}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("SubmitJob code = %v, want unimplemented", connect.CodeOf(err))
 	}

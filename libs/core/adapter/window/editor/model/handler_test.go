@@ -100,7 +100,7 @@ func TestACancelledAskIsAStatusCode(t *testing.T) {
 
 func TestAnyOtherFailureIsAStatusCode(t *testing.T) {
 	handler, world, entry := newHandler(t)
-	world.Keys.OnGet = func() { world.ChangeRevision(entry.ID) }
+	world.Keys.OnGet = func() { world.ChangeRevision(t, entry.ID) }
 
 	_, err := handler.ListModels(t.Context(), connect.NewRequest(&v1.ListModelsRequest{ConnectionId: entry.ID}))
 

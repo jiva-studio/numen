@@ -57,7 +57,7 @@ func TestResolveAddsTheFixedValueOfTheTypeAndNumbersAsText(t *testing.T) {
 	}
 }
 
-func TestResolveLeavesOutAStoredFieldTheTypeDoesNotDeclare(t *testing.T) {
+func TestResolveOmitsAStoredFieldTheTypeDoesNotDeclare(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 	if err := f.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
@@ -128,7 +128,7 @@ func TestReadSecretsIsRefusedWhenARequiredSecretHasNoValue(t *testing.T) {
 	}
 }
 
-func TestReadSecretsLeavesOutAnOptionalSecretThatHasNoValue(t *testing.T) {
+func TestReadSecretsOmitsAnOptionalSecretThatHasNoValue(t *testing.T) {
 	f := newFixture(t)
 	created := f.createCompatible(t, "Ollama", "http://localhost:11434/v1", "")
 	resolved, err := f.connection.Resolve.Execute(created.ID)
@@ -142,7 +142,7 @@ func TestReadSecretsLeavesOutAnOptionalSecretThatHasNoValue(t *testing.T) {
 	}
 }
 
-func TestReadSecretsGivesNoKeyToAnAddressItWasNotEnteredFor(t *testing.T) {
+func TestReadSecretsReturnsNoKeyForAnAddressItWasNotEnteredFor(t *testing.T) {
 	f := newFixture(t)
 	created := f.createCompatible(t, "Server", "https://api.example.com/v1", "sk-for-example")
 	if err := f.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
@@ -182,10 +182,12 @@ func TestReadSecretsIsRefusedWhenTheConnectionChangedWhileTheKeyWasRead(t *testi
 		t.Fatal(err)
 	}
 	editing := connection.NewConnections(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
-		_ = f.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
+		if err := f.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
 			list[0].Revision++
 			return list, nil
-		})
+		}); err != nil {
+			t.Error(err)
+		}
 	}}, nil)
 
 	secrets, err := editing.ReadSecrets.Execute(t.Context(), resolved)
@@ -206,7 +208,9 @@ func TestReadSecretsIsRefusedWhenTheConnectionWasDeletedWhileTheKeyWasRead(t *te
 		t.Fatal(err)
 	}
 	deleting := connection.NewConnections(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
-		_ = f.repository.ChangeConnections(func([]connectionport.Connection) ([]connectionport.Connection, error) { return nil, nil })
+		if err := f.repository.ChangeConnections(func([]connectionport.Connection) ([]connectionport.Connection, error) { return nil, nil }); err != nil {
+			t.Error(err)
+		}
 	}}, nil)
 
 	if _, err := deleting.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connection.ErrStaleRevision) {
@@ -232,7 +236,7 @@ type failingKeys struct{ *memoryKeys }
 
 func (failingKeys) GetKey(context.Context, string) (string, error) { return "", errDisk }
 
-func TestNewCallHoldsTheFieldsTheSecretsTheModelAndTheReasoning(t *testing.T) {
+func TestNewCallCarriesTheFieldsTheSecretsTheModelAndTheReasoning(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 	resolved, err := f.connection.Resolve.Execute(created.ID)

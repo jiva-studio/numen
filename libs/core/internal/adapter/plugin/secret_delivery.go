@@ -40,8 +40,6 @@ func (d *secretDelivery) getSource() pluginport.SecretSource {
 	return d.source
 }
 
-// newExtra returns what the secrets add to the Configure call of a plugin. The key store and the
-// source are those set now; the list of secrets is read when the returned function runs.
 func (d *secretDelivery) newExtra(
 	pluginID string, declared []manifest.SecretDeclaration, requested []string,
 ) func() configureExtra {

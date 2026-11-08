@@ -2,6 +2,7 @@
 package modelcalls
 
 import (
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -37,10 +38,5 @@ func (c Config) SetModelCalls(notices connectionport.Notices) {
 	if !isHost {
 		return
 	}
-	host.SetModelCalls(modelcall.NewCalls(c.Connections, noRows{}, providerbridge.NewSource(c.PluginHost), c.Clock, notices))
+	host.SetModelCalls(modelcall.NewCalls(c.Connections, settingsadapter.NoRows{}, providerbridge.NewSource(c.PluginHost), c.Clock, notices))
 }
-
-// noRows is the rows of a settings file that holds no setting of rows yet: no plugin names a connection.
-type noRows struct{}
-
-func (noRows) ListRows(string, string) ([]connectionport.Row, error) { return nil, nil }

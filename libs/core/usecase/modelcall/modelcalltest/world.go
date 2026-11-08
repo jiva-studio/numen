@@ -159,12 +159,11 @@ func (t fixedTypes) GetType(typeID string) (connectionport.Type, bool) {
 	return connectionport.Type{}, false
 }
 
-// Keys is a key store in memory.
+// Keys is a key store in memory. OnGet runs before every read.
 type Keys struct {
 	mu     sync.Mutex
 	Values map[string]string
-	// OnGet runs before every read.
-	OnGet func()
+	OnGet  func()
 }
 
 // GetKey returns the key stored under the name.
@@ -277,8 +276,9 @@ func (w *World) Edit(t *testing.T, entry connection.Entry, name string) connecti
 }
 
 // ChangeRevision adds 1 to the revision of the connection with no other change.
-func (w *World) ChangeRevision(connectionID string) {
-	_ = w.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
+func (w *World) ChangeRevision(t *testing.T, connectionID string) {
+	t.Helper()
+	err := w.repository.ChangeConnections(func(list []connectionport.Connection) ([]connectionport.Connection, error) {
 		for i := range list {
 			if list[i].ID == connectionID {
 				list[i].Revision++
@@ -286,6 +286,9 @@ func (w *World) ChangeRevision(connectionID string) {
 		}
 		return list, nil
 	})
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 // Row returns a row of the connection with the model.

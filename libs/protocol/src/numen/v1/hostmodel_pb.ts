@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostmodel.proto.
  */
 export const file_numen_v1_hostmodel: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0bW9kZWwucHJvdG8SCG51bWVuLnYxIjsKEEhvc3RNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIuChBIb3N0TW9kZWxNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKGAQoYSG9zdE1vZGVsQ29tcGxldGVSZXF1ZXN0EiwKCG1lc3NhZ2VzGAEgAygLMhoubnVtZW4udjEuSG9zdE1vZGVsTWVzc2FnZRIYCgt0ZW1wZXJhdHVyZRgCIAEoAUgAiAEBEhIKCm1heF90b2tlbnMYAyABKAVCDgoMX3RlbXBlcmF0dXJlIpQBChlIb3N0TW9kZWxDb21wbGV0ZVJlc3BvbnNlEgwKBHRleHQYASABKAkSKwoFZXJyb3IYAiABKA4yHC5udW1lbi52MS5Ib3N0TW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEiwKCGZhaWx1cmVzGAQgAygLMhoubnVtZW4udjEuSG9zdE1vZGVsRmFpbHVyZSImChVIb3N0TW9kZWxFbWJlZFJlcXVlc3QSDQoFdGV4dHMYASADKAkiqwEKFkhvc3RNb2RlbEVtYmVkUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yEisKBWVycm9yGAIgASgOMhwubnVtZW4udjEuSG9zdE1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCRIsCghmYWlsdXJlcxgEIAMoCzIaLm51bWVuLnYxLkhvc3RNb2RlbEZhaWx1cmUiJQojSG9zdE1vZGVsR2V0RW1iZWRkaW5nUHJvZmlsZVJlcXVlc3QimAIKJEhvc3RNb2RlbEdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZRINCgVtb2RlbBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDwoHcG9vbGluZxgDIAEoCRIUCgxxdWVyeV9wcmVmaXgYBCABKAkSFwoPZG9jdW1lbnRfcHJlZml4GAUgASgJEhIKCmRpbWVuc2lvbnMYBiABKAUSEgoKbWF4X3Rva2VucxgHIAEoBRIrCgVlcnJvchgIIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYCSABKAkSLAoIZmFpbHVyZXMYCiADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlKq4BChJIb3N0TW9kZWxFcnJvckNvZGUSJQohSE9TVF9NT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJwojSE9TVF9NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QARIkCiBIT1NUX01PREVMX0VSUk9SX0NPREVfQUxMX0ZBSUxFRBACEiIKHkhPU1RfTU9ERUxfRVJST1JfQ09ERV9SRUpFQ1RFRBADMqkCChBIb3N0TW9kZWxTZXJ2aWNlElMKCENvbXBsZXRlEiIubnVtZW4udjEuSG9zdE1vZGVsQ29tcGxldGVSZXF1ZXN0GiMubnVtZW4udjEuSG9zdE1vZGVsQ29tcGxldGVSZXNwb25zZRJKCgVFbWJlZBIfLm51bWVuLnYxLkhvc3RNb2RlbEVtYmVkUmVxdWVzdBogLm51bWVuLnYxLkhvc3RNb2RlbEVtYmVkUmVzcG9uc2USdAoTR2V0RW1iZWRkaW5nUHJvZmlsZRItLm51bWVuLnYxLkhvc3RNb2RlbEdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0Gi4ubnVtZW4udjEuSG9zdE1vZGVsR2V0RW1iZWRkaW5nUHJvZmlsZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
+  fileDesc("ChhudW1lbi92MS9ob3N0bW9kZWwucHJvdG8SCG51bWVuLnYxIjsKEEhvc3RNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIuChBIb3N0TW9kZWxNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKNAQofSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBIsCghtZXNzYWdlcxgBIAMoCzIaLm51bWVuLnYxLkhvc3RNb2RlbE1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAiABKAFIAIgBARISCgptYXhfdG9rZW5zGAMgASgFQg4KDF90ZW1wZXJhdHVyZSKbAQogSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVzcG9uc2USDAoEdGV4dBgBIAEoCRIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSLAoIZmFpbHVyZXMYBCADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlIi0KHEhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlcXVlc3QSDQoFdGV4dHMYASADKAkisgEKHUhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvchIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSLAoIZmFpbHVyZXMYBCADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlIiwKKkhvc3RNb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVxdWVzdCKfAgorSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZRINCgVtb2RlbBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDwoHcG9vbGluZxgDIAEoCRIUCgxxdWVyeV9wcmVmaXgYBCABKAkSFwoPZG9jdW1lbnRfcHJlZml4GAUgASgJEhIKCmRpbWVuc2lvbnMYBiABKAUSEgoKbWF4X3Rva2VucxgHIAEoBRIrCgVlcnJvchgIIAEoDjIcLm51bWVuLnYxLkhvc3RNb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYCSABKAkSLAoIZmFpbHVyZXMYCiADKAsyGi5udW1lbi52MS5Ib3N0TW9kZWxGYWlsdXJlKq4BChJIb3N0TW9kZWxFcnJvckNvZGUSJQohSE9TVF9NT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJwojSE9TVF9NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QARIkCiBIT1NUX01PREVMX0VSUk9SX0NPREVfQUxMX0ZBSUxFRBACEiIKHkhPU1RfTU9ERUxfRVJST1JfQ09ERV9SRUpFQ1RFRBADMtQCChBIb3N0TW9kZWxTZXJ2aWNlEmEKCENvbXBsZXRlEikubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBoqLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlElgKBUVtYmVkEiYubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBonLm51bWVuLnYxLkhvc3RNb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEoIBChNHZXRFbWJlZGRpbmdQcm9maWxlEjQubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0GjUubnVtZW4udjEuSG9zdE1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding]);
 
 /**
  * HostModelFailure is one row that did not answer.
@@ -63,9 +63,9 @@ export const HostModelMessageSchema: GenMessage<HostModelMessage> = /*@__PURE__*
   messageDesc(file_numen_v1_hostmodel, 1);
 
 /**
- * @generated from message numen.v1.HostModelCompleteRequest
+ * @generated from message numen.v1.HostModelServiceCompleteRequest
  */
-export type HostModelCompleteRequest = Message<"numen.v1.HostModelCompleteRequest"> & {
+export type HostModelServiceCompleteRequest = Message<"numen.v1.HostModelServiceCompleteRequest"> & {
   /**
    * @generated from field: repeated numen.v1.HostModelMessage messages = 1;
    */
@@ -83,16 +83,16 @@ export type HostModelCompleteRequest = Message<"numen.v1.HostModelCompleteReques
 };
 
 /**
- * Describes the message numen.v1.HostModelCompleteRequest.
- * Use `create(HostModelCompleteRequestSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceCompleteRequest.
+ * Use `create(HostModelServiceCompleteRequestSchema)` to create a new message.
  */
-export const HostModelCompleteRequestSchema: GenMessage<HostModelCompleteRequest> = /*@__PURE__*/
+export const HostModelServiceCompleteRequestSchema: GenMessage<HostModelServiceCompleteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 2);
 
 /**
- * @generated from message numen.v1.HostModelCompleteResponse
+ * @generated from message numen.v1.HostModelServiceCompleteResponse
  */
-export type HostModelCompleteResponse = Message<"numen.v1.HostModelCompleteResponse"> & {
+export type HostModelServiceCompleteResponse = Message<"numen.v1.HostModelServiceCompleteResponse"> & {
   /**
    * @generated from field: string text = 1;
    */
@@ -115,16 +115,16 @@ export type HostModelCompleteResponse = Message<"numen.v1.HostModelCompleteRespo
 };
 
 /**
- * Describes the message numen.v1.HostModelCompleteResponse.
- * Use `create(HostModelCompleteResponseSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceCompleteResponse.
+ * Use `create(HostModelServiceCompleteResponseSchema)` to create a new message.
  */
-export const HostModelCompleteResponseSchema: GenMessage<HostModelCompleteResponse> = /*@__PURE__*/
+export const HostModelServiceCompleteResponseSchema: GenMessage<HostModelServiceCompleteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 3);
 
 /**
- * @generated from message numen.v1.HostModelEmbedRequest
+ * @generated from message numen.v1.HostModelServiceEmbedRequest
  */
-export type HostModelEmbedRequest = Message<"numen.v1.HostModelEmbedRequest"> & {
+export type HostModelServiceEmbedRequest = Message<"numen.v1.HostModelServiceEmbedRequest"> & {
   /**
    * @generated from field: repeated string texts = 1;
    */
@@ -132,16 +132,16 @@ export type HostModelEmbedRequest = Message<"numen.v1.HostModelEmbedRequest"> & 
 };
 
 /**
- * Describes the message numen.v1.HostModelEmbedRequest.
- * Use `create(HostModelEmbedRequestSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceEmbedRequest.
+ * Use `create(HostModelServiceEmbedRequestSchema)` to create a new message.
  */
-export const HostModelEmbedRequestSchema: GenMessage<HostModelEmbedRequest> = /*@__PURE__*/
+export const HostModelServiceEmbedRequestSchema: GenMessage<HostModelServiceEmbedRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 4);
 
 /**
- * @generated from message numen.v1.HostModelEmbedResponse
+ * @generated from message numen.v1.HostModelServiceEmbedResponse
  */
-export type HostModelEmbedResponse = Message<"numen.v1.HostModelEmbedResponse"> & {
+export type HostModelServiceEmbedResponse = Message<"numen.v1.HostModelServiceEmbedResponse"> & {
   /**
    * @generated from field: repeated numen.v1.FloatVector vectors = 1;
    */
@@ -164,29 +164,29 @@ export type HostModelEmbedResponse = Message<"numen.v1.HostModelEmbedResponse"> 
 };
 
 /**
- * Describes the message numen.v1.HostModelEmbedResponse.
- * Use `create(HostModelEmbedResponseSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceEmbedResponse.
+ * Use `create(HostModelServiceEmbedResponseSchema)` to create a new message.
  */
-export const HostModelEmbedResponseSchema: GenMessage<HostModelEmbedResponse> = /*@__PURE__*/
+export const HostModelServiceEmbedResponseSchema: GenMessage<HostModelServiceEmbedResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 5);
 
 /**
- * @generated from message numen.v1.HostModelGetEmbeddingProfileRequest
+ * @generated from message numen.v1.HostModelServiceGetEmbeddingProfileRequest
  */
-export type HostModelGetEmbeddingProfileRequest = Message<"numen.v1.HostModelGetEmbeddingProfileRequest"> & {
+export type HostModelServiceGetEmbeddingProfileRequest = Message<"numen.v1.HostModelServiceGetEmbeddingProfileRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.HostModelGetEmbeddingProfileRequest.
- * Use `create(HostModelGetEmbeddingProfileRequestSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceGetEmbeddingProfileRequest.
+ * Use `create(HostModelServiceGetEmbeddingProfileRequestSchema)` to create a new message.
  */
-export const HostModelGetEmbeddingProfileRequestSchema: GenMessage<HostModelGetEmbeddingProfileRequest> = /*@__PURE__*/
+export const HostModelServiceGetEmbeddingProfileRequestSchema: GenMessage<HostModelServiceGetEmbeddingProfileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 6);
 
 /**
- * @generated from message numen.v1.HostModelGetEmbeddingProfileResponse
+ * @generated from message numen.v1.HostModelServiceGetEmbeddingProfileResponse
  */
-export type HostModelGetEmbeddingProfileResponse = Message<"numen.v1.HostModelGetEmbeddingProfileResponse"> & {
+export type HostModelServiceGetEmbeddingProfileResponse = Message<"numen.v1.HostModelServiceGetEmbeddingProfileResponse"> & {
   /**
    * model is the model of the row that answered.
    *
@@ -243,10 +243,10 @@ export type HostModelGetEmbeddingProfileResponse = Message<"numen.v1.HostModelGe
 };
 
 /**
- * Describes the message numen.v1.HostModelGetEmbeddingProfileResponse.
- * Use `create(HostModelGetEmbeddingProfileResponseSchema)` to create a new message.
+ * Describes the message numen.v1.HostModelServiceGetEmbeddingProfileResponse.
+ * Use `create(HostModelServiceGetEmbeddingProfileResponseSchema)` to create a new message.
  */
-export const HostModelGetEmbeddingProfileResponseSchema: GenMessage<HostModelGetEmbeddingProfileResponse> = /*@__PURE__*/
+export const HostModelServiceGetEmbeddingProfileResponseSchema: GenMessage<HostModelServiceGetEmbeddingProfileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostmodel, 7);
 
 /**
@@ -304,8 +304,8 @@ export const HostModelService: GenService<{
    */
   complete: {
     methodKind: "unary";
-    input: typeof HostModelCompleteRequestSchema;
-    output: typeof HostModelCompleteResponseSchema;
+    input: typeof HostModelServiceCompleteRequestSchema;
+    output: typeof HostModelServiceCompleteResponseSchema;
   },
   /**
    * Embed turns texts into vectors, in the order of the texts.
@@ -314,8 +314,8 @@ export const HostModelService: GenService<{
    */
   embed: {
     methodKind: "unary";
-    input: typeof HostModelEmbedRequestSchema;
-    output: typeof HostModelEmbedResponseSchema;
+    input: typeof HostModelServiceEmbedRequestSchema;
+    output: typeof HostModelServiceEmbedResponseSchema;
   },
   /**
    * GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
@@ -324,8 +324,8 @@ export const HostModelService: GenService<{
    */
   getEmbeddingProfile: {
     methodKind: "unary";
-    input: typeof HostModelGetEmbeddingProfileRequestSchema;
-    output: typeof HostModelGetEmbeddingProfileResponseSchema;
+    input: typeof HostModelServiceGetEmbeddingProfileRequestSchema;
+    output: typeof HostModelServiceGetEmbeddingProfileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostmodel, 0);

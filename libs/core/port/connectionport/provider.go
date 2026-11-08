@@ -57,13 +57,12 @@ type StopError struct{ Reason FailureReason }
 func (e *StopError) Error() string { return e.Reason.String() }
 
 // ProviderCall is the connection one call to a provider is made for: a snapshot read at the start of
-// the call. The provider holds it for the length of the call.
+// the call. Type is the id the manifest of the plugin gives the type, without the plugin id. Fields are the
+// fields that are not secret, with the fixed values of the type, and Secrets are the values of the secret
+// fields by key. The provider holds it for the length of the call.
 type ProviderCall struct {
-	// Type is the id the manifest of the plugin gives the type, without the plugin id.
-	Type string
-	// Fields are the fields that are not secret, with the fixed values of the type.
-	Fields map[string]string
-	// Secrets are the values of the secret fields by key.
+	Type      string
+	Fields    map[string]string
 	Secrets   map[string]string
 	Model     string
 	Reasoning string

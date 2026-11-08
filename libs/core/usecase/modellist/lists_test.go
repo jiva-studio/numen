@@ -54,8 +54,8 @@ func TestListModelsCallsTheProviderWithTheConnectionAndItsKeyAndNoModel(t *testi
 	if got.Operation != "list models" || got.Call.Model != "" || got.Call.Secrets["apiKey"] != "sk-one" || got.Call.Fields["baseUrl"] != address {
 		t.Errorf("call = %+v", got)
 	}
-	if opened := s.world.Source.Opened(); !slices.Equal(opened, []string{modelcalltest.ProviderPluginID}) || s.world.Source.Released() != 1 {
-		t.Errorf("opened = %v, released = %d", opened, s.world.Source.Released())
+	if providers := s.world.Source.Opened(); !slices.Equal(providers, []string{modelcalltest.ProviderPluginID}) || s.world.Source.Released() != 1 {
+		t.Errorf("opened = %v, released = %d", providers, s.world.Source.Released())
 	}
 }
 
@@ -124,7 +124,9 @@ func TestAFailureOfTheProviderIsAProviderUnavailableWithTheReason(t *testing.T) 
 func TestAFailureSetsNoCooldownBecauseAPersonAskedForTheList(t *testing.T) {
 	s := newSetup(t)
 	s.world.Provider.Fail(address, &connectionport.TryNextError{Reason: connectionport.FailureReasonPaymentRequired})
-	_, _ = s.lists.ListModels(t.Context(), s.entry.ID, "embed")
+	if _, err := s.lists.ListModels(t.Context(), s.entry.ID, "embed"); err == nil {
+		t.Fatal("the ask that the provider failed succeeded")
+	}
 
 	if _, err := s.lists.ListModels(t.Context(), s.entry.ID, "embed"); err != nil {
 		t.Errorf("the second ask failed: %v", err)

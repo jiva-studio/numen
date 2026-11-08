@@ -11,13 +11,13 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // names no connection, no model and no key.
 service HostModelService {
   // Complete turns messages into the text of an answer.
-  rpc Complete(HostModelCompleteRequest) returns (HostModelCompleteResponse);
+  rpc Complete(HostModelServiceCompleteRequest) returns (HostModelServiceCompleteResponse);
 
   // Embed turns texts into vectors, in the order of the texts.
-  rpc Embed(HostModelEmbedRequest) returns (HostModelEmbedResponse);
+  rpc Embed(HostModelServiceEmbedRequest) returns (HostModelServiceEmbedResponse);
 
   // GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
-  rpc GetEmbeddingProfile(HostModelGetEmbeddingProfileRequest) returns (HostModelGetEmbeddingProfileResponse);
+  rpc GetEmbeddingProfile(HostModelServiceGetEmbeddingProfileRequest) returns (HostModelServiceGetEmbeddingProfileResponse);
 }
 
 // HostModelErrorCode is the reason a served call did not succeed. The zero value is a call that
@@ -44,33 +44,33 @@ message HostModelMessage {
   string text = 2;
 }
 
-message HostModelCompleteRequest {
+message HostModelServiceCompleteRequest {
   repeated HostModelMessage messages = 1;
   optional double temperature = 2;
   int32 max_tokens = 3;
 }
 
-message HostModelCompleteResponse {
+message HostModelServiceCompleteResponse {
   string text = 1;
   HostModelErrorCode error = 2;
   string detail = 3;
   repeated HostModelFailure failures = 4;
 }
 
-message HostModelEmbedRequest {
+message HostModelServiceEmbedRequest {
   repeated string texts = 1;
 }
 
-message HostModelEmbedResponse {
+message HostModelServiceEmbedResponse {
   repeated FloatVector vectors = 1;
   HostModelErrorCode error = 2;
   string detail = 3;
   repeated HostModelFailure failures = 4;
 }
 
-message HostModelGetEmbeddingProfileRequest {}
+message HostModelServiceGetEmbeddingProfileRequest {}
 
-message HostModelGetEmbeddingProfileResponse {
+message HostModelServiceGetEmbeddingProfileResponse {
   // model is the model of the row that answered.
   string model = 1;
   string source = 2;

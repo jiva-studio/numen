@@ -46,11 +46,11 @@ const (
 // HostModelServiceClient is a client for the numen.v1.HostModelService service.
 type HostModelServiceClient interface {
 	// Complete turns messages into the text of an answer.
-	Complete(context.Context, *connect.Request[v1.HostModelCompleteRequest]) (*connect.Response[v1.HostModelCompleteResponse], error)
+	Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
-	Embed(context.Context, *connect.Request[v1.HostModelEmbedRequest]) (*connect.Response[v1.HostModelEmbedResponse], error)
+	Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
-	GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error)
+	GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error)
 }
 
 // NewHostModelServiceClient constructs a client for the numen.v1.HostModelService service. By
@@ -64,19 +64,19 @@ func NewHostModelServiceClient(httpClient connect.HTTPClient, baseURL string, op
 	baseURL = strings.TrimRight(baseURL, "/")
 	hostModelServiceMethods := v1.File_numen_v1_hostmodel_proto.Services().ByName("HostModelService").Methods()
 	return &hostModelServiceClient{
-		complete: connect.NewClient[v1.HostModelCompleteRequest, v1.HostModelCompleteResponse](
+		complete: connect.NewClient[v1.HostModelServiceCompleteRequest, v1.HostModelServiceCompleteResponse](
 			httpClient,
 			baseURL+HostModelServiceCompleteProcedure,
 			connect.WithSchema(hostModelServiceMethods.ByName("Complete")),
 			connect.WithClientOptions(opts...),
 		),
-		embed: connect.NewClient[v1.HostModelEmbedRequest, v1.HostModelEmbedResponse](
+		embed: connect.NewClient[v1.HostModelServiceEmbedRequest, v1.HostModelServiceEmbedResponse](
 			httpClient,
 			baseURL+HostModelServiceEmbedProcedure,
 			connect.WithSchema(hostModelServiceMethods.ByName("Embed")),
 			connect.WithClientOptions(opts...),
 		),
-		getEmbeddingProfile: connect.NewClient[v1.HostModelGetEmbeddingProfileRequest, v1.HostModelGetEmbeddingProfileResponse](
+		getEmbeddingProfile: connect.NewClient[v1.HostModelServiceGetEmbeddingProfileRequest, v1.HostModelServiceGetEmbeddingProfileResponse](
 			httpClient,
 			baseURL+HostModelServiceGetEmbeddingProfileProcedure,
 			connect.WithSchema(hostModelServiceMethods.ByName("GetEmbeddingProfile")),
@@ -87,34 +87,34 @@ func NewHostModelServiceClient(httpClient connect.HTTPClient, baseURL string, op
 
 // hostModelServiceClient implements HostModelServiceClient.
 type hostModelServiceClient struct {
-	complete            *connect.Client[v1.HostModelCompleteRequest, v1.HostModelCompleteResponse]
-	embed               *connect.Client[v1.HostModelEmbedRequest, v1.HostModelEmbedResponse]
-	getEmbeddingProfile *connect.Client[v1.HostModelGetEmbeddingProfileRequest, v1.HostModelGetEmbeddingProfileResponse]
+	complete            *connect.Client[v1.HostModelServiceCompleteRequest, v1.HostModelServiceCompleteResponse]
+	embed               *connect.Client[v1.HostModelServiceEmbedRequest, v1.HostModelServiceEmbedResponse]
+	getEmbeddingProfile *connect.Client[v1.HostModelServiceGetEmbeddingProfileRequest, v1.HostModelServiceGetEmbeddingProfileResponse]
 }
 
 // Complete calls numen.v1.HostModelService.Complete.
-func (c *hostModelServiceClient) Complete(ctx context.Context, req *connect.Request[v1.HostModelCompleteRequest]) (*connect.Response[v1.HostModelCompleteResponse], error) {
+func (c *hostModelServiceClient) Complete(ctx context.Context, req *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	return c.complete.CallUnary(ctx, req)
 }
 
 // Embed calls numen.v1.HostModelService.Embed.
-func (c *hostModelServiceClient) Embed(ctx context.Context, req *connect.Request[v1.HostModelEmbedRequest]) (*connect.Response[v1.HostModelEmbedResponse], error) {
+func (c *hostModelServiceClient) Embed(ctx context.Context, req *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
 	return c.embed.CallUnary(ctx, req)
 }
 
 // GetEmbeddingProfile calls numen.v1.HostModelService.GetEmbeddingProfile.
-func (c *hostModelServiceClient) GetEmbeddingProfile(ctx context.Context, req *connect.Request[v1.HostModelGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error) {
+func (c *hostModelServiceClient) GetEmbeddingProfile(ctx context.Context, req *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error) {
 	return c.getEmbeddingProfile.CallUnary(ctx, req)
 }
 
 // HostModelServiceHandler is an implementation of the numen.v1.HostModelService service.
 type HostModelServiceHandler interface {
 	// Complete turns messages into the text of an answer.
-	Complete(context.Context, *connect.Request[v1.HostModelCompleteRequest]) (*connect.Response[v1.HostModelCompleteResponse], error)
+	Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
-	Embed(context.Context, *connect.Request[v1.HostModelEmbedRequest]) (*connect.Response[v1.HostModelEmbedResponse], error)
+	Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
-	GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error)
+	GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error)
 }
 
 // NewHostModelServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -159,14 +159,14 @@ func NewHostModelServiceHandler(svc HostModelServiceHandler, opts ...connect.Han
 // UnimplementedHostModelServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedHostModelServiceHandler struct{}
 
-func (UnimplementedHostModelServiceHandler) Complete(context.Context, *connect.Request[v1.HostModelCompleteRequest]) (*connect.Response[v1.HostModelCompleteResponse], error) {
+func (UnimplementedHostModelServiceHandler) Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostModelService.Complete is not implemented"))
 }
 
-func (UnimplementedHostModelServiceHandler) Embed(context.Context, *connect.Request[v1.HostModelEmbedRequest]) (*connect.Response[v1.HostModelEmbedResponse], error) {
+func (UnimplementedHostModelServiceHandler) Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostModelService.Embed is not implemented"))
 }
 
-func (UnimplementedHostModelServiceHandler) GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error) {
+func (UnimplementedHostModelServiceHandler) GetEmbeddingProfile(context.Context, *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest]) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostModelService.GetEmbeddingProfile is not implemented"))
 }

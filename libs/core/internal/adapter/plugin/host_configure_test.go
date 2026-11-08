@@ -2,8 +2,6 @@ package plugin
 
 import "testing"
 
-// newPlainHost returns a host whose one running plugin declares no secrets, with no key store and
-// no secret source set.
 func newPlainHost(t *testing.T) (*Host, *configured) {
 	t.Helper()
 	host, probe := newSecretHost(t, nil)

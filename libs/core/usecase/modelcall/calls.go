@@ -16,7 +16,8 @@ const (
 )
 
 // Calls carries out the operations plugins ask for. It reads the rows of the calling plugin in order and
-// goes to the next row on the first failure of a connection.
+// goes to the next row on the first failure of a connection. An error of a provider that is neither failure
+// kind counts as a service that is unreachable.
 type Calls struct {
 	connections *connection.Connections
 	rows        connectionport.Rows
@@ -24,17 +25,17 @@ type Calls struct {
 	clock       machineport.Clock
 	notices     connectionport.Notices
 	cooldown    *cooldown
-	told        *told
+	noticeLog   *noticeLog
 }
 
 // NewCalls returns the calls over the connections, the rows of the plugins and the providers the source
-// opens. notices is told of a connection set aside when a row after it answers.
+// opens. notices is called when a connection was set aside and a row after it answered.
 func NewCalls(
 	connections *connection.Connections, rows connectionport.Rows, source connectionport.ProviderSource,
 	clock machineport.Clock, notices connectionport.Notices,
 ) *Calls {
 	return &Calls{
 		connections: connections, rows: rows, source: source, clock: clock, notices: notices,
-		cooldown: newCooldown(), told: newTold(),
+		cooldown: newCooldown(), noticeLog: newNoticeLog(),
 	}
 }

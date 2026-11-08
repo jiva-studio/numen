@@ -2,6 +2,7 @@ package providerbridge_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,8 +26,8 @@ type blockingProvider struct {
 }
 
 func (p *blockingProvider) Complete(
-	ctx context.Context, _ *connect.Request[v1.ProviderCompleteRequest],
-) (*connect.Response[v1.ProviderCompleteResponse], error) {
+	ctx context.Context, _ *connect.Request[v1.ProviderServiceCompleteRequest],
+) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
 	close(p.started)
 	<-ctx.Done()
 	p.ended <- ctx.Err()
@@ -42,7 +43,7 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 	ctx, cancel := context.WithCancel(t.Context())
 	failed := make(chan error, 1)
 	go func() {
-		_, err := client.Complete(ctx, connect.NewRequest(&v1.ProviderCompleteRequest{Call: &v1.ProviderCall{Model: "m"}}))
+		_, err := client.Complete(ctx, connect.NewRequest(&v1.ProviderServiceCompleteRequest{Call: &v1.ProviderCall{Model: "m"}}))
 		failed <- err
 	}()
 	select {
@@ -52,7 +53,10 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 	}
 	cancel()
 	select {
-	case <-provider.ended:
+	case got := <-provider.ended:
+		if !errors.Is(got, context.Canceled) {
+			t.Fatalf("the handler context ended with %v, want context.Canceled", got)
+		}
 	case <-time.After(cancelWait):
 		t.Fatal("the context of the provider's handler did not end after the caller cancelled")
 	}

@@ -29,14 +29,14 @@ const (
 type scriptedService struct {
 	numenv1connect.UnimplementedProviderServiceHandler
 	mu        sync.Mutex
-	complete  func(*v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error)
+	complete  func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error)
 	authority []string
 	received  []*v1.ProviderCall
 }
 
 func (s *scriptedService) Complete(
-	_ context.Context, request *connect.Request[v1.ProviderCompleteRequest],
-) (*connect.Response[v1.ProviderCompleteResponse], error) {
+	_ context.Context, request *connect.Request[v1.ProviderServiceCompleteRequest],
+) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
 	s.mu.Lock()
 	s.authority = append(s.authority, request.Header().Get("Authorization"))
 	s.received = append(s.received, request.Msg.GetCall())
@@ -49,9 +49,9 @@ func (s *scriptedService) Complete(
 }
 
 func (s *scriptedService) Embed(
-	_ context.Context, request *connect.Request[v1.ProviderEmbedRequest],
-) (*connect.Response[v1.ProviderEmbedResponse], error) {
-	response := &v1.ProviderEmbedResponse{}
+	_ context.Context, request *connect.Request[v1.ProviderServiceEmbedRequest],
+) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
+	response := &v1.ProviderServiceEmbedResponse{}
 	for i := range request.Msg.GetTexts() {
 		response.Vectors = append(response.Vectors, &v1.FloatVector{Values: []float32{float32(i), 2}})
 	}
@@ -59,31 +59,31 @@ func (s *scriptedService) Embed(
 }
 
 func (s *scriptedService) ListModels(
-	context.Context, *connect.Request[v1.ProviderListModelsRequest],
-) (*connect.Response[v1.ProviderListModelsResponse], error) {
-	return connect.NewResponse(&v1.ProviderListModelsResponse{Models: []*v1.ProviderModel{
+	context.Context, *connect.Request[v1.ProviderServiceListModelsRequest],
+) (*connect.Response[v1.ProviderServiceListModelsResponse], error) {
+	return connect.NewResponse(&v1.ProviderServiceListModelsResponse{Models: []*v1.ProviderModel{
 		{Id: "m1", Title: "One", Operations: []string{"embed"}}, {Id: "m2"},
 	}}), nil
 }
 
 func (s *scriptedService) ListReasoningLevels(
-	context.Context, *connect.Request[v1.ProviderListReasoningLevelsRequest],
-) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error) {
-	return connect.NewResponse(&v1.ProviderListReasoningLevelsResponse{Levels: []*v1.ProviderReasoningLevel{{Value: "low", Title: "Low"}}}), nil
+	context.Context, *connect.Request[v1.ProviderServiceListReasoningLevelsRequest],
+) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error) {
+	return connect.NewResponse(&v1.ProviderServiceListReasoningLevelsResponse{Levels: []*v1.ProviderReasoningLevel{{Value: "low", Title: "Low"}}}), nil
 }
 
 func (s *scriptedService) GetModelProfile(
-	context.Context, *connect.Request[v1.ProviderGetModelProfileRequest],
-) (*connect.Response[v1.ProviderGetModelProfileResponse], error) {
-	return connect.NewResponse(&v1.ProviderGetModelProfileResponse{
+	context.Context, *connect.Request[v1.ProviderServiceGetModelProfileRequest],
+) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error) {
+	return connect.NewResponse(&v1.ProviderServiceGetModelProfileResponse{
 		IsKnown: true, Dimensions: 3, MaxTokens: 512, Pooling: "mean", QueryPrefix: "q", DocumentPrefix: "d", Source: "openrouter",
 	}), nil
 }
 
 func (s *scriptedService) ProbeEmbeddingWidth(
-	context.Context, *connect.Request[v1.ProviderProbeEmbeddingWidthRequest],
-) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error) {
-	return connect.NewResponse(&v1.ProviderProbeEmbeddingWidthResponse{Dimensions: 9}), nil
+	context.Context, *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest],
+) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error) {
+	return connect.NewResponse(&v1.ProviderServiceProbeEmbeddingWidthResponse{Dimensions: 9}), nil
 }
 
 // activator hands out the in-process endpoint of the service and counts the releases.
@@ -116,16 +116,18 @@ func newBridge(t *testing.T, service numenv1connect.ProviderServiceHandler) (con
 	return provider, release, host
 }
 
-func answerWith(response *v1.ProviderCompleteResponse) func(*v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error) {
-	return func(*v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error) { return response, nil }
+func answerWith(response *v1.ProviderServiceCompleteResponse) func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
+	return func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
+		return response, nil
+	}
 }
 
 func TestCompleteCarriesTheCallAndTheRequestAndReturnsTheText(t *testing.T) {
 	temperature := 0.5
-	var seen *v1.ProviderCompleteRequest
-	service := &scriptedService{complete: func(request *v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error) {
-		seen = request
-		return &v1.ProviderCompleteResponse{Text: "answer"}, nil
+	var received *v1.ProviderServiceCompleteRequest
+	service := &scriptedService{complete: func(request *v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
+		received = request
+		return &v1.ProviderServiceCompleteResponse{Text: "answer"}, nil
 	}}
 	provider, _, _ := newBridge(t, service)
 
@@ -138,13 +140,13 @@ func TestCompleteCarriesTheCallAndTheRequestAndReturnsTheText(t *testing.T) {
 	if err != nil || result.Text != "answer" {
 		t.Fatalf("Complete = %v, %v", result, err)
 	}
-	call := seen.GetCall()
+	call := received.GetCall()
 	if call.GetType() != "server" || call.GetModel() != "m" || call.GetReasoning() != "low" || call.GetFields()["baseUrl"] != "https://x" ||
 		len(call.GetSecrets()) != 1 || call.GetSecrets()[0].GetKey() != "apiKey" || call.GetSecrets()[0].GetValue() != "sk-1" {
 		t.Errorf("call = %v", call)
 	}
-	if seen.GetTemperature() != 0.5 || seen.GetMaxTokens() != 10 || len(seen.GetMessages()) != 1 || seen.GetMessages()[0].GetText() != "hi" {
-		t.Errorf("request = %v", seen)
+	if received.GetTemperature() != 0.5 || received.GetMaxTokens() != 10 || len(received.GetMessages()) != 1 || received.GetMessages()[0].GetText() != "hi" {
+		t.Errorf("request = %v", received)
 	}
 	if service.authority[0] != "Bearer "+token {
 		t.Errorf("Authorization = %q, want the token of the plugin", service.authority[0])
@@ -152,7 +154,7 @@ func TestCompleteCarriesTheCallAndTheRequestAndReturnsTheText(t *testing.T) {
 }
 
 func TestATryNextFailureBecomesATryNextError(t *testing.T) {
-	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderCompleteResponse{Failure: &v1.ProviderFailure{
+	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderServiceCompleteResponse{Failure: &v1.ProviderFailure{
 		Kind: v1.ProviderFailureKind_PROVIDER_FAILURE_KIND_TRY_NEXT, Reason: v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_RATE_LIMITED, RetryAfterMs: 2500,
 	}})})
 
@@ -165,25 +167,25 @@ func TestATryNextFailureBecomesATryNextError(t *testing.T) {
 }
 
 func TestAStopFailureBecomesAStopError(t *testing.T) {
-	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderCompleteResponse{Failure: &v1.ProviderFailure{
+	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderServiceCompleteResponse{Failure: &v1.ProviderFailure{
 		Kind: v1.ProviderFailureKind_PROVIDER_FAILURE_KIND_STOP, Reason: v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_BAD_REQUEST,
 	}})})
 
 	_, err := provider.Complete(t.Context(), connectionport.ProviderCall{}, connectionport.CompleteRequest{})
 
-	var stopped *connectionport.StopError
-	if !errors.As(err, &stopped) || stopped.Reason != connectionport.FailureReasonBadRequest {
+	var stopError *connectionport.StopError
+	if !errors.As(err, &stopError) || stopError.Reason != connectionport.FailureReasonBadRequest {
 		t.Errorf("err = %v, want a stop error for a bad request", err)
 	}
 }
 
 func TestAFailureOfNoKindIsAStopOfUnknownReason(t *testing.T) {
-	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderCompleteResponse{Failure: &v1.ProviderFailure{}})})
+	provider, _, _ := newBridge(t, &scriptedService{complete: answerWith(&v1.ProviderServiceCompleteResponse{Failure: &v1.ProviderFailure{}})})
 
 	_, err := provider.Complete(t.Context(), connectionport.ProviderCall{}, connectionport.CompleteRequest{})
 
-	var stopped *connectionport.StopError
-	if !errors.As(err, &stopped) || stopped.Reason != connectionport.FailureReasonUnknown {
+	var stopError *connectionport.StopError
+	if !errors.As(err, &stopError) || stopError.Reason != connectionport.FailureReasonUnknown {
 		t.Errorf("err = %v, want a stop error of unknown reason", err)
 	}
 }
@@ -193,44 +195,44 @@ func TestARoleThePluginDoesNotServeIsAStopOfUnknownReason(t *testing.T) {
 
 	_, err := provider.ProbeEmbeddingWidth(t.Context(), connectionport.ProviderCall{})
 
-	var stopped *connectionport.StopError
-	if !errors.As(err, &stopped) || stopped.Reason != connectionport.FailureReasonUnknown {
+	var stopError *connectionport.StopError
+	if !errors.As(err, &stopError) || stopError.Reason != connectionport.FailureReasonUnknown {
 		t.Errorf("err = %v, want a stop error of unknown reason", err)
 	}
 }
 
 func TestAServiceThatFailsWithAStatusCodeIsAnErrorOfNoFailureKind(t *testing.T) {
-	provider, _, _ := newBridge(t, &scriptedService{complete: func(*v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error) {
+	provider, _, _ := newBridge(t, &scriptedService{complete: func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("connection reset"))
 	}})
 
 	_, err := provider.Complete(t.Context(), connectionport.ProviderCall{}, connectionport.CompleteRequest{})
 
 	var tryNext *connectionport.TryNextError
-	var stopped *connectionport.StopError
-	if err == nil || errors.As(err, &tryNext) || errors.As(err, &stopped) {
+	var stopError *connectionport.StopError
+	if err == nil || errors.As(err, &tryNext) || errors.As(err, &stopError) {
 		t.Errorf("err = %v, want a plain error the call path treats as unreachable", err)
 	}
 }
 
 func TestACancelledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	started := make(chan struct{})
-	provider, _, _ := newBridge(t, &scriptedService{complete: func(*v1.ProviderCompleteRequest) (*v1.ProviderCompleteResponse, error) {
+	provider, _, _ := newBridge(t, &scriptedService{complete: func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
 		close(started)
 		<-time.After(10 * time.Second)
-		return &v1.ProviderCompleteResponse{}, nil
+		return &v1.ProviderServiceCompleteResponse{}, nil
 	}})
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
+	outcome := make(chan error, 1)
 	go func() {
 		_, err := provider.Complete(ctx, connectionport.ProviderCall{}, connectionport.CompleteRequest{})
-		done <- err
+		outcome <- err
 	}()
 	<-started
 
 	cancel()
 
-	if err := <-done; !errors.Is(err, context.Canceled) {
+	if err := <-outcome; !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 }

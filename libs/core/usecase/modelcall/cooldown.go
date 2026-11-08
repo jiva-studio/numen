@@ -70,21 +70,20 @@ type notice struct {
 	reason  connectionport.FailureReason
 }
 
-// told is the notices already given, for each connection revision and reason.
-type told struct {
-	mu   sync.Mutex
-	done map[notice]bool
+// noticeLog is the notices already given, for each connection revision and reason.
+type noticeLog struct {
+	mu      sync.Mutex
+	claimed map[notice]bool
 }
 
-func newTold() *told { return &told{done: map[notice]bool{}} }
+func newNoticeLog() *noticeLog { return &noticeLog{claimed: map[notice]bool{}} }
 
-// claim reports whether the notice was not given yet, and marks it given.
-func (t *told) claim(one notice) bool {
+func (t *noticeLog) claim(one notice) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if t.done[one] {
+	if t.claimed[one] {
 		return false
 	}
-	t.done[one] = true
+	t.claimed[one] = true
 	return true
 }

@@ -19,16 +19,16 @@ func callsToFirst(s *setup) int { return len(s.world.Provider.CallsTo(addressOne
 func TestARowSetAsideIsSkippedFor60SecondsWhenTheServiceGaveNoWait(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonRateLimited, 0))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	s.world.Clock.Advance(59 * time.Second)
-	_, _ = s.complete(t)
+	s.attempt(t)
 	if got := callsToFirst(s); got != 1 {
 		t.Fatalf("the first row was called %d times within 59 s, want 1", got)
 	}
 
 	s.world.Clock.Advance(2 * time.Second)
-	_, _ = s.complete(t)
+	s.attempt(t)
 	if got := callsToFirst(s); got != 2 {
 		t.Errorf("the first row was called %d times after 61 s, want 2", got)
 	}
@@ -37,29 +37,29 @@ func TestARowSetAsideIsSkippedFor60SecondsWhenTheServiceGaveNoWait(t *testing.T)
 func TestTheWaitTheServiceAskedForReplacesTheDefault(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonRateLimited, 5*time.Second))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	s.world.Clock.Advance(6 * time.Second)
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	if got := callsToFirst(s); got != 2 {
 		t.Errorf("the first row was called %d times after the 5 s asked for, want 2", got)
 	}
 }
 
-func TestAWaitOfMoreThanTenMinutesIsCutToTenMinutes(t *testing.T) {
+func TestAWaitOfMoreThanTenMinutesIsLimitedToTenMinutes(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonRateLimited, 3*time.Hour))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	s.world.Clock.Advance(9 * time.Minute)
-	_, _ = s.complete(t)
+	s.attempt(t)
 	if got := callsToFirst(s); got != 1 {
 		t.Fatalf("the first row was called %d times within 9 minutes, want 1", got)
 	}
 
 	s.world.Clock.Advance(2 * time.Minute)
-	_, _ = s.complete(t)
+	s.attempt(t)
 	if got := callsToFirst(s); got != 2 {
 		t.Errorf("the first row was called %d times after 11 minutes, want 2", got)
 	}
@@ -69,10 +69,10 @@ func TestARejectedKeyOrAPaymentRequiredLastsUntilTheConnectionIsEdited(t *testin
 	for _, reason := range []connectionport.FailureReason{connectionport.FailureReasonKeyRejected, connectionport.FailureReasonPaymentRequired} {
 		s := newSetup(t, "complete")
 		s.world.Provider.Fail(addressOne, tryNext(reason, 0))
-		_, _ = s.complete(t)
+		s.attempt(t)
 
 		s.world.Clock.Advance(30 * 24 * time.Hour)
-		_, _ = s.complete(t)
+		s.attempt(t)
 		if got := callsToFirst(s); got != 1 {
 			t.Fatalf("%v: the first row was called %d times a month later, want 1", reason, got)
 		}
@@ -85,10 +85,10 @@ func TestARejectedKeyOrAPaymentRequiredLastsUntilTheConnectionIsEdited(t *testin
 	}
 }
 
-func TestACooldownIsKeptPerConnection(t *testing.T) {
+func TestACooldownIsTrackedPerConnection(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonRateLimited, 0))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	s.world.Provider.Fail(addressTwo, tryNext(connectionport.FailureReasonRateLimited, 0))
 	_, err := s.complete(t)
@@ -105,7 +105,7 @@ func TestACooldownIsSharedByEveryPluginThatUsesTheConnection(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Rows.Set("md.example.other-consumer", "complete", modelcalltestRow(s))
 	s.world.Provider.Fail(addressOne, tryNext(connectionport.FailureReasonPaymentRequired, 0))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	_, err := s.calls.Complete(t.Context(), "md.example.other-consumer", connectionport.CompleteRequest{})
 
@@ -150,7 +150,7 @@ func TestOnlyOneRetryIsMade(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonTimeout, 0))
 
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	if got := callsToFirst(s); got != 2 {
 		t.Errorf("the first row was called %d times, want 2", got)
@@ -165,7 +165,7 @@ func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T
 		s := newSetup(t, "complete")
 		s.world.Provider.FailAlways(addressOne, tryNext(reason, 0))
 
-		_, _ = s.complete(t)
+		s.attempt(t)
 
 		if got := callsToFirst(s); got != 1 {
 			t.Errorf("%v: the first row was called %d times, want 1", reason, got)
@@ -176,9 +176,9 @@ func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T
 func TestARowSetAsideAfterARetryStartsItsCooldown(t *testing.T) {
 	s := newSetup(t, "complete")
 	s.world.Provider.FailAlways(addressOne, tryNext(connectionport.FailureReasonTimeout, 0))
-	_, _ = s.complete(t)
+	s.attempt(t)
 
-	_, _ = s.complete(t)
+	s.attempt(t)
 
 	if got := callsToFirst(s); got != 2 {
 		t.Errorf("the first row was called %d times, want 2 (one call and its retry)", got)

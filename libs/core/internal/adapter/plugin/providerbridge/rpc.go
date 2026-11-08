@@ -31,9 +31,11 @@ func (s *Source) OpenProvider(ctx context.Context, pluginID string) (modelcallpo
 		return nil, nil, err
 	}
 	var once sync.Once
-	return &provider{client: client}, func() { once.Do(func() { _ = lease.Close() }) }, nil
+	return &provider{client: client}, func() { once.Do(func() { lease.Host.Release(lease.PluginID) }) }, nil
 }
 
+// provider carries the calls of the core to the ProviderService of a plugin. A role the plugin does not serve
+// is a stop of unknown reason, and the end of the context is returned as it is.
 type provider struct {
 	client numenv1connect.ProviderServiceClient
 }
@@ -45,7 +47,7 @@ func (p *provider) Complete(
 	for i, one := range request.Messages {
 		messages[i] = &v1.ProviderMessage{Role: one.Role, Text: one.Text}
 	}
-	response, err := p.client.Complete(ctx, connect.NewRequest(&v1.ProviderCompleteRequest{
+	response, err := p.client.Complete(ctx, connect.NewRequest(&v1.ProviderServiceCompleteRequest{
 		Call: writeCall(call), Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens),
 	}))
 	if err != nil {
@@ -58,7 +60,7 @@ func (p *provider) Complete(
 }
 
 func (p *provider) Embed(ctx context.Context, call modelcallport.ProviderCall, texts []string) ([][]float32, error) {
-	response, err := p.client.Embed(ctx, connect.NewRequest(&v1.ProviderEmbedRequest{Call: writeCall(call), Texts: texts}))
+	response, err := p.client.Embed(ctx, connect.NewRequest(&v1.ProviderServiceEmbedRequest{Call: writeCall(call), Texts: texts}))
 	if err != nil {
 		return nil, readCallError(ctx, err)
 	}
@@ -73,7 +75,7 @@ func (p *provider) Embed(ctx context.Context, call modelcallport.ProviderCall, t
 }
 
 func (p *provider) ListModels(ctx context.Context, call modelcallport.ProviderCall, operation string) ([]modelcallport.Model, error) {
-	response, err := p.client.ListModels(ctx, connect.NewRequest(&v1.ProviderListModelsRequest{Call: writeCall(call), Operation: operation}))
+	response, err := p.client.ListModels(ctx, connect.NewRequest(&v1.ProviderServiceListModelsRequest{Call: writeCall(call), Operation: operation}))
 	if err != nil {
 		return nil, readCallError(ctx, err)
 	}
@@ -88,7 +90,7 @@ func (p *provider) ListModels(ctx context.Context, call modelcallport.ProviderCa
 }
 
 func (p *provider) ListReasoningLevels(ctx context.Context, call modelcallport.ProviderCall) ([]modelcallport.ReasoningLevel, error) {
-	response, err := p.client.ListReasoningLevels(ctx, connect.NewRequest(&v1.ProviderListReasoningLevelsRequest{Call: writeCall(call)}))
+	response, err := p.client.ListReasoningLevels(ctx, connect.NewRequest(&v1.ProviderServiceListReasoningLevelsRequest{Call: writeCall(call)}))
 	if err != nil {
 		return nil, readCallError(ctx, err)
 	}
@@ -103,7 +105,7 @@ func (p *provider) ListReasoningLevels(ctx context.Context, call modelcallport.P
 }
 
 func (p *provider) GetModelProfile(ctx context.Context, call modelcallport.ProviderCall) (modelcallport.ModelProfile, error) {
-	response, err := p.client.GetModelProfile(ctx, connect.NewRequest(&v1.ProviderGetModelProfileRequest{Call: writeCall(call)}))
+	response, err := p.client.GetModelProfile(ctx, connect.NewRequest(&v1.ProviderServiceGetModelProfileRequest{Call: writeCall(call)}))
 	if err != nil {
 		return modelcallport.ModelProfile{}, readCallError(ctx, err)
 	}
@@ -122,7 +124,7 @@ func (p *provider) GetModelProfile(ctx context.Context, call modelcallport.Provi
 }
 
 func (p *provider) ProbeEmbeddingWidth(ctx context.Context, call modelcallport.ProviderCall) (int, error) {
-	response, err := p.client.ProbeEmbeddingWidth(ctx, connect.NewRequest(&v1.ProviderProbeEmbeddingWidthRequest{Call: writeCall(call)}))
+	response, err := p.client.ProbeEmbeddingWidth(ctx, connect.NewRequest(&v1.ProviderServiceProbeEmbeddingWidthRequest{Call: writeCall(call)}))
 	if err != nil {
 		return 0, readCallError(ctx, err)
 	}
@@ -140,8 +142,6 @@ func writeCall(call modelcallport.ProviderCall) *v1.ProviderCall {
 	return &v1.ProviderCall{Type: call.Type, Fields: call.Fields, Secrets: secrets, Model: call.Model, Reasoning: call.Reasoning}
 }
 
-// readCallError returns the end of the context as it is, a role the plugin does not serve as a stop of
-// unknown reason, and any other failure of the call as it is.
 func readCallError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr

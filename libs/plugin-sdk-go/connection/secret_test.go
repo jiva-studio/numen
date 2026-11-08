@@ -11,14 +11,14 @@ import (
 
 const redactedValue = "sk-test-0123456789"
 
-func TestASecretShowsNoValueUnderAnyVerb(t *testing.T) {
+func TestASecretShowsNoValueForAnyVerb(t *testing.T) {
 	one := Secret{Value: redactedValue}
-	for _, shown := range []string{
+	for _, printed := range []string{
 		fmt.Sprint(one), fmt.Sprintf("%v", one), fmt.Sprintf("%+v", one), fmt.Sprintf("%#v", one),
 		fmt.Sprintf("%s", one), fmt.Sprintf("%q", one), fmt.Sprintf("%v", &one), fmt.Sprintf("%v", map[string]Secret{"apiKey": one}),
 	} {
-		if strings.Contains(shown, redactedValue) {
-			t.Errorf("a secret printed its value: %s", shown)
+		if strings.Contains(printed, redactedValue) {
+			t.Errorf("a secret printed its value: %s", printed)
 		}
 	}
 }

@@ -17,27 +17,27 @@ import (
 type fakeHost struct {
 	numenv1connect.UnimplementedHostModelServiceHandler
 	token    string
-	complete func(*v1.HostModelCompleteRequest) *v1.HostModelCompleteResponse
-	embed    func(*v1.HostModelEmbedRequest) *v1.HostModelEmbedResponse
-	profile  *v1.HostModelGetEmbeddingProfileResponse
+	complete func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse
+	embed    func(*v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse
+	profile  *v1.HostModelServiceGetEmbeddingProfileResponse
 }
 
 func (h *fakeHost) Complete(
-	_ context.Context, request *connect.Request[v1.HostModelCompleteRequest],
-) (*connect.Response[v1.HostModelCompleteResponse], error) {
+	_ context.Context, request *connect.Request[v1.HostModelServiceCompleteRequest],
+) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	h.token = request.Header().Get("Authorization")
 	return connect.NewResponse(h.complete(request.Msg)), nil
 }
 
 func (h *fakeHost) Embed(
-	_ context.Context, request *connect.Request[v1.HostModelEmbedRequest],
-) (*connect.Response[v1.HostModelEmbedResponse], error) {
+	_ context.Context, request *connect.Request[v1.HostModelServiceEmbedRequest],
+) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
 	return connect.NewResponse(h.embed(request.Msg)), nil
 }
 
 func (h *fakeHost) GetEmbeddingProfile(
-	context.Context, *connect.Request[v1.HostModelGetEmbeddingProfileRequest],
-) (*connect.Response[v1.HostModelGetEmbeddingProfileResponse], error) {
+	context.Context, *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest],
+) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error) {
 	return connect.NewResponse(h.profile), nil
 }
 
@@ -51,10 +51,10 @@ func newTestClient(t *testing.T, host *fakeHost) *Client {
 }
 
 func TestCompleteSendsMessagesAndTheTokenAndReturnsTheText(t *testing.T) {
-	var seen *v1.HostModelCompleteRequest
-	host := &fakeHost{complete: func(request *v1.HostModelCompleteRequest) *v1.HostModelCompleteResponse {
-		seen = request
-		return &v1.HostModelCompleteResponse{Text: "fixed"}
+	var received *v1.HostModelServiceCompleteRequest
+	host := &fakeHost{complete: func(request *v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
+		received = request
+		return &v1.HostModelServiceCompleteResponse{Text: "fixed"}
 	}}
 	temperature := 0.5
 	result, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{
@@ -66,14 +66,14 @@ func TestCompleteSendsMessagesAndTheTokenAndReturnsTheText(t *testing.T) {
 	if host.token != "Bearer token-1" {
 		t.Errorf("Authorization = %q", host.token)
 	}
-	if len(seen.GetMessages()) != 2 || seen.GetMessages()[1].GetText() != "u" || seen.GetTemperature() != 0.5 || seen.GetMaxTokens() != 100 {
-		t.Errorf("request = %v", seen)
+	if len(received.GetMessages()) != 2 || received.GetMessages()[1].GetText() != "u" || received.GetTemperature() != 0.5 || received.GetMaxTokens() != 100 {
+		t.Errorf("request = %v", received)
 	}
 }
 
 func TestEmbedReturnsTheVectorsInOrder(t *testing.T) {
-	host := &fakeHost{embed: func(request *v1.HostModelEmbedRequest) *v1.HostModelEmbedResponse {
-		response := &v1.HostModelEmbedResponse{}
+	host := &fakeHost{embed: func(request *v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
+		response := &v1.HostModelServiceEmbedResponse{}
 		for i := range request.GetTexts() {
 			response.Vectors = append(response.Vectors, &v1.FloatVector{Values: []float32{float32(i)}})
 		}
@@ -86,7 +86,7 @@ func TestEmbedReturnsTheVectorsInOrder(t *testing.T) {
 }
 
 func TestGetEmbeddingProfileReturnsTheProfileOfTheRowThatAnswered(t *testing.T) {
-	host := &fakeHost{profile: &v1.HostModelGetEmbeddingProfileResponse{
+	host := &fakeHost{profile: &v1.HostModelServiceGetEmbeddingProfileResponse{
 		Model: "te3", Source: "openrouter", Pooling: "mean", QueryPrefix: "q", DocumentPrefix: "d", Dimensions: 3, MaxTokens: 8000,
 	}}
 	profile, err := newTestClient(t, host).GetEmbeddingProfile(t.Context())
@@ -97,8 +97,8 @@ func TestGetEmbeddingProfileReturnsTheProfileOfTheRowThatAnswered(t *testing.T) 
 }
 
 func TestANoConnectionResponseIsErrNoConnection(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelCompleteRequest) *v1.HostModelCompleteResponse {
-		return &v1.HostModelCompleteResponse{Error: v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION}
+	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
+		return &v1.HostModelServiceCompleteResponse{Error: v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION}
 	}}
 	_, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{})
 	if !errors.Is(err, ErrNoConnection) {
@@ -107,8 +107,8 @@ func TestANoConnectionResponseIsErrNoConnection(t *testing.T) {
 }
 
 func TestAnAllFailedResponseNamesEveryConnectionAndReason(t *testing.T) {
-	host := &fakeHost{embed: func(*v1.HostModelEmbedRequest) *v1.HostModelEmbedResponse {
-		return &v1.HostModelEmbedResponse{
+	host := &fakeHost{embed: func(*v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
+		return &v1.HostModelServiceEmbedResponse{
 			Error: v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_ALL_FAILED,
 			Failures: []*v1.HostModelFailure{
 				{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unreachable"},
@@ -130,8 +130,8 @@ func TestAnAllFailedResponseNamesEveryConnectionAndReason(t *testing.T) {
 }
 
 func TestARejectedResponseIsARejectedError(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelCompleteRequest) *v1.HostModelCompleteResponse {
-		return &v1.HostModelCompleteResponse{
+	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
+		return &v1.HostModelServiceCompleteResponse{
 			Error:    v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_REJECTED,
 			Failures: []*v1.HostModelFailure{{ConnectionName: "OpenRouter", Reason: "bad request"}},
 		}
@@ -155,7 +155,7 @@ func TestEveryHostModelErrorCodeIsReadAsAnError(t *testing.T) {
 }
 
 func TestACancelledCallReturnsTheContextError(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelCompleteRequest) *v1.HostModelCompleteResponse { return nil }}
+	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse { return nil }}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := newTestClient(t, host).Complete(ctx, CompleteRequest{}); !errors.Is(err, context.Canceled) {

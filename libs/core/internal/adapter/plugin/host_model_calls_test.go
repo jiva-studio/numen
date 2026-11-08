@@ -82,7 +82,7 @@ func writeProviderOnDisk(t *testing.T, dir, manifest string) {
 }
 
 // The keys of a connection go to the plugin that provides its type, so a plugin found on disk under the
-// id of a built-in provider does not take its place.
+// id of a built-in provider is not replaced by it.
 func TestAPluginOnDiskDoesNotReplaceABuiltInProvider(t *testing.T) {
 	host, reported, dir := newProviderHost(t)
 	writeProviderOnDisk(t, dir, providerManifest)
@@ -103,10 +103,10 @@ func TestAPluginOnDiskDoesNotReplaceABuiltInProvider(t *testing.T) {
 
 func TestAPluginOnDiskReplacesABuiltInThatProvidesNoConnectionType(t *testing.T) {
 	host, _, dir := newProviderHost(t)
-	plain := `{"id": "md.example.plain", "name": "Plain", "version": "1.0.0", "targets": ["desktop.editor"],
+	simple := `{"id": "md.example.plain", "name": "Plain", "version": "1.0.0", "targets": ["desktop.editor"],
 		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/plain"}}`
-	registerBuiltIn(t, host, []byte(plain), newBuiltInBackend().serve("built-in plain"))
-	writeProviderOnDisk(t, dir, plain)
+	registerBuiltIn(t, host, []byte(simple), newBuiltInBackend().serve("built-in plain"))
+	writeProviderOnDisk(t, dir, simple)
 	host.dirs = []string{dir}
 
 	if err := host.Discover(); err != nil {

@@ -14,8 +14,8 @@ func TestEveryFailureKindOfTheSchemaIsReadAsAFailure(t *testing.T) {
 	testsupport.CheckHandled(t, func(kind v1.ProviderFailureKind) bool {
 		err := readFailure(&v1.ProviderFailure{Kind: kind})
 		var tryNext *connectionport.TryNextError
-		var stopped *connectionport.StopError
-		return errors.As(err, &tryNext) || errors.As(err, &stopped)
+		var stopError *connectionport.StopError
+		return errors.As(err, &tryNext) || errors.As(err, &stopError)
 	})
 }
 

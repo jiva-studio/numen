@@ -96,7 +96,7 @@ func tryRow[R, T any](
 			return rowOutcome[T]{err: ctxErr}
 		}
 		var unavailable *openError
-		var stopped *connectionport.StopError
+		var stopError *connectionport.StopError
 		switch {
 		case errors.As(err, &unavailable):
 			return skipped[T](resolved.Name, connectionport.FailureReasonUnreachable.String())
@@ -106,8 +106,8 @@ func tryRow[R, T any](
 			return skipped[T](resolved.Name, "key store failed")
 		case errors.Is(err, connection.ErrStaleRevision):
 			return rowOutcome[T]{err: fmt.Errorf("call %s: %w", resolved.Name, err)}
-		case errors.As(err, &stopped):
-			return rowOutcome[T]{err: &connectionport.RejectedError{ConnectionName: resolved.Name, Reason: stopped.Reason.String()}}
+		case errors.As(err, &stopError):
+			return rowOutcome[T]{err: &connectionport.RejectedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
 		}
 		reason, retryAfter := readTryNext(err)
 		if tries == 1 && isRetried(reason) {
@@ -125,8 +125,6 @@ func skipped[T any](name, reason string) rowOutcome[T] {
 	return rowOutcome[T]{failure: &connectionport.Failure{ConnectionName: name, Reason: reason}}
 }
 
-// readTryNext returns the reason and the wait of a failure that is not a stop. An error of no failure
-// kind is a provider that could not be reached.
 func readTryNext(err error) (connectionport.FailureReason, time.Duration) {
 	var tryNext *connectionport.TryNextError
 	if errors.As(err, &tryNext) {
@@ -139,8 +137,6 @@ func isRetried(reason connectionport.FailureReason) bool {
 	return reason == connectionport.FailureReasonTimeout || reason == connectionport.FailureReasonUnreachable
 }
 
-// callOnce opens the provider of the connection, reads the secrets on the first call and calls it. The
-// provider is released when the call returns.
 func callOnce[R, T any](
 	ctx context.Context, c *Calls, resolved connection.Resolved, row connectionport.Row, secrets *map[string]string,
 	pick func(connectionport.Provider) R, do attempt[R, T],
@@ -163,7 +159,7 @@ func callOnce[R, T any](
 
 func (c *Calls) reportSetAside(rows []asideRow) {
 	for _, one := range rows {
-		if c.told.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
+		if c.noticeLog.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
 			c.notices.ReportSetAside(one.id, one.name, one.reason)
 		}
 	}

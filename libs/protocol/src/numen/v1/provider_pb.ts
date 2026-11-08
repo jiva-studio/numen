@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/provider.proto.
  */
 export const file_numen_v1_provider: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEizAEKDFByb3ZpZGVyQ2FsbBIMCgR0eXBlGAEgASgJEjIKBmZpZWxkcxgCIAMoCzIiLm51bWVuLnYxLlByb3ZpZGVyQ2FsbC5GaWVsZHNFbnRyeRIpCgdzZWNyZXRzGAMgAygLMhgubnVtZW4udjEuUHJvdmlkZXJTZWNyZXQSDQoFbW9kZWwYBCABKAkSEQoJcmVhc29uaW5nGAUgASgJGi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMQoOUHJvdmlkZXJTZWNyZXQSCwoDa2V5GAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEihwEKD1Byb3ZpZGVyRmFpbHVyZRIrCgRraW5kGAEgASgOMh0ubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlS2luZBIvCgZyZWFzb24YAiABKA4yHy5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMiLQoPUHJvdmlkZXJNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKqAQoXUHJvdmlkZXJDb21wbGV0ZVJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIrCghtZXNzYWdlcxgCIAMoCzIZLm51bWVuLnYxLlByb3ZpZGVyTWVzc2FnZRIYCgt0ZW1wZXJhdHVyZRgDIAEoAUgAiAEBEhIKCm1heF90b2tlbnMYBCABKAVCDgoMX3RlbXBlcmF0dXJlIlQKGFByb3ZpZGVyQ29tcGxldGVSZXNwb25zZRIMCgR0ZXh0GAEgASgJEioKB2ZhaWx1cmUYAiABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiSwoUUHJvdmlkZXJFbWJlZFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBINCgV0ZXh0cxgCIAMoCSJrChVQcm92aWRlckVtYmVkUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yEioKB2ZhaWx1cmUYAiABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiPgoNUHJvdmlkZXJNb2RlbBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgpvcGVyYXRpb25zGAMgAygJIlQKGVByb3ZpZGVyTGlzdE1vZGVsc1JlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIRCglvcGVyYXRpb24YAiABKAkicQoaUHJvdmlkZXJMaXN0TW9kZWxzUmVzcG9uc2USJwoGbW9kZWxzGAEgAygLMhcubnVtZW4udjEuUHJvdmlkZXJNb2RlbBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIjYKFlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkiSgoiUHJvdmlkZXJMaXN0UmVhc29uaW5nTGV2ZWxzUmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsIoMBCiNQcm92aWRlckxpc3RSZWFzb25pbmdMZXZlbHNSZXNwb25zZRIwCgZsZXZlbHMYASADKAsyIC5udW1lbi52MS5Qcm92aWRlclJlYXNvbmluZ0xldmVsEioKB2ZhaWx1cmUYAiABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiRgoeUHJvdmlkZXJHZXRNb2RlbFByb2ZpbGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwi1wEKH1Byb3ZpZGVyR2V0TW9kZWxQcm9maWxlUmVzcG9uc2USEAoIaXNfa25vd24YASABKAgSEgoKZGltZW5zaW9ucxgCIAEoBRISCgptYXhfdG9rZW5zGAMgASgFEg8KB3Bvb2xpbmcYBCABKAkSFAoMcXVlcnlfcHJlZml4GAUgASgJEhcKD2RvY3VtZW50X3ByZWZpeBgGIAEoCRIOCgZzb3VyY2UYByABKAkSKgoHZmFpbHVyZRgIIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJKCiJQcm92aWRlclByb2JlRW1iZWRkaW5nV2lkdGhSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwiZQojUHJvdmlkZXJQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USEgoKZGltZW5zaW9ucxgBIAEoBRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlImQKGFByb3ZpZGVyU3VibWl0Sm9iUmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEhEKCW9wZXJhdGlvbhgCIAEoCRIPCgdyZXF1ZXN0GAMgASgMIlcKGVByb3ZpZGVyU3VibWl0Sm9iUmVzcG9uc2USDgoGam9iX2lkGAEgASgJEioKB2ZhaWx1cmUYAiABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiUwobUHJvdmlkZXJHZXRKb2JTdGF0dXNSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSDgoGam9iX2lkGAIgASgJIloKHFByb3ZpZGVyR2V0Sm9iU3RhdHVzUmVzcG9uc2USDgoGc3RhdHVzGAEgASgJEioKB2ZhaWx1cmUYAiABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiVQodUHJvdmlkZXJGZXRjaEpvYlJlc3VsdFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIOCgZqb2JfaWQYAiABKAkiXAoeUHJvdmlkZXJGZXRjaEpvYlJlc3VsdFJlc3BvbnNlEg4KBnJlc3VsdBgBIAEoDBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlKoABChNQcm92aWRlckZhaWx1cmVLaW5kEiUKIVBST1ZJREVSX0ZBSUxVUkVfS0lORF9VTlNQRUNJRklFRBAAEiIKHlBST1ZJREVSX0ZBSUxVUkVfS0lORF9UUllfTkVYVBABEh4KGlBST1ZJREVSX0ZBSUxVUkVfS0lORF9TVE9QEAIq3gIKFVByb3ZpZGVyRmFpbHVyZVJlYXNvbhInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlNQRUNJRklFRBAAEigKJFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX0tFWV9SRUpFQ1RFRBABEiwKKFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1BBWU1FTlRfUkVRVUlSRUQQAhIoCiRQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9SQVRFX0xJTUlURUQQAxInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlJFQUNIQUJMRRAEEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1RJTUVPVVQQBRInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9CQURfUkVRVUVTVBAGEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1VOS05PV04QBzLxBgoPUHJvdmlkZXJTZXJ2aWNlElEKCENvbXBsZXRlEiEubnVtZW4udjEuUHJvdmlkZXJDb21wbGV0ZVJlcXVlc3QaIi5udW1lbi52MS5Qcm92aWRlckNvbXBsZXRlUmVzcG9uc2USSAoFRW1iZWQSHi5udW1lbi52MS5Qcm92aWRlckVtYmVkUmVxdWVzdBofLm51bWVuLnYxLlByb3ZpZGVyRW1iZWRSZXNwb25zZRJXCgpMaXN0TW9kZWxzEiMubnVtZW4udjEuUHJvdmlkZXJMaXN0TW9kZWxzUmVxdWVzdBokLm51bWVuLnYxLlByb3ZpZGVyTGlzdE1vZGVsc1Jlc3BvbnNlEnIKE0xpc3RSZWFzb25pbmdMZXZlbHMSLC5udW1lbi52MS5Qcm92aWRlckxpc3RSZWFzb25pbmdMZXZlbHNSZXF1ZXN0Gi0ubnVtZW4udjEuUHJvdmlkZXJMaXN0UmVhc29uaW5nTGV2ZWxzUmVzcG9uc2USZgoPR2V0TW9kZWxQcm9maWxlEigubnVtZW4udjEuUHJvdmlkZXJHZXRNb2RlbFByb2ZpbGVSZXF1ZXN0GikubnVtZW4udjEuUHJvdmlkZXJHZXRNb2RlbFByb2ZpbGVSZXNwb25zZRJyChNQcm9iZUVtYmVkZGluZ1dpZHRoEiwubnVtZW4udjEuUHJvdmlkZXJQcm9iZUVtYmVkZGluZ1dpZHRoUmVxdWVzdBotLm51bWVuLnYxLlByb3ZpZGVyUHJvYmVFbWJlZGRpbmdXaWR0aFJlc3BvbnNlElQKCVN1Ym1pdEpvYhIiLm51bWVuLnYxLlByb3ZpZGVyU3VibWl0Sm9iUmVxdWVzdBojLm51bWVuLnYxLlByb3ZpZGVyU3VibWl0Sm9iUmVzcG9uc2USXQoMR2V0Sm9iU3RhdHVzEiUubnVtZW4udjEuUHJvdmlkZXJHZXRKb2JTdGF0dXNSZXF1ZXN0GiYubnVtZW4udjEuUHJvdmlkZXJHZXRKb2JTdGF0dXNSZXNwb25zZRJjCg5GZXRjaEpvYlJlc3VsdBInLm51bWVuLnYxLlByb3ZpZGVyRmV0Y2hKb2JSZXN1bHRSZXF1ZXN0GigubnVtZW4udjEuUHJvdmlkZXJGZXRjaEpvYlJlc3VsdFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
+  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEizAEKDFByb3ZpZGVyQ2FsbBIMCgR0eXBlGAEgASgJEjIKBmZpZWxkcxgCIAMoCzIiLm51bWVuLnYxLlByb3ZpZGVyQ2FsbC5GaWVsZHNFbnRyeRIpCgdzZWNyZXRzGAMgAygLMhgubnVtZW4udjEuUHJvdmlkZXJTZWNyZXQSDQoFbW9kZWwYBCABKAkSEQoJcmVhc29uaW5nGAUgASgJGi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMQoOUHJvdmlkZXJTZWNyZXQSCwoDa2V5GAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEihwEKD1Byb3ZpZGVyRmFpbHVyZRIrCgRraW5kGAEgASgOMh0ubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlS2luZBIvCgZyZWFzb24YAiABKA4yHy5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMiLQoPUHJvdmlkZXJNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKxAQoeUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSKwoIbWVzc2FnZXMYAiADKAsyGS5udW1lbi52MS5Qcm92aWRlck1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAyABKAFIAIgBARISCgptYXhfdG9rZW5zGAQgASgFQg4KDF90ZW1wZXJhdHVyZSJbCh9Qcm92aWRlclNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlEgwKBHRleHQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJSChtQcm92aWRlclNlcnZpY2VFbWJlZFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBINCgV0ZXh0cxgCIAMoCSJyChxQcm92aWRlclNlcnZpY2VFbWJlZFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvchIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIj4KDVByb3ZpZGVyTW9kZWwSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKb3BlcmF0aW9ucxgDIAMoCSJbCiBQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEhEKCW9wZXJhdGlvbhgCIAEoCSJ4CiFQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVzcG9uc2USJwoGbW9kZWxzGAEgAygLMhcubnVtZW4udjEuUHJvdmlkZXJNb2RlbBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIjYKFlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkiUQopUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCKKAQoqUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjAKBmxldmVscxgBIAMoCzIgLm51bWVuLnYxLlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJNCiVQcm92aWRlclNlcnZpY2VHZXRNb2RlbFByb2ZpbGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwi3gEKJlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlc3BvbnNlEhAKCGlzX2tub3duGAEgASgIEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEhQKDHF1ZXJ5X3ByZWZpeBgFIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBiABKAkSDgoGc291cmNlGAcgASgJEioKB2ZhaWx1cmUYCCABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiUQopUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCJsCipQcm92aWRlclNlcnZpY2VQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USEgoKZGltZW5zaW9ucxgBIAEoBRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlImsKH1Byb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIRCglvcGVyYXRpb24YAiABKAkSDwoHcmVxdWVzdBgDIAEoDCJeCiBQcm92aWRlclNlcnZpY2VTdWJtaXRKb2JSZXNwb25zZRIOCgZqb2JfaWQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJaCiJQcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSDgoGam9iX2lkGAIgASgJImEKI1Byb3ZpZGVyU2VydmljZUdldEpvYlN0YXR1c1Jlc3BvbnNlEg4KBnN0YXR1cxgBIAEoCRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIlwKJFByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEg4KBmpvYl9pZBgCIAEoCSJjCiVQcm92aWRlclNlcnZpY2VGZXRjaEpvYlJlc3VsdFJlc3BvbnNlEg4KBnJlc3VsdBgBIAEoDBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlKoABChNQcm92aWRlckZhaWx1cmVLaW5kEiUKIVBST1ZJREVSX0ZBSUxVUkVfS0lORF9VTlNQRUNJRklFRBAAEiIKHlBST1ZJREVSX0ZBSUxVUkVfS0lORF9UUllfTkVYVBABEh4KGlBST1ZJREVSX0ZBSUxVUkVfS0lORF9TVE9QEAIq3gIKFVByb3ZpZGVyRmFpbHVyZVJlYXNvbhInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlNQRUNJRklFRBAAEigKJFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX0tFWV9SRUpFQ1RFRBABEiwKKFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1BBWU1FTlRfUkVRVUlSRUQQAhIoCiRQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9SQVRFX0xJTUlURUQQAxInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlJFQUNIQUJMRRAEEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1RJTUVPVVQQBRInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9CQURfUkVRVUVTVBAGEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1VOS05PV04QBzLxBwoPUHJvdmlkZXJTZXJ2aWNlEl8KCENvbXBsZXRlEigubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GikubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRJWCgVFbWJlZBIlLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUVtYmVkUmVxdWVzdBomLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUVtYmVkUmVzcG9uc2USZQoKTGlzdE1vZGVscxIqLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUxpc3RNb2RlbHNSZXF1ZXN0GisubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlTGlzdE1vZGVsc1Jlc3BvbnNlEoABChNMaXN0UmVhc29uaW5nTGV2ZWxzEjMubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QaNC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VMaXN0UmVhc29uaW5nTGV2ZWxzUmVzcG9uc2USdAoPR2V0TW9kZWxQcm9maWxlEi8ubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlR2V0TW9kZWxQcm9maWxlUmVxdWVzdBowLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlc3BvbnNlEoABChNQcm9iZUVtYmVkZGluZ1dpZHRoEjMubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlcXVlc3QaNC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USYgoJU3VibWl0Sm9iEikubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlU3VibWl0Sm9iUmVxdWVzdBoqLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlc3BvbnNlEmsKDEdldEpvYlN0YXR1cxIsLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUdldEpvYlN0YXR1c1JlcXVlc3QaLS5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXNwb25zZRJxCg5GZXRjaEpvYlJlc3VsdBIuLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVxdWVzdBovLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding]);
 
 /**
  * ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -137,9 +137,9 @@ export const ProviderMessageSchema: GenMessage<ProviderMessage> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 3);
 
 /**
- * @generated from message numen.v1.ProviderCompleteRequest
+ * @generated from message numen.v1.ProviderServiceCompleteRequest
  */
-export type ProviderCompleteRequest = Message<"numen.v1.ProviderCompleteRequest"> & {
+export type ProviderServiceCompleteRequest = Message<"numen.v1.ProviderServiceCompleteRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -162,16 +162,16 @@ export type ProviderCompleteRequest = Message<"numen.v1.ProviderCompleteRequest"
 };
 
 /**
- * Describes the message numen.v1.ProviderCompleteRequest.
- * Use `create(ProviderCompleteRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceCompleteRequest.
+ * Use `create(ProviderServiceCompleteRequestSchema)` to create a new message.
  */
-export const ProviderCompleteRequestSchema: GenMessage<ProviderCompleteRequest> = /*@__PURE__*/
+export const ProviderServiceCompleteRequestSchema: GenMessage<ProviderServiceCompleteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 4);
 
 /**
- * @generated from message numen.v1.ProviderCompleteResponse
+ * @generated from message numen.v1.ProviderServiceCompleteResponse
  */
-export type ProviderCompleteResponse = Message<"numen.v1.ProviderCompleteResponse"> & {
+export type ProviderServiceCompleteResponse = Message<"numen.v1.ProviderServiceCompleteResponse"> & {
   /**
    * @generated from field: string text = 1;
    */
@@ -184,16 +184,16 @@ export type ProviderCompleteResponse = Message<"numen.v1.ProviderCompleteRespons
 };
 
 /**
- * Describes the message numen.v1.ProviderCompleteResponse.
- * Use `create(ProviderCompleteResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceCompleteResponse.
+ * Use `create(ProviderServiceCompleteResponseSchema)` to create a new message.
  */
-export const ProviderCompleteResponseSchema: GenMessage<ProviderCompleteResponse> = /*@__PURE__*/
+export const ProviderServiceCompleteResponseSchema: GenMessage<ProviderServiceCompleteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 5);
 
 /**
- * @generated from message numen.v1.ProviderEmbedRequest
+ * @generated from message numen.v1.ProviderServiceEmbedRequest
  */
-export type ProviderEmbedRequest = Message<"numen.v1.ProviderEmbedRequest"> & {
+export type ProviderServiceEmbedRequest = Message<"numen.v1.ProviderServiceEmbedRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -206,16 +206,16 @@ export type ProviderEmbedRequest = Message<"numen.v1.ProviderEmbedRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ProviderEmbedRequest.
- * Use `create(ProviderEmbedRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceEmbedRequest.
+ * Use `create(ProviderServiceEmbedRequestSchema)` to create a new message.
  */
-export const ProviderEmbedRequestSchema: GenMessage<ProviderEmbedRequest> = /*@__PURE__*/
+export const ProviderServiceEmbedRequestSchema: GenMessage<ProviderServiceEmbedRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 6);
 
 /**
- * @generated from message numen.v1.ProviderEmbedResponse
+ * @generated from message numen.v1.ProviderServiceEmbedResponse
  */
-export type ProviderEmbedResponse = Message<"numen.v1.ProviderEmbedResponse"> & {
+export type ProviderServiceEmbedResponse = Message<"numen.v1.ProviderServiceEmbedResponse"> & {
   /**
    * @generated from field: repeated numen.v1.FloatVector vectors = 1;
    */
@@ -228,10 +228,10 @@ export type ProviderEmbedResponse = Message<"numen.v1.ProviderEmbedResponse"> & 
 };
 
 /**
- * Describes the message numen.v1.ProviderEmbedResponse.
- * Use `create(ProviderEmbedResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceEmbedResponse.
+ * Use `create(ProviderServiceEmbedResponseSchema)` to create a new message.
  */
-export const ProviderEmbedResponseSchema: GenMessage<ProviderEmbedResponse> = /*@__PURE__*/
+export const ProviderServiceEmbedResponseSchema: GenMessage<ProviderServiceEmbedResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 7);
 
 /**
@@ -264,9 +264,9 @@ export const ProviderModelSchema: GenMessage<ProviderModel> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 8);
 
 /**
- * @generated from message numen.v1.ProviderListModelsRequest
+ * @generated from message numen.v1.ProviderServiceListModelsRequest
  */
-export type ProviderListModelsRequest = Message<"numen.v1.ProviderListModelsRequest"> & {
+export type ProviderServiceListModelsRequest = Message<"numen.v1.ProviderServiceListModelsRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -279,16 +279,16 @@ export type ProviderListModelsRequest = Message<"numen.v1.ProviderListModelsRequ
 };
 
 /**
- * Describes the message numen.v1.ProviderListModelsRequest.
- * Use `create(ProviderListModelsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceListModelsRequest.
+ * Use `create(ProviderServiceListModelsRequestSchema)` to create a new message.
  */
-export const ProviderListModelsRequestSchema: GenMessage<ProviderListModelsRequest> = /*@__PURE__*/
+export const ProviderServiceListModelsRequestSchema: GenMessage<ProviderServiceListModelsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 9);
 
 /**
- * @generated from message numen.v1.ProviderListModelsResponse
+ * @generated from message numen.v1.ProviderServiceListModelsResponse
  */
-export type ProviderListModelsResponse = Message<"numen.v1.ProviderListModelsResponse"> & {
+export type ProviderServiceListModelsResponse = Message<"numen.v1.ProviderServiceListModelsResponse"> & {
   /**
    * @generated from field: repeated numen.v1.ProviderModel models = 1;
    */
@@ -301,10 +301,10 @@ export type ProviderListModelsResponse = Message<"numen.v1.ProviderListModelsRes
 };
 
 /**
- * Describes the message numen.v1.ProviderListModelsResponse.
- * Use `create(ProviderListModelsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceListModelsResponse.
+ * Use `create(ProviderServiceListModelsResponseSchema)` to create a new message.
  */
-export const ProviderListModelsResponseSchema: GenMessage<ProviderListModelsResponse> = /*@__PURE__*/
+export const ProviderServiceListModelsResponseSchema: GenMessage<ProviderServiceListModelsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 10);
 
 /**
@@ -330,9 +330,9 @@ export const ProviderReasoningLevelSchema: GenMessage<ProviderReasoningLevel> = 
   messageDesc(file_numen_v1_provider, 11);
 
 /**
- * @generated from message numen.v1.ProviderListReasoningLevelsRequest
+ * @generated from message numen.v1.ProviderServiceListReasoningLevelsRequest
  */
-export type ProviderListReasoningLevelsRequest = Message<"numen.v1.ProviderListReasoningLevelsRequest"> & {
+export type ProviderServiceListReasoningLevelsRequest = Message<"numen.v1.ProviderServiceListReasoningLevelsRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -340,16 +340,16 @@ export type ProviderListReasoningLevelsRequest = Message<"numen.v1.ProviderListR
 };
 
 /**
- * Describes the message numen.v1.ProviderListReasoningLevelsRequest.
- * Use `create(ProviderListReasoningLevelsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceListReasoningLevelsRequest.
+ * Use `create(ProviderServiceListReasoningLevelsRequestSchema)` to create a new message.
  */
-export const ProviderListReasoningLevelsRequestSchema: GenMessage<ProviderListReasoningLevelsRequest> = /*@__PURE__*/
+export const ProviderServiceListReasoningLevelsRequestSchema: GenMessage<ProviderServiceListReasoningLevelsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 12);
 
 /**
- * @generated from message numen.v1.ProviderListReasoningLevelsResponse
+ * @generated from message numen.v1.ProviderServiceListReasoningLevelsResponse
  */
-export type ProviderListReasoningLevelsResponse = Message<"numen.v1.ProviderListReasoningLevelsResponse"> & {
+export type ProviderServiceListReasoningLevelsResponse = Message<"numen.v1.ProviderServiceListReasoningLevelsResponse"> & {
   /**
    * @generated from field: repeated numen.v1.ProviderReasoningLevel levels = 1;
    */
@@ -362,16 +362,16 @@ export type ProviderListReasoningLevelsResponse = Message<"numen.v1.ProviderList
 };
 
 /**
- * Describes the message numen.v1.ProviderListReasoningLevelsResponse.
- * Use `create(ProviderListReasoningLevelsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceListReasoningLevelsResponse.
+ * Use `create(ProviderServiceListReasoningLevelsResponseSchema)` to create a new message.
  */
-export const ProviderListReasoningLevelsResponseSchema: GenMessage<ProviderListReasoningLevelsResponse> = /*@__PURE__*/
+export const ProviderServiceListReasoningLevelsResponseSchema: GenMessage<ProviderServiceListReasoningLevelsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 13);
 
 /**
- * @generated from message numen.v1.ProviderGetModelProfileRequest
+ * @generated from message numen.v1.ProviderServiceGetModelProfileRequest
  */
-export type ProviderGetModelProfileRequest = Message<"numen.v1.ProviderGetModelProfileRequest"> & {
+export type ProviderServiceGetModelProfileRequest = Message<"numen.v1.ProviderServiceGetModelProfileRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -379,16 +379,16 @@ export type ProviderGetModelProfileRequest = Message<"numen.v1.ProviderGetModelP
 };
 
 /**
- * Describes the message numen.v1.ProviderGetModelProfileRequest.
- * Use `create(ProviderGetModelProfileRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceGetModelProfileRequest.
+ * Use `create(ProviderServiceGetModelProfileRequestSchema)` to create a new message.
  */
-export const ProviderGetModelProfileRequestSchema: GenMessage<ProviderGetModelProfileRequest> = /*@__PURE__*/
+export const ProviderServiceGetModelProfileRequestSchema: GenMessage<ProviderServiceGetModelProfileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 14);
 
 /**
- * @generated from message numen.v1.ProviderGetModelProfileResponse
+ * @generated from message numen.v1.ProviderServiceGetModelProfileResponse
  */
-export type ProviderGetModelProfileResponse = Message<"numen.v1.ProviderGetModelProfileResponse"> & {
+export type ProviderServiceGetModelProfileResponse = Message<"numen.v1.ProviderServiceGetModelProfileResponse"> & {
   /**
    * is_known is false when the provider has no profile for the model; the core then probes the width.
    *
@@ -437,16 +437,16 @@ export type ProviderGetModelProfileResponse = Message<"numen.v1.ProviderGetModel
 };
 
 /**
- * Describes the message numen.v1.ProviderGetModelProfileResponse.
- * Use `create(ProviderGetModelProfileResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceGetModelProfileResponse.
+ * Use `create(ProviderServiceGetModelProfileResponseSchema)` to create a new message.
  */
-export const ProviderGetModelProfileResponseSchema: GenMessage<ProviderGetModelProfileResponse> = /*@__PURE__*/
+export const ProviderServiceGetModelProfileResponseSchema: GenMessage<ProviderServiceGetModelProfileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 15);
 
 /**
- * @generated from message numen.v1.ProviderProbeEmbeddingWidthRequest
+ * @generated from message numen.v1.ProviderServiceProbeEmbeddingWidthRequest
  */
-export type ProviderProbeEmbeddingWidthRequest = Message<"numen.v1.ProviderProbeEmbeddingWidthRequest"> & {
+export type ProviderServiceProbeEmbeddingWidthRequest = Message<"numen.v1.ProviderServiceProbeEmbeddingWidthRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -454,16 +454,16 @@ export type ProviderProbeEmbeddingWidthRequest = Message<"numen.v1.ProviderProbe
 };
 
 /**
- * Describes the message numen.v1.ProviderProbeEmbeddingWidthRequest.
- * Use `create(ProviderProbeEmbeddingWidthRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceProbeEmbeddingWidthRequest.
+ * Use `create(ProviderServiceProbeEmbeddingWidthRequestSchema)` to create a new message.
  */
-export const ProviderProbeEmbeddingWidthRequestSchema: GenMessage<ProviderProbeEmbeddingWidthRequest> = /*@__PURE__*/
+export const ProviderServiceProbeEmbeddingWidthRequestSchema: GenMessage<ProviderServiceProbeEmbeddingWidthRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 16);
 
 /**
- * @generated from message numen.v1.ProviderProbeEmbeddingWidthResponse
+ * @generated from message numen.v1.ProviderServiceProbeEmbeddingWidthResponse
  */
-export type ProviderProbeEmbeddingWidthResponse = Message<"numen.v1.ProviderProbeEmbeddingWidthResponse"> & {
+export type ProviderServiceProbeEmbeddingWidthResponse = Message<"numen.v1.ProviderServiceProbeEmbeddingWidthResponse"> & {
   /**
    * @generated from field: int32 dimensions = 1;
    */
@@ -476,16 +476,16 @@ export type ProviderProbeEmbeddingWidthResponse = Message<"numen.v1.ProviderProb
 };
 
 /**
- * Describes the message numen.v1.ProviderProbeEmbeddingWidthResponse.
- * Use `create(ProviderProbeEmbeddingWidthResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceProbeEmbeddingWidthResponse.
+ * Use `create(ProviderServiceProbeEmbeddingWidthResponseSchema)` to create a new message.
  */
-export const ProviderProbeEmbeddingWidthResponseSchema: GenMessage<ProviderProbeEmbeddingWidthResponse> = /*@__PURE__*/
+export const ProviderServiceProbeEmbeddingWidthResponseSchema: GenMessage<ProviderServiceProbeEmbeddingWidthResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 17);
 
 /**
- * @generated from message numen.v1.ProviderSubmitJobRequest
+ * @generated from message numen.v1.ProviderServiceSubmitJobRequest
  */
-export type ProviderSubmitJobRequest = Message<"numen.v1.ProviderSubmitJobRequest"> & {
+export type ProviderServiceSubmitJobRequest = Message<"numen.v1.ProviderServiceSubmitJobRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -503,16 +503,16 @@ export type ProviderSubmitJobRequest = Message<"numen.v1.ProviderSubmitJobReques
 };
 
 /**
- * Describes the message numen.v1.ProviderSubmitJobRequest.
- * Use `create(ProviderSubmitJobRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceSubmitJobRequest.
+ * Use `create(ProviderServiceSubmitJobRequestSchema)` to create a new message.
  */
-export const ProviderSubmitJobRequestSchema: GenMessage<ProviderSubmitJobRequest> = /*@__PURE__*/
+export const ProviderServiceSubmitJobRequestSchema: GenMessage<ProviderServiceSubmitJobRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 18);
 
 /**
- * @generated from message numen.v1.ProviderSubmitJobResponse
+ * @generated from message numen.v1.ProviderServiceSubmitJobResponse
  */
-export type ProviderSubmitJobResponse = Message<"numen.v1.ProviderSubmitJobResponse"> & {
+export type ProviderServiceSubmitJobResponse = Message<"numen.v1.ProviderServiceSubmitJobResponse"> & {
   /**
    * job_id is opaque to the core.
    *
@@ -527,16 +527,16 @@ export type ProviderSubmitJobResponse = Message<"numen.v1.ProviderSubmitJobRespo
 };
 
 /**
- * Describes the message numen.v1.ProviderSubmitJobResponse.
- * Use `create(ProviderSubmitJobResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceSubmitJobResponse.
+ * Use `create(ProviderServiceSubmitJobResponseSchema)` to create a new message.
  */
-export const ProviderSubmitJobResponseSchema: GenMessage<ProviderSubmitJobResponse> = /*@__PURE__*/
+export const ProviderServiceSubmitJobResponseSchema: GenMessage<ProviderServiceSubmitJobResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 19);
 
 /**
- * @generated from message numen.v1.ProviderGetJobStatusRequest
+ * @generated from message numen.v1.ProviderServiceGetJobStatusRequest
  */
-export type ProviderGetJobStatusRequest = Message<"numen.v1.ProviderGetJobStatusRequest"> & {
+export type ProviderServiceGetJobStatusRequest = Message<"numen.v1.ProviderServiceGetJobStatusRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -549,16 +549,16 @@ export type ProviderGetJobStatusRequest = Message<"numen.v1.ProviderGetJobStatus
 };
 
 /**
- * Describes the message numen.v1.ProviderGetJobStatusRequest.
- * Use `create(ProviderGetJobStatusRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceGetJobStatusRequest.
+ * Use `create(ProviderServiceGetJobStatusRequestSchema)` to create a new message.
  */
-export const ProviderGetJobStatusRequestSchema: GenMessage<ProviderGetJobStatusRequest> = /*@__PURE__*/
+export const ProviderServiceGetJobStatusRequestSchema: GenMessage<ProviderServiceGetJobStatusRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 20);
 
 /**
- * @generated from message numen.v1.ProviderGetJobStatusResponse
+ * @generated from message numen.v1.ProviderServiceGetJobStatusResponse
  */
-export type ProviderGetJobStatusResponse = Message<"numen.v1.ProviderGetJobStatusResponse"> & {
+export type ProviderServiceGetJobStatusResponse = Message<"numen.v1.ProviderServiceGetJobStatusResponse"> & {
   /**
    * @generated from field: string status = 1;
    */
@@ -571,16 +571,16 @@ export type ProviderGetJobStatusResponse = Message<"numen.v1.ProviderGetJobStatu
 };
 
 /**
- * Describes the message numen.v1.ProviderGetJobStatusResponse.
- * Use `create(ProviderGetJobStatusResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceGetJobStatusResponse.
+ * Use `create(ProviderServiceGetJobStatusResponseSchema)` to create a new message.
  */
-export const ProviderGetJobStatusResponseSchema: GenMessage<ProviderGetJobStatusResponse> = /*@__PURE__*/
+export const ProviderServiceGetJobStatusResponseSchema: GenMessage<ProviderServiceGetJobStatusResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 21);
 
 /**
- * @generated from message numen.v1.ProviderFetchJobResultRequest
+ * @generated from message numen.v1.ProviderServiceFetchJobResultRequest
  */
-export type ProviderFetchJobResultRequest = Message<"numen.v1.ProviderFetchJobResultRequest"> & {
+export type ProviderServiceFetchJobResultRequest = Message<"numen.v1.ProviderServiceFetchJobResultRequest"> & {
   /**
    * @generated from field: numen.v1.ProviderCall call = 1;
    */
@@ -593,16 +593,16 @@ export type ProviderFetchJobResultRequest = Message<"numen.v1.ProviderFetchJobRe
 };
 
 /**
- * Describes the message numen.v1.ProviderFetchJobResultRequest.
- * Use `create(ProviderFetchJobResultRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceFetchJobResultRequest.
+ * Use `create(ProviderServiceFetchJobResultRequestSchema)` to create a new message.
  */
-export const ProviderFetchJobResultRequestSchema: GenMessage<ProviderFetchJobResultRequest> = /*@__PURE__*/
+export const ProviderServiceFetchJobResultRequestSchema: GenMessage<ProviderServiceFetchJobResultRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 22);
 
 /**
- * @generated from message numen.v1.ProviderFetchJobResultResponse
+ * @generated from message numen.v1.ProviderServiceFetchJobResultResponse
  */
-export type ProviderFetchJobResultResponse = Message<"numen.v1.ProviderFetchJobResultResponse"> & {
+export type ProviderServiceFetchJobResultResponse = Message<"numen.v1.ProviderServiceFetchJobResultResponse"> & {
   /**
    * @generated from field: bytes result = 1;
    */
@@ -615,10 +615,10 @@ export type ProviderFetchJobResultResponse = Message<"numen.v1.ProviderFetchJobR
 };
 
 /**
- * Describes the message numen.v1.ProviderFetchJobResultResponse.
- * Use `create(ProviderFetchJobResultResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ProviderServiceFetchJobResultResponse.
+ * Use `create(ProviderServiceFetchJobResultResponseSchema)` to create a new message.
  */
-export const ProviderFetchJobResultResponseSchema: GenMessage<ProviderFetchJobResultResponse> = /*@__PURE__*/
+export const ProviderServiceFetchJobResultResponseSchema: GenMessage<ProviderServiceFetchJobResultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 23);
 
 /**
@@ -722,8 +722,8 @@ export const ProviderService: GenService<{
    */
   complete: {
     methodKind: "unary";
-    input: typeof ProviderCompleteRequestSchema;
-    output: typeof ProviderCompleteResponseSchema;
+    input: typeof ProviderServiceCompleteRequestSchema;
+    output: typeof ProviderServiceCompleteResponseSchema;
   },
   /**
    * Embed turns texts into vectors, in the order of the texts.
@@ -732,8 +732,8 @@ export const ProviderService: GenService<{
    */
   embed: {
     methodKind: "unary";
-    input: typeof ProviderEmbedRequestSchema;
-    output: typeof ProviderEmbedResponseSchema;
+    input: typeof ProviderServiceEmbedRequestSchema;
+    output: typeof ProviderServiceEmbedResponseSchema;
   },
   /**
    * ListModels lists the models of the connection that fit an operation.
@@ -742,8 +742,8 @@ export const ProviderService: GenService<{
    */
   listModels: {
     methodKind: "unary";
-    input: typeof ProviderListModelsRequestSchema;
-    output: typeof ProviderListModelsResponseSchema;
+    input: typeof ProviderServiceListModelsRequestSchema;
+    output: typeof ProviderServiceListModelsResponseSchema;
   },
   /**
    * ListReasoningLevels lists the reasoning levels of the model of the call.
@@ -752,8 +752,8 @@ export const ProviderService: GenService<{
    */
   listReasoningLevels: {
     methodKind: "unary";
-    input: typeof ProviderListReasoningLevelsRequestSchema;
-    output: typeof ProviderListReasoningLevelsResponseSchema;
+    input: typeof ProviderServiceListReasoningLevelsRequestSchema;
+    output: typeof ProviderServiceListReasoningLevelsResponseSchema;
   },
   /**
    * GetModelProfile returns what the provider knows about the embedding model of the call.
@@ -762,8 +762,8 @@ export const ProviderService: GenService<{
    */
   getModelProfile: {
     methodKind: "unary";
-    input: typeof ProviderGetModelProfileRequestSchema;
-    output: typeof ProviderGetModelProfileResponseSchema;
+    input: typeof ProviderServiceGetModelProfileRequestSchema;
+    output: typeof ProviderServiceGetModelProfileResponseSchema;
   },
   /**
    * ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
@@ -772,8 +772,8 @@ export const ProviderService: GenService<{
    */
   probeEmbeddingWidth: {
     methodKind: "unary";
-    input: typeof ProviderProbeEmbeddingWidthRequestSchema;
-    output: typeof ProviderProbeEmbeddingWidthResponseSchema;
+    input: typeof ProviderServiceProbeEmbeddingWidthRequestSchema;
+    output: typeof ProviderServiceProbeEmbeddingWidthResponseSchema;
   },
   /**
    * SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
@@ -782,8 +782,8 @@ export const ProviderService: GenService<{
    */
   submitJob: {
     methodKind: "unary";
-    input: typeof ProviderSubmitJobRequestSchema;
-    output: typeof ProviderSubmitJobResponseSchema;
+    input: typeof ProviderServiceSubmitJobRequestSchema;
+    output: typeof ProviderServiceSubmitJobResponseSchema;
   },
   /**
    * GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
@@ -792,8 +792,8 @@ export const ProviderService: GenService<{
    */
   getJobStatus: {
     methodKind: "unary";
-    input: typeof ProviderGetJobStatusRequestSchema;
-    output: typeof ProviderGetJobStatusResponseSchema;
+    input: typeof ProviderServiceGetJobStatusRequestSchema;
+    output: typeof ProviderServiceGetJobStatusResponseSchema;
   },
   /**
    * FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
@@ -802,8 +802,8 @@ export const ProviderService: GenService<{
    */
   fetchJobResult: {
     methodKind: "unary";
-    input: typeof ProviderFetchJobResultRequestSchema;
-    output: typeof ProviderFetchJobResultResponseSchema;
+    input: typeof ProviderServiceFetchJobResultRequestSchema;
+    output: typeof ProviderServiceFetchJobResultResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_provider, 0);

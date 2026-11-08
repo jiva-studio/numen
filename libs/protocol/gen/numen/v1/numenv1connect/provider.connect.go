@@ -64,23 +64,23 @@ const (
 // ProviderServiceClient is a client for the numen.v1.ProviderService service.
 type ProviderServiceClient interface {
 	// Complete turns messages into the text of an answer.
-	Complete(context.Context, *connect.Request[v1.ProviderCompleteRequest]) (*connect.Response[v1.ProviderCompleteResponse], error)
+	Complete(context.Context, *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
-	Embed(context.Context, *connect.Request[v1.ProviderEmbedRequest]) (*connect.Response[v1.ProviderEmbedResponse], error)
+	Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error)
 	// ListModels lists the models of the connection that fit an operation.
-	ListModels(context.Context, *connect.Request[v1.ProviderListModelsRequest]) (*connect.Response[v1.ProviderListModelsResponse], error)
+	ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of the model of the call.
-	ListReasoningLevels(context.Context, *connect.Request[v1.ProviderListReasoningLevelsRequest]) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error)
+	ListReasoningLevels(context.Context, *connect.Request[v1.ProviderServiceListReasoningLevelsRequest]) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error)
 	// GetModelProfile returns what the provider knows about the embedding model of the call.
-	GetModelProfile(context.Context, *connect.Request[v1.ProviderGetModelProfileRequest]) (*connect.Response[v1.ProviderGetModelProfileResponse], error)
+	GetModelProfile(context.Context, *connect.Request[v1.ProviderServiceGetModelProfileRequest]) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error)
 	// ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
-	ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error)
+	ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error)
 	// SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
-	SubmitJob(context.Context, *connect.Request[v1.ProviderSubmitJobRequest]) (*connect.Response[v1.ProviderSubmitJobResponse], error)
+	SubmitJob(context.Context, *connect.Request[v1.ProviderServiceSubmitJobRequest]) (*connect.Response[v1.ProviderServiceSubmitJobResponse], error)
 	// GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
-	GetJobStatus(context.Context, *connect.Request[v1.ProviderGetJobStatusRequest]) (*connect.Response[v1.ProviderGetJobStatusResponse], error)
+	GetJobStatus(context.Context, *connect.Request[v1.ProviderServiceGetJobStatusRequest]) (*connect.Response[v1.ProviderServiceGetJobStatusResponse], error)
 	// FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
-	FetchJobResult(context.Context, *connect.Request[v1.ProviderFetchJobResultRequest]) (*connect.Response[v1.ProviderFetchJobResultResponse], error)
+	FetchJobResult(context.Context, *connect.Request[v1.ProviderServiceFetchJobResultRequest]) (*connect.Response[v1.ProviderServiceFetchJobResultResponse], error)
 }
 
 // NewProviderServiceClient constructs a client for the numen.v1.ProviderService service. By
@@ -94,55 +94,55 @@ func NewProviderServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 	baseURL = strings.TrimRight(baseURL, "/")
 	providerServiceMethods := v1.File_numen_v1_provider_proto.Services().ByName("ProviderService").Methods()
 	return &providerServiceClient{
-		complete: connect.NewClient[v1.ProviderCompleteRequest, v1.ProviderCompleteResponse](
+		complete: connect.NewClient[v1.ProviderServiceCompleteRequest, v1.ProviderServiceCompleteResponse](
 			httpClient,
 			baseURL+ProviderServiceCompleteProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("Complete")),
 			connect.WithClientOptions(opts...),
 		),
-		embed: connect.NewClient[v1.ProviderEmbedRequest, v1.ProviderEmbedResponse](
+		embed: connect.NewClient[v1.ProviderServiceEmbedRequest, v1.ProviderServiceEmbedResponse](
 			httpClient,
 			baseURL+ProviderServiceEmbedProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("Embed")),
 			connect.WithClientOptions(opts...),
 		),
-		listModels: connect.NewClient[v1.ProviderListModelsRequest, v1.ProviderListModelsResponse](
+		listModels: connect.NewClient[v1.ProviderServiceListModelsRequest, v1.ProviderServiceListModelsResponse](
 			httpClient,
 			baseURL+ProviderServiceListModelsProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("ListModels")),
 			connect.WithClientOptions(opts...),
 		),
-		listReasoningLevels: connect.NewClient[v1.ProviderListReasoningLevelsRequest, v1.ProviderListReasoningLevelsResponse](
+		listReasoningLevels: connect.NewClient[v1.ProviderServiceListReasoningLevelsRequest, v1.ProviderServiceListReasoningLevelsResponse](
 			httpClient,
 			baseURL+ProviderServiceListReasoningLevelsProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("ListReasoningLevels")),
 			connect.WithClientOptions(opts...),
 		),
-		getModelProfile: connect.NewClient[v1.ProviderGetModelProfileRequest, v1.ProviderGetModelProfileResponse](
+		getModelProfile: connect.NewClient[v1.ProviderServiceGetModelProfileRequest, v1.ProviderServiceGetModelProfileResponse](
 			httpClient,
 			baseURL+ProviderServiceGetModelProfileProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("GetModelProfile")),
 			connect.WithClientOptions(opts...),
 		),
-		probeEmbeddingWidth: connect.NewClient[v1.ProviderProbeEmbeddingWidthRequest, v1.ProviderProbeEmbeddingWidthResponse](
+		probeEmbeddingWidth: connect.NewClient[v1.ProviderServiceProbeEmbeddingWidthRequest, v1.ProviderServiceProbeEmbeddingWidthResponse](
 			httpClient,
 			baseURL+ProviderServiceProbeEmbeddingWidthProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("ProbeEmbeddingWidth")),
 			connect.WithClientOptions(opts...),
 		),
-		submitJob: connect.NewClient[v1.ProviderSubmitJobRequest, v1.ProviderSubmitJobResponse](
+		submitJob: connect.NewClient[v1.ProviderServiceSubmitJobRequest, v1.ProviderServiceSubmitJobResponse](
 			httpClient,
 			baseURL+ProviderServiceSubmitJobProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("SubmitJob")),
 			connect.WithClientOptions(opts...),
 		),
-		getJobStatus: connect.NewClient[v1.ProviderGetJobStatusRequest, v1.ProviderGetJobStatusResponse](
+		getJobStatus: connect.NewClient[v1.ProviderServiceGetJobStatusRequest, v1.ProviderServiceGetJobStatusResponse](
 			httpClient,
 			baseURL+ProviderServiceGetJobStatusProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("GetJobStatus")),
 			connect.WithClientOptions(opts...),
 		),
-		fetchJobResult: connect.NewClient[v1.ProviderFetchJobResultRequest, v1.ProviderFetchJobResultResponse](
+		fetchJobResult: connect.NewClient[v1.ProviderServiceFetchJobResultRequest, v1.ProviderServiceFetchJobResultResponse](
 			httpClient,
 			baseURL+ProviderServiceFetchJobResultProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("FetchJobResult")),
@@ -153,82 +153,82 @@ func NewProviderServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // providerServiceClient implements ProviderServiceClient.
 type providerServiceClient struct {
-	complete            *connect.Client[v1.ProviderCompleteRequest, v1.ProviderCompleteResponse]
-	embed               *connect.Client[v1.ProviderEmbedRequest, v1.ProviderEmbedResponse]
-	listModels          *connect.Client[v1.ProviderListModelsRequest, v1.ProviderListModelsResponse]
-	listReasoningLevels *connect.Client[v1.ProviderListReasoningLevelsRequest, v1.ProviderListReasoningLevelsResponse]
-	getModelProfile     *connect.Client[v1.ProviderGetModelProfileRequest, v1.ProviderGetModelProfileResponse]
-	probeEmbeddingWidth *connect.Client[v1.ProviderProbeEmbeddingWidthRequest, v1.ProviderProbeEmbeddingWidthResponse]
-	submitJob           *connect.Client[v1.ProviderSubmitJobRequest, v1.ProviderSubmitJobResponse]
-	getJobStatus        *connect.Client[v1.ProviderGetJobStatusRequest, v1.ProviderGetJobStatusResponse]
-	fetchJobResult      *connect.Client[v1.ProviderFetchJobResultRequest, v1.ProviderFetchJobResultResponse]
+	complete            *connect.Client[v1.ProviderServiceCompleteRequest, v1.ProviderServiceCompleteResponse]
+	embed               *connect.Client[v1.ProviderServiceEmbedRequest, v1.ProviderServiceEmbedResponse]
+	listModels          *connect.Client[v1.ProviderServiceListModelsRequest, v1.ProviderServiceListModelsResponse]
+	listReasoningLevels *connect.Client[v1.ProviderServiceListReasoningLevelsRequest, v1.ProviderServiceListReasoningLevelsResponse]
+	getModelProfile     *connect.Client[v1.ProviderServiceGetModelProfileRequest, v1.ProviderServiceGetModelProfileResponse]
+	probeEmbeddingWidth *connect.Client[v1.ProviderServiceProbeEmbeddingWidthRequest, v1.ProviderServiceProbeEmbeddingWidthResponse]
+	submitJob           *connect.Client[v1.ProviderServiceSubmitJobRequest, v1.ProviderServiceSubmitJobResponse]
+	getJobStatus        *connect.Client[v1.ProviderServiceGetJobStatusRequest, v1.ProviderServiceGetJobStatusResponse]
+	fetchJobResult      *connect.Client[v1.ProviderServiceFetchJobResultRequest, v1.ProviderServiceFetchJobResultResponse]
 }
 
 // Complete calls numen.v1.ProviderService.Complete.
-func (c *providerServiceClient) Complete(ctx context.Context, req *connect.Request[v1.ProviderCompleteRequest]) (*connect.Response[v1.ProviderCompleteResponse], error) {
+func (c *providerServiceClient) Complete(ctx context.Context, req *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
 	return c.complete.CallUnary(ctx, req)
 }
 
 // Embed calls numen.v1.ProviderService.Embed.
-func (c *providerServiceClient) Embed(ctx context.Context, req *connect.Request[v1.ProviderEmbedRequest]) (*connect.Response[v1.ProviderEmbedResponse], error) {
+func (c *providerServiceClient) Embed(ctx context.Context, req *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
 	return c.embed.CallUnary(ctx, req)
 }
 
 // ListModels calls numen.v1.ProviderService.ListModels.
-func (c *providerServiceClient) ListModels(ctx context.Context, req *connect.Request[v1.ProviderListModelsRequest]) (*connect.Response[v1.ProviderListModelsResponse], error) {
+func (c *providerServiceClient) ListModels(ctx context.Context, req *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error) {
 	return c.listModels.CallUnary(ctx, req)
 }
 
 // ListReasoningLevels calls numen.v1.ProviderService.ListReasoningLevels.
-func (c *providerServiceClient) ListReasoningLevels(ctx context.Context, req *connect.Request[v1.ProviderListReasoningLevelsRequest]) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error) {
+func (c *providerServiceClient) ListReasoningLevels(ctx context.Context, req *connect.Request[v1.ProviderServiceListReasoningLevelsRequest]) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error) {
 	return c.listReasoningLevels.CallUnary(ctx, req)
 }
 
 // GetModelProfile calls numen.v1.ProviderService.GetModelProfile.
-func (c *providerServiceClient) GetModelProfile(ctx context.Context, req *connect.Request[v1.ProviderGetModelProfileRequest]) (*connect.Response[v1.ProviderGetModelProfileResponse], error) {
+func (c *providerServiceClient) GetModelProfile(ctx context.Context, req *connect.Request[v1.ProviderServiceGetModelProfileRequest]) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error) {
 	return c.getModelProfile.CallUnary(ctx, req)
 }
 
 // ProbeEmbeddingWidth calls numen.v1.ProviderService.ProbeEmbeddingWidth.
-func (c *providerServiceClient) ProbeEmbeddingWidth(ctx context.Context, req *connect.Request[v1.ProviderProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error) {
+func (c *providerServiceClient) ProbeEmbeddingWidth(ctx context.Context, req *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error) {
 	return c.probeEmbeddingWidth.CallUnary(ctx, req)
 }
 
 // SubmitJob calls numen.v1.ProviderService.SubmitJob.
-func (c *providerServiceClient) SubmitJob(ctx context.Context, req *connect.Request[v1.ProviderSubmitJobRequest]) (*connect.Response[v1.ProviderSubmitJobResponse], error) {
+func (c *providerServiceClient) SubmitJob(ctx context.Context, req *connect.Request[v1.ProviderServiceSubmitJobRequest]) (*connect.Response[v1.ProviderServiceSubmitJobResponse], error) {
 	return c.submitJob.CallUnary(ctx, req)
 }
 
 // GetJobStatus calls numen.v1.ProviderService.GetJobStatus.
-func (c *providerServiceClient) GetJobStatus(ctx context.Context, req *connect.Request[v1.ProviderGetJobStatusRequest]) (*connect.Response[v1.ProviderGetJobStatusResponse], error) {
+func (c *providerServiceClient) GetJobStatus(ctx context.Context, req *connect.Request[v1.ProviderServiceGetJobStatusRequest]) (*connect.Response[v1.ProviderServiceGetJobStatusResponse], error) {
 	return c.getJobStatus.CallUnary(ctx, req)
 }
 
 // FetchJobResult calls numen.v1.ProviderService.FetchJobResult.
-func (c *providerServiceClient) FetchJobResult(ctx context.Context, req *connect.Request[v1.ProviderFetchJobResultRequest]) (*connect.Response[v1.ProviderFetchJobResultResponse], error) {
+func (c *providerServiceClient) FetchJobResult(ctx context.Context, req *connect.Request[v1.ProviderServiceFetchJobResultRequest]) (*connect.Response[v1.ProviderServiceFetchJobResultResponse], error) {
 	return c.fetchJobResult.CallUnary(ctx, req)
 }
 
 // ProviderServiceHandler is an implementation of the numen.v1.ProviderService service.
 type ProviderServiceHandler interface {
 	// Complete turns messages into the text of an answer.
-	Complete(context.Context, *connect.Request[v1.ProviderCompleteRequest]) (*connect.Response[v1.ProviderCompleteResponse], error)
+	Complete(context.Context, *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
-	Embed(context.Context, *connect.Request[v1.ProviderEmbedRequest]) (*connect.Response[v1.ProviderEmbedResponse], error)
+	Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error)
 	// ListModels lists the models of the connection that fit an operation.
-	ListModels(context.Context, *connect.Request[v1.ProviderListModelsRequest]) (*connect.Response[v1.ProviderListModelsResponse], error)
+	ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of the model of the call.
-	ListReasoningLevels(context.Context, *connect.Request[v1.ProviderListReasoningLevelsRequest]) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error)
+	ListReasoningLevels(context.Context, *connect.Request[v1.ProviderServiceListReasoningLevelsRequest]) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error)
 	// GetModelProfile returns what the provider knows about the embedding model of the call.
-	GetModelProfile(context.Context, *connect.Request[v1.ProviderGetModelProfileRequest]) (*connect.Response[v1.ProviderGetModelProfileResponse], error)
+	GetModelProfile(context.Context, *connect.Request[v1.ProviderServiceGetModelProfileRequest]) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error)
 	// ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
-	ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error)
+	ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error)
 	// SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
-	SubmitJob(context.Context, *connect.Request[v1.ProviderSubmitJobRequest]) (*connect.Response[v1.ProviderSubmitJobResponse], error)
+	SubmitJob(context.Context, *connect.Request[v1.ProviderServiceSubmitJobRequest]) (*connect.Response[v1.ProviderServiceSubmitJobResponse], error)
 	// GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
-	GetJobStatus(context.Context, *connect.Request[v1.ProviderGetJobStatusRequest]) (*connect.Response[v1.ProviderGetJobStatusResponse], error)
+	GetJobStatus(context.Context, *connect.Request[v1.ProviderServiceGetJobStatusRequest]) (*connect.Response[v1.ProviderServiceGetJobStatusResponse], error)
 	// FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
-	FetchJobResult(context.Context, *connect.Request[v1.ProviderFetchJobResultRequest]) (*connect.Response[v1.ProviderFetchJobResultResponse], error)
+	FetchJobResult(context.Context, *connect.Request[v1.ProviderServiceFetchJobResultRequest]) (*connect.Response[v1.ProviderServiceFetchJobResultResponse], error)
 }
 
 // NewProviderServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -321,38 +321,38 @@ func NewProviderServiceHandler(svc ProviderServiceHandler, opts ...connect.Handl
 // UnimplementedProviderServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedProviderServiceHandler struct{}
 
-func (UnimplementedProviderServiceHandler) Complete(context.Context, *connect.Request[v1.ProviderCompleteRequest]) (*connect.Response[v1.ProviderCompleteResponse], error) {
+func (UnimplementedProviderServiceHandler) Complete(context.Context, *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.Complete is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) Embed(context.Context, *connect.Request[v1.ProviderEmbedRequest]) (*connect.Response[v1.ProviderEmbedResponse], error) {
+func (UnimplementedProviderServiceHandler) Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.Embed is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) ListModels(context.Context, *connect.Request[v1.ProviderListModelsRequest]) (*connect.Response[v1.ProviderListModelsResponse], error) {
+func (UnimplementedProviderServiceHandler) ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.ListModels is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) ListReasoningLevels(context.Context, *connect.Request[v1.ProviderListReasoningLevelsRequest]) (*connect.Response[v1.ProviderListReasoningLevelsResponse], error) {
+func (UnimplementedProviderServiceHandler) ListReasoningLevels(context.Context, *connect.Request[v1.ProviderServiceListReasoningLevelsRequest]) (*connect.Response[v1.ProviderServiceListReasoningLevelsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.ListReasoningLevels is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) GetModelProfile(context.Context, *connect.Request[v1.ProviderGetModelProfileRequest]) (*connect.Response[v1.ProviderGetModelProfileResponse], error) {
+func (UnimplementedProviderServiceHandler) GetModelProfile(context.Context, *connect.Request[v1.ProviderServiceGetModelProfileRequest]) (*connect.Response[v1.ProviderServiceGetModelProfileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.GetModelProfile is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderProbeEmbeddingWidthResponse], error) {
+func (UnimplementedProviderServiceHandler) ProbeEmbeddingWidth(context.Context, *connect.Request[v1.ProviderServiceProbeEmbeddingWidthRequest]) (*connect.Response[v1.ProviderServiceProbeEmbeddingWidthResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.ProbeEmbeddingWidth is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) SubmitJob(context.Context, *connect.Request[v1.ProviderSubmitJobRequest]) (*connect.Response[v1.ProviderSubmitJobResponse], error) {
+func (UnimplementedProviderServiceHandler) SubmitJob(context.Context, *connect.Request[v1.ProviderServiceSubmitJobRequest]) (*connect.Response[v1.ProviderServiceSubmitJobResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.SubmitJob is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) GetJobStatus(context.Context, *connect.Request[v1.ProviderGetJobStatusRequest]) (*connect.Response[v1.ProviderGetJobStatusResponse], error) {
+func (UnimplementedProviderServiceHandler) GetJobStatus(context.Context, *connect.Request[v1.ProviderServiceGetJobStatusRequest]) (*connect.Response[v1.ProviderServiceGetJobStatusResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.GetJobStatus is not implemented"))
 }
 
-func (UnimplementedProviderServiceHandler) FetchJobResult(context.Context, *connect.Request[v1.ProviderFetchJobResultRequest]) (*connect.Response[v1.ProviderFetchJobResultResponse], error) {
+func (UnimplementedProviderServiceHandler) FetchJobResult(context.Context, *connect.Request[v1.ProviderServiceFetchJobResultRequest]) (*connect.Response[v1.ProviderServiceFetchJobResultResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.FetchJobResult is not implemented"))
 }

@@ -109,7 +109,7 @@ func (c *Client) Complete(ctx context.Context, request CompleteRequest) (Complet
 	for i, one := range request.Messages {
 		messages[i] = &v1.HostModelMessage{Role: one.Role, Text: one.Text}
 	}
-	wire := &v1.HostModelCompleteRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens)}
+	wire := &v1.HostModelServiceCompleteRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens)}
 	response, err := c.host.Complete(ctx, connect.NewRequest(wire))
 	if err != nil {
 		return CompleteResult{}, fmt.Errorf("connection: complete: %w", err)
@@ -122,7 +122,7 @@ func (c *Client) Complete(ctx context.Context, request CompleteRequest) (Complet
 
 // Embed asks the rows of the plugin, in order, to embed the texts. It returns the errors Complete does.
 func (c *Client) Embed(ctx context.Context, request EmbedRequest) (EmbedResult, error) {
-	response, err := c.host.Embed(ctx, connect.NewRequest(&v1.HostModelEmbedRequest{Texts: request.Texts}))
+	response, err := c.host.Embed(ctx, connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: request.Texts}))
 	if err != nil {
 		return EmbedResult{}, fmt.Errorf("connection: embed: %w", err)
 	}
@@ -139,7 +139,7 @@ func (c *Client) Embed(ctx context.Context, request EmbedRequest) (EmbedResult, 
 // GetEmbeddingProfile asks the rows of the plugin, in order, for the profile of their embedding model.
 // It returns the errors Complete does.
 func (c *Client) GetEmbeddingProfile(ctx context.Context) (EmbeddingProfile, error) {
-	response, err := c.host.GetEmbeddingProfile(ctx, connect.NewRequest(&v1.HostModelGetEmbeddingProfileRequest{}))
+	response, err := c.host.GetEmbeddingProfile(ctx, connect.NewRequest(&v1.HostModelServiceGetEmbeddingProfileRequest{}))
 	if err != nil {
 		return EmbeddingProfile{}, fmt.Errorf("connection: get embedding profile: %w", err)
 	}

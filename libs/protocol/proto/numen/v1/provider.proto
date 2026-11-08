@@ -11,31 +11,31 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // calls.
 service ProviderService {
   // Complete turns messages into the text of an answer.
-  rpc Complete(ProviderCompleteRequest) returns (ProviderCompleteResponse);
+  rpc Complete(ProviderServiceCompleteRequest) returns (ProviderServiceCompleteResponse);
 
   // Embed turns texts into vectors, in the order of the texts.
-  rpc Embed(ProviderEmbedRequest) returns (ProviderEmbedResponse);
+  rpc Embed(ProviderServiceEmbedRequest) returns (ProviderServiceEmbedResponse);
 
   // ListModels lists the models of the connection that fit an operation.
-  rpc ListModels(ProviderListModelsRequest) returns (ProviderListModelsResponse);
+  rpc ListModels(ProviderServiceListModelsRequest) returns (ProviderServiceListModelsResponse);
 
   // ListReasoningLevels lists the reasoning levels of the model of the call.
-  rpc ListReasoningLevels(ProviderListReasoningLevelsRequest) returns (ProviderListReasoningLevelsResponse);
+  rpc ListReasoningLevels(ProviderServiceListReasoningLevelsRequest) returns (ProviderServiceListReasoningLevelsResponse);
 
   // GetModelProfile returns what the provider knows about the embedding model of the call.
-  rpc GetModelProfile(ProviderGetModelProfileRequest) returns (ProviderGetModelProfileResponse);
+  rpc GetModelProfile(ProviderServiceGetModelProfileRequest) returns (ProviderServiceGetModelProfileResponse);
 
   // ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
-  rpc ProbeEmbeddingWidth(ProviderProbeEmbeddingWidthRequest) returns (ProviderProbeEmbeddingWidthResponse);
+  rpc ProbeEmbeddingWidth(ProviderServiceProbeEmbeddingWidthRequest) returns (ProviderServiceProbeEmbeddingWidthResponse);
 
   // SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc SubmitJob(ProviderSubmitJobRequest) returns (ProviderSubmitJobResponse);
+  rpc SubmitJob(ProviderServiceSubmitJobRequest) returns (ProviderServiceSubmitJobResponse);
 
   // GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc GetJobStatus(ProviderGetJobStatusRequest) returns (ProviderGetJobStatusResponse);
+  rpc GetJobStatus(ProviderServiceGetJobStatusRequest) returns (ProviderServiceGetJobStatusResponse);
 
   // FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc FetchJobResult(ProviderFetchJobResultRequest) returns (ProviderFetchJobResultResponse);
+  rpc FetchJobResult(ProviderServiceFetchJobResultRequest) returns (ProviderServiceFetchJobResultResponse);
 }
 
 // ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -91,24 +91,24 @@ message ProviderMessage {
   string text = 2;
 }
 
-message ProviderCompleteRequest {
+message ProviderServiceCompleteRequest {
   ProviderCall call = 1;
   repeated ProviderMessage messages = 2;
   optional double temperature = 3;
   int32 max_tokens = 4;
 }
 
-message ProviderCompleteResponse {
+message ProviderServiceCompleteResponse {
   string text = 1;
   ProviderFailure failure = 2;
 }
 
-message ProviderEmbedRequest {
+message ProviderServiceEmbedRequest {
   ProviderCall call = 1;
   repeated string texts = 2;
 }
 
-message ProviderEmbedResponse {
+message ProviderServiceEmbedResponse {
   repeated FloatVector vectors = 1;
   ProviderFailure failure = 2;
 }
@@ -120,12 +120,12 @@ message ProviderModel {
   repeated string operations = 3;
 }
 
-message ProviderListModelsRequest {
+message ProviderServiceListModelsRequest {
   ProviderCall call = 1;
   string operation = 2;
 }
 
-message ProviderListModelsResponse {
+message ProviderServiceListModelsResponse {
   repeated ProviderModel models = 1;
   ProviderFailure failure = 2;
 }
@@ -135,20 +135,20 @@ message ProviderReasoningLevel {
   string title = 2;
 }
 
-message ProviderListReasoningLevelsRequest {
+message ProviderServiceListReasoningLevelsRequest {
   ProviderCall call = 1;
 }
 
-message ProviderListReasoningLevelsResponse {
+message ProviderServiceListReasoningLevelsResponse {
   repeated ProviderReasoningLevel levels = 1;
   ProviderFailure failure = 2;
 }
 
-message ProviderGetModelProfileRequest {
+message ProviderServiceGetModelProfileRequest {
   ProviderCall call = 1;
 }
 
-message ProviderGetModelProfileResponse {
+message ProviderServiceGetModelProfileResponse {
   // is_known is false when the provider has no profile for the model; the core then probes the width.
   bool is_known = 1;
   int32 dimensions = 2;
@@ -162,43 +162,43 @@ message ProviderGetModelProfileResponse {
   ProviderFailure failure = 8;
 }
 
-message ProviderProbeEmbeddingWidthRequest {
+message ProviderServiceProbeEmbeddingWidthRequest {
   ProviderCall call = 1;
 }
 
-message ProviderProbeEmbeddingWidthResponse {
+message ProviderServiceProbeEmbeddingWidthResponse {
   int32 dimensions = 1;
   ProviderFailure failure = 2;
 }
 
-message ProviderSubmitJobRequest {
+message ProviderServiceSubmitJobRequest {
   ProviderCall call = 1;
   string operation = 2;
   bytes request = 3;
 }
 
-message ProviderSubmitJobResponse {
+message ProviderServiceSubmitJobResponse {
   // job_id is opaque to the core.
   string job_id = 1;
   ProviderFailure failure = 2;
 }
 
-message ProviderGetJobStatusRequest {
+message ProviderServiceGetJobStatusRequest {
   ProviderCall call = 1;
   string job_id = 2;
 }
 
-message ProviderGetJobStatusResponse {
+message ProviderServiceGetJobStatusResponse {
   string status = 1;
   ProviderFailure failure = 2;
 }
 
-message ProviderFetchJobResultRequest {
+message ProviderServiceFetchJobResultRequest {
   ProviderCall call = 1;
   string job_id = 2;
 }
 
-message ProviderFetchJobResultResponse {
+message ProviderServiceFetchJobResultResponse {
   bytes result = 1;
   ProviderFailure failure = 2;
 }
