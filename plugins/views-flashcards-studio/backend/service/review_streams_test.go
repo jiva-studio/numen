@@ -81,7 +81,7 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 // A stream whose page cannot be written to ends with the write's error, at
 // whichever message the failure was detected.
 func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
-	cancelled, cancel := context.WithCancel(t.Context())
+	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	for name, one := range map[string]struct {
@@ -89,7 +89,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		fails      func(n int, msg any) bool
 		moved      bool
 	}{
-		"opening": {func() context.Context { return cancelled }, func(n int, _ any) bool { return n == 1 }, false},
+		"opening": {func() context.Context { return canceled }, func(n int, _ any) bool { return n == 1 }, false},
 		// Nothing changed, and the stream repeats the message until the page is
 		// found gone.
 		"repeating": {t.Context, func(n int, _ any) bool { return n > 1 }, false},
@@ -179,7 +179,7 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 	}
 }
 
-// gated is vaults whose review cards come back when their own gate is closed.
+// gated is vaults whose review cards are returned when their own gate is closed.
 type gated struct {
 	until   map[domain.VaultID]<-chan struct{}
 	entered chan domain.VaultID
@@ -370,7 +370,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		t.Fatal("the stream never sent its opening message")
 	}
 
-	// The page is gone, and nothing cancelled the context the handler holds.
+	// The page is gone, and nothing canceled the context the handler holds.
 	if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 		t.Errorf("the stream ended with %v, want the write's error", err)
 	}
@@ -383,7 +383,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
 	// The vault is read when the window opens it, and what a count that will not
-	// come back does to the stream is what is under test here.
+	// being returned does to the stream is what is under test here.
 	front(t, handler)
 
 	target := make(chan struct{})
@@ -418,7 +418,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	}
 }
 
-// waiting is a vault whose review cards never come back, which is what counting a
+// waiting is a vault whose review cards are never returned, which is what counting a
 // vault of many thousands looks like from the stream's side.
 type waiting struct{ until <-chan struct{} }
 

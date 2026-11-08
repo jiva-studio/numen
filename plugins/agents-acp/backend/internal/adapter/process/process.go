@@ -14,7 +14,7 @@ const waitDelay = 2 * time.Second
 const ExitGrace = time.Second
 
 // Supervise puts the command in a process group of its own, and ends the whole group when the
-// command's context is cancelled.
+// command's context is canceled.
 func Supervise(cmd *exec.Cmd) {
 	detach(cmd)
 	cmd.Cancel = func() error { return kill(cmd) }
@@ -24,7 +24,7 @@ func Supervise(cmd *exec.Cmd) {
 // WaitForExit waits for the started command to exit, and calls stop, which cancels the command's
 // context, if it is still running after ExitGrace.
 //
-// A program that exits on the end of its input is reaped by Wait before its group is signalled, so it
+// A program that exits on the end of its input is reaped by Wait before its group is signaled, so it
 // finishes the way it chose to and is not reported as killed.
 func WaitForExit(cmd *exec.Cmd, stop func()) error {
 	exited := make(chan error, 1)

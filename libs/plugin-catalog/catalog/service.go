@@ -77,8 +77,7 @@ func joinSourceErrors(failures []*SourceError) error {
 }
 
 func checkEntry(entry Entry, env manifest.Environment) *manifest.IncompatibleError {
-	var incompatible *manifest.IncompatibleError
-	if errors.As(entry.Requirements.Check(env), &incompatible) {
+	if incompatible, ok := errors.AsType[*manifest.IncompatibleError](entry.Requirements.Check(env)); ok {
 		return incompatible
 	}
 	return nil

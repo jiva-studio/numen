@@ -462,7 +462,7 @@ describe('the options are honoured', () => {
     for (const parent of getNodesByRelation(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
   })
 
-  it('takes a curve setting without being told the size of a box', () => {
+  it('takes a curve setting without receiving the size of a box', () => {
     // Tuning a curve should not need to know the size of a box.
     const straighter = arrangePlex(neighbourhoods.typical, {
       options: { routing: { curvature: 0 } },

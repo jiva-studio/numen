@@ -291,7 +291,7 @@ describe('where the keyboard is standing', () => {
     expect(palette.emitted('light')).toEqual([['entropy'], ['engine']])
   })
 
-  it('says nothing when a group lands and what is lit stays where it was', async () => {
+  it('says nothing when a group lands and what is lit keeps its position', async () => {
     const palette = mountPalette({ groups: [SECTIONS[1]!] })
     await settle()
 
@@ -461,7 +461,7 @@ describe('what a group says about itself', () => {
     expect(document.body.querySelector('.spinner')?.getAttribute('aria-hidden')).toBe('true')
   })
 
-  it("says a group came back with nothing, in the group's own words", async () => {
+  it("says a group returned nothing, in the group's own words", async () => {
     mountPalette({
       groups: [{ id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' }],
     })
@@ -519,7 +519,7 @@ describe('which group remains where', () => {
       group.textContent?.trim(),
     )
 
-  it('draws a group that came back with nothing at the foot', async () => {
+  it('draws a group that returned nothing at the foot', async () => {
     mountPalette({
       groups: [{ id: 'names', title: 'Names', items: [], silence: 'Nothing' }, SECTIONS[1]!],
     })
@@ -816,7 +816,7 @@ describe('the action panel', () => {
     expect(sheet()).toBeNull()
   })
 
-  it('goes when the palette closes, and does not come back with it', async () => {
+  it('goes when the palette closes, and does not return with it', async () => {
     const palette = await open()
 
     await palette.setProps({ isOpen: false })
@@ -878,7 +878,7 @@ describe('the action panel', () => {
     expect(litAction()?.textContent).toContain('Show in plex')
   })
 
-  it('goes on a press on the ground, and the palette stays where it is', async () => {
+  it('goes on a press on the ground, and the palette keeps its position', async () => {
     const palette = await open()
 
     getDrawnBackdrop()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))

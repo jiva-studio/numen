@@ -3,7 +3,7 @@
  *
  * There were two of these lists — the linter's and the graph's — and they had
  * drifted a module apart, which is how a rule stops covering something without
- * anybody being told. A module left off either list is a rule that stops at its
+ * any owner being notified. A module left off either list is a rule that stops at its
  * border, so there is one list and both tools take it whole.
  */
 import { dirname, resolve } from 'node:path'
@@ -81,7 +81,7 @@ export const modules = [
 /**
  * The packages under `libs` and `apps` that are none of this,
  * each with the reason. A package is here or it is above; the alternative is a
- * package nobody notices is uncovered.
+ * package no one notices is uncovered.
  */
 export const elsewhere = {
   'libs/protocol': 'the schema, generated from the .proto and hand-written nowhere',

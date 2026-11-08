@@ -10,7 +10,7 @@ export type Orientation = 'horizontal' | 'vertical'
 /** Where a dragged tab lands on a pane. */
 export type Side = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
-/** What a tab is called, and what it carries besides, for a strip to show. */
+/** What a tab is called, and what it includes besides, for a strip to show. */
 export interface Tab {
   readonly id: TabId
   readonly title: string

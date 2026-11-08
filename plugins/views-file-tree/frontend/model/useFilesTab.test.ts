@@ -275,7 +275,7 @@ describe('rows dragged out of the tree', () => {
     expect(recorded).toStrictEqual(['drags Entropy.md physics/Kelvin.md'])
   })
 
-  it('are the notes of a mixed selection, and the rest stay where they are', async () => {
+  it('are the notes of a mixed selection, and the rest keep their positions', async () => {
     const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"slices"
 	"strings"
 	"time"
 )
@@ -145,8 +146,8 @@ func run(ctx context.Context, tool program, into io.Writer, arguments ...string)
 
 func getLastLine(response string) string {
 	lines := strings.Split(strings.TrimSpace(response), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if line := strings.TrimSpace(lines[i]); line != "" {
+	for _, line := range slices.Backward(lines) {
+		if line := strings.TrimSpace(line); line != "" {
 			return line
 		}
 	}

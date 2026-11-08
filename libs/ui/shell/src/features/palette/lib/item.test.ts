@@ -125,12 +125,12 @@ describe('walking the list', () => {
     expect(stepTo(places, { from: 0, by: -1 }, canLandOn)).toBe(3)
   })
 
-  it('lands nowhere when nothing in the list can be chosen', () => {
+  it('selects nothing when nothing in the list can be chosen', () => {
     const off = flatten([group('names', [item('one', { isDisabled: true })])])
     expect(stepTo(off, { from: -1, by: 1 }, canLandOn)).toBe(-1)
   })
 
-  it('lands nowhere in a list with nothing in it', () => {
+  it('selects nothing in a list with nothing in it', () => {
     expect(stepTo([], { from: -1, by: 1 }, canLandOn)).toBe(-1)
   })
 })
@@ -246,7 +246,7 @@ describe('walking a list where every row can be landed on', () => {
     expect(getSteppedIndex(3, -1, 1)).toBe(0)
   })
 
-  it('lands nowhere in a list with nothing in it', () => {
+  it('selects nothing in a list with nothing in it', () => {
     expect(getSteppedIndex(0, -1, 1)).toBe(-1)
   })
 })

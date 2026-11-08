@@ -172,11 +172,11 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())
 	requireKeys(t, "the answer of recognition_create", answer, []string{"taskId", "path", "state"}, []string{"task_id"})
-	if want := "recognise:" + scanPath; answer["taskId"] != want {
+	if want := "recognize:" + scanPath; answer["taskId"] != want {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
 	close(s.recogniser.release)
-	s.waitFinished(t, "recognise:"+scanPath)
+	s.waitFinished(t, "recognize:"+scanPath)
 
 	schema := getToolSchema(t, s.registry, "recognition_create", true)
 	requireKeys(t, "the output schema of recognition_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})

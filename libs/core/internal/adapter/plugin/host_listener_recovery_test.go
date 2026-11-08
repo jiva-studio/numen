@@ -27,12 +27,7 @@ func openListenerTarget(t *testing.T, host *Host) func() {
 
 func isEvicted(t *testing.T, host *Host) bool {
 	t.Helper()
-	for _, id := range host.EvictIdle(t.Context(), 0, 50*time.Millisecond) {
-		if id == listenerPlugin {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(host.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
 }
 
 func TestTheReleaseOfAStoppedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) {

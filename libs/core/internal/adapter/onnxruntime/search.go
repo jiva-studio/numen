@@ -143,7 +143,7 @@ func readLoaderConfig(pos string, visited map[string]bool) []string {
 		return nil
 	}
 	var out []string
-	for _, line := range strings.Split(string(raw), "\n") {
+	for line := range strings.SplitSeq(string(raw), "\n") {
 		line, _, _ = strings.Cut(line, "#")
 		fields := strings.FieldsFunc(line, isConfigSeparator)
 		switch {

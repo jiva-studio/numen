@@ -34,7 +34,7 @@ export function createDeckReader(
     const target = parsed.get(id)
     if (target && target.body === body) return target.deck
     // A file read again carries fresh identities for the same cards, so the
-    // string it comes back as differs from the string that went out. A deck
+    // string it is returned as differs from the string that went out. A deck
     // reading as the one on screen leaves that one standing, and a deck the
     // file has named a card of since keeps that card's identity, so the card a
     // person is typing into is not drawn again.
@@ -76,7 +76,7 @@ export function createDeckReader(
 
   /**
    * A deck the tab itself turned, which is what it now holds. It is put here
-   * as it goes into the store, so the string coming back is not read again.
+   * as it goes into the store, so the string returned is not read again.
    */
   const setParsed = (id: string, body: string, deck: BufferDeck): void => {
     parsed.set(id, { body, deck })

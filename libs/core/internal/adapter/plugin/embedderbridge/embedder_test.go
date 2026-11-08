@@ -218,7 +218,7 @@ func TestEmbedderBridge(t *testing.T) {
 	}
 
 	callsBefore := mockServer.getModelCalls.Load()
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if bridge.Concurrency() != 4 {
 			t.Errorf("concurrency = %d, want 4", bridge.Concurrency())
 		}

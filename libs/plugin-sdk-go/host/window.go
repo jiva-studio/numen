@@ -46,7 +46,7 @@ type PassageSpan struct{ Start, Length int }
 // Window is the main window of the plugin's vault. Every call needs window:focus. A path with no file
 // in the vault returns ErrNotExist, and a host with no window returns ErrNoWindow.
 type Window interface {
-	// FocusNote makes the note at the path the current one, and the neighbourhood view is centred on it.
+	// FocusNote makes the note at the path the current one, and the neighborhood view is centered on it.
 	FocusNote(ctx context.Context, path string) (FocusedNote, error)
 	// FocusPassages opens the file at the first passage and highlights every passage.
 	FocusPassages(ctx context.Context, path string, passages []PassageSpan) error

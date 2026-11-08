@@ -29,7 +29,7 @@ func CheckProduced[E comparable, C any](t *testing.T, values []E, from map[E]C, 
 	}
 }
 
-// RoundTrip fails for every value that does not come back as itself.
+// RoundTrip fails for every value that is not returned as itself.
 func RoundTrip[E comparable, C any](t *testing.T, values []E, reading func(E) C, writing func(C) E) {
 	t.Helper()
 	for _, value := range values {

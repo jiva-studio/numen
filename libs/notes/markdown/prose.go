@@ -38,7 +38,7 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 			if found.Target != from {
 				continue
 			}
-			// The brackets stay where they were: only the target between them
+			// The brackets keep their position: only the target between them
 			// moves, and each of them is two bytes.
 			out.WriteString(body[last : pos+found.At+2])
 			out.WriteString(to + getWikilinkSuffix(found.Inside))

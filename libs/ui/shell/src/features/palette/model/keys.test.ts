@@ -180,7 +180,7 @@ describe('usePaletteKeys', () => {
       expect(handle.focus).toHaveBeenCalledTimes(2)
     })
 
-    it('does not take it while the panel opens', async () => {
+    it('does not accept it while the panel opens', async () => {
       const { isPanelOpen, handle } = setUp({ isOpen: true })
       await flushPromises()
       handle.focus.mockClear()
@@ -189,7 +189,7 @@ describe('usePaletteKeys', () => {
       expect(handle.focus).not.toHaveBeenCalled()
     })
 
-    it('does not take it when the palette goes with the panel', async () => {
+    it('does not accept it when the palette goes with the panel', async () => {
       const { isOpen, isPanelOpen, handle } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true
@@ -290,7 +290,7 @@ describe('usePaletteKeys', () => {
   })
 
   describe('as the palette closes', () => {
-    it('lets go of the panel and what was lit, and goes back to where it came from', async () => {
+    it('releases the panel and what was lit, and goes back to where it came from', async () => {
       const { isOpen, isPanelOpen, places, back } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true

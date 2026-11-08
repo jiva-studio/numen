@@ -64,7 +64,7 @@ export function useBranchResize(options: BranchResizeOptions): BranchResize {
   }
 
   // The branch is going, and where its handle reached is not news about a node
-  // that will not be there to hear it.
+  // that will not be there to receive it.
   onBeforeUnmount(() => {
     pendingShares = null
     putDown()

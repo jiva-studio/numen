@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/agent.proto
 
-// What a client asks an agent, and what it hears back while the agent works.
+// What a client asks an agent, and what it receives while the agent works.
 //
 // The window passes a person's task and draws what arrives, a step at a
 // time. What the agent is and how it reaches the vault is the application's
@@ -130,7 +130,7 @@ type AskAgentRequest struct {
 	Agent string `protobuf:"bytes,6,opt,name=agent,proto3" json:"agent,omitempty"`
 	// Which model answers (a model id the chosen agent accepts). Empty uses default.
 	Model string `protobuf:"bytes,7,opt,name=model,proto3" json:"model,omitempty"`
-	// Instructions told about the task.
+	// Instructions given for the task.
 	Instructions string `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	// Vault tools the agent may call.
 	Tools []string `protobuf:"bytes,9,rep,name=tools,proto3" json:"tools,omitempty"`
@@ -451,7 +451,7 @@ type AgentProgram struct {
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// Whether the program is installed on this machine.
 	IsInstalled bool `protobuf:"varint,3,opt,name=is_installed,json=isInstalled,proto3" json:"is_installed,omitempty"`
-	// Set on the program an installation nobody has configured answers with.
+	// Set on the program an installation with no configuration answers with.
 	IsDefault bool `protobuf:"varint,4,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// The models the program says it offers. Empty where it says none.
 	Models []*AgentModel `protobuf:"bytes,5,rep,name=models,proto3" json:"models,omitempty"`

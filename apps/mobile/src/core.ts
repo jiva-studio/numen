@@ -14,7 +14,7 @@ interface CorePlugin {
 
 const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 
-/** Where the core is, and what it holds. */
+/** Where the core is, and its contents. */
 export interface Core {
   port: number
   dir: string

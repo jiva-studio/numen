@@ -96,7 +96,7 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[0].Error == nil || added[1].Error == nil || added[0].Error != added[1].Error {
+	if added[0].Error == nil || added[1].Error == nil || !errors.Is(added[0].Error, added[1].Error) {
 		t.Errorf("the links of one note did not fail together: %v, %v", added[0].Error, added[1].Error)
 	}
 }
@@ -128,14 +128,14 @@ func TestACallCancelledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRes
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	cancelling := c
-	cancelling.index = func(ctx context.Context, v domain.Vault, paths []string) error {
+	canceling := c
+	canceling.index = func(ctx context.Context, v domain.Vault, paths []string) error {
 		err := c.index(ctx, v, paths)
 		cancel()
 		return err
 	}
 
-	added, err := note.NewAddLinks(cancelling.newEditLinks()).Execute(ctx, c.vault, []note.LinkAddition{
+	added, err := note.NewAddLinks(canceling.newEditLinks()).Execute(ctx, c.vault, []note.LinkAddition{
 		{From: "Heat.md", Link: toName("Entropy", domain.RoleRef)},
 		{From: "Work.md", Link: toName("Entropy", domain.RoleRef)},
 		{From: "Order.md", Link: toName("Entropy", domain.RoleRef)},

@@ -533,9 +533,9 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 		Input: []string{text},
 		Model: model,
 	})
-	// gomutants:disable-next-line BRANCH_IF reason="marshalling string struct cannot fail"
+	// gomutants:disable-next-line BRANCH_IF reason="marshaling string struct cannot fail"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="marshalling string struct cannot fail"
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="marshaling string struct cannot fail"
 		return nil, err
 	}
 

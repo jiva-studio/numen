@@ -18,7 +18,7 @@ func TestAPluginTravelsWithTheGroupOfItsSecretDeclarations(t *testing.T) {
 
 	secrets := infos[0].GetSecrets()
 	if len(secrets) != 2 {
-		t.Fatalf("travelled as %v", infos[0])
+		t.Fatalf("traveled as %v", infos[0])
 	}
 	if secrets[0].GetName() != "apiKey" || secrets[0].GetGroup() != "openrouter" || secrets[0].GetDescription() != "Key of the service" {
 		t.Errorf("first declaration = %v", secrets[0])

@@ -163,7 +163,7 @@ describe('the days a grid draws', () => {
 
 describe('how dark a day is drawn', () => {
   // A day with five answers is drawn as active, as a day with fifty is.
-  it('is nothing for a day nobody answered on, and rises with what was done', () => {
+  it('is nothing for a day with no answers, and rises with what was done', () => {
     expect(getWeight(0)).toBe(0)
     expect(getWeight(1)).toBe(1)
     expect(getWeight(4)).toBe(1)

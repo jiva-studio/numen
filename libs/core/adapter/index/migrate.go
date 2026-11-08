@@ -164,7 +164,7 @@ func parseVersion(name string) (int, error) {
 
 func splitStatements(raw string) []string {
 	var out []string
-	for _, chunk := range strings.Split(raw, ";") {
+	for chunk := range strings.SplitSeq(raw, ";") {
 		if strings.TrimSpace(stripComments(chunk)) != "" {
 			out = append(out, chunk)
 		}
@@ -174,7 +174,7 @@ func splitStatements(raw string) []string {
 
 func stripComments(s string) string {
 	var b strings.Builder
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if !strings.HasPrefix(strings.TrimSpace(line), "--") {
 			b.WriteString(line)
 			b.WriteString("\n")

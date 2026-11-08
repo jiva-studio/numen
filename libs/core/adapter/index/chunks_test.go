@@ -164,7 +164,7 @@ func countRows(t *testing.T, db *DB, statement string, args ...any) int {
 }
 
 func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
-	// A nearest-neighbour search answers with the whole table's best k. Both
+	// A nearest-neighbor search answers with the whole table's best k. Both
 	// vaults are seeded near enough to either query to be an answer, and each
 	// query is the other vault's own vector, so the wrong vault's rows are the
 	// nearer ones and a lost filter puts them first.
@@ -894,7 +894,7 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 }
 
 func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
-	// A nearest-neighbour query returns k rows regardless of distance. A chunk
+	// A nearest-neighbor query returns k rows regardless of distance. A chunk
 	// farther than the floor is not a match.
 	ctx := t.Context()
 	db := openDB(t)

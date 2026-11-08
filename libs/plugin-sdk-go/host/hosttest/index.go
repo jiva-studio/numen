@@ -2,6 +2,7 @@ package hosttest
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -20,7 +21,7 @@ func getKind(filePath string) domain.SourceKind {
 func isNote(path string) bool { return strings.HasSuffix(strings.ToLower(path), domain.NoteExtension) }
 
 func isIgnored(filePath string) bool {
-	for _, segment := range strings.Split(filePath, "/") {
+	for segment := range strings.SplitSeq(filePath, "/") {
 		if strings.HasPrefix(segment, ".") {
 			return true
 		}
@@ -30,9 +31,7 @@ func isIgnored(filePath string) bool {
 
 func (v *Vault) parsed() map[string]domain.Note {
 	out := make(map[string]domain.Note, len(v.indexed))
-	for filePath, target := range v.indexed {
-		out[filePath] = target
-	}
+	maps.Copy(out, v.indexed)
 	return out
 }
 

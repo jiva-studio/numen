@@ -97,14 +97,14 @@ export const TheLineGivesWayToWhatItHolds: Story = {
     await expect(pos.left + pos.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
 
     // The line and the word are laid side by side, so neither runs over the
-    // other: the two sides and what they hold take the whole width between them.
+    // other: the two sides and their contents take the whole width between them.
     const gap = Number.parseFloat(getComputedStyle(divider).columnGap)
     await expect((before ?? 0) + (after ?? 0) + pos.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 
 /**
- * A rule leading with what it holds: a stub of line before it, the width of
+ * A rule leading with its contents: a stub of line before it, the width of
  * the air the rule keeps, and the rest of the line after it.
  */
 export const LeadingWithWhatItHolds: Story = {
@@ -153,7 +153,7 @@ export const AnnouncedAsNothing: Story = {
     await expect(divider.querySelector('hr')).toBeNull()
     await expect(divider.querySelector('[role="separator"]')).toBeNull()
 
-    // What it holds is a button, under its own name.
+    // Its content is a button, under its own name.
     const button = found(canvasElement, 'button')
     await expect(button.tagName).toBe('BUTTON')
     await expect(button.textContent?.trim()).toBe('Add a field')

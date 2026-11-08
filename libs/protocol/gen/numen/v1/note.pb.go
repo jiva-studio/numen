@@ -87,7 +87,7 @@ func (Relation) EnumDescriptor() ([]byte, []int) {
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role nobody decided on has no behaviour.
+// and drawing read it, so a role no one has decided on has no behaviour.
 type Role int32
 
 const (
@@ -442,7 +442,7 @@ func (x *GetNeighbourhoodRequest) GetPath() string {
 type GetNeighbourhoodResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
-	Related []*Neighbour           `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
+	Related []*Neighbor            `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
 	// The `type` key of the frontmatter of the note in focus, so a client draws a note as
 	// what it is. Empty for an ordinary note.
 	FocusType string `protobuf:"bytes,3,opt,name=focus_type,json=focusType,proto3" json:"focus_type,omitempty"`
@@ -496,7 +496,7 @@ func (x *GetNeighbourhoodResponse) GetFocus() *Note {
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetRelated() []*Neighbour {
+func (x *GetNeighbourhoodResponse) GetRelated() []*Neighbor {
 	if x != nil {
 		return x.Related
 	}
@@ -524,9 +524,9 @@ func (x *GetNeighbourhoodResponse) GetFocusTabKind() string {
 	return ""
 }
 
-// Neighbour is one note joined to the one in focus. The records that join notes
+// Neighbor is one note joined to the one in focus. The records that join notes
 // are in GetNeighbourhoodResponse.connections.
-type Neighbour struct {
+type Neighbor struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Note     *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
 	Relation Relation               `protobuf:"varint,2,opt,name=relation,proto3,enum=numen.v1.Relation" json:"relation,omitempty"`
@@ -540,20 +540,20 @@ type Neighbour struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Neighbour) Reset() {
-	*x = Neighbour{}
+func (x *Neighbor) Reset() {
+	*x = Neighbor{}
 	mi := &file_numen_v1_note_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Neighbour) String() string {
+func (x *Neighbor) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Neighbour) ProtoMessage() {}
+func (*Neighbor) ProtoMessage() {}
 
-func (x *Neighbour) ProtoReflect() protoreflect.Message {
+func (x *Neighbor) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -565,33 +565,33 @@ func (x *Neighbour) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Neighbour.ProtoReflect.Descriptor instead.
-func (*Neighbour) Descriptor() ([]byte, []int) {
+// Deprecated: Use Neighbor.ProtoReflect.Descriptor instead.
+func (*Neighbor) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *Neighbour) GetNote() *Note {
+func (x *Neighbor) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-func (x *Neighbour) GetRelation() Relation {
+func (x *Neighbor) GetRelation() Relation {
 	if x != nil {
 		return x.Relation
 	}
 	return Relation_RELATION_UNSPECIFIED
 }
 
-func (x *Neighbour) GetType() string {
+func (x *Neighbor) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-func (x *Neighbour) GetTabKind() string {
+func (x *Neighbor) GetTabKind() string {
 	if x != nil {
 		return x.TabKind
 	}
@@ -2831,7 +2831,7 @@ type RenameNoteResponse struct {
 	// Which of the three names the note, and so which the rename brought into
 	// line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
 	NameSource NameSource `protobuf:"varint,3,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
-	// What the file did. Absent when it stayed where it was.
+	// What the file did. Absent when it kept its position.
 	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
@@ -3052,15 +3052,15 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
 	"\x05_note\"-\n" +
 	"\x17GetNeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xec\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xeb\x01\n" +
 	"\x18GetNeighbourhoodResponse\x12$\n" +
-	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
-	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x12\x1d\n" +
+	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12,\n" +
+	"\arelated\x18\x02 \x03(\v2\x12.numen.v1.NeighborR\arelated\x12\x1d\n" +
 	"\n" +
 	"focus_type\x18\x03 \x01(\tR\tfocusType\x126\n" +
 	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\x12$\n" +
-	"\x0efocus_tab_kind\x18\x05 \x01(\tR\ffocusTabKind\"\x8e\x01\n" +
-	"\tNeighbour\x12\"\n" +
+	"\x0efocus_tab_kind\x18\x05 \x01(\tR\ffocusTabKind\"\x8d\x01\n" +
+	"\bNeighbor\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
 	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04type\x12\x19\n" +
@@ -3316,7 +3316,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*GetOpeningNoteResponse)(nil),    // 6: numen.v1.GetOpeningNoteResponse
 	(*GetNeighbourhoodRequest)(nil),   // 7: numen.v1.GetNeighbourhoodRequest
 	(*GetNeighbourhoodResponse)(nil),  // 8: numen.v1.GetNeighbourhoodResponse
-	(*Neighbour)(nil),                 // 9: numen.v1.Neighbour
+	(*Neighbor)(nil),                  // 9: numen.v1.Neighbor
 	(*ResolveAddressesRequest)(nil),   // 10: numen.v1.ResolveAddressesRequest
 	(*ResolveAddressesResponse)(nil),  // 11: numen.v1.ResolveAddressesResponse
 	(*TextLink)(nil),                  // 12: numen.v1.TextLink
@@ -3364,10 +3364,10 @@ var file_numen_v1_note_proto_goTypes = []any{
 var file_numen_v1_note_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
 	4,  // 1: numen.v1.GetNeighbourhoodResponse.focus:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbour
+	9,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbor
 	29, // 3: numen.v1.GetNeighbourhoodResponse.connections:type_name -> numen.v1.Connection
-	4,  // 4: numen.v1.Neighbour.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Neighbour.relation:type_name -> numen.v1.Relation
+	4,  // 4: numen.v1.Neighbor.note:type_name -> numen.v1.Note
+	0,  // 5: numen.v1.Neighbor.relation:type_name -> numen.v1.Relation
 	13, // 6: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
 	12, // 7: numen.v1.ResolveAddressesResponse.found:type_name -> numen.v1.TextLink
 	16, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings

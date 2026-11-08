@@ -154,7 +154,7 @@ func TestAnIndexWithoutAVectorIndexContainsNoWidth(t *testing.T) {
 
 // A width that cannot be read is absent, and the report states why.
 func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
-	t.Run("the catalogue cannot be read", func(t *testing.T) {
+	t.Run("the catalog cannot be read", func(t *testing.T) {
 		db, faults := openBreakingDB(t)
 		faults.breakOn(t, "name = 'chunks_vec'")
 		width, err := getVectorWidth(t.Context(), db.write)

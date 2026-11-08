@@ -8,7 +8,7 @@ import (
 )
 
 func TestASecretLoggedWithTheStructuredLoggerShowsNoValue(t *testing.T) {
-	one := Secret{ID: "s0000000a", Name: "Work", Group: "openrouter", Value: "invented-harbour-key"}
+	one := Secret{ID: "s0000000a", Name: "Work", Group: "openrouter", Value: "invented-harbor-key"}
 	var out bytes.Buffer
 	slog.New(slog.NewJSONHandler(&out, nil)).Info("configure", "secret", one)
 

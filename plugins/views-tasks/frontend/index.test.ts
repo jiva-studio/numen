@@ -40,10 +40,10 @@ const openList = async (wrapper: VueWrapper): Promise<void> => {
 }
 
 describe('the manifest', () => {
-  it('places the view of the plugin in the status slot of the title bar', () => {
+  it('places the view of the plugin in the status slot of the title bar while a vault is open', () => {
     expect(manifest.id).toBe('md.numen.views.tasks')
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'titleBar.status', view: TASKS_VIEW },
+      { slot: 'titleBar.status', view: TASKS_VIEW, when: 'window.isVaultOpen' },
     ])
   })
 

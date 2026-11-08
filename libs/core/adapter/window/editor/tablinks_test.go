@@ -518,7 +518,7 @@ func TestConvertMoveErrorToWireCoversEveryTabMoveErrorCode(t *testing.T) {
 		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED: tablinks.MoveErrorWindowClosed,
 		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT:       tablinks.MoveErrorTimeout,
 		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER:     tablinks.MoveErrorNotOwner,
-		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELLED:     tablinks.MoveErrorCancelled,
+		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELED:      tablinks.MoveErrorCancelled,
 	}, convertMoveErrorToWire)
 }
 

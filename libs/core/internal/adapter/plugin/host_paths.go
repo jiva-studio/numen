@@ -12,14 +12,14 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-// The reasons a setting of type file does not take a path.
+// The reasons a setting of type file does not accept a path.
 var (
 	errPathNotFound = errors.New("not found")
 	errNotAFile     = errors.New("not a file")
 	errNotAccepted  = errors.New("wrong type of file")
 )
 
-// CheckPluginSetting reports why a setting the plugin declares does not take the value. A setting
+// CheckPluginSetting reports why a setting the plugin declares does not accept the value. A setting
 // of type file accepts an empty value or an existing file with an extension it accepts. The port
 // setting of a listener accepts a port the host can bind. Any other setting accepts any value.
 func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {

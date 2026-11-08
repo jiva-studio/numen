@@ -220,7 +220,7 @@ describe('the edges of the halves of a pair', () => {
     expect(applyChange('a\uDBFFb', 'a\uDBFFc')).toEqual([[1, 3, '\uDBFFc']])
   })
 
-  it('does not take the first unit after the leading halves for one', () => {
+  it('does not accept the first unit after the leading halves for one', () => {
     expect(applyChange('a\uDC00x', 'a\uDC00y')).toEqual([[2, 3, 'y']])
   })
 
@@ -228,7 +228,7 @@ describe('the edges of the halves of a pair', () => {
     expect(applyChange('x\uDFFFb', 'y\uDFFFb')).toEqual([[0, 2, 'y\uDFFF']])
   })
 
-  it('does not take the first unit after the trailing halves for one', () => {
+  it('does not accept the first unit after the trailing halves for one', () => {
     expect(applyChange('xb', 'yb')).toEqual([[0, 1, 'y']])
   })
 })

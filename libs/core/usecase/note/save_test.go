@@ -177,7 +177,7 @@ func TestSavingANewHeadingPreservesTheFileWhereItIs(t *testing.T) {
 
 // A synchroniser, a checkout and a touch all move a file's time over text that
 // did not change. This is the rule that keeps the question off the screen of a
-// person whose vault is in a synchronised folder.
+// person whose vault is in a synchronized folder.
 func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -360,7 +360,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	}()
 
 	// The save has reached the point where it takes the lock, or — with
-	// nothing serialising the two — has already read the note the agent is
+	// nothing serializing the two — has already read the note the agent is
 	// about to change.
 	select {
 	case <-saveAsking:

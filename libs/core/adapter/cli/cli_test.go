@@ -108,7 +108,7 @@ func (s *session) trash(refuse error) *fakeTrash {
 }
 
 func getListMarks(listing, name string) string {
-	for _, line := range strings.Split(listing, "\n") {
+	for line := range strings.SplitSeq(listing, "\n") {
 		if len(line) > 2 && strings.HasPrefix(strings.TrimLeft(line, " *?"), name) {
 			return line[:2]
 		}
@@ -231,7 +231,7 @@ func TestReaddingAVaultKeepsItsIdentity(t *testing.T) {
 }
 
 func parseIdentity(output string) string {
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		if id, ok := strings.CutPrefix(strings.TrimSpace(line), "id "); ok {
 			return strings.TrimSpace(id)
 		}
@@ -291,7 +291,7 @@ func TestAMovedVaultIsRecognisedInsteadOfRefused(t *testing.T) {
 		t.Errorf("the registry still points at the old location:\n%s", items)
 	}
 
-	// The identity travelled with the folder, so the index it already built is
+	// The identity traveled with the folder, so the index it already built is
 	// still the right one.
 	if now := readIdentity(t, moved); now != was {
 		t.Errorf("the moved vault is %s, and was %s", now, was)
@@ -377,7 +377,7 @@ func TestForgettingKeepsTheFolderAndReturnsSo(t *testing.T) {
 		t.Errorf("the vault is still on the list:\n%s", items)
 	}
 
-	// The identity stayed in the folder, so the vault that comes back is the one
+	// The identity stayed in the folder, so the vault that is returned is the one
 	// that left.
 	again := s.mustRun("vault", "add", s.vault, "--name", "leaving")
 	if parseIdentity(again) != parseIdentity(added) {

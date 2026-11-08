@@ -665,7 +665,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 		"  type: preset\n" +
 		"  id: 01J8\n" +
 		"  minutes_a_day: 20\n" +
-		"  colour: green\n" +
+		"  color: green\n" +
 		"---\n" +
 		"body\n"
 
@@ -688,7 +688,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 	front := Parse(domain.FileStat{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
 	want := map[string]any{
 		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
-		"colour": "green",
+		"color": "green",
 	}
 	if !reflect.DeepEqual(front, want) {
 		t.Errorf("frontmatter = %v, want %v\n%s", front, want, got)
@@ -825,7 +825,7 @@ func TestOneTypeNamesOnePlace(t *testing.T) {
 
 // A note naming no place under the type grows an entry for it, and one written
 // with no block grows the block too.
-func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
+func TestAnUnnamedTypeIsSavedIn(t *testing.T) {
 	for name, raw := range map[string]string{
 		"no block":       "---\ntype: sample\n---\nbody\n",
 		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",

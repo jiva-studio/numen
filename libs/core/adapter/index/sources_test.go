@@ -293,14 +293,14 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(found) != 1 || found[0].Path != "library/scan.pdf" || found[0].Producer != "ocr" || found[0].ContentHash != "hash-scan" {
-		t.Errorf("the recognised sources are %+v", found)
+		t.Errorf("the recognized sources are %+v", found)
 	}
 
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Sources().GetRecognisedSources(ctx, getFirst().ID, domain.KindFile); err == nil {
-		t.Error("listing over a closed index reported nothing recognised")
+		t.Error("listing over a closed index reported nothing recognized")
 	}
 }
 

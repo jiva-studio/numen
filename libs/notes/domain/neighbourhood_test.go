@@ -21,12 +21,12 @@ func TestARelationIsTakenInOneOrder(t *testing.T) {
 }
 
 func TestTheFocusIsNotRelatedToItself(t *testing.T) {
-	target := domain.Neighbourhood{Focus: domain.NoteRef{Path: "notes/Entropy.md"}}
-	target.AddNeighbour(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbour{Relation: domain.RelationParent})
+	target := domain.Neighborhood{Focus: domain.NoteRef{Path: "notes/Entropy.md"}}
+	target.AddNeighbour(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbor{Relation: domain.RelationParent})
 	if len(target.Related) != 0 {
 		t.Fatalf("the focus was added beside itself: %v", target.Related)
 	}
-	target.AddNeighbour(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbour{Relation: domain.RelationChild})
+	target.AddNeighbour(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbor{Relation: domain.RelationChild})
 	if len(target.Related) != 1 {
 		t.Fatalf("got %v", target.Related)
 	}

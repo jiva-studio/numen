@@ -126,7 +126,7 @@ func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
 func getRecogniseCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
-		ID: "recognition.create", Title: "Recognise text", Icon: "scan-text", When: "target.contentType == 'application/pdf'",
+		ID: "recognition.create", Title: "Recognize text", Icon: "scan-text", When: "target.contentType == 'application/pdf'",
 	}}
 }
 

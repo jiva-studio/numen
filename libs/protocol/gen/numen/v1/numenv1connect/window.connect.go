@@ -6,7 +6,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it goes, are its
+// each is doing behind itself, and what has to land before it closes, are its
 // own. Every question here names the window it is about.
 package numenv1connect
 
@@ -61,10 +61,10 @@ type WindowServiceClient interface {
 	// the caller listens: what it is, what it is on, and how far it has got.
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is told about it.
+	// at once, so a window that opened while work was running is notified of it.
 	// It is a stream and not a question asked over and over, because what is
 	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is told to read a document, and this is
+	// the window asking for it — an agent is instructed to read a document, and this is
 	// where the person watching sees it happen.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error)
 	// WatchQuit says the window is going, for as long as the caller listens. A
@@ -169,10 +169,10 @@ type WindowServiceHandler interface {
 	// the caller listens: what it is, what it is on, and how far it has got.
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is told about it.
+	// at once, so a window that opened while work was running is notified of it.
 	// It is a stream and not a question asked over and over, because what is
 	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is told to read a document, and this is
+	// the window asking for it — an agent is instructed to read a document, and this is
 	// where the person watching sees it happen.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error
 	// WatchQuit says the window is going, for as long as the caller listens. A

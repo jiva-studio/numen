@@ -131,7 +131,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 }
 
-// A run with a time limit ends with a different error from a cancelled run,
+// A run with a time limit ends with a different error from a canceled run,
 // and both mean the run is over: the caller receives the error of the pass that
 // reached the limit, and the context is not consulted afterwards.
 func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
@@ -203,7 +203,7 @@ func (unwilling) Close() error { return nil }
 
 // limited is a run under a time limit that expires where the test
 // specifies. It ends with the deadline error, which differs from the error of a
-// cancelled run.
+// canceled run.
 type limited struct {
 	overChan  chan struct{}
 	deadline  func() (time.Time, bool)

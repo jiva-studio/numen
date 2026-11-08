@@ -31,7 +31,7 @@ interface PlexType {
 
 /**
  * The declarations a title is drawn under, carried by a box the document
- * resolves them against: a token written in any unit comes back in pixels. The
+ * resolves them against: a token written in any unit is returned in pixels. The
  * box holds a word in each size a plex sets text in, so its own width answers a
  * change in any of the tokens it names.
  */

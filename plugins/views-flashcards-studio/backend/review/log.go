@@ -11,13 +11,13 @@ import (
 type Rating uint8
 
 const (
-	// Again is a card that did not come back at all.
+	// Again is a card that was not recalled at all.
 	Again Rating = iota + 1
-	// Hard is a card that came back, slowly and with effort.
+	// Hard is a card that was recalled, slowly and with effort.
 	Hard
-	// Good is a card that came back.
+	// Good is a card that was recalled.
 	Good
-	// Easy is a card that came back with none.
+	// Easy is a card that was recalled with none.
 	Easy
 )
 
@@ -130,7 +130,7 @@ func Read(raw []byte) (answers []Answer, skipped int) {
 		skipped, raw = 1, raw[:lastNewline+1]
 	}
 
-	for _, one := range bytes.Split(raw, []byte("\n")) {
+	for one := range bytes.SplitSeq(raw, []byte("\n")) {
 		if len(bytes.TrimSpace(one)) == 0 {
 			continue
 		}

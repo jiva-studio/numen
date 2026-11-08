@@ -14,7 +14,7 @@ export interface NoteContents {
 
 /**
  * One report of a change being made to the prose of a note, while it is being
- * made: which change it belongs to, where it lands, and what goes in.
+ * made: which change it belongs to, its position, and what goes in.
  */
 export interface NoteEdit {
   readonly change: string
@@ -44,12 +44,12 @@ export interface NoteHeading {
 export type NoteFailure = ErrorCode | 'changed'
 
 /**
- * What a read came back with. The words for a failure belong to whatever shows
+ * What a read returned. The words for a failure belong to whatever shows
  * it.
  */
 export type NoteResult = Result<NoteContents, ErrorCode>
 
-/** What a write came back with. A file that changed is one nothing was written to. */
+/** What a write returned. A file that changed is one nothing was written to. */
 export type WriteResult = Result<NoteContents, NoteFailure>
 
 /** A note to make: what it is called, and where it goes. */
@@ -66,7 +66,7 @@ export interface RenamedNote {
   readonly moved: MoveResult | null
 }
 
-/** What renaming a note came back with. */
+/** What renaming a note returned. */
 export type RenameResult = Result<RenamedNote, NoteFailure>
 
 export interface RemovedNote {
@@ -74,5 +74,5 @@ export interface RemovedNote {
   readonly dangling: readonly string[]
 }
 
-/** What removing a note came back with. */
+/** What removing a note returned. */
 export type RemoveResult = Result<RemovedNote, ErrorCode>

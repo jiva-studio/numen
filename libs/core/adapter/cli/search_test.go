@@ -162,7 +162,7 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 	}
 }
 
-func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
+func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search

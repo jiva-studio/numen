@@ -444,8 +444,8 @@ func TestAFileListedAfterAnotherIsRead(t *testing.T) {
 	}
 }
 
-// A file shorter by the time it is read than when it was measured comes back
-// as what it holds, with nothing made up to fill the range.
+// A file shorter by the time it is read than when it was measured is returned
+// as its contents, with nothing made up to fill the range.
 func TestAFileThatShrankWhileItWasReadReachesBackAsWhatItContains(t *testing.T) {
 	_, v := openFileRead(t, map[string]string{"lecture.txt": "said and said"})
 
@@ -479,7 +479,7 @@ func TestARangeOpeningInsideACharacterAtTheEndOpensAfterIt(t *testing.T) {
 	}
 }
 
-// A range lying wholly inside one character holds no character, and comes back
+// A range lying wholly inside one character holds no character, and is returned
 // empty.
 func TestARangeInsideOneCharacterIsEmpty(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": "śāstra"})

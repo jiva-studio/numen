@@ -98,9 +98,9 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	}()
 	<-entered
 
-	cancelled, cancel := context.WithCancel(t.Context())
+	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, _, err := r.Open(cancelled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
+	if _, _, err := r.Open(canceled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
 		t.Fatalf("waiting Open() = %v, want context.Canceled", err)
 	}
 

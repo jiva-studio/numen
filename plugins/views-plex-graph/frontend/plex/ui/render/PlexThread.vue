@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** The line a gesture drags behind it, and the node letting go there would leave. */
+/** The line a gesture drags behind it, and the node dropping there would leave. */
 import PlexNodeView from './PlexNodeView.vue'
 import type { PlacedNode } from '../../lib/node'
 

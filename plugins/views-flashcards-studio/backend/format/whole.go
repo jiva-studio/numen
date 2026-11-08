@@ -26,8 +26,8 @@ func Whole(
 
 	var provided []CardID
 	// Backwards, because a splice moves every byte after it.
-	for i := len(spans) - 1; i >= 0; i-- {
-		card, span := deck.Cards[i], spans[i]
+	for i, span := range slices.Backward(spans) {
+		card := deck.Cards[i]
 
 		carried := card.CardID
 		if carried == "" {

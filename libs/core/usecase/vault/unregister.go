@@ -14,7 +14,7 @@ import (
 var ErrLastVault = errors.New("the last vault cannot be removed")
 
 // Unregister takes a vault off the list this installation keeps, and out of the
-// index. The folder stays where it is, with the identity it carries, and adding
+// index. The folder keeps its position, with the identity it carries, and adding
 // it again brings back the same vault.
 type Unregister struct {
 	registry vaultport.VaultRegistry

@@ -145,7 +145,7 @@ export type Model = Message<"numen.v1.Model"> & {
   group: string;
 
   /**
-   * Set on the model an installation nobody has configured runs on.
+   * Set on the model an installation with no configuration runs on.
    *
    * @generated from field: bool is_default = 5;
    */
@@ -888,7 +888,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
   isChosen: boolean;
 
   /**
-   * Why the setting does not take the path, in words a person reads. Empty where it was written.
+   * Why the setting does not accept the path, in words a person reads. Empty where it was written.
    *
    * @generated from field: string problem = 3;
    */
@@ -1033,7 +1033,7 @@ export const SettingsService: GenService<{
   },
   /**
    * WriteSettings writes settings into that file. The file is patched as an
-   * object, so every key a person typed stays where it was, and a file the
+   * object, so every key a person typed keeps its position, and a file the
    * settings could not be read out of again is not written at all.
    *
    * @generated from rpc numen.v1.SettingsService.WriteSettings
@@ -1158,7 +1158,7 @@ export const SettingsService: GenService<{
   },
   /**
    * ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
-   * of type file or folder, and writes the path they chose. A path the setting does not take is not
+   * of type file or folder, and writes the path they chose. A path the setting does not accept is not
    * written, and the answer says why.
    *
    * @generated from rpc numen.v1.SettingsService.ChoosePluginPath

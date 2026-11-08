@@ -20,7 +20,7 @@ export interface NewNote {
   readonly title: string
 }
 
-/** The vault as a command changes what it holds. */
+/** The vault as a command changes its contents. */
 export interface VaultWriter {
   /** A note made under the name it is given, in a relation of another one. */
   createNote(title: string, from: string, relation: ConnectionRole | null): Promise<NewNote | null>
@@ -98,7 +98,7 @@ export interface RunContext {
 /** What the window offers a command being carried out, one port to a job. */
 export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice {
   readonly settings: SettingsWriter
-  /** A path put on the clipboard. */
+  /** A path copied to the clipboard. */
   copyPath(path: string): void
   readonly emitEvent?: (event: string) => void
 }

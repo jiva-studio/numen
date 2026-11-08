@@ -344,7 +344,7 @@ export const LitAlone: Story = {
   },
 }
 
-/** Every group came back with nothing, so there is nowhere to stand. */
+/** Every group returned nothing, so there is nowhere to stand. */
 export const LitNothing: Story = {
   args: {
     groups: [{ id: 'names', title: 'Names', items: [], silence: 'Search failed' }],

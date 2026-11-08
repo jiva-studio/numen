@@ -25,7 +25,7 @@ func foldGeneral(name string) string {
 
 func foldASCII(name string) (folded string, ok bool) {
 	hasUpper := false
-	for i := 0; i < len(name); i++ {
+	for i := range len(name) {
 		c := name[i]
 		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated bound differs only for the byte 0x80, which the general fold leaves as it is, so both paths return the same name"
 		if c >= utf8.RuneSelf {
@@ -41,7 +41,7 @@ func foldASCII(name string) (folded string, ok bool) {
 	var lower strings.Builder
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="strings.Builder.Grow is a capacity hint that does not alter the built string"
 	lower.Grow(len(name))
-	for i := 0; i < len(name); i++ {
+	for i := range len(name) {
 		c := name[i]
 		if 'A' <= c && c <= 'Z' {
 			c += 'a' - 'A'

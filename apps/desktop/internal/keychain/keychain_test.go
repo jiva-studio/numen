@@ -90,7 +90,7 @@ func TestAMachineWithoutAKeychainFailsWithANamedError(t *testing.T) {
 	}
 }
 
-// A name is required, and a cancelled context touches nothing.
+// A name is required, and a canceled context touches nothing.
 func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 	keyring.MockInit()
 	store := Store{}
@@ -115,7 +115,7 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 		t.Errorf("error = %v, want context.Canceled", err)
 	}
 	if _, err := store.GetKey(t.Context(), "n"); !errors.Is(err, pluginport.ErrNoKey) {
-		t.Errorf("a cancelled set stored a key: %v", err)
+		t.Errorf("a canceled set stored a key: %v", err)
 	}
 }
 

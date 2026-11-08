@@ -177,7 +177,7 @@ func ConvertCurveToWire(c flashcards.Curve) *api.Curve {
 
 // ConvertBudgetsToWire are the budgets that closed a day, as the schema names them.
 func ConvertBudgetsToWire(names review.BudgetNames) []api.BudgetName {
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="Slice capacity hint does not affect observable behaviour."
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Slice capacity hint does not affect observable behavior."
 	out := make([]api.BudgetName, 0, len(names))
 	for _, one := range names {
 		out = append(out, ConvertBudgetToWire(one))

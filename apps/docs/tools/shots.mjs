@@ -2,8 +2,8 @@
  * What the manual shows, and from which story.
  *
  * The list is on its own so that reading it costs nothing: the check that
- * every name here is still a story runs on a bare node, and a camera nobody
- * has installed is no reason for the names to go unchecked.
+ * every name here is still a story runs on a bare node, and a camera that is not
+ * installed is no reason for the names to go unchecked.
  *
  * A window is drawn narrower than the column it lands in, so the application's
  * own text is larger on the page than it is on screen and can be read at a

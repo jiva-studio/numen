@@ -24,7 +24,7 @@ import (
 )
 
 // vaultLockHold is the longest a plugin holds the writers of the vault. A plugin that goes without
-// letting them go must not stop the vault being written.
+// releasing them must not stop the vault being written.
 const vaultLockHold = 2 * time.Minute
 
 const vaultWatchPoll = time.Second

@@ -17,7 +17,7 @@ func makeAnswers(
 ) []review.Answer {
 	var out []review.Answer
 	for reviewCard := range reviewCards {
-		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognise"}
+		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognize"}
 		for step := range each {
 			out = append(out, review.Answer{
 				ID: fmt.Sprintf("%06d", len(out)), ReviewCard: on,
@@ -116,7 +116,7 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 
 // An abandoned answer is capped at the longest cost, so an hour away from the
 // screen does not count as an hour of review.
-func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
+func TestAnUnattendedAnswerIsCappedAtTheLongest(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 

@@ -278,12 +278,12 @@ func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 	}()
 	giveUp()
 	if err := <-second; !errors.Is(err, context.Canceled) {
-		t.Errorf("a cancelled wait ended with %v", err)
+		t.Errorf("a canceled wait ended with %v", err)
 	}
 
 	stop()
 	if err := <-first; !errors.Is(err, context.Canceled) {
-		t.Errorf("a cancelled answer ended with %v", err)
+		t.Errorf("a canceled answer ended with %v", err)
 	}
 
 	// The place is back: a third question is answered.
@@ -293,7 +293,7 @@ func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 	}
 }
 
-// A question whose context is already cancelled starts no task.
+// A question whose context is already canceled starts no task.
 func TestAQuestionCancelledBeforeItStartsStartsNoTask(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, fake)

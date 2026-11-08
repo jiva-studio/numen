@@ -32,7 +32,7 @@ export interface OpenTab {
   readonly place?: TabPlace
 }
 
-/** A tab kind: what it holds, its title, and how it releases its state. */
+/** A tab kind: its contents, its title, and how it releases its state. */
 export interface TabKind<TabState, K extends string = string> {
   readonly kind: K
   readonly pluginId?: string
@@ -72,7 +72,7 @@ export interface TabKind<TabState, K extends string = string> {
   getTarget?(state: TabState): TabTarget
   getOpenTab?(state: TabState): OpenTab
   /**
-   * The tab lets go of what it held. False keeps it on screen: what it holds
+   * The tab releases what it held. False keeps it on screen: its contents
    * has something to finish, and closes the tab itself once it has.
    */
   onClose?(state: TabState, id: string): boolean

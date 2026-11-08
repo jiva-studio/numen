@@ -98,7 +98,7 @@ func TestReopenedIndex_KeepsSources(t *testing.T) {
 }
 
 // A machine where nothing has scanned reads as a vault holding nothing.
-func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
+func TestAnIndexThatWasNeverBuiltAnswersEmpty(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.NewConfig(container.Config{IndexPath: pos})
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}

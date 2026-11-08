@@ -90,7 +90,7 @@ function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
 export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   const { field, places, isPanelOpen, typed } = options
 
-  // The keyboard comes back to the field when the panel over it goes, and a
+  // The keyboard returns to the field when the panel over it goes, and a
   // palette that is going takes it somewhere else itself.
   watch(isPanelOpen, async (now) => {
     if (now || !options.isOpen()) return

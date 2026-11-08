@@ -10,7 +10,7 @@ func NormaliseSpaces(s string) string {
 
 // HasToken reports whether a space-separated attribute carries a value.
 func HasToken(attribute, token string) bool {
-	for _, field := range strings.Fields(attribute) {
+	for field := range strings.FieldsSeq(attribute) {
 		if strings.EqualFold(field, token) {
 			return true
 		}

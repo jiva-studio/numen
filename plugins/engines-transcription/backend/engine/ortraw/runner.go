@@ -102,7 +102,7 @@ func (runner *Runner) checkStatus(status uintptr) error {
 	var msg string
 	if msgPtr != nil {
 		var b []byte
-		for p := (*byte)(msgPtr); *p != 0; p = (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + 1)) {
+		for p := (*byte)(msgPtr); *p != 0; p = (*byte)(unsafe.Add(unsafe.Pointer(p), 1)) {
 			b = append(b, *p)
 		}
 		msg = string(b)

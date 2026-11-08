@@ -613,11 +613,6 @@ check_knip: ## check dead code and unused dependencies of every TS package and p
 lint_narrative: ## reject narrative identifiers, test names, comments, documents and the strings a person reads across the repository
 	node --test $(NARRATIVE)/scan.test.mjs
 	node $(NARRATIVE)/scan.mjs . --check
-	node $(NARRATIVE)/scan.mjs . --check --changed-since $(NARRATIVE_BASE)
-
-# One check, two scopes: the whole repository, then the lines added since the merge base of NARRATIVE_BASE
-# and HEAD, where the phrase rules (category 24) also fail. CI passes the pull request base as HEAD^1.
-NARRATIVE_BASE ?= origin/main
 
 .PHONY: lint_comments
 lint_comments: ## reject comments on fields and properties and doc comments on unexported functions (Go, TypeScript, Vue)

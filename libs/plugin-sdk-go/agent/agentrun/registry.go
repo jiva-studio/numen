@@ -54,7 +54,7 @@ func (r *Registry) Close() error {
 	return stopAll(running)
 }
 
-// EndConversation stops everything still answered in the conversation, then lets go of its
+// EndConversation stops everything still answered in the conversation, then releases its
 // session. Empty is no conversation.
 func (r *Registry) EndConversation(_ context.Context, conversation string) error {
 	if conversation == "" {

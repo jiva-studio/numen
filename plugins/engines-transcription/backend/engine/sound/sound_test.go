@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"math"
 	"math/rand"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -172,7 +173,7 @@ func TestWavParsingAndSampleEncodings(t *testing.T) {
 	binary.LittleEndian.PutUint16(fmtEnd[14:16], 16)
 	dataFirst = append(dataFirst, "fmt \x10\x00\x00\x00"...)
 	dataFirst = append(dataFirst, fmtEnd...)
-	parsed, err := parseWav(dataFirst[:len(dataFirst):len(dataFirst)])
+	parsed, err := parseWav(slices.Clip(dataFirst))
 	if err != nil || len(parsed.samples) != 2 {
 		t.Fatalf("expected dataFirst wav to parse, got %+v, err %v", parsed, err)
 	}
@@ -291,7 +292,7 @@ func BenchmarkWavDecode16Bit(b *testing.B) {
 	b.SetBytes(int64(len(w.samples)))
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if _, err := w.readSound(); err != nil {
 			b.Fatal(err)
 		}

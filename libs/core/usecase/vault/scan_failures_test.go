@@ -143,7 +143,7 @@ func TestAScanOfACancelledContextTouchesNothing(t *testing.T) {
 		t.Fatalf("error = %v, want the cancellation", err)
 	}
 	if m.opens != 0 || m.registerCalled || res.Notes != 0 {
-		t.Errorf("a cancelled scan went on: opens=%d registered=%v result=%+v", m.opens, m.registerCalled, res)
+		t.Errorf("a canceled scan went on: opens=%d registered=%v result=%+v", m.opens, m.registerCalled, res)
 	}
 }
 
@@ -364,6 +364,6 @@ func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 			t.Errorf("error = %v, want the cancellation", err)
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("a walk waiting for its turn kept waiting after it was cancelled")
+		t.Fatal("a walk waiting for its turn kept waiting after it was canceled")
 	}
 }

@@ -80,7 +80,7 @@ describe('a field of a card model', () => {
     expect(target.templates[1]?.back).toBe('{{Height}}')
   })
 
-  it('lands before the field it was let go on', () => {
+  it('lands before the field it was dropped on', () => {
     expect(
       moveField(cardModel({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
         .fields,

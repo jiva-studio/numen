@@ -17,7 +17,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	ocr := hosttest.NewTexts("v1", "org.example.ocr")
 	ocr.File("a.pdf", file)
 	if err := host.WriteText(ctx, ocr.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{
-		{Text: "teh "}, {Text: "end", Selector: domain.Selector(`{"page":2}`)},
+		{Text: "the "}, {Text: "end", Selector: domain.Selector(`{"page":2}`)},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 		t.Fatalf("live %q (%v), want %q", listing.Live, err, a.GetID())
 	}
 	text, err := host.ReadWholeText(ctx, fixer, listing.Versions[0])
-	if err != nil || text.Text != "teh end" || text.GetSelector(5) != `{"page":2}` {
+	if err != nil || text.Text != "the end" || text.GetSelector(5) != `{"page":2}` {
 		t.Fatalf("read %q (%v)", text.Text, err)
 	}
 	if err := host.WriteText(ctx, fixer.GetStore("org.example.fixer"), "b.jsonl", []domain.TextSegment{{Text: "the end"}}); err != nil {

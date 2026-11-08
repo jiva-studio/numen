@@ -24,7 +24,7 @@ export function useScreens<Name extends string>(
   const on = ref<Name>(order[0]) as Ref<Name>
 
   /**
-   * To a screen. Every screen standing after it lets go of what it holds, so a
+   * To a screen. Every screen standing after it releases its contents, so a
    * person going back never meets what the screen they left was showing.
    */
   const goTo = (to: Name) => {

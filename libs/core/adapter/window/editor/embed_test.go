@@ -40,7 +40,7 @@ import (
 )
 
 func getBefore() []string {
-	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+	return []string{"river", "mountain", "forest", "meadow", "harbor", "valley", "island", "desert"}
 }
 
 func getAfter() []string {

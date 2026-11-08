@@ -12,7 +12,7 @@ const createResponse = (id: string, text = 'back', state?: Turn['state']): Turn 
   state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 describe('the voices', () => {
-  it('draws the transcript in a bubble and what came back on the surface', () => {
+  it('draws the transcript in a bubble and what was returned on the surface', () => {
     expect(VOICES.prompt.isBubble).toBe(true)
     expect(VOICES.response.isBubble).toBe(false)
   })

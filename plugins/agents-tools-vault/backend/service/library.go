@@ -208,11 +208,11 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 		Name:  "library_read",
 		Title: "Read the text of a file",
 		Description: "Read the text of one file of the vault from its text version: the pages of a PDF, " +
-			"the chapters of a book, the transcript of a recording, the recognised text of a scan. " +
+			"the chapters of a book, the transcript of a recording, the recognized text of a scan. " +
 			"Give a page, or a start and a length in bytes; the result lists the ranges of the text with " +
 			"their places in the source, the length of the whole text, and the start to read next. " +
 			"A text file is read as it is. A file with no text version returns an error: it must be " +
-			"recognised or transcribed first. file_read reads the bytes of a text file and returns an error " +
+			"recognized or transcribed first. file_read reads the bytes of a text file and returns an error " +
 			"for a binary file; " +
 			"library_search finds the passage to read.",
 		Effect:       tools.ReadOnly,

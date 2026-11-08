@@ -235,7 +235,7 @@ describe('a hand dragging the row', () => {
     expect(scroll.isDragging.value).toBe(false)
   })
 
-  it('ignores a move after the element is gone', () => {
+  it('ignores a move after the element is removed', () => {
     const { scroll, area } = createPressed()
     scroll.onPointerDown(createPointer(200, 100))
     area.value = null
@@ -244,7 +244,7 @@ describe('a hand dragging the row', () => {
     expect(scroll.isDragging.value).toBe(false)
   })
 
-  it('does not take a pointer the element already holds', () => {
+  it('does not capture a pointer the element already holds', () => {
     const { scroll, element } = createPressed()
     const capture = createCapture(element, true)
 
@@ -268,7 +268,7 @@ describe('a hand dragging the row', () => {
     expect(scroll.isDragging.value).toBe(true)
   })
 
-  it('lets go of the row and the pointer', () => {
+  it('releases the row and the pointer', () => {
     const { scroll, element, capture } = createPressed()
     capture.has.mockReturnValue(true)
     scroll.onPointerDown(createPointer(200, 100))
@@ -290,7 +290,7 @@ describe('a hand dragging the row', () => {
     expect(capture.release).not.toHaveBeenCalled()
   })
 
-  it('lets go without an element', () => {
+  it('releases without an element', () => {
     const { scroll, area } = createPressed()
     area.value = null
 

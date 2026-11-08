@@ -21,7 +21,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  /** It was taken hold of by the pointer, and let go again. */
+  /** It was taken hold of by the pointer, and released again. */
   (event: 'dragstart', press: DragEvent): void
   (event: 'dragend', press: DragEvent): void
   /**

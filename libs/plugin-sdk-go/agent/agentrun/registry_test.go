@@ -71,7 +71,7 @@ func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	}
 }
 
-// Ending a conversation stops what is answered in it and nothing else, and lets go of its session.
+// Ending a conversation stops what is answered in it and nothing else, and releases its session.
 func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
 	var registry agentrun.Registry
 	_, one := start(t, &registry, "one")

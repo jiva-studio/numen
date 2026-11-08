@@ -61,7 +61,7 @@ describe('taking the keyboard onto a row', () => {
     expect(focusMenu).not.toHaveBeenCalled()
   })
 
-  it('focuses the menu once the row is let go', () => {
+  it('focuses the menu once the row is released', () => {
     const { keys, focusMenu } = setup()
     const focus = vi.fn<() => void>()
     keys.holdRow('copy', { focus })
@@ -81,7 +81,7 @@ describe('taking the keyboard onto a row', () => {
 })
 
 describe('keys pressed inside the menu', () => {
-  it('stays where it is for a letter no item begins with', () => {
+  it('keeps its position for a letter no item begins with', () => {
     const { keys } = setup()
     keys.goTo(1)
 

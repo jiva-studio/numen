@@ -78,7 +78,7 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 	}
 }
 
-func TestRegionsComeBackInReadingOrder(t *testing.T) {
+func TestRegionsAreReturnedInReadingOrder(t *testing.T) {
 	// The model returns regions in the order it found them, with the position of
 	// each. Sorting on position keeps the second column after the first.
 	filtered := Distinct([]Region{

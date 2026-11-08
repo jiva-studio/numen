@@ -145,7 +145,7 @@ func (e *vaultEndpoint) MoveNotes(
 func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteMove{
 		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
-		Detail: fmt.Sprintf("the call was cancelled before %s was moved", from),
+		Detail: fmt.Sprintf("the call was canceled before %s was moved", from),
 	}
 	if isCancelled(ctx) {
 		return notAttempted, 0, nil
@@ -191,7 +191,7 @@ func (e *vaultEndpoint) RemoveNotes(
 func removeNote(ctx context.Context, vault pluginport.PluginVault, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteRemoval{
 		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
-		Detail: fmt.Sprintf("the call was cancelled before %s was removed", target),
+		Detail: fmt.Sprintf("the call was canceled before %s was removed", target),
 	}
 	if isCancelled(ctx) {
 		return notAttempted, 0, nil

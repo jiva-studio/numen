@@ -2,6 +2,7 @@ package text
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -240,8 +241,8 @@ func (t *tokenizer) parseTagAttrs(hasAttr bool) tagAttrs {
 }
 
 func (t *tokenizer) handleFinish() {
-	for i := len(t.stack) - 1; i >= 0; i-- {
-		t.x.closeFrame(t.stack[i])
+	for _, v := range slices.Backward(t.stack) {
+		t.x.closeFrame(v)
 	}
 	t.x.preformattedDepth = 0
 }
@@ -334,8 +335,8 @@ func (t *tokenizer) handleStartTag(tt html.TokenType) {
 }
 
 func (t *tokenizer) findStackFrame(a atom.Atom) int {
-	for i := len(t.stack) - 1; i >= 0; i-- {
-		if t.stack[i].atom == a {
+	for i, v := range slices.Backward(t.stack) {
+		if v.atom == a {
 			return i
 		}
 	}

@@ -21,7 +21,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 		vector := backing[row*dimensions : (row+1)*dimensions]
 		tokenCount := 0
 		rowOffset := row * seq
-		for token := 0; token < seq; token++ {
+		for token := range seq {
 			if mask[rowOffset+token] == 0 {
 				continue
 			}

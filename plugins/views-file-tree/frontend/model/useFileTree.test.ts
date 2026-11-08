@@ -128,7 +128,7 @@ describe('the tree as it opens', () => {
 })
 
 describe('a folder opened', () => {
-  it('is read, and what it holds is drawn inside it', async () => {
+  it('is read, and its contents are drawn inside it', async () => {
     const { core } = vault()
     const list = createFileTree(core)
     await list.openFolder(ROOT)
@@ -280,7 +280,7 @@ describe('a change the vault reports', () => {
   })
 })
 
-describe('the window coming back to the front', () => {
+describe('the window returning to the front', () => {
   it('reads every open folder, and turns up what nothing reported', async () => {
     const { core, puts } = vault()
     const list = createFileTree(core)

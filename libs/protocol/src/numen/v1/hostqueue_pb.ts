@@ -19,7 +19,7 @@ export const file_numen_v1_hostqueue: GenFile = /*@__PURE__*/
  */
 export type EnqueueWorkRequest = Message<"numen.v1.EnqueueWorkRequest"> & {
   /**
-   * Set for work a person started. It runs before work nobody asked for.
+   * Set for work a person started. It runs before work no person asked for.
    *
    * @generated from field: bool is_user_started = 1;
    */

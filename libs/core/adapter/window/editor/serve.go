@@ -220,7 +220,7 @@ const (
 	makingVectors = indexing.MakingVectors
 	// wordsAlone is the task ID for a search that runs without semantic retrieval.
 	wordsAlone = "search by words only"
-	// applyingTheme is the task ID for a theme the settings name that the catalogue does not have.
+	// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
 	applyingTheme = "apply theme"
 	// readingTheSettings is the task ID for a settings name that this build reads under another name.
 	// Each message is appended to this ID with its position.
@@ -320,7 +320,7 @@ func (o *Installation) wireUseCases() {
 	services.Note.create = &notes.Create
 	services.Note.editLinks = &notes.Linking
 	services.Note.rename = &notes.Rename
-	services.Note.showNeighbourhood = &notes.Neighbourhood
+	services.Note.showNeighbourhood = &notes.Neighborhood
 	services.Note.getLinkAddress = notes.GetLinkAddress
 	services.Note.bindConnections(notes)
 	services.File.remove = &notes.Remove
@@ -386,7 +386,7 @@ type PluginOpen struct {
 	end    chan struct{}
 }
 
-// errCancelledByUser is the cause a plugin's vault open is cancelled with when the user closes the window,
+// errCancelledByUser is the cause a plugin's vault open is canceled with when the user closes the window,
 // quits or switches its vault.
 var errCancelledByUser = errors.New("the user closed the window or switched its vault")
 

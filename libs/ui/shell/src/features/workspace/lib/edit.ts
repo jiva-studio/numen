@@ -68,7 +68,7 @@ export function openTab(
  * moved from its current position, and one that is alone in the pane it would
  * be placed beside is only shown.
  *
- * The middle is not a side, and a tab requested there stays where it is.
+ * The middle is not a side, and a tab requested there keeps its position.
  */
 export interface OpenAdjacentPlacement {
   readonly side: Side
@@ -81,7 +81,7 @@ export interface OpenAdjacentPlacement {
  * moved from its current position, and one that is alone in the pane it would
  * be placed beside is only shown.
  *
- * The middle is not a side, and a tab requested there stays where it is.
+ * The middle is not a side, and a tab requested there keeps its position.
  */
 export function openTabAdjacent(
   workspace: Workspace,
@@ -167,7 +167,7 @@ export interface EdgeDrop {
   readonly side: Side
 }
 
-/** A tab let go on the outer edge divides the whole workspace. */
+/** A tab dropped on the outer edge divides the whole workspace. */
 export function dropOnEdge(
   workspace: Workspace,
   drop: EdgeDrop,

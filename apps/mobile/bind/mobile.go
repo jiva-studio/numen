@@ -85,9 +85,9 @@ func (c *Core) Start(dir string) (int, error) {
 	}
 
 	// The themes come from the installation. The config has no plugin host, so
-	// the catalogue offers the default theme and the person's own. If the themes
+	// the catalog offers the default theme and the person's own. If the themes
 	// folder cannot be created, only the default theme is loaded. A theme
-	// named in the settings that is missing from the catalogue is reported on
+	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
 	themes, wrong := cfg.Themes(opened.SayTheme)
 	if wrong != nil {

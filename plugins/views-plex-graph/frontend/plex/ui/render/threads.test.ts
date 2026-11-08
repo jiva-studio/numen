@@ -73,7 +73,7 @@ describe('the box a gesture would leave', () => {
   const to = { x: 30, y: 40 }
   const options = { relationName: getRelationLabel, nodeSize: SIZE }
 
-  it('is a box with the relation name where the pointer is when letting go creates', () => {
+  it('is a box with the relation name where the pointer is when dropping creates', () => {
     expect(getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, to, options)).toEqual({
       id: 'ghost',
       title: 'new child',
@@ -109,7 +109,7 @@ describe('something dragged over the picture', () => {
   ])
   const options = { dropName: getRelationLabel, nodeSize: SIZE }
 
-  it('is a line from the focus to the pointer and the box letting go would leave', () => {
+  it('is a line from the focus to the pointer and the box dropping would leave', () => {
     const shape = getDraggedShape(focusLast, { relation: 'sibling', to }, options)
 
     expect(shape?.thread).toBe('M 10 20 C 20 20 20 40 30 40')

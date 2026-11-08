@@ -82,7 +82,7 @@ describe('a document opened', () => {
     expect(readItem.pageNumber.value).toBe(0)
   })
 
-  it('draws nothing until it is told how wide the page is', async () => {
+  it('draws nothing until it is configured with how wide the page is', async () => {
     const { documents } = book()
     const readItem = useDocumentReader(documents, 'Book.pdf')
 

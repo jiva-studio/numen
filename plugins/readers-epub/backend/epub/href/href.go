@@ -15,8 +15,8 @@ func Resolve(base, href string) string {
 	if unescaped, err := url.PathUnescape(href); err == nil {
 		href = unescaped
 	}
-	if strings.HasPrefix(href, "/") {
-		return path.Clean(strings.TrimPrefix(href, "/"))
+	if after, ok := strings.CutPrefix(href, "/"); ok {
+		return path.Clean(after)
 	}
 	return path.Join(base, href)
 }

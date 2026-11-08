@@ -1,6 +1,6 @@
 /**
  * The files of the vault: which of them a file is, what a listing of one folder
- * reports, and what making one or moving one comes back with.
+ * reports, and what making one or moving one returns.
  */
 import type { Result } from '@numen/core-client'
 import type { ErrorCode } from '@/shared/errors'

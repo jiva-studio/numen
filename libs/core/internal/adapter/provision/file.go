@@ -66,7 +66,7 @@ func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, 
 	return getDependencyDir(root, string(req.Kind), req.ID, req.Version), nil
 }
 
-// Status answers whether the machine or the folder holds the dependency.
+// Status returns whether the machine or the folder holds the dependency.
 func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return readyStatus(req, filepath.Dir(found), found), nil

@@ -40,7 +40,7 @@ type openedVault struct {
 	open    *OpenVault
 }
 
-// CloseAndWait lets go of every vault and holds until nothing is still writing to the index.
+// CloseAndWait releases every vault and holds until nothing is still writing to the index.
 func (o *OpenVaults[C, I]) CloseAndWait() {
 	o.mu.Lock()
 	o.isClosing = true

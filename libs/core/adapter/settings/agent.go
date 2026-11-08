@@ -27,7 +27,9 @@ type AgentProgram struct {
 }
 
 // UseProgram is the program an installation names, as the settings hold it.
-func UseProgram(name string) *string { return &name }
+//
+//go:fix inline
+func UseProgram(name string) *string { return new(name) }
 
 // IsNamed reports whether a program answers: one the settings name, or the default where they name
 // none.

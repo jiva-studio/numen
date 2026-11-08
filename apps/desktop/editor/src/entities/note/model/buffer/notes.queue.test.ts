@@ -139,7 +139,7 @@ describe('the queue of an open note', () => {
       expect(other).toBe(false)
     })
 
-    it('is no trouble to resolve where nobody waits', () => {
+    it('is no trouble to resolve where no caller waits', () => {
       const { queue } = setup()
 
       expect(() => queue.resolveFlush('a')).not.toThrow()

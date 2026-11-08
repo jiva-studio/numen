@@ -20,7 +20,7 @@ import (
 func getVault() map[string]string {
 	return map[string]string{
 		"Animal.md": "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n" +
-			"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n" +
+			"\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n" +
 			"\n## Name it\n\n### Front\n\nWhat is {{Height}} at the shoulder?\n\n### Back\n\n{{Name}}\n",
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
@@ -29,7 +29,7 @@ func getVault() map[string]string {
 			"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
 			"\n## Otter ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n\nOtter\n\n### Height\n\nabout 12\"\n",
 		"decks/Words.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 	}
 }
@@ -199,7 +199,7 @@ func TestACardExistsOnceForEachCardOfItsCardModel(t *testing.T) {
 			t.Errorf("nothing laid out for %+v", one.ID)
 		}
 	}
-	for reviewCard, want := range map[string]int{"Recognise": 2, "Name it": 2, "Say it": 1} {
+	for reviewCard, want := range map[string]int{"Recognize": 2, "Name it": 2, "Say it": 1} {
 		if reviewCards[reviewCard] != want {
 			t.Errorf("the review card %q stands %d times, want %d", reviewCard, reviewCards[reviewCard], want)
 		}
@@ -236,7 +236,7 @@ func getHandwritten() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
 		"decks/Own.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
+			"\n## Leaf mold\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nLeaves\n",
 	}
 }
 
@@ -265,8 +265,8 @@ func getMixed() map[string]string {
 		"decks/Mine.md": "---\ntype: deck\n---\n" +
 			"\nWhat I keep meaning to learn, and never do.\n" +
 			"\n# The ones from the garden\n" +
-			"\n## Leaf mould ^k7m2xq9fzp\n\n[[Term]]\n" +
-			"\n### Слово\n\nLeaf mould\n\n### Значение\n\nCompost made of fallen leaves\n" +
+			"\n## Leaf mold ^k7m2xq9fzp\n\n[[Term]]\n" +
+			"\n### Слово\n\nLeaf mold\n\n### Значение\n\nCompost made of fallen leaves\n" +
 			"\n## Loam\n\n[[Term]]\n" +
 			"\n### Слово\n\nLoam\n\n### Значение\n\nSand, silt and clay in the right measure\n",
 	}
@@ -284,7 +284,7 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	}
 	after := read(t, s.vault, "decks/Mine.md")
 
-	if !strings.Contains(after, "## Leaf mould ^k7m2xq9fzp") {
+	if !strings.Contains(after, "## Leaf mold ^k7m2xq9fzp") {
 		t.Error("the card id the card already carried is not the card id it carries now")
 	}
 	for _, fragment := range []string{
@@ -383,7 +383,7 @@ func TestACardWithNoCardModelIsLeftOut(t *testing.T) {
 		"Term.md":    getVault()["Term.md"],
 		"Weather.md": "# Weather\n\nAn ordinary note.\n",
 		"decks/Mixed.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nLeaves\n" +
 			"\n## Rain ^m9n8b7v6c5\n\n[[Weather]]\n\n### Word\n\nRain\n",
 	}
 	s := openVault(t, notes)
@@ -406,7 +406,7 @@ func TestListReviewCards_SkipsCardMissingSide(t *testing.T) {
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n" +
 			"\n## Half a review card\n\n### Front\n\n{{Meaning}}\n",
 		"decks/Half.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Half]]\n\n### Word\n\nLeaf mould\n" +
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Half]]\n\n### Word\n\nLeaf mold\n" +
 			"\n### Meaning\n\nLeaves\n",
 	}
 	s := openVault(t, notes)
@@ -427,7 +427,7 @@ func TestRanking_KeepsCardWithEmptyField(t *testing.T) {
 	notes := map[string]string{
 		"Term.md": getVault()["Term.md"],
 		"decks/Empty.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\n",
+			"\n## Leaf mold ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\n",
 	}
 	s := openVault(t, notes)
 
@@ -438,7 +438,7 @@ func TestRanking_KeepsCardWithEmptyField(t *testing.T) {
 	if len(status) != 1 {
 		t.Fatalf("stands = %+v, want the one card", status)
 	}
-	if front, back := status[0].Lay(); front != "Leaf mould" || back != "" {
+	if front, back := status[0].Lay(); front != "Leaf mold" || back != "" {
 		t.Errorf("laid out front %q, back %q", front, back)
 	}
 }
@@ -466,7 +466,7 @@ func TestCountCardsDue_UnansweredVaultIsAllNew(t *testing.T) {
 func TestACardInsertDaysAwayIsNotDueToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +500,7 @@ func TestACardInsertDaysAwayIsNotDueToday(t *testing.T) {
 func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -541,7 +541,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 	when := vaulttest.GetEpoch()
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 4*time.Second); err != nil {
 		t.Fatal(err)
@@ -568,7 +568,7 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 	when := vaulttest.GetEpoch()
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	record := s.run(t, when)
 	provided, err := record.Answer(t.Context(), on, review.Good, time.Second)
@@ -595,7 +595,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	record := s.run(t, vaulttest.GetEpoch())
 
 	if _, err := record.Answer(
-		t.Context(), review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}, review.Rating(9), 0,
+		t.Context(), review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}, review.Rating(9), 0,
 	); err == nil {
 		t.Error("a rating of nine was written down")
 	}
@@ -609,8 +609,8 @@ func TestASessionAsksWhatIsDueBeforeWhatIsNew(t *testing.T) {
 	long := vaulttest.GetEpoch().Add(-30 * 24 * time.Hour)
 	recent := vaulttest.GetEpoch().Add(-3 * 24 * time.Hour)
 
-	waited := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	lately := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	waited := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	lately := review.CardID{Card: "zpqrstvwxy", Template: "Recognize"}
 	if _, err := s.run(t, long).Answer(t.Context(), waited, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -663,7 +663,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	when := vaulttest.GetEpoch().Add(-72 * time.Hour)
 
 	record := s.run(t, when)
@@ -703,8 +703,8 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	invented := review.CardID{Card: "nobodyhasit", Template: "Recognize"}
 
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -737,7 +737,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	when := vaulttest.GetEpoch().Add(-24 * time.Hour)
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -771,7 +771,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	record := s.run(t, vaulttest.GetEpoch())
 
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -804,7 +804,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	record := s.run(t, vaulttest.GetEpoch())
 
 	provided, err := record.Answer(t.Context(), on, review.Good, 0)
@@ -832,8 +832,8 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	invented := review.CardID{Card: "nobodyhasit", Template: "Recognize"}
 
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)

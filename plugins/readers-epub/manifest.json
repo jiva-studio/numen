@@ -1,7 +1,13 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
+<<<<<<< HEAD
   "version": "2026.11.12",
+||||||| ccf124861
+  "version": "2026.11.11",
+=======
+  "version": "2026.11.13",
+>>>>>>> origin/main
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],

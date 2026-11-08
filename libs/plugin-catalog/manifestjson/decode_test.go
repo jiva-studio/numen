@@ -302,7 +302,7 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 	}{
 		{"none", ``, false},
 		{"one", `"secrets":[{"name":"apiKey","title":"API key"}]`, false},
-		{"two", `"secrets":[{"name":"apiKey","title":"API key"},{"name":"org_id-2","title":"Organisation"}]`, false},
+		{"two", `"secrets":[{"name":"apiKey","title":"API key"},{"name":"org_id-2","title":"Organization"}]`, false},
 		{"empty name", `"secrets":[{"name":"","title":"T"}]`, true},
 		{"slash", `"secrets":[{"name":"a/b","title":"T"}]`, true},
 		{"space", `"secrets":[{"name":"api key","title":"T"}]`, true},

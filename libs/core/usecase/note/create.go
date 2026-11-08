@@ -145,7 +145,7 @@ func (u Create) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 	if u.index == nil {
 		return nil
 	}
-	// The files are written, so the index follows them even when the caller has gone.
+	// The files are written, so the index follows them even when the caller is canceled.
 	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 

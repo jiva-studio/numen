@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// screen records the window going out of sight and coming back into it.
+// screen records the window going out of sight and returning to it.
 type screen struct {
 	mu     sync.Mutex
 	events []string

@@ -56,15 +56,15 @@ func newScene(t *testing.T) *scene {
 	}
 	s.reader = &fakeProvider{pluginID: pdfReader, kind: kindPage, files: s.files,
 		make: func(string, domain.VersionText, bool) []domain.TextSegment {
-			return []domain.TextSegment{page("layer", 0), page("teh", 1)}
+			return []domain.TextSegment{page("layer", 0), page("thw", 1)}
 		}}
 	s.ocr = &fakeProvider{pluginID: ocr, kind: kindRecognition, files: s.files,
 		make: func(string, domain.VersionText, bool) []domain.TextSegment {
-			return []domain.TextSegment{page("scanned", 0), page("teh", 1)}
+			return []domain.TextSegment{page("scanned", 0), page("thw", 1)}
 		}}
 	s.fixer = &fakeProvider{pluginID: proofreader, kind: kindRecognition, files: s.files,
 		make: func(_ string, source domain.VersionText, _ bool) []domain.TextSegment {
-			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
+			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "thw", "the")}}
 		}}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, readCounter{fileReaders: s.files, reads: &s.reads}, steppingClock())
@@ -138,7 +138,7 @@ func TestThePDFExampleShowsTheLiveVersionAtEveryStep(t *testing.T) {
 
 	// A: the file has no version, so the standalone reader is queried for one.
 	s.requestText(t)
-	s.requireLive(t, "A from the file", a, "layer teh ")
+	s.requireLive(t, "A from the file", a, "layer thw ")
 	if got := s.listener.take(); !slices.Equal(got, []string{scanPath}) {
 		t.Fatalf("putting A reported %v, want one change of %s", got, scanPath)
 	}
@@ -147,9 +147,9 @@ func TestThePDFExampleShowsTheLiveVersionAtEveryStep(t *testing.T) {
 	s.runEntry(t, proofreader)
 	s.requireLive(t, "B from A", b, "layer the ")
 
-	// C: recognise the file.
+	// C: recognize the file.
 	s.runEntry(t, ocr)
-	s.requireLive(t, "C from the file", c, "scanned teh ")
+	s.requireLive(t, "C from the file", c, "scanned thw ")
 
 	// D: proofread C, which is what the file shows now.
 	s.runEntry(t, proofreader)
@@ -162,9 +162,9 @@ func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	c := domain.NewTextVersionID(ocr, "file-"+s.getContentHash()[:8])
 	s.plugins.setEnabled(ocr, false)
 
-	s.requireLive(t, "OCR disabled", c, "scanned teh ")
+	s.requireLive(t, "OCR disabled", c, "scanned thw ")
 	text, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, c)
-	if err != nil || text.Text != "scanned teh " {
+	if err != nil || text.Text != "scanned thw " {
 		t.Fatalf("the version of a disabled plugin reads %q (%v)", text.Text, err)
 	}
 }
@@ -176,7 +176,7 @@ func TestAVersionWhoseFileChangedIsNotLive(t *testing.T) {
 	b := getProofreadingOf(s.getReaderVersion())
 	s.folders.write(proofreader+"/"+strings.TrimPrefix(string(b), proofreader+"/")+".jsonl", []byte(`{"text":"tampered"}`+"\n"))
 
-	s.requireLive(t, "after B's file changed", s.getReaderVersion(), "layer teh ")
+	s.requireLive(t, "after B's file changed", s.getReaderVersion(), "layer thw ")
 	if _, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, b); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("reading a changed version file: got %v, want ErrNoText", err)
 	}
@@ -241,7 +241,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	if got := s.reader.getCreated(); got != 2 {
 		t.Fatalf("the reader made %d texts, want 2", got)
 	}
-	s.requireLive(t, "after the replacement", s.getReaderVersion(), "layer teh ")
+	s.requireLive(t, "after the replacement", s.getReaderVersion(), "layer thw ")
 
 	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, first)
 	if err != nil {

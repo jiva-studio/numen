@@ -383,7 +383,7 @@ const (
 )
 
 func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
-	// `numen recognise` is a separate binary and runs while the window is open,
+	// `numen recognize` is a separate binary and runs while the window is open,
 	// so what one process holds every other has to see.
 	derived, root := store(t)
 
@@ -581,7 +581,7 @@ func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 
 // An area is one folder of the store's own. A link standing where the area
 // should be — here to the service folder itself — is not one, and a name under
-// it lands nowhere: the vault's identity is a step down that link, and a store
+// it is not stored anywhere: the vault's identity is a step down that link, and a store
 // that followed it would write over the one file every index row points at.
 func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	derived, root := store(t)

@@ -82,7 +82,7 @@ describe('the commands as the words typed leave them', () => {
     expect(readItem?.at).toStrictEqual([{ start: 0, end: 3 }])
   })
 
-  it('lights the words typed where they stand inside the text of a command', () => {
+  it('lights the words typed where they match inside the text of a command', () => {
     const readItem = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
       (item) => item.id === 'app:note.open',
     )

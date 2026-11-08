@@ -7,7 +7,7 @@ import (
 )
 
 func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIByte(t *testing.T) {
-	for c := 0; c < utf8.RuneSelf; c++ {
+	for c := range utf8.RuneSelf {
 		name := string([]byte{byte(c)})
 		if got, want := FoldName(name), foldGeneral(name); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
@@ -20,8 +20,8 @@ func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIByte(t *testing.T) {
 }
 
 func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIPair(t *testing.T) {
-	for a := 0; a < utf8.RuneSelf; a++ {
-		for b := 0; b < utf8.RuneSelf; b++ {
+	for a := range utf8.RuneSelf {
+		for b := range utf8.RuneSelf {
 			name := string([]byte{byte(a), byte(b)})
 			if got, want := FoldName(name), foldGeneral(name); got != want {
 				t.Fatalf("FoldName(%q) = %q, want %q", name, got, want)

@@ -66,7 +66,7 @@ func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	}
 }
 
-func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
+func TestEveryoneAskingAtOnceReleasesOnce(t *testing.T) {
 	var mu sync.Mutex
 	times := 0
 	steps := NewSequence(func() {
@@ -77,11 +77,9 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range 8 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			steps.Run()
-		}()
+		})
 	}
 	wg.Wait()
 

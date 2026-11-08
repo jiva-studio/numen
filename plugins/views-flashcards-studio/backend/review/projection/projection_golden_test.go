@@ -232,7 +232,7 @@ func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.CardI
 			// in the material.
 			c.Due = getGoldenNow().AddDate(0, 0, -1-i%30)
 		}
-		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
+		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognize"}] = c
 	}
 	return out
 }

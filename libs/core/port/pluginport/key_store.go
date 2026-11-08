@@ -14,7 +14,7 @@ var (
 	ErrNoKeyStore = errors.New("this machine has no key store")
 )
 
-// KeyStore stores the keys that authorise a service for a user, such as an API
+// KeyStore stores the keys that authorize a service for a user, such as an API
 // key, by name.
 type KeyStore interface {
 	// GetKey returns the key stored under the name, or ErrNoKey.

@@ -59,7 +59,7 @@ func isSpelled(token string) bool {
 }
 
 func isASCIIToken(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] >= utf8.RuneSelf {
 			return false
 		}
@@ -71,7 +71,7 @@ func isASCIISpelled(token string) bool {
 	first := -1
 	last := -1
 	hasSpecial := false
-	for i := 0; i < len(token); i++ {
+	for i := range len(token) {
 		b := token[i]
 		if isASCIILetter(b) || isASCIIDigit(b) {
 			if first < 0 {

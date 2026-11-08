@@ -86,9 +86,9 @@ func TestAFailedPluginTravelsWithItsReasonDetailAndTime(t *testing.T) {
 
 	failure := infos[0].GetFailure()
 	if failure.GetReason() != "Timed out while starting" || failure.GetDetail() != "handshake timeout" || failure.GetFailedAtUnixMs() != pos.UnixMilli() {
-		t.Errorf("travelled as %v", failure)
+		t.Errorf("traveled as %v", failure)
 	}
 	if infos[1].GetFailure() != nil {
-		t.Errorf("a plugin that has not failed travelled as %v", infos[1].GetFailure())
+		t.Errorf("a plugin that has not failed traveled as %v", infos[1].GetFailure())
 	}
 }

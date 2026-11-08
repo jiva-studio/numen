@@ -100,9 +100,7 @@ func TestChangeSecretsFromManyCallersLosesNoChange(t *testing.T) {
 	const count = 12
 	var group sync.WaitGroup
 	for i := range count {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			id := fmt.Sprintf("s%08x", i)
 			err := files.ChangeSecrets(path, func(list []pluginport.Secret) ([]pluginport.Secret, error) {
 				return append(list, pluginport.Secret{ID: id, Name: id, Group: "g"}), nil
@@ -110,7 +108,7 @@ func TestChangeSecretsFromManyCallersLosesNoChange(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	group.Wait()
 	cfg, err := openAt(path)

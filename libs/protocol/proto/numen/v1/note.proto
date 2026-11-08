@@ -116,7 +116,7 @@ message GetNeighbourhoodRequest {
 
 message GetNeighbourhoodResponse {
   Note focus = 1;
-  repeated Neighbour related = 2;
+  repeated Neighbor related = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
@@ -144,9 +144,9 @@ enum Relation {
   RELATION_SIBLING = 4;
 }
 
-// Neighbour is one note joined to the one in focus. The records that join notes
+// Neighbor is one note joined to the one in focus. The records that join notes
 // are in GetNeighbourhoodResponse.connections.
-message Neighbour {
+message Neighbor {
   Note note = 1;
   Relation relation = 2;
 
@@ -302,7 +302,7 @@ message WriteNoteResponse {
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role nobody decided on has no behaviour.
+// and drawing read it, so a role no one has decided on has no behaviour.
 enum Role {
   ROLE_UNSPECIFIED = 0;
   ROLE_PARENT = 1;
@@ -565,7 +565,7 @@ message RenameNoteResponse {
   // line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
   NameSource name_source = 3;
 
-  // What the file did. Absent when it stayed where it was.
+  // What the file did. Absent when it kept its position.
   optional MoveResult moved = 4;
 
   // Set when the rename did not finish, and why. The note may already have been

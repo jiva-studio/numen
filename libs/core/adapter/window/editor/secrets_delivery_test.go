@@ -386,16 +386,14 @@ func TestOperationsOnOnePluginAreSerialized(t *testing.T) {
 
 	var group sync.WaitGroup
 	for _, id := range created {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			_, err := w.client.AllowPluginSecret(t.Context(), connect.NewRequest(&v1.AllowPluginSecretRequest{
 				SecretId: id, PluginId: alphaID, Name: "apiKey", Group: "openrouter",
 			}))
 			if err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	group.Wait()
 

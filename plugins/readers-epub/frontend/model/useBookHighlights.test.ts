@@ -1,5 +1,5 @@
 /**
- * The runs of a book lit where they stand.
+ * The runs of a book highlighted at their positions.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { useBookHighlights } from './useBookHighlights'

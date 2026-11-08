@@ -101,7 +101,7 @@ export const TheVault: Story = {
   },
 }
 
-/** A folder open, with what it holds set in under it. */
+/** A folder open, with its contents set in under it. */
 export const AFolderOpened: Story = {
   render: room(['physics']),
   play: async ({ canvasElement }) => {

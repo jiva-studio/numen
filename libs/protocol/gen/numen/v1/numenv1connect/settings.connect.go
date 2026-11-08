@@ -101,7 +101,7 @@ type SettingsServiceClient interface {
 	// name one can be set to.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
-	// object, so every key a person typed stays where it was, and a file the
+	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
 	// CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
@@ -130,7 +130,7 @@ type SettingsServiceClient interface {
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
-	// of type file or folder, and writes the path they chose. A path the setting does not take is not
+	// of type file or folder, and writes the path they chose. A path the setting does not accept is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
 	// GetPluginData is how many files the folder of a plugin holds in the vault
@@ -376,7 +376,7 @@ type SettingsServiceHandler interface {
 	// name one can be set to.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
-	// object, so every key a person typed stays where it was, and a file the
+	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
 	// CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
@@ -405,7 +405,7 @@ type SettingsServiceHandler interface {
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
-	// of type file or folder, and writes the path they chose. A path the setting does not take is not
+	// of type file or folder, and writes the path they chose. A path the setting does not accept is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
 	// GetPluginData is how many files the folder of a plugin holds in the vault

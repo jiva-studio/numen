@@ -1,4 +1,4 @@
-// Package document opens the files the plugin recognises, a scanned page or a PDF, and draws their
+// Package document opens the files the plugin recognizes, a scanned page or a PDF, and draws their
 // pages for the recogniser.
 package document
 
@@ -23,7 +23,7 @@ import (
 	_ "golang.org/x/image/webp" // a scan saved as WebP
 )
 
-// GetExtensions returns the extensions, with the dot, of the files the plugin recognises.
+// GetExtensions returns the extensions, with the dot, of the files the plugin recognizes.
 func GetExtensions() []string {
 	return []string{".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
 }

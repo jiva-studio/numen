@@ -13,7 +13,7 @@ type ListStates struct{ operation }
 
 // Execute returns the state of every secret in list order. It reads the key store once for each
 // secret, so only the page of secrets calls it. A secret whose value cannot be read has none; a
-// cancelled context fails the call.
+// canceled context fails the call.
 func (u *ListStates) Execute(ctx context.Context) ([]State, error) {
 	list, err := u.ledger.GetSecrets()
 	if err != nil {

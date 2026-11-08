@@ -46,7 +46,7 @@ const settle = async () => {
 const quick = { quiet: 1, bound: 5 }
 
 describe('opening a note', () => {
-  it('reads it, and shows what came back', async () => {
+  it('reads it, and shows what was returned', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'entropy grows')
     const notes = openNotes(core, { limits: quick })
@@ -175,7 +175,7 @@ describe('a change in the vault', () => {
     expect(notes.getOpenNote('Heat.md').body).toBe('after')
   })
 
-  it('naming other paths only reaches nobody', async () => {
+  it('naming other paths only reaches no listener', async () => {
     const requests: string[] = []
     const { core, files } = fake()
     files.set('Heat.md', 'x')
@@ -194,7 +194,7 @@ describe('a change in the vault', () => {
 })
 
 describe('closing', () => {
-  it('writes the unsaved changes before the note goes', async () => {
+  it('writes the unsaved changes before the note is closed', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -539,7 +539,7 @@ describe('a save that failed', () => {
 })
 
 describe('closing a note that could not be written', () => {
-  it('holds it once and says why, and lets it go when it is requested again', async () => {
+  it('holds it once and says why, and releases it when it is requested again', async () => {
     const { core, files } = fake({
       write: async () => {
         throw new Error('no transport')
@@ -708,7 +708,7 @@ describe('the limits a store is given', () => {
 })
 
 describe('an id the store does not hold', () => {
-  it('is turned by nothing that is told to it', () => {
+  it('is turned by nothing that is sent to it', () => {
     const { core } = fake()
     const notes = openNotes(core, { limits: quick })
 

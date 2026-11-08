@@ -15,7 +15,7 @@ import (
 // The size a note is cut at is a setting of the embedding plugin, and the core settings hold none.
 
 func TestTheSettingsFileHasNoIndexingSection(t *testing.T) {
-	if _, has := reflect.TypeOf(container.Settings{}).FieldByName("Indexing"); has {
+	if _, has := reflect.TypeFor[container.Settings]().FieldByName("Indexing"); has {
 		t.Error("the settings still have an Indexing section")
 	}
 	raw, err := json.Marshal(container.DefaultSettings())

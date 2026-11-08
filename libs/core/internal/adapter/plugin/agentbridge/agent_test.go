@@ -107,7 +107,7 @@ func TestAgentBridge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAgentTools failed: %v", err)
 	}
-	if len(tools) != 1 || tools[0].Name != "custom_calc" {
+	if len(tools) != 1 || tools[0].GetName() != "custom_calc" {
 		t.Errorf("tools = %+v, want custom_calc", tools)
 	}
 	if promptExt != " extra instructions" {
@@ -126,7 +126,7 @@ func (s *floodAgentServer) AskAgent(
 	_ *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -237,7 +237,7 @@ func (s *programsServer) GetAgentPrograms(
 	}}}), nil
 }
 
-// The programs a plugin lists come back under the plugin that listed them, and the command lines
+// The programs a plugin lists are returned under the plugin that listed them, and the command lines
 // the installation set go to it.
 func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	served := &programsServer{}

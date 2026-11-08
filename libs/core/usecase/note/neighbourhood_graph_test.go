@@ -72,7 +72,7 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 	return out, nil
 }
 
-func showGraph(g graph, refs *pathLookup, focus string) (domain.Neighbourhood, error) {
+func showGraph(g graph, refs *pathLookup, focus string) (domain.Neighborhood, error) {
 	return note.NewShowNeighbourhood(g, refs).Execute(
 		context.Background(), domain.Vault{ID: graphVault}, focus)
 }
@@ -114,7 +114,7 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 	}
 }
 
-// Whatever fails in finding the neighbours is the answer.
+// Whatever fails in finding the neighbors is the answer.
 func TestANeighbourhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("the index would not answer")
@@ -148,7 +148,7 @@ func TestANeighbourhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	}
 }
 
-// A note unknown to the vault is the center of no neighbourhood, regardless of
+// A note unknown to the vault is the center of no neighborhood, regardless of
 // which notes link to it.
 func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	t.Parallel()

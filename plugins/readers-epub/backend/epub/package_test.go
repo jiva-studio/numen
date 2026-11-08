@@ -310,8 +310,7 @@ func TestAPackageThatCannotBeRead(t *testing.T) {
 		if !errors.Is(err, epub.ErrNoPackage) {
 			t.Fatalf("err = %v, want %v", err, epub.ErrNoPackage)
 		}
-		var syntax *xml.SyntaxError
-		if !errors.As(err, &syntax) {
+		if !errors.As(err, new(*xml.SyntaxError)) {
 			t.Errorf("err = %v, want it to hold the syntax error", err)
 		}
 	})

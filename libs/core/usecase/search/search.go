@@ -384,7 +384,7 @@ func fillSource(
 func findHitOffset(text, query string) int {
 	lower := strings.ToLower(text)
 	best := len(text) + 1
-	for _, word := range strings.Fields(strings.ToLower(query)) {
+	for word := range strings.FieldsSeq(strings.ToLower(query)) {
 		if pos := strings.Index(lower, word); pos >= 0 && pos < best {
 			best = pos
 		}
@@ -443,10 +443,7 @@ func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""
 	}
-	end := start + length
-	if end > len(raw) {
-		end = len(raw)
-	}
+	end := min(start+length, len(raw))
 	return strings.Clone(raw[start:end])
 }
 

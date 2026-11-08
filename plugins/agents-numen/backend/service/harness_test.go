@@ -189,7 +189,7 @@ func newCallReply(id, tool, args string) message {
 }
 
 func newTextReply(text string) message {
-	return message{Role: "assistant", Content: newText(text)}
+	return message{Role: "assistant", Content: new(text)}
 }
 
 // fakeVault is a tool server with two tools, behind the token, that keeps the arguments of every

@@ -15,7 +15,7 @@ import (
 
 // The four ratings order the next due day: the better the rating, the later the
 // card is due.
-func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
+func TestTheBetterACardWasRecalledTheLongerItIsLeft(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
 
@@ -35,8 +35,8 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	}
 }
 
-// A card that did not come back at all is a lapse, and it is counted.
-func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
+// A card that was not recalled at all is a lapse, and it is counted.
+func TestACardThatWasNotRecalledIsALapse(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
 
@@ -102,12 +102,10 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 		ends[round] = make([]review.Schedule, len(cards))
 		fell[round] = make([]review.Schedule, len(cards))
 		for i, c := range cards {
-			together.Add(1)
-			go func() {
-				defer together.Done()
+			together.Go(func() {
 				pos[round][i] = delta.Next(c, when, review.Good)
 				ends[round][i], fell[round][i] = delta.Endings(c, when)
-			}()
+			})
 		}
 	}
 	together.Wait()

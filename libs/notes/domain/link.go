@@ -6,7 +6,7 @@ import (
 )
 
 // LinkRole is the purpose of a link. The list is closed: navigation and rendering
-// read it, so an undefined role has no behaviour.
+// read it, so an undefined role has no behavior.
 type LinkRole string
 
 const (

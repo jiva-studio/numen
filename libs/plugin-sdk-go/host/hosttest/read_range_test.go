@@ -114,7 +114,7 @@ func newRangeTexts(t *testing.T, segments []domain.TextSegment) (*hosttest.Texts
 
 func getStrataSegments() []domain.TextSegment {
 	return []domain.TextSegment{
-		{Text: "teh ", Selector: `{"page":1}`},
+		{Text: "the ", Selector: `{"page":1}`},
 		{Text: "end of ", Selector: `{"page":2}`},
 		{Text: "ice", Selector: `{"page":3}`},
 	}
@@ -128,7 +128,7 @@ func TestReadTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []domain.TextSegment{{Text: "h ", Selector: `{"page":1}`}, {Text: "end ", Selector: `{"page":2}`}}
+	want := []domain.TextSegment{{Text: "e ", Selector: `{"page":1}`}, {Text: "end ", Selector: `{"page":2}`}}
 	if !slices.Equal(got.Segments, want) || got.Start != 2 || got.Size != 14 {
 		t.Errorf("the range is %+v, want %+v from 2 of a text of 14 bytes", got, want)
 	}

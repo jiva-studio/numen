@@ -11,7 +11,7 @@ export const getPageIndex = (url: string): number => Number(/pages\/(\d+)/.exec(
 export const getWide = (url: string): number =>
   Number(new URL(url, 'https://x').searchParams.get('wide'))
 
-/** Page requests are held until the test lets them go, so a test sees what the window shows meanwhile. */
+/** Page requests are held until the test releases them, so a test sees what the window shows meanwhile. */
 export const holdPageRequests = async (page: Page) => {
   const requested: Request[] = []
   const failed: string[] = []

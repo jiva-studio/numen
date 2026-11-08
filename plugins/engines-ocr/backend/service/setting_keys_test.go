@@ -12,7 +12,7 @@ func TestCustomModelFilesAreReadFromTheCamelCaseKeys(t *testing.T) {
 		"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt",
 	})
 
-	got := models.cfg.Recognise
+	got := models.cfg.Recognize
 	if got.Path != "/m/rec.onnx" || got.Dict != "/m/dict.txt" {
 		t.Errorf("model path %q and dictionary %q, want /m/rec.onnx and /m/dict.txt", got.Path, got.Dict)
 	}
@@ -24,7 +24,7 @@ func TestCustomModelFilesAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
 		"model": "custom", "custom_model_path": "/m/rec.onnx", "custom_dict_path": "/m/dict.txt",
 	})
 
-	got := models.cfg.Recognise
+	got := models.cfg.Recognize
 	if got.Path != "" || got.Dict != "" {
 		t.Errorf("model path %q and dictionary %q, want none", got.Path, got.Dict)
 	}

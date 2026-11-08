@@ -136,7 +136,7 @@ describe('what the control says alongside the picture', () => {
     expect(state.plot.short.value).toMatch(/^M\S+ \S+ L\S+ \S+$/)
   })
 
-  it('says whether the goal is a date', () => {
+  it('returns whether the goal is a date', () => {
     expect(slider().state.annotations.isDated.value).toBe(false)
     expect(slider({ curve: curve({ goal: 'date' }) }).state.annotations.isDated.value).toBe(true)
   })
@@ -246,7 +246,7 @@ describe('the pointer on the picture', () => {
     ])
   })
 
-  it('walks the knob while the pointer is retained, and writes once it is let go', () => {
+  it('walks the knob while the pointer is retained, and writes once it is released', () => {
     const { state, emitted } = slider()
     const { element, recorded } = createChart(2, 100, true)
     state.interactions.setChart(element)
@@ -256,7 +256,7 @@ describe('the pointer on the picture', () => {
     expect(recorded).toStrictEqual(['release 7'])
   })
 
-  it('does nothing as a pointer it does not hold moves or is let go', () => {
+  it('does nothing as a pointer it does not hold moves or is released', () => {
     const { state, emitted } = slider()
     state.interactions.onPointerMove(pointer(481))
     state.interactions.onPointerUp(pointer(481))

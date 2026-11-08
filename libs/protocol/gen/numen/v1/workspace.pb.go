@@ -42,9 +42,9 @@ const (
 	// TAB_MOVE_ERROR_CODE_NOT_OWNER is a source window that does not own the tab;
 	// another window reported it first.
 	TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER TabMoveErrorCode = 3
-	// TAB_MOVE_ERROR_CODE_CANCELLED is a move that a newer move or detach of the
+	// TAB_MOVE_ERROR_CODE_CANCELED is a move that a newer move or detach of the
 	// tab, a cancelled request, or another window that took the tab ended.
-	TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELLED TabMoveErrorCode = 4
+	TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELED TabMoveErrorCode = 4
 )
 
 // Enum value maps for TabMoveErrorCode.
@@ -54,14 +54,14 @@ var (
 		1: "TAB_MOVE_ERROR_CODE_WINDOW_CLOSED",
 		2: "TAB_MOVE_ERROR_CODE_TIMEOUT",
 		3: "TAB_MOVE_ERROR_CODE_NOT_OWNER",
-		4: "TAB_MOVE_ERROR_CODE_CANCELLED",
+		4: "TAB_MOVE_ERROR_CODE_CANCELED",
 	}
 	TabMoveErrorCode_value = map[string]int32{
 		"TAB_MOVE_ERROR_CODE_UNSPECIFIED":   0,
 		"TAB_MOVE_ERROR_CODE_WINDOW_CLOSED": 1,
 		"TAB_MOVE_ERROR_CODE_TIMEOUT":       2,
 		"TAB_MOVE_ERROR_CODE_NOT_OWNER":     3,
-		"TAB_MOVE_ERROR_CODE_CANCELLED":     4,
+		"TAB_MOVE_ERROR_CODE_CANCELED":      4,
 	}
 )
 
@@ -501,7 +501,7 @@ func (x *ReadOpenTabsResponse) GetActiveId() string {
 	return ""
 }
 
-// A Tab is one tab of the window: what kind it is, and what it holds.
+// A Tab is one tab of the window: what kind it is, and its contents.
 //
 // The kind is the name a plugin registers the tab kind under. A reader that
 // does not know the kind knows a tab of that kind is open and no more.
@@ -2273,13 +2273,13 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x16HighlightWindowRequest\x12\x1b\n" +
 	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12\x13\n" +
 	"\x05is_on\x18\x02 \x01(\bR\x04isOn\"\x19\n" +
-	"\x17HighlightWindowResponse*\xc5\x01\n" +
+	"\x17HighlightWindowResponse*\xc4\x01\n" +
 	"\x10TabMoveErrorCode\x12#\n" +
 	"\x1fTAB_MOVE_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
 	"!TAB_MOVE_ERROR_CODE_WINDOW_CLOSED\x10\x01\x12\x1f\n" +
 	"\x1bTAB_MOVE_ERROR_CODE_TIMEOUT\x10\x02\x12!\n" +
-	"\x1dTAB_MOVE_ERROR_CODE_NOT_OWNER\x10\x03\x12!\n" +
-	"\x1dTAB_MOVE_ERROR_CODE_CANCELLED\x10\x042\xdc\a\n" +
+	"\x1dTAB_MOVE_ERROR_CODE_NOT_OWNER\x10\x03\x12 \n" +
+	"\x1cTAB_MOVE_ERROR_CODE_CANCELED\x10\x042\xdc\a\n" +
 	"\x10WorkspaceService\x12I\n" +
 	"\n" +
 	"WatchFocus\x12\x1b.numen.v1.WatchFocusRequest\x1a\x1c.numen.v1.WatchFocusResponse0\x01\x12P\n" +

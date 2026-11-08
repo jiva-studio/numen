@@ -50,9 +50,7 @@ func loadWorkspace(t *testing.T) workspacePackages {
 	)
 	slots := make(chan struct{}, max(1, runtime.GOMAXPROCS(0)/2))
 	for _, dir := range dirs {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			slots <- struct{}{}
 			defer func() { <-slots }()
 			pkgs, err := packages.Load(newTypedConfig(dir, nil), "./...")
@@ -62,7 +60,7 @@ func loadWorkspace(t *testing.T) workspacePackages {
 				failure = err
 			}
 			byDir[dir] = pkgs
-		}()
+		})
 	}
 	group.Wait()
 	if failure != nil {

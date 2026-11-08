@@ -187,7 +187,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 		defer close(scanning)
 		for {
 			if _, err := scanFor(db).Execute(ctx, v); err != nil {
-				return // cancelled at the end of the benchmark
+				return // canceled at the end of the benchmark
 			}
 			if ctx.Err() != nil {
 				return

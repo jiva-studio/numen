@@ -11,21 +11,21 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// MostRead is how many of the joined notes come back with their text.
+// MostRead is how many of the joined notes are returned with their text.
 //
 // A hub note is pointed at by hundreds of others and a note may be a megabyte,
 // so reading every one reads the whole vault. The remainder is returned named and
 // unread, and is read on request.
 const MostRead = 30
 
-// Neighbourhood is what a deck is joined to.
-type Neighbourhood struct {
-	Notes  []Neighbour
+// Neighborhood is what a deck is joined to.
+type Neighborhood struct {
+	Notes  []Neighbor
 	Unread int
 }
 
-// Neighbour is one note the deck is joined to.
-type Neighbour struct {
+// Neighbor is one note the deck is joined to.
+type Neighbor struct {
 	Written     string
 	Path        string
 	Title       string
@@ -63,10 +63,10 @@ func NewShowNeighbourhood(
 // long, not a note) is an outcome on that note's own entry, and the rest are still read.
 func (u ShowNeighbourhood) Execute(
 	ctx context.Context, v domain.Vault, deck string,
-) (Neighbourhood, error) {
+) (Neighborhood, error) {
 	linked, err := u.linked.Execute(ctx, v, deck)
 	if err != nil {
-		return Neighbourhood{}, err
+		return Neighborhood{}, err
 	}
 
 	found := getNeighbours(v, deck, linked)
@@ -78,14 +78,14 @@ func (u ShowNeighbourhood) Execute(
 	}
 	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
-		return Neighbourhood{}, err
+		return Neighborhood{}, err
 	}
 	kinds, err := u.notes.GetTypes(ctx, v.ID, paths)
 	if err != nil {
-		return Neighbourhood{}, err
+		return Neighborhood{}, err
 	}
 
-	var out Neighbourhood
+	var out Neighborhood
 	for _, one := range found {
 		titled, isShown := getNeighbourTitle(one, notes, kinds)
 		if isShown {
@@ -96,14 +96,14 @@ func (u ShowNeighbourhood) Execute(
 		out.Unread = len(out.Notes) - MostRead
 	}
 	if err := u.readBodies(ctx, v, out.Notes); err != nil {
-		return Neighbourhood{}, err
+		return Neighborhood{}, err
 	}
 	return out, nil
 }
 
-func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbour {
+func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbor {
 	observed := map[string]bool{deck: true}
-	var found []Neighbour
+	var found []Neighbor
 	for _, l := range linked.Links {
 		one, isKept := getLinkedNeighbour(v, l, observed)
 		if isKept {
@@ -117,20 +117,20 @@ func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbour {
 		observed[l.From] = true
 		// Nothing is ambiguous on this side: the note shown is the one that
 		// wrote the link, whatever its own name resolved through.
-		found = append(found, Neighbour{Written: "", Path: l.From, Title: "", Body: "", Label: l.Label, IsBacklink: true, IsAmbiguous: false, Outcome: ""})
+		found = append(found, Neighbor{Written: "", Path: l.From, Title: "", Body: "", Label: l.Label, IsBacklink: true, IsAmbiguous: false, Outcome: ""})
 	}
 	return found
 }
 
-func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbour, bool) {
+func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbor, bool) {
 	// Only an address that names a note can name a missing note. Attachments and web
 	// addresses are neither read here nor missing, and drawing them as notes with
 	// unresolved names would report a vault problem that does not exist.
 	if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
-	one := Neighbour{
+	one := Neighbor{
 		Written:     l.Target.GetWritten(),
 		Path:        l.To,
 		Title:       "",
@@ -146,16 +146,16 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	}
 	if l.ToVault != v.ID || visited[l.To] {
 		// A link into another vault has nothing here to read it with.
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	visited[l.To] = true
 	return one, true
 }
 
 func getNeighbourTitle(
-	one Neighbour, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
-) (Neighbour, bool) {
+	one Neighbor, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
+) (Neighbor, bool) {
 	if one.Path == "" {
 		return one, true
 	}
@@ -163,8 +163,8 @@ func getNeighbourTitle(
 	if !isNote {
 		// The index reported where the link lands but holds no note there: the entry
 		// changed during this read.
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	// An ordinary note is what the cards were written from, and is
 	// taken below.
@@ -174,37 +174,37 @@ func getNeighbourTitle(
 		// Every card names the card model it is cut by, so a deck points at
 		// its card models. A card model is how a card is laid out and not what
 		// it was written from.
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypePreset:
 		// A deck points at the preset it is scheduled by. A preset is how
 		// the cards come round and not what they were written from.
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypeDeck:
 		// Another deck holds more cards to answer and is not a source of the cards under
 		// review.
-		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
-		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbor value."
+		return Neighbor{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	one.Title = ref.Title
 	return one, true
 }
 
-func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neighbours []Neighbour) error {
-	for i := range neighbours {
+func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neighbors []Neighbor) error {
+	for i := range neighbors {
 		if i == MostRead {
 			break
 		}
-		if neighbours[i].Path == "" {
+		if neighbors[i].Path == "" {
 			continue
 		}
-		contents, err := u.reads.Execute(ctx, v, neighbours[i].Path)
+		contents, err := u.reads.Execute(ctx, v, neighbors[i].Path)
 		if err != nil {
 			return err
 		}
-		neighbours[i].Outcome = contents.Outcome
-		neighbours[i].Body = contents.Body
+		neighbors[i].Outcome = contents.Outcome
+		neighbors[i].Body = contents.Body
 	}
 	return nil
 }

@@ -254,12 +254,10 @@ func (u ProjectCurve) computePlaces(count int, each func(index int) error) error
 	var running sync.WaitGroup
 	for item := range count {
 		room <- struct{}{}
-		running.Add(1)
-		go func() {
-			defer running.Done()
+		running.Go(func() {
 			defer func() { <-room }()
 			failed[item] = each(item)
-		}()
+		})
 	}
 	running.Wait()
 

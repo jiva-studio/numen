@@ -139,7 +139,7 @@ export const WORDS = {
   nowhere: 'No start note',
   unanswered: 'Not saved: resolve the file conflict in its tab first',
   stale: 'Not saved: the note changed on disk',
-  /** A file landed where something of its name is filed, and stayed where it was. */
+  /** A file landed where something of its name is filed, and kept its place. */
   alreadyExists: 'Not moved: a file with this name exists',
   /** What the action panel of the palette is called. */
   actions: 'Actions',

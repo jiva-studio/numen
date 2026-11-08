@@ -268,7 +268,7 @@ func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
 	}
 }
 
-// A number a size does not take is answered where it was written: the field in
+// A number a size does not accept is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
 	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.textScale", 4))

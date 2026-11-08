@@ -21,8 +21,8 @@ import (
 // kept as one name, so the rename does not leave a title different from the filename.
 type Rename struct{ Move }
 
-// NewRename is the rename over one move. A note that travelled because it was
-// renamed and one that travelled because it was filed elsewhere settle the same
+// NewRename is the rename over one move. A note that traveled because it was
+// renamed and one that traveled because it was filed elsewhere settle the same
 // way, so both go through the one Move.
 func NewRename(moving Move) Rename { return Rename{Move: moving} }
 

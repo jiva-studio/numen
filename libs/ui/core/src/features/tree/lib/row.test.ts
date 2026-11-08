@@ -1,7 +1,7 @@
 /**
  * What is drawn, what a press makes the selection, where a key goes, and where
  * a drag lands. Plain values, so the awkward cases are cheap: a row that holds
- * nothing, a row named as open that cannot hold, and a drag let go past the
+ * nothing, a row named as open that cannot hold, and a drag released past the
  * last row.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -205,7 +205,7 @@ describe('where a key takes the keyboard', () => {
     expect(step(null, 'ArrowRight')).toStrictEqual({ at: 'work', turn: null })
   })
 
-  it('lands nowhere while nothing is drawn', () => {
+  it('has no drop target while nothing is drawn', () => {
     expect(stepTo([], null, 'ArrowDown')).toStrictEqual({ at: null, turn: null })
     expect(stepTo([], 'work', 'End')).toStrictEqual({ at: null, turn: null })
   })
@@ -242,7 +242,7 @@ describe('where a drag lands', () => {
     expect(getDropTargetAt(112)).toStrictEqual({ into: null })
   })
 
-  it('lands nowhere above the first row', () => {
+  it('has no drop target above the first row', () => {
     expect(getDropTargetAt(-4)).toBeNull()
   })
 
@@ -250,16 +250,16 @@ describe('where a drag lands', () => {
     expect(getDropTargetAt(0)).toStrictEqual({ before: 'work' })
   })
 
-  it('lands nowhere while the rows have no height', () => {
+  it('has no drop target while the rows have no height', () => {
     expect(getRowDropTarget(visibleRows, ['friday'], { y: 12, height: 0 })).toBeNull()
   })
 
-  it('lands nowhere where it would name a row being dragged', () => {
+  it('has no drop target where it would name a row being dragged', () => {
     expect(getDropTargetAt(12, 'work')).toBeNull()
     expect(getDropTargetAt(20, 'plans')).toBeNull()
   })
 
-  it('lands nowhere where it would name any of several being dragged', () => {
+  it('has no drop target where it would name any of several being dragged', () => {
     expect(getDropTargetAt(12, 'notes', 'work')).toBeNull()
     expect(getDropTargetAt(20, 'loose', 'plans')).toBeNull()
   })

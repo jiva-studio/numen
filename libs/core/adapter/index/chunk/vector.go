@@ -37,10 +37,7 @@ func (r *Repository) SaveVectorsInBatches(ctx context.Context, vectors []Vector,
 	}
 
 	for i := 0; i < len(vectors); i += size {
-		end := i + size
-		if end > len(vectors) {
-			end = len(vectors)
-		}
+		end := min(i+size, len(vectors))
 
 		if err := r.saveBatch(ctx, vectors[i:end]); err != nil {
 			return err

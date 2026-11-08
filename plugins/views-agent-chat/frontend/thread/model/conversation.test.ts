@@ -203,7 +203,7 @@ describe('giving up', () => {
   })
 })
 
-describe('a tool nobody titled', () => {
+describe('a tool without a title', () => {
   it('is read as words', async () => {
     let observed = ''
     const conversation = useConversation(
@@ -341,7 +341,7 @@ describe('a wait that explains itself', () => {
     await askPromise
   })
 
-  it('says it is working before anything at all has come back', async () => {
+  it('says it is working before anything at all has been returned', async () => {
     let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
@@ -566,7 +566,7 @@ describe('a conversation that is over', () => {
     expect(overKeys).toStrictEqual([called])
   })
 
-  it('lets go of the answer on its way, and keeps what arrived', async () => {
+  it('releases the answer on its way, and keeps what arrived', async () => {
     let release: () => void = () => undefined
     const target = new Promise<void>((isDone) => {
       release = isDone
@@ -588,7 +588,7 @@ describe('a conversation that is over', () => {
     expect(conversation.isAnswerPending.value).toBe(false)
   })
 
-  it('says nothing when the agent refuses to let go', async () => {
+  it('says nothing when the agent refuses to release it', async () => {
     const conversation = useConversation(
       {
         ...createPort([createStopped()]),
@@ -623,7 +623,7 @@ describe('a conversation that is over', () => {
   })
 })
 
-describe('a window nobody is looking at', () => {
+describe('a window that is not visible', () => {
   /** A screen that never draws a frame, which is what a hidden window is. */
   const never = () => undefined
 
@@ -852,7 +852,7 @@ describe('an error the answer already carries', () => {
     },
   )
 
-  it('is told apart from an answer that says something else', async () => {
+  it('is distinguished from an answer that says something else', async () => {
     const conversation = useConversation(
       createPort([createTranscriptStep('Two notes.'), createStopped('went wrong')]),
       words,
