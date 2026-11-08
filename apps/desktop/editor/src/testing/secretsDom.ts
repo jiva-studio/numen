@@ -140,3 +140,15 @@ export async function chooseGroupAction(
   await click(findButton(/group actions/i, scope))
   await click(findMenuItem(pattern))
 }
+
+/** Opens the menu of a secret row and chooses the item whose text matches. */
+export async function chooseRowAction(row: HTMLElement, pattern: RegExp): Promise<void> {
+  await click(findButton(/secret actions/i, row))
+  await click(findMenuItem(pattern))
+}
+
+/** Opens the menu of a secret row and returns its items, closing nothing. */
+export async function openRowMenu(row: HTMLElement): Promise<HTMLElement[]> {
+  await click(findButton(/secret actions/i, row))
+  return Array.from(root().querySelectorAll<HTMLElement>('[role="menuitem"]'))
+}

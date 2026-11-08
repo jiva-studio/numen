@@ -7,7 +7,7 @@ import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
 import { createInstallation } from '@/testing/installation'
-import { click, dispose, findButton, root, rowOf } from '@/testing/secretsDom'
+import { click, dispose, findButton, findMenuItem, root, rowOf } from '@/testing/secretsDom'
 
 const secrets = [
   { id: 's00000001', name: 'Work', group: 'harbour', allowed: [], hasValue: true },
@@ -24,9 +24,10 @@ const mountPage = () => {
 }
 
 const openDialog = async (name: string): Promise<{ opener: HTMLElement; dialog: HTMLElement }> => {
-  const opener = findButton(/delete secret/i, rowOf(name))
+  const opener = findButton(/secret actions/i, rowOf(name))
   opener.focus()
   await click(opener)
+  await click(findMenuItem(/^delete$/i))
   return { opener, dialog: root().querySelector('[role="alertdialog"]') as HTMLElement }
 }
 

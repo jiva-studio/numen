@@ -1,16 +1,15 @@
 <script setup lang="ts">
 /**
  * One secret of a group as a row of four columns: its name as an input, the value
- * (dots as the placeholder while one is stored), the plugins that may read it, and the controls to move and delete.
+ * (dots as the placeholder while one is stored), the plugins that may read it, and the menu to move and delete it.
  */
 import { ref, watch } from 'vue'
-import { ArrowDown, ArrowUp, Trash2 } from '@lucide/vue'
-import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import type { Declaration } from '../../lib/secretSections'
 import { WORDS as words } from '../../words'
 import SecretNameInput from './SecretNameInput.vue'
 import SecretPermissions from './SecretPermissions.vue'
+import SecretRowMenu from './SecretRowMenu.vue'
 import SecretRowFrame from './SecretRowFrame.vue'
 import SecretValueInput from './SecretValueInput.vue'
 
@@ -49,10 +48,6 @@ function onCommitRename(): void {
   if (name !== '' && name !== props.secret.name) emit('rename', name)
   else draftName.value = props.secret.name
 }
-
-function onDelete(event: MouseEvent): void {
-  if (event.currentTarget instanceof HTMLElement) emit('delete', event.currentTarget)
-}
 </script>
 
 <template>
@@ -82,40 +77,14 @@ function onDelete(event: MouseEvent): void {
     </template>
 
     <template #actions>
-      <Button
-        v-if="canMove"
-        variant="ghost"
-        class="secret-action"
-        size="icon"
-        :aria-label="words.secretMoveUp"
-        :title="words.secretMoveUp"
-        :disabled="isFirst"
-        @click="emit('move-up')"
-      >
-        <ArrowUp :size="14" aria-hidden="true" />
-      </Button>
-      <Button
-        v-if="canMove"
-        variant="ghost"
-        class="secret-action"
-        size="icon"
-        :aria-label="words.secretMoveDown"
-        :title="words.secretMoveDown"
-        :disabled="isLast"
-        @click="emit('move-down')"
-      >
-        <ArrowDown :size="14" aria-hidden="true" />
-      </Button>
-      <Button
-        variant="ghost"
-        class="secret-action"
-        size="icon"
-        :aria-label="words.secretDelete"
-        :title="words.secretDelete"
-        @click="onDelete"
-      >
-        <Trash2 :size="14" aria-hidden="true" />
-      </Button>
+      <SecretRowMenu
+        :is-first="isFirst"
+        :is-last="isLast"
+        :can-move="canMove"
+        @move-up="emit('move-up')"
+        @move-down="emit('move-down')"
+        @delete="(opener) => emit('delete', opener)"
+      />
     </template>
   </SecretRowFrame>
 </template>

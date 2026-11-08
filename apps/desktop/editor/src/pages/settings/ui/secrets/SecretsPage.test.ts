@@ -14,10 +14,13 @@ import {
   enterText,
   findButton,
   findButtons,
+  chooseRowAction,
   findMenuItem,
+  openRowMenu,
   findNameInput,
   findText,
   maskedInputs,
+  nameOf,
   positionOf,
   root,
   rowOf,
@@ -152,22 +155,27 @@ describe('the page of secrets', () => {
   it('moves a secret up before the one above it and down after the one below it', async () => {
     const { installation, wrapper } = mountPage()
     const home = rowOf('Home')
-    await click(findButton(/move up/i, home))
+    await chooseRowAction(home, /move up/i)
     expect(installation.moveSecret).toHaveBeenLastCalledWith(HOME.id, WORK.id)
 
     const work = rowOf('Work')
-    await click(findButton(/move down/i, work))
+    await chooseRowAction(work, /move down/i)
     expect(installation.moveSecret).toHaveBeenLastCalledWith(WORK.id, '')
     dispose(wrapper)
   })
 
-  it('cannot move the first secret of a group up or the last one down', () => {
-    const { wrapper } = mountPage()
-    const work = rowOf('Work')
-    const home = rowOf('Home')
-    expect(findButton(/move up/i, work).hasAttribute('disabled')).toBe(true)
-    expect(findButton(/move down/i, home).hasAttribute('disabled')).toBe(true)
-    dispose(wrapper)
+  it('cannot move the first secret of a group up or the last one down', async () => {
+    const first = mountPage()
+    const itemsOfWork = await openRowMenu(rowOf('Work'))
+    const up = itemsOfWork.find((one) => /move up/i.test(nameOf(one)))
+    expect(up?.hasAttribute('disabled')).toBe(true)
+    dispose(first.wrapper)
+
+    const second = mountPage()
+    const itemsOfHome = await openRowMenu(rowOf('Home'))
+    const down = itemsOfHome.find((one) => /move down/i.test(nameOf(one)))
+    expect(down?.hasAttribute('disabled')).toBe(true)
+    dispose(second.wrapper)
   })
 
   it('renames a secret by its id', async () => {
@@ -183,7 +191,7 @@ describe('the page of secrets', () => {
   it('asks for a confirmation that names the plugins that can read the secret before it deletes one', async () => {
     const { installation, wrapper } = mountPage()
     const work = rowOf('Work')
-    await click(findButton(/delete/i, work))
+    await chooseRowAction(work, /^delete$/i)
 
     expect(installation.deleteSecret).not.toHaveBeenCalled()
     const dialog = root().querySelector(
@@ -200,7 +208,7 @@ describe('the page of secrets', () => {
   it('deletes nothing when the confirmation is cancelled', async () => {
     const { installation, wrapper } = mountPage()
     const work = rowOf('Work')
-    await click(findButton(/delete/i, work))
+    await chooseRowAction(work, /^delete$/i)
     const dialog = root().querySelector(
       '[role="dialog"], [role="alertdialog"], dialog',
     ) as HTMLElement
@@ -265,11 +273,16 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('shows order arrows only in a group with more than one secret', () => {
-    const { wrapper } = mountPage()
-    expect(findButtons(/move up/i, rowOf('Work'))).toHaveLength(1)
-    expect(findButtons(/move up|move down/i, rowOf('Personal'))).toHaveLength(0)
-    dispose(wrapper)
+  it('offers the order items only in a group with more than one secret', async () => {
+    const first = mountPage()
+    const inWork = await openRowMenu(rowOf('Work'))
+    expect(inWork.map(nameOf)).toEqual(['Move up', 'Move down', 'Delete'])
+    dispose(first.wrapper)
+
+    const second = mountPage()
+    const inPersonal = await openRowMenu(rowOf('Personal'))
+    expect(inPersonal.map(nameOf)).toEqual(['Delete'])
+    dispose(second.wrapper)
   })
 
   it('adds a secret with the next version as its name and stores it when a value is entered', async () => {
@@ -310,14 +323,11 @@ describe('the page of secrets', () => {
     expect(draft.className).toBe(saved.className)
     expect(findButton(/save a value first/i, draft).hasAttribute('disabled')).toBe(true)
     expect(findButton(/save a value first/i, draft).title).toBe('Save a value first')
-    expect(
-      findButton(/discard/i, draft)
-        .querySelector('svg')
-        ?.getAttribute('class'),
-    ).toBe(
-      findButton(/delete/i, saved)
-        .querySelector('svg')
-        ?.getAttribute('class'),
+    const discard = findButton(/discard/i, draft)
+    const menu = findButton(/secret actions/i, saved)
+    expect(discard.className).toBe(menu.className)
+    expect(discard.querySelector('svg')?.getAttribute('width')).toBe(
+      menu.querySelector('svg')?.getAttribute('width'),
     )
     dispose(wrapper)
   })

@@ -21,6 +21,8 @@ export const WORDS = {
   secretValue: (name: string) => `Value of ${name}`,
   secretMoveUp: 'Move up',
   secretMoveDown: 'Move down',
+  secretActions: 'Secret actions',
+  secretDeleteItem: 'Delete',
   secretRename: 'Rename secret',
   secretRenameName: 'Name of the secret',
   secretDelete: 'Delete secret',

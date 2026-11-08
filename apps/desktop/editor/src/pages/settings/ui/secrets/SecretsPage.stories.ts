@@ -93,8 +93,13 @@ export const SectionsFitTheColumn: Story = {
 export const DeletionAsksFirst: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const [first] = canvas.getAllByRole('button', { name: 'Delete secret' })
+    const [first] = canvas.getAllByRole('button', { name: 'Secret actions' })
     await userEvent.click(first!)
+    const item = within(document.body).getByRole('menuitem', { name: 'Delete' })
+    await expect(item.closest('[role="menu"]')!.getBoundingClientRect().right).toBeLessThanOrEqual(
+      first!.getBoundingClientRect().right + 0.5,
+    )
+    await userEvent.click(item)
     const dialog = within(canvas.getByRole('alertdialog'))
     await expect(dialog.getByText(/Embeddings/)).toBeVisible()
     await userEvent.click(dialog.getByRole('button', { name: 'Cancel' }))

@@ -34,15 +34,5 @@
 
 :slotted(.secret-action) {
   border-radius: var(--numen-radius);
-  color: var(--numen-hushed);
-  opacity: 0.45;
-  transition: opacity 0.15s ease;
-}
-
-.secret-row:hover :slotted(.secret-action),
-.secret-row:focus-within :slotted(.secret-action),
-:slotted(.secret-action:focus-visible) {
-  color: var(--numen-ink);
-  opacity: 1;
 }
 </style>
