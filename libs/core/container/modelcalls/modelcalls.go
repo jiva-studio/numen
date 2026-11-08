@@ -2,7 +2,6 @@
 package modelcalls
 
 import (
-	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -17,6 +16,7 @@ type Config struct {
 	PluginHost  pluginport.PluginManager
 	Connections *connection.Connections
 	Clock       machineport.Clock
+	Rows        connectionport.Rows
 }
 
 // OpenLists returns the models and reasoning levels a provider gives, or nil for an installation that
@@ -38,5 +38,5 @@ func (c Config) SetModelCalls(notices connectionport.Notices) {
 	if !isHost {
 		return
 	}
-	host.SetModelCalls(modelcall.NewCalls(c.Connections, settingsadapter.NoRows{}, providerbridge.NewSource(c.PluginHost), c.Clock, notices))
+	host.SetModelCalls(modelcall.NewCalls(c.Connections, c.Rows, providerbridge.NewSource(c.PluginHost), c.Clock, notices))
 }

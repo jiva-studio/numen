@@ -7,4 +7,5 @@ type (
 	ConnectionField = connectionport.ConnectionField
 	ConnectionType  = connectionport.ConnectionType
 	Type            = connectionport.Type
+	Use             = connectionport.Use
 )

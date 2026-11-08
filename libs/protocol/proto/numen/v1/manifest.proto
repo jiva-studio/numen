@@ -289,6 +289,9 @@ message ManifestSetting {
   string options_from = 19;
   // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
   string generate = 20;
+  // operation is the operation a setting of type connections needs of each connection, such as
+  // "complete". max is the number of rows.
+  string operation = 21;
 }
 
 // SecretDeclaration is a secret, such as an API key, that a plugin asks the host to store.

@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/providerconnection.proto.
  */
 export const file_numen_v1_providerconnection: GenFile = /*@__PURE__*/
-  fileDesc("CiFudW1lbi92MS9wcm92aWRlcmNvbm5lY3Rpb24ucHJvdG8SCG51bWVuLnYxItIBChZQcm92aWRlckNvbm5lY3Rpb25UeXBlEg8KB3R5cGVfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEg0KBXRpdGxlGAQgASgJEhMKC2Rlc2NyaXB0aW9uGAUgASgJEhIKCm9wZXJhdGlvbnMYBiADKAkSMQoGZmllbGRzGAcgAygLMiEubnVtZW4udjEuTWFuaWZlc3RDb25uZWN0aW9uRmllbGQSFAoMaXNfYXZhaWxhYmxlGAggASgIIr8CChJQcm92aWRlckNvbm5lY3Rpb24SCgoCaWQYASABKAkSDwoHdHlwZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEjgKBmZpZWxkcxgEIAMoCzIoLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbi5GaWVsZHNFbnRyeRIXCg9zZWNyZXRfa2V5c19zZXQYBSADKAkSGQoRaXNfdHlwZV9hdmFpbGFibGUYBiABKAgSEAoIcmV2aXNpb24YCCABKAUSEwoLaXNfY29tcGxldGUYCSABKAgSIgoaaXNfcHJpdmF0ZV9uZXR3b3JrX2FsbG93ZWQYCiABKAgaRQoLRmllbGRzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlOgI4ASIkCiJMaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXNSZXF1ZXN0IlYKI0xpc3RQcm92aWRlckNvbm5lY3Rpb25UeXBlc1Jlc3BvbnNlEi8KBXR5cGVzGAEgAygLMiAubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uVHlwZSIgCh5MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1JlcXVlc3QiVAofTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXNwb25zZRIxCgtjb25uZWN0aW9ucxgBIAMoCzIcLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbiLwAgofQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBIPCgd0eXBlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSRQoGZmllbGRzGAMgAygLMjUubnVtZW4udjEuQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5GaWVsZHNFbnRyeRJMCgdzZWNyZXRzGAQgAygLMjYubnVtZW4udjEuQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5TZWNyZXRzRW50cnlCA4ABARIiChppc19wcml2YXRlX25ldHdvcmtfYWxsb3dlZBgFIAEoCBpFCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSJQoFdmFsdWUYAiABKAsyFi5nb29nbGUucHJvdG9idWYuVmFsdWU6AjgBGi4KDFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpoBCiBDcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRIwCgpjb25uZWN0aW9uGAEgASgLMhwubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uEjQKBWVycm9yGAIgASgOMiUubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSL9AgofVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBIKCgJpZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoBRIMCgRuYW1lGAMgASgJEkUKBmZpZWxkcxgEIAMoCzI1Lm51bWVuLnYxLlVwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QuRmllbGRzRW50cnkSTAoHc2VjcmV0cxgFIAMoCzI2Lm51bWVuLnYxLlVwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QuU2VjcmV0c0VudHJ5QgOAAQESIgoaaXNfcHJpdmF0ZV9uZXR3b3JrX2FsbG93ZWQYBiABKAgaRQoLRmllbGRzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlOgI4ARouCgxTZWNyZXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKaAQogVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2USMAoKY29ubmVjdGlvbhgBIAEoCzIcLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbhI0CgVlcnJvchgCIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiLQofRGVsZXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBIKCgJpZBgBIAEoCSJoCiBEZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRI0CgVlcnJvchgBIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkq+QIKG1Byb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIuCipQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIsCihQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAESLQopUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX05BTUVfVEFLRU4QAhIwCixQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfSU5WQUxJRF9GSUVMRBADEjMKL1BST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9UWVBFX1VOQVZBSUxBQkxFEAQSMwovUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQBRIxCi1QUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfU1RBTEVfUkVWSVNJT04QBjLgBAoZUHJvdmlkZXJDb25uZWN0aW9uU2VydmljZRJ6ChtMaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXMSLC5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXNSZXF1ZXN0Gi0ubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVzcG9uc2USbgoXTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnMSKC5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1JlcXVlc3QaKS5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1Jlc3BvbnNlEnEKGENyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvbhIpLm51bWVuLnYxLkNyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QaKi5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRJxChhVcGRhdGVQcm92aWRlckNvbm5lY3Rpb24SKS5udW1lbi52MS5VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0GioubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2UScQoYRGVsZXRlUHJvdmlkZXJDb25uZWN0aW9uEikubnVtZW4udjEuRGVsZXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBoqLm51bWVuLnYxLkRlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_manifest]);
+  fileDesc("CiFudW1lbi92MS9wcm92aWRlcmNvbm5lY3Rpb24ucHJvdG8SCG51bWVuLnYxItIBChZQcm92aWRlckNvbm5lY3Rpb25UeXBlEg8KB3R5cGVfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEg0KBXRpdGxlGAQgASgJEhMKC2Rlc2NyaXB0aW9uGAUgASgJEhIKCm9wZXJhdGlvbnMYBiADKAkSMQoGZmllbGRzGAcgAygLMiEubnVtZW4udjEuTWFuaWZlc3RDb25uZWN0aW9uRmllbGQSFAoMaXNfYXZhaWxhYmxlGAggASgIIu4CChJQcm92aWRlckNvbm5lY3Rpb24SCgoCaWQYASABKAkSDwoHdHlwZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEjgKBmZpZWxkcxgEIAMoCzIoLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbi5GaWVsZHNFbnRyeRIXCg9zZWNyZXRfa2V5c19zZXQYBSADKAkSGQoRaXNfdHlwZV9hdmFpbGFibGUYBiABKAgSEAoIcmV2aXNpb24YCCABKAUSEwoLaXNfY29tcGxldGUYCSABKAgSIgoaaXNfcHJpdmF0ZV9uZXR3b3JrX2FsbG93ZWQYCiABKAgSLQoEdXNlcxgHIAMoCzIfLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvblVzZRpFCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSJQoFdmFsdWUYAiABKAsyFi5nb29nbGUucHJvdG9idWYuVmFsdWU6AjgBIlIKFVByb3ZpZGVyQ29ubmVjdGlvblVzZRIRCglwbHVnaW5faWQYASABKAkSEwoLcGx1Z2luX25hbWUYAiABKAkSEQoJb3BlcmF0aW9uGAMgASgJIiQKIkxpc3RQcm92aWRlckNvbm5lY3Rpb25UeXBlc1JlcXVlc3QiVgojTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVzcG9uc2USLwoFdHlwZXMYASADKAsyIC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25UeXBlIiAKHkxpc3RQcm92aWRlckNvbm5lY3Rpb25zUmVxdWVzdCJUCh9MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1Jlc3BvbnNlEjEKC2Nvbm5lY3Rpb25zGAEgAygLMhwubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uIvACCh9DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0Eg8KB3R5cGVfaWQYASABKAkSDAoEbmFtZRgCIAEoCRJFCgZmaWVsZHMYAyADKAsyNS5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LkZpZWxkc0VudHJ5EkwKB3NlY3JldHMYBCADKAsyNi5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LlNlY3JldHNFbnRyeUIDgAEBEiIKGmlzX3ByaXZhdGVfbmV0d29ya19hbGxvd2VkGAUgASgIGkUKC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRIlCgV2YWx1ZRgCIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZToCOAEaLgoMU2VjcmV0c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEimgEKIENyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEjAKCmNvbm5lY3Rpb24YASABKAsyHC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb24SNAoFZXJyb3IYAiABKA4yJS5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIv0CCh9VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0EgoKAmlkGAEgASgJEhAKCHJldmlzaW9uGAIgASgFEgwKBG5hbWUYAyABKAkSRQoGZmllbGRzGAQgAygLMjUubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5GaWVsZHNFbnRyeRJMCgdzZWNyZXRzGAUgAygLMjYubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5TZWNyZXRzRW50cnlCA4ABARIiChppc19wcml2YXRlX25ldHdvcmtfYWxsb3dlZBgGIAEoCBpFCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSJQoFdmFsdWUYAiABKAsyFi5nb29nbGUucHJvdG9idWYuVmFsdWU6AjgBGi4KDFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpoBCiBVcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRIwCgpjb25uZWN0aW9uGAEgASgLMhwubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uEjQKBWVycm9yGAIgASgOMiUubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSItCh9EZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0EgoKAmlkGAEgASgJIp8BCiBEZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRI0CgVlcnJvchgBIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkSNQoMcmVtb3ZlZF91c2VzGAMgAygLMh8ubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uVXNlKvkCChtQcm92aWRlckNvbm5lY3Rpb25FcnJvckNvZGUSLgoqUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASLAooUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX05PVF9GT1VORBABEi0KKVBST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9OQU1FX1RBS0VOEAISMAosUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX0lOVkFMSURfRklFTEQQAxIzCi9QUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfVFlQRV9VTkFWQUlMQUJMRRAEEjMKL1BST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAUSMQotUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX1NUQUxFX1JFVklTSU9OEAYy4AQKGVByb3ZpZGVyQ29ubmVjdGlvblNlcnZpY2USegobTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzEiwubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVxdWVzdBotLm51bWVuLnYxLkxpc3RQcm92aWRlckNvbm5lY3Rpb25UeXBlc1Jlc3BvbnNlEm4KF0xpc3RQcm92aWRlckNvbm5lY3Rpb25zEigubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXF1ZXN0GikubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXNwb25zZRJxChhDcmVhdGVQcm92aWRlckNvbm5lY3Rpb24SKS5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0GioubnVtZW4udjEuQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2UScQoYVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uEikubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBoqLm51bWVuLnYxLlVwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEnEKGERlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvbhIpLm51bWVuLnYxLkRlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QaKi5udW1lbi52MS5EZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_google_protobuf_struct, file_numen_v1_manifest]);
 
 /**
  * ProviderConnectionType is a kind of connection one plugin provides.
@@ -137,6 +137,13 @@ export type ProviderConnection = Message<"numen.v1.ProviderConnection"> & {
    * @generated from field: bool is_private_network_allowed = 10;
    */
   isPrivateNetworkAllowed: boolean;
+
+  /**
+   * uses are the settings of plugins whose rows name the connection.
+   *
+   * @generated from field: repeated numen.v1.ProviderConnectionUse uses = 7;
+   */
+  uses: ProviderConnectionUse[];
 };
 
 /**
@@ -145,6 +152,37 @@ export type ProviderConnection = Message<"numen.v1.ProviderConnection"> & {
  */
 export const ProviderConnectionSchema: GenMessage<ProviderConnection> = /*@__PURE__*/
   messageDesc(file_numen_v1_providerconnection, 1);
+
+/**
+ * ProviderConnectionUse is a setting of rows of a plugin that names a connection.
+ *
+ * @generated from message numen.v1.ProviderConnectionUse
+ */
+export type ProviderConnectionUse = Message<"numen.v1.ProviderConnectionUse"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string plugin_name = 2;
+   */
+  pluginName: string;
+
+  /**
+   * operation is the operation the setting of rows needs, such as "complete".
+   *
+   * @generated from field: string operation = 3;
+   */
+  operation: string;
+};
+
+/**
+ * Describes the message numen.v1.ProviderConnectionUse.
+ * Use `create(ProviderConnectionUseSchema)` to create a new message.
+ */
+export const ProviderConnectionUseSchema: GenMessage<ProviderConnectionUse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_providerconnection, 2);
 
 /**
  * @generated from message numen.v1.ListProviderConnectionTypesRequest
@@ -157,7 +195,7 @@ export type ListProviderConnectionTypesRequest = Message<"numen.v1.ListProviderC
  * Use `create(ListProviderConnectionTypesRequestSchema)` to create a new message.
  */
 export const ListProviderConnectionTypesRequestSchema: GenMessage<ListProviderConnectionTypesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 2);
+  messageDesc(file_numen_v1_providerconnection, 3);
 
 /**
  * @generated from message numen.v1.ListProviderConnectionTypesResponse
@@ -174,7 +212,7 @@ export type ListProviderConnectionTypesResponse = Message<"numen.v1.ListProvider
  * Use `create(ListProviderConnectionTypesResponseSchema)` to create a new message.
  */
 export const ListProviderConnectionTypesResponseSchema: GenMessage<ListProviderConnectionTypesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 3);
+  messageDesc(file_numen_v1_providerconnection, 4);
 
 /**
  * @generated from message numen.v1.ListProviderConnectionsRequest
@@ -187,7 +225,7 @@ export type ListProviderConnectionsRequest = Message<"numen.v1.ListProviderConne
  * Use `create(ListProviderConnectionsRequestSchema)` to create a new message.
  */
 export const ListProviderConnectionsRequestSchema: GenMessage<ListProviderConnectionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 4);
+  messageDesc(file_numen_v1_providerconnection, 5);
 
 /**
  * @generated from message numen.v1.ListProviderConnectionsResponse
@@ -204,7 +242,7 @@ export type ListProviderConnectionsResponse = Message<"numen.v1.ListProviderConn
  * Use `create(ListProviderConnectionsResponseSchema)` to create a new message.
  */
 export const ListProviderConnectionsResponseSchema: GenMessage<ListProviderConnectionsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 5);
+  messageDesc(file_numen_v1_providerconnection, 6);
 
 /**
  * @generated from message numen.v1.CreateProviderConnectionRequest
@@ -245,7 +283,7 @@ export type CreateProviderConnectionRequest = Message<"numen.v1.CreateProviderCo
  * Use `create(CreateProviderConnectionRequestSchema)` to create a new message.
  */
 export const CreateProviderConnectionRequestSchema: GenMessage<CreateProviderConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 6);
+  messageDesc(file_numen_v1_providerconnection, 7);
 
 /**
  * @generated from message numen.v1.CreateProviderConnectionResponse
@@ -272,7 +310,7 @@ export type CreateProviderConnectionResponse = Message<"numen.v1.CreateProviderC
  * Use `create(CreateProviderConnectionResponseSchema)` to create a new message.
  */
 export const CreateProviderConnectionResponseSchema: GenMessage<CreateProviderConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 7);
+  messageDesc(file_numen_v1_providerconnection, 8);
 
 /**
  * @generated from message numen.v1.UpdateProviderConnectionRequest
@@ -319,7 +357,7 @@ export type UpdateProviderConnectionRequest = Message<"numen.v1.UpdateProviderCo
  * Use `create(UpdateProviderConnectionRequestSchema)` to create a new message.
  */
 export const UpdateProviderConnectionRequestSchema: GenMessage<UpdateProviderConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 8);
+  messageDesc(file_numen_v1_providerconnection, 9);
 
 /**
  * @generated from message numen.v1.UpdateProviderConnectionResponse
@@ -346,7 +384,7 @@ export type UpdateProviderConnectionResponse = Message<"numen.v1.UpdateProviderC
  * Use `create(UpdateProviderConnectionResponseSchema)` to create a new message.
  */
 export const UpdateProviderConnectionResponseSchema: GenMessage<UpdateProviderConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 9);
+  messageDesc(file_numen_v1_providerconnection, 10);
 
 /**
  * @generated from message numen.v1.DeleteProviderConnectionRequest
@@ -363,7 +401,7 @@ export type DeleteProviderConnectionRequest = Message<"numen.v1.DeleteProviderCo
  * Use `create(DeleteProviderConnectionRequestSchema)` to create a new message.
  */
 export const DeleteProviderConnectionRequestSchema: GenMessage<DeleteProviderConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 10);
+  messageDesc(file_numen_v1_providerconnection, 11);
 
 /**
  * @generated from message numen.v1.DeleteProviderConnectionResponse
@@ -378,6 +416,13 @@ export type DeleteProviderConnectionResponse = Message<"numen.v1.DeleteProviderC
    * @generated from field: string detail = 2;
    */
   detail: string;
+
+  /**
+   * removed_uses are the settings whose rows named the connection and were removed with it.
+   *
+   * @generated from field: repeated numen.v1.ProviderConnectionUse removed_uses = 3;
+   */
+  removedUses: ProviderConnectionUse[];
 };
 
 /**
@@ -385,7 +430,7 @@ export type DeleteProviderConnectionResponse = Message<"numen.v1.DeleteProviderC
  * Use `create(DeleteProviderConnectionResponseSchema)` to create a new message.
  */
 export const DeleteProviderConnectionResponseSchema: GenMessage<DeleteProviderConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_providerconnection, 11);
+  messageDesc(file_numen_v1_providerconnection, 12);
 
 /**
  * ProviderConnectionErrorCode is the reason a served call did not succeed. The zero value is a call

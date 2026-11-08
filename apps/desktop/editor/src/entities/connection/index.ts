@@ -19,3 +19,15 @@ export {
   hasAvailableType,
   hasUnavailableConnection,
 } from './lib/state'
+export {
+  getCompleteRows,
+  getConnectionUsability,
+  listModelsForOperation,
+  moveRow,
+  readRows,
+  sortByUsability,
+  type RowDraft,
+  type StoredRow,
+  type Usability,
+  type UsabilityWords,
+} from './lib/rows'

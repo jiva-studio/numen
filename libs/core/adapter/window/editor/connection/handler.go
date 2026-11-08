@@ -113,14 +113,15 @@ func (h *Handler) UpdateProviderConnection(
 func (h *Handler) DeleteProviderConnection(
 	ctx context.Context, r *connect.Request[v1.DeleteProviderConnectionRequest],
 ) (*connect.Response[v1.DeleteProviderConnectionResponse], error) {
-	if err := h.connections.Delete.Execute(ctx, r.Msg.GetId()); err != nil {
+	removed, err := h.connections.Delete.Execute(ctx, r.Msg.GetId())
+	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
-	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{}), nil
+	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{RemovedUses: writeUses(removed)}), nil
 }
 
 func getDetail(err error) string {

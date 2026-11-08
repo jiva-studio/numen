@@ -69,6 +69,9 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             secretKeysSet: ['apiKey'],
             isTypeAvailable: true,
             isComplete: true,
+            uses: [
+              { pluginId: 'md.numen.tools.proofreading', pluginName: 'Proofreading', operation: 'complete' },
+            ],
           },
         ],
       }),
@@ -132,6 +135,9 @@ describe('createConnectionClient', () => {
         isTypeAvailable: true,
         isComplete: true,
         isPrivateNetworkAllowed: false,
+        uses: [
+          { pluginId: 'md.numen.tools.proofreading', pluginName: 'Proofreading', operation: 'complete' },
+        ],
       },
     ])
   })

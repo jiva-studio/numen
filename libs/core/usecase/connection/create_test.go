@@ -56,7 +56,7 @@ func TestCreateMakesANameFromTheTitleOfTheTypeAndANumber(t *testing.T) {
 	if first.Name != "OpenRouter" || second.Name != "OpenRouter 2" || third.Name != "OpenRouter 3" {
 		t.Errorf("names = %q, %q, %q", first.Name, second.Name, third.Name)
 	}
-	if err := f.connection.Delete.Execute(t.Context(), second.ID); err != nil {
+	if _, err := f.connection.Delete.Execute(t.Context(), second.ID); err != nil {
 		t.Fatal(err)
 	}
 	if again := f.createOpenRouter(t, ""); again.Name != "OpenRouter 2" {
@@ -188,7 +188,7 @@ func TestCreateWritesNoListEntryWhenTheKeyStoreFails(t *testing.T) {
 
 func TestCreateOfASecretFailsWhenTheMachineHasNoKeyStore(t *testing.T) {
 	f := newFixture(t)
-	noKeys := connection.NewConnections(f.repository, f.types, nil, func() (string, error) { return "c00000001", nil })
+	noKeys := connection.NewConnections(f.repository, f.types, nil, f.uses, func() (string, error) { return "c00000001", nil })
 
 	_, err := noKeys.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Secrets: map[string]string{"apiKey": "k"},
@@ -208,7 +208,7 @@ func TestCreateOfASecretFailsWhenTheMachineHasNoKeyStore(t *testing.T) {
 func TestCreateSkipsAnIDThatIsTaken(t *testing.T) {
 	f := newFixture(t)
 	ids := []string{"c00000001", "c00000001", "c00000002"}
-	f.connection = connection.NewConnections(f.repository, f.types, f.keys, func() (string, error) {
+	f.connection = connection.NewConnections(f.repository, f.types, f.keys, f.uses, func() (string, error) {
 		id := ids[0]
 		ids = ids[1:]
 		return id, nil

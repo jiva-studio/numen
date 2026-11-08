@@ -74,7 +74,10 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 		func() (container.Settings, error) { return openAt(path) },
 		func() {})
 	next := 0
-	connections := connection.NewConnections(repository, oneType{}, keys, func() (string, error) {
+	no := settings.NewConnectionRows(settings.ConnectionRowsSource{
+		Connections: repository, Plugins: func() []pluginport.PluginInfo { return nil },
+	})
+	connections := connection.NewConnections(repository, oneType{}, keys, no, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
 	})

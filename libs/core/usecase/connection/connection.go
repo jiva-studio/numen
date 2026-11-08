@@ -32,6 +32,7 @@ type operation struct {
 	repository connectionport.Repository
 	types      connectionport.Types
 	keys       pluginport.KeyStore
+	uses       connectionport.Uses
 	gate       *sync.Mutex
 }
 
@@ -47,6 +48,7 @@ type Entry struct {
 	IsTypeAvailable         bool
 	IsComplete              bool
 	IsPrivateNetworkAllowed bool
+	Uses                    []connectionport.Use
 }
 
 // Connections holds every use case on the list of connections.
@@ -65,9 +67,9 @@ type Connections struct {
 // with no secret field value still works there. The use cases never change the key store and the
 // list at once.
 func NewConnections(
-	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, newID func() (string, error),
+	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses, newID func() (string, error),
 ) *Connections {
-	base := operation{repository: repository, types: types, keys: keys, gate: &sync.Mutex{}}
+	base := operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}
 	return &Connections{
 		Create:      &Create{operation: base, newID: newID},
 		Update:      &Update{operation: base},
@@ -218,9 +220,13 @@ func (s secretStore) restore(ctx context.Context, id string, backup snapshot) er
 }
 
 func (o operation) buildEntry(ctx context.Context, one connectionport.Connection) (Entry, error) {
+	uses, err := o.uses.ListUses(one.ID)
+	if err != nil {
+		return Entry{}, err
+	}
 	entry := Entry{
 		ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-		Fields: map[string]any{}, IsPrivateNetworkAllowed: one.IsPrivateNetworkAllowed,
+		Fields: map[string]any{}, IsPrivateNetworkAllowed: one.IsPrivateNetworkAllowed, Uses: uses,
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {

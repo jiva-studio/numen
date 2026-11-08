@@ -4,7 +4,14 @@
  */
 
 /** Declarative setting value types exposed by a plugin. */
-export type PluginSettingType = 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file'
+export type PluginSettingType =
+  | 'boolean'
+  | 'string'
+  | 'number'
+  | 'enum'
+  | 'range'
+  | 'file'
+  | 'connections'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -12,6 +19,7 @@ export interface PluginSettingOption {
   readonly title: string
   readonly detail: string
   readonly when?: string | undefined
+  readonly operation?: string | undefined
 }
 
 /** A setting is shown, and handed to its plugin, while another holds one of the values listed. */

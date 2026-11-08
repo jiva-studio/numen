@@ -19,7 +19,7 @@ func TestDeleteRemovesTheConnectionAndItsSecrets(t *testing.T) {
 	keep := f.createOpenRouter(t, "Keep")
 	removedConnection := f.createOpenRouter(t, "Gone")
 
-	if err := f.connection.Delete.Execute(t.Context(), removedConnection.ID); err != nil {
+	if _, err := f.connection.Delete.Execute(t.Context(), removedConnection.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -34,7 +34,7 @@ func TestDeleteRemovesTheConnectionAndItsSecrets(t *testing.T) {
 
 func TestDeleteOfAnUnknownConnectionIsNotFound(t *testing.T) {
 	f := newFixture(t)
-	if err := f.connection.Delete.Execute(t.Context(), "c0000000f"); !errors.Is(err, connection.ErrNotFound) {
+	if _, err := f.connection.Delete.Execute(t.Context(), "c0000000f"); !errors.Is(err, connection.ErrNotFound) {
 		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
@@ -43,9 +43,9 @@ func TestDeleteRestoresTheEntryWhenASecretCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 	failing := &failingDelete{memoryKeys: f.keys}
-	f.connection = connection.NewConnections(f.repository, f.types, failing, func() (string, error) { return "c0000000b", nil })
+	f.connection = connection.NewConnections(f.repository, f.types, failing, f.uses, func() (string, error) { return "c0000000b", nil })
 
-	err := f.connection.Delete.Execute(t.Context(), created.ID)
+	_, err := f.connection.Delete.Execute(t.Context(), created.ID)
 
 	if !errors.Is(err, connection.ErrKeyStore) {
 		t.Fatalf("err = %v, want ErrKeyStore", err)

@@ -123,11 +123,15 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
+// SettingTypeConnections is the type of a setting that holds rows of connections: each names a
+// connection, a model and a reasoning level.
+const SettingTypeConnections = "connections"
+
 // settingTypeNumber is the type of a setting that stores a number.
 const settingTypeNumber = "number"
 
 func listSettingTypes() []string {
-	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile}
+	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
 }
 
 // Backend describes the server-side executable of a plugin.
@@ -159,6 +163,7 @@ type Setting struct {
 	Preview     bool
 	OptionsFrom string
 	Generate    string
+	Operation   string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -508,7 +513,7 @@ func listManifestSettingIssues(settings []Setting) []error {
 		}
 		issues = append(issues, listManifestSettingIssue(s, key)...)
 	}
-	return issues
+	return append(issues, listDuplicateOperationIssues(settings)...)
 }
 
 func listManifestSettingIssue(s Setting, key string) []error {
@@ -526,7 +531,8 @@ func listManifestSettingIssue(s Setting, key string) []error {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
 	issues = append(issues, listGenerateSettingIssues(s, key)...)
-	return append(issues, listFileSettingIssues(s, key)...)
+	issues = append(issues, listFileSettingIssues(s, key)...)
+	return append(issues, listConnectionsSettingIssues(s, key)...)
 }
 
 func listGenerateSettingIssues(s Setting, key string) []error {

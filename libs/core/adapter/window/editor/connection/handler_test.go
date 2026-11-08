@@ -80,7 +80,19 @@ func (k *memoryKeys) DeleteKey(_ context.Context, name string) error {
 
 func number(value float64) *float64 { return &value }
 
-func newHandler(keys *memoryKeys) *Handler {
+type fixedUses map[string][]connectionport.Use
+
+func (u fixedUses) ListUses(connectionID string) ([]connectionport.Use, error) {
+	return u[connectionID], nil
+}
+
+func (u fixedUses) RemoveRows(string) error { return nil }
+
+func (u fixedUses) Refresh(context.Context, string) error { return nil }
+
+func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
+
+func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 	fixed := "https://openrouter.ai/api/v1"
 	types := fixedTypes{{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
 		ID: "openrouter", Title: "OpenRouter", Description: "One key for many models.", Operations: []string{"complete", "embed"},
@@ -92,7 +104,7 @@ func newHandler(keys *memoryKeys) *Handler {
 		},
 	}}}
 	next := 0
-	return NewHandler(connections.NewConnections(&memoryRepository{}, types, keys, func() (string, error) {
+	return NewHandler(connections.NewConnections(&memoryRepository{}, types, keys, uses, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
 	}))
@@ -264,4 +276,36 @@ func mustCreate(t *testing.T, handler *Handler) *connect.Response[v1.CreateProvi
 		t.Fatal(err)
 	}
 	return created
+}
+
+func TestListProviderConnectionsNamesThePluginSettingsThatUseEachConnection(t *testing.T) {
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operation: "complete"}}}
+	handler := newHandlerWithUses(newKeys(), uses)
+	mustCreate(t, handler)
+
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := listed.Msg.GetConnections()[0].GetUses()
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.tools.proofreading" || got[0].GetPluginName() != "Proofreading" || got[0].GetOperation() != "complete" {
+		t.Errorf("uses = %v", got)
+	}
+}
+
+func TestDeleteProviderConnectionNamesThePluginSettingsWhoseRowsWereRemoved(t *testing.T) {
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}}}
+	handler := newHandlerWithUses(newKeys(), uses)
+	created := mustCreate(t, handler)
+
+	response, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: created.Msg.GetConnection().GetId()}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := response.Msg.GetRemovedUses()
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.engines.embeddings" || got[0].GetOperation() != "embed" {
+		t.Errorf("removed uses = %v", got)
+	}
 }

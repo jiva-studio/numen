@@ -12,6 +12,9 @@ import type {
   ConnectionDraft,
   ConnectionInfo,
   ConnectionTypeInfo,
+  ModelInfo,
+  ModelListFailure,
+  ReasoningLevelInfo,
   Result,
 } from '@numen/core-client'
 import type {
@@ -64,6 +67,16 @@ export interface Installation {
   createConnection?(draft: ConnectionDraft): Promise<Result<ConnectionInfo, string>>
   updateConnection?(change: ConnectionChange): Promise<Result<ConnectionInfo, string>>
   deleteConnection?(id: string): Promise<Result<undefined, string>>
+  /** The models a connection offers for an operation, from the provider of its type. */
+  listModels?(
+    connectionId: string,
+    operation: string,
+  ): Promise<Result<readonly ModelInfo[], ModelListFailure>>
+  /** The reasoning levels a connection offers for a model. */
+  listReasoningLevels?(
+    connectionId: string,
+    model: string,
+  ): Promise<Result<readonly ReasoningLevelInfo[], ModelListFailure>>
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**

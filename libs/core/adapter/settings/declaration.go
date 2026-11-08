@@ -26,6 +26,9 @@ const (
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
 
+// RegistryConnections names the registry that lists the ids of the stored connections.
+const RegistryConnections = "connections"
+
 func readAppDeclaration() []pluginport.PluginManifestSetting {
 	decoded, err := manifestjson.Decode(appDeclaration)
 	if err != nil {

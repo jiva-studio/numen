@@ -44,7 +44,16 @@ func writeConnection(entry connection.Entry) (*v1.ProviderConnection, error) {
 		Revision:                int32(entry.Revision),
 		IsComplete:              entry.IsComplete,
 		IsPrivateNetworkAllowed: entry.IsPrivateNetworkAllowed,
+		Uses:                    writeUses(entry.Uses),
 	}, nil
+}
+
+func writeUses(uses []connectioncontract.Use) []*v1.ProviderConnectionUse {
+	wire := make([]*v1.ProviderConnectionUse, 0, len(uses))
+	for _, one := range uses {
+		wire = append(wire, &v1.ProviderConnectionUse{PluginId: one.PluginID, PluginName: one.PluginName, Operation: one.Operation})
+	}
+	return wire
 }
 
 func writeType(one connectioncontract.Type) (*v1.ProviderConnectionType, error) {

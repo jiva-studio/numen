@@ -11,7 +11,7 @@ import {
   type PluginLoader,
   type SlotHost,
 } from '@numen/plugin-host'
-import { connections, pluginCatalog } from '@/shared/clients'
+import { connections, models, pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
@@ -475,6 +475,7 @@ function initWindowServices(
     onSizeChanged: () => editing.noted.measureAll(),
     catalog: pluginCatalog,
     connections,
+    models,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })

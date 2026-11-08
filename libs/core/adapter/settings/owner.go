@@ -125,6 +125,8 @@ func checkValue(declared pluginport.PluginManifestSetting, registries Registries
 		return checkNumber(declared, value)
 	case "enum":
 		return checkOption(declared, registries, value)
+	case "connections":
+		return checkRows(declared, registries, value)
 	}
 	return nil
 }
@@ -225,9 +227,11 @@ func (f *File) GetValue(path ...string) (any, bool) {
 // option, and an object of an owner that has no declaration. Each one adds a notice to the file
 // and is applied nowhere. The bytes of the file on disk are not touched.
 func (f *File) DropInvalid(declared Declarations, registries Registries) {
+	registries = f.withConnectionIDs(registries)
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
-		if _, found := declared(id); !found {
+		settings, found := declared(id)
+		if !found {
 			isDefault := isDefaultPlugin(id, f.Plugins[id])
 			delete(f.Plugins, id)
 			if isDefault {
@@ -235,6 +239,11 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			}
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
+		}
+		for _, one := range settings {
+			if one.Type == "connections" {
+				f.dropInvalidRows(id, one)
+			}
 		}
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {

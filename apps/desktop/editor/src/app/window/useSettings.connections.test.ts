@@ -21,6 +21,7 @@ const connection: ConnectionInfo = {
   isTypeAvailable: true,
   isComplete: true,
   isPrivateNetworkAllowed: false,
+  uses: [],
 }
 
 const createClient = (): ConnectionClient => ({

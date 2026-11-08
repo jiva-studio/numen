@@ -18,6 +18,7 @@ type PluginSetting struct {
 	Accept        []string
 	Multiple      bool
 	Preview       bool
+	Operation     string
 	OptionsFrom   string
 	ActiveOptions PluginSettingOptions
 	IsShown       bool
@@ -45,6 +46,7 @@ func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, option
 		Multiple:    declared.Multiple,
 		Preview:     declared.Preview,
 		OptionsFrom: declared.OptionsFrom,
+		Operation:   declared.Operation,
 	}
 }
 

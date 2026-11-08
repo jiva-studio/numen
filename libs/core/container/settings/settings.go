@@ -85,6 +85,19 @@ func (c Config) GetSettingsAt(path string) (Settings, error) {
 	return target, nil
 }
 
+// ReadStoredSettings reads the settings file as it is stored, without leaving anything out of force.
+// An unconfigured installation returns the default settings.
+func (c Config) ReadStoredSettings() (Settings, error) {
+	path, err := c.SettingsFile()
+	if err != nil {
+		return Settings{}, err
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return DefaultSettings(), nil
+	}
+	return c.GetSettingsAt(path)
+}
+
 // GetCheckedSettingsAt reads the settings file at path and drops invalid values.
 func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 	target, err := c.GetSettingsAt(path)
@@ -92,9 +105,9 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 		return Settings{}, err
 	}
 	if c.PluginHost != nil {
+		target.DropInvalidConnections()
 		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
 		target.DropInvalidSecrets(c.IsSecretDeclared)
-		target.DropInvalidConnections()
 	} else {
 		target.DropInvalidSecrets(func(pluginport.DeclarationKey) bool { return true })
 		target.DropInvalidConnections()
@@ -212,6 +225,9 @@ func (c Config) GetDeclarations() settingsadapter.Declarations {
 // GetRegistries returns the option values for a named setting registry.
 func (c Config) GetRegistries() settingsadapter.Registries {
 	return func(name string) ([]string, bool) {
+		if name == settingsadapter.RegistryConnections {
+			return c.listConnectionIDs()
+		}
 		options, found := c.ListRegistryOptions(name)
 		names := make([]string, 0, len(options))
 		for _, one := range options {
@@ -219,6 +235,21 @@ func (c Config) GetRegistries() settingsadapter.Registries {
 		}
 		return names, found
 	}
+}
+
+// listConnectionIDs lists the ids of the connections stored in the settings file.
+func (c Config) listConnectionIDs() ([]string, bool) {
+	stored, err := c.ReadStoredSettings()
+	if err != nil {
+		c.handleError(err)
+		return nil, false
+	}
+	stored.DropInvalidConnections()
+	ids := make([]string, 0, len(stored.Connections))
+	for _, one := range stored.Connections {
+		ids = append(ids, one.ID)
+	}
+	return ids, true
 }
 
 // ListRegistryOptions returns the options for the named registry when known.

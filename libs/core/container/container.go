@@ -208,7 +208,12 @@ func (c Config) connections() connectionswiring.Config {
 		SettingsFiles:        res.settingsFiles,
 		SettingsFile:         s.SettingsFile,
 		ReadCheckedSettings:  s.ReadCheckedSettings,
+		ReadStoredSettings:   s.ReadStoredSettings,
 		RefreshSettingEvents: s.RefreshSettingEvents,
+		Plugins:              s.Plugins(),
+		GetDeclarations:      s.GetDeclarations(),
+		WriteSettings:        s.WriteSettings,
+		HandleError:          c.handleError,
 	}
 }
 
@@ -219,7 +224,7 @@ func (c Config) OpenConnections() *connection.Connections {
 }
 
 func (c Config) modelCalls() modelcallswiring.Config {
-	return modelcallswiring.Config{PluginHost: c.PluginHost, Connections: c.OpenConnections(), Clock: c.Clock()}
+	return modelcallswiring.Config{PluginHost: c.PluginHost, Connections: c.OpenConnections(), Clock: c.Clock(), Rows: c.connections().OpenRows()}
 }
 
 // OpenModelLists returns the models and reasoning levels a provider gives for a connection, or nil

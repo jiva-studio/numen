@@ -188,7 +188,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionChangedWhileTheKeyWasRead(t *testi
 		}); err != nil {
 			t.Error(err)
 		}
-	}}, nil)
+	}}, f.uses, nil)
 
 	secrets, err := editing.ReadSecrets.Execute(t.Context(), resolved)
 
@@ -211,7 +211,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionWasDeletedWhileTheKeyWasRead(t *te
 		if err := f.repository.ChangeConnections(func([]connectionport.Connection) ([]connectionport.Connection, error) { return nil, nil }); err != nil {
 			t.Error(err)
 		}
-	}}, nil)
+	}}, f.uses, nil)
 
 	if _, err := deleting.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connection.ErrStaleRevision) {
 		t.Errorf("err = %v, want ErrStaleRevision", err)
@@ -225,7 +225,7 @@ func TestReadSecretsReportsAFailingKeyStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	failing := connection.NewConnections(f.repository, f.types, failingKeys{memoryKeys: f.keys}, nil)
+	failing := connection.NewConnections(f.repository, f.types, failingKeys{memoryKeys: f.keys}, f.uses, nil)
 
 	if _, err := failing.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connection.ErrKeyStore) {
 		t.Errorf("err = %v, want ErrKeyStore", err)

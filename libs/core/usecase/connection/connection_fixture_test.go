@@ -137,15 +137,16 @@ func newTypes() fixedTypes {
 type fixture struct {
 	repository *memoryRepository
 	keys       *memoryKeys
+	uses       *memoryUses
 	types      fixedTypes
 	connection *connection.Connections
 }
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	f := &fixture{repository: &memoryRepository{}, keys: &memoryKeys{values: map[string]string{}}, types: newTypes()}
+	f := &fixture{repository: &memoryRepository{}, keys: &memoryKeys{values: map[string]string{}}, uses: &memoryUses{}, types: newTypes()}
 	next := 0
-	f.connection = connection.NewConnections(f.repository, f.types, f.keys, func() (string, error) {
+	f.connection = connection.NewConnections(f.repository, f.types, f.keys, f.uses, func() (string, error) {
 		next++
 		return fmt.Sprintf("c%08x", next), nil
 	})
@@ -201,4 +202,48 @@ func (f *fixture) listEntries(t *testing.T) []connection.Entry {
 		t.Fatal(err)
 	}
 	return entries
+}
+
+// memoryUses stands for the settings of rows of the plugins: uses lists them by connection, and the
+// calls the use cases make are recorded.
+type memoryUses struct {
+	mu          sync.Mutex
+	uses        map[string][]connectionport.Use
+	removed     []string
+	refreshed   []string
+	failRemove  error
+	failRefresh error
+}
+
+func (u *memoryUses) ListUses(connectionID string) ([]connectionport.Use, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return slices.Clone(u.uses[connectionID]), nil
+}
+
+func (u *memoryUses) RemoveRows(connectionID string) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.failRemove != nil {
+		return u.failRemove
+	}
+	u.removed = append(u.removed, connectionID)
+	delete(u.uses, connectionID)
+	return nil
+}
+
+func (u *memoryUses) Refresh(_ context.Context, connectionID string) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.refreshed = append(u.refreshed, connectionID)
+	return u.failRefresh
+}
+
+func (u *memoryUses) use(connectionID string, uses ...connectionport.Use) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.uses == nil {
+		u.uses = map[string][]connectionport.Use{}
+	}
+	u.uses[connectionID] = uses
 }

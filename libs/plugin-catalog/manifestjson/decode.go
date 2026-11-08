@@ -275,6 +275,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Preview:     one.GetPreview(),
 			OptionsFrom: one.GetOptionsFrom(),
 			Generate:    one.GetGenerate(),
+			Operation:   one.GetOperation(),
 		})
 	}
 	return out, nil

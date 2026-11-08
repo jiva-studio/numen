@@ -6,7 +6,12 @@ import { themes } from '@/entities/settings'
 import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
 import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
-import { formatErrorMessage, type ConnectionClient, type PluginCatalog } from '@numen/core-client'
+import {
+  formatErrorMessage,
+  type ConnectionClient,
+  type ModelClient,
+  type PluginCatalog,
+} from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
 import { createConnectionStore } from '@/entities/connection'
 import { createFollower, runInBackground } from '@numen/ui'
@@ -30,9 +35,11 @@ export interface SettingsDeps {
   getPlatform?: Installation['getPlatform']
   catalog?: PluginCatalog
   connections?: ConnectionClient
+  models?: ModelClient
 }
 
 interface SettingsTabConfigDeps {
+  models?: ModelClient
   appearance: ReturnType<typeof createWindowAppearance>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
@@ -80,6 +87,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getPlatform,
     catalogEntries,
     reportError,
+    models,
   } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
@@ -91,6 +99,14 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
     ...createConnectionMembers(connections),
+    ...(models
+      ? {
+          listModels: (connectionId: string, operation: string) =>
+            models.listModels(connectionId, operation),
+          listReasoningLevels: (connectionId: string, model: string) =>
+            models.listReasoningLevels(connectionId, model),
+        }
+      : {}),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
@@ -244,6 +260,7 @@ export function useSettings({
   getPlatform,
   catalog,
   connections: connectionClient,
+  models,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
@@ -284,6 +301,7 @@ export function useSettings({
       ...(getPlatform ? { getPlatform } : {}),
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
+      ...(models ? { models } : {}),
     }),
     reportError,
   )

@@ -89,3 +89,22 @@ func TestNewWirePluginInfos_CarriesThePreviewFlagAndTheRegistry(t *testing.T) {
 		t.Errorf("a plain setting carries preview=%v from %q", got[1].GetPreview(), got[1].GetOptionsFrom())
 	}
 }
+
+func TestNewWirePluginInfos_CarriesTheOperationAndTheRowLimitOfASettingOfRows(t *testing.T) {
+	limit := 3.0
+	wire := NewWirePluginInfos([]setting.PluginInfo{{
+		ID: "a.b",
+		Settings: []setting.PluginSetting{
+			{Key: "connections", Type: "connections", Operation: "complete", Max: &limit},
+			{Key: "other", Type: "string"},
+		},
+	}})
+
+	got := wire[0].GetSettings()
+	if got[0].GetOperation() != "complete" || got[0].GetMax() != 3 {
+		t.Errorf("the rows carry operation %q and max %v", got[0].GetOperation(), got[0].GetMax())
+	}
+	if got[1].GetOperation() != "" {
+		t.Errorf("a plain setting carries operation %q", got[1].GetOperation())
+	}
+}

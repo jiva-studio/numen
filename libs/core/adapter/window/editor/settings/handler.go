@@ -167,6 +167,7 @@ func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
 			Multiple:      s.Multiple,
 			Preview:       s.Preview,
 			OptionsFrom:   s.OptionsFrom,
+			Operation:     s.Operation,
 			ActiveOptions: newWireOptions(s.ActiveOptions),
 			IsShown:       s.IsShown,
 			ValueJson:     s.ValueJSON,

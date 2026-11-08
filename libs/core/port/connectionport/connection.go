@@ -1,6 +1,7 @@
 package connectionport
 
 import (
+	"context"
 	"strings"
 	"unicode/utf8"
 
@@ -81,4 +82,19 @@ func IsValidID(id string) bool {
 		}
 	}
 	return true
+}
+
+// Use is a setting of rows of a plugin that names a connection. Operation is the operation the
+// setting needs.
+type Use struct{ PluginID, PluginName, Operation string }
+
+// Uses connects a connection to the settings of rows that name it.
+type Uses interface {
+	// ListUses returns the settings of rows in force that name the connection, one for each plugin and
+	// operation, in the order of the plugin ids.
+	ListUses(connectionID string) ([]Use, error)
+	// RemoveRows writes the settings of rows without the rows that name the connection.
+	RemoveRows(connectionID string) error
+	// Refresh sends the configuration again to each running plugin whose rows name the connection.
+	Refresh(ctx context.Context, connectionID string) error
 }

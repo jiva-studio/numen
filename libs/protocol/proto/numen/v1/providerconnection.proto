@@ -82,6 +82,16 @@ message ProviderConnection {
   bool is_complete = 9;
   // is_private_network_allowed is whether the address may name a private network.
   bool is_private_network_allowed = 10;
+  // uses are the settings of plugins whose rows name the connection.
+  repeated ProviderConnectionUse uses = 7;
+}
+
+// ProviderConnectionUse is a setting of rows of a plugin that names a connection.
+message ProviderConnectionUse {
+  string plugin_id = 1;
+  string plugin_name = 2;
+  // operation is the operation the setting of rows needs, such as "complete".
+  string operation = 3;
 }
 
 message ListProviderConnectionTypesRequest {}
@@ -137,4 +147,6 @@ message DeleteProviderConnectionRequest {
 message DeleteProviderConnectionResponse {
   ProviderConnectionErrorCode error = 1;
   string detail = 2;
+  // removed_uses are the settings whose rows named the connection and were removed with it.
+  repeated ProviderConnectionUse removed_uses = 3;
 }

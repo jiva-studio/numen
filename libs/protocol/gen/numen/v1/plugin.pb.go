@@ -537,7 +537,9 @@ type PluginSetting struct {
 	IsShown bool `protobuf:"varint,20,opt,name=is_shown,json=isShown,proto3" json:"is_shown,omitempty"`
 	// The value in force as JSON, resolved by the core: the stored value, else the default, else the
 	// first of the options in force.
-	ValueJson     string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
+	ValueJson string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
+	// The operation a setting of type connections needs of each connection. max is the number of rows.
+	Operation     string `protobuf:"bytes,22,opt,name=operation,proto3" json:"operation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -708,6 +710,13 @@ func (x *PluginSetting) GetIsShown() bool {
 func (x *PluginSetting) GetValueJson() string {
 	if x != nil {
 		return x.ValueJson
+	}
+	return ""
+}
+
+func (x *PluginSetting) GetOperation() string {
+	if x != nil {
+		return x.Operation
 	}
 	return ""
 }
@@ -1478,7 +1487,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x04 \x01(\tB\x03\x80\x01\x01R\x05value\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xbf\x05\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xdd\x05\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1502,7 +1511,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0eactive_options\x18\x13 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\ractiveOptions\x12\x19\n" +
 	"\bis_shown\x18\x14 \x01(\bR\aisShown\x12\x1d\n" +
 	"\n" +
-	"value_json\x18\x15 \x01(\tR\tvalueJsonB\x06\n" +
+	"value_json\x18\x15 \x01(\tR\tvalueJson\x12\x1c\n" +
+	"\toperation\x18\x16 \x01(\tR\toperationB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"m\n" +

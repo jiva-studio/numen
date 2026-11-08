@@ -236,7 +236,7 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Connections = connection.NewConnections(w.repository, types, w.Keys, func() (string, error) {
+	w.Connections = connection.NewConnections(w.repository, types, w.Keys, NoUses{}, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -326,3 +326,15 @@ func (w *World) SetAvailable(pluginID string, isAvailable bool) {
 }
 
 const apiKeyField = "apiKey"
+
+// NoUses is the settings of rows of an installation where no plugin has one.
+type NoUses struct{}
+
+// ListUses returns no use.
+func (NoUses) ListUses(string) ([]connectionport.Use, error) { return nil, nil }
+
+// RemoveRows removes nothing.
+func (NoUses) RemoveRows(string) error { return nil }
+
+// Refresh configures no plugin.
+func (NoUses) Refresh(context.Context, string) error { return nil }

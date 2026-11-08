@@ -73,7 +73,11 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
-	return u.buildEntry(ctx, updated)
+	entry, err := u.buildEntry(ctx, updated)
+	if err != nil {
+		return Entry{}, err
+	}
+	return entry, u.uses.Refresh(ctx, updated.ID)
 }
 
 func findCurrent(list []connectionport.Connection, request UpdateRequest) (connectionport.Connection, error) {

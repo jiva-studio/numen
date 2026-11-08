@@ -49,6 +49,13 @@ export interface ConnectionTypeInfo {
   readonly isAvailable: boolean
 }
 
+/** A setting of rows of a plugin that names a connection. */
+export interface ConnectionUse {
+  readonly pluginId: string
+  readonly pluginName: string
+  readonly operation: string
+}
+
 /** A stored connection. */
 export interface ConnectionInfo {
   readonly id: string
@@ -60,6 +67,7 @@ export interface ConnectionInfo {
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
   readonly isPrivateNetworkAllowed: boolean
+  readonly uses: readonly ConnectionUse[]
 }
 
 /** A connection to create. An empty name asks the core to name it from the title of the type. */
@@ -197,6 +205,11 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
     isTypeAvailable: connection.isTypeAvailable,
     isComplete: connection.isComplete,
     isPrivateNetworkAllowed: connection.isPrivateNetworkAllowed,
+    uses: connection.uses.map((one) => ({
+      pluginId: one.pluginId,
+      pluginName: one.pluginName,
+      operation: one.operation,
+    })),
   }
 }
 
