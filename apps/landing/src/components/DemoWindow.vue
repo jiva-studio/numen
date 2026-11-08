@@ -3,7 +3,7 @@
  * Interactive landing-page simulation of the Numen desktop window, composed
  * from the real application components (`FilesTab`, `PlexGraphView`, `Editor`,
  * `Reader`, `RecordingTab`, `DeckTab`, `Agent`, `TabLinkIndicator`,
- * `TabLinkMenu`, `WorkspaceLayout`, `Palette`).
+ * `WorkspaceLayout`, `Palette`). The tab menu is a local `Menu` over the real link state.
  */
 import {
   computed,
@@ -32,13 +32,14 @@ import {
   FolderTree,
   Layers,
   Link,
+  Link2Off,
   PenLine,
   Plus,
   Trash2,
   Type,
   Waypoints,
 } from '@lucide/vue'
-import { keyChord, type PaletteKeys, type TextRange } from '@numen/ui'
+import { Menu, keyChord, type MenuItem, type PaletteKeys, type TextRange } from '@numen/ui'
 import {
   Palette,
   WorkspaceLayout,
@@ -107,8 +108,8 @@ import type { AgentModelOption } from '@plugins/views-agent-chat/frontend/messag
 import type { Turn } from '@plugins/views-agent-chat/frontend/thread'
 import {
   TabLinkIndicator,
-  TabLinkMenu,
-  useTabLinkMenu,
+  getAllTabs,
+  getEligibleTabs,
   useTabLinks,
   type TabId,
   type TabLinkGroup,
@@ -1126,12 +1127,72 @@ const tabs = computed<readonly Tab[]>(() =>
   }),
 )
 
-const linkMenu = useTabLinkMenu({
-  tabLinks,
-  getTabs: () => tabs.value,
-  getKind: getKindOfTab,
-  isLinkable: isTabLinkable,
+const UNLINK_ITEM = '__unlink__'
+
+const menuTab = ref<string | null>(null)
+const menuAt = ref({ x: 0, y: 0 })
+
+const menuTabs = computed(() => getAllTabs(tabs.value, tabLinks.tabs))
+
+const menuEligibleTabs = computed(() =>
+  menuTab.value === null
+    ? []
+    : getEligibleTabs({
+        from: menuTab.value,
+        tabs: menuTabs.value,
+        getKind: getKindOfTab,
+        isLinkable: isTabLinkable,
+        getGroupOf: tabLinks.getGroupOf,
+      }),
+)
+
+const menuItems = computed<MenuItem[]>(() => {
+  const from = menuTab.value
+  if (from === null) return []
+  const items: MenuItem[] = []
+  if (tabLinks.getGroupOf(from) !== null) {
+    const titles = tabLinks
+      .getLinkedTargets(from)
+      .map((id) => menuTabs.value.find((tab) => tab.id === id)?.title ?? id)
+    items.push({
+      id: UNLINK_ITEM,
+      text: 'Unlink tab',
+      ...(titles.length > 0 ? { detail: `Linked with ${titles.join(', ')}` } : {}),
+    })
+  }
+  for (const tab of menuEligibleTabs.value) {
+    items.push({
+      id: tab.id,
+      text: tab.title || tab.kind,
+      detail: tab.kind,
+      group: 'Link with tab',
+    })
+  }
+  return items
 })
+
+function getMenuIcon(id: string): Component | null {
+  if (id === UNLINK_ITEM) return Link2Off
+  return menuEligibleTabs.value.some((tab) => tab.id === id) ? getTabIcon(id) : null
+}
+
+function openTabMenu(tabId: string, at: { x: number; y: number }) {
+  if (!isTabLinkable(tabId)) return
+  menuTab.value = tabId
+  menuAt.value = at
+}
+
+function closeTabMenu() {
+  menuTab.value = null
+}
+
+function onChooseTabMenu(id: string) {
+  const from = menuTab.value
+  if (from === null) return
+  if (id === UNLINK_ITEM) tabLinks.unlinkTab(from)
+  else tabLinks.linkTabs(from, id)
+  closeTabMenu()
+}
 
 let isSyncingTabs = false
 
@@ -2223,7 +2284,7 @@ function onCloseWorkspaceTab(tabId: string) {
 }
 
 function onTabContextMenu(tabId: string, pos: { x: number; y: number }) {
-  linkMenu.open(tabId, pos)
+  openTabMenu(tabId, pos)
 }
 
 function onGoBookPage(pdfPath: string, targetPage: number) {
@@ -2601,18 +2662,25 @@ function getTabIcon(id: string): Component | null {
       </template>
     </WorkspaceLayout>
 
-    <TabLinkMenu
-      v-if="linkMenu.tabId.value"
-      :tab-id="linkMenu.tabId.value"
-      :eligible-tabs="linkMenu.eligibleTabs.value"
-      :at="linkMenu.at.value"
-      :is-linked="linkMenu.isLinked.value"
-      :linked-target-title="linkMenu.linkedTargetTitle.value"
-      :get-tab-icon="getTabIcon"
-      @link="linkMenu.link"
-      @unlink="linkMenu.unlink"
-      @close="linkMenu.close"
-    />
+    <Menu
+      v-if="menuTab"
+      :items="menuItems"
+      :at="menuAt"
+      has-groups
+      is-open
+      @choose="onChooseTabMenu"
+      @dismiss="closeTabMenu"
+    >
+      <template #icon="{ id }">
+        <component
+          :is="getMenuIcon(id)"
+          v-if="getMenuIcon(id)"
+          class="tab-menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+      <template #silence>No open tabs to link with</template>
+    </Menu>
 
     <Palette
       v-if="activePanel"
@@ -2639,6 +2707,12 @@ function getTabIcon(id: string): Component | null {
 </template>
 
 <style scoped>
+.tab-menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.75;
+}
+
 .demo-window {
   position: relative;
   width: 100%;
