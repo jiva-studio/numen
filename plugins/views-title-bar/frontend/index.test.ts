@@ -23,7 +23,11 @@ const manifest = JSON.parse(
   id: string
   targets: readonly string[]
   contributes: { slots: readonly { slot: string; view: string }[] }
-  settings: readonly { key: string; default: string; options: readonly { value: string; when?: string }[] }[]
+  settings: readonly {
+    key: string
+    default: string
+    options: readonly { value: string; when?: string }[]
+  }[]
 }
 
 const ORCHARD = { id: 'orchard', name: 'Orchard notes' }
@@ -489,7 +493,6 @@ describe('the window buttons on Linux', () => {
 
     expect(bar.find('[data-title-bar]').attributes('data-controls')).toBe('windows')
   })
-
 })
 
 describe('the bar in a window that offers no slots, vaults or window', () => {

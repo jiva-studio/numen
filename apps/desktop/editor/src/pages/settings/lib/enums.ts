@@ -97,7 +97,8 @@ export function createEnumFields(
     whenReader.getCondition(option.when)?.evaluate({ 'app.platform': getPlatform() }) ?? true
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
-  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting), isAvailable)
+  const getEnumChoices = (setting: PluginSettingInfo) =>
+    toSelectChoices(getEnumOptions(setting), isAvailable)
   /**
    * The value the select shows: the value in force, or the first offered option when the value in
    * force is an option this platform does not offer. Showing it writes nothing.

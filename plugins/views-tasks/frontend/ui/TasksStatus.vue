@@ -60,7 +60,9 @@ watch(
   (tasks) => {
     const active = tasks.filter((task) => task.state === 'running' || task.state === 'cancelling')
     knownIds.value =
-      active.length === 0 ? new Set() : new Set([...knownIds.value, ...active.map((task) => task.id)])
+      active.length === 0
+        ? new Set()
+        : new Set([...knownIds.value, ...active.map((task) => task.id)])
   },
   { immediate: true },
 )

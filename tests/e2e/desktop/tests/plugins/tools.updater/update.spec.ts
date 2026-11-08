@@ -97,7 +97,9 @@ test.describe('the update indicator', () => {
     await indicator.click()
     await expect(page.getByText('Update available')).toBeVisible()
     await expect(
-      page.getByRole('dialog', { name: 'Update available' }).getByRole('button', { name: 'Download' }),
+      page
+        .getByRole('dialog', { name: 'Update available' })
+        .getByRole('button', { name: 'Download' }),
     ).toBeVisible()
   })
 
