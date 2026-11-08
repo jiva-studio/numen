@@ -96,7 +96,7 @@ test.describe('A link', () => {
     const tab = page.getByRole('tabpanel', { name: /rance-part=2/ })
     await expect(tab.getByText(ARTICLE_TEXT)).toBeVisible({ timeout: 30_000 })
 
-    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /\(live\)$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /\(current\)$/)
     await expect(tab.getByText(ARTICLE_TEXT)).toHaveCount(0, { timeout: 30_000 })
 
     await page.reload()

@@ -87,7 +87,7 @@ test.describe('a link to a video', () => {
     await expect(tab.getByText(CAPTION)).toBeVisible({ timeout: 30_000 })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
 
-    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /\(live\)$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /\(current\)$/)
     await expect(tab.getByText(CAPTION)).toHaveCount(0)
 
     await runCommand(page, 'Download captions', /^Download captions$/)

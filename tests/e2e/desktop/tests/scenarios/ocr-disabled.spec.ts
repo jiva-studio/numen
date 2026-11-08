@@ -66,7 +66,7 @@ test.describe('With the OCR plugin disabled after a proofreading', () => {
     await waitForPassage(page, SCANNED_WORDS, PATH)
     await page.keyboard.press('Escape')
 
-    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
     await waitForPassage(page, PROOFREAD_MARK, PATH)
     await page.keyboard.press('Escape')
 

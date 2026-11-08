@@ -96,7 +96,9 @@ test.describe('the update indicator', () => {
     await expect(indicator).toHaveText(`v${NEW_RELEASE.version}`)
     await indicator.click()
     await expect(page.getByText('Update available')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
+    await expect(
+      page.getByRole('dialog', { name: 'Update available' }).getByRole('button', { name: 'Download' }),
+    ).toBeVisible()
   })
 
   test('opens a framed popover above the indicator, with its details laid out, and closes it on Escape', async ({

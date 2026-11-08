@@ -36,7 +36,7 @@ const expectProofreadVersion = async (page: Page): Promise<void> => {
 }
 
 const proofreadLiveVersion = async (page: Page): Promise<void> => {
-  await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
+  await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
 }
 
 test.describe('Proofreading', () => {

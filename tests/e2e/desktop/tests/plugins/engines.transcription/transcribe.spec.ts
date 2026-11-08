@@ -91,7 +91,7 @@ test.describe('the text versions of a file', () => {
     await waitForPassage(page, 'Mock transcribed', `assets/${deleted}`)
     await page.keyboard.press('Escape')
 
-    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^transcript/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Transcript/)
 
     await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
@@ -117,7 +117,7 @@ test.describe('the text versions of a file', () => {
       await expectNoRecognitionRunning(page, name)
     }
 
-    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^recognition/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Recognized text/)
 
     await expectPassageGone(page, MOCK_RECOGNISED_WORDS, `assets/${control}`, `assets/${deleted}`)
   })
@@ -127,13 +127,13 @@ test.describe('the text versions of a file', () => {
   }) => {
     const name = copyAsset('lecture.wav', 'harbour-proofread')
     let tab = await transcribe(page, name)
-    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
     await expect(tab.getByText(/Mock transcribed text.*\[proofread\]/)).toBeVisible({
       timeout: 90_000,
     })
 
     // The proofread version is the live one once it is made.
-    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^proofreading \(live\)$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^Proofread text \(current\)$/)
 
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
     await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)
