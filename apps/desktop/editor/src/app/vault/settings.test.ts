@@ -405,6 +405,8 @@ describe('a plugin whose last start failed', () => {
               name: 'Sample',
               capabilities: [],
               secrets: [],
+              readers: [],
+              settingsViews: [],
               settings: [],
               failure: {
                 reason: 'Timed out while starting',
@@ -480,6 +482,8 @@ describe('what the core resolved and declared', () => {
               secrets: [],
               hasFrontend: false,
               hasBackend: false,
+              readers: [],
+              settingsViews: [],
               settings: [
                 {
                   key: 'model',
