@@ -95,6 +95,63 @@ describe('functions', () => {
   })
 })
 
+describe('length of a doc comment', () => {
+  const doc = (count) => [
+    '/**',
+    ...Array.from({ length: count }, (_, i) => ` * Line ${i + 1}.`),
+    ' */',
+  ]
+
+  it('accepts a doc of five lines and rejects one of six, on every exported kind', () => {
+    const declarations = [
+      'export function f() {}',
+      'export class C {}',
+      'export interface I {}',
+      'export type T = string',
+      'export const v = 1',
+      'export const g = () => {}',
+      'export enum E {}',
+    ]
+    for (const declaration of declarations) {
+      assert.deepEqual(lines('a.ts', [...doc(5), declaration].join('\n')), [], declaration)
+      assert.deepEqual(lines('a.ts', [...doc(6), declaration].join('\n')), [1], declaration)
+    }
+  })
+
+  it('counts a one-line block as one line and a blank line as a line', () => {
+    assert.deepEqual(lines('a.ts', '/** One. */\nexport function f() {}'), [])
+    const blank = [
+      '/**',
+      ' * A.',
+      ' * B.',
+      ' *',
+      ' * C.',
+      ' * D.',
+      ' * E.',
+      ' */',
+      'export function f() {}',
+    ]
+    assert.deepEqual(lines('a.ts', blank.join('\n')), [1])
+  })
+
+  it('does not limit an unexported symbol, a line comment or a member', () => {
+    assert.deepEqual(lines('a.ts', [...doc(6), 'const v = 1'].join('\n')), [])
+    const method = ['export class C {', ...doc(6), 'flush() {}', '}']
+    assert.deepEqual(lines('a.ts', method.join('\n')), [])
+  })
+
+  it('reads the script of a Vue component', () => {
+    const text = ['<script lang="ts">', ...doc(6), 'export function f() {}', '</script>'].join('\n')
+    assert.deepEqual(lines('A.vue', text), [2])
+  })
+
+  it('leaves the long doc in place on --fix', () => {
+    const text = [...doc(6), 'export function f() {}'].join('\n')
+    const [finding] = findScriptComments('a.ts', text)
+    assert.equal(finding.long, true)
+  })
+})
+
 describe('removeRanges', () => {
   it('removes a whole comment line and a trailing comment', () => {
     const text = 'interface A {\n  /** The id. */\n  id: string\n  size: number // in bytes\n}\n'

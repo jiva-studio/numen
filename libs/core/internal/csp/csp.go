@@ -8,15 +8,10 @@ package csp
 import "strings"
 
 // Policy is what a window may load: what its own handler serves, and for a
-// picture, a sound or a frame whatever Sources names beside it. No script runs
-// that it did not serve, no handler written in an attribute runs at all, and no
-// form is submitted anywhere.
-//
-// Where the window itself goes is no directive of a policy. A link leading
-// outward is held by the page.
-//
-// Inline style is allowed: a page positions what it draws through the style
-// attribute.
+// picture, a sound or a frame whatever Sources names beside it.
+// No script runs that it did not serve, no attribute handler runs, no form is submitted.
+// Where the window itself goes is no directive; the page holds outward links.
+// Inline style is allowed: a page positions what it draws through the style attribute.
 func (s Sources) Policy() string {
 	return "default-src 'self'; img-src " + listSources(s.Images) +
 		"; media-src " + listSources(s.Media) +

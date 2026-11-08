@@ -10,12 +10,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 )
 
-// ReadDeck reads the body of a note as a deck. The frontmatter key `type`
-// determines which notes are decks, and this function reads whichever note it
-// is given.
-//
-// It never fails: a deck that cannot be fully interpreted still has its
-// content, and every value in it is read regardless of other problems.
+// ReadDeck reads the body of a note as a deck, whichever note it is given: the frontmatter key
+// `type` decides which notes are decks, not this function. It never fails: a deck that cannot be
+// fully interpreted still has its content, and every value in it is read regardless of other
+// problems.
 func ReadDeck(n domain.Note) Deck {
 	deck, _ := readDeck(n.FileStat, []byte(n.Body))
 	return deck

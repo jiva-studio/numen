@@ -46,11 +46,9 @@ const (
 )
 
 // CharactersPerToken is the floor a token is worth in characters.
-//
-// Latin runs about four; Devanagari and transliterated Sanskrit run under two, and
-// Cyrillic between. Two is the floor, so a chunk cut under a model's limit by
-// this is under it for every script — at the cost of a shorter chunk for Latin
-// than the model could hold.
+// Latin runs about four; Devanagari and transliterated Sanskrit under two,
+// Cyrillic between. Two is the floor, so a chunk cut under a model's limit is
+// under it for every script, at the cost of a shorter chunk for Latin.
 const CharactersPerToken = 2
 
 // GetCharacterBound is what keeps a chunk inside a model's token limit. Zero

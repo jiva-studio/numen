@@ -8,15 +8,9 @@ import (
 
 // RedirectProse redirects every wikilink in the prose that targets one address
 // to another, and returns how many it changed.
-//
-// Only the target inside the brackets changes. An alias after `|` is how the
-// link reads in the sentence and a fragment after `#` names a location inside
-// the note; both are preserved.
-//
-// Everything else is left as it was written.
-//
-// A note whose frontmatter block is never closed has no prose of its own:
-// ErrUnterminated is returned and the file is unchanged.
+// Only the target inside the brackets changes; an alias after `|` and a fragment
+// after `#` are preserved, and so is everything else.
+// A note whose frontmatter block is never closed returns ErrUnterminated and is unchanged.
 func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	if d.isUnterminated {
 		return 0, ErrUnterminated

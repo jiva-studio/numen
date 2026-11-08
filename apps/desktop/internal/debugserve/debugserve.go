@@ -31,12 +31,9 @@ type Clock interface {
 }
 
 // Serve serves handler at addr until ctx is done or the process is interrupted.
-// It serves TLS unless NUMEN_DEBUG_TLS is "false": with the PEM certificate and
-// key NUMEN_DEBUG_TLS_USE_CERT and NUMEN_DEBUG_TLS_USE_KEY name, which are set
-// both or neither, or else with a new self-signed certificate. It writes the
-// certificate it serves in PEM to the file NUMEN_DEBUG_TLS_CERT names and its
-// key in PEM (PKCS #8) to the file NUMEN_DEBUG_TLS_KEY names, when they are
-// set, and writes the listening address to out once the listener is bound.
+// It serves TLS unless NUMEN_DEBUG_TLS is "false", with the PEM pair named by NUMEN_DEBUG_TLS_USE_CERT and NUMEN_DEBUG_TLS_USE_KEY (both or neither), else a new self-signed certificate.
+// When set, it writes the certificate in PEM to the file NUMEN_DEBUG_TLS_CERT names and the key in PEM (PKCS #8) to the file NUMEN_DEBUG_TLS_KEY names.
+// It writes the listening address to out once the listener is bound.
 func Serve(
 	ctx context.Context,
 	clock Clock,

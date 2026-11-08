@@ -36,12 +36,11 @@ func (h *Host) listDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
-// Refresh sends Configure to each running plugin whose list of secrets differs from the one it was
-// last given, and to each plugin in forced, and waits for every send. A secret operation calls it
-// after its change is committed. The error names each plugin whose send failed and holds no value.
-// A plugin counts as given the list only after a send that succeeded with every value read. Where
-// ctx ends first or the call times out, the plugin stays due for the next refresh. Where the plugin
-// answered with an error, a plain refresh does not send the same list again.
+// Refresh sends Configure to each running plugin whose secrets differ from the last list it was
+// given, and to each plugin in forced, and waits for every send. A secret operation calls it
+// after its change is committed. The error names each plugin whose send failed.
+// A plugin counts as given the list only after a send that read every value.
+// If ctx ends or the call times out the plugin stays due; if the plugin answered with an error a plain refresh does not resend.
 func (h *Host) Refresh(ctx context.Context, forced ...string) error {
 	return h.secrets.refresh(ctx, forced)
 }

@@ -29,12 +29,10 @@ const defaultExtractors = 4
 // the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
 
-// DefaultFloor is the minimum cosine similarity at which a passage counts as
-// an answer where neither the query, a stored floor nor the model
-// names one.
-//
-// The similarity that a model assigns to texts about different subjects is
-// specific to the model, so the value is a starting point.
+// DefaultFloor is the minimum cosine similarity at which a passage counts as an
+// answer where neither the query, a stored floor nor the model names one.
+// The similarity a model assigns to texts about different subjects is specific
+// to the model, so the value is a starting point.
 const DefaultFloor = 0.30
 
 // FloorSource returns the floor for a vault under an embedding recipe.
@@ -87,17 +85,10 @@ type Search struct {
 }
 
 // New returns a search over one vault's index.
-//
-// The embedder converts a query into a vector. Nil means the installation has
-// no model: the meaning search does not run and the word search answers alone,
-// which is a complete search, since the vector index is optional and may never
-// finish filling.
-//
-// `texts` is the text versions that sources are cut from. Nil means the
-// installation has none, and only notes return their text.
-//
-// `errorHandler` receives the error of a search mode that could not answer.
-// Nil ignores such errors.
+// A nil embedder means the installation has no model: the meaning search does
+// not run and the word search answers alone, since the vector index is optional.
+// A nil `texts` means only notes return their text. `errorHandler` receives the
+// error of a search mode that could not answer; nil ignores such errors.
 func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, errorHandler windowport.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
@@ -135,8 +126,7 @@ func (u Search) WithCache(cache *QueryCache) Search {
 
 // Execute runs the ways the parameters name, merges their rankings by rank,
 // and returns one passage per document.
-//
-// Three orders: the words in a chunk, the meaning of a chunk, and the name of
+// The orders are the words in a chunk, the meaning of a chunk and the name of
 // the section a chunk opens. A chunk that two of them place well outranks one
 // that any of them placed first alone.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {

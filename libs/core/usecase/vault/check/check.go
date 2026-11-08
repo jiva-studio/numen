@@ -36,11 +36,9 @@ type Checker interface {
 }
 
 // Checks is the set of checks run over one vault.
-//
-// Nothing is kept. Two of these checks read what a scan already stored, and two
-// work the whole vault out from scratch — and those two must not be stored,
-// because what they answer stops being true when a note somewhere else moves,
-// and a written-down answer would go on saying it.
+// Nothing is kept: two checks read what a scan already stored, and two work the
+// whole vault out from scratch. Those two must not be stored, because their
+// answers stop being true when a note elsewhere moves.
 type Checks struct {
 	List []Checker
 }

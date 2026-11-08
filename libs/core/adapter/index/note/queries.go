@@ -86,11 +86,10 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 // mostPerNote is how many headings of one note an answer carries.
 const mostPerNote = 2
 
-// GetNameMatches is the names in a vault that match the words typed: a note's own
-// title, and the headings inside notes.
-//
-// The two are ranked apart and a title comes first, so what is cut by the limit
-// is a heading of a note already named or a name matched less well. What one
+// GetNameMatches returns the note titles and the headings inside notes that match the words typed.
+// Titles are ranked apart and come first, so the limit cuts a heading of a note
+// already named or a weaker name match. What one note may contribute is
+// settled before the limit applies.
 // note may contribute is settled before the limit is applied.
 func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) (_ []domain.NameMatch, err error) {
 	if limit <= 0 {

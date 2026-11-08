@@ -163,13 +163,11 @@ func touch(b *testing.B, path string, seed int) {
 	}
 }
 
-// BenchmarkSearchDuringScan is the question a concurrency decision has to
-// answer with a number: what a search costs while the index is being written.
-//
+// BenchmarkSearchDuringScan measures what a search costs while the index is
+// being written.
 // A scan runs in the background over a vault big enough to take seconds, and
-// searches run against the same database throughout. WAL is what makes this
-// possible at all — a reader never waits for the writer — and the write pool is
-// capped at one connection so writers queue and not colliding.
+// searches run against the same database throughout. WAL lets a reader never
+// wait for the writer, and the write pool is one connection so writers queue.
 func BenchmarkSearchDuringScan(b *testing.B) {
 	const notes = 10_000
 	v := testsupport.GenerateVault(b, notes)

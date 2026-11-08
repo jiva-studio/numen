@@ -24,11 +24,9 @@ const LeastStability = 1.0 / (24 * 60)
 // picked up by the following day.
 const MostShowings = 8
 
-// Simulation projects a preset forward over the days ahead: its review cards
-// answered day after day, inside the budgets it keeps.
-//
-// The share of the load each day of the week carries scales what that day
-// admits, and an even load moves cards onto the days carrying least. Both are
+// Simulation projects a preset forward over the days ahead: its review cards answered day after
+// day, inside the budgets it keeps. The share of the load each day of the week carries scales
+// what that day admits, and an even load moves cards onto the days carrying least. Both are
 // Preset's, and the session reads them the same way.
 type Simulation struct {
 	By      Scheduler
@@ -72,18 +70,11 @@ func newNoSchedule() Schedule {
 	return Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
 }
 
-// GetDaysToLearn returns how many days of review a review card begun now needs
-// before this preset counts it as learned, when every day on which the card falls
-// due answers it.
-//
-// It is one number for the whole material that has not begun: those review cards
-// all start from the same empty schedule. A rule that no such review card
-// satisfies yields NeverLearns.
-//
-// A day of the week with none of the load schedules nothing, so it shows the
-// review card nothing and does not count toward the days the pace divides by. A
-// week with such a day needs as many days of review as its slowest day of the
-// week, so the pace holds for a review card begun on any of them.
+// GetDaysToLearn returns how many days of review a review card begun now needs before this
+// preset counts it as learned, when every due day answers it. It is one number for the whole
+// unbegun material. A rule no such card satisfies yields NeverLearns. A day of the week with
+// none of the load shows nothing and is not counted, so the pace holds for a card begun on any
+// day of the week.
 func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Helper getDaysToLearn uses LongestLearning and does not read Simulation.Days."

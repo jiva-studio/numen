@@ -221,13 +221,9 @@ func TestDivideBudget_ShareNeverExceedsDemand(t *testing.T) {
 	})
 }
 
-// the other: three decks with the same count due take a third each, and a deck with
-// nine times another's count due takes nine times the share. What the proportions leave
-// over is under one card a deck, so no share is a whole card away from the
-// proportion it is drawn from.
-//
-// The shares are proportional, and what they leave over goes by the largest
-// fraction.
+// Shares are proportional to what each deck has due: three decks with the same count due take
+// a third each, and a deck with nine times another's count takes nine times the share. What the
+// proportions leave over is under one card a deck, and goes by the largest fraction.
 func TestDivideBudget_SharesAreProportional(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -270,12 +266,10 @@ func TestADeckWithMoreDueNeverConsumesLess(t *testing.T) {
 	})
 }
 
-// The decks take the same shares between them whatever order they are given in.
-// A share is computed from the amount its deck has due and nothing else, so renaming a
-// deck's file moves no card from one deck to another.
-//
-// The shares are proportional to what is due in each deck, and where the fractions
-// are equal the deck with more due takes the remainder.
+// The decks take the same shares between them whatever order they are given in. A share is
+// computed from the amount its deck has due and nothing else, so renaming a deck's file moves no
+// card from one deck to another. Where fractions are equal the deck with more due takes the
+// remainder.
 func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -299,13 +293,10 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	})
 }
 
-// Decks with different counts due have the same fraction: half a day leaves a
-// deck with an odd count due half a card over, whatever that count is, so a deck
-// with one due and a deck with seven due are equal. The two remaining cards go to the
-// two decks with the most due among those with equal fractions, and not to the
-// decks with one card due each.
-//
-// Where the fractions are equal the deck with more due takes the remainder.
+// Decks with different counts due have the same fraction: half a day leaves an odd count due
+// half a card over, whatever the count, so one due and seven due are equal. The two remaining
+// cards go to the two decks with the most due among those with equal fractions, not to the decks
+// with one card due each.
 func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
 	t.Parallel()
 	demands := []int{0, 1, 1, 7, 239, 400}

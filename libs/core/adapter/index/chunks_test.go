@@ -1069,10 +1069,9 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 }
 
 // Text a source stopped containing removes its vector; a removed source removes nothing.
-//
-// A split identifies exactly which text the source contained before and does not
-// contain now, which is the only point where that is known. A source the vault
-// does not list is different: an unreadable folder looks the same as one whose
+// A split knows which text the source held before and not now. A source the
+// vault does not list is ambiguous: an unreadable folder looks like deleted
+// files, and recomputing the vector is costly.
 // files were deleted, and recomputing the vector is costly.
 func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()

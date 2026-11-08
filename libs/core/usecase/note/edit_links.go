@@ -12,13 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// EditLinks writes the relationships one note declares.
-//
-// It works on the `links:` block, which is where a link that carries a role
-// lives. A mention in prose is a link too, and is written by writing prose:
-// this is not the place for it.
-//
-// Every change here applies to one entry. The surrounding entries belong to the
+// EditLinks writes the relationships one note declares, in the `links:` block,
+// where a link that carries a role lives. A mention in prose is written by writing prose.
+// Every change applies to one entry. The surrounding entries belong to the
 // user, including ones the application could not parse, and are written back
 // byte for byte.
 type EditLinks struct {
@@ -29,9 +25,7 @@ type EditLinks struct {
 }
 
 // NewEditLinks returns the use case that writes a note's relationships. It takes the
-// vault readers and writers, the index updater that makes written links searchable, and
-// the clock.
-//
+// vault readers and writers, the index updater and the clock.
 // All four are required for the reason NewWrite requires them: a written link
 // that is not indexed cannot be queried, and timestamps come from the injected
 // clock and not from the machine clock directly.
@@ -53,17 +47,11 @@ func (u EditLinks) WithWriters(writers vaultport.VaultWriters) EditLinks {
 	return u
 }
 
-// Add writes relationships into a note, in one read and one write. A link to
-// the same place with the same role is already there, and adding it again
-// changes nothing.
-//
-// One link is named on its own, so there is always at least one: no links is
-// still a read and a write, and stamps an identifier into a note without one.
-//
-// FileStat is what the caller believes is on disk, and every one of these
-// takes it for the reason PointAt does: a note that changed since it was read
-// is left alone and port.ErrStale comes back. The empty file stat is a
-// caller holding itself to whatever the note is at the moment of the write.
+// Add writes relationships into a note, in one read and one write. Adding a link
+// to the same place with the same role again changes nothing.
+// At least one link is named, so a call stamps an identifier into a note without one.
+// FileStat is what the caller believes is on disk: a changed note is left alone
+// and port.ErrStale is returned. The empty file stat skips that check.
 func (u EditLinks) Add(
 	ctx context.Context, v domain.Vault, from string, stat domain.FileStat,
 	add domain.Link, more ...domain.Link,
@@ -86,12 +74,10 @@ func (u EditLinks) Add(
 	})
 }
 
-// Update changes the properties of an existing link, its role, type,
-// label and reason, without changing its target.
-//
-// Every omitted field is cleared, so the result is derived from what the
-// caller read. The file stat protects against this: a label the user
-// wrote in the meantime is not silently overwritten.
+// Update changes the properties of an existing link, its role, type, label and
+// reason, without changing its target.
+// Every omitted field is cleared, so the file stat protects against overwriting
+// a label the user wrote since the caller read the note.
 func (u EditLinks) Update(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
 	change domain.Link, stat domain.FileStat,
@@ -114,16 +100,10 @@ func (u EditLinks) Update(
 }
 
 // PointAt makes a note name one place under a link `type`, in one read and one
-// write. An empty address takes the entry out, so the note names none.
-//
-// The entry is written where a feature reads it: one type, one place. What the
-// person wrote on it — its role, its label, why it exists — is kept, and every
-// other entry of the block comes out of the write as the bytes it went in as.
-//
-// FileStat, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrStale comes
-// back. A write that landed answers with the file stat of the file it
-// produced.
+// write. An empty address takes the entry out.
+// Its role, label and reason are kept, and every other entry of the block is
+// written back byte for byte. FileStat, when given, is what the caller believes
+// is on disk; a changed note is left alone and port.ErrStale is returned.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from string, p LinkPoint,
 ) (domain.FileStat, error) {
@@ -132,12 +112,10 @@ func (u EditLinks) PointAt(
 	return e.shared().PointAt(ctx, v, from, p.Of, p.To, p.Role)
 }
 
-// Remove takes a relationship out. The note at the other end is untouched: what
-// is removed is one end's account of the relationship, which is all a link ever
-// was.
-//
-// The record is addressed by the key: its target, its type (the empty type names
-// the records that carry none), and its role when one is given.
+// Remove takes a relationship out. The note at the other end is untouched: only
+// one end's account of the relationship is removed.
+// The record is addressed by its target, its type (the empty type names the
+// records that carry none), and its role when one is given.
 func (u EditLinks) Remove(
 	ctx context.Context, v domain.Vault, from string, key domain.LinkKey, stat domain.FileStat,
 ) (domain.FileStat, error) {

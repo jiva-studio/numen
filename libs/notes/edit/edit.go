@@ -28,13 +28,10 @@ type Files interface {
 type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) error
 
 // Baseline is what a caller last saw of the note it is saving.
-//
-// Prose is compared first: text equal to the text the caller read is unchanged,
-// regardless of file size and time. A synchroniser, a checkout and a touch all change those
-// without changing the text, and comparing them alone would report a conflict for an unedited file.
-//
-// FileStat answers for text that did move, and is what makes a save that follows a save land: the
-// note is at the file stat the last write produced, so it is the note this caller put there.
+// Prose is compared first: equal text is unchanged whatever the file size and
+// time, which a synchroniser, a checkout or a touch change alone.
+// FileStat answers for text that did move: a note at the file stat of the last
+// write is the note this caller put there.
 type Baseline struct {
 	Prose    string
 	FileStat domain.FileStat

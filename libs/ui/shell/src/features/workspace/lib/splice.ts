@@ -41,11 +41,8 @@ interface JoinAdjacent {
 
 /**
  * A new pane placed next to a node, taking half its share.
- *
- * When the parent divides its length in the direction of the requested side, the
- * pane joins it as a sibling; when it does not, the node is wrapped in a branch, which
- * is one level deeper and divides the other way. A node with no parent is the
- * root, and the workspace rotates its axis to fit.
+ * When the parent divides along the requested side, the pane joins it as a sibling; otherwise the node is wrapped in a branch that divides the other way.
+ * A node with no parent is the root, and the workspace rotates its axis to fit.
  */
 export function putAdjacent(
   root: WorkspaceNode,

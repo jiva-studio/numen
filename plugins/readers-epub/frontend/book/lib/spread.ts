@@ -115,13 +115,9 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
 }
 
 /**
- * The page in front and how many the book is read in, counted in the columns a
- * person is looking at: a spread of two turns two pages.
- *
+ * The page in front and how many the book is read in, counted in the columns on screen: a spread of two turns two pages.
  * Only the document being read is laid out, so only its columns are counted.
- * What the rest of the book evaluates to is that document's own bytes to the column
- * carried over it — an estimate, and the only one that costs nothing. It moves
- * when the reading area does, which is what a page measured on the screen does.
+ * The rest of the book is estimated from that document's bytes per column, the only free estimate, and moves when the reading area does.
  */
 export interface PagesQuery {
   readonly book: TextRange

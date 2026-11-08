@@ -53,11 +53,8 @@ export interface Arrow {
 
 /**
  * How far a wheel scrolls the window, in whole headings, and the remainder.
- *
- * The caller carries the remainder into the next wheel event, so a trackpad
- * reporting a few pixels at a time accumulates to whole headings. Wheel deltas
- * may be in lines or pages as well as pixels, and only pixels can be compared
- * with a heading height.
+ * The caller carries the remainder into the next wheel event, so a trackpad reporting a few pixels at a time accumulates to whole headings.
+ * Wheel deltas may be in lines or pages as well as pixels, and only pixels can be compared with a heading height.
  */
 export function scrollBy(
   suspended: NodeHeadings,
@@ -84,14 +81,9 @@ export const getFurthest = (suspended: NodeHeadings): number =>
   Math.max(0, suspended.headings.length - suspended.visibleCount)
 
 /**
- * What a node hangs at a moment of the opening.
- *
- * The panel opens to the depth it keeps, and each heading rises into place from
- * slightly below it, staggered by a lead behind the heading above. Headings
- * rise from inside the panel and never from outside it, so none is drawn where
- * the panel is absent.
- *
- * Returns null while the node is closed, since a closed node draws nothing.
+ * What a node hangs at a moment of the opening. Returns null while the node is closed.
+ * The panel opens to the depth it keeps, and each heading rises into place from slightly below, staggered by a lead behind the heading above.
+ * Headings rise from inside the panel and never from outside it, so none is drawn where the panel is absent.
  */
 export function getOpenHeadings(
   suspended: NodeHeadings,

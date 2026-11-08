@@ -587,11 +587,8 @@ const NESTED = '- a bullet\n'
 
 /**
  * Tab in and Tab out.
- *
- * Tab indents, as in any editor for lists, so focus would stay inside the note.
- * Escape returns Tab to the page and the next Tab moves on. Re-entering the
- * editor re-arms the trap, so every visit starts the same way. The exit is
- * announced when the keyboard arrives.
+ * Tab indents, so focus would stay inside the note. Escape returns Tab to the page and the next Tab moves on.
+ * Re-entering the editor re-arms the trap. The exit is announced when the keyboard arrives.
  */
 export const LeftByTheKeyboard: Story = {
   render: () => ({

@@ -19,12 +19,8 @@ func isAlone(key string) bool {
 	return false
 }
 
-// HTML is the document as the markup a window draws it from, every run of text
-// wrapped in a span carrying its offset.
-//
-// It goes into a page unescaped, so the text and every attribute value is
-// escaped here. The names and the attributes are the few a document is read
-// down to, and escaping is the last thing between a book and the window's DOM.
+// HTML is the document as the markup a window draws it from, every run of text wrapped in a span carrying its offset.
+// It goes into a page unescaped, so the text and every attribute value is escaped here: escaping is the last thing between a book and the window's DOM.
 func (m *Markup) HTML() string {
 	var out strings.Builder
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Grow sets capacity only; the page is the same at any size"

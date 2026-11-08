@@ -57,12 +57,9 @@ const PROBE =
   'block-size:1em;font-size:var(--numen-font-size);visibility:hidden;pointer-events:none'
 
 /**
- * The size a node's label is being set at, followed for as long as the caller
- * lives. It is measured off a box of the window's own type, so it answers a
- * multiplier on the root and a theme naming a size of its own alike.
- *
- * Where nothing is drawn — a test, a page rendered on a server — it is the
- * size the plex was designed at.
+ * The size a node's label is being set at, followed for as long as the caller lives.
+ * It is measured off a box of the window's own type, so it follows a multiplier on the root and a theme naming a size of its own alike.
+ * Where nothing is drawn (a test, a page rendered on a server) it is the size the plex was designed at.
  */
 export function useTypeSize(): Ref<number> {
   const type = ref(DESIGNED_TYPE)

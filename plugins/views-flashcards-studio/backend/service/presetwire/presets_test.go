@@ -105,13 +105,10 @@ func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *
 	}
 }
 
-// What a day's budget is spent on and what counts as learned are two settings,
-// and they are carried apart.
-//
-// The two enums number their values alike — cards and an interval are both one,
-// shows and a chance of recall are both two — so a message that carried one in
-// the other's field would be read without complaint. Each value of each is put
-// through and read back beside every value of the other.
+// What a day's budget is spent on and what counts as learned are two settings, carried apart.
+// The two enums number their values alike (cards and an interval are both one, shows and a
+// chance of recall are both two), so a message carrying one in the other's field would be read
+// without complaint. Each value of each is put through beside every value of the other.
 func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 	for _, counts := range []api.BudgetUnit{
 		api.BudgetUnitCards, api.BudgetUnitShows,

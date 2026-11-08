@@ -314,14 +314,10 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 	return node, nil
 }
 
-// ErrInline is returned for a block whose keys share lines. The block is left
-// unchanged.
-//
-// Writes replace the lines a key occupies, which is the key's own span only
-// while one line holds one key. `{title: T, id: b}` puts all keys on one line,
-// so the span of any key is the span of all of them. A value written on one
-// line, such as `load: {cpu: 50}`, still occupies its key's own lines and is
-// replaced as usual.
+// ErrInline is returned for a block whose keys share lines. The block is left unchanged.
+// Writes replace the lines a key occupies, which is the key's own span only while
+// one line holds one key, as `{title: T, id: b}` does not.
+// A value on one line, such as `load: {cpu: 50}`, is replaced as usual.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 
 // ErrAnchored is a frontmatter carrying a YAML anchor. Nothing is changed in it.

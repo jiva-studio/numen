@@ -588,12 +588,9 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	}
 }
 
-// A preset written before the rule existed is read with the default rule, and its
-// cards are counted against the default threshold.
-//
-// The file names no rule and no interval, as every preset written before the rule
-// existed. A review card postponed by less than the default interval is not
-// learned, and the counts of the review window reflect that.
+// A preset written before the rule existed names no rule and no interval, so it is read with
+// the default rule and its cards are counted against the default threshold. A review card
+// postponed by less than the default interval is not learned.
 func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -817,12 +814,9 @@ func TestADayNamedTwiceIsSavedWhereTheReadConsumesIt(t *testing.T) {
 	}
 }
 
-// A save with settings that a preset cannot hold returns an error and leaves the
-// note as written.
-//
-// A client that sets none of goal, learned or counts sends a value that is not
-// one of the allowed values, and the day named by the goal must exist for the goal
-// to be read.
+// A save with settings that a preset cannot hold returns an error and leaves the note as
+// written. The refused values are one that is not allowed for goal, learned or counts, and a
+// goal day that does not exist.
 func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {

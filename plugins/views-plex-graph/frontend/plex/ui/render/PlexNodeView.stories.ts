@@ -211,12 +211,8 @@ export const EveryRelation: Story = {
 
 /**
  * The handle: absent until the node is hovered or focused by keyboard.
- *
- * Pressing the handle navigates, so it must start a gesture and must not also
- * select the node underneath.
- *
- * Only a browser can verify this: where tab stops inside an SVG, and whether
- * preventing the pointer default keeps focus off the node.
+ * Pressing the handle navigates, so it must start a gesture and must not also select the node underneath.
+ * Only a browser can verify this: where tab stops fall inside an SVG, and whether preventing the pointer default keeps focus off the node.
  */
 export const Reaching: Story = {
   play: async ({ args, canvasElement }) => {
@@ -270,12 +266,8 @@ export const Reaching: Story = {
 }
 
 /**
- * Not Latin, far too long, nothing to break at, and nothing at all — the same
- * corpus the plex is shown, laid out in a grid because these are being
- * compared and not arranged.
- *
- * Only a browser can answer it: jsdom lays out no text, so every title is the
- * same size to it and one that overflows looks identical to one that fits.
+ * Not Latin, far too long, nothing to break at, and nothing at all: the corpus the plex is shown, laid out in a grid because these are compared and not arranged.
+ * Only a browser can answer it: jsdom lays out no text, so every title is the same size to it and one that overflows looks identical to one that fits.
  */
 export const AwkwardLabels: Story = {
   render: renderScene(
@@ -341,12 +333,9 @@ export const TheCornersAreAsDesigned: Story = {
 }
 
 /**
- * On its way in or out, beside one that has arrived — because faintness only
- * means anything against something that is fully there.
- *
- * Such a node cannot be chosen, is not a tab stop and is not announced. Those
- * are negatives, and negatives are asserted next door in jsdom: they are what
- * fails silently and looks right in every screenshot.
+ * On its way in or out, beside one that has arrived, because faintness only means something against a node that is fully there.
+ * Such a node cannot be chosen, is not a tab stop and is not announced. Those negatives fail silently and look right in every screenshot,
+ * so they are asserted next door in jsdom.
  */
 export const PartWayThere: Story = {
   render: renderScene((args) => [
@@ -356,12 +345,9 @@ export const PartWayThere: Story = {
 }
 
 /**
- * The dark token set, with the pointer over a plain node and over the focused
- * node.
- *
- * Hover mixes part of a node's title color into its background, and the focused
- * node uses a different color pair. Both must move toward their own title color
- * on a dark background as they do on a light one.
+ * The dark token set, with the pointer over a plain node and over the focused node.
+ * Hover mixes part of a node's title color into its background, and the focused node uses a different color pair.
+ * Both must move toward their own title color on a dark background as on a light one.
  */
 export const Dark: Story = {
   globals: DARK,

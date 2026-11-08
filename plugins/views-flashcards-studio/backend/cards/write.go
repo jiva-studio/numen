@@ -14,12 +14,10 @@ import (
 )
 
 // Write puts a deck or a card model back where it came from.
-//
-// A deck and a card model are notes, so this is a note's write with a deck's bound
-// on it: the body is replaced whole, and a file that has changed since the
-// caller read it is left alone with ports.ErrStale. The frontmatter is the
-// person's, apart from the key a card model declares its fields in and the
-// identifier an edit stamps on a note carrying none.
+// It is a note's write with a deck's bound: the body is replaced whole, and a file changed since
+// the caller read it is left alone with ports.ErrStale. The frontmatter is the person's, apart
+// from the key a card model declares its fields in and the identifier an edit stamps on a note
+// carrying none.
 type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
@@ -89,14 +87,10 @@ func (u Write) createWholeBody(
 	return whole, provided, nil
 }
 
-// CardModel puts the templates and the fields into the card model at path. A card model is
-// a note and is bounded as one.
-//
-// The templates are the body and the fields are one key of the frontmatter, and
-// both are the one file, so one write carries both.
-//
-// The read, the change and the write are made under this vault's write lock,
-// from before the read until after the file is replaced.
+// CardModel puts the templates and the fields into the card model at path, bounded as a note.
+// The templates are the body and the fields are one key of the frontmatter, so one write carries
+// both. The read, the change and the write are made under this vault's write lock, from before
+// the read until after the file is replaced.
 func (u Write) CardModel(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	stat domain.FileStat,

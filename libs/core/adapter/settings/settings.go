@@ -23,12 +23,10 @@ import (
 )
 
 // Document is the settings file as declared by the composition root: one object
-// whose fields are the sections, in file order. This adapter reads and writes
-// that file and owns the sections below; an adapter's configuration is that
-// adapter's section, and the document determines where each section is placed.
-//
-// A document is created with the defaults of an unconfigured installation, so a
-// file that omits a section, or names half of one, loads complete.
+// whose fields are the sections, in file order.
+// An adapter's configuration is that adapter's section; the document decides its place.
+// A document starts with the defaults of an unconfigured installation, so a
+// file that omits or half-names a section loads complete.
 type Document interface {
 	// GetVersion is the shape the file was written at, GetAppearance how the
 	// window is drawn. Each is read and put right as the file is read.

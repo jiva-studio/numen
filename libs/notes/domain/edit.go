@@ -1,11 +1,8 @@
 package domain
 
-// Edit is a change to a note's prose, reported while it is being made, to
-// anyone viewing that note.
-//
-// It is a report, not the change itself: the file is authoritative, and this
-// announces what is about to happen to it. A lost report degrades the display,
-// not the note.
+// Edit is a change to a note's prose, reported while it is being made.
+// It is a report, not the change: the file is authoritative.
+// A lost report degrades the display, not the note.
 type Edit struct {
 	Change string
 	Path   string

@@ -119,11 +119,9 @@ type Allowance struct {
 func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 
 // GetAllowance is what this preset's day admits.
-//
-// Now is any instant of the review day, spent is what that day has already gone
-// through under the preset, unbegunCards is the material it has still to begin,
-// and daysToLearn is how many days of review a review card begun now needs before
-// the preset counts it learned, which a date paces the day against.
+// Now is any instant of the review day, spent is what that day has already gone through,
+// unbegunCards is the material it has still to begin, and daysToLearn is how many days of review
+// a review card begun now needs before the preset counts it learned, which a date paces against.
 func (p Preset) GetAllowance(
 	d Day, now time.Time, used Spent, unbegunCards, daysToLearn int,
 ) Allowance {
@@ -159,16 +157,11 @@ func (p Preset) GetAllowance(
 	return out
 }
 
-// IsNextCardDebt reports whether the next card of this day comes from the debt
-// before it. False is a card from the material the preset has not begun.
-//
-// Debt and begun are the counts of each kind the day has taken so far, and the two
-// flags after them report whether the debt side and the unbegun side have a card left to give.
-// The day is split between the two in the share the preset names; a side with
-// nothing left leaves the rest of the day to the other, and an odd card goes to the
-// debt.
-//
-// It is the one rule for how a day is spent.
+// IsNextCardDebt reports whether the next card of this day comes from the debt before it. False
+// is a card from the material the preset has not begun. Debt and begun are the counts of each
+// kind taken so far; isDue and isNew report whether each side has a card left. The day is split
+// in the share the preset names, a side with nothing left leaves the rest to the other, and an
+// odd card goes to the debt.
 func (a Allowance) IsNextCardDebt(debt, begun int, isDue, isNew bool) bool {
 	if !isDue {
 		return false

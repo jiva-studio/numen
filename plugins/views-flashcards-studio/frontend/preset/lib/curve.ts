@@ -58,13 +58,10 @@ export const getKnobValue = (curve: Curve, place: number): number =>
 export type GoalIdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 
 /**
- * Whether the goal has nothing to work on, and why. The counts the curve carries
- * identify the first two: no deck points at the preset, or the decks that do hold
- * no cards in total. A preset holding cards never reports that it holds none.
- *
- * The third is a preset that schedules but has nothing it can schedule: every
- * review card is unbegun, and no place of the range begins one. It describes the
- * material and is not a reason the preset is stopped.
+ * Whether the goal has nothing to work on, and why: 'unpointed' (no deck points at the preset),
+ * 'noCards' (those decks hold no cards), or 'beginsNothing' (every review card is unbegun and no
+ * place of the range begins one). The last describes the material and is not a reason the preset
+ * is stopped.
  */
 export const getIdleReason = (curve: Curve): GoalIdleReason => {
   if (!curve.isHonest) return ''

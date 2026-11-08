@@ -81,11 +81,9 @@ type Theme struct {
 }
 
 // Catalogue is every theme this installation offers: the one inside the
-// binary, the ones enabled plugins contribute, and the ones in the user's
-// folder.
-//
-// A catalogue whose folder could not be created or read still offers the
-// default theme, so the window opens with a theme regardless of disk state.
+// binary, the ones enabled plugins contribute, and the ones in the user's folder.
+// A folder that could not be created or read still leaves the default theme,
+// so the window opens with a theme regardless of disk state.
 type Catalogue struct {
 	dir     string
 	plugins themecontract.PluginThemes

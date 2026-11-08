@@ -28,12 +28,10 @@ type FileStat struct {
 // replacement of the file does not.
 type FileID uint64
 
-// IsUnchanged reports whether the file can be skipped. Size and modification
-// time are the invalidation key; content is not hashed during a walk, since
-// that requires reading every file to detect that nothing changed.
-//
-// The time is compared with Equal, since a time.Time also carries a zone and a
-// monotonic reading, neither of which identifies the instant.
+// IsUnchanged reports whether the file can be skipped.
+// Size and modification time are the key; content is not hashed during a walk.
+// Times are compared with Equal, since time.Time also carries a zone and a
+// monotonic reading.
 func (f FileStat) IsUnchanged(other FileStat) bool {
 	return f.Size == other.Size && f.ModTime.Equal(other.ModTime)
 }

@@ -159,12 +159,10 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	}
 }
 
-// The mark a schedule cache is filed under carries everything that decides
-// which day a card lands on.
-//
-// A cache worked out under one placing is thrown away whole when the placing
-// changes, so a setting that moves a card and not the mark is a cache read back
-// under settings it was never worked out for.
+// The mark a schedule cache is filed under carries everything that decides which day a card
+// lands on. A cache worked out under one placing is thrown away whole when the placing changes,
+// so a setting that moves a card and not the mark would be read back under settings it was never
+// worked out for.
 func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 	preset := review.Defaults()
 	preset.Load = map[time.Weekday]int{time.Saturday: 50}
@@ -740,12 +738,8 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	})
 }
 
-// Under the interval rule a review card is learned once its interval is at least
-// the preset's interval, so a card learned under one interval is learned under
-// every shorter interval.
-//
-// Under learned: interval a card is learned once its interval is at least the
-// preset's interval.
+// Under the interval rule a review card is learned once its interval is at least the preset's
+// interval, so a card learned under one interval is learned under every shorter interval.
 func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -764,14 +758,10 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	})
 }
 
-// Under the retention rule, learned is a property of the current state of the
-// review card and not a milestone that was passed: the chance of recall only
-// falls as days pass, so a card counted as learned on a later day was counted as
-// learned on every earlier day, and a lapse that collapses its stability removes
-// it from the learned state.
-//
-// Learned is a state and not a milestone, evaluated at the current state of the
-// card.
+// Under the retention rule, learned is a state of the review card now, not a milestone passed:
+// the chance of recall only falls as days pass, so a card counted as learned on a later day was
+// learned on every earlier day, and a lapse that collapses its stability removes it from the
+// learned state.
 func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

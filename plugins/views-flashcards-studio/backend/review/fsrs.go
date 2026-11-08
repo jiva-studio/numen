@@ -17,23 +17,18 @@ import (
 // difficulty as its own, and answer confidently with a wrong day.
 const FSRSName = "fsrs-5"
 
-// FSRS spaces a card by how well it came back, carrying two numbers between
-// answers: how long the card is expected to stay recalled, and how hard it is.
-//
-// The parameters come from the library and the arithmetic over them is here, so a
-// scheduler carries no state between answers and one instance can serve many
-// review cards concurrently.
+// FSRS spaces a card by how well it was recalled, carrying two numbers between answers: how long
+// the card is expected to stay recalled, and how hard it is. The parameters come from the library
+// and the arithmetic over them is here, so a scheduler keeps no state between answers and one
+// instance can serve many review cards concurrently.
 type FSRS struct {
 	p    fsrs.Parameters
 	name string
 }
 
-// NewFSRS is the scheduler on its published parameters.
-//
-// Fuzz, the library's random offset of a day either way that keeps cards learned
-// together from falling due together, is disabled. A schedule is recomputed from
-// the answers whenever it is needed, and a scheduler with varying output would
-// produce a different schedule on every launch.
+// NewFSRS is the scheduler on its published parameters. Fuzz, the library's random offset of a
+// day either way, is disabled: a schedule is recomputed from the answers whenever it is needed,
+// and varying output would give a different schedule on every launch.
 func NewFSRS() FSRS {
 	p := fsrs.DefaultParam()
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="DefaultParam initializes EnableFuzz to false."

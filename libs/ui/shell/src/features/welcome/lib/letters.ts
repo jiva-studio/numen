@@ -21,12 +21,8 @@ export const VAULT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 export const vaultLetter = (pos: number): string => VAULT_LETTERS[pos] ?? ''
 
 /**
- * Which vault of the list a keystroke opens, counting from the top, and nothing
- * where it opens none.
- *
- * A key held down repeats and a key pressed with a modifier is the machine's
- * own shortcut; a letter typed into a field is text. None of the three is a
- * person picking a vault.
+ * Which vault of the list a keystroke opens, counting from the top, or nothing.
+ * A repeating key, a key with a modifier (the machine's own shortcut) and a letter typed into a field are not a person picking a vault.
  */
 export function getVaultForKey(press: KeyboardEvent, vaults: number): number | null {
   if (press.repeat || press.altKey || press.ctrlKey || press.metaKey) return null

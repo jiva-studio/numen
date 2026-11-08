@@ -260,11 +260,8 @@ const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
 
 /**
  * Four fields and two templates, one of them in the reverse direction.
- *
- * A field's row is one block: the divider line and the background belong to the
- * row, and the drag handle, the input and the remove button are inside it
- * without their own. The first field names every card and has the same row
- * shape as the others.
+ * A field's row is one block: the divider line and the background belong to the row, and the drag
+ * handle, the input and the remove button are inside it without their own.
  */
 export const ACardModel: Story = {
   args: { width: '64rem' },

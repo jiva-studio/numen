@@ -45,12 +45,9 @@ export interface PalettePlace {
 }
 
 /**
- * holding nothing after the ones holding something.
- *
- * A group holding nothing is drawn while it is still working, and where it has
- * something to say in place of items. One that is neither is worth no heading
- * of its own and is drawn nowhere. Such a group holds no item either way, so
- * what the keyboard counts is untouched.
+ * The groups holding something, then the groups holding nothing.
+ * A group holding nothing is kept while it is still working or has something to say in place of items.
+ * Any other empty group is dropped. Empty groups hold no item, so what the keyboard counts is untouched.
  */
 export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
   ...groups.filter((one) => one.items.length > 0),

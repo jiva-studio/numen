@@ -7,12 +7,10 @@ import (
 )
 
 // EmbeddingModel names the model a vector came from. It is stored beside the
-// vector, and a vector whose model differs from the one now configured is
-// stale: its numbers describe directions another model chose.
-//
-// Every field but MinChunkLength and ChunkTokens is part of the identity. Two models of the same name at different
-// widths produce vectors that cannot be compared, and the width is what a
-// reader needs to know before it decodes stored bytes.
+// vector, and a vector whose model differs from the one configured is stale.
+// Every field but MinChunkLength and ChunkTokens is part of the identity. Two
+// models of the same name at different widths produce vectors that cannot be
+// compared, and a reader needs the width before it decodes stored bytes.
 type EmbeddingModel struct {
 	Name       string
 	Dimensions int
@@ -35,20 +33,11 @@ func (m EmbeddingModel) String() string {
 	return m.Name + "@" + strconv.Itoa(m.Dimensions)
 }
 
-// Recipe is everything about this model that decides what a vector is, as one
-// value.
-//
-// A vector retained beyond the row that pointed at it is looked up by the text
-// it was made from and the recipe it was made under. A property missing from
-// the recipe can change while the key does not, and a vector found under a key
-// that does not describe it is worse than no stored vector.
-//
-// The provider of the vector comes first. Two places serving one name are two
-// sets of rows, and a query uses the recipe the index was filled with.
-//
-// How the numbers are stored is the quantisation and the scale applied to it.
-// The scale defines the grid of byte values, so a changed scale gives every
-// stored byte a different meaning, and the recipe detects the change.
+// Recipe is everything about this model that decides what a vector is, as one value.
+// A retained vector is looked up by its source text and the recipe it was made
+// under, so a property missing from the recipe can change while the key does
+// not. The provider comes first: two places serving one name are two sets of
+// rows. The quantization and scale come last: a changed scale gives every stored byte a new meaning.
 func (m EmbeddingModel) Recipe() string {
 	return fmt.Sprintf("%s|%s|%d|%d|%s|%s|%s@%g",
 		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling, QuantisedInt8, Int8Scale)

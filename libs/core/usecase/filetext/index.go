@@ -25,12 +25,10 @@ const sourcesPerQuery = 100
 // offsets a version gives do.
 const versionReader = "text-version-1"
 
-// Index cuts the live text versions of the files a vault holds into chunks.
-//
-// It runs in two passes. The first records the files that have text or that a
-// plugin can extract text from, without opening them. The second reads the
-// live text version of every file that needs text and cuts it into chunks, one
-// write per file.
+// Index cuts the live text versions of the files a vault holds into chunks, in two passes.
+// The first records the files that have text or that a plugin can extract text
+// from, without opening them. The second reads the live text of every file that
+// needs it and cuts it into chunks, one write per file.
 type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository

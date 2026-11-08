@@ -97,16 +97,11 @@ func (u ListReviewCards) GetDeckPaths(ctx context.Context, v domain.Vault) ([]st
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// GetReviewCards returns the review cards of the decks at paths. A caller that
-// needs the cards of one preset passes the decks pointing at that preset, and
-// the rest of the vault is not read.
-//
-// A deck whose file and card models match those its review cards were last parsed
-// from is not parsed again. The decks that are parsed are parsed concurrently on
-// up to Cores workers, and the review cards are returned in the order of paths.
-//
-// A deck that cannot be read contributes no review card and is not an error. The
-// failure is a problem of the deck itself and is reported in the editor.
+// GetReviewCards returns the review cards of the decks at paths, in the order of paths. A
+// caller needing one preset's cards passes the decks pointing at it, and the rest of the vault is
+// not read. A deck whose file and card models match its last parse is not parsed again; the
+// others are parsed concurrently on up to Cores workers. A deck that cannot be read contributes
+// no card and is not an error, since the editor reports it as a problem of the deck.
 func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, paths []string) []ReviewCard {
 	epoch := u.cache.begin()
 	reader, err := u.readers.Open(v)

@@ -41,13 +41,11 @@ func vault(tb testing.TB) string {
 	return resolved
 }
 
-// Every external access to a vault goes through the two rules, so their results
-// are the whole of the containment: a path belongs to the vault or the
-// application and never both, and whichever rule accepts it, the result is under
-// the root once every link on the way is resolved.
-//
-// Paths arrive from the user's editor, another machine's sync and a browser's
-// address bar, so the bytes are untrusted.
+// FuzzInside checks that a path belongs to the vault or the application and
+// never both, and that whichever rule accepts it, the result is under the root
+// once every link is resolved. The two rules are the whole of the containment.
+// Paths arrive from the editor, another machine's sync and a browser's address
+// bar, so the bytes are untrusted.
 func FuzzInside(f *testing.F) {
 	root := vault(f)
 	for _, path := range getPaths() {

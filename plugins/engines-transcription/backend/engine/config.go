@@ -5,12 +5,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
-// Config is what a user may change about transcription: which models, where
-// they came from, how the speech in a file is found, and how much of the
-// machine one recording may use.
-//
-// A zero field takes its default, so a settings file naming one thing leaves
-// the rest alone.
+// Config is what a user may change about transcription: which models, where they came from, how the speech in a file is found, and how much of the machine one recording may use.
+// A zero field takes its default, so a settings file naming one thing leaves the rest alone.
 type Config struct {
 	Runtime string `json:"runtime"`
 

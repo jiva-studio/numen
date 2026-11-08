@@ -5,11 +5,8 @@ import type { Direction, PlexOptions, Size } from '../options'
 
 /**
  * What dragging away from a node and letting go evaluates to.
- *
- * The plex works out the shape of the gesture and nothing else: which node it
- * started from, which way it went, and whether it landed on something. What a
- * parent or a jump then *means* — what gets written, and whether it is allowed
- * — is the application's. This reports.
+ * The plex reports the shape of the gesture only: the node it started from, the direction, and whether it landed on something.
+ * What a parent or a jump means, what gets written and whether it is allowed, is the application's.
  */
 export type Drop =
   | { readonly kind: 'create'; readonly from: string; readonly relation: PlexRelation }
@@ -22,11 +19,8 @@ export type Drop =
 
 /**
  * The relation requested by a gesture that moved nowhere.
- *
- * One more child is the default; failing that, the first relation the caller
- * allows. A gesture moves nowhere when it is a press and not a drag: from a
- * trackpad, from a pointer that cannot hold a button down, or from the
- * keyboard, where there is no direction to read at all.
+ * One more child is the default; failing that, the first relation the caller allows.
+ * A gesture moves nowhere when it is a press and not a drag: from a trackpad, a pointer that cannot hold a button down, or the keyboard.
  */
 export const getRelationWithoutDirection = (
   relations: readonly PlexRelation[],

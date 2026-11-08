@@ -72,10 +72,9 @@ type Config struct {
 
 // Worker keeps the index of a vault in sync with its content, one pass at a
 // time, and never while another pass is running.
-//
-// After the first pass, work arrives in three forms: a file with text, which is
-// found and cut before anything is embedded; a note, which arrives already cut
-// and needs only its vectors; and a file a plugin extended with more text.
+// After the first pass, work arrives as a file with text, found and cut before
+// anything is embedded; a note, which arrives already cut and needs only its
+// vectors; and a file a plugin extended with more text.
 type Worker struct {
 	reading      OpenReading
 	embedder     embeddingport.Embedder

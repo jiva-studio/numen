@@ -12,11 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// A folder inside the vault is replaced by a link to another location while a write
-// through it is in progress.
-//
-// A sync client owns the folder it syncs and may put a link where a folder was at any
-// moment. A rule checked against the name before the write describes a vault that has
+// TestAFolderSwappedForALinkConsumesNothingOutOfTheVault replaces a folder
+// inside the vault by a link to another location while a write through it is in progress.
+// A sync client owns the folder it syncs and may do that at any moment, so a
+// rule checked against the name before the write describes a vault that has
 // since changed; the write itself must stay inside.
 func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 	root := t.TempDir()

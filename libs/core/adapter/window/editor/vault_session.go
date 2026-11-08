@@ -25,15 +25,11 @@ type vaultSession struct {
 // awaiting the user's confirmation.
 var errAnswerPending = errors.New("pending review confirmation")
 
-// Show puts a vault in the window: another in place of the current one, or the
-// first when none is shown. The index and the embedder belong to the installation
-// and stay; everything belonging to the vault is torn down and rebuilt.
-//
-// Nothing is torn down until the requested vault validates as a vault and every
-// page has written its pending state. A page holding text awaiting user
-// confirmation aborts the swap, as does a vault that fails to start: the window
-// stays on its current vault, and a window with no vault to fall back on reports
-// the error. The open is the plugin open whose lock the switch shares, nil for a user vault switch.
+// Show puts a vault in the window, in place of the current one or as the first.
+// The index and the embedder stay; everything belonging to the vault is rebuilt.
+// Nothing is torn down until the vault validates and every page has written its
+// pending state; a page awaiting confirmation or a vault that fails to start
+// aborts the swap. `open` is the plugin open whose lock the switch shares, nil for a user switch.
 func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 	if v.ID == o.State.GetCurrentVault().ID {
 		return nil

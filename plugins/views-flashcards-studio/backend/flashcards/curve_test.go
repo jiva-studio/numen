@@ -647,12 +647,9 @@ func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 	return out
 }
 
-// The learned count for today depends on the rule and its threshold and on
-// nothing else.
-//
-// It is read off the schedules the vault already holds, before a projected day
-// is spent, so no budget, no share of the day and no share of the week can
-// reach it. What a day's budget is spent on cannot reach it either.
+// The learned count for today depends on the rule and its threshold and on nothing else.
+// It is read off the schedules the vault already holds, before a projected day is spent, so no
+// budget, share of the day or share of the week can reach it.
 func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -844,11 +841,8 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 }
 
 // A place of a date's range is one run, and everything read off it agrees.
-//
-// The height of the curve and the mark on it come from one run. The preset's own
-// date schedules nothing past the day it names, so a separate run for the height
-// draws material forgotten at every place after that day while the mark reports
-// the day as met.
+// The preset's own date schedules nothing past the day it names, so a separate run for the height
+// would draw material forgotten at every later place while the mark reports the day as met.
 func TestAPlaceOfADateIsOneRun(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -1103,12 +1097,9 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasGeneratedBelow(t *testing.T) {
 	}
 }
 
-// A goal keeping no account of what its pace gets through leaves no place of
-// its curve falling short.
-//
-// The shortfall of a budget is drawn as a line of its own over the curve. A goal
-// of minutes and a goal of retention set no pace per day, so no place of theirs
-// has a shortfall.
+// A goal keeping no account of what its pace gets through leaves no place of its curve falling
+// short. The shortfall of a budget is a line of its own over the curve; a goal of minutes or of
+// retention sets no pace per day.
 func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -1174,13 +1165,9 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	}
 }
 
-// A curve computes the places of its grid concurrently, and the curve is
-// identical on every evaluation.
-//
-// Under the race detector the test verifies that places share no state: each run
-// reads the schedules it is given and writes only what it returns. Without it, the
-// test verifies that the result does not depend on the order in which places
-// finish, which varies with the core count.
+// A curve computes the places of its grid concurrently, and is identical on every evaluation.
+// Under the race detector this checks that places share no state. Without it, it checks that the
+// result does not depend on the order in which places finish, which varies with the core count.
 func TestProjectCurve_IsDeterministic(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 200)
@@ -1268,13 +1255,9 @@ func curveWhole(cards int) map[string]string {
 }
 
 // The curve of a preset holding the whole vault, at four sizes of it.
-//
-// The projection cost depends on the review cards the preset holds; these four
-// sizes show how it grows with them. The log grows with the vault as well, at the
-// same half an answer per review card as the row above.
-//
-// The schedule cache is filled before the clock starts, which is what opening
-// the window and then a preset tab costs.
+// The projection cost depends on the review cards the preset holds. The log grows with the vault
+// at half an answer per review card, as in the row above. The schedule cache is filled before
+// the clock starts, which is what opening a preset tab costs.
 func BenchmarkCurveCards(b *testing.B) {
 	for _, cards := range []int{500, 5000, 20000, 50000} {
 		b.Run(fmt.Sprint(cards), func(b *testing.B) {
@@ -1301,15 +1284,11 @@ func BenchmarkCurveCards(b *testing.B) {
 	}
 }
 
-// The curve of one preset, over fifty thousand review cards in twenty decks
-// answered a hundred and fifty times a day for six months.
-//
-// One preset holds a deck of the vault and the other holds the rest of it, so
-// what the two rows are read against each other for is what a curve pays for
-// the decks it does not schedule.
-//
-// The schedule cache is filled before the clock starts, which is what opening
-// the window and then a preset tab costs.
+// The curve of one preset, over fifty thousand review cards in twenty decks answered a hundred
+// and fifty times a day for six months.
+// One preset holds a deck of the vault and the other holds the rest, so the two rows compared
+// show what a curve pays for the decks it does not schedule. The schedule cache is filled before
+// the clock starts.
 func BenchmarkPresetCurve(b *testing.B) {
 	const cards = 50000
 	s := openVault(b, curveLoad(cards))
@@ -1443,14 +1422,10 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, revie
 	return decks, len(s.standings.GetReviewCards(t.Context(), s.vault, decks))
 }
 
-// A curve reads the decks pointing at its preset and leaves the rest of the
-// vault unread, and what it evaluates to is what reading the whole vault evaluates to:
-// the same range, the same value at every place of it, the same marks, and the
-// same decks and review cards behind them.
-//
-// The queried vault holds decks of other presets and decks of none; the
-// comparison vault holds only the decks the preset schedules. Both hold one
-// history, so any difference between the answers comes from the reading.
+// A curve reads the decks pointing at its preset and leaves the rest of the vault unread, and
+// evaluates to what reading the whole vault evaluates to: range, values, marks, decks and review
+// cards. The queried vault holds decks of other presets and of none; the comparison vault holds
+// only the decks the preset schedules. Both hold one history, so a difference comes from the reading.
 func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	t.Parallel()
 	shapes := []struct {

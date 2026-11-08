@@ -6,20 +6,10 @@ import (
 )
 
 // Expression converts user-typed text into an FTS5 query.
-//
-// The value is bound as a parameter, so injection is not the concern: FTS5 parses
-// the bound string as an expression of its own. Unprocessed, ordinary input
-// fails: "state-function" is parsed as a column reference, "C++" as a syntax
-// error, and a stray quote as an unterminated string, so the search returns a
-// database error.
-//
-// Every word is quoted into a literal, and the words are joined by implicit AND.
-// FTS5 operators are therefore unavailable: searching for AND, OR or NEAR finds
-// those words. A query language is an explicit feature, not a side effect of how
-// a string is passed.
-//
-// `growing` marks the last word as possibly incomplete, and it then receives a
-// prefix mark. A finished query matches exactly.
+// Every word is quoted into a literal and joined by implicit AND, so FTS5
+// operators are unavailable: AND, OR and NEAR are searched as words. Unquoted,
+// "state-function" parses as a column reference and "C++" as a syntax error.
+// `growing` gives the last word a prefix mark; a finished query matches exactly.
 func Expression(typed string, growing bool) string {
 	var out strings.Builder
 	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,STATEMENT_REMOVE reason="Grow sets capacity only; the mutated values are 1, 3 and 5, and the expression is the same at any size"
