@@ -134,3 +134,42 @@ func TestAConditionIsCompiledOnceForItsText(t *testing.T) {
 		t.Errorf("reading a condition read before allocates %v times, want it taken as compiled", allocations)
 	}
 }
+
+// partialVectors are the partial section of libs/protocol/when.json: values true, false or unknown
+// where the context leaves variables out.
+type partialVectors struct {
+	Partial []struct {
+		When   string `json:"when"`
+		Values []struct {
+			Context map[string]any `json:"context"`
+			Value   any            `json:"value"`
+		} `json:"values"`
+	} `json:"partial"`
+}
+
+func TestThePartialExamplesHaveTheirValues(t *testing.T) {
+	text, err := os.ReadFile("../../protocol/when.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var vectors partialVectors
+	if err := json.Unmarshal(text, &vectors); err != nil {
+		t.Fatal(err)
+	}
+	if len(vectors.Partial) == 0 {
+		t.Fatal("when.json has no partial examples")
+	}
+	results := map[any]when.Result{true: when.True, false: when.False, "unknown": when.Unknown}
+	for _, example := range vectors.Partial {
+		condition := parse(t, example.When)
+		for _, one := range example.Values {
+			want, isKnown := results[one.Value]
+			if !isKnown {
+				t.Fatalf("%q: the value %v is none of true, false and unknown", example.When, one.Value)
+			}
+			if got := condition.Evaluate(one.Context); got != want {
+				t.Errorf("%q over %v = %v, want %v", example.When, one.Context, got, want)
+			}
+		}
+	}
+}
