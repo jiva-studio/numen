@@ -60,7 +60,8 @@ export class NoteDriver {
     this.scenario.remember(title, notePath)
     await writeNote(page.request, notePath, `${initialText}\n`)
     await this.scenario.ensureWorkspace()
-    await expect(await openNote(page, notePath)).toContainText(initialText)
+    // The editor hides the brackets of a link where the cursor is not.
+    await expect(await openNote(page, notePath)).toContainText(initialText.replace(/\[\[|\]\]/g, ''))
   }
 
   async write(how: string, value: string, text: string): Promise<void> {

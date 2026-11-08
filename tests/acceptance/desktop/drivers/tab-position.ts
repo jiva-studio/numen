@@ -67,12 +67,16 @@ const leavePdfAt = async (page: Page, panel: Locator, file: string, target: numb
     .toContain(`"page":${target}`)
 }
 
-const leaveBookAt = async (panel: Locator, target: number): Promise<void> => {
+const leaveBookAt = async (page: Page, panel: Locator, file: string, target: number): Promise<void> => {
   const count = getCount(panel)
+  const before = (await readSavedStates(page.request)).get(file)
   for (let next = 2; next <= target; next += 1) {
     await panel.locator('.book-tab').press('PageDown')
     await expect(count).toHaveText(new RegExp(`^${next} of \\d+$`))
   }
+  await expect
+    .poll(async () => (await readSavedStates(page.request)).get(file))
+    .not.toBe(before)
 }
 
 const leaveRecordingAt = async (page: Page, panel: Locator, file: string, time: string): Promise<void> => {
@@ -89,7 +93,7 @@ export const openTabAt = async (page: Page, file: string, place: string, value: 
   const panel = await openVaultFile(page, path.dirname(file), path.basename(file))
   const kind = await readKind(panel, file, place)
   if (kind === 'PDF Reader') await leavePdfAt(page, panel, file, Number(value))
-  else if (kind === 'EPUB Reader') await leaveBookAt(panel, Number(value))
+  else if (kind === 'EPUB Reader') await leaveBookAt(page, panel, file, Number(value))
   else await leaveRecordingAt(page, panel, file, value)
 }
 

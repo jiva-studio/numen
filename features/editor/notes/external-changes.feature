@@ -1,4 +1,4 @@
-Feature: A note that changes on disk
+Feature: External changes of a note
   A person writes a note. Another program changes the same note on disk.
 
   Background:
