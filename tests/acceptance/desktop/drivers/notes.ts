@@ -67,9 +67,9 @@ export class NoteDriver {
   }
 
   async openLink(link: string, reference: string, name: string): Promise<void> {
-    const name = link.replace(/^\[\[|\]\]$/g, '')
+    const linkName = link.replace(/^\[\[|\]\]$/g, '')
     await this.getText(await this.scenario.getPath(reference, name))
-      .getByText(name, { exact: false })
+      .getByText(linkName, { exact: false })
       .first()
       .click({ modifiers: ['ControlOrMeta'] })
   }
