@@ -267,7 +267,7 @@ func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	s := newToolFixture(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
@@ -292,10 +292,10 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 
 func TestRecognitionCreateOfAScanBeingRecognisedReportsItRunning(t *testing.T) {
 	s := newToolFixture(t)
-	first := s.recognise(t, "Physics", scanPath)
+	first := s.recognize(t, "Physics", scanPath)
 	s.waitStarted(t)
 
-	second := s.recognise(t, "Physics", scanPath)
+	second := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}
 	if second != want {
@@ -370,7 +370,7 @@ func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	version := s.putRecognition(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
 		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
@@ -398,7 +398,7 @@ func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 		t.Fatalf("the scan lists %+v, want the recognition live", listing)
 	}
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
 		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
@@ -450,7 +450,7 @@ func TestRecognitionCreateOfLiveProofreadReturnsItWithoutARun(t *testing.T) {
 	recognized := s.putRecognition(t)
 	proofread := s.putProofread(t, recognized)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
 		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
@@ -466,7 +466,7 @@ func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
 	s.putRecognition(t)
 	s.putProofread(t, domain.TextVersion{})
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
@@ -498,7 +498,7 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 		t.Errorf("a scan only Chemistry has was accepted in Physics: %s", inShown.GetResult().GetStructured())
 	}
 
-	out := s.recognise(t, "Chemistry", chemistryScan)
+	out := s.recognize(t, "Chemistry", chemistryScan)
 	if out.State != "started" || out.TaskID != "recognize:"+chemistryScan {
 		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
@@ -638,7 +638,7 @@ func TestRecognitionCreateOfARecognisedScanReadsNoFile(t *testing.T) {
 	version := s.putRecognition(t)
 	counts := s.countReads(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
 		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),

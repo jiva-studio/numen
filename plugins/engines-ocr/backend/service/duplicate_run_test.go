@@ -19,7 +19,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 	}()
 	s.waitStarted(t)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	if out.State != stateRunning {
 		t.Errorf("recognition_create while the command recognizes the scan returned %+v, want the state running", out)
@@ -35,7 +35,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 // recognized.
 func TestRecogniseCommandDuringToolRecognitionFails(t *testing.T) {
 	s := newToolFixture(t)
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 	s.waitStarted(t)
 
 	_, err := newRecogniseCommand(s.tools)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})

@@ -19,7 +19,7 @@ func TestRecognitionCreateOfAChangedScanStartsARun(t *testing.T) {
 	s.vault.File(scanPath, string(changed))
 	s.texts.File(scanPath, changed)
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	if out.State != "started" || out.Version != "" {
 		t.Errorf("recognition_create of a changed scan returned %+v, want started", out)
@@ -45,7 +45,7 @@ func TestRecognitionCreateOverOtherPluginsKeyStartsARun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out := s.recognise(t, "Physics", scanPath)
+	out := s.recognize(t, "Physics", scanPath)
 
 	if out.State != "started" {
 		t.Errorf("recognition_create over another plugin's live version returned %+v, want started", out)
@@ -59,7 +59,7 @@ func TestRecognitionCreateInChemistryReadsChemistryVersions(t *testing.T) {
 	s.putRecognition(t) // Physics has a recognition of books/scan.pdf; Chemistry has none.
 	s.chemistry.File(scanPath, "x")
 
-	res := s.recognise(t, "Chemistry", scanPath)
+	res := s.recognize(t, "Chemistry", scanPath)
 
 	if res.State == "done" {
 		t.Errorf("recognition_create in Chemistry returned %+v from the versions of Physics", res)
