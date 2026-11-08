@@ -354,11 +354,20 @@ func (c Config) subscribeHost() {
 	})
 }
 
+func (c Config) refreshPluginSecrets(ctx context.Context) error {
+	gate := c.getResources().secretGate
+	if err := gate.Enter(ctx); err != nil {
+		return err
+	}
+	defer gate.Leave()
+	return c.PluginHost.Refresh(ctx)
+}
+
 func (c Config) tellHost(batch []settingsport.Setting) {
 	notifyPluginSettings(c.PluginHost, batch, c.handleError)
 	for _, one := range batch {
 		if slices.Equal(one.Path, secretsPath()) {
-			if err := c.PluginHost.Refresh(context.Background()); err != nil {
+			if err := c.refreshPluginSecrets(context.Background()); err != nil {
 				c.handleError(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
 			}
 			continue

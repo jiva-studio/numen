@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
-// blockingStore stops each write of a value until the test lets it go.
+// blockingStore stops each write of a value until the test releases it.
 type blockingStore struct {
 	keys
 	entered chan string
@@ -51,7 +51,7 @@ func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 	group.Wait()
 }
 
-// refreshBlocker stops each refresh until the test lets it go.
+// refreshBlocker stops each refresh until the test releases it.
 type refreshBlocker struct {
 	plugins
 	entered chan struct{}
@@ -64,26 +64,37 @@ func (r *refreshBlocker) Refresh(context.Context, ...string) error {
 	return nil
 }
 
-func TestTheSendToPluginsDoesNotHoldBackTheNextOperation(t *testing.T) {
+// The gate is held until the plugins are configured, so a refresh of the file watch, which waits
+// for the gate, finds them configured and cannot take the error of a plugin from the operation.
+func TestTheGateIsHeldUntilThePluginsAreConfigured(t *testing.T) {
 	f := newFixture(secret.Secret{ID: "s00000001", Name: "One", Group: "g"})
-	blocker := &refreshBlocker{entered: make(chan struct{}, 1), release: make(chan struct{})}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, nil)
+	gate := secret.NewGate()
+	blocker := &refreshBlocker{entered: make(chan struct{}, 2), release: make(chan struct{})}
+	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
 
 	first := make(chan error, 1)
 	go func() { first <- f.secrets.Rename.Execute(t.Context(), "s00000001", "Office") }()
 	<-blocker.entered
 
+	watch := make(chan error, 1)
+	go func() { watch <- gate.Enter(t.Context()) }()
 	second := make(chan error, 1)
 	go func() { second <- f.secrets.Move.Execute(t.Context(), "s00000001", "") }()
 	select {
+	case <-watch:
+		t.Fatal("the file watch passed the gate while the plugins were being configured")
 	case <-blocker.entered:
-	case <-time.After(5 * time.Second):
-		t.Fatal("the second operation did not reach its own refresh while the first one was sending")
+		t.Fatal("the second operation reached its refresh while the first one was configuring")
+	case <-time.After(100 * time.Millisecond):
 	}
 	close(blocker.release)
 	if err := <-first; err != nil {
 		t.Error(err)
 	}
+	if err := <-watch; err != nil {
+		t.Fatal(err)
+	}
+	gate.Leave()
 	if err := <-second; err != nil {
 		t.Error(err)
 	}

@@ -33,16 +33,24 @@ type operation struct {
 	gate    *Gate
 }
 
-// Gate lets one operation at a time change the key store and the list. Operations of every window
-// share one gate, so two of them never interleave the steps of their changes.
+// Gate lets one operation at a time change the key store and the list and configure the plugins for
+// it. Operations of every window share one gate, so two of them never interleave their steps. The
+// file watch of the settings waits for it too, so a refresh it starts finds the plugins already
+// configured by the operation that wrote the file and the operation, not the watch, gets the error
+// of a plugin that refuses.
 type Gate struct{ slot chan struct{} }
 
 // NewGate returns a gate that no operation holds.
 func NewGate() *Gate { return &Gate{slot: make(chan struct{}, 1)} }
 
-func (g *Gate) enter(ctx context.Context) error {
+// Enter waits for the gate. It returns the context error, holding nothing, when ctx ends first. A
+// nil gate is always free.
+func (g *Gate) Enter(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if g == nil {
+		return nil
 	}
 	select {
 	case g.slot <- struct{}{}:
@@ -52,22 +60,23 @@ func (g *Gate) enter(ctx context.Context) error {
 	}
 }
 
-func (g *Gate) leave() { <-g.slot }
+// Leave frees a gate that Enter returned nil for.
+func (g *Gate) Leave() {
+	if g != nil {
+		<-g.slot
+	}
+}
 
 func (o operation) apply(ctx context.Context, change func() (readers []string, err error)) error {
-	readers, err := o.change(ctx, change)
+	if err := o.gate.Enter(ctx); err != nil {
+		return err
+	}
+	defer o.gate.Leave()
+	readers, err := change()
 	if err != nil {
 		return err
 	}
 	return o.plugins.Refresh(ctx, readers...)
-}
-
-func (o operation) change(ctx context.Context, change func() ([]string, error)) ([]string, error) {
-	if err := o.gate.enter(ctx); err != nil {
-		return nil, err
-	}
-	defer o.gate.leave()
-	return change()
 }
 
 // GetEntryName returns the name the value of a secret is stored under in the key store, which the
