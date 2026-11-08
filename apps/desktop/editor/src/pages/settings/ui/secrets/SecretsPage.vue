@@ -176,8 +176,7 @@ function getNamesInGroup(group: string): readonly string[] {
 
 .secrets-page__back {
   align-self: flex-start;
-  margin-block-end: var(--settings-apart);
-  margin-inline-start: -0.5rem;
+  margin-block-end: 0.75rem;
 }
 
 .secrets-page__where {

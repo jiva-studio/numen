@@ -61,7 +61,7 @@ async function onSubmit(value: string): Promise<boolean> {
     <template #actions>
       <Button
         v-if="canDiscard"
-        variant="outline"
+        variant="ghost"
         class="secret-action"
         size="icon"
         :aria-label="words.secretDiscard"
