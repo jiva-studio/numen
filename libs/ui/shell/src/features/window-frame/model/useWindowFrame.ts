@@ -3,8 +3,9 @@
  * The calls go through the Wails runtime served beside the page; a page served without it (stories,
  * tests) gets a frame that does nothing.
  */
-import { computed, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { getWindowRadius, readMajorVersion, WINDOW_RADIUS_VARIABLE } from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 
 /** The operating system of the window, as `runtime.GOOS` names it. */
@@ -26,6 +27,7 @@ export interface FrameRuntime {
     readonly IsMac?: () => boolean
     readonly IsWindows?: () => boolean
     readonly IsLinux?: () => boolean
+    readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
   }
 }
 
@@ -43,6 +45,10 @@ export interface WindowFrame {
   readonly isMaximized: Readonly<Ref<boolean>>
   readonly isFullscreen: Readonly<Ref<boolean>>
   readonly windowEdge: Readonly<Ref<FrameEdge>>
+  /** The major version of macOS; undefined off macOS or while it is not read. */
+  readonly macVersion: Readonly<Ref<number | undefined>>
+  /** The corner radius of the window in points, also set as `--numen-window-radius` on the root. */
+  readonly windowRadius: Readonly<Ref<number>>
   minimizeWindow(): Promise<void>
   toggleMaximizeWindow(): Promise<void>
   closeWindow(): Promise<void>
@@ -75,6 +81,15 @@ export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): 
 
 const ignoreFailure = (): undefined => undefined
 
+/** The major version of macOS the runtime reports; undefined when it cannot be read. */
+async function readMacVersion(system: FrameRuntime['System']): Promise<number | undefined> {
+  try {
+    return readMajorVersion((await system?.Environment?.())?.OSInfo?.Version)
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * The frame of the window this page is drawn in, read through the Wails runtime: its platform, its
  * maximized and full screen state, which a resize reads again, and its buttons.
@@ -83,6 +98,16 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
   const platform = ref<WindowPlatform>('windows')
   const isMaximized = ref(false)
   const isFullscreen = ref(false)
+  const macVersion = ref<number | undefined>(undefined)
+  const windowRadius = computed(() =>
+    getWindowRadius(platform.value, macVersion.value, isFullscreen.value),
+  )
+  watch(
+    windowRadius,
+    (radius) =>
+      globalThis.document?.documentElement.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`),
+    { immediate: true },
+  )
 
   /** Reads the maximized and the full screen state, which a resize changes. */
   async function readWindowState(): Promise<void> {
@@ -107,6 +132,7 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
   runInBackground(
     load().then(async (loaded) => {
       platform.value = getPlatform(loaded?.System)
+      if (platform.value === 'darwin') macVersion.value = await readMacVersion(loaded?.System)
       await readWindowState()
     }),
     ignoreFailure,
@@ -121,6 +147,8 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
     platform,
     isMaximized,
     isFullscreen,
+    macVersion,
+    windowRadius,
     windowEdge: computed(() => getWindowEdge(platform.value, isFullscreen.value)),
     minimizeWindow,
     toggleMaximizeWindow,

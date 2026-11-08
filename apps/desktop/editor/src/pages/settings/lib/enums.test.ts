@@ -94,6 +94,37 @@ describe('the fields of a plugin', () => {
       ])
     })
 
+    describe('the value shown', () => {
+      const getShown = (platform: string, stored?: string) => {
+        const buttons = { ...plugin.settings[0]!, default: 'windows' }
+        const fields = createEnumFields(
+          () => plugin,
+          () => stored,
+          () => false,
+          () => platform,
+        )
+        return fields.getEnumValue(buttons)
+      }
+
+      it('is Left on macOS where the default is Right', () => {
+        expect(getShown('darwin')).toBe('mac')
+      })
+
+      it('is Left on macOS where the stored value is Right or None', () => {
+        expect(getShown('darwin', 'windows')).toBe('mac')
+        expect(getShown('darwin', 'none')).toBe('mac')
+      })
+
+      it.each(['linux', 'windows'])('stays Right by default on %s', (platform) => {
+        expect(getShown(platform)).toBe('windows')
+      })
+
+      it('is a stored value that is offered, as stored', () => {
+        expect(getShown('darwin', 'mac')).toBe('mac')
+        expect(getShown('linux', 'none')).toBe('none')
+      })
+    })
+
     it('offers an option whose condition cannot be read', () => {
       const broken = createPluginInfo('p', 'P', {
         settings: [

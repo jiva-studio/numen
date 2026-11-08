@@ -3,7 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
-import { WINDOWS_CONTROLS_WIDTH } from '../lib/frame'
+import { CORNER_INSET, WINDOWS_CONTROLS_WIDTH } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
 
@@ -109,6 +109,14 @@ describe('the place of the title', () => {
 
     expect(style(wrapper, '--title-bar-lead')).toBe('0px')
     expect(style(wrapper, '--title-bar-trail')).toBe('132px')
+  })
+
+  it('keeps the end of the bar clear of the corner radius of the window', () => {
+    document.documentElement.style.setProperty('--numen-window-radius', '26px')
+    const wrapper = mountBar({ platform: 'darwin' })
+
+    expect(style(wrapper, '--title-bar-corner-inset')).toBe(CORNER_INSET)
+    expect(CORNER_INSET).toContain('var(--numen-window-radius')
   })
 
   it('keeps the room of the circles at the start of the bar in the mac style', () => {

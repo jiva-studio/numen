@@ -15,7 +15,7 @@ import {
   type SlotItem,
   type VaultsState,
 } from '@numen/plugin-sdk'
-import { getControls, getControlsRoom, type ButtonsSetting } from '../lib/frame'
+import { CORNER_INSET, getControls, getControlsRoom, type ButtonsSetting } from '../lib/frame'
 import { formatTitle } from '../lib/title'
 import { TITLE_BAR_WORDS } from '../lib/words'
 import MacButtonsInset from './frame/MacButtonsInset.vue'
@@ -164,7 +164,7 @@ function onRunCommand(command: string, itemId?: string): void {
     class="title-bar"
     data-title-bar
     :data-controls="controls"
-    :style="{ '--title-bar-lead': `${room.lead}px`, '--title-bar-trail': `${room.trail}px` }"
+    :style="{ '--title-bar-lead': `${room.lead}px`, '--title-bar-trail': `${room.trail}px`, '--title-bar-corner-inset': CORNER_INSET }"
     @dblclick="onDoubleClick"
   >
     <MacButtonsInset

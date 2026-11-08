@@ -44,7 +44,7 @@
 
 .title-bar__trail {
   justify-content: flex-end;
-  padding-inline-end: var(--title-bar-trail, 0px);
+  padding-inline-end: max(var(--title-bar-trail, 0px), var(--title-bar-corner-inset, 0px));
 }
 
 .title-bar__middle {

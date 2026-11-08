@@ -98,8 +98,17 @@ export function createEnumFields(
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
   const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting), isOffered)
-  const getEnumValue = (setting: PluginSettingInfo) =>
-    toText(getValueInForce(setting, read, isRequested))
+  /**
+   * The value the select shows: the value in force, or the first offered option when the value in
+   * force is an option this platform does not offer. Showing it writes nothing.
+   */
+  const getEnumValue = (setting: PluginSettingInfo) => {
+    const value = toText(getValueInForce(setting, read, isRequested))
+    const options = getEnumOptions(setting)
+    const current = options.find((one) => one.value === value)
+    if (!current || isOffered(current)) return value
+    return options.find(isOffered)?.value ?? value
+  }
 
   const getShownSettings = () => getPlugin().settings.filter(isSettingShown)
 
