@@ -180,7 +180,7 @@ func wantSQLiteError(t *testing.T, err error, contains string) {
 	if err == nil {
 		t.Fatalf("no error, want one saying %q", contains)
 	}
-	if _, ok := errors.AsType[*sqlite.Error](err); !ok {
+	if !errors.As(err, new(*sqlite.Error)) {
 		t.Fatalf("the error %q no longer carries the database's own", err)
 	}
 	if !strings.Contains(err.Error(), contains) {

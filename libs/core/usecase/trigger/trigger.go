@@ -191,7 +191,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 		if err == nil {
 			continue
 		}
-		if _, ok := errors.AsType[*pluginport.UnavailableError](err); ok {
+		if errors.As(err, new(*pluginport.UnavailableError)) {
 			p.skipped[one.entry.PluginID] = true
 		}
 		p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, path, err))

@@ -58,7 +58,7 @@ func TestDecodeRejectsALineThatIsNotJSON(t *testing.T) {
 	if !strings.Contains(err.Error(), "line 3:") {
 		t.Fatalf("got %v, want line 3 reported", err)
 	}
-	if _, ok := errors.AsType[*json.SyntaxError](err); !ok {
+	if !errors.As(err, new(*json.SyntaxError)) {
 		t.Fatalf("got %v, want wrapped *json.SyntaxError", err)
 	}
 }

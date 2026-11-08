@@ -121,7 +121,7 @@ func TestFetchFailsWhereNothingListens(t *testing.T) {
 	server.Close()
 
 	_, err := New().Fetch(t.Context(), endpoint)
-	if _, ok := errors.AsType[*url.Error](err); !ok {
+	if !errors.As(err, new(*url.Error)) {
 		t.Errorf("error = %v, want url.Error", err)
 	}
 }

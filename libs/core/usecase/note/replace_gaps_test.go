@@ -56,7 +56,7 @@ func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.FileStat{})
-	if _, ok := errors.AsType[note.MissingSpan](err); !ok {
+	if !errors.As(err, new(note.MissingSpan)) {
 		t.Fatalf("want MissingSpan, got %v", err)
 	}
 }
