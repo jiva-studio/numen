@@ -139,6 +139,11 @@ describe('settings domain', () => {
     request.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
+      plugins: [],
+      app: [],
+      secretSections: [],
+      secretMenus: [],
+      credentialsPath: '',
       path: 'settings.json',
     })
     request.writeSettings.mockResolvedValue({})

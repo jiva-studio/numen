@@ -31,6 +31,11 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   models: [],
+  plugins: [],
+  app: [],
+  secretSections: [],
+  secretMenus: [],
+  credentialsPath: '',
   ...overrides,
 })
 

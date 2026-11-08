@@ -97,14 +97,14 @@ describe('fetchPluginReadme', () => {
 
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      headers: { get: (h: string) => (h === 'content-type' ? 'text/html; charset=utf-8' : '') },
+      headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
       text: async () => '<html></html>',
     })
     expect(await fetchPluginReadme('my-plugin')).toBe('')
 
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      headers: undefined,
+      headers: new Headers({ 'content-type': 'text/markdown' }),
       text: async () => '# Hello',
     })
     expect(await fetchPluginReadme('my-plugin')).toBe('# Hello')

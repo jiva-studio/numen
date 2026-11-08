@@ -14,7 +14,7 @@ const UNEXPECTED = 'internal error'
  * produces; a code that nothing here produces gets a message that states only
  * what is known; a call cancelled by the caller has an empty message.
  */
-const TROUBLE: Record<Code, string> = {
+const TROUBLE: Partial<Record<Code, string>> = {
   [Code.Canceled]: '',
   [Code.Unknown]: 'Numen is not responding; retrying',
   [Code.InvalidArgument]: 'invalid request',
@@ -54,7 +54,7 @@ const CARRIES = new Set<Code>([
 export const formatErrorMessage = (error: unknown): string => {
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
-  return carried || TROUBLE[fault.code]
+  return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
 }
 
 /**

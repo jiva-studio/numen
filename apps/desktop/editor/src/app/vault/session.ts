@@ -97,7 +97,7 @@ export const sessionCore: SessionCore = {
         about: task.about,
         completedCount: Number(task.done),
         total: Number(task.total),
-        counting: counted[task.unit] ?? 'things',
+        counting: counted[task.unit] ?? 'items',
         error: task.error,
         isUserStarted: task.isUserStarted,
         pluginId: task.pluginId,
