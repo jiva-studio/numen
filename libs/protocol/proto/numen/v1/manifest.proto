@@ -243,6 +243,9 @@ message ManifestSecret {
   string title = 2;
   string description = 3;
   ManifestCondition when = 4;
+  // group is where the person finds the secrets for this declaration. It is a hint and not a limit.
+  // Optional; when set it is non-empty, trimmed and at most 64 characters.
+  string group = 5;
 }
 
 message ManifestNoteType {

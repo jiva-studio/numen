@@ -64,7 +64,7 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	pos := startPlugin(t)
 
 	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
@@ -95,7 +95,7 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	defer web.Close()
 
 	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
@@ -140,5 +140,44 @@ func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
 	}
 	if maxT, ok := receivedBody["max_tokens"].(float64); !ok || int(maxT) != 2048 {
 		t.Errorf("expected max_tokens 2048, got %v", receivedBody["max_tokens"])
+	}
+}
+
+func hostKey() server.Secrets {
+	return server.Secrets{server.SecretAPIKey: {
+		{ID: "s00000001", Name: "Work", Group: "openrouter", Value: "host-key"},
+		{ID: "s00000002", Name: "Home", Group: "openrouter", Value: "other-key"},
+	}}
+}
+
+// The agent sends the first secret of the list and ignores the others; an empty list sends no key.
+func TestTheFirstSecretOfTheListIsTheKeySentToTheChatService(t *testing.T) {
+	var seen []string
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Header.Get("Authorization"))
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
+	}))
+	defer chat.Close()
+	pos := startPlugin(t)
+	client := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken))
+
+	if _, err := client.Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) == 0 || seen[len(seen)-1] != "Bearer host-key" {
+		t.Errorf("the chat service was asked with %v, want the first secret", seen)
+	}
+
+	if _, err := client.Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, server.Secrets{server.SecretAPIKey: {}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if last := seen[len(seen)-1]; last == "Bearer host-key" || last == "Bearer other-key" {
+		t.Errorf("the chat service was asked with %q after an empty list", last)
 	}
 }

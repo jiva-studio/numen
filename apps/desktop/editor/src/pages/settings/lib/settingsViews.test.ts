@@ -60,14 +60,20 @@ describe('hasPluginSettings', () => {
     const withHiddenSecretOnly = createPluginInfo('p', 'P', {
       settings: [],
       secrets: [
-        { name: 's1', title: 'S1', description: '', when: { setting: 'mode', is: ['on'] } },
+        {
+          name: 's1',
+          title: 'S1',
+          description: '',
+          group: '',
+          when: { setting: 'mode', is: ['on'] },
+        },
       ],
     })
     expect(hasPluginSettings(withHiddenSecretOnly, () => 'off')).toBe(false)
 
     const withNoSettingsSecretsOnly = createPluginInfo('p', 'P', {
       settings: [],
-      secrets: [{ name: 's1', title: 'S1', description: '' }],
+      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
     })
     expect(hasPluginSettings(withNoSettingsSecretsOnly, () => undefined)).toBe(true)
   })

@@ -186,19 +186,21 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 // Configure calls the built-in plugin's own lifecycle service with its settings and secrets.
 func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
 	host := newBuiltInHost(t)
-	host.SetKeyStore(newKeys(map[string]string{firstBuiltInID + "/apiKey": fromKeychain}))
-	host.SetSettings(map[string]map[string]any{
-		firstBuiltInID: {"model": "large-model", pluginport.SettingStoredSecrets: []any{"apiKey"}},
-	})
+	host.SetKeyStore(newKeys(map[string]string{"secret/s0a1b2c3d": fromKeychain}))
+	host.SetSecretSource(allowOne(firstBuiltInID))
+	host.SetSettings(map[string]map[string]any{firstBuiltInID: {"model": "large-model"}})
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
 
 	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	values := backend.probe.last(t).GetValues()
-	if values["model"] != "large-model" || values["apiKey"] != fromKeychain {
-		t.Fatalf("Configure values = %v", values)
+	call := backend.probe.last(t)
+	if call.GetValues()["model"] != "large-model" {
+		t.Errorf("Configure values = %v", call.GetValues())
+	}
+	if got := call.GetSecrets(); len(got) != 1 || got[0].GetValues()[0].GetValue() != fromKeychain {
+		t.Errorf("Configure secrets = %v, want the allowed secret", got)
 	}
 }
 

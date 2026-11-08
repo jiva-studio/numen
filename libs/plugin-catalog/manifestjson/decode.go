@@ -226,6 +226,7 @@ func newSecrets(wire []*v1.ManifestSecret) []manifest.Secret {
 			Title:       one.GetTitle(),
 			Description: one.GetDescription(),
 			When:        newCondition(one.GetWhen()),
+			Group:       one.GetGroup(),
 		})
 	}
 	return out

@@ -49,7 +49,6 @@ const (
 	ConditionFalse            = when.False
 	ConditionUnknown          = when.Unknown
 	PluginProtocolVersion     = manifest.ProtocolVersion
-	SettingStoredSecrets      = manifest.SettingStoredSecrets
 	SettingTypeString         = manifest.SettingTypeString
 	SettingTypeEnum           = manifest.SettingTypeEnum
 	SettingTypeFile           = manifest.SettingTypeFile

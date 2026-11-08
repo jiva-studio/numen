@@ -55,6 +55,7 @@ type Secret struct {
 	Title       string
 	Description string
 	When        *Condition
+	Group       string
 }
 
 // GetSecretNames returns the names of the secrets the plugin declares.

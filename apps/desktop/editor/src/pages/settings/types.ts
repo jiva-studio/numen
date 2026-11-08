@@ -7,7 +7,14 @@
  */
 import type { Ref } from 'vue'
 import type { CatalogEntry } from '@numen/core-client'
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type {
+  Model,
+  PluginInfo,
+  PluginSettingInfo,
+  SecretMenu,
+  SecretSection,
+  SettingEdit,
+} from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
@@ -27,11 +34,20 @@ export interface Installation {
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**
-   * The key of a secret a plugin declares, stored or removed. The window is informed only
-   * which secrets have a key, under each plugin's `storedSecrets`.
+   * The secrets, each a name in a group with the plugin declarations that may read it. A value
+   * is entered once and is never read back. Each call reads the settings again.
    */
-  writeSecret(pluginId: string, name: string, key: string): void
-  deleteSecret(pluginId: string, name: string): void
+  createSecret(group: string, name: string, value: string): Promise<string>
+  renameSecret(id: string, name: string): void
+  writeSecret(id: string, value: string): void
+  deleteSecret(id: string): void
+  deleteSecretGroup(group: string): void
+  /** Puts a secret before another one of its group, or at the end of the group where `beforeId` is empty. */
+  moveSecret(id: string, beforeId: string): void
+  renameSecretGroup(group: string, name: string): void
+  /** Lets one declaration of a plugin read a secret. The group is empty for a declaration with none. */
+  allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
+  denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
@@ -58,6 +74,12 @@ export interface Installation {
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
+  readonly secretSections?: Readonly<Ref<readonly SecretSection[]>>
+  readonly secretMenus?: Readonly<Ref<readonly SecretMenu[]>>
+  readonly secretStates?: Readonly<Ref<ReadonlyMap<string, boolean>>>
+  /** Reads which secrets have a value. Only the page of secrets calls it. */
+  loadSecretStates?(): Promise<void>
+  readonly credentialsPath?: Readonly<Ref<string>>
   readonly file: Readonly<Ref<string>>
 }
 

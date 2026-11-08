@@ -161,7 +161,7 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(models.updateConfig)
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { models.updateConfig(values) })
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {

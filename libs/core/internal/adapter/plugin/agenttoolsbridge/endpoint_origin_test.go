@@ -1,6 +1,7 @@
 package agenttoolsbridge
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -17,7 +18,7 @@ func serveOriginEndpoint(t *testing.T) *endpoint {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := served.close(t.Context()); err != nil {
+		if err := served.close(context.WithoutCancel(t.Context())); err != nil {
 			t.Error(err)
 		}
 	})

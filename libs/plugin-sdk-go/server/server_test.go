@@ -72,7 +72,7 @@ func TestServerLifecycleRPC(t *testing.T) {
 		WithToken(testToken),
 		WithStdout(&stdout),
 		WithStdin(nil),
-		WithConfigure(func(_ context.Context, vals map[string]string) error {
+		WithConfigure(func(_ context.Context, vals map[string]string, _ Secrets) error {
 			configureMu.Lock()
 			configuredValues = vals
 			configureMu.Unlock()
@@ -295,7 +295,7 @@ func TestServerContextCancellation(t *testing.T) {
 func TestLifecycleUnitMethods(t *testing.T) {
 	ch := make(chan struct{})
 	var updated map[string]string
-	life := NewLifecycleServer(ch, WithLifecycleUpdateConfig(func(m map[string]string) {
+	life := NewLifecycleServer(ch, WithLifecycleUpdateConfig(func(m map[string]string, _ Secrets) {
 		updated = m
 	}))
 
@@ -701,7 +701,7 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 	called := false
 	ls := NewLifecycleServer(
 		make(chan struct{}),
-		WithLifecycleConfigure(func(context.Context, map[string]string) error {
+		WithLifecycleConfigure(func(context.Context, map[string]string, Secrets) error {
 			called = true
 			return nil
 		}),
@@ -710,10 +710,10 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 			return errors.New("shutdown hook error")
 		}),
 	)
-	if err := ls.configure(t.Context(), map[string]string{"k1": "v1"}); err != nil || called {
+	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k1": "v1"}, nil); err != nil || called {
 		t.Fatalf("expected nil callback after WithLifecycleUpdateConfig(nil), got err=%v called=%v", err, called)
 	}
-	if err := ls.configure(t.Context(), map[string]string{"k2": "v2"}); err != nil {
+	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k2": "v2"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if v, ok := ls.GetConfig("k1"); !ok || v != "v1" {
@@ -724,7 +724,7 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 	}
 
 	var zeroLS LifecycleServer
-	if err := zeroLS.configure(t.Context(), map[string]string{"z": "1"}); err != nil {
+	if err := zeroLS.configureWith(t.Context(), map[string]string{"z": "1"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if v, ok := zeroLS.GetConfig("z"); !ok || v != "1" {
@@ -779,7 +779,7 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 		t.Fatalf("default timeouts = %v, %v; want 2s, 5s", s.shutdownTimeout, s.readHeaderTimeout)
 	}
 
-	s.SetConfigure(func(context.Context, map[string]string) error { return nil })
+	s.SetConfigure(func(context.Context, map[string]string, Secrets) error { return nil })
 	if s.onConfigure == nil {
 		t.Fatal("expected s.onConfigure to be set")
 	}

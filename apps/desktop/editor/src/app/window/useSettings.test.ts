@@ -23,8 +23,16 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
     watchSettings: vi.fn(async function* () {
       yield* []
     }),
-    writePluginSecret: vi.fn(async () => undefined),
-    deletePluginSecret: vi.fn(async () => undefined),
+    createSecret: vi.fn(async () => 's0a1b2c3d'),
+    renameSecret: vi.fn(async () => undefined),
+    writeSecret: vi.fn(async () => undefined),
+    moveSecret: vi.fn(async () => undefined),
+    renameSecretGroup: vi.fn(async () => undefined),
+    allowPluginSecret: vi.fn(async () => undefined),
+    denyPluginSecret: vi.fn(async () => undefined),
+    deleteSecret: vi.fn(async () => undefined),
+    deleteSecretGroup: vi.fn(async () => undefined),
+    listSecretStates: vi.fn(async () => new Map<string, boolean>()),
     retryPlugin: vi.fn(async () => ''),
     choosePluginPath: vi.fn(async () => ({ path: '/picked', isChosen: true, problem: '' })),
     getPluginData: vi.fn(async () => 5),
@@ -140,7 +148,6 @@ const SCANNER: PluginInfo = {
   isActive: true,
   capabilities: [],
   secrets: [],
-  storedSecrets: [],
   hasFrontend: false,
   hasBackend: false,
   settings: [
@@ -322,17 +329,39 @@ describe('the settings tab', () => {
     expect(settings.rest.isPending).toHaveBeenCalledWith(['a', 'b'])
 
     const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-    await (installation.writeSecret(
-      'plugin.ocr',
-      'apiKey',
-      'secret-val',
-    ) as unknown as Promise<void>)
-    expect(core.writePluginSecret).toHaveBeenCalledWith('plugin.ocr', 'apiKey', 'secret-val')
+    await (installation.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
+    expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
     expect(startSpy).toHaveBeenCalledTimes(1)
 
-    await (installation.deleteSecret('plugin.ocr', 'apiKey') as unknown as Promise<void>)
-    expect(core.deletePluginSecret).toHaveBeenCalledWith('plugin.ocr', 'apiKey')
+    await (installation.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
+    expect(core.deleteSecret).toHaveBeenCalledWith('s0a1b2c3d')
     expect(startSpy).toHaveBeenCalledTimes(2)
+
+    await (installation.allowPluginSecret(
+      's0a1b2c3d',
+      'plugin.ocr',
+      'apiKey',
+      'openrouter',
+    ) as unknown as Promise<void>)
+    expect(core.allowPluginSecret).toHaveBeenCalledWith(
+      's0a1b2c3d',
+      'plugin.ocr',
+      'apiKey',
+      'openrouter',
+    )
+    await (installation.denyPluginSecret(
+      's0a1b2c3d',
+      'plugin.ocr',
+      'apiKey',
+      'openrouter',
+    ) as unknown as Promise<void>)
+    expect(core.denyPluginSecret).toHaveBeenCalledWith(
+      's0a1b2c3d',
+      'plugin.ocr',
+      'apiKey',
+      'openrouter',
+    )
+    expect(startSpy).toHaveBeenCalledTimes(4)
 
     settings.rest.plugins.value = [
       {
@@ -343,7 +372,6 @@ describe('the settings tab', () => {
         isActive: true,
         capabilities: [],
         secrets: [],
-        storedSecrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],
@@ -356,7 +384,6 @@ describe('the settings tab', () => {
         isActive: true,
         capabilities: [],
         secrets: [],
-        storedSecrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],
@@ -374,11 +401,7 @@ describe('the settings tab', () => {
     vi.useFakeTimers()
     try {
       startSpy.mockClear()
-      await (installation.writeSecret(
-        'plugin.ocr',
-        'apiKey2',
-        'secret-val-2',
-      ) as unknown as Promise<void>)
+      await (installation.writeSecret('s0a1b2c3d', 'secret-val-2') as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)

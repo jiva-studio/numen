@@ -322,25 +322,6 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 	}
 }
 
-// The name under which the host records the stored secrets is
-// neither a setting nor a secret of a manifest.
-func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
-	for _, one := range []struct {
-		name  string
-		field string
-	}{
-		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
-		{"a secret", `"secrets":[{"name":"storedSecrets","title":"T"}]`},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
-			if !errors.Is(err, manifest.ErrReservedSettingKey) {
-				t.Errorf("error = %v, want port.ErrReservedSettingKey", err)
-			}
-		})
-	}
-}
-
 func TestAnAgentSettingTypeIsNotInTheSchema(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"agent","title":"Model"}]}`))
 	if !errors.Is(err, manifest.ErrInvalidSettingType) {

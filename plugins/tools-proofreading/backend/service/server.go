@@ -97,7 +97,7 @@ func newSettings() *settings {
 	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
-func (s *settings) updateConfig(values map[string]string) {
+func (s *settings) updateConfig(values map[string]string, secrets server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if provider := values["provider"]; provider != "" {
@@ -109,8 +109,11 @@ func (s *settings) updateConfig(values map[string]string) {
 	if model := values["model"]; model != "" {
 		s.cfg.model = model
 	}
-	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
-		s.cfg.apiKey = key
+	if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
+		s.cfg.apiKey = ""
+		if len(list) > 0 {
+			s.cfg.apiKey = list[0].Value
+		}
 	}
 	applyIntConfig(values, "batchSize", &s.cfg.batchSize, 1)
 	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
@@ -286,7 +289,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	}
 	config := newSettings()
 	if len(vars) > 0 {
-		config.updateConfig(vars)
+		config.updateConfig(vars, nil)
 	}
 	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
 	commands, err := newCommands(run)

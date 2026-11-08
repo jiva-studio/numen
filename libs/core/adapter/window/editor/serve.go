@@ -345,8 +345,7 @@ func (o *Installation) wireUseCases() {
 	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
 	services.Settings.Watch = made.OpenWatchSettings()
-	services.Settings.WriteSecret = made.OpenWritePluginSecret()
-	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
+	services.Settings.Secrets = made.OpenSecrets()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
 	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
 	if data := made.OpenPluginData(); data != nil {

@@ -8,6 +8,7 @@ import { computed, ref } from 'vue'
 import { Button, Prose, Switch } from '@numen/ui'
 import ChevronIcon from './ChevronIcon.vue'
 import PluginData from './PluginData.vue'
+import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
 import { isInstalled } from './plugins'
@@ -123,9 +124,9 @@ function onDeleteData(): void {
       @disable="onDisable"
     />
 
-    <div v-if="props.hasSettings" class="plugin-detail__settings">
+    <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
       <slot name="settings" />
-    </div>
+    </PluginSettingsCard>
 
     <PluginData
       :plugin-id="props.plugin.id"
@@ -149,21 +150,6 @@ function onDeleteData(): void {
 .plugin-detail__back {
   align-self: flex-start;
   margin-block-end: 0.75rem;
-}
-
-.plugin-detail__settings {
-  padding-inline: 1rem;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-}
-
-.plugin-detail__settings + .plugin-detail__settings {
-  margin-block-start: 1.25rem;
-}
-
-.plugin-detail__settings :deep(.settings__row:last-child) {
-  border-block-end: none;
 }
 
 .plugin-detail__header {

@@ -118,8 +118,15 @@ const createTab = (
       content.push(...response)
     },
     file: ref('/numen.json'),
+    createSecret: vi.fn(async () => 's00000001'),
+    renameSecret: vi.fn(),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    deleteSecretGroup: vi.fn(),
+    moveSecret: vi.fn(),
+    renameSecretGroup: vi.fn(),
+    allowPluginSecret: vi.fn(),
+    denyPluginSecret: vi.fn(),
     retryPlugin: vi.fn(),
     choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
@@ -184,7 +191,7 @@ describe('the settings tab', () => {
     expect(rows[0]!.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws plugin rows below system settings when plugins are present', () => {
+  it('draws the Secrets row after system settings and plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -193,16 +200,16 @@ describe('the settings tab', () => {
       isActive: true,
       capabilities: [],
       secrets: [],
-      storedSecrets: [],
       hasFrontend: false,
       hasBackend: false,
       settings: [],
     }
     const { tab } = createTab({}, [samplePlugin])
     const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(2)
+    expect(rows.length).toBe(3)
     expect(rows[0]!.text()).toContain(words.systemSettings)
-    expect(rows[1]!.text()).toContain('Transcription Plugin')
+    expect(rows[1]!.text()).toContain('Secrets')
+    expect(rows[2]!.text()).toContain('Transcription Plugin')
   })
 
   it('opens on the theme the core resolved, in one list with the themes of plugins', async () => {
@@ -275,7 +282,6 @@ describe('the settings tab', () => {
       isActive: true,
       capabilities: [],
       secrets: [],
-      storedSecrets: [],
       hasFrontend: false,
       hasBackend: false,
       settings: [],
@@ -284,8 +290,8 @@ describe('the settings tab', () => {
 
     // Click on the plugin row to select it
     const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(2)
-    await rows[1]!.trigger('click')
+    expect(rows.length).toBe(3)
+    await rows[2]!.trigger('click')
     await nextTick()
 
     // Full page plugin detail: system detail and list are gone
@@ -311,7 +317,6 @@ describe('the settings tab', () => {
       isActive: true,
       capabilities: ['agent'],
       secrets: [],
-      storedSecrets: [],
       hasFrontend: true,
       hasBackend: false,
       settings: [],
@@ -328,7 +333,7 @@ describe('the settings tab', () => {
     expect(initialSearchQuery.value).toBe('')
 
     const rows = tab.findAll('.plugin-row')
-    await rows[1]!.trigger('click')
+    await rows[2]!.trigger('click')
     await nextTick()
     expect(tab.find('.plugin-detail').exists()).toBe(true)
 

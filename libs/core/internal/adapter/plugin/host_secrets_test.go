@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -84,13 +85,6 @@ func (k *keys) DeleteKey(_ context.Context, name string) error {
 	return nil
 }
 
-func (k *keys) hold(name string) (string, bool) {
-	k.mu.Lock()
-	defer k.mu.Unlock()
-	key, found := k.item[name]
-	return key, found
-}
-
 // configured records the Configure calls a plugin receives.
 type configured struct {
 	testsupport.PluginLifecycle
@@ -98,14 +92,72 @@ type configured struct {
 	calls         []*v1.ConfigureRequest
 	unimplemented bool
 	shutdowns     int
+	failure       error
+	hold          chan struct{}
+	entered       chan struct{}
+	delay         time.Duration
+	during        func()
+}
+
+func (c *configured) setFailure(err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.failure = err
+}
+
+func (c *configured) setHold(t *testing.T) (entered <-chan struct{}, release func()) {
+	t.Helper()
+	hold, arrivals := make(chan struct{}), make(chan struct{}, 8)
+	c.mu.Lock()
+	c.hold, c.entered = hold, arrivals
+	c.mu.Unlock()
+	var once sync.Once
+	release = func() { once.Do(func() { close(hold) }) }
+	t.Cleanup(release)
+	return arrivals, release
+}
+
+func (c *configured) count() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.calls)
 }
 
 func (c *configured) Configure(
-	_ context.Context, req *connect.Request[v1.ConfigureRequest],
+	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
+	c.mu.Lock()
+	hold, entered, delay, during := c.hold, c.entered, c.delay, c.during
+	c.mu.Unlock()
+	if during != nil {
+		during()
+	}
+	if entered != nil {
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+	}
+	if hold != nil {
+		select {
+		case <-hold:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	if delay > 0 {
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.calls = append(c.calls, req.Msg)
+	if c.failure != nil {
+		return nil, c.failure
+	}
 	if c.unimplemented {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no configure"))
 	}
@@ -174,24 +226,44 @@ func assertNoKey(t *testing.T, where, text string, keys ...string) {
 	}
 }
 
-// The key arrives as the value of its secret in Configure, and nowhere else in the call.
-func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
-	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
-	host, probe := newSecretHost(t, store)
-	recordStored(host)
+// secretID is the id of the one secret the tests of this file list.
+const secretID = "s0a1b2c3d"
+
+func allowOne(pluginID string) pluginport.SecretSource {
+	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
+		return []pluginport.Secret{{
+			ID: secretID, Name: "Work", Group: "openrouter",
+			Allowed: []pluginport.SecretPermission{{Plugin: pluginID, Name: declared}},
+		}}, nil
+	}}
+}
+
+func listed(t *testing.T, probe *configured, name string) []*v1.SecretValue {
+	t.Helper()
+	for _, entry := range probe.last(t).GetSecrets() {
+		if entry.GetName() == name {
+			return entry.GetValues()
+		}
+	}
+	t.Fatalf("the call carries no entry for %s: %v", name, probe.last(t).GetSecrets())
+	return nil
+}
+
+// The value arrives in the entry of its declaration and nowhere else in the call.
+func TestTheValueReachesThePluginOnlyInTheEntryOfItsDeclaration(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	host.SetSecretSource(allowOne(secretPluginID))
 
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
-	if call.GetValues()["apiKey"] != fromKeychain {
-		t.Errorf("values = %v, want the stored key under apiKey", call.GetValues())
+	got := listed(t, probe, declared)
+	if len(got) != 1 || got[0].GetValue() != fromKeychain || got[0].GetId() != secretID || got[0].GetName() != "Work" || got[0].GetGroup() != "openrouter" {
+		t.Errorf("delivered %v, want the allowed secret with its value", got)
 	}
 	assertNoKey(t, "the configuration json", call.GetConfigurationJson(), fromKeychain)
 	for name, value := range call.GetValues() {
-		if name == "apiKey" {
-			continue
-		}
 		assertNoKey(t, "value "+name, value, fromKeychain)
 	}
 	if call.GetValues()["model"] != "sonnet" {
@@ -199,19 +271,34 @@ func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
 	}
 }
 
-// A secret without a key is delivered as empty, which signals to the plugin
-// that it has no value.
-func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
-	host, probe := newSecretHost(t, newKeys(map[string]string{}))
+// A declaration nothing is allowed to is delivered as an entry with no values, without any read of
+// the key store.
+func TestADeclarationWithNothingAllowedIsDeliveredEmptyAndTheStoreIsNotRead(t *testing.T) {
+	host, probe := newSecretHost(t, untouchable{t})
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
-	if got, found := probe.last(t).GetValues()["apiKey"]; !found || got != "" {
-		t.Errorf("apiKey = %q, %v for a key nobody stored", got, found)
+	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+		t.Fatal(err)
+	}
+	if got := listed(t, probe, declared); len(got) != 0 {
+		t.Errorf("delivered %v, want no secret", got)
 	}
 }
 
-// A key typed into the settings file under a secret's name is not a key: it
+// A secret the store has no value for is left out of the list.
+func TestASecretWithNoValueInTheStoreIsLeftOut(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{}))
+	host.SetSecretSource(allowOne(secretPluginID))
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Fatal(err)
+	}
+	if got := listed(t, probe, declared); len(got) != 0 {
+		t.Errorf("delivered %v for a value nobody stored", got)
+	}
+}
+
+// A key typed into the settings file under the name of a secret is not a key.
 func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})
@@ -224,13 +311,9 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	for name, value := range call.GetValues() {
 		assertNoKey(t, "value "+name, value, fromSettings)
 	}
-	if call.GetValues()["apiKey"] != "" {
-		t.Errorf("apiKey = %q, want none", call.GetValues()["apiKey"])
-	}
 	if call.GetValues()["model"] != "opus" {
 		t.Errorf("values = %v: the other settings are still passed", call.GetValues())
 	}
-
 	cfg, err := host.GetPluginConfigJSON(secretPluginID)
 	if err != nil {
 		t.Fatal(err)
@@ -241,9 +324,9 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	}
 }
 
-// The environment a plugin process is launched with and its command line hold
-// no key and no setting: neither the key in the store, nor one typed into the
-// settings, nor one in the environment of the host.
+// The environment a plugin process is launched with and its command line hold no key and no
+// setting: neither the key in the store, nor one typed into the settings, nor one in the
+// environment of the host.
 func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	const fromHostEnv = "value-in-the-host-environment"
 	for _, name := range []string{
@@ -252,8 +335,8 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 		t.Setenv(name, fromHostEnv)
 	}
 	const fromSetting = "value-of-a-setting"
-	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
-	host, _ := newSecretHost(t, store)
+	host, _ := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	host.SetSecretSource(allowOne(secretPluginID))
 	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
 
 	const launchName = "launch-name"
@@ -274,13 +357,16 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	}
 }
 
-// A key store that fails to read a secret recorded as stored is an error naming
-// it, and the plugin is still configured with everything else.
-func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
+var errLockedKeychain = errors.New("the keychain is locked")
+
+// A key store that fails to read an allowed secret is an error naming it, the plugin is still
+// configured with everything else, and the entry of the declaration is sent with no value, so the
+// plugin drops the secrets it may no longer hold.
+func TestAKeyStoreThatCannotBeReadFailsLoudlyAndTheDeclarationIsSentEmpty(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
-	recordStored(host)
+	host.SetSecretSource(allowOne(secretPluginID))
 
 	err := host.NotifyPluginConfig(t.Context(), secretPluginID)
 	if !errors.Is(err, errLockedKeychain) {
@@ -289,184 +375,43 @@ func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
 	}
-	if _, dispatched := probe.last(t).GetValues()["apiKey"]; dispatched {
-		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
+	if got := listed(t, probe, declared); len(got) != 0 {
+		t.Errorf("the entry carries %v, want no value", got)
 	}
 }
 
-// A host with no key store configures a plugin that declares a secret, and
-// fails to store a key for it.
-func TestAHostWithoutAKeyStoreFailsToStoreASecret(t *testing.T) {
-	host, probe := newSecretHost(t, nil)
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
-		t.Errorf("configure: %v", err)
-	}
-	if probe.last(t).GetValues()["apiKey"] != "" {
-		t.Error("a key came from nowhere")
-	}
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", "value"); !errors.Is(err, pluginport.ErrNoKeyStore) {
-		t.Errorf("set: error = %v, want port.ErrNoKeyStore", err)
-	}
-}
-
-// A key set through the host is stored under the plugin and name, is visible to
-// the running plugin immediately, and is removed from it when deleted.
-func TestAKeySetThroughTheHostReachesTheRunningPlugin(t *testing.T) {
-	store := newKeys(map[string]string{})
-	host, probe := newSecretHost(t, store)
-
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); err != nil {
-		t.Fatal(err)
-	}
-	if got, _ := store.hold(secretPluginID + "/apiKey"); got != fromKeychain {
-		t.Errorf("stored %q", got)
-	}
-	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
-		t.Errorf("the plugin was handed %v", probe.last(t).GetValues())
-	}
-
-	if err := host.DeletePluginSecret(t.Context(), secretPluginID, "apiKey"); err != nil {
-		t.Fatal(err)
-	}
-	if _, found := store.hold(secretPluginID + "/apiKey"); found {
-		t.Error("the key was not deleted")
-	}
-	if probe.last(t).GetValues()["apiKey"] != "" {
-		t.Errorf("the plugin still holds %v", probe.last(t).GetValues())
-	}
-}
-
-// Only a secret declared in the manifest can be stored, and only for a plugin
-// known to the host.
-func TestOnlyADeclaredSecretIsStored(t *testing.T) {
-	store := newKeys(map[string]string{})
-	host, _ := newSecretHost(t, store)
-
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "other", "value"); !errors.Is(err, errUndeclaredSecret) {
-		t.Errorf("an undeclared secret: error = %v", err)
-	}
-	if err := host.DeletePluginSecret(t.Context(), secretPluginID, "other"); !errors.Is(err, errUndeclaredSecret) {
-		t.Errorf("an undeclared secret deleted: error = %v", err)
-	}
-	if err := host.SetPluginSecret(t.Context(), "md.numen.absent", "apiKey", "value"); !errors.Is(err, errPluginNotFound) {
-		t.Errorf("an unknown plugin: error = %v", err)
-	}
-	if len(store.item) != 0 {
-		t.Errorf("the store holds %v", store.item)
-	}
-}
-
-// A store that fails to save a key returns an error, and the plugin is not
-// notified of a change.
-func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
+// A machine without a key store configures the plugin with an empty list, reports that once, and
+// fails neither Configure nor a change of a setting.
+func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = pluginport.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
+	host.SetSecretSource(allowOne(secretPluginID))
+	var reported []error
+	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); !errors.Is(err, pluginport.ErrNoKeyStore) {
-		t.Errorf("error = %v, want port.ErrNoKeyStore", err)
-	}
-	if len(probe.calls) != 0 {
-		t.Error("the plugin was configured after a failed store")
-	}
-}
-
-// A plugin that does not respond to Configure cannot receive its key, and the
-// key change returns an error; a plugin without secrets that does not respond is
-// not an error.
-func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
-	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	probe.unimplemented = true
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); err == nil {
-		t.Error("a key the plugin never received was reported as delivered")
-	}
-
-	plainPlugin := host.plugins[secretPluginID]
-	plainPlugin.Manifest.Secrets = nil
-	host.plugins[secretPluginID] = plainPlugin
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
-		t.Errorf("a plugin without secrets that does not answer Configure: %v", err)
+		t.Errorf("configure: %v", err)
 	}
-}
-
-// The changes of one plugin's secrets are applied and delivered one at a time,
-// so the plugin ends holding what the store holds.
-func TestChangesOfASecretAreAppliedOneAtATime(t *testing.T) {
-	store := newKeys(map[string]string{})
-	store.entered = make(chan struct{}, 1)
-	store.gate = make(chan struct{})
-	host, probe := newSecretHost(t, store)
-
-	setDone := make(chan error, 1)
-	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
-	<-store.entered
-
-	deleteDone := make(chan error, 1)
-	go func() { deleteDone <- host.DeletePluginSecret(t.Context(), secretPluginID, "apiKey") }()
-	select {
-	case err := <-deleteDone:
-		t.Fatalf("a delete ran while a set was in flight: %v", err)
-	case <-time.After(100 * time.Millisecond):
+	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+		t.Errorf("a change of a setting: %v", err)
 	}
-
-	close(store.gate)
-	if err := <-setDone; err != nil {
-		t.Fatal(err)
+	if got := listed(t, probe, declared); len(got) != 0 {
+		t.Errorf("delivered %v with no key store", got)
 	}
-	if err := <-deleteDone; err != nil {
-		t.Fatal(err)
+	if probe.last(t).GetValues()["model"] != "opus" {
+		t.Errorf("values = %v, want the setting", probe.last(t).GetValues())
 	}
-	if _, found := store.hold(secretPluginID + "/apiKey"); found {
-		t.Error("the store holds a key the delete removed")
+	if len(reported) != 1 || !errors.Is(reported[0], pluginport.ErrNoKeyStore) {
+		t.Errorf("reported %v, want port.ErrNoKeyStore once", reported)
 	}
-	if probe.last(t).GetValues()["apiKey"] != "" {
-		t.Errorf("the plugin holds %v after the delete", probe.last(t).GetValues())
-	}
-}
-
-// A Configure from elsewhere waits for the change of a secret in flight, so it
-// cannot send the plugin the key the store held before the change.
-func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
-	store := newKeys(map[string]string{})
-	store.entered = make(chan struct{}, 1)
-	store.gate = make(chan struct{})
-	host, probe := newSecretHost(t, store)
-
-	setDone := make(chan error, 1)
-	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
-	<-store.entered
-
-	errCh := make(chan error, 1)
-	go func() { errCh <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
-	select {
-	case err := <-errCh:
-		t.Fatalf("a Configure ran during a secret change: %v", err)
-	case <-time.After(100 * time.Millisecond):
-	}
-
-	close(store.gate)
-	if err := <-setDone; err != nil {
-		t.Fatal(err)
-	}
-	if err := <-errCh; err != nil {
-		t.Fatal(err)
-	}
-	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
-		t.Errorf("the plugin ended holding %v", probe.last(t).GetValues())
-	}
-}
-
-var errLockedKeychain = errors.New("the keychain is locked")
-
-func recordStored(host *Host) {
-	host.SetSettings(map[string]map[string]any{secretPluginID: {pluginport.SettingStoredSecrets: []any{declared}}})
 }
 
 // untouchable is a key store that fails the test when it is reached.
 type untouchable struct{ t *testing.T }
 
 func (u untouchable) GetKey(context.Context, string) (string, error) {
-	u.t.Error("the key store was read for a secret nobody stored")
+	u.t.Error("the key store was read for a declaration nothing is allowed to")
 	return "", pluginport.ErrNoKey
 }
 
@@ -480,108 +425,149 @@ func (u untouchable) DeleteKey(context.Context, string) error {
 	return nil
 }
 
-// A secret that was never stored is delivered as empty without any access to
-// the key store, at plugin start and on every setting change.
-func TestASecretNobodyStoredPreservesTheKeyStoreAlone(t *testing.T) {
-	host, probe := newSecretHost(t, untouchable{t})
+// A refresh configures a plugin only when its list of secrets differs from the one it was given.
+func TestARefreshConfiguresOnlyAPluginWhoseListChanged(t *testing.T) {
+	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
+	host, probe := newSecretHost(t, store)
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	calls := len(probe.calls)
+
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if got, found := probe.last(t).GetValues()["apiKey"]; !found || got != "" {
-		t.Errorf("apiKey = %q, %v for a key nobody stored", got, found)
+	if len(probe.calls) != calls {
+		t.Errorf("%d Configure calls after a refresh with nothing changed, want %d", len(probe.calls), calls)
+	}
+
+	host.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Refresh(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if len(probe.calls) != calls+1 || len(listed(t, probe, declared)) != 1 {
+		t.Errorf("%d Configure calls after an allow, want %d with the secret", len(probe.calls), calls+1)
 	}
 }
 
-// A machine without a key store configures the plugin without the secret it
-// recorded as stored, reports that once, and fails neither Configure nor a
-// change of a setting.
-func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
-	store := newKeys(map[string]string{})
-	store.failed = pluginport.ErrNoKeyStore
+// A plugin named by an operation is configured although its list did not change, so it takes a new value.
+func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
+	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
 	host, probe := newSecretHost(t, store)
-	recordStored(host)
-	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
-
+	host.SetSecretSource(allowOne(secretPluginID))
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
-		t.Errorf("configure: %v", err)
+		t.Fatal(err)
 	}
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
-		t.Errorf("a change of a setting: %v", err)
-	}
-	call := probe.last(t)
-	if _, dispatched := call.GetValues()["apiKey"]; dispatched {
-		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
-	}
-	if call.GetValues()["model"] != "opus" {
-		t.Errorf("values = %v, want the setting", call.GetValues())
-	}
-	if len(reported) != 1 || !errors.Is(reported[0], pluginport.ErrNoKeyStore) {
-		t.Errorf("reported %v, want port.ErrNoKeyStore once", reported)
-	}
-}
 
-// Storing a key records the name of its secret among the settings, never the
-// key, and deleting it clears the record; neither the window nor the plugin
-// sees the record.
-func TestAStoredSecretIsRecordedByName(t *testing.T) {
-	store := newKeys(map[string]string{})
-	host, probe := newSecretHost(t, store)
-	persisted := map[string]any{}
-	// The settings file hands every write back to the host, as the container does.
-	host.SetPersistHandler(func(pluginID, key string, value any) error {
-		persisted[pluginID+"/"+key] = value
-		return host.UpdatePluginSetting(t.Context(), pluginID, key, []any{"forged"})
+	err := applyChange(host, t.Context(), func() ([]string, error) {
+		return []string{secretPluginID}, store.SetKey(t.Context(), "secret/"+secretID, "value-replaced")
 	})
-	record := secretPluginID + "/" + pluginport.SettingStoredSecrets
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := listed(t, probe, declared); len(got) != 1 || got[0].GetValue() != "value-replaced" {
+		t.Errorf("delivered %v, want the replaced value", got)
+	}
+}
 
-	set := make(chan error, 1)
-	go func() { set <- host.SetPluginSecret(t.Context(), secretPluginID, declared, fromKeychain) }()
+// A refused operation configures no plugin.
+func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{}))
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Fatal(err)
+	}
+	calls := len(probe.calls)
+	errRefused := errors.New("refused")
+
+	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, errRefused })
+	if !errors.Is(err, errRefused) || len(probe.calls) != calls {
+		t.Errorf("error = %v, %d calls, want the refusal and %d calls", err, len(probe.calls), calls)
+	}
+}
+
+// A refresh and a Configure from elsewhere run one at a time.
+func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	source := newListing("Work")
+	host.SetSecretSource(source.source())
+	entered, release := probe.setHold(t)
+
+	refreshDone := make(chan error, 1)
+	go func() { refreshDone <- host.Refresh(t.Context()) }()
+	<-entered
+	configureDone := make(chan error, 1)
+	go func() { configureDone <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
 	select {
-	case err := <-set:
-		if err != nil {
+	case err := <-configureDone:
+		t.Fatalf("a Configure ran during a refresh: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	release()
+	for _, result := range []chan error{refreshDone, configureDone} {
+		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("storing a key waits on the write of its record")
 	}
-	if got := host.getStoredSecretsLocked(secretPluginID); !slices.Equal(got, []string{declared}) {
-		t.Errorf("the host holds the record %v, want the name of the secret", got)
-	}
-	if err := host.SetPluginSetting(t.Context(), secretPluginID, pluginport.SettingStoredSecrets, []any{declared}); !errors.Is(err, pluginport.ErrReservedSettingKey) {
-		t.Errorf("a window writing the record: error = %v", err)
-	}
-	if got, ok := persisted[record].([]string); !ok || !slices.Equal(got, []string{declared}) {
-		t.Errorf("recorded %#v, want the name of the secret", persisted[record])
-	}
-	if _, observed := host.GetPluginSettings(secretPluginID)[pluginport.SettingStoredSecrets]; observed {
-		t.Error("the window sees the record")
-	}
-	if _, observedVal := probe.last(t).GetValues()[pluginport.SettingStoredSecrets]; observedVal {
-		t.Error("the plugin sees the record")
-	}
-
-	if err := host.DeletePluginSecret(t.Context(), secretPluginID, declared); err != nil {
-		t.Fatal(err)
-	}
-	if got, ok := persisted[record].([]string); !ok || len(got) != 0 {
-		t.Errorf("recorded %#v after the delete, want none", persisted[record])
-	}
-	host.SetKeyStore(untouchable{t})
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
-		t.Fatal(err)
+	if probe.count() != 2 {
+		t.Errorf("%d Configure calls, want 2", probe.count())
 	}
 }
 
-// A record that cannot be persisted fails the store of the key.
-func TestARecordThatCannotBePersistedFailsTheStore(t *testing.T) {
-	host, _ := newSecretHost(t, newKeys(map[string]string{}))
-	errFull := errors.New("the disk is full")
-	host.SetPersistHandler(func(string, string, any) error { return errFull })
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, declared, fromKeychain); !errors.Is(err, errFull) {
-		t.Errorf("error = %v, want the persist error", err)
+// The declarations are listed for every installed plugin, with the group each declares.
+func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
+	host, _ := newSecretHost(t, nil)
+	host.plugins["md.numen.other"] = manifest.Discovered{Manifest: pluginport.PluginManifest{
+		ID: "md.numen.other",
+		Secrets: []pluginport.PluginSecret{
+			{Name: "token", Title: "Token", Group: "mistral"},
+		},
+	}}
+	want := []pluginport.SecretPermission{
+		{Plugin: secretPluginID, Name: declared},
+		{Plugin: "md.numen.other", Name: "token", Group: "mistral"},
+	}
+	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []pluginport.SecretPermission{want[1], want[0]}) {
+		t.Errorf("declarations = %v, want %v", got, want)
+	}
+}
+
+// Permissions of a declaration that is gone are dropped after a scan, and not after a scan that had
+// a problem, which may have hidden an installed plugin.
+func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
+	host, _ := newSecretHost(t, nil)
+	var pruned [][]pluginport.SecretPermission
+	host.SetSecretSource(pluginport.SecretSource{Prune: func(declared []pluginport.SecretPermission) error {
+		pruned = append(pruned, declared)
+		return nil
+	}})
+	host.hasScanned = true
+
+	host.pruneSecretPermissions()
+	if len(pruned) != 1 || len(pruned[0]) != 1 || pruned[0][0].Plugin != secretPluginID {
+		t.Fatalf("pruned with %v, want the declarations of the installed plugin", pruned)
+	}
+
+	host.problems = append(host.problems, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
+	host.pruneSecretPermissions()
+	if len(pruned) != 1 {
+		t.Errorf("a scan with a problem pruned again: %v", pruned)
+	}
+}
+
+// A plugin between its activation and the Configure of that activation is not due one: the
+// Configure of the activation reads the list as it is, so a refresh sends nothing to it.
+func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	host.SetSecretSource(allowOne(secretPluginID))
+	host.secrets.mu.Lock()
+	host.secrets.awaitingFirstConfigure[secretPluginID] = true
+	host.secrets.mu.Unlock()
+
+	if err := host.Refresh(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if probe.count() != 0 {
+		t.Errorf("the refresh sent %d Configure calls to a plugin that awaits its activation Configure", probe.count())
 	}
 }

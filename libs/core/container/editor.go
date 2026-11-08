@@ -73,15 +73,14 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenGetSettingsFn: func() *settings.Get {
 			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins(), cfg.listAppSettings)
 		},
-		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
-		OpenWatchSettingsFn:      func() *settings.Watch { return settings.NewWatch(cfg.SubscribeSettingChanges) },
-		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
-		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
-		OpenRetryPluginFn:        cfg.openRetryPlugin,
-		ReportPluginFailuresFn:   func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
-		SetPluginWorkFn:          cfg.SetPluginWork,
-		IsRebuildingIndexVal:     cfg.ShouldRebuildIndex,
-		OpenEmbeddersFn:          cfg.Embedders,
+		OpenWriteSettingsFn:    func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
+		OpenWatchSettingsFn:    func() *settings.Watch { return settings.NewWatch(cfg.SubscribeSettingChanges) },
+		OpenSecretsFn:          cfg.OpenSecrets,
+		OpenRetryPluginFn:      cfg.openRetryPlugin,
+		ReportPluginFailuresFn: func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
+		SetPluginWorkFn:        cfg.SetPluginWork,
+		IsRebuildingIndexVal:   cfg.ShouldRebuildIndex,
+		OpenEmbeddersFn:        cfg.Embedders,
 		NewSearchFn: func(asking embeddingport.Embedder, handleError func(error)) search.Search {
 			return cfg.NewSearch(db, asking, handleError)
 		},

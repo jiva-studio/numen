@@ -74,7 +74,7 @@ function onChooseMenuItem(id: string): void {
 
 <template>
   <div
-    class="plugin-row row-divider"
+    class="plugin-row"
     :class="{ 'plugin-row--disabled': !props.isEnabled }"
     role="button"
     tabindex="0"

@@ -9,6 +9,7 @@ import (
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 )
@@ -30,8 +31,7 @@ type PluginCatalog = interface {
 }
 
 type pluginSecretAssembly interface {
-	OpenWritePluginSecret() *settings.WriteSecret
-	OpenDeletePluginSecret() *settings.DeleteSecret
+	OpenSecrets() *secret.Secrets
 	GetPluginCommands() plugincommand.Commands
 	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
 	OpenChooseTabKind() *tabkind.Choose

@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
@@ -19,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -337,30 +341,6 @@ func (c Config) OpenPluginVault(
 	return vaults, nil
 }
 
-var errNoPluginHost = errors.New("this installation has no plugin host to keep a secret for")
-
-// GetPluginSecretWriter stores, on request from the window, the key of a secret a plugin
-// declares in its manifest, and passes the plugin the secrets it currently holds.
-func (c Config) GetPluginSecretWriter() func(ctx context.Context, pluginID, name, key string) error {
-	return func(ctx context.Context, pluginID, name, key string) error {
-		if c.PluginHost == nil {
-			return errNoPluginHost
-		}
-		return c.PluginHost.SetPluginSecret(ctx, pluginID, name, key)
-	}
-}
-
-// GetPluginSecretDeleter removes, on request from the window, the key of a secret a
-// plugin declares in its manifest, and passes the plugin the secrets it currently holds.
-func (c Config) GetPluginSecretDeleter() func(ctx context.Context, pluginID, name string) error {
-	return func(ctx context.Context, pluginID, name string) error {
-		if c.PluginHost == nil {
-			return errNoPluginHost
-		}
-		return c.PluginHost.DeletePluginSecret(ctx, pluginID, name)
-	}
-}
-
 // GetPluginDir is the folder of an installed plugin, and false for one not installed.
 func (c Config) GetPluginDir(id string) (string, bool) {
 	if c.PluginHost == nil {
@@ -397,4 +377,48 @@ func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
 		var host pluginport.PluginWindowHost = c.PluginHost
 		host.SetPluginWindow(window)
 	}
+}
+
+// credentialsLocator is a key store that keeps its values in a file when the machine has no keychain.
+type credentialsLocator interface {
+	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
+	// system keychain is in use.
+	GetCredentialsPath(ctx context.Context) string
+}
+
+func (c Config) openSecretLedger() *settings.SecretLedger {
+	return settings.NewSecretLedger(c.getResources().settingsFiles, c.settingsFile, c.readCheckedSettings, c.refreshSettingEvents)
+}
+
+// OpenSecrets returns the use cases on the secrets shared between plugins.
+func (c Config) OpenSecrets() *secret.Secrets {
+	var plugins pluginport.SecretPlugins = secret.NoPlugins{}
+	if c.PluginHost != nil {
+		plugins = c.PluginHost
+	}
+	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.getResources().secretGate)
+}
+
+func (c Config) getCredentialsPath() string {
+	locator, isLocator := c.KeyStore.(credentialsLocator)
+	if !isLocator {
+		return ""
+	}
+	return locator.GetCredentialsPath(context.Background())
+}
+
+func newSecretID() (string, error) {
+	var random [4]byte
+	if _, err := rand.Read(random[:]); err != nil {
+		return "", fmt.Errorf("read random bytes for the id of a secret: %w", err)
+	}
+	return "s" + hex.EncodeToString(random[:]), nil
+}
+
+func (c Config) setSecretSource() {
+	ledger := c.openSecretLedger()
+	c.PluginHost.SetSecretSource(pluginport.SecretSource{
+		List:  ledger.GetSecrets,
+		Prune: c.OpenSecrets().Prune.Execute,
+	})
 }
