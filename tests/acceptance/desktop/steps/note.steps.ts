@@ -4,24 +4,10 @@ Given('the person has the note titled {string} with {string}', async ({ person }
   await person.note.create(title, text)
 })
 
-Given(
-  'the person has unsaved {string} in the note {word} {string}',
-  async ({ person }, text: string, how: string, value: string) => {
-    await person.note.writeWithoutSaving(how, value, text)
-  },
-)
-
 When(
-  'the person writes {string} in the note {word} {string}',
-  async ({ person }, text: string, how: string, value: string) => {
-    await person.note.write(how, value, text)
-  },
-)
-
-Given(
-  'another program writes {string} in the note {word} {string} on disk',
-  async ({ person }, text: string, how: string, value: string) => {
-    await person.note.changeOnDisk(how, value, text)
+  '{actor} writes {string} in the note {word} {string}',
+  async ({ person }, actor: string, text: string, how: string, value: string) => {
+    await person.note.write(actor, text, how, value)
   },
 )
 

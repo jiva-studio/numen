@@ -7,18 +7,7 @@ import { expect, type Locator, type Page } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { openVaultFile } from '../../../e2e/desktop/tests/support/workspace.js'
 
-type TabKind = 'PDF Reader' | 'EPUB Reader' | 'Audio Player'
-
-/** The kind of place each kind of tab has. */
-const PLACES: Record<TabKind, string> = {
-  'PDF Reader': 'page',
-  'EPUB Reader': 'page',
-  'Audio Player': 'time',
-}
-
-export const getStem = (file: string): string => path.basename(file).replace(/\.[^.]+$/, '')
-
-export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+import { assertPlace, getEscaped, getStem, parseTime, type TabKind } from './rules.js'
 
 const getPanel = (page: Page, file: string): Locator =>
   page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })
@@ -45,15 +34,8 @@ const readKind = async (panel: Locator, file: string, place: string): Promise<Ta
     })
     .toBeDefined()
   if (!kind) throw new Error(`the tab "${file}" has no known kind`)
-  if (PLACES[kind] !== place) {
-    throw new Error(`the tab "${file}" is a ${kind} tab: its place is a ${PLACES[kind]}, not a ${place}`)
-  }
+  assertPlace(kind, place, file)
   return kind
-}
-
-const getSeconds = (time: string): number => {
-  const [minutes = 0, seconds = 0] = time.split(':').map(Number)
-  return minutes * 60 + seconds
 }
 
 const leavePdfAt = async (page: Page, panel: Locator, file: string, target: number): Promise<void> => {
@@ -81,11 +63,11 @@ const leaveBookAt = async (page: Page, panel: Locator, file: string, target: num
 
 const leaveRecordingAt = async (page: Page, panel: Locator, file: string, time: string): Promise<void> => {
   const player = getPlayer(panel)
-  await player.getByRole('slider').fill(String(getSeconds(time) * 1000))
+  await player.getByRole('slider').fill(String(parseTime(time) * 1000))
   await expect(player).toContainText(time)
   await expect
     .poll(async () => (await readSavedStates(page.request)).get(file))
-    .toContain(`"t":[${getSeconds(time)},`)
+    .toContain(`"t":[${parseTime(time)},`)
 }
 
 /** Opens the tab of the file and leaves it at the place. */

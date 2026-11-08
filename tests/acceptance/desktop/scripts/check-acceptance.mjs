@@ -12,7 +12,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CucumberExpression, ParameterTypeRegistry } from '@cucumber/cucumber-expressions'
+import { CucumberExpression, ParameterType, ParameterTypeRegistry } from '@cucumber/cucumber-expressions'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator } from '@cucumber/messages'
 
@@ -65,6 +65,13 @@ const getBody = (source, start) => {
 
 // The definitions: Given/When/Then('pattern', ...) in steps.
 const registry = new ParameterTypeRegistry()
+// The parameter types the steps define with defineParameterType({ name, regexp, ... }).
+for (const file of walk(path.join(root, 'support'), '.ts')) {
+  const source = fs.readFileSync(file, 'utf8')
+  for (const hit of source.matchAll(/name:\s*'(\w+)',\s*regexp:\s*\/(.+)\//g)) {
+    registry.defineParameterType(new ParameterType(hit[1], new RegExp(hit[2]), String, (text) => text, true, false))
+  }
+}
 const definitions = walk(stepsDir, '.ts').flatMap((file) => {
   const source = fs.readFileSync(file, 'utf8')
   return [...source.matchAll(/\b(Given|When|Then)\(\s*(['"`])((?:\\.|(?!\2).)*)\2/g)].map((hit) => {

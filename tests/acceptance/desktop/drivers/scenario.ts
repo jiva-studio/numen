@@ -1,12 +1,13 @@
 /** What one scenario shares between the levels of the driver: the page, the notes it made, its vault. */
-import path from 'node:path'
 import type { Page } from 'playwright/test'
-import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote } from '../../../e2e/desktop/tests/support/vault.js'
+import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { parseReference, pickByTitle } from './rules.js'
 
 export class Scenario {
   private readonly paths = new Map<string, string>()
-  private readonly createdPaths: string[] = []
+  private readonly titles = new Set<string>()
   private hasWorkspace = false
   private vaultName: string | undefined
 
@@ -18,21 +19,21 @@ export class Scenario {
     this.hasWorkspace = true
   }
 
+  async useTitle(title: string): Promise<void> {
+    this.titles.add(title)
+    await destroyNote(this.page.request, `notes/${title}.md`).catch(() => undefined)
+  }
+
   remember(title: string, notePath: string): void {
     this.paths.set(title, notePath)
-    this.createdPaths.push(notePath)
   }
 
-  getPath(how: string, value: string): string {
-    if (how === 'at') return value
-    if (how !== 'titled') throw new Error(`"${how}" does not name a tab or a note: use "at" or "titled"`)
-    const notePath = this.paths.get(value)
-    if (!notePath) throw new Error(`the scenario made no note titled "${value}"`)
-    return notePath
-  }
-
-  getFolder(notePath: string): string {
-    return path.posix.dirname(notePath).replace(/^\.$/, '')
+  async getPath(how: string, value: string): Promise<string> {
+    const reference = parseReference(how, value)
+    if (reference.how === 'at') return value
+    const known = this.paths.get(value)
+    if (known) return known
+    return pickByTitle(value, [...(await readSavedStates(this.page.request)).keys()])
   }
 
   bindVault(name: string): void {
@@ -43,6 +44,7 @@ export class Scenario {
   }
 
   async removeNotes(): Promise<void> {
-    for (const notePath of this.createdPaths) await destroyNote(this.page.request, notePath)
+    const paths = [...this.paths.values(), ...[...this.titles].map((title) => `notes/${title}.md`)]
+    for (const notePath of paths) await destroyNote(this.page.request, notePath).catch(() => undefined)
   }
 }

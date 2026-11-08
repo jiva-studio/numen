@@ -10,7 +10,7 @@ export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     // The driver reads the clock and the dice for names no run repeats.
     portIgnores: ['**/*.ts'],
-    allowDefaultProject: ['scripts/*.mjs'],
+    allowDefaultProject: ['scripts/*.mjs', 'vitest.config.mjs'],
     extraIgnores: ['playwright-report/**', 'test-results/**', '.features-gen/**'],
   }),
 

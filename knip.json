@@ -170,6 +170,8 @@
         "eslint.config.js",
         "scripts/*.mjs",
         "steps/**/*.ts",
+        "drivers/**/*.test.ts",
+        "vitest.config.mjs",
         "support/*.ts"
       ],
       "project": [

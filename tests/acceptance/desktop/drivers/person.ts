@@ -24,7 +24,6 @@ export class Person {
   }
 
   async leaveVault(): Promise<void> {
-    await this.note.releaseSaves()
     await this.scenario.removeNotes()
   }
 }

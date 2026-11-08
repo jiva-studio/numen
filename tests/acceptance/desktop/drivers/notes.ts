@@ -1,9 +1,8 @@
 /** The person at a note: writing it, choosing in its banner, and what the note holds in the window and on disk. */
-import { expect, type Locator, type Route } from 'playwright/test'
-import { getEscaped } from './tab-position.js'
+import { expect, type Locator } from 'playwright/test'
+import { getEscaped } from './rules.js'
 import {
   createNote,
-  createUniqueTitle,
   getNotePanel,
   getNoteText,
   listBacklinks,
@@ -15,16 +14,7 @@ import {
 } from '../../../e2e/desktop/tests/support/vault.js'
 import type { Scenario } from './scenario.js'
 
-const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
-
-interface PausedSaves {
-  routes: Route[]
-  isPaused: boolean
-}
-
 export class NoteDriver {
-  private readonly pausedSaves = new Map<string, PausedSaves>()
-
   constructor(private readonly scenario: Scenario) {}
 
   private getText(notePath: string): Locator {
@@ -35,28 +25,10 @@ export class NoteDriver {
     return getNotePanel(this.scenario.page, notePath)
   }
 
-  private async pauseSaves(notePath: string): Promise<PausedSaves> {
-    const paused: PausedSaves = { routes: [], isPaused: true }
-    await this.scenario.page.route(WRITE_NOTE, async (route) => {
-      if (!route.request().postData()?.includes(notePath)) await route.fallback()
-      else if (paused.isPaused) paused.routes.push(route)
-      else await route.continue()
-    })
-    return paused
-  }
-
-  private async resumeSaves(paused: PausedSaves): Promise<void> {
-    const reply = this.scenario.page.waitForResponse((response) =>
-      response.url().includes('NoteService/WriteNote'),
-    )
-    paused.isPaused = false
-    for (const route of paused.routes) await route.continue()
-    await reply
-  }
-
   async create(title: string, initialText: string): Promise<void> {
     const { page } = this.scenario
-    const notePath = await createNote(page.request, createUniqueTitle(title))
+    await this.scenario.useTitle(title)
+    const notePath = await createNote(page.request, title)
     this.scenario.remember(title, notePath)
     await writeNote(page.request, notePath, `${initialText}\n`)
     await this.scenario.ensureWorkspace()
@@ -64,39 +36,28 @@ export class NoteDriver {
     await expect(await openNote(page, notePath)).toContainText(initialText.replace(/\[\[|\]\]/g, ''))
   }
 
-  async write(how: string, value: string, text: string): Promise<void> {
-    const notePath = this.scenario.getPath(how, value)
-    await typeAtEnd(this.scenario.page, this.getText(notePath), ` ${text}`)
-  }
-
-  async writeWithoutSaving(how: string, value: string, text: string): Promise<void> {
-    const notePath = this.scenario.getPath(how, value)
-    const paused = await this.pauseSaves(notePath)
-    this.pausedSaves.set(notePath, paused)
-    await this.write(how, value, text)
-    await expect.poll(() => paused.routes.length).toBeGreaterThan(0)
-  }
-
-  async changeOnDisk(how: string, value: string, text: string): Promise<void> {
-    const notePath = this.scenario.getPath(how, value)
-    await writeNote(this.scenario.page.request, notePath, `${text}\n`)
-    const paused = this.pausedSaves.get(notePath)
-    if (!paused) return
-    this.pausedSaves.delete(notePath)
-    await this.resumeSaves(paused)
+  async write(actor: string, text: string, how: string, value: string): Promise<void> {
+    const notePath = await this.scenario.getPath(how, value)
+    if (actor === 'the person') {
+      await typeAtEnd(this.scenario.page, this.getText(notePath), ` ${text}`)
+    } else if (actor === 'another program') {
+      await writeNote(this.scenario.page.request, notePath, `${text}\n`)
+    } else {
+      throw new Error(`"${actor}" does not write notes: use "the person" or "another program"`)
+    }
   }
 
   async removeFromDisk(how: string, value: string): Promise<void> {
-    await destroyNote(this.scenario.page.request, this.scenario.getPath(how, value))
+    await destroyNote(this.scenario.page.request, await this.scenario.getPath(how, value))
   }
 
   async choose(label: string, how: string, value: string): Promise<void> {
-    const banner = this.getPanel(this.scenario.getPath(how, value)).getByRole('alert')
+    const banner = this.getPanel(await this.scenario.getPath(how, value)).getByRole('alert')
     await banner.getByRole('button', { name: label }).click()
   }
 
   async chooseCompletion(label: string, how: string, value: string): Promise<void> {
-    this.scenario.getPath(how, value)
+    await this.scenario.getPath(how, value)
     const option = this.scenario.page
       .locator('.cm-tooltip-autocomplete')
       .getByRole('option', { name: new RegExp(`^${getEscaped(label)}`) })
@@ -107,37 +68,29 @@ export class NoteDriver {
 
   async openLink(link: string, how: string, value: string): Promise<void> {
     const name = link.replace(/^\[\[|\]\]$/g, '')
-    await this.getText(this.scenario.getPath(how, value))
+    await this.getText(await this.scenario.getPath(how, value))
       .getByText(name, { exact: false })
       .first()
       .click({ modifiers: ['ControlOrMeta'] })
   }
 
   async expectHas(how: string, value: string, text: string): Promise<void> {
-    await expect(this.getPanel(this.scenario.getPath(how, value))).toContainText(text)
+    await expect(this.getPanel(await this.scenario.getPath(how, value))).toContainText(text)
   }
 
   async expectLacks(how: string, value: string, text: string): Promise<void> {
-    await expect(this.getPanel(this.scenario.getPath(how, value))).not.toContainText(text)
+    await expect(this.getPanel(await this.scenario.getPath(how, value))).not.toContainText(text)
   }
 
   async expectOnDiskHas(how: string, value: string, text: string): Promise<void> {
-    await waitForSavedBody(this.scenario.page.request, this.scenario.getPath(how, value), text)
+    await waitForSavedBody(this.scenario.page.request, await this.scenario.getPath(how, value), text)
   }
 
   async expectLinks(how: string, value: string, toHow: string, toValue: string): Promise<void> {
-    const from = this.scenario.getPath(how, value)
-    const backlinks = (): Promise<string[]> =>
-      listBacklinks(this.scenario.page.request, this.scenario.getPath(toHow, toValue))
+    const from = await this.scenario.getPath(how, value)
+    const to = await this.scenario.getPath(toHow, toValue)
+    const backlinks = (): Promise<string[]> => listBacklinks(this.scenario.page.request, to)
     await expect.poll(backlinks).toContain(from)
   }
 
-  async releaseSaves(): Promise<void> {
-    for (const paused of this.pausedSaves.values()) {
-      paused.isPaused = false
-      for (const route of paused.routes) await route.continue().catch(() => undefined)
-    }
-    this.pausedSaves.clear()
-    await this.scenario.page.unroute(WRITE_NOTE).catch(() => undefined)
-  }
 }

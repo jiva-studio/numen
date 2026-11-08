@@ -9,7 +9,8 @@
     "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "acceptance:lint": "node scripts/lint-features.mjs && eslint . && node scripts/check-acceptance.mjs",
+    "acceptance:lint": "node scripts/lint-features.mjs && eslint . && npm run -s acceptance:unit && node scripts/check-acceptance.mjs",
+    "acceptance:unit": "vitest run",
     "acceptance:check": "node scripts/check-acceptance.mjs",
     "acceptance:steps": "node scripts/list-acceptance-steps.mjs"
   },
@@ -24,6 +25,7 @@
     "playwright": "^1.64.1",
     "playwright-bdd": "^9.2.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.3"
   }
 }
