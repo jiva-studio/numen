@@ -32,3 +32,12 @@ describe('the chip of the background tasks', () => {
     expect(css).not.toMatch(/animation|@keyframes|focus-visible|outline:\s*var|__badge/)
   })
 })
+
+describe('the chip of the background tasks under the pointer', () => {
+  it('takes a ground that differs from the title bar and from its own ground', () => {
+    const block = /\.tasks-status__trigger:hover,[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+
+    expect(block).toContain('color-mix(in oklab, var(--numen-surface), var(--numen-ink)')
+    expect(block).not.toMatch(/--numen-raised|--numen-titlebar/)
+  })
+})

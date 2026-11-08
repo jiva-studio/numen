@@ -42,7 +42,7 @@
 
 .tasks-status__trigger:hover,
 .tasks-status__trigger[aria-expanded='true'] {
-  background: var(--numen-raised);
+  background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
 }
 
 .tasks-status__trigger--failed,

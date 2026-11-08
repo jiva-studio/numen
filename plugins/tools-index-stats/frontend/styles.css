@@ -48,7 +48,7 @@
 
 .index-stats__trigger:hover,
 .index-stats__trigger[aria-expanded='true'] {
-  background: var(--numen-raised);
+  background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
 }
 
 .index-popover {

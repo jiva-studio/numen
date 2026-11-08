@@ -43,3 +43,12 @@ describe('the chip of the vector count', () => {
     expect(css).not.toMatch(/animation|@keyframes|transition|focus-visible|outline:\s*var/)
   })
 })
+
+describe('the chip of the vector count under the pointer', () => {
+  it('takes a ground that differs from the title bar and from its own ground', () => {
+    const block = /\.index-stats__trigger:hover,[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+
+    expect(block).toContain('color-mix(in oklab, var(--numen-surface), var(--numen-ink)')
+    expect(block).not.toMatch(/--numen-raised|--numen-titlebar/)
+  })
+})
