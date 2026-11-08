@@ -45,6 +45,7 @@ type pluginSecretAssembly interface {
 }
 
 type pluginWorkAssembly interface {
+	modelAssembly
 	EmitEvent(event string)
 	OpenRetryPlugin() *settings.RetryPlugin
 	ReportPluginFailures(tasks *run.Tasks)
@@ -67,5 +68,4 @@ type PluginAssembly interface {
 	GetAgent() agentport.Agent
 	pluginSecretAssembly
 	pluginWorkAssembly
-	modelAssembly
 }

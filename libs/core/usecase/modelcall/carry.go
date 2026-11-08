@@ -112,8 +112,6 @@ func tryRow[R, T any](
 	}
 }
 
-// checkRow resolves the connection of a row. It returns the failure that skips the row when the
-// connection is gone, its type is not provided or lacks the operation, or it is set aside.
 func (c *Calls) checkRow(row connectionport.Row, operation string) (connection.Resolved, *connectionport.Failure, error) {
 	resolved, err := c.connections.Resolve.Execute(row.ConnectionID)
 	switch {
@@ -147,8 +145,6 @@ type verdict struct {
 	retryAfter time.Duration
 }
 
-// readVerdict sorts the failure of a call: a row to skip, an error that ends the call, or a connection to
-// set aside for a reason. An error of no failure kind is a provider that could not be reached.
 func readVerdict(resolved connection.Resolved, err error) verdict {
 	var unavailable *openError
 	var stopError *connectionport.StopError

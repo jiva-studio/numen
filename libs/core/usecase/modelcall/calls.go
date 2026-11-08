@@ -17,7 +17,9 @@ const (
 
 // Calls carries out the operations plugins ask for. It reads the rows of the calling plugin in order and
 // goes to the next row on the first failure of a connection. An error of a provider that is neither failure
-// kind counts as a service that is unreachable.
+// kind counts as a service that is unreachable. A row is skipped, and its reason is in the error
+// when every row fails, if its connection is gone, its type is not provided or lacks the operation, its key is
+// missing, or it is set aside.
 type Calls struct {
 	connections *connection.Connections
 	rows        connectionport.Rows
