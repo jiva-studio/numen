@@ -6,9 +6,6 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  # Node comes from a newer package set than the rest: the tools below are pinned to the
-  # versions CI runs, and the nixpkgs that has them has Node 22.23.2, while .node-version
-  # asks for 22.23.4. Move this revision with .node-version; the other tools stay on nixpkgs.
   inputs.nixpkgs-node.url = "github:NixOS/nixpkgs/f9a75f41be3a74eab55d3a7679d34ad6cc0da977";
 
   outputs =
