@@ -47,6 +47,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   const reveal = vi.fn<() => void>()
   const goBack = vi.fn<() => void>()
   const dismiss = vi.fn<() => void>()
+  const tellChoice = vi.fn<(item: string, action: string) => void>()
   const back = document.createElement('button')
   document.body.append(back)
   backs.push(back)
@@ -61,7 +62,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           groups: () => GROUPS,
           typed: searchQuery,
           onItemActive: () => undefined,
-          tellChoice: () => undefined,
+          tellChoice,
         })
         keys = usePaletteKeys({
           field,
@@ -101,6 +102,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
     reveal,
     goBack,
     dismiss,
+    tellChoice,
     back,
     errors,
     places,
@@ -136,6 +138,14 @@ describe('usePaletteKeys', () => {
     it('claim Enter', () => {
       const { press } = setUp({ isOpen: true })
       expect(press('Enter').defaultPrevented).toBe(true)
+    })
+
+    it('chooses the first selectable row on Enter when no row is selected yet', () => {
+      const { places, press, tellChoice } = setUp({ isOpen: true })
+      places.selectedId.value = ''
+      expect(places.here.value).toBe(-1)
+      press('Enter')
+      expect(tellChoice).toHaveBeenCalledWith('a', 'open')
     })
 
     it('send Backspace in an empty field back a step, and leave it to the field otherwise', () => {
