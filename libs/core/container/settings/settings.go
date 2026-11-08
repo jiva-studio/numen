@@ -237,7 +237,6 @@ func (c Config) GetRegistries() settingsadapter.Registries {
 	}
 }
 
-// listConnectionIDs lists the ids of the connections stored in the settings file.
 func (c Config) listConnectionIDs() ([]string, bool) {
 	stored, err := c.ReadStoredSettings()
 	if err != nil {

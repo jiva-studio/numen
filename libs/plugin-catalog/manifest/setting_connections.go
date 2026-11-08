@@ -5,8 +5,6 @@ import (
 	"math"
 )
 
-// listConnectionsSettingIssues checks the operation and the number of rows of a setting of type
-// connections, and that no other kind of setting names an operation.
 func listConnectionsSettingIssues(s Setting, key string) []error {
 	if s.Type != SettingTypeConnections {
 		if s.Operation == "" {

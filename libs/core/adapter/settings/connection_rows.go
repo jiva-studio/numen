@@ -140,17 +140,17 @@ func removeRowsOf(stored File, owner, key, connectionID string) (settingsport.Se
 	if !isList {
 		return settingsport.Setting{}, false, nil
 	}
-	kept := make([]any, 0, len(list))
+	remainder := make([]any, 0, len(list))
 	for _, row := range list {
 		if object, isObject := row.(map[string]any); isObject && object[rowConnection] == connectionID {
 			continue
 		}
-		kept = append(kept, row)
+		remainder = append(remainder, row)
 	}
-	if len(kept) == len(list) {
+	if len(remainder) == len(list) {
 		return settingsport.Setting{}, false, nil
 	}
-	encoded, err := json.Marshal(kept)
+	encoded, err := json.Marshal(remainder)
 	if err != nil {
 		return settingsport.Setting{}, false, fmt.Errorf("encode the rows of %s.%s: %w", owner, key, err)
 	}

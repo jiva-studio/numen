@@ -44,3 +44,11 @@ export function hasAvailableType(types: readonly ConnectionTypeInfo[]): boolean 
 export function hasUnavailableConnection(connections: readonly ConnectionInfo[]): boolean {
   return connections.some((one) => !one.isTypeAvailable)
 }
+
+/** The names of the plugins whose rows use a connection, once each, as a list a person reads. */
+export function getUsedByNames(uses: ConnectionInfo['uses']): string {
+  const names = [...new Set(uses.map((one) => one.pluginName))]
+  const last = names.pop()
+  if (last === undefined) return ''
+  return names.length === 0 ? last : `${names.join(', ')} and ${last}`
+}

@@ -10,6 +10,7 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
+import ConnectionRows from './connection-rows/ConnectionRows.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
 import { createEnumFields, getValueInForce } from '../../lib/enums'
@@ -106,7 +107,20 @@ function getStringSetting(key: string, fallback: unknown): string {
   <PluginSecretField :state="state" :plugin="plugin" :secrets="getTopSecrets()" />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
+    <div v-if="setting.type === 'connections'" class="settings__rows">
+      <div class="settings__rows-head">
+        <span class="settings__rows-name">{{ setting.title }}</span>
+        <p v-if="setting.description" class="settings__rows-detail">{{ setting.description }}</p>
+      </div>
+      <ConnectionRows
+        :setting="setting"
+        :value="getValue(setting.key)"
+        :installation="installation"
+        @change="(rows) => onSettingChange(setting.key, rows)"
+      />
+    </div>
     <SettingRow
+      v-else
       v-slot="{ labelledBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
@@ -209,6 +223,31 @@ function getStringSetting(key: string, fallback: unknown): string {
 </template>
 
 <style scoped>
+.settings__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-block: 0.625rem;
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.settings__rows-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.settings__rows-name {
+  color: var(--numen-ink);
+  font-weight: 500;
+}
+
+.settings__rows-detail {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+}
+
 .settings__number {
   inline-size: var(--settings-value);
   text-align: end;

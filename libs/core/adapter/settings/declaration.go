@@ -26,7 +26,10 @@ const (
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
 
-// RegistryConnections names the registry that lists the ids of the stored connections.
+// RegistryConnections names the registry that lists the ids of the stored connections. A setting of
+// rows takes a list of at most max objects, each with a connection from this registry and a model,
+// optionally a reasoning level, and no connection and model twice. A registry that lists no
+// connections leaves the connection unchecked.
 const RegistryConnections = "connections"
 
 func readAppDeclaration() []pluginport.PluginManifestSetting {

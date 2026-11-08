@@ -78,6 +78,8 @@ export const WORDS = {
   connectionDelete: 'Delete connection',
   connectionDeleteAsking: (name: string, hasKey: boolean) =>
     hasKey ? `Delete "${name}"? Its key is removed from this machine.` : `Delete "${name}"?`,
+  connectionUsedBy: (names: string) => `Used by ${names}.`,
+  connectionUsedByDeleted: (names: string) => `Used by ${names}. Their rows for it are removed.`,
   connectionDeleteConfirm: 'Delete',
   connectionDeleteCancel: 'Cancel',
   connectionDeleteFailed: 'The connection was not deleted:',
@@ -105,6 +107,26 @@ export const WORDS = {
   connectionFieldSelect: 'Choose',
   connectionRequired: 'Required.',
   connectionOptionalKey: 'May stay empty for a server on this computer.',
+  /** The rows of connections on the page of a plugin. */
+  connectionRowsPrivacy: 'The text of your notes is sent to each connection listed, in this order.',
+  connectionRowsNone: 'No connections yet. Add one on the Connections page.',
+  connectionRowsChoose: 'Choose a connection',
+  connectionRowsConnection: 'Connection',
+  connectionRowsModel: 'Model',
+  connectionRowsModelPlaceholder: 'Choose or type a model',
+  connectionRowsReasoning: 'Reasoning',
+  connectionRowsDefault: 'Default',
+  connectionRowsRemove: (position: number) => `Remove row ${position}`,
+  connectionRowsGrip: (position: number, count: number) => `Move row ${position} of ${count}`,
+  connectionRowsPickedUp: (position: number, count: number) =>
+    `Picked up row ${position} of ${count}. Use the arrow keys to move it and Space to drop it.`,
+  connectionRowsMoved: (position: number, count: number) =>
+    `Moved to position ${position} of ${count}.`,
+  connectionRowsDropped: (position: number, count: number) =>
+    `Dropped at position ${position} of ${count}.`,
+  connectionRowsCancelled: 'Move cancelled.',
+  connectionRowsModelsFailed: 'The models could not be listed:',
+  connectionCannot: (operation: string) => `This type cannot ${operation}`,
   /** The label of the action that opens a plugin's settings. */
   configure: 'Configure',
   /** A plugin's setting of type file or folder. */

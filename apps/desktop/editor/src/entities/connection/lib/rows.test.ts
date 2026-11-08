@@ -108,7 +108,9 @@ describe('getConnectionUsability', () => {
   })
 
   it('gives the reason a connection cannot be used', () => {
-    expect(getConnectionUsability(connection(), type({ operations: ['complete'] }), 'embed', reasons)).toStrictEqual({
+    expect(
+      getConnectionUsability(connection(), type({ operations: ['complete'] }), 'embed', reasons),
+    ).toStrictEqual({
       isUsable: false,
       reason: 'This type cannot embed',
     })
@@ -146,7 +148,10 @@ describe('listModelsForOperation', () => {
       { id: 'c', title: 'C', operations: [] },
     ]
 
-    expect(listModelsForOperation(models, 'complete').map((one) => one.id)).toStrictEqual(['a', 'c'])
+    expect(listModelsForOperation(models, 'complete').map((one) => one.id)).toStrictEqual([
+      'a',
+      'c',
+    ])
     expect(listModelsForOperation(models, 'embed').map((one) => one.id)).toStrictEqual(['b', 'c'])
   })
 })

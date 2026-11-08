@@ -19,6 +19,7 @@ import {
   dispose,
   enterText,
   findButton,
+  findButtons,
   findMenuItem,
   findText,
   maskedInputs,
@@ -381,6 +382,32 @@ describe('editing and deleting', () => {
 
     expect(deleteConnection).toHaveBeenCalledWith('c00000001')
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('lists the plugins whose rows use a connection, and says their rows are removed with it', async () => {
+    const uses = [
+      {
+        pluginId: 'md.numen.tools.proofreading',
+        pluginName: 'Proofreading',
+        operation: 'complete',
+      },
+      { pluginId: 'md.numen.engines.embeddings', pluginName: 'Embeddings', operation: 'embed' },
+    ]
+    const { wrapper } = mountPage(
+      [connection({ uses }), connection({ id: 'c00000002', name: 'Spare' })],
+      [SERVICE],
+    )
+    await flushPromises()
+
+    const rows = root().querySelectorAll('.connection-row')
+    expect(rows[0]?.textContent).toContain('Used by Proofreading and Embeddings.')
+    expect(rows[1]?.textContent).not.toContain('Used by')
+    await click(findButtons(/connection actions/i)[0]!)
+    await click(findMenuItem(/^delete$/i))
+    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+      'Used by Proofreading and Embeddings. Their rows for it are removed.',
+    )
     dispose(wrapper)
   })
 

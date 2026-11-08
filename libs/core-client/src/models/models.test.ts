@@ -43,7 +43,9 @@ describe('createModelClient', () => {
 
     const answer = await client.listModels('c00000001', 'complete')
 
-    expect(requests).toStrictEqual([expect.objectContaining({ connectionId: 'c00000001', operation: 'complete' })])
+    expect(requests).toStrictEqual([
+      expect.objectContaining({ connectionId: 'c00000001', operation: 'complete' }),
+    ])
     expect(answer).toStrictEqual({ ok: true, value: [{ id: 'm', title: 'm', operations: [] }] })
   })
 
@@ -62,14 +64,18 @@ describe('createModelClient', () => {
       createRpc({
         listReasoningLevels: (request) => {
           requests.push(request)
-          return Promise.resolve(create(ListReasoningLevelsResponseSchema, { levels: [{ value: 'low', title: 'Low' }] }))
+          return Promise.resolve(
+            create(ListReasoningLevelsResponseSchema, { levels: [{ value: 'low', title: 'Low' }] }),
+          )
         },
       }),
     )
 
     const answer = await client.listReasoningLevels('c00000001', 'm')
 
-    expect(requests).toStrictEqual([expect.objectContaining({ connectionId: 'c00000001', model: 'm' })])
+    expect(requests).toStrictEqual([
+      expect.objectContaining({ connectionId: 'c00000001', model: 'm' }),
+    ])
     expect(answer).toStrictEqual({ ok: true, value: [{ value: 'low', title: 'Low' }] })
   })
 
@@ -81,9 +87,17 @@ describe('createModelClient', () => {
     for (const [code, expected] of codes) {
       const client = createModelClient(
         createRpc({
-          listModels: () => Promise.resolve(create(ListModelsResponseSchema, { error: code, detail: 'the key was rejected' })),
+          listModels: () =>
+            Promise.resolve(
+              create(ListModelsResponseSchema, { error: code, detail: 'the key was rejected' }),
+            ),
           listReasoningLevels: () =>
-            Promise.resolve(create(ListReasoningLevelsResponseSchema, { error: code, detail: 'the key was rejected' })),
+            Promise.resolve(
+              create(ListReasoningLevelsResponseSchema, {
+                error: code,
+                detail: 'the key was rejected',
+              }),
+            ),
         }),
       )
 

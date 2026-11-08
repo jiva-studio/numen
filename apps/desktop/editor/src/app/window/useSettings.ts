@@ -66,6 +66,16 @@ function createConnectionMembers(
   }
 }
 
+function createModelMembers(models: ModelClient | undefined): Partial<Installation> {
+  if (!models) return {}
+  return {
+    listModels: (connectionId: string, operation: string) =>
+      models.listModels(connectionId, operation),
+    listReasoningLevels: (connectionId: string, model: string) =>
+      models.listReasoningLevels(connectionId, model),
+  }
+}
+
 function createConnections(client: ConnectionClient | undefined, words: Words, log: MessageLog) {
   if (!client) return undefined
   return createConnectionStore(client, {
@@ -99,14 +109,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
     ...createConnectionMembers(connections),
-    ...(models
-      ? {
-          listModels: (connectionId: string, operation: string) =>
-            models.listModels(connectionId, operation),
-          listReasoningLevels: (connectionId: string, model: string) =>
-            models.listReasoningLevels(connectionId, model),
-        }
-      : {}),
+    ...createModelMembers(models),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),

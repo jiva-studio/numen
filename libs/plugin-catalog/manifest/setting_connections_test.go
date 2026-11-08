@@ -13,7 +13,7 @@ func readSettings(settings string) (manifest.Manifest, error) {
 	return manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[` + settings + `]}`))
 }
 
-func TestAManifestDeclaresOneSettingThatHoldsRowsOfConnections(t *testing.T) {
+func TestASettingOfRowsIsReadFromAManifest(t *testing.T) {
 	m, err := readSettings(`{"key":"connections","type":"connections","title":"Connections","description":"Services tried in order.","operation":"complete","max":5}`)
 	if err != nil {
 		t.Fatal(err)

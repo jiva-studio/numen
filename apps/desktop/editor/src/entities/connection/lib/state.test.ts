@@ -5,6 +5,7 @@ import {
   getConnectionState,
   getOperationsText,
   getOperationTitle,
+  getUsedByNames,
   hasAvailableType,
   hasUnavailableConnection,
 } from './state'
@@ -100,5 +101,29 @@ describe('hasUnavailableConnection', () => {
       true,
     )
     expect(hasUnavailableConnection([connection()])).toBe(false)
+  })
+})
+
+describe('getUsedByNames', () => {
+  const use = (pluginName: string, operation = 'complete') => ({
+    pluginId: `a.${pluginName.toLowerCase()}`,
+    pluginName,
+    operation,
+  })
+
+  it('names the plugins in the order of the uses', () => {
+    expect(getUsedByNames([use('Proofreading')])).toBe('Proofreading')
+    expect(getUsedByNames([use('Proofreading'), use('Embeddings', 'embed')])).toBe(
+      'Proofreading and Embeddings',
+    )
+    expect(getUsedByNames([use('A'), use('B'), use('C')])).toBe('A, B and C')
+  })
+
+  it('names a plugin once whatever the number of its settings', () => {
+    expect(getUsedByNames([use('Proofreading'), use('Proofreading', 'embed')])).toBe('Proofreading')
+  })
+
+  it('returns an empty text for a connection no setting uses', () => {
+    expect(getUsedByNames([])).toBe('')
   })
 })

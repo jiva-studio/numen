@@ -14,7 +14,7 @@ var (
 	embeddings   = connectionport.Use{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}
 )
 
-func TestListGivesEachConnectionTheSettingsOfRowsThatNameIt(t *testing.T) {
+func TestListReturnsTheUsesOfEachConnection(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
 	home := f.createCompatible(t, "Ollama", "http://localhost:11434/v1", "")
@@ -58,7 +58,7 @@ func TestDeleteOfAnUnknownConnectionRemovesNoRows(t *testing.T) {
 	}
 }
 
-func TestDeleteThatCannotRemoveASecretLeavesTheRowsAlone(t *testing.T) {
+func TestDeleteRemovesNoRowsWhenASecretCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
 	f.uses.use(work.ID, proofreading)

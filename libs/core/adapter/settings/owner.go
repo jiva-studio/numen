@@ -49,11 +49,10 @@ type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
 // registry that has no provider.
 type Registries func(name string) ([]string, bool)
 
-// CheckWrite returns why a value is not one the setting at the path takes.
-// The first path element is the owner and the rest is the key path under it.
-// It checks the declared key, the type of the value, enum membership and range
-// bounds for every owner. The keys `agent` and `ai` of the owner app are
-// outside the check.
+// CheckWrite returns why a value is not one the setting at the path takes. The first path element
+// is the owner and the rest is the key path under it. It checks the declared key, the type, enum
+// membership and range bounds, and for rows of connections the rows (see RegistryConnections). The
+// keys `agent` and `ai` of the owner app are outside the check.
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {
@@ -224,7 +223,8 @@ func (f *File) GetValue(path ...string) (any, bool) {
 
 // DropInvalid leaves out of force every stored value that CheckWrite refuses for the declarations
 // given: an undeclared key, a value of the wrong type or outside its bounds, a value that is no
-// option, and an object of an owner that has no declaration. Each one adds a notice to the file
+// option, and an object of an owner that has no declaration. In a setting of type connections only
+// the rows that fail are left out, and the rows beyond max, each with a notice. Each one adds a notice to the file
 // and is applied nowhere. The bytes of the file on disk are not touched.
 func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	registries = f.withConnectionIDs(registries)

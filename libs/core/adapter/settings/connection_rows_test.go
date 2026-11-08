@@ -38,7 +38,7 @@ func rowsPlugin(id, name string, rows ...pluginport.PluginSetting) pluginport.Pl
 type rowsWorld struct {
 	plugins   []pluginport.PluginInfo
 	stored    settings.File
-	written   []settingsport.Setting
+	writes    []settingsport.Setting
 	failWrite error
 	refreshed [][]string
 	failSend  error
@@ -52,7 +52,7 @@ func (w *rowsWorld) rows() *settings.ConnectionRows {
 		Declared:    declaredWithRows,
 		ReadStored:  func() (settings.File, error) { return w.stored, nil },
 		Write: func(entries []settingsport.Setting) error {
-			w.written = append(w.written, entries...)
+			w.writes = append(w.writes, entries...)
 			return w.failWrite
 		},
 		Refresh: func(_ context.Context, forced ...string) error {
@@ -110,7 +110,7 @@ func TestListRowsAnswersNothingForAPluginThatHasNoSuchSetting(t *testing.T) {
 	}
 }
 
-func TestListRowsLeavesOutTheRowsOfASettingThatIsNotShown(t *testing.T) {
+func TestListRowsReturnsNoRowForAHiddenSetting(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings",
 		rowsSetting("connections", "embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
@@ -122,7 +122,7 @@ func TestListRowsLeavesOutTheRowsOfASettingThatIsNotShown(t *testing.T) {
 	}
 }
 
-func TestListRowsLeavesOutRowsThatNameAMissingConnection(t *testing.T) {
+func TestListRowsReturnsOnlyRowsOfExistingConnections(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "complete", true,
 		`[{"connection":"c00000000","model":"a"},{"connection":"`+homeID+`","model":"b"}]`))
@@ -174,7 +174,7 @@ func TestListUsesNamesASettingOnceWhateverTheNumberOfItsRowsForTheConnection(t *
 	}
 }
 
-func TestListUsesLeavesOutASettingThatIsNotShown(t *testing.T) {
+func TestListUsesReturnsNoUseForAHiddenSetting(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings",
 		rowsSetting("connections", "embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
@@ -210,11 +210,11 @@ func TestRemoveRowsWritesEverySettingOfRowsWithoutTheRowsOfTheConnection(t *test
 	}
 
 	got := map[string]string{}
-	for _, one := range world.written {
+	for _, one := range world.writes {
 		got[strings.Join(one.Path, ".")] = one.JSON
 	}
 	if len(got) != 2 {
-		t.Fatalf("written = %v, want the two settings that named the connection", world.written)
+		t.Fatalf("writes = %v, want the two settings that named the connection", world.writes)
 	}
 	if got[embeddingsID+".connections"] != `[]` {
 		t.Errorf("embeddings = %s", got[embeddingsID+".connections"])
@@ -232,8 +232,8 @@ func TestRemoveRowsWritesNothingWhenNoRowNamesTheConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(world.written) != 0 {
-		t.Errorf("written = %v", world.written)
+	if len(world.writes) != 0 {
+		t.Errorf("writes = %v", world.writes)
 	}
 }
 
@@ -246,8 +246,8 @@ func TestRemoveRowsReachesRowsOfASettingThatIsNotShown(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(world.written) != 1 || world.written[0].JSON != `[]` {
-		t.Errorf("written = %v, want the rows of the hidden setting emptied", world.written)
+	if len(world.writes) != 1 || world.writes[0].JSON != `[]` {
+		t.Errorf("writes = %v, want the rows of the hidden setting emptied", world.writes)
 	}
 }
 

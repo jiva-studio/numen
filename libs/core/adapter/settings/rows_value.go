@@ -18,9 +18,6 @@ const (
 
 type rowIdentity struct{ connection, model string }
 
-// checkRows returns why a value is not the rows a setting of type connections takes: a list of at
-// most max objects that name an existing connection and a model, and no pair of connection and
-// model twice. A registry that lists no connections leaves the connection unchecked.
 func checkRows(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
 	list, isList := value.([]any)
 	if !isList {
@@ -29,17 +26,17 @@ func checkRows(declared pluginport.PluginManifestSetting, registries Registries,
 	if declared.Max != nil && float64(len(list)) > *declared.Max {
 		return fmt.Errorf("%d rows are %w 0..%v", len(list), ErrOutOfRange, *declared.Max)
 	}
-	known, isKnown := listConnectionIDs(registries)
-	seen := map[rowIdentity]bool{}
+	connectionIDs, isKnown := listConnectionIDs(registries)
+	pairs := map[rowIdentity]bool{}
 	for index, row := range list {
-		identity, err := readRow(row, known, isKnown)
+		identity, err := readRow(row, connectionIDs, isKnown)
 		if err != nil {
 			return fmt.Errorf("row %d: %w", index+1, err)
 		}
-		if seen[identity] {
+		if pairs[identity] {
 			return fmt.Errorf("row %d: %w: the connection and the model are in a row before", index+1, ErrWrongType)
 		}
-		seen[identity] = true
+		pairs[identity] = true
 	}
 	return nil
 }
@@ -52,14 +49,14 @@ func listConnectionIDs(registries Registries) (map[string]bool, bool) {
 	if !isFound {
 		return nil, false
 	}
-	known := make(map[string]bool, len(ids))
+	connectionIDs := make(map[string]bool, len(ids))
 	for _, id := range ids {
-		known[id] = true
+		connectionIDs[id] = true
 	}
-	return known, true
+	return connectionIDs, true
 }
 
-func readRow(row any, known map[string]bool, isKnown bool) (rowIdentity, error) {
+func readRow(row any, connectionIDs map[string]bool, isKnown bool) (rowIdentity, error) {
 	object, isObject := row.(map[string]any)
 	if !isObject {
 		return rowIdentity{}, fmt.Errorf("%w: expected an object", ErrWrongType)
@@ -80,7 +77,7 @@ func readRow(row any, known map[string]bool, isKnown bool) (rowIdentity, error) 
 	if _, err := readRowText(object, rowReasoning, false); err != nil {
 		return rowIdentity{}, err
 	}
-	if isKnown && !known[connection] {
+	if isKnown && !connectionIDs[connection] {
 		return rowIdentity{}, fmt.Errorf("%q is %w the connections", connection, ErrNotAnOption)
 	}
 	return rowIdentity{connection: connection, model: model}, nil
@@ -104,29 +101,26 @@ func readRowText(object map[string]any, key string, isRequired bool) (string, er
 	return text, nil
 }
 
-// dropInvalidRows leaves out of force each row of a setting of rows that checkRows would refuse,
-// and each row beyond max, with a notice each. A value that is no list is left to the check of the
-// whole value.
 func (f *File) dropInvalidRows(owner string, declared pluginport.PluginManifestSetting) {
 	list, isList := f.Plugins[owner][declared.Key].([]any)
 	if !isList {
 		return
 	}
-	known := make(map[string]bool, len(f.Connections))
+	connectionIDs := make(map[string]bool, len(f.Connections))
 	for _, one := range f.Connections {
-		known[one.ID] = true
+		connectionIDs[one.ID] = true
 	}
-	kept := make([]any, 0, len(list))
-	seen := map[rowIdentity]bool{}
+	remainder := make([]any, 0, len(list))
+	pairs := map[rowIdentity]bool{}
 	for index, row := range list {
-		identity, err := readRow(row, known, true)
+		identity, err := readRow(row, connectionIDs, true)
 		reason := ""
 		switch {
 		case err != nil:
 			reason = err.Error()
-		case seen[identity]:
+		case pairs[identity]:
 			reason = "the connection and the model are in a row before"
-		case declared.Max != nil && float64(len(kept)) >= *declared.Max:
+		case declared.Max != nil && float64(len(remainder)) >= *declared.Max:
 			reason = fmt.Sprintf("more than %v rows", *declared.Max)
 		}
 		if reason != "" {
@@ -134,14 +128,12 @@ func (f *File) dropInvalidRows(owner string, declared pluginport.PluginManifestS
 				owner, declared.Key, index+1, strings.TrimSpace(reason)))
 			continue
 		}
-		seen[identity] = true
-		kept = append(kept, row)
+		pairs[identity] = true
+		remainder = append(remainder, row)
 	}
-	f.Plugins[owner][declared.Key] = kept
+	f.Plugins[owner][declared.Key] = remainder
 }
 
-// withConnectionIDs answers the registry of connections from the connections of the file and every
-// other registry from registries.
 func (f *File) withConnectionIDs(registries Registries) Registries {
 	ids := make([]string, 0, len(f.Connections))
 	for _, one := range f.Connections {

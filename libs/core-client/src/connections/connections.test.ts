@@ -70,7 +70,11 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             isTypeAvailable: true,
             isComplete: true,
             uses: [
-              { pluginId: 'md.numen.tools.proofreading', pluginName: 'Proofreading', operation: 'complete' },
+              {
+                pluginId: 'md.numen.tools.proofreading',
+                pluginName: 'Proofreading',
+                operation: 'complete',
+              },
             ],
           },
         ],
@@ -136,7 +140,11 @@ describe('createConnectionClient', () => {
         isComplete: true,
         isPrivateNetworkAllowed: false,
         uses: [
-          { pluginId: 'md.numen.tools.proofreading', pluginName: 'Proofreading', operation: 'complete' },
+          {
+            pluginId: 'md.numen.tools.proofreading',
+            pluginName: 'Proofreading',
+            operation: 'complete',
+          },
         ],
       },
     ])

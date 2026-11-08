@@ -7,7 +7,12 @@ import { computed, ref } from 'vue'
 import { Ellipsis } from '@lucide/vue'
 import { Button, Menu, measureRect, measureWindow, type MenuItem } from '@numen/ui'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
-import { getAddressText, getConnectionState, getOperationsText } from '@/entities/connection'
+import {
+  getAddressText,
+  getConnectionState,
+  getOperationsText,
+  getUsedByNames,
+} from '@/entities/connection'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -31,6 +36,7 @@ const state = computed(() => getConnectionState(props.connection))
 const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
 const address = computed(() => getAddressText(props.type, props.connection))
 const operations = computed(() => getOperationsText(props.type))
+const usedBy = computed(() => getUsedByNames(props.connection.uses))
 const anchor = ref<{ x: number; y: number; height: number } | null>(null)
 const opener = ref<HTMLElement | null>(null)
 
@@ -62,6 +68,9 @@ function onChoose(id: string): void {
         <span class="connection-row__type">{{ typeTitle }}</span>
       </div>
       <div v-if="address !== ''" class="connection-row__address">{{ address }}</div>
+      <div v-if="usedBy !== ''" class="connection-row__address">
+        {{ words.connectionUsedBy(usedBy) }}
+      </div>
     </div>
     <div class="connection-row__state">
       <span v-if="state === 'unavailable'" class="connection-row__chip connection-row__chip--bad">

@@ -16,6 +16,7 @@ export {
   getAddressText,
   getConnectionState,
   getOperationsText,
+  getUsedByNames,
   hasAvailableType,
   hasUnavailableConnection,
 } from './lib/state'
