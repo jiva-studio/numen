@@ -77,7 +77,8 @@ const isOffline = () => {
       'run-offline: cannot open a network namespace with `unshare -rn` and `ip`.\n' +
         'Install util-linux and iproute2, and allow unprivileged user namespaces ' +
         '(on Ubuntu: sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0).\n' +
-        (probe.error?.message ?? probe.stderr),
+        (probe.error ? `${probe.error.message}\n` : '') +
+        probe.stderr,
     )
     process.exit(1)
   }

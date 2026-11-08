@@ -26,7 +26,8 @@ export const interceptExternalLinks = (
   root: Document = document,
 ): (() => void) => {
   const onPress = (press: MouseEvent) => {
-    const link = press.target instanceof Element ? press.target.closest('a[href]') : null
+    const target = press.target as Partial<Pick<Element, 'closest'>> | null
+    const link = target?.closest?.('a[href]')
     const href = link?.getAttribute('href')
     if (!href) return
 

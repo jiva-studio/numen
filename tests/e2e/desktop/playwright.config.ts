@@ -10,7 +10,7 @@ const readShardFiles = (): string[] | undefined => {
   const paths = readPathsFromEnv()
   if (!named && !paths) return undefined
   const [index, count] = named ? named.split('/').map(Number) : [0, 1]
-  const shard = planShards(count, paths).at(index)
+  const shard = Number.isInteger(index) && index >= 0 ? planShards(count, paths).at(index) : undefined
   if (!shard) throw new Error(`NUMEN_E2E_SHARD=${named} names no shard`)
   return shard.map((file) => fileURLToPath(new URL(file, import.meta.url)))
 }

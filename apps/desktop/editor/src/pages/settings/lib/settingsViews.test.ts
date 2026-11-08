@@ -109,6 +109,13 @@ describe('fetchPluginReadme', () => {
     })
     expect(await fetchPluginReadme('my-plugin')).toBe('# Hello')
 
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
+      text: async () => '# Bare',
+    })
+    expect(await fetchPluginReadme('my-plugin')).toBe('# Bare')
+
     fetchMock.mockRejectedValueOnce(new Error('network error'))
     expect(await fetchPluginReadme('my-plugin')).toBe('')
   })

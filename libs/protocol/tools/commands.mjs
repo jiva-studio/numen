@@ -58,6 +58,7 @@ const getTsArguments = (one) =>
 const ts = [
   `// ${HEADER}`,
   '',
+  '/** One argument of a shared command; the palette asks for it as it asks for the argument of a manifest command. */',
   'export interface SharedCommandArgument {',
   '  readonly name: string',
   '  readonly title: string',
@@ -65,6 +66,7 @@ const ts = [
   '  readonly isRequired: boolean',
   '}',
   '',
+  '/** A shared command of the application and the arguments every handler of it takes. */',
   'export interface SharedCommand {',
   '  readonly id: string',
   '  readonly title: string',
