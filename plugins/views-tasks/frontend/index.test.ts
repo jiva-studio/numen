@@ -1,12 +1,11 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate, TASKS_VIEW } from './index'
-import { APPEAR_DELAY_MS, HOLD_MS } from './lib/chipDisplay'
 import { createTask } from './testing/tasks'
 
 const manifest = JSON.parse(
@@ -59,20 +58,7 @@ describe('the manifest', () => {
   })
 })
 
-const settle = async (ms: number): Promise<void> => {
-  await flushPromises()
-  vi.advanceTimersByTime(ms)
-  await flushPromises()
-}
-
 describe('the summary', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] })
-  })
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('says Idle with an empty ring while no task runs', () => {
     const { view } = activateTasks()
 
@@ -90,11 +76,11 @@ describe('the summary', () => {
     const running = (id: string) => createTask({ id, state: 'running' })
 
     context.backgroundTasks.setTasks([running('a'), running('b'), running('c')])
-    await settle(APPEAR_DELAY_MS)
+    await flushPromises()
     expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 3')
 
     context.backgroundTasks.setTasks([running('b'), running('c')])
-    await settle(HOLD_MS)
+    await flushPromises()
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
       '1 of 3 tasks done',
@@ -102,11 +88,11 @@ describe('the summary', () => {
     expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
 
     context.backgroundTasks.setTasks([running('c'), running('d')])
-    await settle(HOLD_MS)
+    await flushPromises()
     expect(wrapper.find('.tasks-status__summary').text()).toBe('2 of 4')
 
     context.backgroundTasks.setTasks([])
-    await settle(HOLD_MS)
+    await flushPromises()
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
   })
 
@@ -115,7 +101,7 @@ describe('the summary', () => {
     const wrapper = mountTasks(view)
 
     context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running', done: 1, total: 2 })])
-    await settle(APPEAR_DELAY_MS)
+    await flushPromises()
 
     const fill = wrapper.find('.tasks-status__ring-fill')
     const length = Number(fill.attributes('stroke-dasharray'))
@@ -148,12 +134,12 @@ describe('the summary', () => {
       createTask({ id: 'f', state: 'running' }),
       createTask({ id: 'b', state: 'running' }),
     ])
-    await settle(APPEAR_DELAY_MS)
+    await flushPromises()
     context.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'running' }),
       createTask({ id: 'f', state: 'failed', error: 'x' }),
     ])
-    await settle(HOLD_MS)
+    await flushPromises()
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
@@ -161,12 +147,11 @@ describe('the summary', () => {
     )
   })
 
-  it('takes the tasks the window lists before the view is drawn', async () => {
+  it('takes the tasks the window lists before the view is drawn', () => {
     const { context, view } = activateTasks()
     context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
 
     const wrapper = mountTasks(view)
-    await settle(APPEAR_DELAY_MS)
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 1')
   })

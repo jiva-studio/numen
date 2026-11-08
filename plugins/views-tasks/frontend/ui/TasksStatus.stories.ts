@@ -4,7 +4,7 @@
  * the contrast of the chip as drawn.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor } from 'storybook/test'
+import { expect } from 'storybook/test'
 import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
 
@@ -48,7 +48,7 @@ const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
 
 const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
-  await waitFor(() => expect(chip.textContent?.trim()).toBe('0 of 2'), { timeout: 2000 })
+  await expect(chip.textContent?.trim()).toBe('0 of 2')
   await expect(chip.getAttribute('aria-label')).toBe('0 of 2 tasks done')
   await expect(chip.getAnimations()).toHaveLength(0)
   await expect(chip.querySelector('.tasks-status__ring-fill')).not.toBeNull()
