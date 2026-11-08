@@ -28,6 +28,10 @@ message RunCommandRequest {
   // decimal, a boolean as true or false. An optional argument left out is
   // absent.
   map<string, string> arguments = 3;
+
+  // The id of the item a person picked, for a command that offers its own
+  // items; empty for a run without a pick.
+  string item_id = 4;
 }
 
 message RunCommandResponse {
@@ -134,7 +138,7 @@ message PluginCommand {
 
   // has_items is set for a command that offers items, which a place reads
   // with ListCommandItems and runs with the id of the one picked as the
-  // argument of RunPluginCommand.
+  // item_id of RunPluginCommand.
   bool has_items = 11;
 }
 
@@ -148,6 +152,11 @@ message CommandArgument {
   bool is_required = 3;
 }
 
+// RunPluginCommandRequest runs a command of a plugin or a plugin's handler of a
+// shared command. With no plugin_id it runs the application command
+// app:version.delete, which the core serves: it deletes the text version
+// item_id names, its record and its file, and reports the file in
+// WatchVaultChangesResponse.version_paths.
 message RunPluginCommandRequest {
   string plugin_id = 1;
 
@@ -158,9 +167,9 @@ message RunPluginCommandRequest {
 
   map<string, string> arguments = 4;
 
-  // The id of the item picked, for a command that offers items; empty for
-  // any other command.
-  string argument = 5;
+  // The id of the item picked, for a command that offers items; empty for a
+  // run without a pick.
+  string item_id = 5;
 }
 
 message ListCommandItemsRequest {
@@ -172,7 +181,8 @@ message ListCommandItemsRequest {
 }
 
 // PluginCommandId is one command of a plugin: a command it declares, or its
-// handler of a shared command.
+// handler of a shared command. With no plugin_id it is the application command
+// app:version.delete, whose items are every text version of the file.
 message PluginCommandId {
   string plugin_id = 1;
 
@@ -200,7 +210,7 @@ message CommandItemList {
 }
 
 // CommandItem is one item a command offers: the id the run takes as its
-// argument, and what a person reads.
+// item_id, and what a person reads.
 message CommandItem {
   string id = 1;
 

@@ -40,7 +40,7 @@
     ],
     "triggers": [
       {
-        "on": "file.added",
+        "event": "file.added",
         "command": "app:file.createText",
         "when": "target.contentType == 'application/pdf'"
       }

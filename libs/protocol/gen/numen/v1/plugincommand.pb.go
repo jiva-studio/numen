@@ -91,7 +91,10 @@ type RunCommandRequest struct {
 	// The arguments by their declared names, each written as text: a number in
 	// decimal, a boolean as true or false. An optional argument left out is
 	// absent.
-	Arguments     map[string]string `protobuf:"bytes,3,rep,name=arguments,proto3" json:"arguments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Arguments map[string]string `protobuf:"bytes,3,rep,name=arguments,proto3" json:"arguments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// The id of the item a person picked, for a command that offers its own
+	// items; empty for a run without a pick.
+	ItemId        string `protobuf:"bytes,4,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +148,13 @@ func (x *RunCommandRequest) GetArguments() map[string]string {
 		return x.Arguments
 	}
 	return nil
+}
+
+func (x *RunCommandRequest) GetItemId() string {
+	if x != nil {
+		return x.ItemId
+	}
+	return ""
 }
 
 type RunCommandResponse struct {
@@ -459,7 +469,7 @@ type PluginCommand struct {
 	Shortcut string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
 	// has_items is set for a command that offers items, which a place reads
 	// with ListCommandItems and runs with the id of the one picked as the
-	// argument of RunPluginCommand.
+	// item_id of RunPluginCommand.
 	HasItems      bool `protobuf:"varint,11,opt,name=has_items,json=hasItems,proto3" json:"has_items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -613,6 +623,11 @@ func (x *CommandArgument) GetIsRequired() bool {
 	return false
 }
 
+// RunPluginCommandRequest runs a command of a plugin or a plugin's handler of a
+// shared command. With no plugin_id it runs the application command
+// app:version.delete, which the core serves: it deletes the text version
+// item_id names, its record and its file, and reports the file in
+// WatchVaultChangesResponse.version_paths.
 type RunPluginCommandRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
@@ -620,9 +635,9 @@ type RunPluginCommandRequest struct {
 	// The file the command runs over, relative to the vault the window shows.
 	Path      string            `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	Arguments map[string]string `protobuf:"bytes,4,rep,name=arguments,proto3" json:"arguments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// The id of the item picked, for a command that offers items; empty for
-	// any other command.
-	Argument      string `protobuf:"bytes,5,opt,name=argument,proto3" json:"argument,omitempty"`
+	// The id of the item picked, for a command that offers items; empty for a
+	// run without a pick.
+	ItemId        string `protobuf:"bytes,5,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -685,9 +700,9 @@ func (x *RunPluginCommandRequest) GetArguments() map[string]string {
 	return nil
 }
 
-func (x *RunPluginCommandRequest) GetArgument() string {
+func (x *RunPluginCommandRequest) GetItemId() string {
 	if x != nil {
-		return x.Argument
+		return x.ItemId
 	}
 	return ""
 }
@@ -747,7 +762,8 @@ func (x *ListCommandItemsRequest) GetCommands() []*PluginCommandId {
 }
 
 // PluginCommandId is one command of a plugin: a command it declares, or its
-// handler of a shared command.
+// handler of a shared command. With no plugin_id it is the application command
+// app:version.delete, whose items are every text version of the file.
 type PluginCommandId struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
@@ -925,7 +941,7 @@ func (x *CommandItemList) GetMessage() string {
 }
 
 // CommandItem is one item a command offers: the id the run takes as its
-// argument, and what a person reads.
+// item_id, and what a person reads.
 type CommandItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1044,11 +1060,12 @@ var File_numen_v1_plugincommand_proto protoreflect.FileDescriptor
 
 const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\n" +
-	"\x1cnumen/v1/plugincommand.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\xc9\x01\n" +
+	"\x1cnumen/v1/plugincommand.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\xe2\x01\n" +
 	"\x11RunCommandRequest\x12\x18\n" +
 	"\acommand\x18\x01 \x01(\tR\acommand\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12H\n" +
-	"\targuments\x18\x03 \x03(\v2*.numen.v1.RunCommandRequest.ArgumentsEntryR\targuments\x1a<\n" +
+	"\targuments\x18\x03 \x03(\v2*.numen.v1.RunCommandRequest.ArgumentsEntryR\targuments\x12\x17\n" +
+	"\aitem_id\x18\x04 \x01(\tR\x06itemId\x1a<\n" +
 	"\x0eArgumentsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x81\x01\n" +
@@ -1087,13 +1104,13 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +
 	"\vis_required\x18\x03 \x01(\bR\n" +
-	"isRequired\"\x8e\x02\n" +
+	"isRequired\"\x8b\x02\n" +
 	"\x17RunPluginCommandRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12N\n" +
-	"\targuments\x18\x04 \x03(\v20.numen.v1.RunPluginCommandRequest.ArgumentsEntryR\targuments\x12\x1a\n" +
-	"\bargument\x18\x05 \x01(\tR\bargument\x1a<\n" +
+	"\targuments\x18\x04 \x03(\v20.numen.v1.RunPluginCommandRequest.ArgumentsEntryR\targuments\x12\x17\n" +
+	"\aitem_id\x18\x05 \x01(\tR\x06itemId\x1a<\n" +
 	"\x0eArgumentsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"d\n" +

@@ -33,12 +33,6 @@
         "command": "app:link.deleteMedia",
         "group": "3-text",
         "order": 40
-      },
-      {
-        "slot": "fileTree.context",
-        "command": "app:version.delete",
-        "group": "3-text",
-        "order": 90
       }
     ],
     "handlers": [
@@ -60,16 +54,11 @@
         "command": "app:link.deleteMedia",
         "title": "Delete media",
         "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
-      },
-      {
-        "command": "app:version.delete",
-        "title": "Delete text",
-        "when": "version.pluginId == 'md.numen.tools.media.importer' && version.kind in ['article', 'captions']"
       }
     ],
     "triggers": [
       {
-        "on": "file.added",
+        "event": "file.added",
         "command": "app:file.createText",
         "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
       }

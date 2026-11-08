@@ -135,7 +135,10 @@ type Entry struct {
 	IsNote bool `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about an entry that is not a note.
-	Type          string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+	// where none holds, and for an entry that is not a note.
+	TabKind       string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,6 +204,13 @@ func (x *Entry) GetIsNote() bool {
 func (x *Entry) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *Entry) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
 	}
 	return ""
 }
@@ -802,13 +812,14 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"y\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x94\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
 	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12\x17\n" +
 	"\ais_note\x18\x06 \x01(\bR\x06isNote\x12\x12\n" +
-	"\x04type\x18\x05 \x01(\tR\x04type\",\n" +
+	"\x04type\x18\x05 \x01(\tR\x04type\x12\x19\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +

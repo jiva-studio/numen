@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIo0BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLSAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJEhAKCHRhYl9raW5kGAUgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLkAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -102,6 +102,14 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
    * @generated from field: string type = 4;
    */
   type: string;
+
+  /**
+   * The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+   * where none holds.
+   *
+   * @generated from field: string tab_kind = 5;
+   */
+  tabKind: string;
 };
 
 /**
@@ -236,6 +244,14 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * @generated from field: string selector = 10;
    */
   selector: string;
+
+  /**
+   * The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+   * where none holds, and for a source that is not a note.
+   *
+   * @generated from field: string tab_kind = 11;
+   */
+  tabKind: string;
 };
 
 /**

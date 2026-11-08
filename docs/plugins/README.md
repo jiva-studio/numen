@@ -476,7 +476,7 @@ The core runs a trigger in the backend of its plugin, with the file as the targe
 ```json
 "contributes": {
   "handlers": [{ "command": "app:file.createText", "title": "Extract text layer", "when": "target.contentType == 'application/pdf'" }],
-  "triggers": [{ "on": "file.added", "command": "app:file.createText", "when": "target.contentType == 'application/pdf'" }]
+  "triggers": [{ "event": "file.added", "command": "app:file.createText", "when": "target.contentType == 'application/pdf'" }]
 }
 ```
 

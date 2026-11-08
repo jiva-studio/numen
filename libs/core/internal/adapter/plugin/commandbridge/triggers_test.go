@@ -9,7 +9,7 @@ import (
 )
 
 func TestListTriggers_ReadsTheTriggersOfTheEnabledPlugins(t *testing.T) {
-	added := manifest.Trigger{On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.isFile"}
+	added := manifest.Trigger{Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.isFile"}
 	host := &commandHost{
 		plugins: []pluginport.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.scans", Contributes: manifest.Contributes{Triggers: []manifest.Trigger{added}}}},

@@ -205,7 +205,10 @@ type NameMatch struct {
 	// A word reached by its prefix is marked whole.
 	Ranges []*Range `protobuf:"bytes,3,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
-	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+	// where none holds.
+	TabKind       string `protobuf:"bytes,5,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -264,6 +267,13 @@ func (x *NameMatch) GetRanges() []*Range {
 func (x *NameMatch) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *NameMatch) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
 	}
 	return ""
 }
@@ -403,7 +413,10 @@ type Passage struct {
 	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
 	// The selector of the text version segment the hit is in, as JSON, and empty
 	// for a note. It locates the hit in the file; the SDK documents its keys.
-	Selector      string `protobuf:"bytes,10,opt,name=selector,proto3" json:"selector,omitempty"`
+	Selector string `protobuf:"bytes,10,opt,name=selector,proto3" json:"selector,omitempty"`
+	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+	// where none holds, and for a source that is not a note.
+	TabKind       string `protobuf:"bytes,11,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,6 +514,13 @@ func (x *Passage) GetSelector() string {
 	return ""
 }
 
+func (x *Passage) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
+	}
+	return ""
+}
+
 var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
@@ -510,12 +530,13 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
-	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xaa\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xc5\x01\n" +
 	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12'\n" +
 	"\x06ranges\x18\x03 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04typeB\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x19\n" +
+	"\btab_kind\x18\x05 \x01(\tR\atabKindB\n" +
 	"\n" +
 	"\b_heading\"m\n" +
 	"\x15SearchPassagesRequest\x12\x14\n" +
@@ -523,7 +544,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x93\x02\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xae\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -534,7 +555,8 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04line\x18\a \x01(\x05R\x04line\x12\x12\n" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x1a\n" +
 	"\bselector\x18\n" +
-	" \x01(\tR\bselectorB\a\n" +
+	" \x01(\tR\bselector\x12\x19\n" +
+	"\btab_kind\x18\v \x01(\tR\atabKindB\a\n" +
 	"\x05_note*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +

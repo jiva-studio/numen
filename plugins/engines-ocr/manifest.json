@@ -14,12 +14,6 @@
         "command": "app:file.createText",
         "group": "3-text",
         "order": 10
-      },
-      {
-        "slot": "fileTree.context",
-        "command": "app:version.delete",
-        "group": "3-text",
-        "order": 90
       }
     ],
     "handlers": [
@@ -27,16 +21,11 @@
         "command": "app:file.createText",
         "title": "Recognize text",
         "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
-      },
-      {
-        "command": "app:version.delete",
-        "title": "Delete recognition",
-        "when": "version.pluginId == 'md.numen.engines.ocr' && version.kind == 'recognition'"
       }
     ],
     "triggers": [
       {
-        "on": "file.added",
+        "event": "file.added",
         "command": "app:file.createText",
         "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
       }
