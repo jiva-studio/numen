@@ -1,33 +1,37 @@
 import { Given, Then, When } from '../support/bdd.js'
 
-Given('the note {string} is open with {string}', async ({ person }, title: string, text: string) => {
+Given('the person has the note {string} with {string}', async ({ person }, title: string, text: string) => {
   await person.openNote(title, text)
 })
 
-Given('the person writes {string} in the open note {string}', async ({ person }, text: string, title: string) => {
+Given('the person has unsaved {string} in the note {string}', async ({ person }, text: string, title: string) => {
   await person.writeWithoutSaving(text, title)
 })
 
-Given('another program writes {string} in the saved note {string}', async ({ person }, text: string, title: string) => {
+Given('another program writes {string} in the note {string} on disk', async ({ person }, text: string, title: string) => {
   await person.changeNoteOnDisk(text, title)
 })
 
-Given('another program removes the saved note {string}', async ({ person }, title: string) => {
+Given('another program removes the note {string} from disk', async ({ person }, title: string) => {
   await person.removeNoteFromDisk(title)
 })
 
-When('the person chooses {string} for the open note {string}', async ({ person }, option: string, title: string) => {
-  await person.choose(option, title)
+When('the person chooses {string} for the note {string}', async ({ person }, label: string, title: string) => {
+  await person.choose(label, title)
 })
 
-Then('the {word} note {string} has {string}', async ({ person }, kind: string, title: string, text: string) => {
-  await person.expectHas(kind, title, text)
+Then('the note {string} has {string}', async ({ person }, title: string, text: string) => {
+  await person.expectHas('app', title, text)
 })
 
-Then('the {word} note {string} does not have {string}', async ({ person }, kind: string, title: string, text: string) => {
-  await person.expectLacks(kind, title, text)
+Then('the note {string} does not have {string}', async ({ person }, title: string, text: string) => {
+  await person.expectLacks('app', title, text)
 })
 
-Then('the open note {string} warns about {string}', async ({ person }, title: string, kind: string) => {
-  await person.expectWarning(title, kind)
+Then('the note {string} on disk has {string}', async ({ person }, title: string, text: string) => {
+  await person.expectHas('disk', title, text)
+})
+
+Then('the note {string} on disk does not have {string}', async ({ person }, title: string, text: string) => {
+  await person.expectLacks('disk', title, text)
 })

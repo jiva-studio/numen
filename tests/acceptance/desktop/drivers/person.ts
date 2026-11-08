@@ -20,19 +20,6 @@ import {
 
 const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
 
-/** The warnings a note gives, by the name a scenario uses. */
-const WARNINGS: Record<string, string> = {
-  change: 'Saving paused: the file changed on disk.',
-  removal: 'the note was removed from the vault',
-}
-
-/** The ways out of a warning, by the name a scenario uses. */
-const BANNER_CHOICES: Record<string, string> = {
-  'keep my text': 'Keep my version',
-  'use the saved text': 'Use disk version',
-  'save the note again': 'Recreate it',
-}
-
 /** A note of the scenario, found by the title the scenario gives it. */
 interface Subject {
   path: string
@@ -114,10 +101,8 @@ export class Person {
     await destroyNote(this.page.request, this.getSubject(title).path)
   }
 
-  async choose(option: string, title: string): Promise<void> {
-    const name = BANNER_CHOICES[option]
-    if (!name) throw new Error(`no choice "${option}"`)
-    await this.getBanner(title).getByRole('button', { name }).click()
+  async choose(label: string, title: string): Promise<void> {
+    await this.getBanner(title).getByRole('button', { name: label }).click()
   }
 
   async leaveVault(): Promise<void> {
@@ -134,22 +119,16 @@ export class Person {
 
   async expectHas(kind: string, title: string, text: string): Promise<void> {
     const subject = this.getSubject(title)
-    if (kind === 'saved') await waitForSavedBody(this.page.request, subject.path, text)
-    else await expect(subject.text).toContainText(text)
+    if (kind === 'disk') await waitForSavedBody(this.page.request, subject.path, text)
+    else await expect(getNotePanel(this.page, subject.path)).toContainText(text)
   }
 
   async expectLacks(kind: string, title: string, text: string): Promise<void> {
     const subject = this.getSubject(title)
-    if (kind === 'saved') {
+    if (kind === 'disk') {
       expect((await readNote(this.page.request, subject.path)).body).not.toContain(text)
     } else {
-      await expect(subject.text).not.toContainText(text)
+      await expect(getNotePanel(this.page, subject.path)).not.toContainText(text)
     }
-  }
-
-  async expectWarning(title: string, kind: string): Promise<void> {
-    const message = WARNINGS[kind]
-    if (!message) throw new Error(`no warning "${kind}"`)
-    await expect(this.getBanner(title)).toContainText(message)
   }
 }

@@ -1,46 +1,47 @@
 Feature: A note that changes on disk
-  A person writes a note. Another program changes the saved note.
+  A person writes a note. Another program changes the same note on disk.
 
   Background:
-    Given the note "Shopping list" is open with "tea"
+    Given the person has the note "Shopping list" with "tea"
 
-  Scenario: The open note follows a change in the saved note
-    When another program writes "milk" in the saved note "Shopping list"
-    Then the open note "Shopping list" has "milk"
+  Scenario: The note follows a change on disk
+    When another program writes "milk" in the note "Shopping list" on disk
+    Then the note "Shopping list" has "milk"
 
-  Scenario: Unsaved text is kept when the saved note changes
-    Given the person writes "bread" in the open note "Shopping list"
-    When another program writes "milk" in the saved note "Shopping list"
-    Then the open note "Shopping list" warns about "change"
-    And the open note "Shopping list" has "bread"
+  Scenario: Unsaved text is kept when the note changes on disk
+    Given the person has unsaved "bread" in the note "Shopping list"
+    When another program writes "milk" in the note "Shopping list" on disk
+    Then the note "Shopping list" has "the file changed on disk"
+    And the note "Shopping list" has "bread"
+    And the note "Shopping list" on disk has "milk"
 
   Scenario: The person keeps their text
-    Given the person writes "bread" in the open note "Shopping list"
-    And another program writes "milk" in the saved note "Shopping list"
-    When the person chooses "keep my text" for the open note "Shopping list"
-    Then the saved note "Shopping list" has "bread"
-    And the saved note "Shopping list" does not have "milk"
+    Given the person has unsaved "bread" in the note "Shopping list"
+    And another program writes "milk" in the note "Shopping list" on disk
+    When the person chooses "Keep my version" for the note "Shopping list"
+    Then the note "Shopping list" on disk has "bread"
+    And the note "Shopping list" on disk does not have "milk"
 
-  Scenario: The person takes the text of the saved note
-    Given the person writes "bread" in the open note "Shopping list"
-    And another program writes "milk" in the saved note "Shopping list"
-    When the person chooses "use the saved text" for the open note "Shopping list"
-    Then the open note "Shopping list" has "milk"
-    And the open note "Shopping list" does not have "bread"
+  Scenario: The person takes the text from disk
+    Given the person has unsaved "bread" in the note "Shopping list"
+    And another program writes "milk" in the note "Shopping list" on disk
+    When the person chooses "Use disk version" for the note "Shopping list"
+    Then the note "Shopping list" has "milk"
+    And the note "Shopping list" does not have "bread"
 
-  Scenario: The open note takes the latest change
-    Given the person writes "bread" in the open note "Shopping list"
-    And another program writes "milk" in the saved note "Shopping list"
-    And another program writes "eggs" in the saved note "Shopping list"
-    When the person chooses "use the saved text" for the open note "Shopping list"
-    Then the open note "Shopping list" has "eggs"
+  Scenario: The note takes the latest change on disk
+    Given the person has unsaved "bread" in the note "Shopping list"
+    And another program writes "milk" in the note "Shopping list" on disk
+    And another program writes "eggs" in the note "Shopping list" on disk
+    When the person chooses "Use disk version" for the note "Shopping list"
+    Then the note "Shopping list" has "eggs"
 
-  Scenario: A removed saved note leaves the text in the open note
-    When another program removes the saved note "Shopping list"
-    Then the open note "Shopping list" warns about "removal"
-    And the open note "Shopping list" has "tea"
+  Scenario: A note removed from disk keeps its text
+    When another program removes the note "Shopping list" from disk
+    Then the note "Shopping list" has "the note was removed from the vault"
+    And the note "Shopping list" has "tea"
 
   Scenario: The person saves a removed note again
-    Given another program removes the saved note "Shopping list"
-    When the person chooses "save the note again" for the open note "Shopping list"
-    Then the saved note "Shopping list" has "tea"
+    Given another program removes the note "Shopping list" from disk
+    When the person chooses "Recreate it" for the note "Shopping list"
+    Then the note "Shopping list" on disk has "tea"
