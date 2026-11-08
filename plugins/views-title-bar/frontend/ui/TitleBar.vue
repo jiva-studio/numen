@@ -82,7 +82,11 @@ const rows = computed<readonly BarRow[]>(() => [
   { prefix: SLOT.titleBarStatus, entries: props.status },
 ])
 const room = computed(() => getControlsRoom(controls.value, props.isFullscreen))
-const { fit } = useBarFit(start, () => rows.value, () => room.value.lead + room.value.trail)
+const { fit } = useBarFit(
+  start,
+  () => rows.value,
+  () => room.value.lead + room.value.trail,
+)
 const { onKeydown, onFocusin } = useToolbarFocus(start)
 const overflow = computed<readonly SlotItem[]>(() => {
   const overflowKeys = new Set(fit.value.overflow)
@@ -164,7 +168,11 @@ function onRunCommand(command: string, itemId?: string): void {
     class="title-bar"
     data-title-bar
     :data-controls="controls"
-    :style="{ '--title-bar-lead': `${room.lead}px`, '--title-bar-trail': `${room.trail}px`, '--title-bar-corner-inset': CORNER_INSET }"
+    :style="{
+      '--title-bar-lead': `${room.lead}px`,
+      '--title-bar-trail': `${room.trail}px`,
+      '--title-bar-corner-inset': CORNER_INSET,
+    }"
     @dblclick="onDoubleClick"
   >
     <MacButtonsInset

@@ -76,8 +76,12 @@ describe('the place of the title', () => {
   const cells = (wrapper: VueWrapper) =>
     wrapper
       .find('[data-title-bar-start]')
-      .findAll(':scope > [data-title-bar-lead], :scope > [data-title-bar-middle], :scope > [data-title-bar-trail]')
-      .map((one) => Object.keys(one.attributes()).find((name) => name.startsWith('data-title-bar-'))!)
+      .findAll(
+        ':scope > [data-title-bar-lead], :scope > [data-title-bar-middle], :scope > [data-title-bar-trail]',
+      )
+      .map((one) =>
+        Object.keys(one.attributes()).find((name) => name.startsWith('data-title-bar-'))!,
+      )
   const style = (wrapper: VueWrapper, name: string) =>
     (wrapper.find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(name).trim()
 

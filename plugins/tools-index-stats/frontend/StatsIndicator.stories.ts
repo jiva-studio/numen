@@ -183,7 +183,9 @@ export const KeepsItsSize: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(getBox)
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(
+      getBox,
+    )
     await expect(boxes).toHaveLength(4)
     for (const box of boxes) await expect(box.height).toBe(20)
   },

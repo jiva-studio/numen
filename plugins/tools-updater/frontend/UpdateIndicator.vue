@@ -77,7 +77,13 @@ function onDismiss() {
     >
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
-    <span v-else class="update-indicator__trigger" role="img" :aria-label="tooltip" :title="tooltip">
+    <span
+      v-else
+      class="update-indicator__trigger"
+      role="img"
+      :aria-label="tooltip"
+      :title="tooltip"
+    >
       <span class="update-indicator__label">v{{ version }}</span>
     </span>
 

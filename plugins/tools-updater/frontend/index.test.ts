@@ -141,7 +141,10 @@ describe('the updater frontend', () => {
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
-    await wrapper.findAll('button').find((one) => one.text() === 'Dismiss')?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Dismiss')
+      ?.trigger('click')
 
     expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.9.0')
     expect(wrapper.find('.update-indicator').classes()).not.toContain('update-indicator--available')

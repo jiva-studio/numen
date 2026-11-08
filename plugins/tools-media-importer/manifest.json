@@ -7,7 +7,10 @@
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
-    "textKinds": [{ "kind": "article", "title": "Article" }, { "kind": "captions", "title": "Captions" }],
+    "textKinds": [
+      { "kind": "article", "title": "Article" },
+      { "kind": "captions", "title": "Captions" }
+    ],
     "feature": "media links",
     "category": "tools",
     "noteTypes": [

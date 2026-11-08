@@ -30,7 +30,6 @@ describe('the popover of the update badge', () => {
   })
 })
 
-
 describe('the chip of the version', () => {
   it('is flat, 20px high, 12px in text, 8px in padding, and still', () => {
     const rule = readRule('.update-indicator__trigger')

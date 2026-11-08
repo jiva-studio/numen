@@ -93,12 +93,12 @@ export const KeepsItsSize: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.update-indicator__trigger')].map(
-      (one) => {
-        const { width, height } = one.getBoundingClientRect()
-        return { width, height }
-      },
-    )
+    const boxes = [
+      ...canvasElement.querySelectorAll<HTMLElement>('.update-indicator__trigger'),
+    ].map((one) => {
+      const { width, height } = one.getBoundingClientRect()
+      return { width, height }
+    })
     await expect(boxes).toHaveLength(2)
     for (const box of boxes) await expect(box.height).toBe(20)
   },
