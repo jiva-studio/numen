@@ -6,7 +6,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it goes, are its
+// each is doing behind itself, and what has to land before it closes, are its
 // own. Every question here names the window it is about.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
@@ -113,7 +113,7 @@ export type Task = Message<"numen.v1.Task"> & {
   error: string;
 
   /**
-   * Set for work a person started and is waiting to be told about.
+   * Set for work a person started and is waiting to be notified about.
    *
    * @generated from field: bool is_user_started = 7;
    */
@@ -444,7 +444,7 @@ export const FlushResultSchema: GenEnum<FlushResult> = /*@__PURE__*/
 
 /**
  * WindowService answers about one window: what it has in front of the person,
- * what is being done behind it, and what a caller has left when it goes.
+ * what is being done behind it, and what a caller has left when it closes.
  *
  * @generated from service numen.v1.WindowService
  */
@@ -454,10 +454,10 @@ export const WindowService: GenService<{
    * the caller listens: what it is, what it is on, and how far it has got.
    *
    * The whole list arrives every time any of it changes, and the first arrives
-   * at once, so a window that opened while work was running is told about it.
+   * at once, so a window that opened while work was running is notified of it.
    * It is a stream and not a question asked over and over, because what is
    * being done is known here the moment it changes and work can begin without
-   * the window asking for it — an agent is told to read a document, and this is
+   * the window asking for it — an agent is instructed to read a document, and this is
    * where the person watching sees it happen.
    *
    * @generated from rpc numen.v1.WindowService.WatchTasks

@@ -44,7 +44,7 @@ func (l *progressLog) getCounted() []run.Task {
 	return counted
 }
 
-func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
+func canceledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := reading(t)
@@ -89,7 +89,7 @@ func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *ho
 // find nothing pending while only the canceled note lacks vectors.
 func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	events := &progressLog{recorder: newRecorder()}
-	p, _, _ := cancelledPass(t, events, &readyLog{})
+	p, _, _ := canceledPass(t, events, &readyLog{})
 	earlier := len(events.getCounted())
 
 	p.embed(t.Context())
@@ -115,12 +115,12 @@ func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	}
 }
 
-// The vectors-ready listener is told once the notes nobody canceled carry vectors, and the
+// The vectors-ready listener is notified once the notes no person canceled carry vectors, and the
 // canceled note still has none: the event covers the vault without it.
-func TestVectorsReadyExcludesTheCancelledNote(t *testing.T) {
+func TestVectorsReadyExcludesTheCanceledNote(t *testing.T) {
 	events := &progressLog{recorder: newRecorder()}
 	log := &readyLog{}
-	p, model, heldChunks := cancelledPass(t, events, log)
+	p, model, heldChunks := canceledPass(t, events, log)
 	if len(log.vaults) != 0 {
 		t.Fatalf("told %v after the canceled pass", log.vaults)
 	}

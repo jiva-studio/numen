@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
 )
 
-// visibility is the window going out of sight and coming back into it. Hiding
+// visibility is the window going out of sight and returning to it. Hiding
 // leaves the page drawing and answering, so what only it holds is passed
 // after the window is gone from the screen.
 type visibility struct {
@@ -35,7 +35,7 @@ func closeWindow(
 	return false
 }
 
-// windowTracker tracks active open windows and answers whether a closing window is the last.
+// windowTracker tracks active open windows and returns whether a closing window is the last.
 type windowTracker struct {
 	mu    sync.Mutex
 	count int

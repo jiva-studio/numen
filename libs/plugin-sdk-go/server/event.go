@@ -12,7 +12,7 @@ import (
 type EventHandler func(ctx context.Context, event string) error
 
 // WithEventHandler mounts numen.v1.PluginEventService, which hands each delivered event to fn.
-// A server without one does not take events.
+// A server without one does not accept events.
 func WithEventHandler(fn EventHandler) Option {
 	return func(s *Server) {
 		s.onEvent = fn

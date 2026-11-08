@@ -116,7 +116,7 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 
 // An abandoned answer is capped at the longest cost, so an hour away from the
 // screen does not count as an hour of review.
-func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
+func TestAnUnattendedAnswerIsCappedAtTheLongest(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 

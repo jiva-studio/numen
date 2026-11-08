@@ -126,7 +126,7 @@ describe('what dismisses the menu', () => {
   })
 })
 
-describe('letting go of the window', () => {
+describe('releasing the window', () => {
   const fire = (): void => {
     window.dispatchEvent(new Event('wheel'))
     createElement().dispatchEvent(new Event('pointerdown', { bubbles: true }))
@@ -135,7 +135,7 @@ describe('letting go of the window', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
   }
 
-  it('hears nothing once released, and registers passive capture listeners', () => {
+  it('receives nothing once released, and registers passive capture listeners', () => {
     const addSpy = vi.spyOn(window, 'addEventListener')
     const removeSpy = vi.spyOn(window, 'removeEventListener')
     const { dismiss, ground } = setup(null, (event) => event.type === 'resize')
@@ -157,7 +157,7 @@ describe('letting go of the window', () => {
     removeSpy.mockRestore()
   })
 
-  it('hears nothing once the menu is unmounted while still open', () => {
+  it('receives nothing once the menu is unmounted while still open', () => {
     const { dismiss, ground, wrapper } = setup()
     ground.listen()
     wrapper.unmount()

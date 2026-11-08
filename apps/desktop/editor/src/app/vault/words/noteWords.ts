@@ -78,7 +78,7 @@ export const mapNoteResult = (from: {
   })
 }
 
-/** What a write came back with. A file that moved past the caller has changed. */
+/** What a write returned. A file that moved past the caller has changed. */
 export const mapWriteResult = (from: {
   body?: string | undefined
   error?: NoteErrorCodeValue | undefined

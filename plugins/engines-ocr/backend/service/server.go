@@ -24,7 +24,7 @@ const EnvMockML = "NUMEN_MOCK_ML"
 // engineFactory opens the recogniser the configuration names.
 type engineFactory func(ctx context.Context, cfg engine.Config) (recogniser, error)
 
-// recogniser is the recogniser of a page and what it holds.
+// recogniser is the recogniser of a page and its contents.
 type recogniser interface {
 	recognition.Recogniser
 	Close() error

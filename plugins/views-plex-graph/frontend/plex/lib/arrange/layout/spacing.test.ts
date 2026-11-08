@@ -157,7 +157,7 @@ describe('findSpacing', () => {
     expect([...windows]).toStrictEqual([options.viewport])
   })
 
-  it('never gives a gap less than its setting, whatever spread it is told', () => {
+  it('never gives a gap less than its setting, whatever spread it is given', () => {
     expect(findSpacing({ ...options, spread: 0.5 }, () => true)).toStrictEqual(
       spacingAsSet(options),
     )

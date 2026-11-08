@@ -182,7 +182,7 @@ func TestAHeadingIsStoredWithoutItsBlockID(t *testing.T) {
 	db := openDB(t)
 	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		// A mark, and four endings that are not one: too short, too long, an
-		// alphabet the id pattern does not take, and no space before the caret.
+		// alphabet the id pattern does not accept, and no space before the caret.
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 2, Text: "Short ^k7m2xq9f"},
 		domain.Heading{Level: 2, Text: "Long ^k7m2xq9fzpb"},

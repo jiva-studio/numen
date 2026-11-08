@@ -94,7 +94,7 @@ func TestEvent_HandlerRejectionReturnsError(t *testing.T) {
 	}
 }
 
-func TestAServerWithoutAnEventHandlerDoesNotTakeEvents(t *testing.T) {
+func TestAServerWithoutAnEventHandlerDoesNotAcceptEvents(t *testing.T) {
 	client := newEventClient(serveEvents(t), eventToken)
 
 	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))

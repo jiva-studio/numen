@@ -146,7 +146,7 @@ func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 }
 
 // TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds. A limit that truncates
-// in silence reads as "that is all there is".
+// in silence reads as "that is everything".
 func TestADeckAnswersARunOfItsCardsAndReturnsHowManyItContains(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -225,7 +225,7 @@ func TestDeckRead_ReturnsRequestedFieldsOnly(t *testing.T) {
 		t.Errorf("the first card holds %q under Name", got)
 	}
 
-	// A card carrying none of them is a card, and comes back as one.
+	// A card carrying none of them is a card, and is returned as one.
 	none := readCards(t, session, map[string]any{
 		"path": "Animals.md", "cardId": llama, "fields": []string{"Life span"},
 	})
@@ -490,7 +490,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 
 // TestAWriteIsRefusedOverAnEditNobodySaw. A manual edit of the deck takes
 // precedence over an agent write based on a stale read, which returns an error.
-func TestAWriteIsRefusedOverAnEditNobodySaw(t *testing.T) {
+func TestAWriteIsRefusedOverAnEditThatWasNeverRead(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})

@@ -28,9 +28,9 @@ export function orderNames(
 }
 
 /**
- * A dragged field may land where it was let go. The first field names every
+ * A dragged field may land where it was dropped. The first field names every
  * card the card model cuts, so it stays first: it does not move, and nothing lands
- * above it. A field let go at its current position moves nothing either.
+ * above it. A field dropped at its current position moves nothing either.
  */
 export function canDropField(
   fields: readonly string[],
@@ -86,7 +86,7 @@ export type Objection = 'blank' | 'taken' | 'braced'
 
 export type HeadingObjection = 'blank' | 'taken'
 
-/** What checking a name came back with. */
+/** What checking a name returned. */
 export interface NameCheckResult<Why extends Objection> {
   readonly name: string
   readonly objection: Why | null

@@ -366,7 +366,7 @@ export const ModeSchema: GenEnum<Mode> = /*@__PURE__*/
   enumDesc(file_numen_v1_theme, 1);
 
 /**
- * ThemeService answers how the window is drawn, and is told what a person
+ * ThemeService answers how the window is drawn, and is notified of what a person
  * chose.
  *
  * @generated from service numen.v1.ThemeService

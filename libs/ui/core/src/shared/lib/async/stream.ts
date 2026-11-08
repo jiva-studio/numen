@@ -25,7 +25,7 @@ export interface StreamDeps {
   setLost(message: string): void
   wait(ms: number): Promise<unknown>
   /**
-   * What the follower lets go of when a stream ends: whatever it holds answers
+   * What the follower releases when a stream ends: whatever it holds answers
    * to that reading of the stream alone.
    */
   reset?(): void
@@ -34,7 +34,7 @@ export interface StreamDeps {
 export function createFollower(deps: StreamDeps) {
   /**
    * One reading of a stream, to its end or to the fault that ends it. It
-   * answers whether the window is still open.
+   * returns whether the window is still open.
    */
   const readStream = async <T>(
     stream: () => AsyncIterable<T>,

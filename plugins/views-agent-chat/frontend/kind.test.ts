@@ -91,7 +91,7 @@ describe('what a command requested over an agent tab is over', () => {
 })
 
 describe('an agent tab that closes', () => {
-  it('notifies the conversation it is over, so the agent lets go of what it kept', () => {
+  it('notifies the conversation it is over, so the agent releases what it kept', () => {
     const one = window()
     const state = one.open()
 

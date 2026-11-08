@@ -472,7 +472,7 @@ func TestStreak_ZeroWithoutAnswers(t *testing.T) {
 // Retention is counted over the cards that were learned, and only those: a card
 // still being learned is presented again after ten minutes, which indicates nothing about
 // how well anything is remembered.
-func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
+func TestWhatWasRecalledIsCountedOverWhatWasLearned(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognize"}
 	delta := review.NewFSRS()

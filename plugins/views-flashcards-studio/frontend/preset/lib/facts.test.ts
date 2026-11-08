@@ -29,7 +29,7 @@ describe('what a place buys', () => {
     ])
   })
 
-  it('adds when the overdue is gone, or that it stays, where something is overdue', () => {
+  it('adds when the overdue count is cleared, or that it remains, where something is overdue', () => {
     expect(getBuyFacts('minutes', { ...targetPoint, clears: 3 }).at(-1)).toStrictEqual({
       kind: 'overdueGone',
       days: 3,

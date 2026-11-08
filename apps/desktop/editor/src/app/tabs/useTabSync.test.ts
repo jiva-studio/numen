@@ -252,7 +252,7 @@ describe('createTabSync guards', () => {
 })
 
 describe('a linked tab that fails to move', () => {
-  it('is told to the window, and the rest still move', async () => {
+  it('is sent to the window, and the rest still move', async () => {
     const failure = new Error('the plugin is gone')
     const other = vi.fn<Navigate>()
     const { sync, onError } = setup(

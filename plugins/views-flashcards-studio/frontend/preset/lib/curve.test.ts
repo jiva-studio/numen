@@ -197,14 +197,14 @@ describe('a goal with nothing to work on', () => {
     )
   })
 
-  it('is not the line the window guessed, which is nobody’s answer', () => {
+  it('is not the line the window guessed, which no request answers', () => {
     expect(getIdleReason({ ...nothing, isHonest: false })).toBe('')
     expect(getIdleReason({ ...nothing, decks: 4, isHonest: false })).toBe('')
   })
 
   // The preset is not stopped: it schedules reviews, and nothing here can ever
   // become one.
-  it('is a material nobody has begun that no place of the range begins', () => {
+  it('is a material no one has begun that no place of the range begins', () => {
     const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
     expect(getIdleReason(all)).toBe('beginsNothing')
   })
@@ -278,7 +278,7 @@ describe('the value the knob remains at, at the edges', () => {
   })
 })
 
-describe('a material nobody has begun, where the range has no place', () => {
+describe('a material no one has begun, where the range has no place', () => {
   it('is not a reason to say the preset begins nothing', () => {
     const none: Curve = {
       goal: 'minutes',

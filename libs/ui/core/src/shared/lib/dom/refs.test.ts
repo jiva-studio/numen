@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createRefRegistry } from './refs'
 
 describe('the refs of a loop', () => {
-  it('passes a key the same function until its element goes', () => {
+  it('passes a key the same function until its element is removed', () => {
     const { getRef } = createRefRegistry<string>(vi.fn())
     const first = getRef('a')
 

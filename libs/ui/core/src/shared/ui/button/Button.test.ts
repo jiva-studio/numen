@@ -15,7 +15,7 @@ describe('what a button is', () => {
     expect(button.text()).toBe('Save')
   })
 
-  it('is drawn solid and at the default size where it is told nothing', () => {
+  it('is drawn solid and at the default size where it is given nothing', () => {
     const button = mount(Button)
     expect(button.classes()).toEqual(
       expect.arrayContaining([
@@ -57,7 +57,7 @@ describe('what a button is', () => {
     expect(button.classes()).toContain('bg-accent')
   })
 
-  it('takes the element of its child where it is told to', () => {
+  it('takes the element of its child where it is configured to', () => {
     const button = mount(Button, {
       props: { asChild: true },
       slots: { default: '<a href="/x" class="own">Open</a>' },

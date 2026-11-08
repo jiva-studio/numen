@@ -54,9 +54,9 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// VectorsReady is told that all the vectors of a vault exist, but those of the sources whose indexing
-// a person canceled: those stay without vectors until they change. It is told after every pass that
-// leaves no other vector pending, so it is told more than once for a vault.
+// VectorsReady is notified that all the vectors of a vault exist, but those of the sources whose indexing
+// a person canceled: those stay without vectors until they change. It is notified after every pass that
+// leaves no other vector pending, so it is notified more than once for a vault.
 type VectorsReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.

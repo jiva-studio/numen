@@ -272,7 +272,7 @@ describe('a theme changed under a plex already standing', () => {
     stop()
   })
 
-  it('takes its box back out of the page when the plex goes', () => {
+  it('takes its box back out of the page when the plex is disposed', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -372,7 +372,7 @@ describe('the box a plex measures its type against', () => {
     })
   })
 
-  it('is release when the plex goes', () => {
+  it('is released when the plex is disposed', () => {
     stubCanvas()
     stubStyles()
     setTheme()

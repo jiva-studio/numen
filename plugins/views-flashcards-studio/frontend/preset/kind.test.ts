@@ -402,7 +402,7 @@ describe('the curve behind the knob', () => {
 
   // The plotted figures are the result for the settings currently in the tab, so
   // the curve of an earlier request is not valid for new settings.
-  it('is nobody’s answer while the answer to the settings now standing is out', async () => {
+  it('is no request’s answer while the answer to the settings now standing is out', async () => {
     const { state } = await openPresetTab()
     expect(state.curve.value.isHonest).toBe(true)
 
@@ -521,7 +521,7 @@ describe('what the tab says it encountered as an error', () => {
 // While the plot is waiting on the vault index, the tab reports that a response
 // is pending. When no response is coming, the tab reports the error and clears
 // the waiting state.
-describe('a curve nobody answers', () => {
+describe('a curve no request answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
     const { state } = await openPresetTab({}, () => Promise.reject(new Error('the vault is gone')))
     expect(state.isWaiting.value).toBe(false)
@@ -545,7 +545,7 @@ describe('a curve nobody answers', () => {
 // A typed setting is written when the control is released. Until then the tab
 // holds the pending value and the position of the control.
 describe('what a tab still has unwritten for the file', () => {
-  it('is written before the tab goes', async () => {
+  it('is written before the tab is closed', async () => {
     const { state, writtenFiles, closed } = await openPresetTab()
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
@@ -568,7 +568,7 @@ describe('what a tab still has unwritten for the file', () => {
     expect(state.errorMessage.value).not.toBe('')
   })
 
-  it('lets the tab go the second time it is requested, the person having been told', async () => {
+  it('lets the tab go the second time it is requested, the person having been notified', async () => {
     const { state, closed } = await openPresetTab(
       {},
       curve,
@@ -597,7 +597,7 @@ describe('what a tab still has unwritten for the file', () => {
     expect(state.hasExternalChange.value).toBe(true)
   })
 
-  it('is written when the window goes', async () => {
+  it('is written when the window is closed', async () => {
     const { state, writtenFiles, flush } = await openPresetTab()
     state.updateSetting('newADay', 4)
     await flush()

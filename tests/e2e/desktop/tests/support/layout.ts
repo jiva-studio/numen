@@ -103,7 +103,7 @@ export const showInFiles = async (page: Page, folders: readonly string[]): Promi
 }
 
 /**
- * Presses a row, carries it past the drag threshold and lets go over the middle of another row,
+ * Presses a row, carries it past the drag threshold and drops over the middle of another row,
  * the way a pointer drags a row onto a folder.
  */
 export const dragRowOnto = async (page: Page, row: Locator, onto: Locator): Promise<void> => {

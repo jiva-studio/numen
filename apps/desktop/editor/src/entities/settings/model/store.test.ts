@@ -272,7 +272,7 @@ describe('a setting written twice in quick succession', () => {
     expect(retainedState.getCommittedSetting(settingPath)).toBe(true)
   })
 
-  it('does not take a read that answers after a newer one', async () => {
+  it('does not accept a read that answers after a newer one', async () => {
     const vault = createBlockedVault()
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 

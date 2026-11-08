@@ -16,7 +16,7 @@ function createFocusTarget(matches: (selector: string) => boolean) {
 }
 
 describe('hover', () => {
-  it('is on while the pointer is over it, and off once it leaves', () => {
+  it('is on while the pointer is over it, and off once the pointer exits', () => {
     const hoverFocus = useHoverFocus()
     expect(hoverFocus.isOn.value).toBe(false)
 
@@ -55,7 +55,7 @@ describe('keyboard focus', () => {
     expect(hoverFocus.isOn.value).toBe(false)
   })
 
-  it('stays while focus moves to something inside, and goes when it leaves', () => {
+  it('stays while focus moves to something inside, and ends when it exits', () => {
     const { hoverFocus, element, focus } = createFocusTarget(() => true)
     const inside = document.createElement('span')
     const outside = document.createElement('span')

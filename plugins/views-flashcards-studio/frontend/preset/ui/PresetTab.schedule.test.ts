@@ -76,7 +76,7 @@ describe('a goal with nothing to work on', () => {
 
   //   // The preset schedules and there is nothing here it can schedule. The message
   //   // replaces the control, and it is not a reason the preset is stopped.
-  it('says a material nobody has begun that no place of the range begins', () => {
+  it('says a material no one has begun that no place of the range begins', () => {
     const { tab } = mountPresetTab({ ...nothing, decks: 1, cards: 900, unbegun: 900 })
     expect(tab.text()).toContain(words.beginsNothing)
     expect(tab.findAll('[data-preset="stopped"]')).toHaveLength(0)

@@ -17,7 +17,7 @@ func (o OpenTabs) GetActiveTab() (Tab, bool) {
 	return Tab{}, false
 }
 
-// A Tab is one tab of a window: what kind it is, and what it holds.
+// A Tab is one tab of a window: what kind it is, and its contents.
 //
 // The kind is the name a plugin registers the tab kind under. State is the
 // JSON that plugin saved for the tab; nothing here reads it.

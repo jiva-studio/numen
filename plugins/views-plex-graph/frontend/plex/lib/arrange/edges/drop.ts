@@ -4,7 +4,7 @@ import { RELATION_NAMES, type PlexRelation } from '../../relation'
 import type { Direction, PlexOptions, Size } from '../options'
 
 /**
- * What dragging away from a node and letting go evaluates to.
+ * What dragging away from a node and dropping evaluates to.
  * The plex reports the shape of the gesture only: the node it started from, the direction, and whether it landed on something.
  * What a parent or a jump means, what gets written and whether it is allowed, is the application's.
  */
@@ -52,7 +52,7 @@ export function getRelationTowards(
 /**
  * The node a point falls inside, if any. Later nodes win, as when drawn.
  *
- * A node that is not fully there is not a node to let go on: it is on its way
+ * A node that is not fully there is not a node to drop on: it is on its way
  * in or out, and it would be a link to something the reader never saw. That is
  * the same rule that decides the click and the tab stop.
  */
@@ -111,7 +111,7 @@ export interface DroppedInput {
  *
  * Measured from the focus, which is what the arrangement is built around. A
  * node the pointer crosses is not a landing: the relation is read off the
- * direction, and letting go anywhere in the window is answered the same way.
+ * direction, and dropping anywhere in the window is answered the same way.
  */
 export function getDropRelation({
   frame,

@@ -34,7 +34,7 @@ const findCloseButton = (wrapper: ReturnType<typeof mountWorkspace>, tab: string
   wrapper.find(`[data-workspace-tab="${tab}"] button`)
 
 describe('a close', () => {
-  it('is told to the caller before anything is applied', async () => {
+  it('is reported to the caller before anything is applied', async () => {
     let notifiedEvent: unknown
     const target = mountWorkspace(oneStack(), {
       onClose: () => {
@@ -48,7 +48,7 @@ describe('a close', () => {
     expect(target.emitted('close')?.[0]?.[0]).toBe('chat')
   })
 
-  it('is applied where the caller lets it go', async () => {
+  it('is applied where the caller releases it', async () => {
     const target = mountWorkspace()
     await findCloseButton(target, 'chat').trigger('click')
 
@@ -111,7 +111,7 @@ describe('the last tab in the workspace', () => {
 })
 
 describe('a menu requested for on a tab', () => {
-  it('is told to the caller with the tab and the point', async () => {
+  it('is reported to the caller with the tab and the point', async () => {
     const target = mountWorkspace()
 
     await target

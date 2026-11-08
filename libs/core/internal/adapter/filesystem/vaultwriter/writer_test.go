@@ -251,7 +251,7 @@ func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 }
 
 // A file is stated out of its metadata. The file here is sixteen megabytes and
-// cannot be opened at all, and the answer still comes back.
+// cannot be opened at all, and the answer is still returned.
 func TestStatingAFileOpensNothing(t *testing.T) {
 	root := t.TempDir()
 	export, err := os.OpenFile(filepath.Join(root, "export.iso"), os.O_CREATE|os.O_WRONLY, 0o000)

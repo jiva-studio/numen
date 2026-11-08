@@ -16,7 +16,7 @@ import (
 // word for: it cannot declare a variable of that type, cannot write a stand-in
 // for it in a test, and cannot see in its own source what it was given.
 //
-// A driven adapter therefore comes back as the port it satisfies. A driving one
+// A driven adapter therefore is returned as the port it satisfies. A driving one
 // is what an application mounts and calls in through, and has no port to come
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = module + "internal/adapter/"
@@ -82,7 +82,7 @@ func isReachable(fn *ast.FuncDecl) bool {
 }
 
 // The composition root hands out ports. An adapter the compiler holds is bound
-// to one here and never comes back out under its own name.
+// to one here and is never returned under its own name.
 func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 	target, err := readTree(".")
 	if err != nil {

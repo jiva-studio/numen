@@ -87,7 +87,7 @@ func TestAFolderGoesToTheTrash(t *testing.T) {
 
 // TestAFolderWithAPunctuatedName is the encoding of the recorded path: a name a
 // person may well choose has characters a URL does not carry as they are, and
-// what is written has to come back as what was deleted.
+// what is written has to be returned as what was deleted.
 func TestAFolderWithAPunctuatedName(t *testing.T) {
 	data := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", data)

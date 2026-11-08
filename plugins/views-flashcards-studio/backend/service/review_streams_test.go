@@ -179,7 +179,7 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 	}
 }
 
-// gated is vaults whose review cards come back when their own gate is closed.
+// gated is vaults whose review cards are returned when their own gate is closed.
 type gated struct {
 	until   map[domain.VaultID]<-chan struct{}
 	entered chan domain.VaultID
@@ -383,7 +383,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
 	// The vault is read when the window opens it, and what a count that will not
-	// come back does to the stream is what is under test here.
+	// being returned does to the stream is what is under test here.
 	front(t, handler)
 
 	target := make(chan struct{})
@@ -418,7 +418,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	}
 }
 
-// waiting is a vault whose review cards never come back, which is what counting a
+// waiting is a vault whose review cards are never returned, which is what counting a
 // vault of many thousands looks like from the stream's side.
 type waiting struct{ until <-chan struct{} }
 

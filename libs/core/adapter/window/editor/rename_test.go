@@ -1098,7 +1098,7 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 
 // TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord. The wire and the core call
 // a link's role by one word, so the role a request names is the role the note
-// comes back carrying.
+// is returned carrying.
 func TestEveryRoleTheSchemaNamesIsSavedBelowThatWord(t *testing.T) {
 	for _, one := range []struct {
 		role v1.Role

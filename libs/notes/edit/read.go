@@ -17,7 +17,7 @@ import (
 type ReadOutcome string
 
 const (
-	// Ok is the body coming back.
+	// Ok is the returned body.
 	Ok ReadOutcome = "ok"
 	// Missing is a path with no file behind it.
 	Missing ReadOutcome = "missing"

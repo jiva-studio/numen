@@ -175,7 +175,7 @@ describe('a change to the arrangement is a movement too', () => {
   })
 })
 
-describe('when the component goes away', () => {
+describe('when the component is disposed', () => {
   it('stops asking to be called back', async () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
@@ -323,7 +323,7 @@ describe('what counts as a change to the arrangement', () => {
   })
 })
 
-describe('a movement nobody requested for', () => {
+describe('a movement that was not requested', () => {
   it('does not cancel a callback when nothing was waiting for one', async () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)

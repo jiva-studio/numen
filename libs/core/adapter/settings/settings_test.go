@@ -139,7 +139,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	}
 }
 
-// A number the setting does not take is not one it is seeded with.
+// A number the setting does not accept is not one it is seeded with.
 func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "3")
 	cfg, err := openAt(write(t, `{}`))
@@ -163,7 +163,7 @@ func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
 
 // A first run with no other configuration has a settings file to read and edit,
 // containing the application's active settings.
-func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
+func TestAnUnconfiguredInstallationWritesItsSettingsDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
 	cfg, err := openAt(path)
 	if err != nil {

@@ -81,7 +81,7 @@ describe('a hand on the row', () => {
     expect(hand.to({ x: 150, y: 60 })).toEqual({ x: 550, y: 340 })
   })
 
-  it('lets go', () => {
+  it('releases', () => {
     const hand = new Hand()
     hand.take(createPoint(200), createPoint(500))
     hand.to(createPoint(150))

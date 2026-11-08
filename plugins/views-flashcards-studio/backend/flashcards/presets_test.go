@@ -149,7 +149,7 @@ func TestSession_DeckWithTwoPresetsUsesFirstBudget(t *testing.T) {
 }
 
 // An index update that failed is not a write that failed. The file stat of the
-// file the write produced comes back with it, and the caller's next save lands
+// file the write produced is returned with it, and the caller's next save lands
 // on that file.
 func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
@@ -433,7 +433,7 @@ func TestANoteThatIsNotAPresetIsNotSaved(t *testing.T) {
 	}
 }
 
-// The load each day of the week carries goes in and comes back out as it was.
+// The load each day of the week carries goes in and is returned as it was.
 func TestTheLoadReachesBackAsItWentIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getSettled())
@@ -1141,7 +1141,7 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	}
 }
 
-// The whole frontmatter comes back as it went in but for the one entry: the
+// The whole frontmatter is returned as it went in but for the one entry: the
 // identity, the keys the application does not own, the comments beside them,
 // the block's own indentation and the order of the entries.
 func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
@@ -1209,7 +1209,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	}
 }
 
-// A block holding other entries keeps them when the preset entry goes.
+// A block holding other entries keeps them when the preset entry is removed.
 func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{

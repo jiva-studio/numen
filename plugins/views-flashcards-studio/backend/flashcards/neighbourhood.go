@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// MostRead is how many of the joined notes come back with their text.
+// MostRead is how many of the joined notes are returned with their text.
 //
 // A hub note is pointed at by hundreds of others and a note may be a megabyte,
 // so reading every one reads the whole vault. The remainder is returned named and

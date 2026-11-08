@@ -82,7 +82,7 @@ func contains(all []string, one string) bool {
 //
 // The frontmatter is shared with the user, and the application does not own all
 // of it.
-func TestANoteNobodySavedToReachesOutAsItWentIn(t *testing.T) {
+func TestANoteNeverSavedToReachesOutAsItWentIn(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		raw, _ := drawNote(t)

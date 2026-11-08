@@ -43,7 +43,7 @@ const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTa
   }) as DeclaredTabKindRegistration
 
 describe('a registration that says what its tabs hold', () => {
-  it('is told apart from one that holds a note', () => {
+  it('is distinguished from one that holds a note', () => {
     expect(isDeclaredTabKind(declare())).toBe(true)
     expect(isDeclaredTabKind({ kind: 'note', component: Pane })).toBe(false)
   })

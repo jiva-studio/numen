@@ -40,7 +40,7 @@ describe('the files a plugin has open', () => {
     expect(remove).toHaveBeenCalledOnce()
   })
 
-  it('put a file that moved under a tab to the person before the window goes', async () => {
+  it('put a file that moved under a tab to the person before the window is closed', async () => {
     const { fileFlush, drop } = createFlush()
     const states = ref<Record<string, string>>({})
     const staleBuffers = {

@@ -59,7 +59,7 @@ func TestWritingOneKeyPreservesTheRestOfTheBlockAsItWas(t *testing.T) {
 	}
 }
 
-// The names come back in the order they stand in, and an entry that is not text
+// The names are returned in the order they stand in, and an entry that is not text
 // is not a name.
 func TestAListIsRead(t *testing.T) {
 	doc := openDocument(t, "---\nfields:\n  - Height\n  - 12\n  - Weight\n---\n")

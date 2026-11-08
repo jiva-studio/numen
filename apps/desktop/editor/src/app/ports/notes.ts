@@ -34,7 +34,7 @@ export interface NotePort {
    * Prose into a note, keeping the frontmatter the file has when it lands.
    *
    * Seen is what a read gave this caller. Prose on disk that the caller never
-   * saw comes back as changed, and nothing is written. Nothing seen writes
+   * saw is returned as changed, and nothing is written. Nothing seen writes
    * over whatever is there.
    */
   write(

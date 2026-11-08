@@ -512,7 +512,7 @@ func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 	if problems := after.CardModel.Problems; len(problems) != 0 {
 		t.Errorf("the card model declares something its templates do not place: %+v", problems)
 	}
-	// One write, so the file stat that came back is the file on disk and the
+	// One write, so the file stat that was returned is the file on disk and the
 	// next write of it lands.
 	if answer.At.Size != int64(len(onDisk(t, f.root, "cards/Animal.md"))) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.At)
@@ -619,7 +619,7 @@ func cardModel(t *testing.T, f *cutting, path string) *api.ReadCardModelResponse
 
 // TestACardModelIsWrittenWithItsTemplatesAndItsFields. The templates are the body and the
 // fields are one key of the frontmatter, and both are the one file, so what
-// comes back is the file holding both.
+// is returned is the file holding both.
 func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
@@ -649,7 +649,7 @@ func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	if !strings.Contains(target, "fields:\n  - Name\n  - Height\n") {
 		t.Errorf("the card model declares something else: %q", target)
 	}
-	// The file stat that comes back is the file on disk, so the write that
+	// The file stat that is returned is the file on disk, so the write that
 	// follows this one lands.
 	if answer.At.Size != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.At)

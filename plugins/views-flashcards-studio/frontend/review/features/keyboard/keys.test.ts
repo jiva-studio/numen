@@ -102,7 +102,7 @@ describe('the keys a session is done with', () => {
     }
   })
 
-  // With a panel up, escape sends it away and the session stays where it is.
+  // With a panel up, escape sends it away and the session keeps its position.
   it('sends the panel away on escape before it leaves the session', () => {
     expect(getSessionKeyIntent(createPress('Escape'), { isShown: true, isAsking: true })).toEqual({
       does: 'shut',

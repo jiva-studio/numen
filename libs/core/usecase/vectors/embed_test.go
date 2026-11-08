@@ -478,7 +478,7 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	}
 }
 
-// holdingEmbedder embeds every text except those of a source it is told to
+// holdingEmbedder embeds every text except those of a source it is configured to
 // hold: a call with one blocks until its context ends.
 type holdingEmbedder struct {
 	*embedder

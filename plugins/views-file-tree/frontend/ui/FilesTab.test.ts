@@ -190,7 +190,7 @@ describe('a row the tree reports', () => {
     expect(recorded).toStrictEqual(['moves Entropy.md Order.md'])
   })
 
-  it('opens the folder it remains for, and what it holds is drawn', async () => {
+  it('opens the folder it remains for, and its contents are drawn', async () => {
     const { window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('open', 'physics')

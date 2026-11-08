@@ -180,7 +180,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(true)
   })
 
-  it('drops an answer to a question nobody is asking any more', async () => {
+  it('drops a result of a superseded query', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -219,7 +219,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
-  it('says nothing of a group that was requested and came back with nothing', async () => {
+  it('says nothing of a group that was requested and returned nothing', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -235,7 +235,7 @@ describe('answers arriving', () => {
     expect(group?.isWorking).toBe(false)
   })
 
-  it('says the vault holds no vectors, where meaning came back with nothing', async () => {
+  it('says the vault holds no vectors, where meaning returned nothing', async () => {
     const vault = createVault()
     const readItem = { chunks: 4, embedded: 0, isEmbedding: true }
     const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
@@ -310,7 +310,7 @@ describe('answers arriving', () => {
     expect(namesItem?.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.read }])
   })
 
-  it('lets go of everything when the palette is put away', async () => {
+  it('releases everything when the palette is put away', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -400,7 +400,7 @@ describe('where a thing found takes the person', () => {
     })
   })
 
-  it('takes nobody anywhere for an item it is not drawing', async () => {
+  it('navigates nowhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
     expect(palette.chooseResult('notes/nowhere.md', OPEN_NOTE)).toBeNull()
   })
@@ -746,7 +746,7 @@ describe('what was typed taken back', () => {
 })
 
 describe('answers to a question overtaken', () => {
-  it('draws no failure of a question nobody is asking any more', async () => {
+  it('draws no failure of a superseded query', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,

@@ -205,7 +205,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 	quiet(t, watching, "work with no name was reported")
 }
 
-func TestFinishingWhatIsNotThereTellsNobody(t *testing.T) {
+func TestFinishingWhatIsNotThereNotifiesNoListener(t *testing.T) {
 	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -249,7 +249,7 @@ func TestClearingConsumesAllTasksOutAndTellsListeners(t *testing.T) {
 	}
 }
 
-func TestClearingWhatIsEmptyTellsNobody(t *testing.T) {
+func TestClearingWhatIsEmptyNotifiesNoListener(t *testing.T) {
 	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()

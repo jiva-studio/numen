@@ -50,7 +50,7 @@ func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func
 	})
 }
 
-// RoundTrip fails for every value of the enum that does not come back as
+// RoundTrip fails for every value of the enum that is not returned as
 // itself. A value the reading does not name lands on its default, and the
 // writing sends that default back in its place.
 func RoundTrip[E SchemaEnum, C any](t *testing.T, reading func(E) C, writing func(C) E) {

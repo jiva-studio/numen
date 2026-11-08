@@ -108,7 +108,7 @@ export const faults = (shots, declared) => {
 
 /**
  * The rule put through lists made up here, each case with the words the rule
- * is to answer it in. A check nobody has seen fail is an assumption, and this
+ * is to answer it in. A check that has never been seen failing is an assumption, and this
  * one's whole worth is its failure path, so the path is walked on every run
  * before a picture is.
  *

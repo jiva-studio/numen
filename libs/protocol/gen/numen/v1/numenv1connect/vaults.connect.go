@@ -73,7 +73,7 @@ type VaultsServiceClient interface {
 	// filesystem gives it.
 	RenameVault(context.Context, *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error)
 	// RemoveVault takes a vault off the list and out of the index. The folder
-	// stays where it is unless the request asks for it, and adding it back
+	// keeps its position unless the request asks for it, and adding it back
 	// brings back the same vault.
 	RemoveVault(context.Context, *connect.Request[v1.RemoveVaultRequest]) (*connect.Response[v1.RemoveVaultResponse], error)
 	// OpenVault shows another vault in this window. What the window was showing
@@ -189,7 +189,7 @@ type VaultsServiceHandler interface {
 	// filesystem gives it.
 	RenameVault(context.Context, *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error)
 	// RemoveVault takes a vault off the list and out of the index. The folder
-	// stays where it is unless the request asks for it, and adding it back
+	// keeps its position unless the request asks for it, and adding it back
 	// brings back the same vault.
 	RemoveVault(context.Context, *connect.Request[v1.RemoveVaultRequest]) (*connect.Response[v1.RemoveVaultResponse], error)
 	// OpenVault shows another vault in this window. What the window was showing

@@ -56,7 +56,7 @@ var (
 )
 
 // PackageCache holds downloaded plugin packages by the SHA-256 of their content. Every application
-// of the user shares one, and what it holds is checked on every use, since the folder is writable by
+// of the user shares one, and its contents are checked on every use, since the folder is writable by
 // any of them.
 type PackageCache interface {
 	// Put stores the content under the checksum. Content whose hash differs is refused with

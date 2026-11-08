@@ -140,7 +140,7 @@ describe('an answer as it arrives', () => {
     expect(drop).not.toHaveBeenCalled()
   })
 
-  it('says whether it is open and whether it has words', () => {
+  it('returns whether it is open and whether it has words', () => {
     const { answer } = create()
     expect(answer.isOpen()).toBe(false)
     expect(answer.hasContent()).toBe(false)

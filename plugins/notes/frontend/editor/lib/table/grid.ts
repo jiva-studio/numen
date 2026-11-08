@@ -122,7 +122,7 @@ export const isWritable = (state: EditorState) =>
 const shiftCells = (row: Row, delta: number): Row =>
   row.map((cell) => (cell ? { ...cell, from: cell.from + delta, to: cell.to + delta } : null))
 
-/** The same widget, standing where the changes have carried the table. Other widgets come back as they are. */
+/** The same widget, standing where the changes have carried the table. Other widgets are returned unchanged. */
 export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType => {
   if (!(widget instanceof Grid)) return widget
   const table = widget.table

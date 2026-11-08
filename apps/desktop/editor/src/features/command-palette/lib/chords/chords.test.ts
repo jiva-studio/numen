@@ -30,12 +30,12 @@ describe('a keystroke the window answers', () => {
     expect(isChord(createKeyEvent({ metaKey: true }))).toBe(true)
   })
 
-  it('belongs to nobody while Alt is retained with it', () => {
+  it('belongs to no command while Alt is retained with it', () => {
     expect(isChord(createKeyEvent({ ctrlKey: true, altKey: true }))).toBe(false)
     expect(isChord(createKeyEvent({ metaKey: true, altKey: true }))).toBe(false)
   })
 
-  it('belongs to nobody with neither of the two retained', () => {
+  it('belongs to no command with neither of the two retained', () => {
     expect(isChord(createKeyEvent())).toBe(false)
   })
 })

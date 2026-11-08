@@ -170,7 +170,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // reindex to receive events and the operating system does not wait for it. A
 // debounce that blocked on the consumer would stop draining the backlog and
 // lose later events.
-func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
+func TestDebouncingContinuesWhileNoListenerIsRegistered(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := vaultwatch.Watcher{Hub: watchhub.NewHub(), Options: vaultconfig.Options{DebounceDelay: 50 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {

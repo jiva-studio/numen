@@ -57,7 +57,7 @@ export const removeCard = (deck: BufferDeck, id: string): BufferDeck => ({
 const getLastSection = (deck: BufferDeck): string | null => deck.sections.at(-1)?.id ?? null
 
 /**
- * A card let go somewhere in the deck.
+ * A card dropped somewhere in the deck.
  */
 export const dropCard = (deck: BufferDeck, id: string, target: InsertionPoint): BufferDeck => {
   const targetCard = deck.cards.find((card) => card.id === id)

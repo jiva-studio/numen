@@ -138,7 +138,7 @@ describe('a hand on the strip', () => {
 
   //   // A pointer release can land anywhere, and the strip settles on the nearest
   //   // stop and does not stay between two of them.
-  it('settles on the nearest stop when it is let go', async () => {
+  it('settles on the nearest stop when it is released', async () => {
     const { one, window_ } = strip()
 
     window_.dispatchEvent(hand('pointerdown', 500))
@@ -171,7 +171,7 @@ describe('a hand on the strip', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
-  it('settles back on where it started when it is let go short of the next', async () => {
+  it('settles back on where it started when it is released short of the next', async () => {
     const { one, window_ } = strip()
 
     window_.dispatchEvent(hand('pointerdown', 500))
@@ -223,7 +223,7 @@ describe('a wheel on the strip', () => {
 
   //   // A scroll to a stop that the parent does not accept returns the strip to the
   //   // current stop, and a wheel scroll settles the same way as a pointer drag.
-  it('is taken back off a stop the window did not take', async () => {
+  it('is taken back off a stop the window did not accept', async () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()
 

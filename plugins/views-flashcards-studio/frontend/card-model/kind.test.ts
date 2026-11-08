@@ -255,7 +255,7 @@ describe('a field renamed in a card model', () => {
 })
 
 describe('a field carried in a card model', () => {
-  it('lands where it was let go', async () => {
+  it('lands where it was dropped', async () => {
     const { tab } = await open()
 
     tab.moveField('Life span', null)
@@ -263,7 +263,7 @@ describe('a field carried in a card model', () => {
     expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
-  it('leaves the first field first, wherever it was let go', async () => {
+  it('leaves the first field first, wherever it was dropped', async () => {
     const { tab } = await open()
 
     tab.moveField('Height', null)
@@ -608,7 +608,7 @@ describe('what the window asks of a card model tab', () => {
 })
 
 describe('a card model tab closed', () => {
-  it('stays open, still called what it was, where the file moved past what it holds', async () => {
+  it('stays open, still called what it was, where the file moved past its contents', async () => {
     const one = await openStale()
 
     one.tab.close(one.id)
@@ -632,7 +632,7 @@ describe('a card model tab closed', () => {
     expect(tab.cardModel.value.templates[0]?.id).not.toBe(was)
   })
 
-  it('lets go of its title while a tab relies on another file', async () => {
+  it('releases its title while a tab relies on another file', async () => {
     const one = await open()
     await one.windowTabs.openTab(CARD_MODEL, 'Plant.md')
     await settle()

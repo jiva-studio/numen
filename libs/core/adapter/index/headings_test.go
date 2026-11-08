@@ -59,7 +59,7 @@ func TestAHeadingReachesBackWithItsLevelAndItsLine(t *testing.T) {
 	}
 }
 
-func TestHeadingsComeBackInTheOrderTheyStand(t *testing.T) {
+func TestHeadingsAreReturnedInTheOrderTheyStand(t *testing.T) {
 	db := openDB(t)
 	saveNoteWithHeadings(t, db, getFirst(), "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "Last", Line: 12},

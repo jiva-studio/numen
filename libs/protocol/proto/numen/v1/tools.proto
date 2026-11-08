@@ -27,7 +27,7 @@ message ListToolsResponse {
   repeated PluginTool tools = 1;
 }
 
-// PluginTool is one tool as an agent is told of it.
+// PluginTool is one tool as an agent receives it.
 message PluginTool {
   // The name an agent calls the tool by.
   string name = 1;

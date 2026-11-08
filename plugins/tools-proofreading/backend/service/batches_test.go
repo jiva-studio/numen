@@ -204,7 +204,7 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 		}
 	}
 
-	// A page's printed lines stay where they were printed. A sentence broken
+	// A page's printed lines keep the positions they were printed at. A sentence broken
 	// across lines of speech is answered for as one line.
 	if !strings.Contains(scanInstruction, "Nothing moves from one line to\n  another") {
 		t.Error("the scan instruction lets a word move between lines")

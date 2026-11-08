@@ -276,10 +276,10 @@ describe('narrative phrases', () => {
     assert.deepEqual(getPhraseRules('x/plain_test.go', go), [])
   })
 
-  it('reports phrases as advisory on a full scan, so --check passes', () => {
+  it('fails on a phrase in a full scan', () => {
     const { code, out } = scanFixture('y/a.test.ts', "it('lets go of the interval it is waiting on', () => {})\n")
-    assert.equal(code, 0, out)
-    assert.match(out, /24\. Narrative phrases \(advisory[^:]*: 1/)
+    assert.equal(code, 1, out)
+    assert.match(out, /24\. Narrative phrases[^:]*: 1/)
   })
 })
 

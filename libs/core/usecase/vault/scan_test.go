@@ -513,7 +513,7 @@ func (r refusingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error)
 
 // A permission bit, a broken ACL, a device that went away. A refresh counts
 // such a file and carries on, and the two ways the index changes agree.
-func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
+func TestAnUnreadableFileDoesNotStopAScan(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))

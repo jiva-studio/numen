@@ -270,7 +270,7 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
-  it('shows the removal notice once the last row is gone and asks to remove the link on Done', async () => {
+  it('shows the removal notice once the last row is removed and asks to remove the link on Done', async () => {
     const wrapper = mountPopover()
     await wrapper.get('.plex-link-row__delete-btn').trigger('click')
 

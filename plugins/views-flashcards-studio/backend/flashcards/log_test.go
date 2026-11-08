@@ -173,8 +173,8 @@ func (s *reorderedStores) Open(v domain.Vault) (ports.LogStore, error) {
 	return s.store, nil
 }
 
-// GetLogFiles sorts what the store lists, so the same runs come back in the same
-// order whatever order the store's own listing came back in.
+// GetLogFiles sorts what the store lists, so the same runs are returned in the same
+// order whatever order the store's own listing returned them in.
 func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
@@ -262,7 +262,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 // A vault folder that is gone mid-session is not somewhere to go on answering
 // into. An unmounted disk and a sync folder that vanished leave a path the
 // application would fill with a stub, and an evening of answers in it is
-// shadowed the moment the real vault comes back.
+// shadowed the moment the real vault is returned.
 func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
@@ -408,7 +408,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 
 // A vault with no reviews has no folder and no files, which is a valid empty
 // result and not a failure.
-func TestAVaultNobodyReviewedContainsNoRuns(t *testing.T) {
+func TestAnUnreviewedVaultContainsNoRuns(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 
@@ -538,7 +538,7 @@ func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
 }
 
 // What the screen shows is what it showed: the days, the streak, the answers,
-// what is still to come and how much came back.
+// what is still to come and how much was recalled.
 func TestTheHistoryShowsWhatItShowed(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)

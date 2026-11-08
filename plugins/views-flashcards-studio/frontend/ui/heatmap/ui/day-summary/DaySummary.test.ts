@@ -1,6 +1,6 @@
 /**
  * The account of one day of the grid: what was answered, how it was answered,
- * and how much of what was being reviewed came back.
+ * and how much of what was being reviewed was recalled.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -57,7 +57,7 @@ describe('a day that has been answered on', () => {
     expect(mountDetail({ did: 26 }).get('[data-day-detail="count"]').text()).toBe('26 answered')
   })
 
-  it('lists the four in the order they are pressed, and leaves out the ones nobody pressed', () => {
+  it('lists the four in the order they are pressed, and leaves out the ones that were not pressed', () => {
     expect(getRatings(mountDetail({ did: 24, again: 2, hard: 0, good: 18, easy: 4 }))).toEqual([
       ['again', 'Again', '2'],
       ['good', 'Good', '18'],
@@ -70,8 +70,8 @@ describe('a day that has been answered on', () => {
   })
 })
 
-describe('the share that came back', () => {
-  it('is what came back of what was requested, to the nearest whole', () => {
+describe('the share recalled', () => {
+  it('is what was recalled of what was requested, to the nearest whole', () => {
     expect(
       mountDetail({ did: 26, tested: 24, recalled: 20 })
         .get('[data-day-detail="recall-rate"]')
@@ -89,14 +89,14 @@ describe('the share that came back', () => {
     ).toBe(false)
   })
 
-  it('is the whole of it where everything requested came back', () => {
+  it('is the whole of it where everything requested was recalled', () => {
     expect(
       mountDetail({ did: 9, tested: 9, recalled: 9 }).get('[data-day-detail="recall-rate"]').text(),
     ).toBe('100% came back')
   })
 })
 
-describe('a day nobody answered on', () => {
+describe('a day with no answers', () => {
   it('says so, and says nothing else', () => {
     const summary = mountDetail()
     expect(summary.get('[data-day-detail="count"]').text()).toBe('Nothing answered')

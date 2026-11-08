@@ -87,7 +87,7 @@ func (Relation) EnumDescriptor() ([]byte, []int) {
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role nobody decided on has no behaviour.
+// and drawing read it, so a role no one has decided on has no behaviour.
 type Role int32
 
 const (
@@ -2831,7 +2831,7 @@ type RenameNoteResponse struct {
 	// Which of the three names the note, and so which the rename brought into
 	// line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
 	NameSource NameSource `protobuf:"varint,3,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
-	// What the file did. Absent when it stayed where it was.
+	// What the file did. Absent when it kept its position.
 	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the

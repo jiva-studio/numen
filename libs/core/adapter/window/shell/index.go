@@ -138,7 +138,7 @@ func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, 
 	a.ReportChange()
 }
 
-// ClearIndexFailure lets go of why a vault could not be indexed. A vault that moved
+// ClearIndexFailure releases the reason why a vault could not be indexed. A vault that moved
 // underneath the window is indexed again.
 func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 	a.indexRuns.clear(vaultID)

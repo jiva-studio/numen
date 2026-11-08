@@ -784,7 +784,7 @@ describe('the first note shown', () => {
 })
 
 describe('a closed window', () => {
-  it('lets go of every stream it listens to', async () => {
+  it('releases every stream it listens to', async () => {
     const signals: AbortSignal[] = []
     const core = fake({
       watchTasks: async function* (signal) {

@@ -136,7 +136,7 @@
   overflow-x: auto;
 }
 
-/* A word that has just arrived fades up where it lands in the editor. */
+/* A word that has just arrived fades up at its position in the editor. */
 @keyframes numen-word {
   from {
     opacity: 0;

@@ -10,7 +10,7 @@ import type { PaletteKeys } from './keys'
 
 const mountCap = (keys: PaletteKeys) => mount(KeyCap, { props: { keys } })
 
-describe('what a reader who is listening is told', () => {
+describe('what a reader who is listening receives', () => {
   it('is the keys in the order they are pressed, and then the letter', () => {
     const cap = mountCap({ icons: ['command', 'shift'], letter: 'P' })
     expect(cap.get('.sr-only').text()).toBe('Command Shift P')

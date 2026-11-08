@@ -490,7 +490,7 @@ func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
 }
 
 // A card model declaring no such field is not written to.
-func TestRenamingAFieldNobodyDeclares(t *testing.T) {
+func TestRenamingAnUndeclaredField(t *testing.T) {
 	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -820,7 +820,7 @@ func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 }
 
 // A card of a deck that never held one is given the wikilink under its heading,
-// and the values it already holds stay where they stand.
+// and the values it already holds keep their position.
 func TestSetCardModelOnACardThatNamedNone(t *testing.T) {
 	file := format.OpenDeckBody("## Llama ^k7m2xq9fzp\n\nsomebody's prose\n\n### Name\n\nLlama\n")
 	if err := file.SetCardModel(llama, "Animal"); err != nil {

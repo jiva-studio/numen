@@ -2,7 +2,7 @@
 // @generated from file numen/v1/agent.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client asks an agent, and what it hears back while the agent works.
+// What a client asks an agent, and what it receives while the agent works.
 //
 // The window passes a person's task and draws what arrives, a step at a
 // time. What the agent is and how it reaches the vault is the application's
@@ -107,7 +107,7 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
   model: string;
 
   /**
-   * Instructions told about the task.
+   * Instructions given for the task.
    *
    * @generated from field: string instructions = 8;
    */
@@ -275,7 +275,7 @@ export type AgentProgram = Message<"numen.v1.AgentProgram"> & {
   isInstalled: boolean;
 
   /**
-   * Set on the program an installation nobody has configured answers with.
+   * Set on the program an installation with no configuration answers with.
    *
    * @generated from field: bool is_default = 4;
    */
@@ -806,7 +806,7 @@ export const GetAgentToolsResponseSchema: GenMessage<GetAgentToolsResponse> = /*
 export const AgentService: GenService<{
   /**
    * AskAgent passes a task and reports what the agent does, in the order it
-   * does it, until it is done. Letting go of the stream stops the agent.
+   * does it, until it is done. Closing the stream stops the agent.
    *
    * @generated from rpc numen.v1.AgentService.AskAgent
    */

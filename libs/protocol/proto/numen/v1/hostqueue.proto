@@ -42,7 +42,7 @@ enum WorkState {
 }
 
 message EnqueueWorkRequest {
-  // Set for work a person started. It runs before work nobody asked for.
+  // Set for work a person started. It runs before work no person asked for.
   bool is_user_started = 1;
 }
 
