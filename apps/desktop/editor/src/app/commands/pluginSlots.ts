@@ -4,6 +4,7 @@
  */
 import {
   APP_COMMAND_OWNER,
+  isSharedCommand,
   SHARED_COMMANDS,
   getCommandOwner,
   type DeclaredSlotEntry,
@@ -11,6 +12,7 @@ import {
   type PluginPaletteCommand,
   type SlotCommandLook,
   type CommandTarget,
+  type WhenReader,
   type WhenValues,
 } from '@numen/plugin-host'
 import type { Command } from '@/features/command-palette'
@@ -18,7 +20,6 @@ import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { getPaletteId } from './declaredCommands'
 import { APP_SLOT_ENTRIES } from './appPlacements'
-import { getCondition } from './whenContext'
 
 /** The entries of the plugins with those of the application; undefined until the plugins have been listed. */
 export function readSlotEntries(
@@ -42,6 +43,7 @@ export interface SlotCommandFinderDeps {
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   readonly hasPluginItems?: (command: string) => boolean
   readonly getWhenValues: (target: CommandTarget | undefined) => WhenValues
+  readonly whenReader: WhenReader
 }
 
 const isOverFile = (target: CommandTarget | undefined): boolean =>
@@ -52,7 +54,7 @@ export function createSlotCommandFinder(
   deps: SlotCommandFinderDeps,
 ): (command: string, target: CommandTarget | undefined) => SlotCommandLook | undefined {
   const isAvailableOver = (when: string | undefined, target: CommandTarget | undefined) =>
-    getCondition(when)?.evaluate(deps.getWhenValues(target)) ?? false
+    deps.whenReader.getCondition(when)?.evaluate(deps.getWhenValues(target)) ?? false
 
   const findEditorLook = (command: string, target: CommandTarget | undefined) => {
     const found = deps.getEditorCommands().find((one) => one.id === command)
@@ -106,13 +108,13 @@ export function createSlotCommandFinder(
       ?.some(
         (one) =>
           one.command === command &&
-          getCondition(one.when)?.evaluatePartial(partialValues) !== 'false',
+          deps.whenReader.getCondition(one.when)?.evaluatePartial(partialValues) !== 'false',
       )
     return isPossible ? { title: shared.title, shortcut: '', hasItems: true } : undefined
   }
 
   return (command, target) => {
-    if (SHARED_COMMANDS.some((one) => one.id === command)) return findSharedLook(command, target)
+    if (isSharedCommand(command)) return findSharedLook(command, target)
     return getCommandOwner(command) === APP_COMMAND_OWNER
       ? findEditorLook(command, target)
       : findPluginLook(command, target)

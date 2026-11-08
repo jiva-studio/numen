@@ -67,7 +67,6 @@ const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } 
       tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
       getTab: vi.fn((id: string) => open.get(id)),
     },
-    getNoteCommands: () => [],
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },

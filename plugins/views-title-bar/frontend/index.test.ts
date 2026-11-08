@@ -10,7 +10,6 @@ import {
 } from '@numen/plugin-sdk/testing'
 import {
   SLOT,
-  TITLE_BAR_SLOT,
   type AppInfo,
   type PluginContext,
   type SlotViewRegistration,
@@ -84,7 +83,7 @@ describe('the plugin', () => {
 
     expect(component).toBeDefined()
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: TITLE_BAR_SLOT, view: TITLE_BAR_VIEW },
+      { slot: SLOT.titleBar, view: TITLE_BAR_VIEW },
     ])
   })
 
@@ -157,7 +156,7 @@ describe('the commands of the slots', () => {
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:chart.open', target: undefined, argument: undefined },
+      { command: 'org.example.tide:chart.open', target: undefined, itemId: undefined },
     ])
   })
 
@@ -278,7 +277,7 @@ describe('a submenu in a slot', () => {
     await nextTick()
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:log.create', target: undefined, argument: undefined },
+      { command: 'org.example.tide:log.create', target: undefined, itemId: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
   })
@@ -352,7 +351,7 @@ describe('the title', () => {
     await nextTick()
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'app:vault.create', target: undefined, argument: undefined },
+      { command: 'app:vault.create', target: undefined, itemId: undefined },
     ])
     expect(context.vaults.getSwitches()).toStrictEqual([])
   })

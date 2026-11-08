@@ -1,16 +1,17 @@
 /**
  * The commands the plugins registered, as the window reads and runs them: the palette's list, the
- * items a command offers, running one with its argument, and the plugins' shortcuts.
+ * items a command offers, running one with an item, and the plugins' shortcuts.
  */
 import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
 import { readAvailableCommands } from './availableReader'
 import { isCommandAvailable } from './commandWhen'
-import { createHandlerApi, isSharedCommand } from './handlers'
+import { isSharedCommand } from '@numen/plugin-sdk'
+import { createHandlerApi } from './handlers'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
-import type { CommandRun, PluginHostDeps } from './types'
+import type { CommandRun, HostDeps } from './types'
 
 const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: target.noteType ?? '' })
 
@@ -18,7 +19,7 @@ const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: targe
  * The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts.
  * A shared command offers and runs the handlers the plugins declare.
  */
-export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
+export function createCommandApi(deps: HostDeps, registry: HostRegistry) {
   const getAvailable = () => readAvailableCommands(deps, registry)
   const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
   const handlers = createHandlerApi(deps, registry)
@@ -47,7 +48,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
       note: CommandNote,
       run: CommandRun = {},
     ): Promise<boolean> => {
-      const { argument } = run
+      const { itemId } = run
       if (isSharedCommand(id)) return handlers.runSharedCommand(id, { note, ...run })
       const command = findAvailable(id)
       if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
@@ -57,7 +58,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         entry = registry.commands.value.get(id)
       }
       if (!entry) return false
-      await runCommand(deps, entry, { note, argument, isAwaited: run.isAwaited })
+      await runCommand(deps, entry, { note, itemId, isAwaited: run.isAwaited })
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {

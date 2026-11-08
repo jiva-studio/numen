@@ -18,12 +18,11 @@ export const SLOT = {
   fileTreeContext: 'fileTree.context',
   // The menu of a tab, over the file of the tab, drawn by the tab strip of the window.
   tabStripContext: 'tabStrip.context',
+  // The menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.
+  plexGraphContext: 'plexGraph.context',
   // The actions of a search result that is a note, over that note, drawn by the palette.
   paletteSearchResult: 'palette.searchResult',
 } as const
 
 // SlotName is a slot of a window.
 export type SlotName = (typeof SLOT)[keyof typeof SLOT]
-
-// WINDOW_SLOTS are the slots of the window itself; each draws one view, of the plugin first by id.
-export const WINDOW_SLOTS: readonly SlotName[] = [SLOT.titleBar, SLOT.statusBar]

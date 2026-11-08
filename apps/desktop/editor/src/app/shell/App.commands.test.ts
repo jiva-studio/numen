@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { Layers, LayoutTemplate } from '@lucide/vue'
-import { registerNoteIcon } from '@/entities/note'
+import { registerTabKindIcon } from '@/entities/note'
 // The mocked modules stand before the plugins that reach them are imported.
 import {
   requests,
@@ -321,7 +321,10 @@ describe('a command requested for while the vault is being read', () => {
 /** The window as rendered, driven like a user with nothing stubbed. */
 
 function drawPluginTypes(): void {
-  const unregister = [registerNoteIcon('sample', Layers), registerNoteIcon('form', LayoutTemplate)]
+  const unregister = [
+    registerTabKindIcon('sample', Layers),
+    registerTabKindIcon('form', LayoutTemplate),
+  ]
   onTestFinished(() => {
     for (const one of unregister) one()
   })

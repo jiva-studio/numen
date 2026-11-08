@@ -26,6 +26,7 @@ export function createRecordings(cues: readonly Cue[] = CUES, canCreateText = fa
     textRuns: 0,
     cueTimes: new Map<number, number>(),
     readError: null as Error | null,
+    textError: null as Error | null,
     onWork: null as ((isWorking: boolean) => void) | null,
     onChange: null as (() => void) | null,
     isWatched: false,
@@ -45,6 +46,7 @@ export function createRecordings(cues: readonly Cue[] = CUES, canCreateText = fa
     canCreateText: async () => state.canCreateText,
     createText: async () => {
       state.textRuns++
+      if (state.textError) throw state.textError
     },
     watchChanges: (_, onChange) => {
       state.onChange = onChange

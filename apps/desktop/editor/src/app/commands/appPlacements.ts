@@ -35,6 +35,13 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
+    command: 'app:version.delete',
+    group: '3-text',
+    order: 90,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    slot: 'fileTree.context',
     command: 'app:note.trash',
     group: '9-remove',
   },

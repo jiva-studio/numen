@@ -5,13 +5,20 @@
  */
 import { computed, shallowRef, watch } from 'vue'
 import {
+  createWhenReader,
   formatCommandId,
   type CommandDeclaration,
   type CommandItem,
   type HandlerDeclaration,
+  type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-host'
-import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
+import {
+  registerCommand,
+  type Command,
+  type CommandInvocation,
+  type CommandTarget,
+} from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
   listDeclaredItemLists,
@@ -21,7 +28,7 @@ import {
   type DeclaredSlot,
 } from '@/entities/plugin'
 import {
-  EMPTY_WHEN_CONTEXT,
+  createEmptyWhenContext,
   createWhenAvailability,
   getWhenGroup,
   type WindowWhenContext,
@@ -55,7 +62,7 @@ export const getPaletteId = (command: DeclaredCommand): string =>
  */
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
-  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+  context: WindowWhenContext = createEmptyWhenContext(),
   listItems: ListItems = listItemsOfOne,
 ): readonly Command[] {
   const isWhenAvailable = createWhenAvailability(context)
@@ -64,7 +71,7 @@ export function createDeclaredPaletteCommands(
     return {
       id: getPaletteId(one),
       text: one.title,
-      group: getWhenGroup(one.when),
+      group: getWhenGroup(context.whenReader.getCondition(one.when)),
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
       ...(one.hasItems
         ? {
@@ -102,8 +109,8 @@ export interface DeclaredCommandsDeps {
   readonly isListed?: (id: string) => boolean
   readonly hasBackend?: (pluginId: string) => boolean
   readonly getConfig?: () => WhenSettings
+  readonly whenReader?: WhenReader
   readonly listItems?: ListItems
-  readonly onCommandsChanged?: () => void
 }
 
 const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => ({
@@ -113,6 +120,13 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   ...(command.icon ? { icon: command.icon } : {}),
   ...(command.when ? { when: command.when } : {}),
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
+})
+
+const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({
+  path: invocation.file,
+  values: invocation.values ?? {},
+  ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
+  ...(one.hasItems ? { itemId: invocation.name } : {}),
 })
 
 /**
@@ -132,6 +146,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const whenContext: WindowWhenContext = {
     getContentTypes: () => contentTypes.value,
     getConfig: deps.getConfig ?? (() => ({})),
+    whenReader: deps.whenReader ?? createWhenReader(),
   }
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
@@ -153,12 +168,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       for (const unregister of unregisterAll) unregister()
       unregisterAll = commands.map((one) =>
         registerCommand(getPaletteId(one), async (invocation, on) => {
-          const outcome = await run(one, {
-            path: invocation.file,
-            values: invocation.values ?? {},
-            ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
-            ...(one.hasItems ? { argument: invocation.name } : {}),
-          })
+          const outcome = await run(one, toDeclaredRun(one, invocation), whenContext.whenReader)
           if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
           const { message, openedPath } = outcome.value
           if (message) on.writeMessage(message, 'info')
@@ -182,13 +192,9 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // An answer equal to the lists held keeps them, so the commands are not registered again while
     // the palette lists them.
     const handlers = commands.handlers ?? []
-    const isChanged =
-      !isSameList(declared.value, commands.commands) ||
-      !isSameList(declaredHandlers.value, handlers)
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
     if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
-    if (isChanged) deps.onCommandsChanged?.()
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }

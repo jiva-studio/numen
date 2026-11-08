@@ -44,6 +44,7 @@ const props = withDefaults(
     status?: readonly SlotItem[]
     canCreateVault?: boolean
     listItems?: (command: string) => Promise<readonly CommandItem[]>
+    reportError?: ((error: unknown) => void) | undefined
   }>(),
   {
     platform: 'windows',
@@ -63,8 +64,8 @@ const emit = defineEmits<{
   (event: 'minimize-window'): void
   (event: 'toggle-maximize-window'): void
   (event: 'close-window'): void
-  /** A command was picked; with `argument`, the id of the item picked. */
-  (event: 'run-command', command: string, argument?: string): void
+  /** A command was picked; with `itemId`, the id of the item picked. */
+  (event: 'run-command', command: string, itemId?: string): void
   /** A vault that is not the current one was chosen. */
   (event: 'switch-vault', id: string): void
   /** The last row of the list, which creates a vault, was chosen. */
@@ -151,9 +152,9 @@ function onDoubleClick(event: MouseEvent): void {
   emit('toggle-maximize-window')
 }
 
-function onRunCommand(command: string, argument?: string): void {
-  if (argument === undefined) emit('run-command', command)
-  else emit('run-command', command, argument)
+function onRunCommand(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run-command', command)
+  else emit('run-command', command, itemId)
 }
 </script>
 
@@ -196,6 +197,7 @@ function onRunCommand(command: string, argument?: string): void {
         :hidden="fit.hidden"
         :platform="platform"
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
 
@@ -206,6 +208,7 @@ function onRunCommand(command: string, argument?: string): void {
         :icon="Ellipsis"
         data-title-bar-more
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
 
@@ -236,6 +239,7 @@ function onRunCommand(command: string, argument?: string): void {
         :hidden="fit.hidden"
         :platform="platform"
         :list-items="listItems"
+        :report-error="reportError"
         @run-command="onRunCommand"
       />
     </div>

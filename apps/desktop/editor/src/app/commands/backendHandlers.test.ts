@@ -25,15 +25,15 @@ describe('createBackendHandlers', () => {
     const { deps, handlers } = createWith({ ok: true, value: { message: '', openedPath: '' } })
 
     expect(
-      await handlers.listBackendHandlerItems('md.ears', 'app:version.delete', TARGET),
+      await handlers.listBackendHandlerItems('md.ears', 'app:link.downloadMedia', TARGET),
     ).toStrictEqual([{ id: 'v1', title: 'Transcript' }])
     expect(deps.list).toHaveBeenCalledWith(
-      { pluginId: 'md.ears', id: 'app:version.delete' },
+      { pluginId: 'md.ears', id: 'app:link.downloadMedia' },
       'talks/a.mp3',
     )
   })
 
-  it('runs a handler over the path with the argument, writes its message and opens its file', async () => {
+  it('runs a handler over the path with the item picked, writes its message and opens its file', async () => {
     const { deps, handlers } = createWith({
       ok: true,
       value: { message: 'Transcribed', openedPath: 'talks/a.md' },
@@ -43,28 +43,30 @@ describe('createBackendHandlers', () => {
       pluginId: 'md.ears',
       command: 'app:file.createText',
       target: TARGET,
-      argument: 'fast',
+      itemId: 'fast',
       values: { language: 'en' },
     })
 
     expect(deps.run).toHaveBeenCalledWith(
       { pluginId: 'md.ears', command: 'app:file.createText' },
-      { path: 'talks/a.mp3', values: { language: 'en' }, argument: 'fast' },
+      { path: 'talks/a.mp3', values: { language: 'en' }, itemId: 'fast' },
     )
     expect(deps.writeMessage).toHaveBeenCalledWith('Transcribed', 'info')
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
   })
 
-  it('writes the error of a run that did not succeed as the plugin words it', async () => {
+  it('rejects a run that did not succeed with the error as the plugin words it, and writes nothing', async () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 
-    await handlers.runBackendHandler({
-      pluginId: 'md.ears',
-      command: 'app:file.createText',
-      target: TARGET,
-    })
+    await expect(
+      handlers.runBackendHandler({
+        pluginId: 'md.ears',
+        command: 'app:file.createText',
+        target: TARGET,
+      }),
+    ).rejects.toThrow('no audio')
 
-    expect(deps.writeMessage).toHaveBeenCalledExactlyOnceWith('no audio', 'error')
+    expect(deps.writeMessage).not.toHaveBeenCalled()
     expect(deps.openFile).not.toHaveBeenCalled()
   })
 

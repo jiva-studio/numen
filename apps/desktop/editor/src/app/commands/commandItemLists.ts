@@ -1,8 +1,7 @@
 /**
  * The item lists of the commands the core lists them for, as the menus of the window read them: the
  * commands requested over one file together are read in one request, after the one read of the kind
- * of the file requested with them, and each list is stored by its file, plugin and command until the
- * file or its text versions change, the vault is read again or the commands change.
+ * of the file requested with them. Every menu open reads its lists again.
  */
 import type { CommandItem } from '@numen/plugin-host'
 import type { ItemListAnswer, ItemListRequest } from '@/entities/plugin'
@@ -47,56 +46,18 @@ function createPendingList(request: ItemListRequest): PendingList {
   return { request, promise, resolve, reject }
 }
 
-function createListCache() {
-  const lists = new Map<string, Map<string, readonly CommandItem[]>>()
-  const versions = new Map<string, number>()
-  let epoch = 0
-  const getVersion = (path: string): string => `${epoch}:${versions.get(path) ?? 0}`
-  return {
-    get: (path: string, key: string) => lists.get(path)?.get(key),
-    /** What a read started now is checked against before its lists are stored. */
-    getVersion,
-    store: (path: string, version: string, key: string, items: readonly CommandItem[]) => {
-      if (version !== getVersion(path)) return
-      lists.set(path, new Map(lists.get(path)).set(key, items))
-    },
-    dropPaths: (paths: readonly string[]) => {
-      for (const path of paths) {
-        lists.delete(path)
-        versions.set(path, (versions.get(path) ?? 0) + 1)
-      }
-    },
-    dropAll: () => {
-      lists.clear()
-      epoch += 1
-    },
-  }
-}
-
-type ListCache = ReturnType<typeof createListCache>
-
-/** One request of the lists of a session: its file, the version of the file, the lists requested. */
-interface ListRead {
-  readonly path: string
-  readonly version: string
-  readonly pending: readonly PendingList[]
-}
-
-function settleLists(cache: ListCache, read: ListRead, answers: readonly ItemListAnswer[]): void {
-  for (const one of read.pending) {
+function settleLists(pending: readonly PendingList[], answers: readonly ItemListAnswer[]): void {
+  for (const one of pending) {
     const { pluginId, command } = one.request
     const answer = answers.find((each) => each.pluginId === pluginId && each.command === command)
     if (!answer) one.reject(new Error(`no list of the items of ${command}`))
     else if (!answer.result.ok) one.reject(new Error(answer.result.error))
-    else {
-      cache.store(read.path, read.version, getKey(pluginId, command), answer.result.value)
-      one.resolve(answer.result.value)
-    }
+    else one.resolve(answer.result.value)
   }
 }
 
-function failLists(read: ListRead, error: unknown): void {
-  for (const one of read.pending) {
+function failLists(pending: readonly PendingList[], error: unknown): void {
+  for (const one of pending) {
     one.reject(error instanceof Error ? error : new Error(String(error)))
   }
 }
@@ -104,22 +65,20 @@ function failLists(read: ListRead, error: unknown): void {
 export function createCommandItemLists(deps: CommandItemListsDeps) {
   const schedule = deps.schedule ?? scheduleTask
   const sessions = new Map<string, Session>()
-  const cache = createListCache()
 
   /** Sends the lists the session requested in one request, and settles each of them. */
   const send = (path: string, session: Session): void => {
     if (sessions.get(path) === session) sessions.delete(path)
     const pending = [...session.lists.values()]
     if (pending.length === 0) return
-    const read: ListRead = { path, version: cache.getVersion(path), pending }
     deps
       .listLists(
         path,
         pending.map((one) => one.request),
       )
       .then(
-        (answers) => settleLists(cache, read, answers),
-        (error: unknown) => failLists(read, error),
+        (answers) => settleLists(pending, answers),
+        (error: unknown) => failLists(pending, error),
       )
   }
 
@@ -147,14 +106,12 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
   }
 
   return {
-    /** The items the command offers over the file: those stored, or read with the others requested now. */
+    /** The items the command offers over the file, read with the others requested now. */
     listItems: (
       command: { readonly pluginId: string; readonly id: string },
       path: string,
     ): Promise<readonly CommandItem[]> => {
       const key = getKey(command.pluginId, command.id)
-      const items = cache.get(path, key)
-      if (items) return Promise.resolve(items)
       const session = getSession(path)
       const existing = session.lists.get(key)
       if (existing) return existing.promise
@@ -170,10 +127,6 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
       session.kinds ??= deps.fileKinds([only])
       return session.kinds
     },
-    /** Forgets the lists of the files, whose content or text versions changed. */
-    dropPaths: cache.dropPaths,
-    /** Forgets every list, as the commands changed. */
-    dropAll: cache.dropAll,
   }
 }
 

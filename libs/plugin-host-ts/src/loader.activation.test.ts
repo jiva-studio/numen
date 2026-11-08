@@ -4,7 +4,6 @@ import type { PluginContext } from '@numen/plugin-sdk'
 import { createPluginHost } from './hosting/host'
 import type { CommandDeclaration, PluginHostDeps } from './hosting/types'
 import { createPluginLoader } from './loader'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const PLUGIN = 'md.numen.views.plex.graph'
 
@@ -132,18 +131,18 @@ describe('the commands of a plugin that is turned off', () => {
   })
 })
 
-describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
+describe('a plugin whose start passes 30 s', () => {
   it('holds no registration and stays inactive when its start ends later', async () => {
     vi.useFakeTimers()
     try {
       const { host, loader, onError } = createWindow(async (context) => {
         context.registerCommand({ id: 'graph.open', handler: () => undefined })
-        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+        await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
         context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
       })
 
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+      await vi.advanceTimersByTimeAsync(30_000 + 100)
 
       expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
       expect(onError).toHaveBeenCalledTimes(1)
@@ -161,7 +160,7 @@ describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
   })
 })
 
-describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends after a newer start', () => {
+describe('a start cancelled at 30 s that ends after a newer start', () => {
   it('leaves what the newer start registered', async () => {
     vi.useFakeTimers()
     try {
@@ -169,14 +168,14 @@ describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends after a newer sta
       const { host, loader } = createWindow(async (context) => {
         starts += 1
         if (starts === 1) {
-          await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 2_000))
+          await new Promise((resolve) => setTimeout(resolve, 30_000 + 2_000))
           return
         }
         context.registerCommand({ id: 'graph.open', handler: () => undefined })
         context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
       })
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+      await vi.advanceTimersByTimeAsync(30_000 + 100)
       await started
 
       expect(await loader.activatePlugin(PLUGIN)).toBe(true)

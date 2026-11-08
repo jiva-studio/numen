@@ -4,7 +4,7 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { SLOT, TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
+import { createWindowHost, SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -18,7 +18,7 @@ import {
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createNoticeQueue, getTabPaneRect } from '@numen/shell'
+import { createNoticeQueue, getTabPaneRect, useWindowFrame } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
@@ -33,8 +33,9 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { createCommandRunner, createPaletteItems, useCommands } from '../commands/useCommands'
+import { useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
+import { createVersionCommands } from '../commands/versionCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
 import { createBackendHandlers } from '../commands/backendHandlers'
@@ -42,8 +43,6 @@ import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
 import { getNamedIcon } from '@/shared/icons'
 import { useWindowDisplay } from './useWindowDisplay'
-import { useWindowFrame } from './useWindowFrame'
-import { createWindowHost } from './windowHost'
 import { createEditorVaults } from './windowVaults'
 import { createWindowCommands } from './windowCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
@@ -82,6 +81,7 @@ interface WindowCommandsOptions {
   declaredCommands: ReturnType<typeof useDeclaredCommands>
   slots?: SlotHost | undefined
   getAppCommands: () => readonly Command[]
+  readCommandNote: ReturnType<typeof createCommandNoteReader>
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -90,6 +90,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     declaredCommands: deps.declaredCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,
+    readCommandNote: deps.readCommandNote,
     core,
     words,
     log: deps.log,
@@ -295,7 +296,6 @@ const createDeclaredParts = (
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
     listItems: itemLists.listItems,
-    onCommandsChanged: itemLists.dropAll,
   })
   return { itemLists, declaredCommands }
 }
@@ -401,6 +401,7 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
   tabsHold?: TabsHold
   tabCommands?: TabCommands
+  versionCommands?: ReturnType<typeof createVersionCommands>
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -450,7 +451,6 @@ function initWindowServices(
       windowTabs: base.windowTabs,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
-      itemLists: base.itemLists,
       writeMessage: base.writeMessage,
     }),
   )
@@ -487,7 +487,7 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
-  base.appCommands.current = () => ctx.tabCommands?.commands ?? []
+  base.appCommands.current = () => getAppCommandList(ctx)
   base.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
@@ -518,7 +518,6 @@ function initWindowKindsAndCommands(
         base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
       return name ? getNamedIcon(name) : undefined
     },
-    getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
   Object.assign(base.pluginServices, getKinds(ctx).services, {
@@ -547,7 +546,8 @@ function initWindowKindsAndCommands(
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
     slots: base.pluginHost.slots,
-    getAppCommands: () => ctx.tabCommands?.commands ?? [],
+    getAppCommands: () => getAppCommandList(ctx),
+    readCommandNote: createCommandNoteReader(base.itemLists),
   })
 
   return {
@@ -722,6 +722,21 @@ function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof crea
   return tabCommands
 }
 
+function createWindowVersionCommands(base: WindowCore) {
+  const versionCommands = createVersionCommands({
+    listItems: base.itemLists.listItems,
+    run: (command, path, itemId) =>
+      runDeclaredHandler({ pluginId: '', command }, { path, values: {}, itemId }),
+  })
+  versionCommands.register()
+  return versionCommands
+}
+
+const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
+  ...(ctx.tabCommands?.commands ?? []),
+  ...(ctx.versionCommands?.commands ?? []),
+]
+
 const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   bootstrapFailure: bootstrap.failure,
   isStarted: bootstrap.isStarted,
@@ -735,35 +750,17 @@ function createWindowFrameServices(
 ) {
   const { frame } = base
   let tableIds: readonly string[] | undefined
-  const getAppCommands = () => ctx.tabCommands?.commands ?? []
-  const getCommandNote = createCommandNoteReader(base.itemLists)
-  const getCommandDeps = () => getCommands(ctx).commandDeps
-  const items = createPaletteItems(
-    {
-      getAppCommands,
-      declaredCommands: base.declaredCommands,
-      pluginHost: base.pluginHost,
-      getTarget: commands.getTarget,
-    },
-    getCommandNote,
-    getCommandDeps,
-  )
-  const runner = createCommandRunner({
-    ...getCommands(ctx),
-    pluginHost: base.pluginHost,
-    getCommandNote,
-    getCommandDeps,
-    writeMessage: base.writeMessage,
-  })
+  const getAppCommands = () => getAppCommandList(ctx)
+  const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
   const windowCommands = createWindowCommands({
     getAppIds: () => [
       ...(tableIds ??= createCommands(words).map((one) => one.id)),
       ...getAppCommands().map((one) => one.id),
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
-    runCommandToEnd: runner.runCommandToEnd,
+    runCommandToEnd,
     listItems: items.listCommandItems,
-    runWithArgument: items.runWithArgument,
+    runWithItem: items.runWithItem,
     getTarget: commands.getTarget,
   })
   Object.assign(base.pluginServices, {
@@ -781,7 +778,7 @@ function createWindowFrameServices(
 }
 
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
-  titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
+  titleBarView: pluginHost.getSlotView(SLOT.titleBar),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })
 
@@ -813,6 +810,7 @@ export const useWindow = () => {
   const closeTab = createTabCloser(base)
   const moves = createWindowTabMoves(base, editing, closeTab)
   ctx.tabCommands = createWindowTabCommands(base, moves)
+  ctx.versionCommands = createWindowVersionCommands(base)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {

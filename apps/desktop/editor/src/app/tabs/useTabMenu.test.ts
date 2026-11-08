@@ -5,7 +5,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import {
-  MENU_HOLD_MS,
   SLOT,
   type SlotCommand,
   type SlotHost,
@@ -50,12 +49,10 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
 })
 
 const createCommands = () => {
-  const runs: { command: string; target: RunTarget | undefined; argument?: string }[] = []
+  const runs: { command: string; target: RunTarget | undefined; itemId?: string }[] = []
   return {
-    run: async (id: string, target?: RunTarget, argument?: string) => {
-      runs.push(
-        argument === undefined ? { command: id, target } : { command: id, target, argument },
-      )
+    run: async (id: string, target?: RunTarget, itemId?: string) => {
+      runs.push(itemId === undefined ? { command: id, target } : { command: id, target, itemId })
     },
     listItems: vi.fn(async (_id: string, _target?: RunTarget) => [
       { id: 'window-a', title: 'Atlas' },
@@ -284,6 +281,29 @@ describe('the note type and the properties of the file of a tab', () => {
   })
 })
 
+describe('an open of the menu of a tab cancelled while its note type is read', () => {
+  it('opens nothing after Escape', async () => {
+    let finish: (kind: NoteKind) => void = () => undefined
+    const commands = createCommands()
+    const menu = useTabMenu({
+      slots: createSlots(ENTRIES),
+      runCommand: commands.run,
+      listItems: commands.listItems,
+      getTabTarget: (tab) => TARGETS[tab]!,
+      readNoteKind: () => new Promise<NoteKind>((done) => (finish = done)),
+    })
+
+    menu.open('reef', { x: 4, y: 8 })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    finish({ noteType: 'link' })
+    await settle()
+    await settle()
+
+    expect(menu.menu.value).toBeNull()
+    expect(commands.listItems).not.toHaveBeenCalled()
+  })
+})
+
 describe('an entry of the menu of a tab that offers items', () => {
   const getItemRows = (menu: ReturnType<typeof setup>['menu']) =>
     menu.menu.value?.items
@@ -309,7 +329,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     commands.listItems.mockReturnValue(new Promise(() => undefined))
 
     menu.open('reef', { x: 4, y: 8 })
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
     vi.useRealTimers()
 
     expect(getItemRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])
@@ -334,7 +354,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     expect(getItemRows(menu)?.map((one) => one.text)).toStrictEqual(['Atlas', 'Tide log'])
   })
 
-  it('runs the command over the tab with the id of the argument picked', async () => {
+  it('runs the command over the tab with the id of the itemId picked', async () => {
     const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
@@ -342,7 +362,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     menu.choose('reef', getItemRows(menu)![1]!.id)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: MOVE.command, target: TARGETS.reef, argument: 'window-b' },
+      { command: MOVE.command, target: TARGETS.reef, itemId: 'window-b' },
     ])
   })
 
@@ -356,7 +376,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     expect(commands.getRuns()).toStrictEqual([])
   })
 
-  it('highlights the window of a move argument under the pointer, and clears the highlight after', async () => {
+  it('highlights the window of a move itemId under the pointer, and clears the highlight after', async () => {
     const { menu, onHighlight } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()

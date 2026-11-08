@@ -32,8 +32,8 @@ export function createFilesTabDeps(
   id: string,
 ): FilesTabDeps {
   return {
-    openEntry: ({ path, name }) => {
-      if (isNotePath(path) && workspace.syncPath(id, path, getFileStem(name))) return
+    openEntry: ({ path, name, isNote }) => {
+      if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
       workspace.openFile(path, { title: name || path, placement: 'current' })
     },
     onSelectPath: (path, state) => {
@@ -44,8 +44,8 @@ export function createFilesTabDeps(
     },
     getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
     listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
-    runCommand: async (command, target, argument) => {
-      await commands?.run(command, target, argument)
+    runCommand: async (command, target, itemId) => {
+      await commands?.run(command, target, itemId)
     },
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),

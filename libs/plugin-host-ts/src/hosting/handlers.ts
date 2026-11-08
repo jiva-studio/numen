@@ -3,25 +3,24 @@
  * plugins declare under `contributes.handlers`, each run by its plugin's frontend where it registered
  * the handler and by its backend otherwise.
  */
-import { SHARED_COMMANDS, type CommandItem, type CommandNote } from '@numen/plugin-sdk'
+import { isSharedCommand, type CommandItem, type CommandNote } from '@numen/plugin-sdk'
 import { formatCommandId } from '../commandId'
 import { isCommandAvailable } from './commandWhen'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
-import type { CommandRun, HandlerDeclaration, PluginHostDeps } from './types'
+import type { CommandRun, HandlerDeclaration, HostDeps } from './types'
 
 /** Joins the plugin id and the id of an item a handler offers, in the id of a shared command's item. */
 const ITEM_SEPARATOR = ':'
 
 /** Whether the full id is a shared command of the application. */
-export const isSharedCommand = (id: string): boolean => SHARED_COMMANDS.some((one) => one.id === id)
 
 /** The items one handler offers of its own, and undefined for a handler that offers none. */
 type HandlerItems = readonly CommandItem[] | undefined
 
 /** What the handlers of the shared commands are read from and run through. */
 interface HandlerParts {
-  readonly deps: PluginHostDeps
+  readonly deps: HostDeps
   readonly registry: HostRegistry
 }
 
@@ -80,7 +79,7 @@ async function runHandler(
       pluginId: handler.pluginId,
       command: handler.command,
       target: run.note,
-      argument: run.argument,
+      itemId: run.itemId,
       values: run.values,
     })
   } catch (error) {
@@ -113,23 +112,23 @@ async function runSharedCommand(
   command: string,
   run: SharedRun,
 ): Promise<boolean> {
-  const { note, argument, values } = run
+  const { note, itemId, values } = run
   const handlers = listMatching(parts, command, note)
-  if (argument === undefined) {
+  if (itemId === undefined) {
     if (handlers.length !== 1) return false
     await runHandler(parts, handlers[0]!, { note, values, isAwaited: run.isAwaited })
     return true
   }
-  const separator = argument.indexOf(ITEM_SEPARATOR)
-  const pluginId = separator < 0 ? argument : argument.slice(0, separator)
+  const separator = itemId.indexOf(ITEM_SEPARATOR)
+  const pluginId = separator < 0 ? itemId : itemId.slice(0, separator)
   const handler = handlers.find((one) => one.pluginId === pluginId)
   if (!handler) return false
-  const item = separator < 0 ? undefined : argument.slice(separator + 1)
-  await runHandler(parts, handler, { note, argument: item, values, isAwaited: run.isAwaited })
+  const item = separator < 0 ? undefined : itemId.slice(separator + 1)
+  await runHandler(parts, handler, { note, itemId: item, values, isAwaited: run.isAwaited })
   return true
 }
 
-export function createHandlerApi(deps: PluginHostDeps, registry: HostRegistry) {
+export function createHandlerApi(deps: HostDeps, registry: HostRegistry) {
   const parts: HandlerParts = { deps, registry }
   return {
     isSharedCommand,

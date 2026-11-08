@@ -18,15 +18,16 @@ const props = defineProps<{
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run-command', command: string, itemId?: string): void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRunCommand(command: string, argument?: string): void {
-  if (argument === undefined) emit('run-command', command)
-  else emit('run-command', command, argument)
+function onRunCommand(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run-command', command)
+  else emit('run-command', command, itemId)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -59,6 +60,7 @@ function isDrawn(entry: SlotItem): boolean {
           :tooltip="getTooltip(entry)"
           is-item-list
           :list-items="listItems"
+          :report-error="reportError"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-command="entry.command"
           @run-command="onRunCommand"
@@ -87,6 +89,7 @@ function isDrawn(entry: SlotItem): boolean {
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-submenu="entry.submenu"
           :list-items="listItems"
+          :report-error="reportError"
           @run-command="onRunCommand"
         />
         <div

@@ -1203,6 +1203,24 @@ const createMenuSeparator = (index: number): SlotSeparator => ({
   key: `demo/separator/${index}`,
 })
 
+/** The entries of the menu on a node of the plex. */
+const PLEX_MENU: readonly SlotItem[] = [
+  createMenuCommand(DEMO_COMMAND.openNote, 'Open note'),
+  createMenuSeparator(1),
+  createMenuCommand(DEMO_COMMAND.showNoteInPlex, 'Show note in plex'),
+  createMenuCommand(DEMO_COMMAND.revealNote, 'Show note in file tree'),
+  createMenuCommand(DEMO_COMMAND.askAgent, 'Ask agent about note'),
+  createMenuSeparator(2),
+  createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path'),
+  createMenuSeparator(3),
+  createMenuCommand(DEMO_COMMAND.createChildNote, 'Create child note'),
+  createMenuCommand(DEMO_COMMAND.createParentNote, 'Create parent note'),
+  createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
+  createMenuCommand(DEMO_COMMAND.renameNote, 'Rename note'),
+  createMenuSeparator(4),
+  createMenuCommand(DEMO_COMMAND.trashNote, 'Move note to trash'),
+]
+
 /** The New submenu the file tree declares, with what the tree makes. */
 const NEW_SUBMENU: SlotItem = {
   kind: 'submenu',
@@ -1212,8 +1230,8 @@ const NEW_SUBMENU: SlotItem = {
   title: 'New',
   icon: Plus,
   entries: [
-    createMenuCommand(DEMO_COMMAND.newTreeNote, 'New note'),
-    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'New folder'),
+    createMenuCommand(DEMO_COMMAND.newTreeNote, 'Create note here'),
+    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
   ],
 }
 
@@ -1324,7 +1342,7 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
     entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
   )
   const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
-  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename')
+  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename file')
   if (target.path === ROOT) return [NEW_SUBMENU]
   if (target.others.length > 0) {
     const selected = [target.path, ...target.others]
@@ -1749,16 +1767,12 @@ const plexState = createPlexTab(plexView, {
     }
     return map
   },
-  runCommand: (command, path) => {
-    runVaultCommand(command, path, 'plex')
+  getMenuEntries: () => PLEX_MENU,
+  listItems: async () => [],
+  runCommand: async (command, target) => {
+    runVaultCommand(command, target.path, 'plex')
   },
-  getNoteCommands: () => [
-    { id: DEMO_COMMAND.revealNote, text: 'Show note in file tree', group: 'note' },
-    { id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'note' },
-    { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'note' },
-  ],
-  getCommandIcon: (id) => COMMAND_ICONS[id] ?? null,
-  getNoteIcon: (type) => (type === 'deck' ? Layers : FileText),
+  getNoteIcon: (tabKind) => (tabKind === 'deck' ? Layers : FileText),
   openingPath: ref('physics/Entropy.md'),
   readOpeningPath: async () => 'physics/Entropy.md',
   dragged: draggedPaths,

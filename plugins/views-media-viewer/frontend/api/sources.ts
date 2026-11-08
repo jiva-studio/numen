@@ -2,11 +2,8 @@
  * Where a tab plays from: a file of the vault from its own address, a note from the address its
  * `media` property names, or, while it names none, the page its `page` property names.
  */
-import type { AddressSource, VaultNotes } from '@numen/plugin-sdk'
+import { isNotePath, type AddressSource, type VaultNotes } from '@numen/plugin-sdk'
 import type { RecordingSource } from '../types'
-
-/** The extension of a note. */
-const NOTE_EXTENSION = '.md'
 
 const NOTHING: RecordingSource = { mediaUrl: '', mediaType: '', pageUrl: '' }
 
@@ -35,7 +32,7 @@ export function createSources(
 
   return {
     getSource: async (path: string): Promise<RecordingSource> => {
-      if (path.toLowerCase().endsWith(NOTE_EXTENSION)) return readNote(path)
+      if (isNotePath(path)) return readNote(path)
       const source = await resolve(path)
       return { mediaUrl: source.url, mediaType: source.mediaType, pageUrl: '' }
     },

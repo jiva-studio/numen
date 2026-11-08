@@ -4,7 +4,13 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
-import { SLOT, createSlotRegistry, type PluginHost, type SlotItem } from '@numen/plugin-host'
+import {
+  createWhenReader,
+  SLOT,
+  createSlotRegistry,
+  type PluginHost,
+  type SlotItem,
+} from '@numen/plugin-host'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/features/command-palette'
 import { createWindowSlots } from './windowSlots'
@@ -69,7 +75,11 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
       slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
       handlers: computed(() => []),
-      whenContext: { getContentTypes: () => ({ md: 'text/markdown' }), getConfig: () => ({}) },
+      whenContext: {
+        getContentTypes: () => ({ md: 'text/markdown' }),
+        getConfig: () => ({}),
+        whenReader: createWhenReader(),
+      },
     },
     hostHolder: { current: host as unknown as PluginHost },
     writeIssue: vi.fn(),

@@ -1,16 +1,14 @@
 /**
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
-import { computed, ref, shallowRef, type Component } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import {
   createSlotMenu,
   formatErrorMessage,
   getFileName,
   NOTE_TYPE,
-  readCommandItemLists,
-  type CommandItemLists,
+  useSlotMenu,
   type CommandTarget,
-  type Disposable,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { TRASH_NOTE } from '../lib/menu'
@@ -109,36 +107,20 @@ const getMenuTarget = (
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: words.loadingItems }
 
+/** What the menu of the tree is over: where it was requested, and the target of its commands. */
+interface FileMenuTarget {
+  readonly request: MenuRequest
+  readonly target: CommandTarget
+}
+
 function useFileMenu(list: FileTree, deps: FilesTabDeps) {
-  const menu = ref<MenuRequest | null>(null)
   const reportFailure = createFailureReporter(deps)
-  const itemLists = shallowRef<CommandItemLists>(new Map())
-  let itemSubscription: Disposable | null = null
-
-  const dismissMenu = () => {
-    itemSubscription?.dispose()
-    itemSubscription = null
-    menu.value = null
-  }
-
-  /**
-   * Reads the items of the commands of the menu the request opens, and shows the menu once they are
-   * read or the hold has passed; Escape or a pointer press before that cancels the open.
-   */
-  const openMenu = (request: MenuRequest) => {
-    dismissMenu()
-    const target = getTarget(request.path)
-    itemSubscription = readCommandItemLists(
-      deps.getMenuEntries(target),
-      (command) => deps.listItems(command, target),
-      {
-        onChange: (lists) => (itemLists.value = lists),
-        onShow: () => (menu.value = request),
-        onCancel: dismissMenu,
-        onError: reportFailure,
-      },
-    )
-  }
+  const slotMenu = useSlotMenu<FileMenuTarget>({
+    listItems: (command, { target }) => deps.listItems(command, target),
+    words: MENU_WORDS,
+    onError: reportFailure,
+  })
+  const menu = computed(() => slotMenu.target.value?.request ?? null)
 
   const getOverPaths = (path: string): readonly string[] =>
     list.selectedPaths.value.includes(path) ? list.selectedPaths.value : [path]
@@ -146,31 +128,35 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const getTarget = (path: string | null): CommandTarget =>
     getMenuTarget(list, path, path === null ? [] : getOverPaths(path))
 
-  const getSlotMenu = (path: string | null) =>
-    createSlotMenu(deps.getMenuEntries(getTarget(path)), itemLists.value, MENU_WORDS)
+  /** Opens the menu the request asks for, over the row it was opened on. */
+  const openMenu = (request: MenuRequest) => {
+    const target = getTarget(request.path)
+    slotMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
+  }
 
-  const openMenuTree = computed(() => (menu.value ? getSlotMenu(menu.value.path) : null))
+  /** The rows of the open menu for its row; for another row, its rows before any list is read. */
+  const getMenuItems = (path: string | null) => {
+    const openMenuTree = slotMenu.menu.value
+    if (openMenuTree && menu.value?.path === path) return openMenuTree.items
+    return createSlotMenu(deps.getMenuEntries(getTarget(path)), new Map(), MENU_WORDS).items
+  }
 
   const getMenuIcon = (id: string): Component | null =>
-    (openMenuTree.value?.getIcon(id) as Component | undefined) ?? null
+    (slotMenu.getIcon(id) as Component | undefined) ?? null
 
   const chooseMenuItem = (id: string) => {
-    const request = menu.value
-    if (!request) return
-    const target = getTarget(request.path)
-    const pick = openMenuTree.value?.getPick(id)
-    dismissMenu()
-    if (!pick) return
-    deps.runCommand(pick.command, target, pick.argument).catch(reportFailure)
+    const choice = slotMenu.pick(id)
+    if (!choice) return
+    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
   }
 
   return {
     menu,
     openMenu,
-    dismissMenu,
+    dismissMenu: slotMenu.close,
     chooseMenuItem,
     getOverPaths,
-    getMenuItems: (path: string | null) => getSlotMenu(path).items,
+    getMenuItems,
     getMenuIcon,
   }
 }

@@ -118,7 +118,8 @@
         "group": "1-cards",
         "order": 30,
         "when": "target.isFolder"
-      }
+      },
+      { "slot": "plexGraph.context", "command": "preset.open", "group": "1-note", "order": 40 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

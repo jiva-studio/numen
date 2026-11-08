@@ -48,7 +48,35 @@
       },
       { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
       { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
-      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 }
+      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      { "slot": "plexGraph.context", "command": "app:note.open", "group": "0-open", "order": 10 },
+      { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.copyPath",
+        "group": "2-file",
+        "order": 10
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createChild",
+        "group": "3-plex",
+        "order": 10
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createParent",
+        "group": "3-plex",
+        "order": 20
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createJump",
+        "group": "3-plex",
+        "order": 30
+      },
+      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
+      { "slot": "plexGraph.context", "command": "app:note.trash", "group": "9-remove" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

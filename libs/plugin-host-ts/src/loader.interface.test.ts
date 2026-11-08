@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const BAR = 'org.example.ledger'
 const TABS = 'org.example.orchard'
@@ -102,14 +101,14 @@ describe('the start of the plugins of the window slots', () => {
     await Promise.all([interfaceWait, started])
   })
 
-  it('settles the wait at INTERFACE_WAIT_MS, and activates a late plugin once it is read', async () => {
+  it('settles the wait at 3 s, and activates a late plugin once it is read', async () => {
     vi.useFakeTimers()
-    const { loader, log } = createLoader({ [BAR]: INTERFACE_WAIT_MS + 5_000 })
+    const { loader, log } = createLoader({ [BAR]: 3_000 + 5_000 })
     let isSettled = false
     const interfaceWait = loader.waitForInterface().then(() => (isSettled = true))
 
     const started = startAll(loader)
-    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+    await vi.advanceTimersByTimeAsync(3_000 - 1)
     expect(isSettled).toBe(false)
     await vi.advanceTimersByTimeAsync(1)
 
@@ -122,12 +121,12 @@ describe('the start of the plugins of the window slots', () => {
     await Promise.all([interfaceWait, started])
   })
 
-  it('starts the plugins after a late one at INTERFACE_WAIT_MS without waiting for it', async () => {
+  it('starts the plugins after a late one at 3 s without waiting for it', async () => {
     vi.useFakeTimers()
     const { loader } = createLoader({}, { [TABS]: 10_000 })
 
     const started = startAll(loader)
-    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS + 10)
+    await vi.advanceTimersByTimeAsync(3_000 + 10)
 
     expect(loader.isPluginActive(TABS)).toBe(false)
     expect(loader.isPluginActive(BAR)).toBe(true)
@@ -138,13 +137,13 @@ describe('the start of the plugins of the window slots', () => {
   })
 })
 
-describe('a plugin that has not started within PLUGIN_START_LIMIT_MS', () => {
+describe('a plugin that has not started within 30 s', () => {
   it('counts as failed, and what it registers after is taken back', async () => {
     vi.useFakeTimers()
-    const { loader, host } = createLoader({}, { [BAR]: PLUGIN_START_LIMIT_MS + 1_000 })
+    const { loader, host } = createLoader({}, { [BAR]: 30_000 + 1_000 })
 
     const started = startAll(loader)
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 100)
+    await vi.advanceTimersByTimeAsync(30_000 - 100)
     expect(loader.getPluginFailure(BAR)).toBeUndefined()
     await vi.advanceTimersByTimeAsync(200)
 

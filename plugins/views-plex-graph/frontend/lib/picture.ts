@@ -27,6 +27,17 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
   return found
 }
 
+/** The tab kind the core chose for each note of the neighbourhood, where it reports one. */
+export function getTabKinds(neighbourhood: Neighbourhood): ReadonlyMap<string, string> {
+  const found = new Map<string, string>()
+  const { focus, focusTabKind } = neighbourhood
+  if (focus.path && focusTabKind) found.set(focus.path, focusTabKind)
+  for (const related of neighbourhood.related) {
+    if (related.tabKind) found.set(related.path, related.tabKind)
+  }
+  return found
+}
+
 /**
  * A record of a connection, with the end of the line its arrowhead is at: a
  * record written in the first note points at the second, and one written in the

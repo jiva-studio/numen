@@ -5,6 +5,7 @@ export {
   runDeclaredCommand,
   runDeclaredHandler,
   type DeclaredCommand,
+  type DeclaredCommandOutcome,
   type DeclaredList,
   type DeclaredSlot,
   type ItemListAnswer,

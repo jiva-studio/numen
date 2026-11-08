@@ -13,7 +13,7 @@ import {
   type RunSupport,
 } from '@/features/command-palette'
 import type { VaultCore } from '../vault'
-import { usePluginCommands } from './usePluginCommands'
+import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 const HANDLER: HandlerDeclaration = {
   pluginId: 'md.pages',
@@ -33,8 +33,18 @@ const createHost = () =>
 
 describe('a shared command in the palette', () => {
   it('is an entry with a pick list while a plugin handles it, and none otherwise', () => {
-    const handled = usePluginCommands({} as VaultCore, createHost(), undefined, () => [HANDLER])
-    const unhandled = usePluginCommands({} as VaultCore, createHost(), undefined, () => [])
+    const handled = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      createHost(),
+      undefined,
+      () => [HANDLER],
+    )
+    const unhandled = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      createHost(),
+      undefined,
+      () => [],
+    )
 
     expect(handled.getPaletteEntries()).toMatchObject([
       { id: 'app:file.createText', text: 'Create text', input: 'items', group: 'note' },
@@ -43,9 +53,12 @@ describe('a shared command in the palette', () => {
   })
 
   it('is available over a file and not over the window alone', () => {
-    const [entry] = usePluginCommands({} as VaultCore, createHost(), undefined, () => [
-      HANDLER,
-    ]).getPaletteEntries()
+    const [entry] = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      createHost(),
+      undefined,
+      () => [HANDLER],
+    ).getPaletteEntries()
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
     expect(entry?.isAvailable(target, RUNS)).toBe(true)
@@ -57,9 +70,12 @@ describe('a shared command that asks for a value', () => {
   const importer = { ...HANDLER, command: 'app:link.import', title: 'Import link' }
 
   it('asks for its required arguments as a command of a manifest does', () => {
-    const [entry] = usePluginCommands({} as VaultCore, createHost(), undefined, () => [
-      importer,
-    ]).getPaletteEntries()
+    const [entry] = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      createHost(),
+      undefined,
+      () => [importer],
+    ).getPaletteEntries()
 
     expect(entry).toMatchObject({
       id: 'app:link.import',
@@ -81,7 +97,7 @@ describe('a shared command that asks for a value', () => {
   it('runs its handler with the values given', async () => {
     const host = createHost()
     usePluginCommands(
-      { fileKinds: async () => new Map() } as unknown as VaultCore,
+      createCommandNoteReader({ fileKinds: async () => new Map() } as unknown as VaultCore),
       host,
       undefined,
       () => [importer],

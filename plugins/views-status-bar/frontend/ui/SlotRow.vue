@@ -13,15 +13,16 @@ defineProps<{
   place: string
   entries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRun(command: string, argument?: string): void {
-  if (argument === undefined) emit('run', command)
-  else emit('run', command, argument)
+function onRun(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run', command)
+  else emit('run', command, itemId)
 }
 </script>
 
@@ -37,6 +38,7 @@ function onRun(command: string, argument?: string): void {
         :tooltip="formatTooltip(entry)"
         is-item-list
         :list-items="listItems"
+        :report-error="reportError"
         @run="onRun"
       />
       <button
@@ -58,6 +60,7 @@ function onRun(command: string, argument?: string): void {
         :label="entry.title"
         :icon="entry.icon"
         :list-items="listItems"
+        :report-error="reportError"
         @run="onRun"
       />
     </template>

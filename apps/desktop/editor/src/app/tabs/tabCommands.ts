@@ -102,7 +102,7 @@ export function createTabCommands(deps: TabCommandsDeps) {
       (run: (invocation: CommandInvocation) => void) => (invocation: CommandInvocation) => {
         if (invocation.tab !== '') run(invocation)
       }
-    const withArgument = (run: (tab: TabId, argument: string) => void) =>
+    const withItem = (run: (tab: TabId, itemId: string) => void) =>
       requireTab((invocation) => {
         if (invocation.name !== '') run(invocation.tab, invocation.name)
       })
@@ -117,11 +117,11 @@ export function createTabCommands(deps: TabCommandsDeps) {
       ),
       registerCommand(
         TAB_COMMAND.moveToWindow,
-        withArgument((tab, argument) => deps.move(tab, argument)),
+        withItem((tab, itemId) => deps.move(tab, itemId)),
       ),
       registerCommand(
         TAB_COMMAND.link,
-        withArgument((tab, argument) => deps.tabLinks.linkTabs(tab, argument)),
+        withItem((tab, itemId) => deps.tabLinks.linkTabs(tab, itemId)),
       ),
     ]
     return () => {

@@ -84,15 +84,6 @@ vi.mock('../commands/useCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
-  createPaletteItems: () => ({
-    hasCommandItems: () => false,
-    listCommandItems: async () => [],
-    runWithArgument: async () => undefined,
-  }),
-  createCommandRunner: () => ({
-    runCommand: () => undefined,
-    runCommandToEnd: async () => undefined,
-  }),
 }))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (_core: unknown, args: unknown) => {
@@ -257,12 +248,17 @@ beforeEach(() => {
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
+      pluginRuns: {
+        runCommandToEnd: vi.fn(async () => undefined),
+        items: {
+          hasCommandItems: () => false,
+          listCommandItems: async () => [],
+          runWithItem: async () => undefined,
+        },
+      },
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),
-      getNoteCommands: vi.fn(() => [
-        { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
-      ]),
       pluginWays: ref([]),
     },
     pluginHost: {
@@ -395,9 +391,6 @@ describe('the parts of the window', () => {
   it('hand the kinds what the commands declare of the plugins', async () => {
     useWindow()
 
-    expect(h.args.kinds.getNoteCommands()).toStrictEqual([
-      { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
-    ])
     expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe(
       getNamedIcon('share'),
     )
@@ -627,6 +620,7 @@ describe('the services a plugin is given', () => {
       'app:tab.unlink',
       'app:tab.moveToWindow',
       'app:tab.link',
+      'app:version.delete',
       'org.example.sample:share.run',
     ])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })

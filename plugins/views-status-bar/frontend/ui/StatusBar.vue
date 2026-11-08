@@ -13,26 +13,34 @@ defineProps<{
   startEntries: readonly SlotItem[]
   endEntries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, argument?: string): void }>()
+const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRun(command: string, argument?: string): void {
-  if (argument === undefined) emit('run', command)
-  else emit('run', command, argument)
+function onRun(command: string, itemId?: string): void {
+  if (itemId === undefined) emit('run', command)
+  else emit('run', command, itemId)
 }
 </script>
 
 <template>
   <footer class="status-bar" role="region" :aria-label="words.bar">
-    <SlotRow place="statusBar.left" :entries="startEntries" :list-items="listItems" @run="onRun" />
+    <SlotRow
+      place="statusBar.left"
+      :entries="startEntries"
+      :list-items="listItems"
+      :report-error="reportError"
+      @run="onRun"
+    />
     <SlotRow
       class="status-bar__slot--end"
       place="statusBar.right"
       :entries="endEntries"
       :list-items="listItems"
+      :report-error="reportError"
       @run="onRun"
     />
   </footer>

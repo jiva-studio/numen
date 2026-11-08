@@ -20,9 +20,7 @@ const FRONT = {
 function setup() {
   const pluginIds = shallowRef<readonly string[]>(['org.example.tide:chart.open'])
   const runCommandToEnd = vi.fn(async (_id: string, _target: CommandTarget) => undefined)
-  const runWithArgument = vi.fn(
-    async (_id: string, _target: RunTarget, _argument: string) => undefined,
-  )
+  const runWithItem = vi.fn(async (_id: string, _target: RunTarget, _argument: string) => undefined)
   const listItems = vi.fn(async (id: string, _target: RunTarget) =>
     id === 'org.example.tide:chart.move' ? WINDOWS : [],
   )
@@ -31,10 +29,10 @@ function setup() {
     getPluginIds: () => pluginIds.value,
     runCommandToEnd,
     listItems,
-    runWithArgument,
+    runWithItem,
     getTarget: () => FRONT,
   })
-  return { commands, pluginIds, runCommandToEnd, runWithArgument, listItems }
+  return { commands, pluginIds, runCommandToEnd, runWithItem, listItems }
 }
 
 describe('the commands of the window', () => {
@@ -121,14 +119,14 @@ describe('the commands of the window', () => {
     })
   })
 
-  it('run a command with the item picked as its argument', async () => {
-    const { commands, runCommandToEnd, runWithArgument } = setup()
+  it('run a command with the item picked as its itemId', async () => {
+    const { commands, runCommandToEnd, runWithItem } = setup()
 
     await commands.run('org.example.tide:chart.move', undefined, 'w2')
 
     expect(runCommandToEnd).not.toHaveBeenCalled()
-    expect(runWithArgument.mock.calls[0]?.[0]).toBe('org.example.tide:chart.move')
-    expect(runWithArgument.mock.calls[0]?.[2]).toBe('w2')
+    expect(runWithItem.mock.calls[0]?.[0]).toBe('org.example.tide:chart.move')
+    expect(runWithItem.mock.calls[0]?.[2]).toBe('w2')
   })
 
   it('run a command to its end, and reject with the error of the run', async () => {

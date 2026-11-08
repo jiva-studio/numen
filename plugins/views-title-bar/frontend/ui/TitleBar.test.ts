@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { MENU_HOLD_MS, type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
+import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
@@ -14,6 +14,7 @@ interface Options {
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
   listItems?: (command: string) => Promise<readonly CommandItem[]>
+  reportError?: (error: unknown) => void
 }
 
 const mounted: VueWrapper[] = []
@@ -436,7 +437,7 @@ describe('a command with items', () => {
     await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
     await settle()
     expect(menuTexts()).toStrictEqual([])
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
     await settle()
     vi.useRealTimers()
 
@@ -452,7 +453,35 @@ describe('a command with items', () => {
     expect(menuTexts()).toStrictEqual([])
   })
 
-  it('emits run-command with the command and the item picked as its argument', async () => {
+  it('opens on the next click after a click whose command listed no item', async () => {
+    const listItems = vi.fn<() => Promise<readonly CommandItem[]>>(async () => [])
+    const wrapper = mountBar({ commands: [MOVE], listItems })
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    listItems.mockResolvedValue(items)
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(menuTexts()).toStrictEqual(['Window 1', 'Window 2'])
+  })
+
+  it('reports a list that failed to read', async () => {
+    const failure = new Error('the windows are gone')
+    const reportError = vi.fn()
+    const wrapper = mountBar({
+      commands: [MOVE],
+      listItems: () => Promise.reject(failure),
+      reportError,
+    })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
+  })
+
+  it('emits run-command with the command and the item picked as its itemId', async () => {
     const wrapper = mountBar({ commands: [MOVE], listItems: async () => items })
 
     await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')

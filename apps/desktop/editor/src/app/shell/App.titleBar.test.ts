@@ -18,10 +18,12 @@ const frame = vi.hoisted(() => ({
   toggleMaximizeWindow: vi.fn(async () => undefined),
 }))
 
-vi.mock('../window/useWindowFrame', async () => {
+vi.mock('@numen/shell', async (importOriginal) => {
   const { computed } = await import('vue')
-  const { MAC_BUTTONS_INSET } = await import('@numen/shell')
+  const shell = await importOriginal<typeof import('@numen/shell')>()
+  const { MAC_BUTTONS_INSET } = shell
   return {
+    ...shell,
     useWindowFrame: () => ({
       platform: computed(() => frame.platform),
       isMaximized: computed(() => frame.isMaximized),

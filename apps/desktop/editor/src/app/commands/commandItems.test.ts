@@ -1,6 +1,6 @@
 /**
  * The items of a command, whoever owns it: a command of the window that offers them over its
- * target, or a command a plugin registered with items; and a run of one with the argument picked.
+ * target, or a command a plugin registered with items; and a run of one with the item picked.
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandTarget as RunTarget } from '@numen/plugin-host'
@@ -39,8 +39,8 @@ const setup = () => {
     hasCommandItems: (id: string) => id === 'org.example.tide:chart.move',
     listCommandItems: vi.fn(async () => [{ id: 'w2', title: 'Second window' }]),
   }
-  const runApp = vi.fn(async (_id: string, _target: CommandTarget, _argument: string) => undefined)
-  const runPlugin = vi.fn(async (_id: string, _target: RunTarget, _argument: string) => undefined)
+  const runApp = vi.fn(async (_id: string, _target: CommandTarget, _itemId: string) => undefined)
+  const runPlugin = vi.fn(async (_id: string, _target: RunTarget, _itemId: string) => undefined)
   const items = createCommandItems({
     getAppCommands: () => [MOVE, CLOSE],
     pluginHost,
@@ -67,7 +67,7 @@ describe('the items of a command', () => {
     ])
   })
 
-  it('of a command of the window are read over the file the target names, or the file in front', async () => {
+  it('of a command of the window are read over the file the target names, and no file where it names none', async () => {
     const files: string[] = []
     const items = createCommandItems({
       getAppCommands: () => [
@@ -88,7 +88,7 @@ describe('the items of a command', () => {
     await items.listCommandItems(MOVE.id, { ...OVER_TAB, path: 'talks/a.mp3' })
     await items.listCommandItems(MOVE.id, OVER_TAB)
 
-    expect(files).toStrictEqual(['talks/a.mp3', 'Front.md'])
+    expect(files).toStrictEqual(['talks/a.mp3', ''])
   })
 
   it('of a command of the window are read over the tab in front where the target names none', async () => {
@@ -114,20 +114,20 @@ describe('the items of a command', () => {
   })
 })
 
-describe('a run with the argument picked', () => {
-  it('runs a command of the window over the tab of the target, with the argument', async () => {
+describe('a run with the item picked', () => {
+  it('runs a command of the window over the tab of the target, with the item picked', async () => {
     const { items, runApp, runPlugin } = setup()
 
-    await items.runWithArgument(MOVE.id, OVER_TAB, 'w2')
+    await items.runWithItem(MOVE.id, OVER_TAB, 'w2')
 
     expect(runApp).toHaveBeenCalledWith(MOVE.id, expect.objectContaining({ tab: 'note:2' }), 'w2')
     expect(runPlugin).not.toHaveBeenCalled()
   })
 
-  it('runs a plugin command through the plugin, with the argument', async () => {
+  it('runs a plugin command through the plugin, with the item picked', async () => {
     const { items, runApp, runPlugin } = setup()
 
-    await items.runWithArgument('org.example.tide:chart.move', OVER_TAB, 'w2')
+    await items.runWithItem('org.example.tide:chart.move', OVER_TAB, 'w2')
 
     expect(runPlugin).toHaveBeenCalledWith('org.example.tide:chart.move', OVER_TAB, 'w2')
     expect(runApp).not.toHaveBeenCalled()

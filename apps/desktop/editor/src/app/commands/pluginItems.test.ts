@@ -89,6 +89,36 @@ describe('the commands with items in the palette', () => {
     expect(listCommandItems).toHaveBeenCalledTimes(2)
   })
 
+  it('drop an answer read for an earlier open of the palette', async () => {
+    const answers: ((items: readonly CommandItem[]) => void)[] = []
+    const listCommandItems = vi.fn(
+      () => new Promise<readonly CommandItem[]>((resolve) => answers.push(resolve)),
+    )
+    const lists = createItemLists(
+      { hasCommandItems: (id: string) => id === 'zzStale', listCommandItems },
+      { paletteLists: WINDOW_LISTS, getTarget: () => TARGET, runs: RUNS },
+    )
+    const isOpen = ref(true)
+    lists.resetWhenClosed(isOpen)
+    const command = [createCommand('zzStale')]
+    lists.removeEmptyCommands(command)
+    isOpen.value = false
+    await nextTick()
+    isOpen.value = true
+    await nextTick()
+    lists.removeEmptyCommands(command)
+
+    answers[0]?.([])
+    await settle()
+    expect(lists.removeEmptyCommands(command).map((one) => one.id)).toStrictEqual(['zzStale'])
+    answers[1]?.([{ id: 'w1', title: 'Window 1' }])
+    await settle()
+
+    expect(lists.lists.getStepGroups('zzStale', '')[0]?.items).toStrictEqual([
+      { id: 'w1', title: 'Window 1' },
+    ])
+  })
+
   it('are all listed while the palette is closed, and no item is read', () => {
     const { removeEmptyCommands, isOpen, listCommandItems } = setUp({ 'version.delete': [] })
     isOpen.value = false
@@ -137,7 +167,7 @@ describe('a shared command in the palette', () => {
 
   it('keeps its own title where its one item is an item of a handler, in the group of its plugin', async () => {
     const { removeEmptyCommands } = setUp({
-      'app:version.delete': [
+      'app:link.downloadMedia': [
         {
           id: 'md.numen.engines.transcription:t1',
           title: 'transcript',
@@ -146,7 +176,7 @@ describe('a shared command in the palette', () => {
       ],
     })
     const shared = {
-      ...createCommand('app:version.delete'),
+      ...createCommand('app:link.downloadMedia'),
       text: 'Delete text',
       input: 'items' as const,
     }

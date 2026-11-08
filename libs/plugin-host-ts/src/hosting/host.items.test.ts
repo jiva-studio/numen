@@ -1,5 +1,5 @@
 /**
- * The items a plugin command offers over a target, and the run of the command with the argument
+ * The items a plugin command offers over a target, and the run of the command with the item
  * picked.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -74,12 +74,12 @@ describe('the items of a plugin command', () => {
     expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual([])
   })
 
-  it('reach the handler as its argument, by the id of the item picked', async () => {
+  it('reach the handler as its itemId, by the id of the item picked', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
     context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
-    await host.executeCommand(`${TIDE}:chart.move`, NOTE, { argument: 'w2' })
+    await host.executeCommand(`${TIDE}:chart.move`, NOTE, { itemId: 'w2' })
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2')
   })

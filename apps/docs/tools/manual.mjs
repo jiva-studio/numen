@@ -218,6 +218,23 @@ const readCommands = async (ids) => {
   return rows
 }
 
+/**
+ * The window's commands over the text versions of a file, read from versionCommands.ts: each row's
+ * group, and its text from the words that file declares.
+ */
+const readVersionCommands = async () => {
+  const source = await read(APP, 'commands/versionCommands.ts')
+  const words = source.match(/const VERSION_WORDS = \{([^}]*)\}/)?.[1]
+  if (words === undefined) die('versionCommands.ts no longer declares its words')
+  const rows = [...source.matchAll(/text:\s*VERSION_WORDS\.([A-Za-z]+),\s*group:\s*'([a-z]+)'/g)]
+  if (rows.length === 0) die('versionCommands.ts declares no command')
+  return rows.map(([, word, group]) => {
+    const text = words.match(new RegExp(`\\b${word}:\\s*'([^']+)'`))?.[1]
+    if (!text) die(`versionCommands.ts has no words for '${word}'`)
+    return { text, group }
+  })
+}
+
 /** Which entry of the words a command is drawn with. */
 const spoken = (declared, command) => {
   const row = declared.find((one) => one.id === command)
@@ -284,6 +301,7 @@ const commands = async () => {
   const plugins = await readPlugins()
   const rows = [
     ...own,
+    ...(await readVersionCommands()),
     ...plugins.flatMap((one) => one.settings),
     ...plugins.flatMap((one) => one.declared),
     ...plugins.flatMap((one) =>

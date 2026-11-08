@@ -103,7 +103,7 @@ describe('the commands of a tab', () => {
     expect(isCommandAvailable(linked, TAB_COMMAND.link, 'chat')).toBe(false)
   })
 
-  it('run over the tab of the target, with the argument picked', async () => {
+  it('run over the tab of the target, with the item picked', async () => {
     const { tabCommands, tabLinks, detach, move } = setup({ groups: { reef: GROUP } })
     tabCommands.register()
 
@@ -134,7 +134,7 @@ describe('the commands of a tab', () => {
     expect(tabLinks.linkTabs).toHaveBeenCalledWith('reef', 'chat')
   })
 
-  it('run nothing without a tab, or a move and a link without a argument', async () => {
+  it('run nothing without a tab, or a move and a link without a itemId', async () => {
     const { tabCommands, tabLinks, detach, move } = setup()
     const unregister = tabCommands.register()
 

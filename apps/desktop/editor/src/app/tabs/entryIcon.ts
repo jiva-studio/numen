@@ -1,6 +1,6 @@
 /**
  * The icon for one entry of the files tree. A folder's icon reflects whether
- * its contents are shown; a note's icon depends on its note type, and every
+ * its contents are shown; a note's icon is that of the tab kind that opens it, and every
  * other file's icon is that of the reader that opens it.
  */
 import type { Component } from 'vue'
@@ -15,6 +15,6 @@ export const getEntryIcon = (
 ): Component => {
   if (!entry) return File
   if (entry.isFolder) return isOpen ? FolderOpen : Folder
-  if (entry.isNote) return getNoteIcon(entry.type)
+  if (entry.isNote) return getNoteIcon(entry.tabKind)
   return findFileIcon?.(entry.path) ?? File
 }

@@ -73,19 +73,17 @@ describe('what else a plex tab asks of the window', () => {
     ])
   })
 
-  it('runs a command over a note, lists the declared ones and says what failed', () => {
+  it('reads the entries of the node menu from its slot, runs a command over a note and says what failed', async () => {
     const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:1')
+    const target = { path: 'One.md', title: 'One', isFolder: false, others: [], tab: '' }
 
-    deps.runCommand('rename', 'One.md', 'One')
+    deps.getMenuEntries(target)
+    await deps.runCommand('rename', target)
     deps.showMessage('the link was not written')
 
-    expect(recorded.commands).toStrictEqual([
-      ['rename', { path: 'One.md', title: 'One', isFolder: false, others: [], tab: '' }],
-    ])
-    expect(deps.getNoteCommands()).toStrictEqual([
-      { id: 'org.example.sample:share.run', text: 'Share the note', group: 'note' },
-    ])
+    expect(recorded.entries).toStrictEqual([['plexGraph.context', target]])
+    expect(recorded.commands).toStrictEqual([['rename', target]])
     expect(recorded.errors).toStrictEqual(['the link was not written'])
   })
 

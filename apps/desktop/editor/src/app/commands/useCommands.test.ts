@@ -275,7 +275,10 @@ describe('a plugin command over a note', () => {
     shortcut: 'mod+shift+x',
     icon: 'waypoints',
   }
-  const setupPlugin = (declared: readonly object[] = [SUMMARY]) => {
+  const setupPlugin = (
+    declared: readonly object[] = [SUMMARY],
+    extra: Partial<CommandsDepsOptions> = {},
+  ) => {
     const executeCommand = vi.fn(async () => true)
     const handleShortcut = vi.fn(() => false)
     const writeMessage = vi.fn()
@@ -304,6 +307,7 @@ describe('a plugin command over a note', () => {
       rest: {},
       writeMessage,
       pluginHost,
+      ...extra,
     } as unknown as CommandsDepsOptions
     return { executeCommand, handleShortcut, writeMessage, ...useCommands(options) }
   }
@@ -365,7 +369,7 @@ describe('a plugin command over a note', () => {
     expect(entry?.icon).toBe(getNamedIcon('waypoints'))
   })
 
-  it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
+  it('offers the keyed commands over the window as ways in', () => {
     const one = setupPlugin([
       SUMMARY,
       GRAPH,
@@ -379,9 +383,6 @@ describe('a plugin command over a note', () => {
         keys: { letter: 'mod+shift+x' },
         icon: getNamedIcon('waypoints'),
       },
-    ])
-    expect(one.getNoteCommands()).toStrictEqual([
-      { id: SUMMARY.id, text: SUMMARY.title, group: 'note' },
     ])
   })
 
@@ -411,6 +412,29 @@ describe('a plugin command over a note', () => {
     one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
     await vi.waitFor(() => expect(one.writeMessage).toHaveBeenCalled())
     expect(one.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('reads the note of every run through the one reader the window gives, a run to its end too', async () => {
+    const note = {
+      path: 'Animals.md',
+      title: 'Animals',
+      type: 'deck',
+      isFolder: false,
+      others: [],
+      tab: '',
+    }
+    const readCommandNote = vi.fn(async () => note)
+    const one = setupPlugin([SUMMARY], { readCommandNote })
+    const target = { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget
+
+    one.runCommand('summary', target)
+    await one.pluginRuns.runCommandToEnd('summary', target)
+
+    expect(readCommandNote).toHaveBeenCalledTimes(2)
+    expect(one.executeCommand.mock.calls.map((call) => (call as unknown[])[1])).toStrictEqual([
+      note,
+      note,
+    ])
   })
 
   it('delegates shortcuts to pluginHost.handleShortcut with a lazy note getter', async () => {
@@ -533,7 +557,7 @@ describe('a plugin command with items in the palette', () => {
     expect(rows('second').map((one) => one.id)).toStrictEqual(['w2'])
   })
 
-  it('runs the command with the item picked as its argument', async () => {
+  it('runs the command with the item picked as its itemId', async () => {
     const { executeCommand } = setupItems()
     const call = h.registerCommand.mock.calls.find(([id]) => id === MOVE.id) as [
       string,
@@ -545,7 +569,7 @@ describe('a plugin command with items in the palette', () => {
     expect(executeCommand).toHaveBeenCalledExactlyOnceWith(
       MOVE.id,
       expect.objectContaining({ path: 'Tide.md' }),
-      { argument: 'w2' },
+      { itemId: 'w2' },
     )
   })
 

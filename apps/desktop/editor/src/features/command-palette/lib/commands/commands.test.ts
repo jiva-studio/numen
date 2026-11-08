@@ -3,7 +3,7 @@
  * it, and which commands appear on the row of another command.
  */
 import { describe, expect, it } from 'vitest'
-import { createCommands, isCommandPrefixTyped, getNoteCommands } from './commands'
+import { createCommands, getGroupCommands, isCommandPrefixTyped } from './commands'
 import { getPrompt } from '../step/step'
 import type { CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
@@ -23,7 +23,7 @@ describe('the character that means the commands', () => {
 
 describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
-    const commands = getNoteCommands(createCommands(words)).map((one) => one.id)
+    const commands = getGroupCommands(createCommands(words), 'note').map((one) => one.id)
 
     expect(commands).toContain('app:note.open')
     expect(commands).not.toContain('app:note.openBeside')
@@ -111,7 +111,7 @@ describe('the command that opens a document chosen as a result', () => {
   })
 
   it('is not one of the commands over a note, so the menu of a file row does not list it', () => {
-    expect(getNoteCommands(createCommands(words)).map((one) => one.id)).not.toContain(
+    expect(getGroupCommands(createCommands(words), 'note').map((one) => one.id)).not.toContain(
       'app:file.open',
     )
   })

@@ -28,7 +28,7 @@ describe('createTextCommand', () => {
     await createTextCommand(() => commands).createText('talks/Ants.mp3')
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: 'app:file.createText', target: TARGET, argument: undefined },
+      { command: 'app:file.createText', target: TARGET, itemId: undefined },
     ])
   })
 })

@@ -1,5 +1,5 @@
 // Writes the list of the slots of a window, from slots.json, as Go for the manifest reader (in its package, which knows no wire format) and as
-// TypeScript for the plugin SDK. Run by `make lib_protocol_generate`; the generated files are committed.
+// TypeScript for the plugin SDK and, for the slots of the window itself, the plugin host. Run by `make lib_protocol_generate`; the generated files are committed.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -71,6 +71,13 @@ const ts = [
   '// SlotName is a slot of a window.',
   'export type SlotName = (typeof SLOT)[keyof typeof SLOT]',
   '',
+].join('\n')
+
+const host = [
+  `// ${HEADER}`,
+  '',
+  "import { SLOT, type SlotName } from '@numen/plugin-sdk'",
+  '',
   '// WINDOW_SLOTS are the slots of the window itself; each draws one view, of the plugin first by id.',
   `export const WINDOW_SLOTS: readonly SlotName[] = [${slots
     .filter((one) => one.isWindow)
@@ -81,3 +88,4 @@ const ts = [
 
 write('../../plugin-catalog/manifest/slots.go', go)
 write('../../plugin-sdk-ts/src/slots/slotNames.ts', ts)
+write('../../plugin-host-ts/src/slots/windowSlots.ts', host)

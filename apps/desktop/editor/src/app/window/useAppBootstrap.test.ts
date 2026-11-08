@@ -2,7 +2,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { INTERFACE_WAIT_MS } from '@numen/plugin-host'
 import { STEP_LIMIT_MS, useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
 
 const setup = (overrides: Partial<BootstrapDeps> = {}) => {
@@ -80,7 +79,7 @@ describe('a window mounting while a plugin does not start', () => {
           }),
       })
 
-      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(3_000 - 1)
       expect(calls).not.toContain('startLayout')
       await vi.advanceTimersByTimeAsync(1)
       expect(calls).toContain('startLayout')
@@ -97,7 +96,7 @@ describe('a window mounting while a plugin does not start', () => {
     try {
       const { bootstrap } = setup({ startPlugins: () => new Promise<void>(() => undefined) })
 
-      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(3_000 - 1)
       expect(bootstrap().isStarted.value).toBe(false)
       await vi.advanceTimersByTimeAsync(1)
       expect(bootstrap().isStarted.value).toBe(true)
@@ -118,14 +117,14 @@ describe('a window mounting while a plugin does not start', () => {
     expect(calls).toContain('startLayout')
   })
 
-  it('is drawn at INTERFACE_WAIT_MS while the settings have not answered', async () => {
+  it('is drawn at 3 s while the settings have not answered', async () => {
     vi.useFakeTimers()
     try {
       const { bootstrap, calls } = setup({
         startSettings: () => new Promise<void>(() => undefined),
       })
 
-      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(3_000 - 1)
       expect(bootstrap().isStarted.value).toBe(false)
       await vi.advanceTimersByTimeAsync(1)
 
@@ -143,7 +142,7 @@ describe('a window mounting while a plugin does not start', () => {
         waitForInterfacePlugins: () => new Promise<void>(() => undefined),
       })
 
-      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(3_000 - 1)
       expect(bootstrap().isStarted.value).toBe(false)
       await vi.advanceTimersByTimeAsync(1)
       expect(bootstrap().isStarted.value).toBe(true)

@@ -2,7 +2,8 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
-import { WINDOW_SLOTS, type PluginLifecycle, type SlotName } from '@numen/plugin-sdk'
+import type { PluginLifecycle, SlotName } from '@numen/plugin-sdk'
+import { WINDOW_SLOTS } from './slots/windowSlots'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
 /** The bundle every plugin frontend builds to, relative to the plugin folder. */

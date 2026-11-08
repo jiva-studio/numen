@@ -38,6 +38,7 @@ import type {
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
 import type { WhenValues } from '../when/when'
+import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
 
 export type {
@@ -74,20 +75,20 @@ export interface HandlerDeclaration {
 }
 
 /**
- * One run of a handler in its plugin's backend: over the target, with `argument` the id of the item
+ * One run of a handler in its plugin's backend: over the target, with `itemId` the id of the item
  * picked and `values` the values of the arguments the shared command declares, by name.
  */
 export interface BackendHandlerRun {
   readonly pluginId: string
   readonly command: string
   readonly target: CommandTarget
-  readonly argument?: string | undefined
+  readonly itemId?: string | undefined
   readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 /** What a run of a command is given: the id of the item picked, and the values of the arguments of a shared command by name. */
 export interface CommandRun {
-  readonly argument?: string | undefined
+  readonly itemId?: string | undefined
   readonly values?: Readonly<Record<string, string>> | undefined
   readonly isAwaited?: boolean | undefined
 }
@@ -105,6 +106,7 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 export interface PluginHostDeps {
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
+  readonly whenReader?: WhenReader
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   readonly listBackendHandlerItems?: (
@@ -250,3 +252,6 @@ export interface PluginContextHost {
   getTexts?(pluginId: string): VaultTexts | undefined
   getSlots?(): SlotHost | undefined
 }
+
+/** What the host runs with: the deps of the window, with the one reader of its conditions. */
+export type HostDeps = PluginHostDeps & { readonly whenReader: WhenReader }

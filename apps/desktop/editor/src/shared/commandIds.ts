@@ -18,6 +18,7 @@ export const COMMAND = {
   trashNote: formatAppCommandId('note.trash'),
   deleteNote: formatAppCommandId('note.delete'),
   copyNotePath: formatAppCommandId('note.copyPath'),
+  deleteText: formatAppCommandId('version.delete'),
   openFile: formatAppCommandId('file.open'),
   moveFile: formatAppCommandId('file.move'),
   createFolder: formatAppCommandId('folder.create'),

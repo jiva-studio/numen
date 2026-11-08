@@ -76,6 +76,7 @@ export interface CommandsDepsOptions {
   slots?: SlotHost
   getAppCommands?: () => readonly Command[]
   declaredCommands?: DeclaredCommands
+  readCommandNote?: ReturnType<typeof createCommandNoteReader>
 }
 
 const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
@@ -102,8 +103,7 @@ const listExtraCommands = (
   ...pluginEntries,
 ]
 
-/** The items of the commands of the palette, of the window and of the plugins, and their runs. */
-export function createPaletteItems(
+function createPaletteItems(
   options: Pick<
     CommandsDepsOptions,
     'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
@@ -119,11 +119,11 @@ export function createPaletteItems(
     ],
     pluginHost,
     getTarget: options.getTarget,
-    runApp: (id, target, argument) =>
-      runInvocationToEnd(createInvocation(id, target, argument), getCommandDeps()),
-    runPlugin: async (id, target, argument) => {
+    runApp: (id, target, itemId) =>
+      runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps()),
+    runPlugin: async (id, target, itemId) => {
       const note = await getCommandNote(target)
-      await pluginHost?.executeCommand(id, note, { argument, isAwaited: true })
+      await pluginHost?.executeCommand(id, note, { itemId, isAwaited: true })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)
@@ -220,12 +220,12 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
-    core,
+    options.readCommandNote ?? createCommandNoteReader(core),
     pluginHost,
     declaredCommands?.whenContext,
     () => declaredCommands?.handlers.value,
   )
-  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
+  const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
     coverage,
@@ -248,7 +248,7 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
-  const { runCommand } = createCommandRunner({
+  const { runCommand, runCommandToEnd } = createCommandRunner({
     commands,
     palette,
     pluginHost,
@@ -281,10 +281,10 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     commandDeps,
+    pluginRuns: { items, runCommandToEnd },
     runCommand,
     runChoice,
     onKeyDown,
     pluginWays,
-    getNoteCommands,
   }
 }

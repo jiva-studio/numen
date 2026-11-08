@@ -76,9 +76,6 @@ const ts = [
   ]),
   '] as const',
   '',
-  '// SharedCommandId is the full id of a shared command.',
-  "export type SharedCommandId = (typeof SHARED_COMMANDS)[number]['id']",
-  '',
 ].join('\n')
 
 /** The Go name of a shared command, from its title: CreateText for Create text. */

@@ -30,9 +30,6 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
     runCommand: vi.fn(),
     ask: vi.fn(),
     getNoteInFocus: () => ({ path: 'Focus.md', title: 'Focus' }),
-    getNoteCommands: () => [
-      { id: 'org.example.sample:share.run', text: 'Share the note', group: 'note' },
-    ],
     writeMessage: vi.fn(),
     getMessageWriter: () => vi.fn(),
     today: () => '2026-09-04',
@@ -87,14 +84,6 @@ describe('the window a plugin is handed', () => {
     const { workspace } = createWorkspace()
 
     expect(workspace).not.toHaveProperty('runCommand')
-  })
-
-  it('lists the commands the plugins declare over a note', () => {
-    const { workspace } = createWorkspace()
-
-    expect(workspace.getNoteCommands()).toStrictEqual([
-      { id: 'org.example.sample:share.run', text: 'Share the note', group: 'note' },
-    ])
   })
 
   it('shares what is dragged, asks the agent and says what failed', () => {

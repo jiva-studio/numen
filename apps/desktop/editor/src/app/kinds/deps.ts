@@ -1,4 +1,3 @@
-import type { MenuEntry } from '@numen/plugin-host'
 import type { CommandDeps, CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -26,5 +25,4 @@ export interface WindowKindsDeps {
   tabLinks?: TabLinksState
   tabSync?: ReturnType<typeof createTabSync>
   getPluginCommandIcon?: (id: string) => unknown
-  getNoteCommands: () => readonly MenuEntry[]
 }

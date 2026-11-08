@@ -97,7 +97,7 @@ describe('the menu of a row', () => {
     await createFilesTabDeps(host, 'files').runCommand('app:note.trash', rowTarget)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: 'app:note.trash', target: rowTarget, argument: undefined },
+      { command: 'app:note.trash', target: rowTarget, itemId: undefined },
     ])
   })
 

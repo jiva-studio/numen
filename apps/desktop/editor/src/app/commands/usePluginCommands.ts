@@ -6,7 +6,6 @@ import { computed, watch } from 'vue'
 import type {
   CommandNote,
   HandlerDeclaration,
-  MenuEntry,
   PluginHost,
   PluginPaletteCommand,
 } from '@numen/plugin-host'
@@ -20,7 +19,7 @@ import {
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 import {
-  EMPTY_WHEN_CONTEXT,
+  createEmptyWhenContext,
   createWhenAvailability,
   hasNoteVariable,
   type WindowWhenContext,
@@ -50,9 +49,9 @@ export const createCommandNoteReader =
   }
 
 export function usePluginCommands(
-  core: VaultCore,
+  getCommandNote: ReturnType<typeof createCommandNoteReader>,
   pluginHost: PluginHost | undefined,
-  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+  context: WindowWhenContext = createEmptyWhenContext(),
   getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
 ) {
   const isWhenAvailable = createWhenAvailability(context)
@@ -75,7 +74,9 @@ export function usePluginCommands(
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: hasNoteVariable(cmd.when) ? ('note' as const) : ('window' as const),
+      group: hasNoteVariable(context.whenReader.getCondition(cmd.when))
+        ? ('note' as const)
+        : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
@@ -89,17 +90,9 @@ export function usePluginCommands(
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => !hasNoteVariable(cmd.when) && cmd.shortcut)
+      .filter((cmd) => !hasNoteVariable(context.whenReader.getCondition(cmd.when)) && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
-
-  /** The commands the plugins declare over one note, in the words the palette offers them by. */
-  const getNoteCommands = (): readonly MenuEntry[] =>
-    getPluginCommands()
-      .filter((cmd) => hasNoteVariable(cmd.when))
-      .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
-
-  const getCommandNote = createCommandNoteReader(core)
 
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
@@ -113,7 +106,7 @@ export function usePluginCommands(
             if (invocation.values) {
               await pluginHost.executeCommand(cmd.id, note, { values: invocation.values })
             } else if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
-              await pluginHost.executeCommand(cmd.id, note, { argument: invocation.name })
+              await pluginHost.executeCommand(cmd.id, note, { itemId: invocation.name })
             } else await pluginHost.executeCommand(cmd.id, note)
           }),
         )
@@ -125,7 +118,6 @@ export function usePluginCommands(
   return {
     getPaletteEntries,
     getCommandNote,
-    getNoteCommands,
     pluginWays,
   }
 }

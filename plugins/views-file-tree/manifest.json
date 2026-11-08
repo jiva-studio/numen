@@ -30,18 +30,18 @@
         "when": "target.isNote"
       },
       {
-        "id": "tree.rename",
-        "title": "Rename",
+        "id": "tree.renameFile",
+        "title": "Rename file",
         "icon": "pencil"
       },
       {
-        "id": "tree.newNote",
-        "title": "New note",
+        "id": "tree.createNote",
+        "title": "Create note here",
         "icon": "file-plus"
       },
       {
-        "id": "tree.newFolder",
-        "title": "New folder",
+        "id": "tree.createFolder",
+        "title": "Create folder",
         "icon": "folder-plus"
       }
     ],
@@ -56,25 +56,26 @@
       },
       {
         "slot": "fileTree.new",
-        "command": "tree.newNote",
+        "command": "tree.createNote",
         "group": "0-tree",
         "order": 10,
         "when": "target.isFolder"
       },
       {
         "slot": "fileTree.new",
-        "command": "tree.newFolder",
+        "command": "tree.createFolder",
         "group": "0-tree",
         "order": 20,
         "when": "target.isFolder"
       },
       {
         "slot": "fileTree.context",
-        "command": "tree.rename",
+        "command": "tree.renameFile",
         "group": "2-edit",
         "order": 10,
         "when": "!target.isRoot && !target.isMultiple"
-      }
+      },
+      { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

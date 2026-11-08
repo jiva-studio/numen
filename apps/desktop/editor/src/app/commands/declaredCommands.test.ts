@@ -3,6 +3,7 @@
  * one as the palette carries it out.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createWhenReader } from '@numen/plugin-host'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
@@ -54,7 +55,7 @@ describe('a declared command in the palette', () => {
     expect(sample?.prompts).toStrictEqual([{ name: 'title', title: 'Title', isRequired: true }])
   })
 
-  it('asks nothing when every argument is optional', () => {
+  it('asks nothing when every itemId is optional', () => {
     const [one] = createDeclaredPaletteCommands([
       { ...createSample, arguments: [{ name: 'folder', title: 'Folder', isRequired: false }] },
     ])
@@ -67,6 +68,7 @@ describe('a declared command in the palette', () => {
     const [one] = createDeclaredPaletteCommands([convert], {
       getContentTypes: () => ({ pdf: 'application/pdf', epub: 'application/epub+zip' }),
       getConfig: () => ({}),
+      whenReader: createWhenReader(),
     })
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
@@ -115,7 +117,7 @@ describe('a declared command with items', () => {
     expect(listItems).toHaveBeenCalledWith(proofread, 'talks/a.mp3')
   })
 
-  it('runs over the file with the item picked as its argument', async () => {
+  it('runs over the file with the item picked as its itemId', async () => {
     const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
     const declared = useDeclaredCommands({
       list: async () => ({ commands: [proofread], slots: [] }),
@@ -129,11 +131,15 @@ describe('a declared command with items', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(proofread, {
-      path: 'talks/a.mp3',
-      values: {},
-      argument: 'org.example.ears/ears',
-    })
+    expect(run).toHaveBeenCalledWith(
+      proofread,
+      {
+        path: 'talks/a.mp3',
+        values: {},
+        itemId: 'org.example.ears/ears',
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -165,11 +171,15 @@ describe('a run of a declared command', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(createSample, {
-      path: 'Glaciers',
-      values: { title: 'Moraines' },
-      isTargetNamed: true,
-    })
+    expect(run).toHaveBeenCalledWith(
+      createSample,
+      {
+        path: 'Glaciers',
+        values: { title: 'Moraines' },
+        isTargetNamed: true,
+      },
+      expect.anything(),
+    )
   })
 
   it('sends the file and values, writes the message and opens the returned path', async () => {
@@ -204,7 +214,11 @@ describe('a run of a declared command', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(createSample, { path: 'a.md', values: { title: 'Verbs' } })
+    expect(run).toHaveBeenCalledWith(
+      createSample,
+      { path: 'a.md', values: { title: 'Verbs' } },
+      expect.anything(),
+    )
     expect(writeMessage).toHaveBeenLastCalledWith('Made a sample', 'info')
     expect(openFile).toHaveBeenCalledWith('Verbs.md', '', 'current')
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([

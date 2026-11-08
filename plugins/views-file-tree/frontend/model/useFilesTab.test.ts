@@ -505,7 +505,9 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(NEW_MENU.entries[1]!.key)
 
-    expect(recorded).toStrictEqual(['runs md.numen.views.file.tree:tree.newFolder physics physics'])
+    expect(recorded).toStrictEqual([
+      'runs md.numen.views.file.tree:tree.createFolder physics physics',
+    ])
   })
 
   it('runs the command over the root where the menu was requested off every row', async () => {
@@ -513,12 +515,13 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(NEW_MENU.entries[0]!.key)
 
-    expect(recorded).toStrictEqual(['runs md.numen.views.file.tree:tree.newNote  '])
+    expect(recorded).toStrictEqual(['runs md.numen.views.file.tree:tree.createNote  '])
   })
 
   it('passes the whole selection, on a row standing in it', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Entropy.md', 'Cover.png'])
+    pendingState.one.openMenu({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.chooseMenuItem(TRASH.key)
 
@@ -530,6 +533,7 @@ describe('an item chosen in the menu on a row', () => {
   it('passes the one row, on a row standing outside the selection', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Cover.png'])
+    pendingState.one.openMenu({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.chooseMenuItem(TRASH.key)
 

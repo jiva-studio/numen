@@ -54,13 +54,13 @@ describe('the commands of a mock context', () => {
     expect(await ctx.commands.listItems('app:vault.create')).toStrictEqual([])
   })
 
-  it('record the argument a command runs with', async () => {
+  it('record the item id a command runs with', async () => {
     const ctx = createMockPluginContext()
 
     await ctx.commands.run('app:tab.move', TARGET, 'w2')
 
     expect(ctx.commands.getRuns()).toStrictEqual([
-      { command: 'app:tab.move', target: TARGET, argument: 'w2' },
+      { command: 'app:tab.move', target: TARGET, itemId: 'w2' },
     ])
   })
 
@@ -88,8 +88,8 @@ describe('the commands of a mock context', () => {
     await ctx.commands.run('org.example.ledger:ledger.open', TARGET)
 
     expect(ctx.commands.getRuns()).toStrictEqual([
-      { command: 'app:vault.create', target: undefined, argument: undefined },
-      { command: 'org.example.ledger:ledger.open', target: TARGET, argument: undefined },
+      { command: 'app:vault.create', target: undefined, itemId: undefined },
+      { command: 'org.example.ledger:ledger.open', target: TARGET, itemId: undefined },
     ])
   })
 })

@@ -17,6 +17,3 @@ export const SHARED_COMMANDS = [
   // Deletes the downloaded media of a link note.
   { id: 'app:link.deleteMedia', title: 'Delete media', arguments: [] },
 ] as const
-
-// SharedCommandId is the full id of a shared command.
-export type SharedCommandId = (typeof SHARED_COMMANDS)[number]['id']

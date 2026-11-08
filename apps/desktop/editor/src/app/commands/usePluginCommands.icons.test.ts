@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-host'
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
-import { usePluginCommands } from './usePluginCommands'
+import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 describe('the palette entry of a command a plugin declares', () => {
   it('is drawn with the icon the manifest names', () => {
@@ -13,7 +13,10 @@ describe('the palette entry of a command a plugin declares', () => {
       ],
     } as unknown as PluginHost
 
-    const [entry] = usePluginCommands({} as VaultCore, host).getPaletteEntries()
+    const [entry] = usePluginCommands(
+      createCommandNoteReader({} as VaultCore),
+      host,
+    ).getPaletteEntries()
 
     expect(entry?.icon).toBe(getNamedIcon('folder-tree'))
   })

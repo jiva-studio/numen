@@ -12,12 +12,12 @@ import {
   type SlotItem,
   type SlotPlace,
   type CommandTarget,
-  type Result,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
 import { getTargetValues } from '../when/targetValues'
-import { parseWhen, type WhenCondition, type WhenValues } from '../when/when'
+import type { WhenValues } from '../when/when'
+import { createWhenReader, type WhenReader } from '../when/whenReader'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -50,6 +50,7 @@ export interface SlotRegistryDeps {
   readonly findView: (pluginId: string, view: string) => unknown
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
+  readonly whenReader?: WhenReader
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
@@ -247,12 +248,10 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   }
   const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
 
-  // Each condition is read once, however often its entries are drawn.
-  const conditions = new Map<string, Result<WhenCondition, string>>()
+  const whenReader = deps.whenReader ?? createWhenReader()
   const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
     if (!entry.when) return true
-    const parsed = conditions.get(entry.when) ?? parseWhen(entry.when)
-    conditions.set(entry.when, parsed)
+    const parsed = whenReader.read(entry.when)
     if (!parsed.ok) {
       const id = entry.command ?? entry.view ?? entry.submenu ?? ''
       report(

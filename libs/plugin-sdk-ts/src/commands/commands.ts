@@ -3,6 +3,12 @@
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
 import type { Disposable } from '../types'
+import { SHARED_COMMANDS } from './sharedCommands'
+
+// isSharedCommand reports whether the full id is a shared command of the application.
+export function isSharedCommand(id: string): boolean {
+  return SHARED_COMMANDS.some((one) => one.id === id)
+}
 
 // CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
 // on, the file of a tab, the note of a search result or the note a plugin names. A run without
@@ -38,8 +44,8 @@ export interface CommandsHost {
   // the handler's title; a place draws a single one as a row of that title. Where those handlers
   // offer items of their own, it offers theirs instead, in one list, each in the group of its plugin.
   listItems(command: string, target?: CommandTarget): Promise<readonly CommandItem[]>
-  // Runs the command of the full id over the target; with `argument`, the id of the item picked. A
-  // shared command without an argument runs its one handler whose condition holds over the target,
+  // Runs the command of the full id over the target; with `itemId`, the id of the item picked. A
+  // shared command without an item id runs its one handler whose condition holds over the target,
   // and runs nothing where several or none do.
-  run(command: string, target?: CommandTarget, argument?: string): Promise<void>
+  run(command: string, target?: CommandTarget, itemId?: string): Promise<void>
 }

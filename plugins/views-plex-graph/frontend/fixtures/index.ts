@@ -63,11 +63,13 @@ const createNeighbourhood = (
   return {
     focus: { path: focus, title: focus.replace(/\.md$/, '') },
     focusType: types[focus] ?? NOTE_TYPE,
+    ...(types[focus] ? { focusTabKind: types[focus] } : {}),
     related: specs.map((spec) => ({
       relation: spec.relation ?? 'child',
       path: spec.path,
       title: spec.title ?? spec.path.replace(/\.md$/, ''),
       type: spec.type ?? types[spec.path] ?? NOTE_TYPE,
+      ...(types[spec.path] ? { tabKind: types[spec.path] } : {}),
     })),
     connections: [...specs.map((spec) => createLine(focus, spec)), ...lines],
   }

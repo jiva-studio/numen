@@ -16,7 +16,7 @@ import {
   getDeclaredSlots,
   readManifestSlotEntries,
   createViewRegistry,
-  TITLE_BAR_SLOT,
+  SLOT,
   openExternalUrl,
   type LoaderHost,
   type AgentHost,
@@ -31,7 +31,7 @@ import {
 } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { createNamedIcon } from '@numen/ui'
-import type { WindowPlatform } from './useWindowFrame'
+import type { WindowPlatform } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -257,7 +257,7 @@ export function createShellHost(
     closeTab,
     notices,
     /** The view a plugin draws in the title bar, or null while none does. */
-    titleBarView: slotViews.getSlotView(TITLE_BAR_SLOT),
+    titleBarView: slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */
     mountView: declaredViews.mountView,
   }

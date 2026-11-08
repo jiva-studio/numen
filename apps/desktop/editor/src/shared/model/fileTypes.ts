@@ -28,6 +28,7 @@ export interface Entry {
   readonly isFolder: boolean
   readonly isNote: boolean
   readonly type: NoteType
+  readonly tabKind?: string
 }
 
 /** Where a note was filed, or why none was made. */
