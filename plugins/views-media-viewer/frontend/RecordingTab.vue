@@ -10,7 +10,7 @@ import Player from './Player.vue'
 import VideoSurface from './VideoSurface.vue'
 import MediaLayout from './MediaLayout.vue'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
-import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
+import { isNotePath, type ReaderTabState, type Selector } from '@numen/plugin-sdk'
 import type { Recordings, TextRange } from './types'
 import { createTimeSelector, getSelectorStart } from './lib/place'
 import { WORDS as words } from './words'
@@ -31,7 +31,7 @@ const tab = useTranscript(props.recordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable, isVideo, isLoaded, url } = tab.playback
 const { pageUrl } = tab.content
 /** Whether there is media to play: a note that names neither media nor a page draws no player. */
-const hasMedia = computed(() => url.value !== '' || !targetPath.toLowerCase().endsWith('.md'))
+const hasMedia = computed(() => url.value !== '' || !isNotePath(targetPath))
 
 /* --------------------------------- Hooks ---------------------------------- */
 const saveTime = (ms: number) => {

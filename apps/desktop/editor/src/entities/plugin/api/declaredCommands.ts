@@ -4,7 +4,12 @@
  * before it is sent to the plugin.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { parseWhen, type CommandItem, type HandlerDeclaration } from '@numen/plugin-host'
+import {
+  createWhenReader,
+  type CommandItem,
+  type HandlerDeclaration,
+  type WhenReader,
+} from '@numen/plugin-host'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {
@@ -184,16 +189,19 @@ export async function runDeclaredHandler(
 
 /**
  * Runs the command in the backend of the plugin that declares it, over the file where its condition
- * reads the target, it offers items, or a place named the file.
+ * reads the target, it offers items, or a place named the file. The reader reads the condition; a
+ * window passes its one reader.
  */
 export async function runDeclaredCommand(
   command: DeclaredCommand,
   run: DeclaredCommandRun,
+  whenReader: WhenReader = createWhenReader(),
 ): Promise<DeclaredCommandOutcome> {
   const answer = await pluginCommands.runPluginCommand({
     pluginId: command.pluginId,
     command: command.id,
-    path: isOverTarget(command) || command.hasItems || run.isTargetNamed ? run.path : '',
+    path:
+      isOverTarget(command, whenReader) || command.hasItems || run.isTargetNamed ? run.path : '',
     arguments: { ...run.values },
     ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
   })
@@ -236,7 +244,11 @@ export async function listDeclaredItemLists(
 }
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */
-export function isOverTarget(command: Pick<DeclaredCommand, 'when'>): boolean {
-  const parsed = parseWhen(command.when ?? '')
-  return parsed.ok && parsed.value.names.some((name) => name.startsWith('target.'))
+export function isOverTarget(
+  command: Pick<DeclaredCommand, 'when'>,
+  whenReader: WhenReader,
+): boolean {
+  return (
+    whenReader.getCondition(command.when)?.names.some((name) => name.startsWith('target.')) ?? false
+  )
 }

@@ -38,6 +38,7 @@ import type {
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
 import type { WhenValues } from '../when/when'
+import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
 
 export type {
@@ -105,6 +106,8 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 export interface PluginHostDeps {
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
+  /** The reader of the conditions of the window; the host makes one of its own where none is given. */
+  readonly whenReader?: WhenReader
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   readonly listBackendHandlerItems?: (
@@ -250,3 +253,6 @@ export interface PluginContextHost {
   getTexts?(pluginId: string): VaultTexts | undefined
   getSlots?(): SlotHost | undefined
 }
+
+/** What the host runs with: the deps of the window, with the one reader of its conditions. */
+export type HostDeps = PluginHostDeps & { readonly whenReader: WhenReader }

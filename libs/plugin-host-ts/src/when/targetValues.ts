@@ -2,7 +2,7 @@
  * The target variables of when conditions, derived in this one place from the path a place passes,
  * as VS Code derives its resource keys from the URI. The core derives the same values for a run.
  */
-import type { CommandTarget } from '@numen/plugin-sdk'
+import { isNotePath, type CommandTarget } from '@numen/plugin-sdk'
 
 /** What a place read of the note of a target: its type and its frontmatter. */
 export interface TargetNote {
@@ -12,9 +12,6 @@ export interface TargetNote {
 
 /** What the derivation reads of a target. */
 export type TargetPath = Pick<CommandTarget, 'path' | 'isFolder' | 'others'>
-
-/** The extension that makes a file a note. */
-const NOTE_EXTENSION = 'md'
 
 const NO_TARGET = {
   'target.isRoot': false,
@@ -51,7 +48,7 @@ export function getTargetValues(
   if (!target) return NO_TARGET
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)
-  const isNote = extension === NOTE_EXTENSION
+  const isNote = !isFolder && isNotePath(path)
   return {
     'target.isRoot': isFolder && path === '',
     'target.isFolder': isFolder,

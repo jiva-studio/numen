@@ -4,7 +4,7 @@
  * the commands of the plugins read.
  */
 import {
-  getTargetValues,
+  getWhenValues as buildWhenValues,
   type CommandTarget,
   type PluginHost,
   type PluginHostDeps,
@@ -47,15 +47,16 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     config: whenContext.getConfig(),
     ...windowValues.current?.(),
   })
-  const getWhenValues = (target: CommandTarget | undefined): WhenValues => ({
-    ...getWindowValues(),
-    ...getTargetValues(target, whenContext.getContentTypes(), {
-      type: target?.noteType,
-      properties: target?.properties,
-    }),
-  })
+  const getWhenValues = (target: CommandTarget | undefined): WhenValues =>
+    buildWhenValues({
+      window: getWindowValues(),
+      target,
+      note: { type: target?.noteType, properties: target?.properties },
+      contentTypes: whenContext.getContentTypes(),
+    })
   const findCommand = createSlotCommandFinder({
     getWhenValues,
+    whenReader: whenContext.whenReader,
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
     getHandlerDeclarations: () => deps.declaredCommands.handlers.value,
@@ -77,6 +78,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     getSlotWhenValues: getWhenValues,
     getWindowValues,
     getContentTypes: whenContext.getContentTypes,
+    whenReader: whenContext.whenReader,
   }
   return { hostDeps, windowValues }
 }

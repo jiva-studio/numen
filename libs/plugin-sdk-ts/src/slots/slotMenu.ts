@@ -6,7 +6,7 @@
 import type { Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import type { CommandItem } from '../commands/commands'
-import { SHARED_COMMANDS } from '../commands/sharedCommands'
+import { isSharedCommand } from '../commands/commands'
 import type { SlotCommand, SlotEntryKey, SlotItem } from './slots'
 
 // CommandItemLists is the items read for the commands of an open menu, by the key of their entry;
@@ -34,9 +34,6 @@ export interface SlotMenu {
 }
 
 const ITEM_MARK = '#item:'
-
-const isSharedCommand = (command: string): boolean =>
-  SHARED_COMMANDS.some((one) => one.id === command)
 
 interface MenuParts {
   readonly lists: CommandItemLists

@@ -6,7 +6,7 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { SHARED_COMMANDS, type CommandItem, type PluginHost } from '@numen/plugin-host'
+import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-host'
 import type { Command, CommandTarget, PaletteLists, RunSupport } from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
@@ -79,8 +79,6 @@ function createPluginItems(deps: PluginItemsDeps) {
 
   return { getGroups, isEmpty, getRead, reset }
 }
-
-const isSharedCommand = (id: string): boolean => SHARED_COMMANDS.some((one) => one.id === id)
 
 const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem | undefined => {
   const [only] = items ?? []

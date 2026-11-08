@@ -6,11 +6,12 @@ import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
 import { readAvailableCommands } from './availableReader'
 import { isCommandAvailable } from './commandWhen'
-import { createHandlerApi, isSharedCommand } from './handlers'
+import { isSharedCommand } from '@numen/plugin-sdk'
+import { createHandlerApi } from './handlers'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
-import type { CommandRun, PluginHostDeps } from './types'
+import type { CommandRun, HostDeps } from './types'
 
 const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: target.noteType ?? '' })
 
@@ -18,7 +19,7 @@ const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: targe
  * The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts.
  * A shared command offers and runs the handlers the plugins declare.
  */
-export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
+export function createCommandApi(deps: HostDeps, registry: HostRegistry) {
   const getAvailable = () => readAvailableCommands(deps, registry)
   const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
   const handlers = createHandlerApi(deps, registry)

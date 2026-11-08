@@ -1,5 +1,6 @@
 /** Whether the host runs a command of a plugin over a note: its when condition. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
+import { createWhenReader } from '../when/whenReader'
 import { isCommandAvailable } from './commandWhen'
 
 const declaration = (when?: string) => ({
@@ -16,6 +17,7 @@ const FOLDER = { ...TARGET, path: 'notes', title: 'notes', isFolder: true, type:
 const ROOT = { ...FOLDER, path: '', title: '' }
 const ROWS = { ...NOTE, others: ['notes/Wasps.md'] }
 const deps = {
+  whenReader: createWhenReader(),
   getContentTypes: () => ({ md: 'text/markdown' }),
   getWindowValues: () => ({ 'window.isVaultReady': true, config: { ledger: { isOn: true } } }),
 }

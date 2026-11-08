@@ -14,6 +14,7 @@ export {
   formatFingerprint,
   getRelationErrorWords,
   isNotePath,
+  isSharedCommand,
   MENU_HOLD_MS,
   useSlotMenu,
 } from '@numen/plugin-sdk'

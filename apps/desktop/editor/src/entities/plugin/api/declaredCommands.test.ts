@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { COMMAND_ERROR_CODE, asFailure, asValue, type PluginCatalog } from '@numen/core-client'
+import { createWhenReader } from '@numen/plugin-host'
 import { createMockCatalogEntry } from '@numen/core-client/testing'
 import type { PluginInfo } from '@numen/plugin-manager'
 import { useCatalogEntries } from '../model/catalogEntries'
@@ -165,9 +166,11 @@ describe('the commands the plugins declare', () => {
   })
 
   it('run over a target where their condition reads one', () => {
-    expect(isOverTarget(convert)).toBe(true)
-    expect(isOverTarget({ when: 'window.isVaultReady' })).toBe(false)
-    expect(isOverTarget({})).toBe(false)
+    const reader = createWhenReader()
+
+    expect(isOverTarget(convert, reader)).toBe(true)
+    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
+    expect(isOverTarget({}, reader)).toBe(false)
   })
 })
 

@@ -1,6 +1,7 @@
 /** A shared command that several plugins place in one menu, as the file tree reads the menu. */
 import { describe, expect, it } from 'vitest'
 import {
+  createWhenReader,
   createSlotRegistry,
   getTargetValues,
   type CommandTarget,
@@ -25,6 +26,7 @@ const describeItem = (item: SlotItem): string =>
 describe('a shared command placed by several plugins', () => {
   it('shows once in the menu', () => {
     const findCommand = createSlotCommandFinder({
+      whenReader: createWhenReader(),
       getPluginCommands: () => [],
       getDeclaredCommands: () => [],
       getEditorCommands: () => [],

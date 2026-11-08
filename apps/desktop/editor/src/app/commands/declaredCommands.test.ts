@@ -129,11 +129,15 @@ describe('a declared command with items', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(proofread, {
-      path: 'talks/a.mp3',
-      values: {},
-      itemId: 'org.example.ears/ears',
-    })
+    expect(run).toHaveBeenCalledWith(
+      proofread,
+      {
+        path: 'talks/a.mp3',
+        values: {},
+        itemId: 'org.example.ears/ears',
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -165,11 +169,15 @@ describe('a run of a declared command', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(createSample, {
-      path: 'Glaciers',
-      values: { title: 'Moraines' },
-      isTargetNamed: true,
-    })
+    expect(run).toHaveBeenCalledWith(
+      createSample,
+      {
+        path: 'Glaciers',
+        values: { title: 'Moraines' },
+        isTargetNamed: true,
+      },
+      expect.anything(),
+    )
   })
 
   it('sends the file and values, writes the message and opens the returned path', async () => {
@@ -204,7 +212,11 @@ describe('a run of a declared command', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(createSample, { path: 'a.md', values: { title: 'Verbs' } })
+    expect(run).toHaveBeenCalledWith(
+      createSample,
+      { path: 'a.md', values: { title: 'Verbs' } },
+      expect.anything(),
+    )
     expect(writeMessage).toHaveBeenLastCalledWith('Made a sample', 'info')
     expect(openFile).toHaveBeenCalledWith('Verbs.md', '', 'current')
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([

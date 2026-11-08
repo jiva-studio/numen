@@ -2,7 +2,7 @@
  * The when values of the palette. Its target is what is in front: the note in front, or else the file
  * in front or chosen as a result; there is none while the vault does not accept operations.
  */
-import { getTargetValues, type WhenSettings, type WhenValues } from '@numen/plugin-host'
+import { getWhenValues, type WhenSettings, type WhenValues } from '@numen/plugin-host'
 
 /** What the palette knows of what is in front, as its command target holds it. */
 export interface PaletteInFront {
@@ -25,11 +25,14 @@ export function getPaletteValues(
     target.isReady && path !== ''
       ? { path, isFolder: false, others: target.others ?? [] }
       : undefined
-  return {
-    ...getTargetValues(inFront, contentTypes),
-    'window.isVaultOpen': target.vault.id !== '',
-    'window.isVaultReady': target.isReady,
-    'window.isTabOpen': target.tab !== '',
+  return getWhenValues({
+    window: {
+      'window.isVaultOpen': target.vault.id !== '',
+      'window.isVaultReady': target.isReady,
+      'window.isTabOpen': target.tab !== '',
+    },
+    target: inFront,
+    contentTypes,
     config,
-  }
+  })
 }

@@ -18,7 +18,8 @@ import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
-import { isSharedCommand } from './handlers'
+import { createWhenReader } from '../when/whenReader'
+import { isSharedCommand } from '@numen/plugin-sdk'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -282,7 +283,9 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
   }
 }
 
-export function createPluginHost(deps: PluginHostDeps) {
+export function createPluginHost(windowDeps: PluginHostDeps) {
+  const whenReader = windowDeps.whenReader ?? createWhenReader()
+  const deps = { ...windowDeps, whenReader }
   const registry = createHostRegistry()
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
@@ -298,6 +301,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+    whenReader,
   })
   contextHost.getSlots = () => slots
   const parts = { registry, slotViews, deps }

@@ -3,7 +3,7 @@
  * target, or a command a plugin registered with items; and the run of one with the item picked.
  */
 import {
-  SHARED_COMMANDS,
+  isSharedCommand,
   type CommandItem,
   type CommandTarget as RunTarget,
   type PluginHost,
@@ -33,8 +33,8 @@ export function createCommandItems(deps: CommandItemsDeps) {
       const command = findAppCommand(id)
       if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
       if (!deps.pluginHost?.hasCommandItems(id)) return []
-      const isShared = SHARED_COMMANDS.some((one) => one.id === id)
-      const noteTarget = isShared && deps.readTarget ? await deps.readTarget(target) : target
+      const noteTarget =
+        isSharedCommand(id) && deps.readTarget ? await deps.readTarget(target) : target
       return deps.pluginHost.listCommandItems(id, noteTarget)
     },
     runWithItem: (id: string, target: RunTarget, itemId: string): Promise<void> =>

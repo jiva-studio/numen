@@ -5,6 +5,7 @@
 import { computed, type Component } from 'vue'
 import type { TabMenu } from '@numen/shell'
 import {
+  isNotePath,
   SLOT,
   useSlotMenu,
   type CommandItem,
@@ -33,9 +34,6 @@ export interface TabMenuDeps {
   /** The type and the properties of the note of the path, which the entries are asked for over. */
   readNoteKind?(path: string): Promise<NoteKind>
 }
-
-/** The extension that makes a file a note. */
-const NOTE_EXTENSION = '.md'
 
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: WORDS.loadingItems }
@@ -112,7 +110,7 @@ export function useTabMenu(deps: TabMenuDeps) {
       target: { tab, at, target: typed },
       entries: getEntries(typed),
     })
-    if (!deps.readNoteKind || !target.path.endsWith(NOTE_EXTENSION)) {
+    if (!deps.readNoteKind || !isNotePath(target.path)) {
       slotMenu.open(() => request(target))
       return
     }

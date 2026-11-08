@@ -3,6 +3,12 @@
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
 import type { Disposable } from '../types'
+import { SHARED_COMMANDS } from './sharedCommands'
+
+// isSharedCommand reports whether the full id is a shared command of the application.
+export function isSharedCommand(id: string): boolean {
+  return SHARED_COMMANDS.some((one) => one.id === id)
+}
 
 // CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
 // on, the file of a tab, the note of a search result or the note a plugin names. A run without

@@ -19,7 +19,7 @@ import {
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 import {
-  EMPTY_WHEN_CONTEXT,
+  createEmptyWhenContext,
   createWhenAvailability,
   hasNoteVariable,
   type WindowWhenContext,
@@ -51,7 +51,7 @@ export const createCommandNoteReader =
 export function usePluginCommands(
   core: VaultCore,
   pluginHost: PluginHost | undefined,
-  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+  context: WindowWhenContext = createEmptyWhenContext(),
   getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
   getCommandNote: ReturnType<typeof createCommandNoteReader> = createCommandNoteReader(core),
 ) {
@@ -75,7 +75,9 @@ export function usePluginCommands(
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: hasNoteVariable(cmd.when) ? ('note' as const) : ('window' as const),
+      group: hasNoteVariable(context.whenReader.getCondition(cmd.when))
+        ? ('note' as const)
+        : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
@@ -89,7 +91,7 @@ export function usePluginCommands(
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => !hasNoteVariable(cmd.when) && cmd.shortcut)
+      .filter((cmd) => !hasNoteVariable(context.whenReader.getCondition(cmd.when)) && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 

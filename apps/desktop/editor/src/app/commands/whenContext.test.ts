@@ -1,5 +1,6 @@
 /** The when conditions of the plugins' commands over what is in front of the palette. Every plugin is invented. */
 import { describe, expect, it } from 'vitest'
+import { createWhenReader } from '@numen/plugin-host'
 import type { CommandTarget } from '@/features/command-palette'
 import { createWhenAvailability, getWhenGroup, hasNoteVariable } from './whenContext'
 
@@ -18,6 +19,7 @@ describe('a condition of a command of a plugin', () => {
   const isAvailable = createWhenAvailability({
     getContentTypes: () => ({ md: 'text/markdown', pdf: 'application/pdf' }),
     getConfig: () => ({ org: { example: { ledger: { isOn: true } } } }),
+    whenReader: createWhenReader(),
   })
 
   it('reads the note in front, its content type and the settings', () => {
@@ -39,15 +41,19 @@ describe('a condition of a command of a plugin', () => {
 })
 
 describe('the group of a command in the palette', () => {
+  const reader = createWhenReader()
+  const getWhenGroupOf = (when: string | undefined) => getWhenGroup(reader.getCondition(when))
+  const hasNoteVariableIn = (when: string) => hasNoteVariable(reader.getCondition(when))
+
   it('is note where its condition reads target.isNote, file where it reads another target value, window otherwise', () => {
-    expect(getWhenGroup('target.isNote && window.isVaultReady')).toBe('note')
-    expect(getWhenGroup("target.contentType == 'application/pdf'")).toBe('file')
-    expect(getWhenGroup('window.isVaultOpen')).toBe('window')
-    expect(getWhenGroup(undefined)).toBe('window')
+    expect(getWhenGroupOf('target.isNote && window.isVaultReady')).toBe('note')
+    expect(getWhenGroupOf("target.contentType == 'application/pdf'")).toBe('file')
+    expect(getWhenGroupOf('window.isVaultOpen')).toBe('window')
+    expect(getWhenGroupOf(undefined)).toBe('window')
   })
 
   it('reads target.isNote, or not', () => {
-    expect(hasNoteVariable('!target.isNote')).toBe(true)
-    expect(hasNoteVariable('target.isFile')).toBe(false)
+    expect(hasNoteVariableIn('!target.isNote')).toBe(true)
+    expect(hasNoteVariableIn('target.isFile')).toBe(false)
   })
 })

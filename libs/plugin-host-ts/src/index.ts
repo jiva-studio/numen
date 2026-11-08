@@ -66,3 +66,5 @@ export {
 } from './slots/slotRegistry'
 export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
 export { getTargetValues } from './when/targetValues'
+export { createWhenReader, type WhenReader } from './when/whenReader'
+export { getWhenValues, type WhenValueParts } from './when/whenValues'

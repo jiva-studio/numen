@@ -1,6 +1,6 @@
 /** The slot entries of the window: those the plugins declare and those of the application, and how their commands are drawn. */
 import { describe, expect, it } from 'vitest'
-import { getTargetValues, type CommandTarget } from '@numen/plugin-host'
+import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-host'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { APP_SLOT_ENTRIES } from './appPlacements'
@@ -122,6 +122,7 @@ describe('the slot entries of the window', () => {
 
 describe('a command of a slot entry', () => {
   const find = createSlotCommandFinder({
+    whenReader: createWhenReader(),
     getPluginCommands: () => [
       { id: `${TIDE}:tide.live`, title: 'Live tide', icon: 'waves', shortcut: 'mod+t' },
     ],
@@ -183,6 +184,7 @@ describe('a command of a slot entry', () => {
 
 describe('a shared command in a slot', () => {
   const find = createSlotCommandFinder({
+    whenReader: createWhenReader(),
     getPluginCommands: () => [],
     getDeclaredCommands: () => [],
     getEditorCommands: () => [],
@@ -211,6 +213,7 @@ describe('a shared command over what the window knows of the target', () => {
   const LINK: CommandTarget = { ...NOTE, path: 'links/Bees.md', noteType: 'link' }
   const PAPER: CommandTarget = { ...NOTE, path: 'papers/Bees.pdf' }
   const find = createSlotCommandFinder({
+    whenReader: createWhenReader(),
     getPluginCommands: () => [],
     getDeclaredCommands: () => [],
     getEditorCommands: () => [],
