@@ -113,9 +113,30 @@ export const rowOf = (name: string): HTMLElement => {
   return ancestorWhere(input, (one) => maskedInputs(one).length > 0)
 }
 
-/** The section of the group with that name: the smallest element around the name that holds a button to add a secret. */
+/** The section of the group with that name: the smallest element around the name that holds the group actions button. */
 export const sectionOf = (group: string): HTMLElement => {
   const text = findText(group)
   if (text === null) throw new Error(`no text ${group} on the page`)
-  return ancestorWhere(text, (one) => findButtons(/add/i, one).length > 0)
+  return ancestorWhere(text, (one) => findButtons(/group actions/i, one).length > 0)
+}
+
+/** The menu item whose text matches, in the menu drawn into the document. */
+export const findMenuItem = (pattern: RegExp): HTMLElement => {
+  const items = Array.from(root().querySelectorAll<HTMLElement>('[role="menuitem"]'))
+  const found = items.filter((one) => pattern.test(nameOf(one)))
+  if (found.length !== 1) {
+    throw new Error(
+      `${found.length} menu items match ${pattern}; the items are: ${items.map(nameOf).join(' | ')}`,
+    )
+  }
+  return found[0] as HTMLElement
+}
+
+/** Opens the group actions menu in a scope and chooses the item whose text matches. */
+export async function chooseGroupAction(
+  pattern: RegExp,
+  scope: ParentNode = root(),
+): Promise<void> {
+  await click(findButton(/group actions/i, scope))
+  await click(findMenuItem(pattern))
 }

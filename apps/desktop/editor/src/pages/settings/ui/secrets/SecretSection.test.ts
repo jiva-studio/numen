@@ -4,6 +4,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import SecretSection from './SecretSection.vue'
+import { chooseGroupAction, click, findButton, findMenuItem } from '@/testing/secretsDom'
 
 const section = { group: 'harbour', isAsked: false, secrets: [] }
 
@@ -49,7 +50,7 @@ describe('the section of a group', () => {
 
   it('keeps its name while the group is being renamed', async () => {
     const wrapper = mountSection()
-    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    await chooseGroupAction(/rename group/i)
     const id = document.querySelector('section')?.getAttribute('aria-labelledby') ?? ''
     expect(document.getElementById(id)?.textContent).toBe('harbour')
     wrapper.unmount()
@@ -57,7 +58,7 @@ describe('the section of a group', () => {
 
   it('is renamed to the name without U+0085 at its ends, as the core trims it', async () => {
     const wrapper = mountSection()
-    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    await chooseGroupAction(/rename group/i)
     const input = wrapper.get<HTMLInputElement>('input[type="text"]')
     await input.setValue('\u0085quay')
     await input.trigger('keydown', { key: 'Enter' })
@@ -68,7 +69,7 @@ describe('the section of a group', () => {
 
   it('is renamed with U+FEFF kept at its ends, as the core keeps it', async () => {
     const wrapper = mountSection()
-    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    await chooseGroupAction(/rename group/i)
     const input = wrapper.get<HTMLInputElement>('input[type="text"]')
     await input.setValue('\uFEFFquay')
     await input.trigger('keydown', { key: 'Enter' })
@@ -93,20 +94,27 @@ describe('the deletion of a group', () => {
 
   it('emits delete-group from the button of a group the person made', async () => {
     const wrapper = mountWith(false, [secret])
-    await wrapper.get('button[aria-label="Delete group"]').trigger('click')
+    await chooseGroupAction(/delete group/i)
     expect(wrapper.emitted('delete-group')).toHaveLength(1)
+    expect(wrapper.emitted('delete-group')?.[0]?.[0]).toBe(findButton(/group actions/i))
     wrapper.unmount()
   })
 
-  it('has no button for a group a plugin asks for', () => {
+  it('offers only adding a secret in a group a plugin asks for', async () => {
     const wrapper = mountWith(true, [secret])
-    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(false)
+    await click(findButton(/group actions/i))
+    expect(
+      Array.from(document.querySelectorAll('[role="menuitem"]')).map((one) =>
+        one.textContent?.trim(),
+      ),
+    ).toEqual(['Add secret'])
     wrapper.unmount()
   })
 
-  it('has a button for a group the person made with no secret', () => {
+  it('offers deleting a group the person made with no secret', async () => {
     const wrapper = mountWith(false, [])
-    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(true)
+    await click(findButton(/group actions/i))
+    expect(findMenuItem(/delete group/i)).toBeTruthy()
     wrapper.unmount()
   })
 })
@@ -126,7 +134,7 @@ describe('the name of a group', () => {
 
   const renameTo = async (name: string) => {
     const wrapper = mountSection()
-    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    await chooseGroupAction(/rename group/i)
     const input = wrapper.get<HTMLInputElement>('input[type="text"]')
     await input.setValue(name)
     await input.trigger('keydown', { key: 'Enter' })
@@ -191,7 +199,7 @@ describe('the card of a well-known service', () => {
 
   it('renames the key of the group, not its title', async () => {
     const wrapper = mountGroup('openai')
-    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    await chooseGroupAction(/rename group/i)
     expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('openai')
     wrapper.unmount()
   })

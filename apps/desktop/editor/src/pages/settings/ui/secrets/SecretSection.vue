@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * The secrets of one group in priority order. A group a plugin asks for shows one empty secret
- * named Default while it has none. A group the person made can be renamed.
+ * named Default while it has none. A menu in the header adds a secret; for a group the person made
+ * it also renames and deletes the group.
  */
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef } from 'vue'
-import { Pencil, Plus, Trash2 } from '@lucide/vue'
+import { Settings2 } from '@lucide/vue'
 import { getServiceInfo } from '@numen/core-client'
-import { Button } from '@numen/ui'
+import { Button, Menu, measureRect, type MenuItem } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
   getFirstSecretName,
@@ -51,6 +52,17 @@ const firstName = computed(() => getFirstSecretName(props.section.group))
 const info = computed(() => getServiceInfo(props.section.group))
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 const headingId = useId()
+const menuAnchor = ref<{ x: number; y: number; width: number } | null>(null)
+const menuOpener = ref<HTMLElement | null>(null)
+const menuItems = computed<readonly MenuItem[]>(() => [
+  { id: 'add', text: words.secretAdd },
+  ...(props.section.isAsked
+    ? []
+    : [
+        { id: 'rename', text: words.secretGroupRename },
+        { id: 'delete', text: words.secretGroupDelete },
+      ]),
+])
 
 onMounted(async () => {
   if (props.isNew) await onStartRename()
@@ -80,8 +92,24 @@ function onCancelRename(): void {
   isTooLong.value = false
 }
 
-function onDeleteGroup(event: MouseEvent): void {
-  if (event.currentTarget instanceof HTMLElement) emit('delete-group', event.currentTarget)
+function onOpenMenu(event: MouseEvent): void {
+  const opener = event.currentTarget
+  if (!(opener instanceof HTMLElement)) return
+  const box = measureRect(opener)
+  menuOpener.value = opener
+  menuAnchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0, width: box?.width ?? 0 }
+}
+
+function onCloseMenu(): void {
+  menuAnchor.value = null
+}
+
+async function onChooseAction(id: string): Promise<void> {
+  const opener = menuOpener.value
+  onCloseMenu()
+  if (id === 'add') emit('add')
+  else if (id === 'rename') await onStartRename()
+  else if (id === 'delete' && opener) emit('delete-group', opener)
 }
 
 function onMoveUp(index: number): void {
@@ -122,28 +150,29 @@ function onMoveDown(index: number): void {
         </p>
       </div>
       <Button
-        v-if="!section.isAsked && !isRenaming"
-        class="secret-section__tool"
+        v-if="!isRenaming"
         variant="ghost"
         size="icon-small"
-        :aria-label="words.secretGroupRename"
-        :title="words.secretGroupRename"
-        @mousedown.prevent
-        @click="onStartRename"
+        aria-haspopup="menu"
+        :aria-expanded="menuAnchor !== null"
+        :aria-label="words.secretGroupActions"
+        :title="words.secretGroupActions"
+        @click="onOpenMenu"
       >
-        <Pencil :size="14" aria-hidden="true" />
+        <Settings2 :size="14" aria-hidden="true" />
       </Button>
-      <Button
-        v-if="!section.isAsked && !isRenaming"
-        class="secret-section__tool"
-        variant="ghost"
-        size="icon-small"
-        :aria-label="words.secretGroupDelete"
-        :title="words.secretGroupDelete"
-        @click="onDeleteGroup"
-      >
-        <Trash2 :size="14" aria-hidden="true" />
-      </Button>
+      <Menu
+        v-if="menuAnchor"
+        :items="menuItems"
+        :at="{ x: menuAnchor.x, y: menuAnchor.y }"
+        :asking="menuAnchor.width"
+        :from="menuOpener"
+        :name="words.secretGroupActions"
+        trigger="keyboard"
+        is-open
+        @choose="onChooseAction"
+        @dismiss="onCloseMenu"
+      />
     </div>
 
     <ul class="secret-section__secrets">
@@ -177,11 +206,6 @@ function onMoveDown(index: number): void {
         @discard="emit('discard', name)"
       />
     </ul>
-
-    <Button variant="ghost" size="small" class="secret-section__add" @click="emit('add')">
-      <Plus :size="14" aria-hidden="true" />
-      {{ words.secretAdd }}
-    </Button>
   </section>
 </template>
 
@@ -232,21 +256,6 @@ function onMoveDown(index: number): void {
   font-weight: 500;
 }
 
-.secret-section__tool {
-  opacity: 0;
-}
-
-.secret-section:hover .secret-section__tool,
-.secret-section:focus-within .secret-section__tool {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .secret-section__tool {
-    opacity: 1;
-  }
-}
-
 .secret-section__name-input {
   box-sizing: border-box;
   block-size: var(--numen-action-size);
@@ -263,11 +272,5 @@ function onMoveDown(index: number): void {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.secret-section__add {
-  align-self: flex-start;
-  margin-block-start: 0.5rem;
-  margin-inline-start: -0.5rem;
 }
 </style>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * The plugin declarations that may read a secret: a button that reads the number of plugins and
- * opens a checklist with a check box for each declaration, labelled with the plugin title.
+ * opens a searchable list of the declarations, with a check mark on each one that is allowed.
+ * A click on a row allows the declaration to read the secret, or stops it.
  */
-import { computed, ref } from 'vue'
-import { ChevronDown } from '@lucide/vue'
-import { Checkbox } from '@numen/ui'
+import { computed, ref, useTemplateRef } from 'vue'
+import { Check, ChevronDown } from '@lucide/vue'
+import { SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import { isAllowed, type Declaration } from '../../lib/secretSections'
 import { WORDS as words } from '../../words'
@@ -22,52 +23,81 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isOpen = ref(false)
-const count = computed(() => {
+const trigger = useTemplateRef<HTMLElement>('trigger')
+const anchor = ref<{ x: number; y: number; width: number } | null>(null)
+const query = ref('')
+
+const keyOf = (one: Declaration): string => `${one.pluginId}/${one.name}/${one.group}`
+const items = computed<readonly ListItem[]>(() =>
+  props.declarations.map((one) => ({ id: keyOf(one), text: one.pluginName })),
+)
+const allowedIds = computed(() => {
   const secret = props.secret
-  return secret ? props.declarations.filter((one) => isAllowed(secret, one)).length : 0
+  const allowed = props.declarations.filter((one) => secret !== undefined && isAllowed(secret, one))
+  return new Set(allowed.map(keyOf))
 })
+const count = computed(() => allowedIds.value.size)
+
+/* -------------------------------- Handlers -------------------------------- */
+function onClose(): void {
+  anchor.value = null
+  query.value = ''
+}
+
+function onOpen(): void {
+  if (anchor.value) return onClose()
+  const box = measureRect(trigger.value)
+  anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0, width: box?.width ?? 0 }
+}
+
+function onChoose(id: string): void {
+  const declaration = props.declarations.find((one) => keyOf(one) === id)
+  if (declaration) emit('toggle', declaration, !allowedIds.value.has(id))
+}
 </script>
 
 <template>
-  <div class="secret-permissions" @keydown.esc="isOpen = false">
+  <div class="secret-permissions">
     <button
+      ref="trigger"
       type="button"
       class="secret-permissions__button"
+      aria-haspopup="listbox"
       :disabled="!secret || declarations.length === 0"
       :title="secret ? undefined : words.secretSaveFirst"
-      :aria-expanded="isOpen"
-      @click="isOpen = !isOpen"
+      :aria-expanded="anchor !== null"
+      @click="onOpen"
     >
       {{ words.secretReaders(count) }}
       <ChevronDown :size="14" aria-hidden="true" />
     </button>
-    <div v-if="isOpen" class="secret-permissions__backdrop" @click="isOpen = false" />
-    <div
-      v-if="isOpen"
-      class="secret-permissions__list"
-      role="group"
-      :aria-label="words.secretAllowedTo"
+    <SearchableListPopup
+      v-if="anchor"
+      :model-value="null"
+      v-model:query="query"
+      :items="items"
+      :label="words.secretAllowedTo"
+      :placeholder="words.secretSearchPlugins"
+      :empty-text="words.secretNoPlugins"
+      :at="{ x: anchor.x, y: anchor.y }"
+      :asking="anchor.width"
+      :from="trigger"
+      @select="onChoose"
+      @close="onClose"
     >
-      <Checkbox
-        v-for="one in declarations"
-        :key="`${one.pluginId}/${one.name}/${one.group}`"
-        class="secret-permissions__declaration"
-        :title="one.description"
-        :model-value="secret !== undefined && isAllowed(secret, one)"
-        @update:model-value="(value) => emit('toggle', one, value)"
-      >
-        {{ one.pluginName }}
-      </Checkbox>
-    </div>
+      <template #leading="{ item }">
+        <Check
+          class="secret-permissions__check"
+          :class="{ 'secret-permissions__check--off': !allowedIds.has(item.id) }"
+          :size="14"
+          aria-hidden="true"
+        />
+      </template>
+    </SearchableListPopup>
   </div>
 </template>
 
 <style scoped>
-.secret-permissions {
-  position: relative;
-}
-
 .secret-permissions__button {
   display: flex;
   align-items: center;
@@ -92,29 +122,11 @@ const count = computed(() => {
   cursor: default;
 }
 
-.secret-permissions__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9;
+.secret-permissions__check {
+  flex: none;
 }
 
-.secret-permissions__list {
-  position: absolute;
-  inset-block-start: 100%;
-  inset-inline-end: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-inline-size: 12rem;
-  margin-block-start: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  background-color: var(--numen-raised);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-}
-
-.secret-permissions__declaration {
-  color: var(--numen-ink);
+.secret-permissions__check--off {
+  visibility: hidden;
 }
 </style>

@@ -8,11 +8,13 @@ import { mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import {
+  chooseGroupAction,
   click,
   dispose,
   enterText,
   findButton,
   findButtons,
+  findMenuItem,
   findNameInput,
   findText,
   maskedInputs,
@@ -208,28 +210,26 @@ describe('the page of secrets', () => {
   })
 
   const openReaders = (row: HTMLElement) => click(findButton(/plugin/i, row))
-  const checkboxOf = (description: string) =>
-    root().querySelector<HTMLInputElement>(
-      `label[title="${description}"] input`,
-    ) as HTMLInputElement
+  const optionOf = (pluginName: string) =>
+    Array.from(root().querySelectorAll<HTMLElement>('[role="option"]')).find(
+      (one) => one.textContent?.trim() === pluginName,
+    ) as HTMLElement
+  const isMarked = (option: HTMLElement) =>
+    option.querySelector('.secret-permissions__check--off') === null
+  const optionNames = () =>
+    Array.from(root().querySelectorAll('[role="option"]')).map((one) => one.textContent?.trim())
 
   it('lists a plugin once per name: its declarations of the group, and the ungrouped one only where it has none for the group', async () => {
     const { wrapper } = mountPage()
     await openReaders(rowOf('Work'))
-    const titles = Array.from(root().querySelectorAll('label')).map((one) => one.title)
-    expect(titles).toStrictEqual([
-      'Key of the embeddings service',
-      'Key of the proofreading service',
-    ])
-    expect(root().querySelectorAll('input[type="checkbox"]')).toHaveLength(2)
+    expect(optionNames()).toStrictEqual(['Embeddings', 'Proofreading'])
     dispose(wrapper)
   })
 
   it('lists the declarations of the other groups in no section', async () => {
     const { wrapper } = mountPage()
     await openReaders(rowOf('Personal'))
-    const titles = Array.from(root().querySelectorAll('label')).map((one) => one.title)
-    expect(titles).toStrictEqual(['Key of the custom embeddings service'])
+    expect(optionNames()).toStrictEqual(['Embeddings'])
     dispose(wrapper)
   })
 
@@ -240,13 +240,13 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('shows a permission as checked and toggles it with allow and deny', async () => {
+  it('marks an allowed plugin with a check and toggles it with allow and deny', async () => {
     const { installation, wrapper } = mountPage()
     await openReaders(rowOf('Work'))
-    const embeddingsBox = checkboxOf('Key of the embeddings service')
-    const proofreadingBox = checkboxOf('Key of the proofreading service')
-    expect(embeddingsBox.checked).toBe(true)
-    expect(proofreadingBox.checked).toBe(false)
+    const embeddingsBox = optionOf('Embeddings')
+    const proofreadingBox = optionOf('Proofreading')
+    expect(isMarked(embeddingsBox)).toBe(true)
+    expect(isMarked(proofreadingBox)).toBe(false)
 
     await click(proofreadingBox)
     expect(installation.allowPluginSecret).toHaveBeenLastCalledWith(
@@ -275,7 +275,7 @@ describe('the page of secrets', () => {
   it('adds a secret with the next version as its name and stores it when a value is entered', async () => {
     const { installation, wrapper } = mountPage()
     const openrouter = sectionOf('OpenRouter')
-    await click(findButton(/add/i, openrouter))
+    await chooseGroupAction(/add secret/i, openrouter)
     expect(findNameInput('OpenRouter V1')).not.toBeNull()
     await enterText(
       maskedInputs(rowOf('OpenRouter V1'))[0] as HTMLInputElement,
@@ -291,7 +291,7 @@ describe('the page of secrets', () => {
 
   it('creates a new secret under the name typed into its name input', async () => {
     const { installation, wrapper } = mountPage()
-    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
     await typeName(findNameInput('OpenRouter V1') as HTMLInputElement, 'Staging')
     await enterText(maskedInputs(rowOf('Staging'))[0] as HTMLInputElement, 'made-up-staging-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
@@ -304,7 +304,7 @@ describe('the page of secrets', () => {
 
   it('draws a new secret like a saved one, with its plugin list disabled until it exists', async () => {
     const { wrapper } = mountPage()
-    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
     const draft = rowOf('OpenRouter V1')
     const saved = rowOf('Work')
     expect(draft.className).toBe(saved.className)
@@ -324,7 +324,7 @@ describe('the page of secrets', () => {
 
   it('discards a new secret with its button', async () => {
     const { wrapper } = mountPage()
-    await click(findButton(/add/i, sectionOf('OpenRouter')))
+    await chooseGroupAction(/add secret/i, sectionOf('OpenRouter'))
     await click(findButton(/discard/i, rowOf('OpenRouter V1')))
     expect(findNameInput('OpenRouter V1')).toBeNull()
     dispose(wrapper)
@@ -333,7 +333,7 @@ describe('the page of secrets', () => {
   it('names the second secret of a group with V1', async () => {
     const { wrapper } = mountPage()
     const travel = sectionOf('travel')
-    await click(findButton(/add/i, travel))
+    await chooseGroupAction(/add secret/i, travel)
     expect(findNameInput('travel V1')).not.toBeNull()
     dispose(wrapper)
   })
@@ -342,9 +342,12 @@ describe('the page of secrets', () => {
     const { installation, wrapper } = mountPage()
     const travel = sectionOf('travel')
     const openrouter = sectionOf('OpenRouter')
-    expect(findButtons(/rename group/i, openrouter)).toHaveLength(0)
+    await click(findButton(/group actions/i, openrouter))
+    expect(root().querySelectorAll('[role="menuitem"]')).toHaveLength(1)
+    expect(findMenuItem(/add secret/i)).toBeTruthy()
+    await click(findMenuItem(/add secret/i))
 
-    await click(findButton(/rename group/i, travel))
+    await chooseGroupAction(/rename group/i, travel)
     const input = travel.querySelector('input[type="text"], input:not([type])') as HTMLInputElement
     await enterText(input, 'holidays')
     expect(installation.renameSecretGroup).toHaveBeenCalledExactlyOnceWith('travel', 'holidays')

@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import {
+  chooseGroupAction,
   click,
   dispose,
   enterText,
@@ -114,7 +115,7 @@ describe('the page of secrets with no group', () => {
     await typeGroup('Local Llama')
     expect(installation.renameSecretGroup).not.toHaveBeenCalled()
     expect(findText('Local Llama')?.tagName).toBe('H2')
-    await click(findButton(/add secret/i))
+    await chooseGroupAction(/add secret/i)
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
@@ -128,7 +129,7 @@ describe('the page of secrets with no group', () => {
     const { wrapper } = mountPage()
     await click(findButton(/add group/i))
     await typeGroup('New group')
-    await click(findButton(/delete group/i))
+    await chooseGroupAction(/delete group/i)
     expect(findText('New group')).toBeNull()
     expect(root().querySelector('[role="dialog"], [role="alertdialog"], dialog')).toBeNull()
     dispose(wrapper)
@@ -139,7 +140,7 @@ describe('the page of secrets with no group', () => {
       secret('s00000001', '1', 'Local Llama'),
       secret('s00000002', 'Home', 'Local Llama'),
     ])
-    await click(findButton(/add secret/i))
+    await chooseGroupAction(/add secret/i)
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
@@ -155,8 +156,10 @@ describe('the page of secrets with no group', () => {
       plugins: ref(plugins),
     })
     await click(findButton(/plugin/i, rowOf('Work')))
-    const labels = Array.from(root().querySelectorAll('label')).map((one) => one.title)
-    expect(labels).toStrictEqual(['Key of a local harbour'])
+    const names = Array.from(root().querySelectorAll('[role="option"]')).map((one) =>
+      one.textContent?.trim(),
+    )
+    expect(names).toStrictEqual(['Harbour'])
     dispose(wrapper)
   })
 })
