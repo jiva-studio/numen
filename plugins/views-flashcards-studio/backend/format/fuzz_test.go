@@ -27,12 +27,10 @@ func getDeckSeeds() []string {
 	}
 }
 
-// A deck passes here once, on its way to the vault, and what comes out is
-// finished: every card carries a card id that could have been created, no card is
-// gained or lost, and every card id this gave names the card it was given to.
-//
-// Passing what came out through again changes nothing and gives no card id, so the
-// pass is safe to make on every write.
+// A deck passes through Whole once, on its way to the vault, and what comes out is finished:
+// every card carries a card id that could have been created, no card is gained or lost, and
+// every card id given names the card it was given to. Passing the result through again changes
+// nothing and gives no card id, so the pass is safe on every write.
 func FuzzWhole(f *testing.F) {
 	for _, seed := range getDeckSeeds() {
 		f.Add(seed, "Word")

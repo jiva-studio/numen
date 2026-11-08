@@ -651,10 +651,8 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 // TestAWarmScanStopsWhenCancelled covers the check in the loop. A warm scan
 // opens no file, so no reader rejects the cancelled context and the scan must
 // check it itself.
-//
-// The context is cancelled part-way through, not before the start: with an
-// up-front cancellation the first query fails and the loop check is never
-// reached.
+// The context is cancelled part-way through: with an up-front cancellation the
+// first query fails and the loop check is never reached.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)

@@ -40,12 +40,8 @@ func (t *Transcriber) Open(_ context.Context, raw []byte) (Recording, error) {
 // GetDuration is how long the recording is, in milliseconds.
 func (r *recording) GetDuration() int { return r.length }
 
-// GetSegments returns the segments the segmenter cut the recording into, from a
-// millisecond offset onward, at most count of them. A count of zero returns all.
-//
-// The whole file is cut at once, on the first request. The segmenter reads it
-// from start to end, and the end of a segment is determined by the silence
-// after it.
+// GetSegments returns the segments the segmenter cut the recording into, from a millisecond offset onward, at most count of them. A count of zero returns all.
+// The whole file is cut at once, on the first request, because the end of a segment is determined by the silence after it.
 func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

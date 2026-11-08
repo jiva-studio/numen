@@ -13,12 +13,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// A projection reports the returning share for the requested days only and
-// holds no value for any other day.
-//
-// The share is computed in one pass over the whole material per day. Days
-// that were not requested are not computed, and the values of the requested
-// days do not depend on which days were requested.
+// A projection reports the returning share for the requested days only and holds no value for
+// any other day. Days not requested are not computed, and the values of the requested days do
+// not depend on which days were requested.
 func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -161,12 +158,9 @@ func TestWhatExistsOverdue(t *testing.T) {
 	}
 }
 
-// A day answers the longest-waiting review cards first and leaves the rest of
-// the overdue pile unanswered.
-//
-// The same day is run again with only those two cards overdue, and every
-// figure read from the material equals the first run: the day answers the two
-// oldest overdue cards and not two others of the five.
+// A day answers the longest-waiting review cards first and leaves the rest of the overdue pile
+// unanswered. The same day run again with only those two cards overdue gives every figure equal
+// to the first run, so the day answered the two oldest of the five.
 func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
@@ -219,12 +213,9 @@ func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 	}
 }
 
-// A rule no review card can reach by the day the preset aims at is handed the
-// whole material at once, and every review card is counted as out of reach.
-//
-// A pace is what spreads a material over the days it has. Where no day leaves
-// a review card time to be learned, there is nothing to spread and nothing to
-// gain by trickling it out.
+// A rule no review card can reach by the day the preset aims at is handed the whole material at
+// once, and every review card is counted as out of reach. A pace spreads a material over the
+// days it has; where no day leaves time to learn a card, trickling it out gains nothing.
 func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -866,13 +857,10 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 	}
 }
 
-// The number of review cards that cannot be learned by the day the preset
-// aims at, at any pace, is counted and reported.
-//
-// A review card begun today needs a fortnight to reach a three-week interval,
-// so a ten-day horizon leaves every unbegun card of that kind short. The day
-// and the rule are unchanged, and the pace covers every review card that
-// can be reached.
+// The number of review cards that cannot be learned by the day the preset aims at, at any pace,
+// is counted and reported. A review card begun today needs a fortnight to reach a three-week
+// interval, so a ten-day horizon leaves every unbegun card of that kind short, while the pace
+// covers every card that can be reached.
 func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
@@ -927,13 +915,10 @@ func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 	}
 }
 
-// The day on which the whole material is learned is reported where such a day
-// exists.
-//
-// An interval is passed once and stays passed, so the last review card to pass
-// it does so on a definite day. A chance of recall is a level: a card falls
-// below the target as it fades and rises above it when answered, so no day
-// holds all of them at once. A preset aiming at a date is reported by its date.
+// The day on which the whole material is learned is reported where such a day exists. An
+// interval is passed once and stays passed, so the last review card to pass it does so on a
+// definite day. A chance of recall is a level that falls as a card fades and rises when answered,
+// so no day holds all of them at once. A preset aiming at a date is reported by its date.
 func TestProjection_LearnedDayByRule(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -967,12 +952,9 @@ func TestProjection_LearnedDayByRule(t *testing.T) {
 	}
 }
 
-// The day a review card reports from daysToLearn is the day the projection
-// learns it.
-//
-// The pace of a date is computed from the first and the projection from the
-// second, so a day is the same day in both: a review card begun today is
-// learned on the day the pace predicted.
+// The day a review card reports from daysToLearn is the day the projection learns it. The pace
+// of a date is computed from the first and the projection from the second, so a card begun today
+// is learned on the day the pace predicted.
 func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
@@ -1001,12 +983,10 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	}
 }
 
-// A date learns the same material whether or not the days are evened out.
-//
-// The pace of a date simulates a review card with no day chosen for it, and the
-// run chooses one. The days beyond the front of a run carry nothing, so the
-// lightest day of a window is its last and every review card is presented
-// later than the pace predicted.
+// A date learns the same material whether or not the days are evened out. The pace of a date
+// simulates a review card with no day chosen for it, and the run chooses one. The days beyond
+// the front of a run carry nothing, so the lightest day of a window is its last, and every
+// review card would be presented later than the pace predicted.
 func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	p := review.Defaults()
@@ -1033,12 +1013,9 @@ func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 	}
 }
 
-// The pace of a date counts the days the preset admits, and no others.
-//
-// A day of the week at none of the load schedules nothing. Dividing the
-// material by the calendar puts on the surviving days a load they were never
-// paced for, and the review cards it begins too late stand unlearned on the day
-// with nothing saying so.
+// The pace of a date counts the days the preset admits, and no others. A day of the week at
+// none of the load schedules nothing, and dividing the material by the calendar puts on the
+// surviving days a load they were never paced for, leaving cards unlearned with nothing saying so.
 func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	p := review.Defaults()
@@ -1104,11 +1081,9 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	}
 }
 
-// The pace of a date carries the share of the load its day of the week carries.
-//
-// The pace is a whole day's share of the material, and the day it falls on
-// keeps as much of it as it keeps of everything else. A Saturday at half was
-// handed a whole day of new material, and the days around it were paced as
+// The pace of a date carries the share of the load its day of the week carries. The pace is a
+// whole day's share of the material, and its day keeps as much of it as of everything else. A
+// Saturday at half was handed a whole day of new material, and the days around it were paced as
 // though it had carried its own.
 func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 	// A Saturday, so the light day is the requested day.
@@ -1225,13 +1200,10 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 	}
 }
 
-// The pace of a date divides the material by days of review, in one unit.
-//
-// The number of days available counts each day by the share of the load it
-// carries, and the number a review card needs counts days of review. A week
-// at half the load has half a week of capacity and needs as many days of
-// review as any other, so the second is weighted by the shares of the days it
-// takes.
+// The pace of a date divides the material by days of review, in one unit. The days available
+// count each day by the share of the load it carries, and the days a review card needs count
+// days of review. A week at half the load has half a week of capacity and needs as many days of
+// review as any other, so the second is weighted by the shares of the days it takes.
 func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
@@ -1264,13 +1236,10 @@ func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 
 func allForgotten(review.Schedule, time.Time) float64 { return 0 }
 
-// A day counting showings spends a slot on every showing, and a day counting
-// cards charges a review card once and presents it again at no cost.
-//
-// Nothing is recalled here, so every card the day presents falls back into it. A
-// day counting showings answers as many showings as its budget holds, and a
-// day counting cards answers that many review cards, each presented until the day
-// stops asking it.
+// A day counting showings spends a slot on every showing, and a day counting cards charges a
+// review card once and presents it again at no cost. Nothing is recalled here, so every card the
+// day presents falls back into it: showings answer as many showings as the budget holds, cards
+// answer that many review cards, each presented until the day stops asking it.
 func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -1296,14 +1265,11 @@ func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
 	}
 }
 
-// What a day's budget is spent on is read where a count closes the day, and
-// only a goal of retention keeps one on each side.
-//
-// A goal of minutes is closed by the clock, and the minutes go on every showing
-// at either counting. A goal of a date is closed by the count of cards it has to
-// begin, and every showing after the first is a review, which that goal holds to
-// nothing. So the counting shortens the day under retention and decides nothing
-// under the other two.
+// What a day's budget is spent on is read where a count closes the day, and only a goal of
+// retention keeps one on each side. A goal of minutes is closed by the clock, and the minutes go
+// on every showing at either counting. A goal of a date is closed by the count of cards it has to
+// begin, and every showing after the first is a review, which that goal holds to nothing. So the
+// counting shortens the day under retention and decides nothing under the other two.
 func TestWhatADaysBudgetIsSpentOnIsReadBelowEachGoal(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))

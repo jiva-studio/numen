@@ -39,14 +39,11 @@ func (r Rating) String() string {
 	return "unknown"
 }
 
-// CardID is the key a schedule is filed under: one card, and one review card of
-// the card model that cuts it. The card is identified by its card id, and the review card is
-// identified by its name in the card model.
-//
-// A card is shown once through each of its card model's templates, and each
-// template presents a different prompt, so each has its own schedule. The card id
-// moves with the card between decks and between vaults; the template name does
-// not, and renaming a review card restarts its schedule.
+// CardID is the key a schedule is filed under: the card, by its card id, and one review card of
+// the card model that cuts it, by its name in the card model. Each template of the card model
+// presents a different prompt, so each has its own schedule. The card id moves with the card
+// between decks and vaults; the template name does not, and renaming a review card restarts its
+// schedule.
 type CardID struct {
 	Card     string
 	Template string
@@ -121,12 +118,10 @@ func Write(a Answer) ([]byte, error) {
 	return append(raw, '\n'), nil
 }
 
-// Read returns the answers in one log file and the number of lines it could
-// not use.
-//
-// It never fails. A log is appended to by a process that may stop at any moment
-// and is copied between machines by external tools, so an unreadable line is
-// skipped and counted, and never prevents reading the rest of the history.
+// Read returns the answers in one log file and the number of lines it could not use. It never
+// fails: a log is appended to by a process that may stop at any moment and copied between
+// machines by external tools, so an unreadable line is skipped and counted, and never prevents
+// reading the rest of the history.
 func Read(raw []byte) (answers []Answer, skipped int) {
 	// Content after the last newline is a line that was not written whole.
 	if lastNewline := bytes.LastIndexByte(raw, '\n'); lastNewline < 0 {

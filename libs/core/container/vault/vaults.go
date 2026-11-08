@@ -95,10 +95,8 @@ func (c Config) handleError(err error) {
 
 // Vaults builds the list of vaults an installation holds, and the vault's own
 // tree, against this installation's list and index.
-//
-// notes is what settles each note a move sent somewhere else, and is the same
-// note.Move a rename goes through, so a note that travelled settles one way
-// however it travelled.
+// notes settles each note a move sent somewhere else. It is the same note.Move
+// a rename goes through, so a note settles one way however it travelled.
 func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.Move) vaultusecase.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vaultusecase.NewUnregister(registry, db.Vaults())

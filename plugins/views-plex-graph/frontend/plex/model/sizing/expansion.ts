@@ -30,12 +30,9 @@ export interface WideBoxBounds {
 }
 
 /**
- * The box a node opens to: the space its whole title requires, clamped inside
- * the window. It grows about its own midpoint, and shifts back inside the
- * window where the midpoint leaves no space to grow.
- *
- * Null where the box already holds the title, and where the window is no wider
- * than the box.
+ * The box a node opens to: the space its whole title requires, clamped inside the window.
+ * It grows about its own midpoint, and shifts back inside the window where the midpoint leaves no space to grow.
+ * Null where the box already holds the title, and where the window is no wider than the box.
  */
 export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
   const { viewport, margin } = bounds
@@ -61,13 +58,8 @@ export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open:
 }
 
 /**
- * How far open a box is, from fully closed to fully open: closed until the
- * attention has been on it for the wait, then open, and closed again as soon
- * as the attention leaves.
- *
- * `on` names what the attention is on, and is empty when it is on nothing. A
- * change of target is a different target: the box closes and the wait for it
- * begins again. A wait of zero never opens.
+ * How far open a box is, from fully closed to fully open: closed until the attention has been on it for the wait, then open, and closed again as soon as the attention leaves.
+ * `on` names what the attention is on, and is empty when it is on nothing. A change of target restarts the wait. A wait of zero never opens.
  */
 export function useExpansion(
   on: () => string | null,

@@ -2,13 +2,12 @@ package settings
 
 import "encoding/json"
 
-// Agent selects the agent the panel uses and configures how each program
-// runs.
+// Agent selects the agent the panel uses and configures how each program runs.
+// A program's section is kept whether or not it is selected, so switching agent
+// preserves the settings of the previous one. The programs are the ones listed
+// by the plugins that provide agents.
 //
-// A program's section is kept whether or not the program is selected, so
-// switching to another agent preserves the settings of the previous one. The
-// programs are the ones listed by the plugins that provide agents.
-//
+//numen:settings
 //numen:settings
 type Agent struct {
 	// Use names the program the panel uses. When absent, the program that the

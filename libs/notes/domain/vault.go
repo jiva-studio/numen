@@ -82,12 +82,9 @@ func (vs Vaults) CheckOverlap(path string) error {
 	return nil
 }
 
-// FindByName returns the vault with this name, excluding the vault `self`,
-// which is the vault being named.
-//
-// Names are compared after folding. A name from a file picker and the same
-// name typed at a command line differ in composition and case, and neither
-// distinguishes two vaults.
+// FindByName returns the vault with this name, excluding the vault `self`.
+// Names are compared after folding, so a name from a file picker and the same
+// name typed at a command line match despite differing composition and case.
 func (vs Vaults) FindByName(name string, self VaultID) (Vault, bool) {
 	for _, v := range vs {
 		if v.ID != self && FoldName(v.Name) == FoldName(name) {

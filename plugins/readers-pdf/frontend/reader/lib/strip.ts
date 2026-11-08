@@ -71,14 +71,9 @@ export interface Row {
 
 /**
  * The row a document forms in a viewport, drawn at `zoom` times the base size.
- *
- * A page of unknown size takes the first page's size, and a document with no
- * reported sizes uses the default page size. Laying out the row with no sizes
- * would place every page at the same position, and the row would shift as the
- * sizes arrive.
- *
- * A viewport with no height forms no row. Until a size is measured there is no
- * width to draw a page at, and a page drawn at an arbitrary width is discarded.
+ * A page of unknown size takes the first page's size, and a document with no reported sizes uses the default page size.
+ * Laying out the row with no sizes would place every page at one position and shift when the sizes arrive.
+ * A viewport with no height forms no row: with no measured size there is no width to draw a page at.
  */
 export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   const height = Math.round((viewport.height - 2 * GAP) * zoom)
@@ -147,13 +142,9 @@ export function findPageScroll(row: Row, page: number): number | undefined {
 }
 
 /**
- * How far the row is scrolled to show a page, held inside the row. Nothing for a
- * page the row does not hold.
- *
- * The page is put against the left edge when the centre line of the viewport
- * then falls on it, and centred in the viewport otherwise. Either way
- * `getCurrentPage` at the returned offset is the page, unless the offset was
- * clamped at an end of the row.
+ * How far the row is scrolled to show a page, held inside the row. Nothing for a page the row does not hold.
+ * The page goes against the left edge when the viewport's center line then falls on it, and is centered otherwise.
+ * `getCurrentPage` at the returned offset is the page, unless the offset was clamped at an end of the row.
  */
 export function getScrollTarget(row: Row, viewport: Size, page: number): number | undefined {
   const leftEdge = findPageScroll(row, page)

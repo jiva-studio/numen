@@ -146,13 +146,10 @@ type SearchFloor struct {
 	Default float64
 }
 
-// Search is the search index and the search floor of the vault the host shows, as a plugin works
-// them. SearchClient works them through HostSearchService, and tests work them through
-// hosttest.Search.
-//
-// A call that names a recipe other than the one of the model in use returns ErrRecipeMismatch, and a
-// call while the installation has no model returns ErrNoModel. A call while the host shows no vault
-// returns ErrNoVault.
+// Search is the search index and the search floor of the vault the host shows.
+// A call naming a recipe other than the one of the model in use returns
+// ErrRecipeMismatch, a call with no model installed returns ErrNoModel, and a
+// call while the host shows no vault returns ErrNoVault.
 type Search interface {
 	// With is the search of the vault of the identity. A call on it returns ErrUnknownVault when the
 	// installation has no such vault.

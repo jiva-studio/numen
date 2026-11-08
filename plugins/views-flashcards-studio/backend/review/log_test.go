@@ -246,12 +246,9 @@ func getLogSeeds() []string {
 	}
 }
 
-// No line is dropped without being counted: every line of a log is either an
-// answer read from it or a line counted as skipped.
-//
-// A log is appended to by a process that may stop at any moment and is copied
-// between machines by software that does not know its format, so its bytes are
-// untrusted input.
+// No line is dropped without being counted: every line of a log is either an answer read from
+// it or a line counted as skipped. The bytes are untrusted input, since the log is appended to by
+// a process that may stop at any moment and copied by software that does not know its format.
 func FuzzReadLog(f *testing.F) {
 	for _, seed := range getLogSeeds() {
 		f.Add(seed)

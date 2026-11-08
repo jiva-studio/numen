@@ -62,17 +62,13 @@ type Window struct {
 
 // Again is the interval at which a stream resends its last message while nothing
 // has changed.
-//
-// The request context belongs to the process and is cancelled when the window
-// closes, not when a page reloads, so a handler detects a gone client only
-// through a failed write. Every stream therefore writes periodically.
+// The request context is cancelled when the window closes, not when a page
+// reloads, so a handler detects a gone client only through a failed write.
 const Again = time.Second
 
 // WatchTasks streams the running tasks until the client disconnects.
-//
 // The full list is sent on every change, and the first message is sent
-// immediately: a client that connects while work is running needs the current
-// state, and a stream silent until the next change is indistinguishable from
+// immediately: a stream silent until the next change is indistinguishable from
 // one that never opened.
 func (w *Window) WatchTasks(
 	ctx context.Context,

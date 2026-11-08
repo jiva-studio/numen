@@ -2,13 +2,10 @@ import type { VariantProps } from 'class-variance-authority'
 import { cva } from 'class-variance-authority'
 
 /**
- * Hover moves a variant's background without losing the text on it. A ground
- * that already stands apart from its text (the accent, the alarm tint) moves
- * further from the text, so hovering never lowers the contrast; the outline
- * variant, whose text is far from its ground, moves a little toward its text.
- * `Contrast.stories.ts` measures every variant and state. Focus draws the ring
- * at the width the tokens define, which is the treatment every focusable
- * element in this library uses.
+ * Hover moves a variant's background without lowering the text contrast: a ground apart from its text
+ * (the accent, the alarm tint) moves further from it; the outline variant moves a little toward its text.
+ * `Contrast.stories.ts` measures every variant and state.
+ * Focus draws the ring at the token width, the treatment of every focusable element in this library.
  */
 export const buttonVariants = cva(
   [

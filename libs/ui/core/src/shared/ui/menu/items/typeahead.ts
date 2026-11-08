@@ -34,12 +34,9 @@ export const isLetter = (press: {
   press.key.length === 1 && press.key !== ' ' && !press.ctrlKey && !press.metaKey && !press.altKey
 
 /**
- * The item a letter typed at `now` moves the keyboard to, counting on from the
- * current item and skipping the items that cannot be chosen.
- *
- * A letter that lengthens the word searches for the whole word from the current
- * item, so the focus stays in place while the word grows. A letter that begins
- * a word, and the same letter typed again, search from the next item.
+ * The item a letter typed at `now` moves the keyboard to, counting on from the current item and skipping items that cannot be chosen.
+ * A letter that lengthens the word searches for the whole word from the current item, so focus stays while the word grows.
+ * A letter that begins a word, and a repeat of the same letter, search from the next item.
  */
 export interface JumpStrike {
   readonly letter: string

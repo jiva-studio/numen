@@ -193,13 +193,10 @@ const getPane = (canvas: HTMLElement, pane: string): HTMLElement =>
 const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview'] as const
 
 /**
- * One template of a card model of four fields, its previews standing what a card fills
- * them with.
- *
- * The window is one window: two parts to a row, the writing beside its preview
- * and the front above the back, divided by the lines they share. The frame
- * around all four is the template's, the parts carry none of their own, and the
- * keyboard landing in one changes nothing that is drawn.
+ * One template of a card model of four fields, its previews standing for what a card fills them with.
+ * The window is one window: the writing beside its preview, the front above the back, divided by
+ * the lines they share. The frame around all four is the template's, the parts carry none of
+ * their own, and the keyboard landing in one changes nothing that is drawn.
  */
 export const ATemplate: Story = {
   play: async ({ canvasElement }) => {

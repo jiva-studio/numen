@@ -69,15 +69,11 @@ func ConvertTimeToNanos(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-// Chunk is one segment of a source's text. `Location` is the position in the
-// source's own numbering and is empty when the format provides none.
-//
-// `Text` is the chunk content. It is indexed and hashed but not stored: it is
-// the text at `Start` for `Length` in the file, so a chunk whose text differs
-// from the file cannot be read back.
-//
-// `Small` are the chunks inside this one. A Chunk with none of its own is
-// still a large chunk: it is large because nothing encloses it.
+// Chunk is one segment of a source's text.
+// `Location` is the position in the source's own numbering, empty when the
+// format provides none.
+// `Text` is indexed and hashed but not stored; it is the text at `Start` for `Length` in the file.
+// `Small` are the chunks inside this one; a Chunk with none is still large because nothing encloses it.
 type Chunk struct {
 	Start    int
 	Length   int
@@ -204,12 +200,11 @@ func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, ki
 	return exec(ctx, tx, "delete_source", source)
 }
 
-// MoveSources files what the vault held at one path, and everything under it,
-// where it now is. The chunks, the vectors, the links and the headings hang off
-// the source's own number and travel with it untouched.
-//
-// Only the file at the path itself can be called something else afterwards;
-// everything under a folder keeps the name it has.
+// MoveSources renames the source at one path, and everything under it, to a new path.
+// The chunks, vectors, links and headings hang off the source's own number and
+// travel with it untouched.
+// Only the file at the path itself can get a new name; everything under a
+// folder keeps its name.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
 	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		vault, err := vaultRow(ctx, tx, vaultID)
@@ -348,22 +343,11 @@ func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 	return exec(ctx, tx, "clear_chunks", source)
 }
 
-// Replace makes the chunks of one source the ones given, inside a transaction
-// that is already open.
-//
-// A chunk is identified by the hash of its text. A chunk whose hash is on a row
-// of this source keeps that row, and its vector and its full-text row with it;
-// the row is moved to where the text now is. A chunk whose hash is on no row is
-// a new chunk, and a row whose hash is in no chunk is a chunk that is gone.
-//
-// A large chunk covers the whole of a note, so its hash moves whenever the note
-// is edited at all, and `chunks.parent_id … ON DELETE CASCADE` takes every
-// chunk inside a large one with it. The new rows go in first, the chunks that
-// were kept are then pointed at the large chunk they now sit in, and the rows
-// that are gone come out last.
-//
-// Only leaf chunks are indexed for their words, so a word search finds the
-// smallest enclosing passage.
+// Replace makes the chunks of one source the ones given, inside an open transaction.
+// A chunk is identified by the hash of its text: a known hash keeps its row and
+// vector, a new hash is a new row, a row with no chunk is removed.
+// Order matters: new rows first, kept chunks re-pointed at their large chunk,
+// removed rows last, because `parent_id ON DELETE CASCADE` removes the chunks inside a large one.
 func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64, chunks []Chunk) error {
 	target, err := chunksOf(ctx, tx, source)
 	if err != nil {

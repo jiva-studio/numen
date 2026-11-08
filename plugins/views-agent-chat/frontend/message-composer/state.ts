@@ -37,11 +37,8 @@ export type KeyIntent = 'submit' | 'newline' | 'pass'
 
 /**
  * A key, read as an intent.
- *
- * Enter sends and Shift+Enter breaks the line. While a text input method is
- * composing, Enter is choosing a candidate and belongs to the input method.
- * Composition is read from the event and from the key both: a browser
- * mid-composition reports the key as 229.
+ * Enter sends and Shift+Enter breaks the line. While a text input method is composing, Enter belongs to it.
+ * Composition is read from the event and from the key both: a browser mid-composition reports the key as 229.
  */
 export const keyIntent = (event: {
   readonly key: string

@@ -28,15 +28,11 @@ type fileServer struct {
 	mediaTypes     *file.GetMediaType
 }
 
-// A Loopback is a socket on the loopback address that serves the vault's files.
-//
-// The window loads pages from a scheme registered with the toolkit. Media
-// players do not support that scheme: the browser media stack loads only
-// standard schemes and rejects the format. A loopback address is reachable by
-// the media stack.
-//
-// The Loopback holds no recording logic. It serves the files the vault holds,
-// and the decision of what may be played is made where the player is drawn.
+// Loopback is a socket on the loopback address that serves the vault's files.
+// The window loads pages from a scheme registered with the toolkit, which the
+// browser media stack does not accept; a loopback address it can reach.
+// The Loopback holds no recording logic: what may be played is decided where
+// the player is drawn.
 type Loopback struct {
 	server  *http.Server
 	files   *fileServer
@@ -116,13 +112,11 @@ func (l *Loopback) getHandler() http.Handler {
 	})
 }
 
-// Address is where the file at a path in a vault is read from. A build that
-// opened no socket, and a socket that stopped answering, both answer with
-// nowhere.
-//
-// The address names which bytes the file was when it was given out, so a player
-// loaded from it plays one recording through and is not spliced with another
-// halfway. A file rewritten under the same name is a different address.
+// Address returns where the file at a path in a vault is read from, or nowhere
+// for a build that opened no socket or a socket that stopped answering.
+// The address names the bytes the file had when it was given out, so a player
+// never splices two recordings. A file rewritten under the same name is a
+// different address.
 func (l *Loopback) Address(vault domain.Vault, ref domain.FileStat) string {
 	if l == nil || l.stopped.Load() {
 		return ""

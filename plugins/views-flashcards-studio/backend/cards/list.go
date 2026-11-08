@@ -39,12 +39,9 @@ func NewList(readers ports.VaultReaders, notes CardModelQueries) List {
 	return List{readers: readers, notes: notes}
 }
 
-// Execute lists the card models of one vault, by path, and reports how many the
-// vault holds.
-//
-// Limit is how many of them are read, and zero or less reads all of them. The
-// index reports the total, so the count is returned without opening a file for
-// the card models beyond the limit.
+// Execute lists the card models of one vault, by path, and reports how many the vault holds.
+// Limit is how many are read; zero or less reads all. The index reports the total, so the count
+// is returned without opening a file for the card models beyond the limit.
 func (u List) Execute(
 	ctx context.Context, v domain.Vault, limit int,
 ) ([]CardModelSummary, int, error) {

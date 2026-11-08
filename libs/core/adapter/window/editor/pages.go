@@ -52,10 +52,8 @@ func mount(pos string, to http.Handler) served { return served{posVal: pos, to: 
 
 // NewHandler puts the services in front of the pages, so a window and a browser
 // are served by one handler.
-//
-// named lists the services this build serves, by the names the schema gives them.
-// A service left out is not mounted, and a call to it is unanswered because
-// nothing serves it, not because a handler with nothing behind it is mounted.
+// named lists the services this build serves, by the names the schema gives
+// them. A service left out is not mounted, so a call to it is unanswered.
 // Naming none builds the whole schema.
 func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)

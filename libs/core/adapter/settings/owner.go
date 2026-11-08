@@ -49,11 +49,10 @@ type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
 // registry that has no provider.
 type Registries func(name string) ([]string, bool)
 
-// CheckWrite takes the declarations of the owners, the registries, the path of the setting and the
-// value. It returns why the value is not one the setting at the path takes. The first element of
-// the path is the owner and the rest is the key path under it, as the file lays them out. One
-// function checks a write for every owner: the declared key, the type of the value, the
-// membership of an enum and the bounds of a range. The keys `agent` and `ai` of the owner app are
+// CheckWrite returns why a value is not one the setting at the path takes.
+// The first path element is the owner and the rest is the key path under it.
+// It checks the declared key, the type of the value, enum membership and range
+// bounds for every owner. The keys `agent` and `ai` of the owner app are
 // outside the check.
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")

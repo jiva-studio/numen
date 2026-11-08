@@ -25,10 +25,9 @@ const (
 
 // Begin starts a write transaction, asking again while another process holds
 // the write lock.
-//
-// The write pool opens with _txlock=immediate, so the lock is taken at BEGIN: a
-// transaction that could not take it has done nothing, and beginning again is
-// the whole of the retry.
+// The write pool opens with _txlock=immediate, so the lock is taken at BEGIN;
+// a transaction that could not take it has done nothing and the retry is a
+// new Begin.
 func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 	var tx *sql.Tx
 	err := retry(ctx, func() error {
@@ -76,14 +75,10 @@ func JoinClose(err, closeErr error) error {
 }
 
 // Transaction is a write transaction and the statements prepared inside it.
-//
-// SQLite reads the text of a statement each time one is prepared, and the
-// driver prepares afresh for every Exec. A transaction that spans five hundred
-// notes runs the same two dozen statements five hundred times over, so each of
-// them is prepared here on its first use and run again after that.
-//
-// A prepared statement belongs to the transaction it was prepared in and is
-// closed with it, on commit and on rollback alike.
+// Each statement is prepared on first use and reused, because the driver
+// prepares afresh for every Exec and one transaction runs the same statements
+// hundreds of times.
+// A prepared statement is closed with its transaction, on commit and rollback alike.
 type Transaction struct {
 	*sql.Tx
 	ready map[string]*sql.Stmt
@@ -128,16 +123,11 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 	return row
 }
 
-// Uninterrupted returns the context a statement on the index runs under: ctx
-// itself with its error when ctx is already done, and otherwise a context that
-// is not cancelled while the statement runs.
-//
-// The driver answers a cancelled context by interrupting the connection. The
-// vec0 table prepares its own statements the first time a connection touches
-// it, and a prepare that the interrupt fails leaves it a nil statement that it
-// then clears, which ends the process. A statement therefore starts only while
-// ctx is live and then runs to its end. A write transaction still rolls back
-// when ctx is cancelled, between its statements.
+// Uninterrupted returns ctx with its error when ctx is done, otherwise a context not cancelled while the statement runs.
+// The driver answers cancellation by interrupting the connection, and an
+// interrupted prepare in the vec0 table leaves a nil statement that it then
+// clears, which ends the process. A write transaction still rolls back on
+// cancellation, between statements.
 func Uninterrupted(ctx context.Context) (context.Context, error) {
 	if err := ctx.Err(); err != nil {
 		return ctx, err

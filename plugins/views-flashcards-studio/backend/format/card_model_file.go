@@ -55,13 +55,10 @@ func (f *CardModelFile) SetFields(names []string) error {
 	return f.doc.SetList(fieldsKey, names)
 }
 
-// RenameField renames one declared field in place. It returns ErrNoSuchField when
-// the card model does not declare `from`, and ErrFieldTaken when it already
-// declares `to`.
-//
-// A field's name is written twice in this file: where `fields` declares it, and
-// in the braces of every template that places it. Both are written here, so the
-// resulting card model declares what its templates place.
+// RenameField renames one declared field in place. It returns ErrNoSuchField when the card
+// model does not declare `from`, and ErrFieldTaken when it already declares `to`. The name is
+// written twice in this file, in `fields` and in the braces of every template that places it;
+// both are written here, so the templates place what the card model declares.
 func (f *CardModelFile) RenameField(from, to string) error {
 	names := f.Fields()
 	pos := slices.Index(names, from)

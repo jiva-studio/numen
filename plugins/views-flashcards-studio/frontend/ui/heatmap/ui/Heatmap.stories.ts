@@ -300,12 +300,9 @@ const CORNERS = [
 ]
 
 /**
- * The grid pinned against each edge of the window in turn, pointed at in the
- * corner nearest that edge.
- *
- * A summary is placed beside the day it describes, and the side it prefers is off
- * the screen in two of these four, so this story determines whether the whole
- * summary remains readable.
+ * The grid pinned against each edge of the window in turn, pointed at in the corner nearest that
+ * edge. A summary prefers a side that is off the screen in two of the four, so this story checks
+ * that the whole summary stays readable.
  */
 export const AtEveryEdge: Story = {
   args: { did: createYear(), now, words },

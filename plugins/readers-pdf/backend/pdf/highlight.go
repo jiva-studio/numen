@@ -36,14 +36,9 @@ const (
 	wordGap  = 0.25
 )
 
-// Highlights returns the locations of the words of some pages of the document:
-// one box per word, at the offset in Text where that word begins.
-//
-// The requested pages are given by index, and only those are read. The boxes
-// are returned in ascending offset order.
-//
-// A page whose text layer is empty yields no boxes, and a scan yields none at
-// all.
+// Highlights returns the locations of the words of some pages of the document: one box per word, at the offset in Text where that word begins.
+// Pages are given by index and only those are read. The boxes are returned in ascending offset order.
+// A page whose text layer is empty yields no boxes, and a scan yields none at all.
 func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []HighlightBox, err error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="empty page selection returns immediately without opening a worker"

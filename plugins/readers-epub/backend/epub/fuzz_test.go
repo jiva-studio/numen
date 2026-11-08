@@ -21,17 +21,11 @@ const mostPerBook = 256 << 20
 // moves on to the next file.
 const mostFuzzed = 1 << 20
 
-// A book read without error satisfies the invariants the rest of the
-// application relies on: every offset is inside the text, parts are in reading
-// order, and each part has a one-line name. The tier recorded for the parts is
-// the tier that produced them.
-//
-// However small the file, the text it yields is bounded; sizes declared by an
-// archive are not trusted.
-//
-// A file that cannot be read fails as a non-archive, an archive with no
-// container, an archive with no package document, or a book whose spine is
-// ciphertext. An empty book is read successfully and is a distinct result.
+// FuzzRead checks that a book read without error satisfies the invariants the rest of the application relies on:
+// every offset is inside the text, parts are in reading order, each part has a one-line name, and the tier recorded for the parts is the tier that produced them.
+// The text yielded is bounded however small the file; sizes declared by an archive are not trusted.
+// A file that cannot be read fails as a non-archive, an archive with no container, an archive with no package document, or a book whose spine is ciphertext.
+// An empty book is read successfully and is a distinct result.
 func FuzzRead(f *testing.F) {
 	whole := tinyBook(f, nil)
 	f.Add(whole)

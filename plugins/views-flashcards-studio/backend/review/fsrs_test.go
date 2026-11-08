@@ -68,14 +68,9 @@ func TestFSRSNext_ReviewedCardIsNotNew(t *testing.T) {
 	}
 }
 
-// A scheduler carries nothing from one answer to the next, so one of them
-// answers for many review cards at once and each answer is the answer it would
-// have given on its own.
-//
-// Run under the race detector this is what holds the scheduler to carrying no
-// state: one that wrote anything into itself while working an interval out
-// could not be shared, and a projection of a preset shares one across every
-// place of a curve.
+// A scheduler carries nothing from one answer to the next, so one answers for many review cards
+// at once, each answer as it would be on its own. Under the race detector this holds it to
+// keeping no state: a projection of a preset shares one scheduler across every place of a curve.
 func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
@@ -201,15 +196,11 @@ func getLibraryRetentions() []float64 {
 	return []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 }
 
-// The scheduler works an interval out from its parameters, and what it works
-// out is what the library those parameters come from works out.
-//
-// Every field of a schedule is compared bit for bit and not within a tolerance:
-// a schedule differing in the last place is a different schedule, and a card
-// review card sent away for a different day.
-//
-// Test coverage includes sequences generated across review phases from new
-// cards, and synthetic boundary schedules covering clamping limits.
+// The scheduler works an interval out from its parameters, and the result is what the library
+// those parameters come from works out. Every field of a schedule is compared bit for bit, not
+// within a tolerance, since a schedule differing in the last place can send a review card away
+// for a different day. Coverage: sequences across review phases from new cards, and synthetic
+// boundary schedules for clamping limits.
 func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 	for _, retention := range getLibraryRetentions() {
 		delta, engine := makeSchedulers(retention)

@@ -30,17 +30,11 @@ type TextSourceProperty struct {
 	Value string
 }
 
-// A TextVersion is the core's record of one text of a vault file: who made it,
-// from what, of which kind, and the file in the maker's plugin folder that
-// holds its segments.
-//
-// A version has one root. Source names another version of the same file, and
-// InputHash is the TextHash of that version. SourceProperty names a property of
-// the note, and InputHash is empty. With neither, the version is made from
-// the file, and InputHash is HashContent of the file. Hashes are as they were
-// when the version was made. File is the name of the version's file in the
-// folder of PluginID; TextHash is HashContent of that file's bytes when the version
-// was recorded.
+// A TextVersion is the core record of one text of a vault file: who made it,
+// from what, of which kind, and the file in the maker folder.
+// A version has one root: Source (InputHash is its TextHash), SourceProperty
+// (InputHash empty), or neither (the file; InputHash is HashContent of the file).
+// TextHash is HashContent of File bytes. Hashes are as of when the version was made.
 type TextVersion struct {
 	Path           string
 	PluginID       string

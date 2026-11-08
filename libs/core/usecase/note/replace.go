@@ -29,11 +29,10 @@ type Replace struct {
 }
 
 // NewReplace creates a Replace from the vault readers and writers, the index
-// index updater and the clock.
-//
-// All four are required, as for NewWrite: without the index updater, a replacement
-// changes the file but the index does not reflect the new content, and without
-// the clock the note is stamped with the machine's time.
+// updater and the clock.
+// All four are required, as for NewWrite: without the index updater the index
+// does not reflect the new content, and without the clock the note is stamped
+// with the machine's time.
 func NewReplace(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) Replace {

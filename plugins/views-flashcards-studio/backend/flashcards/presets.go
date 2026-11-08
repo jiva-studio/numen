@@ -87,12 +87,10 @@ type PresetSummary struct {
 	Title string
 }
 
-// List returns every preset the vault holds, by path. The defaults are excluded:
-// they schedule a deck that names no preset, and no note holds them.
-//
-// The index identifies which notes are presets, so no file is opened. A build
-// without the index gets ErrNoPresets: a vault with no presets is a valid
-// answer, and a build that cannot determine it must not return one.
+// List returns every preset the vault holds, by path. The defaults are excluded: they schedule a
+// deck that names no preset, and no note holds them. The index identifies the preset notes, so no
+// file is opened. A build without the index gets ErrNoPresets, because it must not answer with an
+// empty list it cannot determine.
 func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, error) {
 	if u.notes == nil {
 		return nil, ErrNoPresets
@@ -122,11 +120,9 @@ func CreateDefaultPreset() PresetContents {
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
-//
-// A link reaching nothing, a link reaching a note that is not a preset, and a
-// `links:` entry written with no role all leave the deck on the defaults and say
-// so against it. A deck naming two presets is scheduled by the first and carries
-// a problem: two presets are two answers to one question.
+// A link reaching nothing, a link reaching a note that is not a preset, and a `links:` entry with
+// no role all leave the deck on the defaults and say so against it. A deck naming two presets is
+// scheduled by the first and carries a problem.
 func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
 	return u.OpenReads().GetForDeck(ctx, v, deck)
 }
@@ -369,16 +365,11 @@ var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold"
 // nothing is written.
 var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 
-// Point puts the deck at path on a preset, by writing the entry of its `links:`
-// block that carries `type: preset`.
-//
-// # An empty preset takes that entry out, and the deck is scheduled by the
-//
-// FileStat, when it is given, is what the caller believes is on disk. A deck
-// that has changed since it was read is left alone and port.ErrStale comes
-// back. A write that landed answers with the file stat of the file it
-// produced, which the caller presents at its next write. An index that could
-// not be updated is note.ErrIndexOutdated beside that file stat.
+// Point puts the deck at path on a preset, by writing the entry of its `links:` block that
+// carries `type: preset`. An empty preset takes that entry out, and the deck is scheduled by the
+// defaults. A deck changed since stat was read is left alone and port.ErrStale comes back. A
+// landed write answers with the new file stat; an index that could not be updated is
+// note.ErrIndexOutdated beside it.
 func (u Presets) Point(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -417,16 +408,10 @@ func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset st
 }
 
 // Save writes the settings into the preset at path.
-//
-// Each key the application owns is replaced on its own. Every other key, the
-// order they stand in, the way they are written and the body are left as they
-// arrived.
-//
-// FileStat, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrStale comes
-// back. A write that landed answers with the file stat of the file it
-// produced, which the caller presents at its next write. An index that could
-// not be updated is note.ErrIndexOutdated beside that file stat.
+// Each key the application owns is replaced on its own; every other key, its order, its
+// formatting and the body are left as they arrived. A note changed since stat was read is left
+// alone and port.ErrStale comes back. A landed write answers with the new file stat; an index
+// that could not be updated is note.ErrIndexOutdated beside it.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,

@@ -9,20 +9,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-// FuzzRead checks that reading arbitrary bytes never fails the invariants the
-// rest of the application relies on. A document that reads successfully lists
-// its parts in pagination order, and each part has a one-line name; a document
-// whose outline has no names reports that.
-//
-// Locating an offset yields the page that begins at or before it and the part
-// that begins at or before it, so a passage found in the text belongs to a page
-// and a heading.
-//
-// A file that cannot be read fails as not a PDF or as password-protected. A scan
-// has no text and is a successfully read document.
-//
-// The input bytes are a file in a user's vault, written by a scanner, a browser
-// or a sync tool, and possibly incomplete.
+// FuzzRead checks that reading arbitrary bytes never breaks the invariants the rest of the application relies on.
+// A document that reads lists its parts in pagination order with a one-line name each; an outline with no names reports that.
+// Locating an offset yields the page and the part that begin at or before it.
+// A file that cannot be read fails as not a PDF or as password-protected. A scan has no text and is a successfully read document.
+// The input is a file in a user's vault, possibly incomplete, written by a scanner, a browser or a sync tool.
 func FuzzRead(f *testing.F) {
 	for _, name := range []string{tiny, outline, labels, turned, scan, vast, prose} {
 		raw, err := os.ReadFile("testdata/" + name)

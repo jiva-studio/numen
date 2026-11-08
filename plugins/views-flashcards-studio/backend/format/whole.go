@@ -13,21 +13,11 @@ type CardID struct {
 	CardID cardid.ID
 }
 
-// Whole is a deck's body with every card made whole: a card carrying no card id is
-// given one, and a heading that has fallen out of step with the card's first
-// field is written again from the field. Every other byte of the body is left
-// as it arrived. What comes back beside it is every card id this gave.
-//
-// A deck passes here once, on its way to the vault.
-//
-// card's brackets. A card whose card model is not among them, or whose card model
-// declares no field, is not reprojected: nothing can say which of its fields is
-// first, so its heading is left exactly currently. Neither is a card that
-// writes no heading at all for the field that is first. A card is given its
-// card id all the same.
-//
-// The body is text whose line endings are normalised, and so is what comes
-// back. The endings the file keeps are put on when it is written.
+// Whole is a deck's body with every card made whole: a card carrying no card id is given one,
+// and a heading out of step with the card's first field is written again from the field. Every
+// other byte is left as it arrived, and the card ids given come back beside it. A card whose
+// card model is not in cardModels, or declares no field, or writes no heading for its first
+// field keeps its heading, but is still given a card id. The body has normalized line endings.
 func Whole(
 	body string, cardModels map[string]CardModel, createID func() cardid.ID,
 ) (string, []CardID) {

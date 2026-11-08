@@ -19,14 +19,9 @@ import (
 
 // DerivedStore stores the application's own files inside one vault: files it
 // generated and cannot regenerate.
-//
-// It is separate from VaultWriter because it writes to the application's own
-// folder, which VaultWriter rejects, and rejects every path VaultWriter
-// writes. Neither type can perform the other's work.
-//
-// Every name begins with the name of one of its areas. Names outside its areas
-// are rejected, including the vault's identity, which lives in the vault
-// folder and in no area.
+// It is separate from VaultWriter, which rejects the application's own folder,
+// and rejects every path VaultWriter writes.
+// Every name begins with an area name; others are rejected, including the vault's identity.
 type DerivedStore struct {
 	vault   string
 	service string
@@ -83,12 +78,10 @@ func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 // identity from the one the store was opened with.
 var ErrNotThisVault = errors.New("the folder is not the vault this store was opened on")
 
-// OpenDerived opens one vault's store, and holds on to the identity that vault
-// carries. Nothing is written: a store that created its folder on being opened
-// would put one in every vault the application looks at.
-//
-// The store answers for every area named and the first of them is what it is
-// called. A store names at least one.
+// OpenDerived opens one vault's store and holds on to the identity that vault carries.
+// Nothing is written: a store that created its folder on opening would put one
+// in every vault the application looks at.
+// The store answers for every area named; the first is its name, so at least one is required.
 func OpenDerived(vaultRoot string, opts vaultconfig.Options, areas ...string) (*DerivedStore, error) {
 	validAreas := make([]string, 0, len(areas))
 	for _, area := range areas {
@@ -215,15 +208,11 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) (
 	return atomicfile.SyncDirectory(root, filepath.Dir(pos))
 }
 
-// Append adds to the end of the file in place. The data is written completely
-// or not at all: a partial write is truncated back to the original length, so
-// the next append starts at the original end.
-//
+// Append adds to the end of the file in place, completely or not at all: a
+// partial write is truncated back to the original length.
 // A name that several callers append to is guarded by a claim, because the
 // truncation removes everything written after this append's own bytes.
-//
-// A crash during a write can still leave a torn tail. Readers keep the
-// complete pages and drop the remainder.
+// A crash can still leave a torn tail; readers keep the complete pages.
 func (d *DerivedStore) Append(_ context.Context, name string, content []byte) (err error) {
 	target, err := d.getPath(name)
 	if err != nil {
@@ -292,7 +281,6 @@ const claimSuffix = ".claim"
 
 // ClaimName holds a name until the returned function is called, and fails
 // with port.ErrClaimed when another caller holds it.
-//
 // The claim is a kernel lock on `<name>.claim` next to the artifact, so it
 // applies across processes and is released when a holder is killed. A claim
 // file with no lock on it does not hold the name.

@@ -19,11 +19,9 @@ export interface HeatmapMetrics {
 
 /**
  * The number of columns that fit the available width, and the cell size used.
- *
- * The cell size is fixed and the number of columns follows from the width, so a
- * wide window shows more weeks with the same cell size, and a narrow window
- * shows fewer weeks without empty space around the grid. The remaining width
- * is distributed between the cells, which aligns the grid to both edges.
+ * The cell size is fixed and the columns follow from the width, so a wide window shows more weeks
+ * at the same size. The remaining width is distributed between the cells, which aligns the grid
+ * to both edges.
  */
 export function measureGrid(metrics: HeatmapMetrics): {
   columns: number

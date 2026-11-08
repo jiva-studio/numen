@@ -19,13 +19,11 @@ var (
 	ErrNotOwner = errors.New("host: the version is not the plugin's")
 )
 
-// TextPut is what a plugin reports of one of its text versions. The plugin writes the version's
-// file into its folder first, with WriteText; File is that file's name. A version has one root:
-// Source names the version the text was made from, and InputHash is that version's TextHash;
-// SourceProperty names a property of the note, with no Source and no InputHash, and the version is
-// live while the note holds the property's key as that string; with neither, the text is made from
-// the file, and InputHash is HashContent of the file. Kind is what the text is, as the plugin names
-// it. The host records the hash of the file.
+// TextPut is what a plugin reports of one of its text versions.
+// The plugin writes the file into its folder first, with WriteText; File is its name.
+// A version has one root: Source (InputHash is its TextHash), SourceProperty (no
+// Source or InputHash; live while the note holds the property's key as that string),
+// or neither (InputHash is HashContent of the file). The host records the file's hash.
 type TextPut struct {
 	Path           string
 	Key            string

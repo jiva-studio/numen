@@ -76,14 +76,10 @@ type FileStatQueries interface {
 }
 
 // Execute traverses the vault once.
-//
 // Only files whose size or modification time differ from what the index holds
-// are read and parsed; the rest are not opened at all. That is what keeps a scan
-// of an unchanged vault cheap enough to run at startup.
-//
+// are read and parsed, which keeps a scan of an unchanged vault cheap.
 // One walk of a vault runs at a time among the scans sharing its turns. A walk
-// writes in groups from what it read, so its copy of a note lands last however
-// early the note was read.
+// writes in groups, so its copy of a note lands last however early it was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 

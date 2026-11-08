@@ -22,10 +22,9 @@ var ErrNotANote = vaultport.ErrNotANote
 
 // GetContainedPath converts a path relative to a vault root into a path on this
 // machine and rejects one that leaves the root.
-//
-// The check runs on the cleaned path: `notes/../../etc` starts with neither a slash
-// nor a dot-dot yet escapes the root. Every access to a vault from outside the
-// application passes through here first.
+// The check runs on the cleaned path: `notes/../../etc` starts with neither a
+// slash nor a dot-dot yet escapes the root. Every outside access to a vault
+// passes through here first.
 func GetContainedPath(root, path, serviceDir string) (string, error) {
 	target, _, err := resolveVaultPath(root, path, serviceDir)
 	return target, err

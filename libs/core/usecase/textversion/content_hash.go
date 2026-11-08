@@ -22,12 +22,10 @@ const racyWindow = 2 * time.Second
 // returned without it.
 var ErrFileUnreadable = errors.New("the file cannot be read")
 
-// GetContentHash returns domain.HashContent of the file at the path as it is now. A
-// recorded hash whose stat equals the file's is returned without opening the
-// file; otherwise the file is hashed from a stream and the hash is recorded
-// with the stat. A file the vault ignores has no index row and is hashed
-// without a record.
-//
+// GetContentHash returns domain.HashContent of the file at the path as it is now.
+// A recorded hash whose stat equals the file's is returned without opening the
+// file; otherwise the file is hashed from a stream and recorded with the stat.
+// A file the vault ignores has no index row and is hashed without a record.
 // The record is a cache: a hash that cannot be recorded is returned all the same.
 func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	reader, err := u.readers.Open(v)

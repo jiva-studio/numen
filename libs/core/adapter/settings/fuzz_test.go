@@ -10,16 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 )
 
-// A settings file yields either settings this build can run with or an error
-// describing what is wrong with the file. Both sizes and the count are numbers
-// that their settings accept, the version is one the reader supports, and the
-// mode is a word the window displays.
-//
-// When the file names a setting this build cannot use and the defaults apply,
-// the reader reports it.
-//
-// The values are arbitrary user input between the braces, so none of them is
-// assumed to be valid.
+// FuzzAt checks that a settings file yields either settings this build can run
+// with or an error describing the file.
+// Sizes and count are numbers their settings accept, the version is supported,
+// and the mode is a word the window displays.
+// The values are arbitrary user input, so none is assumed valid.
 func FuzzAt(f *testing.F) {
 	// The file the application writes, a size the setting does not go to, a word no half of a
 	// colour pair is called, a theme named nothing at all, and a version the file was never

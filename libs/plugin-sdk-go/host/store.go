@@ -13,12 +13,10 @@ type StoreFile struct {
 }
 
 // Store is the plugin's own folder in a vault's store, `.numen/<plugin id>/`.
-// Every plugin has one and cannot access any other. A plugin uses it through
-// StoreClient; tests use hosttest.
-//
-// A name is a file directly in the folder; a name that contains a slash or
-// begins with a dot yields ErrOutside. A missing file yields ErrNotExist, and a
-// call while the host shows no vault yields ErrNoVault.
+// A plugin cannot access another plugin's folder.
+// A name is a file directly in the folder; one containing a slash or beginning
+// with a dot yields ErrOutside. A missing file yields ErrNotExist, and a call
+// while the host shows no vault yields ErrNoVault.
 type Store interface {
 	// With returns the folder in the vault with the given identity. A call on it
 	// returns ErrUnknownVault when the installation has no such vault.

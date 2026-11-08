@@ -30,19 +30,11 @@ type Curve struct {
 	Unbegun   int
 }
 
-// Point is what a preset evaluates to at one place of the grid.
-//
-// Reviews is counted in review cards and Minutes in the showings they take, so a
-// review card the day comes back to costs its minutes and is the one card.
-//
-// The meaning of the two depends on the goal. Under a goal of minutes they are
-// the first day of the run the preset admits: the next session that will be
-// run. Under a goal of retention they are the load over the days the preset
-// admits.
-//
-// A goal of a date reads Reviews off that first day, and fills Minutes with
-// what getting through the material by the day the place names costs, over the
-// days of review up to it.
+// Point is what a preset evaluates to at one place of the grid. Reviews is counted in review
+// cards and Minutes in the showings they take. Under a goal of minutes both describe the first
+// day of the run the preset admits; under retention, the load over the days it admits. A goal
+// of a date reads Reviews off that first day and fills Minutes with what getting through the
+// material by the day the place names costs.
 type Point struct {
 	Reviews  float64
 	Minutes  float64

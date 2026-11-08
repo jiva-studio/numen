@@ -97,13 +97,11 @@ func (h *fileHandler) ListFiles(
 	return connect.NewResponse(out), nil
 }
 
-// ListFileKinds returns what the vault holds at each of the given paths, so the
-// client opens each path in the editor made for it: a note in the kind of tab the core chooses for it.
-//
+// ListFileKinds returns what the vault holds at each given path, so the client
+// opens each path in the editor made for it.
 // Whether a note exists is read from the vault and its type from the index, or
-// from the note itself when nothing has scanned it yet, so a file a plugin has
-// created opens in the editor made for it. A window with no vault has no
-// source, and a path with nothing at it is omitted.
+// from the note itself when nothing has scanned it yet. A window with no vault
+// has no source, and a path with nothing at it is omitted.
 func (h *fileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {

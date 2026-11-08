@@ -21,13 +21,9 @@ type folderDialog struct {
 	isOpen bool
 }
 
-// ChooseFolder returns the folder the user selected, and false when the user
-// closed the dialog. The dialog ends on user input, and the wait is not
-// bounded.
-//
-// It is called on a goroutine serving the page. The toolkit opens the dialog on
-// the thread that owns the window and returns the result here, so the wait
-// happens off that thread.
+// ChooseFolder returns the folder the user selected, and false when the user closed the dialog.
+// The wait for user input is not bounded.
+// It is called on a goroutine serving the page: the toolkit opens the dialog on the thread that owns the window and returns the result here, so the wait happens off that thread.
 func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
 	// The dialog library terminates the process when the machine has no settings
 	// schemas to read, which closes the window and discards unsaved state.

@@ -31,12 +31,9 @@ export interface PlexDragDeps {
 }
 
 /**
- * Follow a pointer dragging something across the plex until it is let go or
- * given up on.
- *
- * The gesture began somewhere the plex cannot see, so it is followed on the
- * window for as long as there is something to drag, and it is over the
- * instant the pointer comes up wherever that is.
+ * Follow a pointer dragging something across the plex until it is let go or given up on.
+ * The gesture began where the plex cannot see, so it is followed on the window while there is something to drag,
+ * and it is over the instant the pointer comes up, wherever that is.
  */
 export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   /** Where the pointer is, and nothing at all while nothing is being dragged. */

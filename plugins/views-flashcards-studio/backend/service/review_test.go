@@ -615,14 +615,11 @@ func getBacklogged() map[string]string {
 	}
 }
 
-// The deck screen and the preset tab are one arithmetic, under every goal.
-//
-// The deck screen calls CardsDue for what its decks offer today, and the preset
-// tab calls Curve for the curve over a preset's range. Both are called here as the
-// application calls them: the settings the curve is computed for are the ones the
-// vault holds. The curve at the preset's setting is the day the deck screen available
-// whenever the control is at today, and the reason a day is closed names the budget
-// its own goal steers and no other.
+// The deck screen and the preset tab are one arithmetic, under every goal. They are called as
+// the application calls them: CardsDue for what the decks offer today, Curve for the curve over
+// a preset's range, computed for the settings the vault holds. The curve at the preset's setting
+// is the day the deck screen offers whenever the control is at today, and the reason a day is
+// closed names the budget its own goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what      string
@@ -709,13 +706,10 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 	}
 }
 
-// The day suggested under a goal of minutes is the shortest day that presents every
-// card the day holds, on a vault with a backlog.
-//
-// A shorter day is cut short by the clock, so the shortest day on the range is
-// never the suggestion for a vault behind on its reviews. The cards a shorter day
-// presents may already be the whole count: a card that returns within the day is the
-// same card, and the repeated showings it takes exhaust the clock.
+// The day suggested under a goal of minutes is the shortest day that presents every card the
+// day holds, on a vault with a backlog. A shorter day is cut short by the clock, so the shortest
+// day on the range is never the suggestion for a vault behind on its reviews. A card returning
+// within the day is the same card, and its repeated showings exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	handler, target := newAPI(t, getLived())
 	v := target[0]

@@ -182,12 +182,8 @@ type AmbiguousLink struct {
 
 // IsNameable reports whether a filename can be written as an address that
 // resolves back to it.
-//
-// A file may be called almost anything, and an address may not. `#` starts a
-// fragment, `|` starts an alias, `://` starts a scheme and `]]` ends a
-// wikilink, so a note named with any of them cannot be reached by its name:
-// the character is read as punctuation of the link. Such a note is addressed
-// by its identifier or not at all.
+// `#`, `|`, `://` and `]]` are read as link punctuation, so a note named with
+// any of them is addressed by its identifier or not at all.
 func IsNameable(name string) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE reason="ParseAddress trims surrounding space so untrimmed names also fail the final equality check"
 	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {

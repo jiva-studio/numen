@@ -9,16 +9,11 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// PointAt makes a note name one place under a link `type`, in one read and one write. An empty
-// address takes the entry out, so the note names none.
-//
-// The entry is written where a feature reads it: one type, one place. The
-// user's content of the entry (its role, its label, its reason) is kept, and
-// every other entry of the block is written back byte for byte.
-//
-// The edit's file stat, when given, is the state the caller believes is on disk.
-// A note that changed since it was read is left unchanged and ErrStale is
-// returned. A successful write returns the file stat of the file it produced.
+// PointAt makes a note name one place under a link `type`, in one read and one write.
+// An empty address takes the entry out. The entry keeps the user's role, label and
+// reason, and every other entry is written back byte for byte.
+// A note that changed since the edit's file stat returns ErrStale and is left unchanged.
+// A successful write returns the file stat it produced.
 func (e Edit) PointAt(
 	ctx context.Context, v domain.Vault, from, of string, to domain.Address, role domain.LinkRole,
 ) (domain.FileStat, error) {

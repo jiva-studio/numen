@@ -401,11 +401,8 @@ export const NoCardModel: Story = {
 
 /**
  * A card whose first paragraph is not a lone wikilink.
- *
- * The missing card model is reported as a plain fact on the strip, where the
- * name of a card model is shown for every other card. The problems the vault
- * found with the card are reported once, and the card content is shown where
- * it is edited.
+ * The missing card model is reported as a plain fact on the strip, where the name of a card model
+ * is shown for every other card. The problems the vault found with the card are reported once.
  */
 export const CutByNothing: Story = {
   args: { corpus: 'cut by nothing' },

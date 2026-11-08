@@ -197,15 +197,11 @@ func GetDayTallies(d Day, answers []Answer) map[string]Tally {
 	return out
 }
 
-// Spent is what a day came to under one preset: how many of its cards were
-// answered, and how long those answers took.
-//
-// The counts are of cards and not of answers, which is the unit the budget is
-// kept in: a card that comes round again in the same day is one card, and every
-// answer given to it is time spent.
-//
-// New and Reviews divide the cards the way a budget does: a card is new on the
-// day its review card is first answered at all, and a review on every day after.
+// Spent is what a day came to under one preset: how many of its cards were answered, and how
+// long those answers took. The counts are of cards, the unit the budget is kept in, so a card
+// that comes round again in the same day is one card while every answer given to it is time
+// spent. New and Reviews divide the cards as a budget does: a card is new on the day its review
+// card is first answered at all, and a review on every day after.
 type Spent struct {
 	Answered int
 	New      int
@@ -213,16 +209,11 @@ type Spent struct {
 	Took     time.Duration
 }
 
-// GetSpentUnder is what the named day consumed under each preset, keyed by the
-// path of the preset the review cards are grouped under.
-//
-// A review card with no preset is omitted, and so is an undone answer. Each
-// answer is counted as Answer.Counted determines.
-//
-// counts gives the unit each preset counts in, keyed by the same path; a path
-// not in counts is counted in cards: a review card counts once for the day
-// however many times it is answered in it. Every answer contributes its time
-// under either unit.
+// GetSpentUnder is what the named day consumed under each preset, keyed by the path of the
+// preset the review cards are grouped under. A review card with no preset is omitted, and so is
+// an undone answer. counts gives the unit each preset counts in; a path not in counts is counted
+// in cards, where a review card counts once however many times it is answered. Every answer
+// contributes its time under either unit.
 func GetSpentUnder(
 	d Day, day string, answers []Answer,
 	presetMap map[CardID]string, counts map[string]BudgetUnit,

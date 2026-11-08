@@ -7,11 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 )
 
-// Vector is one chunk's embedding in both representations that are stored.
-//
+// Vector is one chunk's embedding in both stored representations.
 // `Value` is one byte a dimension, for the rerank. `Coarse` is one bit a
-// dimension, read out of `Value`, and is what the first pass compares. `Hash`
-// addresses the text the vector was bought for, and `Recipe` names the model
+// dimension, read out of `Value`, for the first pass.
+// `Hash` addresses the text the vector was computed for, `Recipe` names the model and shape.
 // and the shape it was bought under.
 type Vector struct {
 	Chunk  int64

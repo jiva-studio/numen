@@ -7,12 +7,10 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// Library is the ONNX Runtime a process runs, opened once for its life, and the calls of it this
-// package resolves. One engine serves every caller of a Library.
-//
+// Library is the ONNX Runtime a process runs, opened once for its life, and the calls of it this package resolves. One engine serves every caller.
 // The binding gives every tensor to the engine made last and stamps it on for that tensor's life,
-// so one made on a library's first use moves what everything already running was building its
-// tensors through. A process makes one Library and passes it to everything that runs a model.
+// so a library made after others moves what they were already running on.
+// A process makes one Library and passes it to everything that runs a model.
 type Library struct {
 	runtime Runtime[*ort.Engine]
 	graph   graphOptimization

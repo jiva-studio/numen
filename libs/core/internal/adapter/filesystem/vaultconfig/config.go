@@ -59,11 +59,10 @@ func ReadConfig(root, serviceDir string) (Config, error) {
 }
 
 // Initialize gives a folder an identity, which is the moment it becomes a vault.
-// This is the one write the application makes into a vault without a request to
-// edit something, and it happens because the user added the vault.
-//
-// An existing configuration is returned untouched: the identity is what every
-// row in the index points at.
+// It is the one write the application makes into a vault without a request to
+// edit something; it happens because the user added the vault.
+// An existing configuration is returned untouched: every index row points at
+// the identity.
 func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir

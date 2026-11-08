@@ -11,11 +11,9 @@ import (
 
 // Locks is one write lock per vault root, keyed by the folder on disk. Writers that share a Locks
 // take the same lock for a folder.
-//
-// Entries are never removed. It holds one channel per vault root written to, and the key is the
-// folder as the filesystem resolves it, so no spelling of a root adds a second entry: the number
-// of vaults bounds the map. Removing an entry would require counting its waiters, to save a few
-// channels.
+// Entries are never removed. The key is the folder as the filesystem resolves
+// it, so no spelling of a root adds an entry and the number of vaults bounds
+// the map; removing one would require counting its waiters.
 type Locks struct {
 	mu     sync.Mutex
 	byRoot map[string]chan struct{}

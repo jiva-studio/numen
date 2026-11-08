@@ -16,12 +16,10 @@ const HeadingRunes = 120
 // caret is what a card id is written behind, at the end of a card's heading.
 const caret = "^"
 
-// ReadHeading reads a card's heading — the text after the hashes — into what it
-// shows and the card id it carries.
-//
-// A card id is separated from the text by one space, is the last token, and is a
-// card id only at the length and in the alphabet card ids are written in. Anything
-// else at the end of a heading is heading text and is returned as part of the text.
+// ReadHeading reads a card's heading, the text after the hashes, into what it shows and the
+// card id it carries. A card id is the last token, separated from the text by one space, and
+// only at the length and in the alphabet card ids are written in. Anything else at the end is
+// heading text.
 func ReadHeading(heading string) (text string, carried cardid.ID) {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
@@ -51,12 +49,10 @@ func WriteHeading(text string, carried cardid.ID) string {
 	return text + " " + caret + string(carried)
 }
 
-// Project is the heading text a card's first field gives. The heading holds
-// nothing of its own: throw it away and this writes it again from the field.
-//
-// It is taken over text whose line endings are normalised. It stops at the
-// first line break and at HeadingRunes characters, and the spaces at either end
-// are dropped. A field that is empty, or holds only spaces, projects to nothing.
+// Project is the heading text a card's first field gives. The heading holds nothing of its
+// own: throw it away and this writes it again from the field. The text stops at the first line
+// break and at HeadingRunes characters, and the spaces at either end are dropped. A field that
+// is empty or only spaces projects to nothing. The value has normalized line endings.
 func Project(value string) string {
 	line := markdown.Normalise(value)
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {

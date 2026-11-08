@@ -7,10 +7,9 @@ import (
 )
 
 // Broadcaster delivers messages of one type to its subscribers.
-//
 // A subscriber that does not keep up is not waited for, so one slow subscriber
 // does not block the vault. A lagging subscriber receives the message produced
-// by Fallback, and Capacity sets how many messages may be pending before a
+// by Fallback; Capacity sets how many messages may be pending before a
 // subscriber counts as lagging.
 type Broadcaster[T any] struct {
 	Fallback   func(latest T) T

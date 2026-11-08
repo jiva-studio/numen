@@ -114,10 +114,8 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 
 // AddLink writes one relationship into the block and leaves every other entry
 // byte-for-byte unchanged.
-//
-// An entry is addressed by its target and its type. The entry of the same target
-// and type takes the role, label and marker given, and keeps the reason the user
-// wrote on it unless a reason is given.
+// An entry is addressed by its target and type; the entry of the same target and
+// type takes the given role, label and marker, and keeps its reason unless one is given.
 func (d *Document) AddLink(add domain.Link) error {
 	b, err := d.block()
 	if err != nil {
@@ -289,12 +287,9 @@ func (d *Document) appendEntry(b block, l domain.Link) error {
 }
 
 // SetLinkOfType makes the block name one note under a `type`.
-//
 // The first entry with that type is pointed at the address and keeps its role and
-// the user's text; any further entry with that type is removed, so a note has one
-// target per type. An empty address removes all of them, and an empty block is
-// removed with them.
-//
+// the user's text; further entries with that type are removed.
+// An empty address removes all of them, and an empty block with them.
 // An entry the parser cannot read is left as written.
 func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()

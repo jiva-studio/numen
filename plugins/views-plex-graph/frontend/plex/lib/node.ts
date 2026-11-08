@@ -60,13 +60,8 @@ export const isReachable = (node: PlacedNode): boolean =>
 export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 
 /**
- * What a node is to a gesture, beyond a box with a title.
- *
- * A node has exactly one of these roles: a pointer cannot start a gesture from a
- * node and be aiming at it at once, and a node that does not exist yet has none.
- *
- * - `open` — no gesture is in progress, and a pointer over it may start one
- * - `closed` — a gesture cannot start here
+ * What a node is to a gesture. A node has exactly one role, and one that does not exist yet has none.
+ * - `open` — no gesture is in progress, so a pointer over it may start one; `closed` — a gesture cannot start here
  * - `source` — the gesture in progress started here
  * - `target` — releasing now would link the gesture to this node
  * - `ghost` — not a node yet: the shape of what releasing here would create
