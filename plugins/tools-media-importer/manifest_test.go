@@ -65,7 +65,7 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 	}
 	triggers := manifest.Contributes.Triggers
 	if len(triggers) != 1 || triggers[0].Event != "file.added" || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") ||
-		!strings.Contains(triggers[0].When, "!target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isLive)") {
+		!strings.Contains(triggers[0].When, "!target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)") {
 		t.Errorf("the triggers are %+v", triggers)
 	}
 	found := slices.IndexFunc(manifest.Settings, func(one struct {
