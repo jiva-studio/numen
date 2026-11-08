@@ -46,7 +46,7 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
     const hook: unknown = Reflect.get(registration, name)
     if (hook !== undefined) hooks[name] = hook
   }
-  return hooks as Partial<AnyTabKind>
+  return hooks
 }
 
 /**

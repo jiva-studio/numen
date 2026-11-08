@@ -27,6 +27,7 @@ func newMountedHandler(t *testing.T, notes map[string]string) http.Handler {
 }
 
 func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
+	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+service.ServiceName+"/"+method, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)

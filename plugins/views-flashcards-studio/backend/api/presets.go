@@ -159,8 +159,8 @@ type CreatePresetRequest struct {
 
 // CreatePresetResponse is the response of the CreatePreset method.
 type CreatePresetResponse struct {
-	Path         string    `json:"path"`
-	Error        ErrorCode `json:"error,omitempty"`
+	Path            string    `json:"path"`
+	Error           ErrorCode `json:"error,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
@@ -173,8 +173,8 @@ type ScheduleDeckRequest struct {
 
 // ScheduleDeckResponse is the response of the ScheduleDeck method.
 type ScheduleDeckResponse struct {
-	Error        ErrorCode `json:"error,omitempty"`
-	At           *FileStat `json:"at,omitempty"`
+	Error           ErrorCode `json:"error,omitempty"`
+	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
@@ -211,8 +211,8 @@ type WritePresetRequest struct {
 
 // WritePresetResponse is the response of the WritePreset method.
 type WritePresetResponse struct {
-	Error        ErrorCode `json:"error,omitempty"`
-	At           *FileStat `json:"at,omitempty"`
+	Error           ErrorCode `json:"error,omitempty"`
+	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 

@@ -50,7 +50,7 @@ func (r RetentionByDay) GetShare(day int) (float64, bool) {
 // Days is every day this answers for, in order.
 func (r RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(r.on)) }
 
-func (r *RetentionByDay) add(day int, share float64) {
+func addRetention(r *RetentionByDay, day int, share float64) {
 	if r.on == nil {
 		r.on = make(map[int]float64)
 	}

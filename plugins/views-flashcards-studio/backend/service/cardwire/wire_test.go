@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-
 func requireEqual(t *testing.T, got, want any) {
 	t.Helper()
 	api.FillCollections(got)

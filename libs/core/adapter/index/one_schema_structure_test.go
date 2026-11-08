@@ -14,11 +14,12 @@ import (
 func TestNoCodeOfTheIndexEmptiesItOrReshapesItsBookkeeping(t *testing.T) {
 	removed := map[string]bool{"resetIndex": true, "dropEverything": true, "getDropping": true}
 	fset := token.NewFileSet()
-	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+	sources := os.DirFS(".")
+	err := fs.WalkDir(sources, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		raw, err := os.ReadFile(path)
+		raw, err := fs.ReadFile(sources, path)
 		if err != nil {
 			return err
 		}

@@ -70,14 +70,14 @@ func (a *Agent) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 	for key, section := range sections {
-		if err := a.readSection(key, section); err != nil {
+		if err := readAgentSection(a, key, section); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (a *Agent) readSection(key string, section json.RawMessage) error {
+func readAgentSection(a *Agent, key string, section json.RawMessage) error {
 	if key == "use" {
 		return json.Unmarshal(section, &a.Use)
 	}
@@ -115,14 +115,14 @@ func (p *AgentProgram) UnmarshalJSON(raw []byte) error {
 		if string(value) == "null" {
 			continue
 		}
-		if err := p.readField(key, value); err != nil {
+		if err := readProgramField(p, key, value); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (p *AgentProgram) readField(key string, value json.RawMessage) error {
+func readProgramField(p *AgentProgram, key string, value json.RawMessage) error {
 	switch key {
 	case "command":
 		return json.Unmarshal(value, &p.Command)

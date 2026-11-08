@@ -170,7 +170,7 @@ func normalize(secrets []pluginport.Secret) []pluginport.Secret {
 }
 
 // WriteSecretsJSON is the secrets section as the file lays it out.
-func (f File) WriteSecretsJSON() (string, error) {
+func (f *File) WriteSecretsJSON() (string, error) {
 	content, err := json.Marshal(newSecretEntries(f.Secrets))
 	if err != nil {
 		return "", err

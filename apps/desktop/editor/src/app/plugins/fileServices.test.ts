@@ -7,9 +7,10 @@ import { Folder, FolderOpen } from '@lucide/vue'
 import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
 import { findIcon } from '@/shared/icons'
 import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
+import type * as CommandPaletteModule from '@/features/command-palette'
 
 vi.mock('@/features/command-palette', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/features/command-palette')>()),
+  ...(await importOriginal<typeof CommandPaletteModule>()),
   runInvocation: vi.fn(() => Promise.resolve()),
 }))
 

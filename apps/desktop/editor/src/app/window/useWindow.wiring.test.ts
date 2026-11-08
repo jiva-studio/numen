@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getNamedIcon } from '@/shared/icons'
 import { ref } from 'vue'
 import { useWindow } from './useWindow'
+import type * as UseOpenTabsModule from '../tabs/useOpenTabs'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
@@ -70,7 +71,7 @@ vi.mock('./useSettings', () => ({
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
 vi.mock('../tabs/useOpenTabs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../tabs/useOpenTabs')>()
+  const actual = await importOriginal<typeof UseOpenTabsModule>()
   return {
     ...actual,
     useOpenTabs: (args: unknown) => {

@@ -11,11 +11,12 @@ import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { createPluginSupport } from '@/app/plugins/useWindowPlugins'
 import { useSettings } from './useSettings'
+import type * as SettingsModule from '@/entities/settings'
 
 const file = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
 
 vi.mock('@/entities/settings', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/entities/settings')>()),
+  ...(await importOriginal<typeof SettingsModule>()),
   themes: {
     getAppearance: async () => {
       const app = (file.current['app'] ?? {}) as Record<string, Record<string, unknown>>

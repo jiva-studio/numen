@@ -350,19 +350,16 @@ func partsIn(tb testing.TB, root string) map[string][]byte {
 	tb.Helper()
 
 	parts := map[string][]byte{}
-	err := filepath.WalkDir(root, func(pos string, entry fs.DirEntry, err error) error {
+	fixture := os.DirFS(root)
+	err := fs.WalkDir(fixture, ".", func(pos string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return err
 		}
-		raw, err := os.ReadFile(pos)
+		raw, err := fs.ReadFile(fixture, pos)
 		if err != nil {
 			return err
 		}
-		name, err := filepath.Rel(root, pos)
-		if err != nil {
-			return err
-		}
-		parts[filepath.ToSlash(name)] = raw
+		parts[pos] = raw
 		return nil
 	})
 	if err != nil {

@@ -69,7 +69,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
         (one) =>
           one?.kind.isTool && one.kind.navigate !== undefined && one.kind.getTarget !== undefined,
       )
-    const target = last?.kind.getTarget!(last.state)
+    const target = last?.kind.getTarget?.(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 

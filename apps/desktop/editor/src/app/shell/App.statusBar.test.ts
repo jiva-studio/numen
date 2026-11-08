@@ -8,12 +8,13 @@ import { defineComponent, h } from 'vue'
 import type { BackgroundTask, PluginHost } from '@numen/plugin-host'
 import { WorkspaceLayout } from '@numen/shell'
 import { mountWindow, settle, vaultState } from '@/testing/window'
+import type * as UseWindowPluginsModule from '../plugins/useWindowPlugins'
 
 /** The plugin host of the window last mounted, so a test registers a view as a plugin does. */
 const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
 
 vi.mock('../plugins/useWindowPlugins', async (original) => {
-  const module = await original<typeof import('../plugins/useWindowPlugins')>()
+  const module = await original<typeof UseWindowPluginsModule>()
   return {
     ...module,
     createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {

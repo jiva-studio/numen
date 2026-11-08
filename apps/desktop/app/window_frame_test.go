@@ -78,11 +78,11 @@ func TestFatalWindowOptions_DropsSystemFrame(t *testing.T) {
 	}
 }
 
-var errFatalSample = errString("sample")
+var errFatalSample = stringError("sample")
 
-type errString string
+type stringError string
 
-func (e errString) Error() string { return string(e) }
+func (e stringError) Error() string { return string(e) }
 
 func TestFatalReportPage_DrawsNoPluginAction(t *testing.T) {
 	page, err := fatalReport{}.page(container.NewConfig(container.Config{}), errFatalSample)

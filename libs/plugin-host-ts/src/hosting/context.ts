@@ -202,7 +202,7 @@ function guardService<K extends keyof Services, S>(
   if (service === undefined) return {}
   const out: Partial<Record<K, NonNullable<Services[K]>>> = {}
   out[key] = guard(service)
-  return out as Pick<Services, K>
+  return out
 }
 
 function guardServices(

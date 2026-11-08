@@ -44,7 +44,7 @@ export function createMockTabWindow(): MockTabWindow {
 
   return {
     register: <State>(registration: TabKindRegistration<State>) => {
-      kinds.set(registration.kind, registration as TabKindRegistration<unknown>)
+      kinds.set(registration.kind, registration)
     },
     openTab: (kind, targetPath = '') =>
       new Promise((resolve) => {

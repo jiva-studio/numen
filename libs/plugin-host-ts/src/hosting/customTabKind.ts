@@ -209,9 +209,9 @@ function appendHostActions(
 ): void {
   if (!deps) return
   bindCustomTabHandlers(tabId, actions, deps.tabActionHandlers)
-  if (deps.onTabAction && !actions.dispatch) {
-    actions.dispatch = (action: string, ...args: unknown[]) =>
-      deps.onTabAction!(action, tabId, ...args)
+  const onTabAction = deps.onTabAction
+  if (onTabAction && !actions.dispatch) {
+    actions.dispatch = (action: string, ...args: unknown[]) => onTabAction(action, tabId, ...args)
   }
 }
 

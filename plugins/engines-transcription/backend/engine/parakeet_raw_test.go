@@ -14,22 +14,23 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
 )
 
-func openCachedTranscriber(t testing.TB) *Transcriber {
-	t.Helper()
+func openCachedTranscriber(tb testing.TB) *Transcriber {
+	tb.Helper()
 	cfg := Defaults()
 	cfg.ShouldDownload = false
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir
 	}
-	delta, err := Open(t.Context(), NewRuntime(), cfg)
+	delta, err := Open(tb.Context(), NewRuntime(), cfg)
 	if err != nil {
-		t.Skipf("parakeet models not available: %v", err)
+		tb.Skipf("parakeet models not available: %v", err)
 	}
-	cleanup.CloseAfter(t, delta)
+	cleanup.CloseAfter(tb, delta)
 	return delta
 }
 
-func makeFrames(t testing.TB, width int) map[string]*ort.Value {
+func makeFrames(tb testing.TB, width int) map[string]*ort.Value {
+	tb.Helper()
 	data := make([]float32, encoded*width)
 	seed := uint32(1)
 	for i := range data {
@@ -38,10 +39,10 @@ func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 	}
 	tensor, err := ort.NewTensor([]int64{1, encoded, int64(width)}, data)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	// The tensor points into data and nothing else keeps it.
-	t.Cleanup(func() { tensor.Destroy(); runtime.KeepAlive(data) })
+	tb.Cleanup(func() { tensor.Destroy(); runtime.KeepAlive(data) })
 	return map[string]*ort.Value{outputFrames: tensor}
 }
 
