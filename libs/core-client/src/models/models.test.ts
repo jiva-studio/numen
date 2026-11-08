@@ -280,3 +280,16 @@ describe('createModelClient calls on models', () => {
     await expect(client.complete('p', { messages: [] })).rejects.toThrow('aborted')
   })
 })
+
+describe('createModelClient lists', () => {
+  it('throws on a list answered with an error code only calls get', async () => {
+    const client = createModelClient(
+      createRpc({
+        listModels: () =>
+          Promise.resolve(create(ListModelsResponseSchema, { error: ModelErrorCode.ALL_FAILED })),
+      }),
+    )
+
+    await expect(client.listModels('c00000001', 'complete')).rejects.toThrow('ALL_FAILED')
+  })
+})

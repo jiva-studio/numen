@@ -12,6 +12,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
 type fakeHost struct {
@@ -209,4 +210,11 @@ func TestEmbedSendsThePriority(t *testing.T) {
 	if err != nil || received != v1.Priority_PRIORITY_INTERACTIVE {
 		t.Errorf("priority = %v, %v, want interactive", received, err)
 	}
+}
+
+func TestEveryPriorityOfTheSchemaIsProducedFromAClientPriority(t *testing.T) {
+	schematest.CheckProduced(t, map[v1.Priority]Priority{
+		v1.Priority_PRIORITY_INTERACTIVE: PriorityInteractive,
+		v1.Priority_PRIORITY_BACKGROUND:  PriorityBackground,
+	}, writePriority)
 }

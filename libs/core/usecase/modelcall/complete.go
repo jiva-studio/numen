@@ -13,7 +13,7 @@ import (
 func (c *Calls) Complete(
 	ctx context.Context, callerPluginID string, request connectionport.CompleteRequest, priority connectionport.Priority,
 ) (connectionport.CompleteResult, error) {
-	return carry(ctx, c, callerPluginID, "complete", priority, pickCompletion, func(
+	return carry(ctx, c, asking{callerPluginID, "complete", priority}, pickCompletion, func(
 		ctx context.Context, provider connectionport.CompletionProvider, call connectionport.ProviderCall, _ connectionport.Row,
 	) (connectionport.CompleteResult, error) {
 		return provider.Complete(ctx, call, request)
@@ -28,7 +28,7 @@ func (c *Calls) Embed(
 	if len(texts) == 0 {
 		return nil, nil
 	}
-	return carry(ctx, c, callerPluginID, "embed", priority, pickEmbedding, func(
+	return carry(ctx, c, asking{callerPluginID, "embed", priority}, pickEmbedding, func(
 		ctx context.Context, provider connectionport.EmbeddingProvider, call connectionport.ProviderCall, _ connectionport.Row,
 	) ([][]float32, error) {
 		return provider.Embed(ctx, call, texts)
@@ -39,7 +39,7 @@ func (c *Calls) Embed(
 // their model. Where the provider has no profile it measures the width with one probe. It returns the
 // errors Complete does.
 func (c *Calls) GetEmbeddingProfile(ctx context.Context, callerPluginID string) (connectionport.EmbeddingProfile, error) {
-	return carry(ctx, c, callerPluginID, "embed", connectionport.PriorityBackground, pickProfiles, func(
+	return carry(ctx, c, asking{callerPluginID, "embed", connectionport.PriorityBackground}, pickProfiles, func(
 		ctx context.Context, provider connectionport.ModelProfiles, call connectionport.ProviderCall, row connectionport.Row,
 	) (connectionport.EmbeddingProfile, error) {
 		profile, err := provider.GetModelProfile(ctx, call)

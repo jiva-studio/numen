@@ -40,6 +40,7 @@ func (w *Waits) Wait(ctx context.Context, d time.Duration) error {
 			}
 		}
 		w.mu.Unlock()
+		w.changed <- struct{}{}
 		return ctx.Err()
 	}
 }
@@ -55,15 +56,13 @@ func (w *Waits) List() []time.Duration {
 	return durations
 }
 
-// AwaitCount blocks until count waits are pending.
+// AwaitCount blocks until count waits are pending or the test ends.
 func (w *Waits) AwaitCount(t *testing.T, count int) {
 	t.Helper()
-	timeout := time.After(10 * time.Second)
 	for len(w.List()) != count {
 		select {
 		case <-w.changed:
-		case <-time.After(5 * time.Millisecond):
-		case <-timeout:
+		case <-t.Context().Done():
 			t.Fatalf("waits pending = %v, want %d", w.List(), count)
 		}
 	}

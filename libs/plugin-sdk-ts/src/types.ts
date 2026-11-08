@@ -8,7 +8,7 @@ import type { CommandItem, CommandsHost, CommandTarget } from './commands/comman
 import type { SlotHost } from './slots/slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
-import type { ModelHost } from './models'
+import type { ModelHost } from './models/models'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 

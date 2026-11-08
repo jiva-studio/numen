@@ -277,6 +277,11 @@ function createEvents(pluginId: string, host: PluginContextHost, guard: EventGua
   }
 }
 
+function createModelServices(pluginId: string, host: PluginContextHost) {
+  const models = host.getModels?.(pluginId)
+  return models ? { models } : {}
+}
+
 function createWindowServices(
   pluginId: string,
   host: PluginContextHost,
@@ -286,13 +291,12 @@ function createWindowServices(
   const tasks = host.getTasks?.(pluginId)
   const backgroundTasks = host.getBackgroundTasks?.()
   const texts = host.getTexts?.(pluginId)
-  const models = host.getModels?.(pluginId)
   return {
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(backgroundTasks ? { backgroundTasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
-    ...(models ? { models } : {}),
+    ...createModelServices(pluginId, host),
     ...createFrameServices(host),
   }
 }

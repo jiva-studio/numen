@@ -319,7 +319,11 @@ func TestThePluginEndpointDoesNotMountModelService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = endpoint.Close(t.Context()) })
+	t.Cleanup(func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
 	client := numenv1connect.NewModelServiceClient(http.DefaultClient, fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
 		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 
@@ -328,4 +332,12 @@ func TestThePluginEndpointDoesNotMountModelService(t *testing.T) {
 	if connect.CodeOf(callErr) != connect.CodeUnimplemented && connect.CodeOf(callErr) != connect.CodeNotFound {
 		t.Errorf("code = %v, want the service to be absent", connect.CodeOf(callErr))
 	}
+}
+
+func TestEveryPriorityOfTheSchemaIsReadAsThePortOneIt(t *testing.T) {
+	want := map[v1.Priority]connectionport.Priority{
+		v1.Priority_PRIORITY_INTERACTIVE: connectionport.PriorityInteractive,
+		v1.Priority_PRIORITY_BACKGROUND:  connectionport.PriorityBackground,
+	}
+	testsupport.CheckHandled(t, func(priority v1.Priority) bool { return readPriority(priority) == want[priority] })
 }

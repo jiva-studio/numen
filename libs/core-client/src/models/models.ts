@@ -117,6 +117,10 @@ const readFailure = (code: ModelErrorCode, detail: string): ModelListFailure | u
       return { errorCode: 'provider_unavailable', detail }
     case ModelErrorCode.UNSPECIFIED:
       return undefined
+    case ModelErrorCode.NO_CONNECTION:
+    case ModelErrorCode.ALL_FAILED:
+    case ModelErrorCode.REJECTED:
+      throw new Error(`ModelService answered a list with the call error ${ModelErrorCode[code]}`)
   }
 }
 

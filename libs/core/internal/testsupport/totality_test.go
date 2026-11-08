@@ -30,6 +30,7 @@ func getWalked() map[protoreflect.FullName]string {
 		"numen.v1.ProviderConnectionErrorCode": "adapter/window/editor/connection: written by getErrorCode",
 		"numen.v1.HostModelErrorCode":          "internal/adapter/plugin/hostendpoint: written by getModelErrorCode",
 		"numen.v1.ModelErrorCode":              "adapter/window/editor/model: written by getErrorCode",
+		"numen.v1.Priority":                    "internal/adapter/plugin/hostendpoint: read by readPriority, plugin-sdk-go/connection: written by writePriority",
 		"numen.v1.ProviderFailureKind":         "internal/adapter/plugin/providerbridge: read by readFailure",
 		"numen.v1.ProviderFailureReason":       "internal/adapter/plugin/providerbridge: read by readReason",
 		"numen.v1.PluginEventErrorCode":        "internal/adapter/plugin: read by readEventRefusal",

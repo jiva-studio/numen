@@ -218,24 +218,24 @@ type World struct {
 // New creates a world with two plugins that provide the types server (complete and embed) and, for the
 // first plugin, completer (complete only).
 func New() *World {
-	address := manifest.ConnectionField{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
+	address := manifest.ConnectionField{Key: addressField, Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
 	minimum, step := 1.0, 1.0
 	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
 	serverType := func(pluginID string) connectionport.Type {
 		return connectionport.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
-			ID: "server", Title: "Server", Operations: []string{"complete", "embed"}, Fields: []manifest.ConnectionField{address, key},
+			ID: "server", Title: "Server", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key},
 		}}
 	}
 	types := &fixedTypes{list: []connectionport.Type{
 		serverType(ProviderPluginID),
 		{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
-			ID: "completer", Title: "Completer", Operations: []string{"complete"}, Fields: []manifest.ConnectionField{address, optionalKey},
+			ID: "completer", Title: "Completer", Operations: getCompleteOnly(), Fields: []manifest.ConnectionField{address, optionalKey},
 		}},
 		serverType(OtherPluginID),
 		{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
-			ID: "limited", Title: "Limited", Operations: []string{"complete", "embed"}, Fields: []manifest.ConnectionField{address, key, parallelRequests},
+			ID: "limited", Title: "Limited", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key, parallelRequests},
 		}},
 	}}
 	w := &World{
@@ -253,7 +253,7 @@ func New() *World {
 // Add creates a connection of the type with the address and, when key is not empty, the key.
 func (w *World) Add(t *testing.T, typeID, name, address, key string) connection.Entry {
 	t.Helper()
-	request := connection.CreateRequest{TypeID: typeID, Name: name, Fields: map[string]any{"baseUrl": address}}
+	request := connection.CreateRequest{TypeID: typeID, Name: name, Fields: map[string]any{addressField: address}}
 	if key != "" {
 		request.Secrets = map[string]string{apiKeyField: key}
 	}
@@ -350,7 +350,7 @@ func (NoUses) Refresh(context.Context, string) error { return nil }
 // parallelRequests says otherwise. A parallelRequests of 0 leaves the field unset.
 func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests int) connection.Entry {
 	t.Helper()
-	fields := map[string]any{"baseUrl": address}
+	fields := map[string]any{addressField: address}
 	if parallelRequests > 0 {
 		fields[manifest.ConnectionParallelRequests] = float64(parallelRequests)
 	}
@@ -362,3 +362,9 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 	}
 	return entry
 }
+
+const addressField = "baseUrl"
+
+func getBothOperations() []string { return []string{"complete", "embed"} }
+
+func getCompleteOnly() []string { return []string{"complete"} }

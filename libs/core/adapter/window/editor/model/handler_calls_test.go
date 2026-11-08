@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 )
 
@@ -109,4 +110,12 @@ func TestARequestWithTheTokenOfAPluginIsRefusedByEveryCall(t *testing.T) {
 	if got := world.Provider.Calls(); len(got) != 0 {
 		t.Errorf("the provider received %d calls for refused requests", len(got))
 	}
+}
+
+func TestEveryPriorityOfTheSchemaIsReadAsThePortOneIt(t *testing.T) {
+	want := map[v1.Priority]connectionport.Priority{
+		v1.Priority_PRIORITY_INTERACTIVE: connectionport.PriorityInteractive,
+		v1.Priority_PRIORITY_BACKGROUND:  connectionport.PriorityBackground,
+	}
+	testsupport.CheckHandled(t, func(priority v1.Priority) bool { return readPriority(priority) == want[priority] })
 }

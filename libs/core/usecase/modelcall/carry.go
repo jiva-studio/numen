@@ -34,14 +34,20 @@ type openError struct{ err error }
 
 func (e *openError) Error() string { return e.err.Error() }
 
+// asking is what one call of a plugin asks for.
+type asking struct {
+	callerPluginID string
+	operation      string
+	priority       connectionport.Priority
+}
+
 func carry[R, T any](
-	ctx context.Context, c *Calls, callerPluginID, operation string, priority connectionport.Priority,
-	pick func(connectionport.Provider) R, do attempt[R, T],
+	ctx context.Context, c *Calls, ask asking, pick func(connectionport.Provider) R, do attempt[R, T],
 ) (T, error) {
 	var none T
-	rows, err := c.rows.ListRows(callerPluginID, operation)
+	rows, err := c.rows.ListRows(ask.callerPluginID, ask.operation)
 	if err != nil {
-		return none, fmt.Errorf("read the rows of %s: %w", callerPluginID, err)
+		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
 	}
 	if len(rows) == 0 {
 		return none, connectionport.ErrNoConnection
@@ -52,7 +58,7 @@ func carry[R, T any](
 		if err := ctx.Err(); err != nil {
 			return none, err
 		}
-		outcome := tryRow(ctx, c, row, operation, priority, pick, do)
+		outcome := tryRow(ctx, c, row, ask, pick, do)
 		if outcome.err != nil {
 			return none, outcome.err
 		}
@@ -81,17 +87,16 @@ type rowCall[R, T any] struct {
 }
 
 func tryRow[R, T any](
-	ctx context.Context, c *Calls, row connectionport.Row, operation string, priority connectionport.Priority,
-	pick func(connectionport.Provider) R, do attempt[R, T],
+	ctx context.Context, c *Calls, row connectionport.Row, ask asking, pick func(connectionport.Provider) R, do attempt[R, T],
 ) rowOutcome[T] {
-	resolved, skip, err := c.checkRow(row, operation)
+	resolved, skip, err := c.checkRow(row, ask.operation)
 	if err != nil {
 		return rowOutcome[T]{err: err}
 	}
 	if skip != nil {
 		return rowOutcome[T]{failure: skip}
 	}
-	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do, priority: priority}
+	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do, priority: ask.priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
 		if err == nil {

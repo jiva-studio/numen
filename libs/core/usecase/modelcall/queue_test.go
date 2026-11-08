@@ -291,11 +291,19 @@ func TestAnEmbeddingProfileCallIsBackground(t *testing.T) {
 	s.embed(t.Context(), consumerID, connectionport.PriorityBackground)
 	s.awaitEntered(t)
 
-	go func() { _, _ = s.calls.GetEmbeddingProfile(t.Context(), consumerID) }()
+	profile := make(chan error, 1)
+	go func() {
+		_, err := s.calls.GetEmbeddingProfile(t.Context(), consumerID)
+		profile <- err
+	}()
 	s.world.Waits.AwaitCount(t, 1)
 
 	if got := s.world.Waits.List(); got[0] != 10*time.Minute {
 		t.Errorf("waits = %v, want 10m0s", got)
+	}
+	s.world.Provider.Unblock(addressLimited)
+	if err := awaitDone(t, profile); err != nil {
+		t.Error(err)
 	}
 }
 
