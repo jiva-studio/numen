@@ -440,6 +440,7 @@ func listValidPluginKinds() []string {
 		"editors",
 		"views",
 		"engines",
+		"connections",
 		"tools",
 		"themes",
 	}
