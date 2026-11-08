@@ -57,7 +57,9 @@ export async function getUtilityCss(candidates: readonly string[]): Promise<stri
 export function getDefinedClasses(css: string): Set<string> {
   const classes = new Set<string>()
   postcss.parse(css).walkRules((rule) => {
-    for (const [, escaped = ''] of rule.selector.matchAll(/\.((?:[\w-]|\\[0-9a-fA-F]{1,6}\s?|\\.)+)/g)) {
+    for (const [, escaped = ''] of rule.selector.matchAll(
+      /\.((?:[\w-]|\\[0-9a-fA-F]{1,6}\s?|\\.)+)/g,
+    )) {
       classes.add(
         escaped
           .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex: string) =>
