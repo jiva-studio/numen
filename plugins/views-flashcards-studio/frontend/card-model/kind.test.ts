@@ -427,6 +427,50 @@ describe('a card model read again under the window', () => {
   })
 })
 
+describe('a card model edited before its file is read', () => {
+  /** A window whose card model read answers only when the test lets it. */
+  const openUnread = async () => {
+    const one = vault()
+    const read = one.core.readCardModel
+    let answerRead = (): void => undefined
+    one.core.readCardModel = (path) =>
+      new Promise((resolve) => {
+        answerRead = () => resolve(read(path))
+      })
+    const windowTabs = createMockTabWindow()
+    const cardModels = createCardModelTabs(one.core, {
+      buffers: createMockBufferHost(),
+      closeTab: windowTabs.finishClose,
+    })
+    windowTabs.register(cardModels.kind)
+    const id = await windowTabs.openTab(CARD_MODEL, 'Animal.md')
+    const tab = windowTabs.getTabState<CardModelTabState>(id) as CardModelTabState
+    return { ...one, cardModels, tab, answerRead: () => answerRead() }
+  }
+
+  it('takes no template while the file is read', async () => {
+    const { tab } = await openUnread()
+
+    tab.addTemplate('Name it')
+
+    expect(tab.cardModel.value.templates).toStrictEqual([])
+  })
+
+  it('shows the file once it is read, and writes nothing', async () => {
+    const { cardModels, tab, answerRead, writtenFiles } = await openUnread()
+
+    tab.addTemplate('Name it')
+    answerRead()
+    await settle()
+    await cardModels.store.flush()
+
+    expect(tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
+      'Recognise',
+    ])
+    expect(writtenFiles).toStrictEqual([])
+  })
+})
+
 describe('a card model renamed under the window', () => {
   it('is the tab it has when it is requested for at the name it now carries', async () => {
     const one = await open()

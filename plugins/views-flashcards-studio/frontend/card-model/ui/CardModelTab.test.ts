@@ -92,6 +92,43 @@ const twice: DeckProblem = {
   text: 'declared twice',
 }
 
+/** The button that adds a template, found by its text. */
+const findAddTemplate = (window: ReturnType<typeof mount>) =>
+  window.findAll('button').find((one) => one.text() === 'Add a template')
+
+describe('a card model whose file is being read', () => {
+  it('takes no gesture until the file is read', async () => {
+    const core: Cards = {
+      cardModels: async () => ({ cardModels: [], total: 0 }),
+      createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+      createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+      renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' }),
+      readDeck: async () => asFailure({ code: 'notFound' as const, bound: 0 }),
+      writeDeck: async () => asValue({ at: '' }),
+      // The read never answers.
+      readCardModel: () => new Promise(() => undefined),
+      writeCardModel: async () => asValue({ at: 'written' }),
+    }
+    const windowTabs = createMockTabWindow()
+    const cardModels = createCardModelTabs(core, {
+      buffers: createMockBufferHost(),
+      closeTab: windowTabs.finishClose,
+    })
+    windowTabs.register(cardModels.kind)
+    const id = await windowTabs.openTab(CARD_MODEL, 'Animal.md')
+    const tab = windowTabs.getTabState<CardModelTabState>(id) as CardModelTabState
+    const window = mount(CardModelTab, { props: { state: tab }, attachTo: document.body })
+
+    expect(findAddTemplate(window)?.element.matches(':disabled')).toBe(true)
+  })
+
+  it('takes gestures once the file is read', async () => {
+    const { window } = await mountCardModel()
+
+    expect(findAddTemplate(window)?.element.matches(':disabled')).toBe(false)
+  })
+})
+
 describe('a card model drawn', () => {
   it('draws a row for every field and one for every template', async () => {
     const { window } = await mountCardModel()

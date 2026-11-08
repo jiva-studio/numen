@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { openNotes } from './notes'
-import type { Notes } from './types'
+import type { NoteResult, Notes } from './types'
 
 describe('openNotes for flashcards studio', () => {
   it('opens note and loads body asynchronously', async () => {
@@ -22,6 +22,30 @@ describe('openNotes for flashcards studio', () => {
 
     expect(store.getOpenNote('tab-1').body).toBe('deck content')
     expect(store.getFilePath('tab-1')).toBe('v1')
+  })
+
+  it('takes no edit while the file is read, so the read replaces nothing', async () => {
+    let answerRead = (): void => undefined
+    const notes: Notes = {
+      read: vi.fn(
+        () =>
+          new Promise<NoteResult>((resolve) => {
+            answerRead = () => resolve(asValue({ body: 'deck content', at: 'v1' }))
+          }),
+      ),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    store.setBody('tab-1', 'typed before the read')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'loading' })
+
+    answerRead()
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    await store.flush()
+    expect(store.getOpenNote('tab-1').body).toBe('deck content')
+    expect(notes.write).not.toHaveBeenCalled()
   })
 
   it('marks error when read fails or throws', async () => {
