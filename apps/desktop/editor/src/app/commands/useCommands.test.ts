@@ -431,7 +431,10 @@ describe('a plugin command over a note', () => {
     await one.runCommandToEnd('summary', target)
 
     expect(readCommandNote).toHaveBeenCalledTimes(2)
-    expect(one.executeCommand.mock.calls.map((call) => call[1])).toStrictEqual([note, note])
+    expect(one.executeCommand.mock.calls.map((call) => (call as unknown[])[1])).toStrictEqual([
+      note,
+      note,
+    ])
   })
 
   it('delegates shortcuts to pluginHost.handleShortcut with a lazy note getter', async () => {
