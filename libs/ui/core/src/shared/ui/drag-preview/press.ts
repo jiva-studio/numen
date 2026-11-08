@@ -47,7 +47,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drag(event: PointerEvent): void {
-    const target = dragging.value!
+    const target = dragging.value
+    if (!target) return
 
     const now: Position = { x: event.clientX, y: event.clientY }
     const hasMoved =
@@ -63,7 +64,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drop(event: PointerEvent): void {
-    const target = dragging.value!
+    const target = dragging.value
+    if (!target) return
     const point: Position = { x: event.clientX, y: event.clientY }
 
     end()
@@ -73,7 +75,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function cancel(): void {
-    const target = dragging.value!
+    const target = dragging.value
+    if (!target) return
 
     end()
     if (target.hasMoved) press.cancel?.(target.item)

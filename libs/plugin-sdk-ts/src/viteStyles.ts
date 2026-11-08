@@ -57,9 +57,9 @@ export async function getUtilityCss(candidates: readonly string[]): Promise<stri
 export function getDefinedClasses(css: string): Set<string> {
   const classes = new Set<string>()
   postcss.parse(css).walkRules((rule) => {
-    for (const [, escaped] of rule.selector.matchAll(/\.((?:[\w-]|\\[0-9a-fA-F]{1,6}\s?|\\.)+)/g)) {
+    for (const [, escaped = ''] of rule.selector.matchAll(/\.((?:[\w-]|\\[0-9a-fA-F]{1,6}\s?|\\.)+)/g)) {
       classes.add(
-        escaped!
+        escaped
           .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex: string) =>
             String.fromCodePoint(Number.parseInt(hex, 16)),
           )
@@ -178,7 +178,7 @@ function getPluginFiles(root: string, moduleIds: Iterable<string>): string[] {
   const prefix = resolve(root) + sep
   const files = new Set<string>()
   for (const id of moduleIds) {
-    const file = id.split('?')[0]!
+    const file = id.replace(/\?.*/s, '')
     if (file.startsWith(prefix) && !file.includes(`${sep}node_modules${sep}`)) files.add(file)
   }
   return [...files].filter((file) => /\.(vue|ts|tsx|js)$/.test(file))

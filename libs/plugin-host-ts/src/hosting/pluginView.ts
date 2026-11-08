@@ -25,7 +25,7 @@ function isAsyncComponent(
     'render' in comp ||
     'props' in comp ||
     '__name' in comp ||
-    (comp as { length?: number }).length! > 0
+    ((comp as { length?: number }).length ?? 0) > 0
   )
 }
 
