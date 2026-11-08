@@ -181,10 +181,14 @@ func newCommands(agentTools *Tools) (*command.Registry, error) {
 
 func newRecogniseCommand(agentTools *Tools) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		if _, err := agentTools.recognitions.StatFile(ctx, "", req.Path); err != nil {
+		vault, err := agentTools.recognitions.GetVaultID(ctx, "")
+		if err != nil {
 			return command.Result{}, err
 		}
-		state, err := agentTools.start(ctx, "", req.Path)
+		if _, err := agentTools.recognitions.StatFile(ctx, vault, req.Path); err != nil {
+			return command.Result{}, err
+		}
+		state, err := agentTools.start(ctx, vault, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}

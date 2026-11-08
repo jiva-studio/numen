@@ -151,7 +151,7 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 }
 
 func (r *Recognition) claim(ctx context.Context, req Request) (Request, string, error) {
-	vault, err := r.getVaultID(ctx, req.Vault)
+	vault, err := r.GetVaultID(ctx, req.Vault)
 	if err != nil {
 		return Request{}, "", err
 	}
@@ -169,7 +169,7 @@ func (r *Recognition) claim(ctx context.Context, req Request) (Request, string, 
 // IsRunning reports whether a run has locked the file of the vault. An empty vault ID means the vault
 // the host shows.
 func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, filePath string) (bool, error) {
-	vault, err := r.getVaultID(ctx, vault)
+	vault, err := r.GetVaultID(ctx, vault)
 	if err != nil {
 		return false, err
 	}
@@ -178,7 +178,8 @@ func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, fileP
 	return r.running[getRunKey(vault, filePath)], nil
 }
 
-func (r *Recognition) getVaultID(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
+// GetVaultID returns the vault, or the vault the host shows where it is empty.
+func (r *Recognition) GetVaultID(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
 	if vault != "" {
 		return vault, nil
 	}
