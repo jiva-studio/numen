@@ -15,7 +15,7 @@ const props = defineProps<{ state: CardModelTabState }>()
 // --- State ---
 const cardModel = computed(() => props.state.cardModel.value)
 const marks = computed(() => props.state.marks.value)
-const isLoading = computed(() => props.state.note.value.state === 'loading')
+const isRead = computed(() => props.state.note.value.isRead)
 
 // --- Handlers ---
 function onKeep() {
@@ -80,7 +80,7 @@ function onWriteTemplate(id: string, half: Half, text: string) {
     </ul>
 
     <!-- The editor takes no input until the file is read. -->
-    <fieldset class="card-model-tab__body" :disabled="isLoading">
+    <fieldset class="card-model-tab__body" :disabled="!isRead">
       <CardModelEditor
         class="card-model-tab__editor"
         :fields="cardModel.fields"

@@ -151,21 +151,22 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
   function getOpenNote(id: string): OpenNote {
     const tab = tabs.get(id)
     if (!tab) {
-      return { path: '', body: '', state: 'loading', error: null }
+      return { path: '', body: '', state: 'loading', error: null, isRead: false }
     }
     return {
       path: tab.path,
       body: tab.body,
       state: tab.state,
       error: tab.error,
+      isRead: tab.baseline !== null,
     }
   }
 
   /** Replaces the text of a tab, and writes it once the edits pause. */
   function setBody(id: string, body: string): void {
     const tab = tabs.get(id)
-    // An edit before the first read is refused: the read would replace it.
-    if (!tab || tab.state === 'loading') return
+    // An edit is refused until a read returned the body: a pending read would replace it, and after a failed read there is no file version to write it against.
+    if (!tab || tab.baseline === null) return
     tab.body = body
     if (tab.state === 'clean' || tab.state === 'saving') {
       tab.state = 'unsaved'
