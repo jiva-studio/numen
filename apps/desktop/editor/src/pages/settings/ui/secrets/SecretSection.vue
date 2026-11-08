@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The secrets of one group in priority order. A group a plugin asks for shows one empty secret
- * named Default while it has none. A button in the header adds a secret; for a group the person made
+ * The secrets of one group in priority order. A group with no secret shows one empty secret
+ * while it has none, named after the service of the group, else Default. A button in the header adds a secret; for a group the person made
  * a menu renames and deletes the group. The rows show their names, under a Key label, only while
  * the group holds more than one secret.
  */
@@ -55,7 +55,7 @@ const firstName = computed(() => getFirstSecretName(props.section.group))
 const info = computed(() => getServiceInfo(props.section.group))
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 const headingId = useId()
-const isFirstEmpty = computed(() => props.section.isAsked && props.section.secrets.length === 0)
+const isFirstEmpty = computed(() => props.section.secrets.length === 0)
 const keyCount = computed(
   () => props.section.secrets.length + props.drafts.length + (isFirstEmpty.value ? 1 : 0),
 )

@@ -107,12 +107,12 @@ function getDraftNames(group: string): readonly string[] {
   return drafts.value.filter((one) => one.group === group).map((one) => one.name)
 }
 
-/** The names a new secret of the group must not take: those in use and the Default of an empty asked group. */
+/** The names a new secret of the group must not take: those in use and the name of the empty first secret of an empty group. */
 function getNamesInGroup(group: string): readonly string[] {
   const section = sections.value.find((one) => one.group === group)
   return [
     ...(section?.secrets.map((one) => one.name) ?? []),
-    ...(section?.isAsked && section.secrets.length === 0 ? [getFirstSecretName(group)] : []),
+    ...(section?.secrets.length === 0 ? [getFirstSecretName(group)] : []),
     ...getDraftNames(group),
   ]
 }

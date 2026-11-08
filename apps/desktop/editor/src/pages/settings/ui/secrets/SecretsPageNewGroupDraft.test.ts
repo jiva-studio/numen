@@ -65,28 +65,28 @@ afterEach(() => {
 })
 
 describe('the name of the first secret in a group the person types', () => {
-  it('is the name of the group', async () => {
+  it('is Default, shown as an empty row when the group is made', async () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add group/i))
+    expect(maskedInputs()).toHaveLength(1)
     await typeGroup('Local Llama')
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      'Local Llama',
+      'Default',
       'made-up-llama-value',
     )
     dispose(wrapper)
   })
 
   it('is followed by V1 in a group that has the first', async () => {
-    const { installation, wrapper } = mountPage([secret('s00000001', 'Local Llama', 'Local Llama')])
+    const { installation, wrapper } = mountPage([secret('s00000001', 'Default', 'Local Llama')])
     await addKey()
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      'Local Llama V1',
+      'Default V1',
       'made-up-second-value',
     )
     dispose(wrapper)
@@ -95,14 +95,14 @@ describe('the name of the first secret in a group the person types', () => {
   it('is followed by V2 in a group that has the first and V1', async () => {
     const { installation, wrapper } = mountPage([
       secret('s00000001', 'Local Llama', 'Local Llama'),
-      secret('s00000002', 'Local Llama V1', 'Local Llama'),
+      secret('s00000002', 'Default V1', 'Local Llama'),
     ])
     await addKey()
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-third-value')
     expect(installation.createSecret).toHaveBeenCalledWith(
       'Local Llama',
-      'Local Llama V2',
+      'Default V2',
       'made-up-third-value',
     )
     dispose(wrapper)
@@ -115,7 +115,6 @@ describe('a secret that fails to be created from the control that adds a secret'
     const { wrapper } = mountPage([], { createSecret })
     await click(findButton(/add group/i))
     await typeGroup('Local Llama')
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
 
     expect(createSecret).toHaveBeenCalled()
@@ -140,12 +139,11 @@ describe('a group name of more than 64 characters', () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add group/i))
     await typeGroup('g'.repeat(64))
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
     expect(installation.createSecret).toHaveBeenCalledWith(
       'g'.repeat(64),
-      'g'.repeat(64),
+      'Default',
       'made-up-value',
     )
     dispose(wrapper)
@@ -162,11 +160,7 @@ describe('a secret that fails to be created from the control that adds a secret 
     const inputs = maskedInputs()
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-section-value')
 
-    expect(createSecret).toHaveBeenCalledWith(
-      'Local Llama',
-      'Local Llama V1',
-      'made-up-section-value',
-    )
+    expect(createSecret).toHaveBeenCalledWith('Local Llama', 'Default V1', 'made-up-section-value')
     const after = maskedInputs()
     expect((after[after.length - 1] as HTMLInputElement).value).toBe('made-up-section-value')
     dispose(wrapper)
@@ -178,10 +172,9 @@ describe('the name of a group the person types', () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add group/i))
     await typeGroup('\u0085abc')
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
-    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'abc', 'made-up-value')
+    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
     dispose(wrapper)
   })
 
@@ -189,10 +182,9 @@ describe('the name of a group the person types', () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add group/i))
     await typeGroup('﻿abc')
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
 
-    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', '﻿abc', 'made-up-value')
+    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')
     dispose(wrapper)
   })
 })

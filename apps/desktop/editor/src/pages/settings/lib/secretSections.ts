@@ -2,7 +2,7 @@
  * The page of secrets and the menu of a secret field, as plain data: the sections of the secrets
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
-import { getServiceInfo } from '@numen/core-client'
+import { findServiceInfo } from '@numen/core-client'
 import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
 import { WORDS } from '../words'
 
@@ -126,7 +126,7 @@ export function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): 
  * service is known by.
  */
 export function getFirstSecretName(group: string): string {
-  const title = group === '' ? '' : getServiceInfo(group).title
+  const title = findServiceInfo(group)?.title ?? ''
   return title === '' ? WORDS.secretDefault : title
 }
 

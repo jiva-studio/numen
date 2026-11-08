@@ -116,11 +116,10 @@ describe('the page of secrets with no group', () => {
     await typeGroup('Local Llama')
     expect(installation.renameSecretGroup).not.toHaveBeenCalled()
     expect(findText('Local Llama')?.tagName).toBe('H2')
-    await addKey()
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
-      'Local Llama',
+      'Default',
       'made-up-llama-value',
     )
     dispose(wrapper)
@@ -146,7 +145,7 @@ describe('the page of secrets with no group', () => {
     await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-second-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
-      'Local Llama V1',
+      'Default V1',
       'made-up-second-value',
     )
     dispose(wrapper)

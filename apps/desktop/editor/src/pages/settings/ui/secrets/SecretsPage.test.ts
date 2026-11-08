@@ -341,11 +341,11 @@ describe('the page of secrets', () => {
     dispose(wrapper)
   })
 
-  it('names the second secret of a group with V1', async () => {
+  it('names the second secret of a group no service is known by Default V1', async () => {
     const { wrapper } = mountPage()
     const travel = sectionOf('travel')
     await addKey(travel)
-    expect(findNameInput('travel V1')).not.toBeNull()
+    expect(findNameInput('Default V1')).not.toBeNull()
     dispose(wrapper)
   })
 

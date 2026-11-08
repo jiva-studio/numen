@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getServiceInfo } from './services'
+import { findServiceInfo, getServiceInfo } from './services'
 
 describe('getServiceInfo', () => {
   it('returns the title and description of a known service', () => {
@@ -23,5 +23,16 @@ describe('getServiceInfo', () => {
 
   it('does not match a name of the object prototype', () => {
     expect(getServiceInfo('constructor')).toEqual({ title: 'constructor', description: '' })
+  })
+})
+
+describe('findServiceInfo', () => {
+  it('returns the service of a known group, ignoring case and whitespace', () => {
+    expect(findServiceInfo('  OpenAI ')?.title).toBe('OpenAI')
+  })
+
+  it('returns undefined for an unknown group and for a prototype name', () => {
+    expect(findServiceInfo('harbour')).toBeUndefined()
+    expect(findServiceInfo('constructor')).toBeUndefined()
   })
 })

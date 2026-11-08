@@ -154,15 +154,14 @@ export const EmptyPageHasAddControl: Story = {
   },
 }
 
-/** A new group takes its name at once; a secret added to it opens a field for the value. */
+/** A new group takes its name at once and shows an empty row for the value. */
 export const AddsInATypedGroup: Story = {
   render: renderEmpty,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Add group' }))
     await userEvent.type(canvas.getByLabelText('Name of the group'), 'Local Llama{Enter}')
-    await userEvent.click(canvas.getByRole('button', { name: 'Add key' }))
-    await expect(canvas.getByLabelText('Value of Local Llama')).toBeVisible()
+    await expect(canvas.getByLabelText('Value of Default')).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const row of canvasElement.querySelectorAll('li')) {
       await expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)

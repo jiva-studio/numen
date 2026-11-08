@@ -40,7 +40,33 @@ describe('the section of a group', () => {
     await input.setValue('a-made-up-key')
     await input.trigger('keydown', { key: 'Enter' })
     await flushPromises()
-    expect(create).toHaveBeenCalledWith('harbour', 'a-made-up-key')
+    expect(create).toHaveBeenCalledWith('Default', 'a-made-up-key')
+    wrapper.unmount()
+  })
+
+  it('shows one empty draft row named Default in an empty group the person made', () => {
+    const wrapper = mountSection()
+    expect(document.querySelectorAll('input[type="password"]')).toHaveLength(1)
+    expect(document.querySelector('button[title="Discard"]')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('names the empty draft row after the service of a made group', async () => {
+    const create = vi.fn(async () => true)
+    const wrapper = mount(SecretSection, {
+      attachTo: document.body,
+      props: {
+        section: { group: 'openai', isAsked: false, secrets: [] },
+        drafts: [],
+        declarations: [],
+        create,
+      },
+    })
+    const input = wrapper.get<HTMLInputElement>('input[type="password"]')
+    await input.setValue('a-made-up-key')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(create).toHaveBeenCalledWith('OpenAI', 'a-made-up-key')
     wrapper.unmount()
   })
 
