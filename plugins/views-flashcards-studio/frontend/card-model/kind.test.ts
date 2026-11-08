@@ -337,6 +337,22 @@ describe('a card model the vault rejected', () => {
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
+
+  it('writes an edit made after a write that did not reach the vault', async () => {
+    const answers: Parameters<typeof vault>[0] = { wrote: 'unreachable' }
+    const { cardModels, tab, writtenFiles } = await open(answers)
+    const id = cardModels.store.getOpenIds()[0] ?? ''
+
+    tab.addField('Weight')
+    await cardModels.store.flushPending(id)
+    delete answers.wrote
+    tab.addField('Depth')
+    await cardModels.store.flushPending(id)
+
+    expect(writtenFiles.at(-1)).toMatch(/^Animal\.md Height, Life span, Weight, Depth \|/)
+    expect(tab.note.value.state).toBe('clean')
+    expect(tab.errorMessage.value).toBe('')
+  })
 })
 
 describe('what is wrong with a card model', () => {
@@ -424,6 +440,60 @@ describe('a card model read again under the window', () => {
       'Recall',
     ])
     expect(one.tab.cardModel.value).not.toBe(was)
+  })
+})
+
+describe('a card model edited before its file is read', () => {
+  /** A window whose card model read answers only when the test lets it. */
+  const openUnread = async () => {
+    const one = vault()
+    const read = one.core.readCardModel
+    let answerRead = (): void => undefined
+    one.core.readCardModel = (path) =>
+      new Promise((resolve) => {
+        answerRead = () => resolve(read(path))
+      })
+    const windowTabs = createMockTabWindow()
+    const cardModels = createCardModelTabs(one.core, {
+      buffers: createMockBufferHost(),
+      closeTab: windowTabs.finishClose,
+    })
+    windowTabs.register(cardModels.kind)
+    const id = await windowTabs.openTab(CARD_MODEL, 'Animal.md')
+    const tab = windowTabs.getTabState<CardModelTabState>(id) as CardModelTabState
+    return { ...one, cardModels, tab, answerRead: () => answerRead() }
+  }
+
+  it('takes no template while the file is read', async () => {
+    const { tab } = await openUnread()
+
+    tab.addTemplate('Name it')
+
+    expect(tab.cardModel.value.templates).toStrictEqual([])
+  })
+
+  it('takes no template where the read failed', async () => {
+    const { cardModels, tab, writtenFiles } = await open({ error: 'notACardModel' })
+
+    tab.addTemplate('Name it')
+    await cardModels.store.flush()
+
+    expect(tab.cardModel.value.templates).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
+  })
+
+  it('shows the file once it is read, and writes nothing', async () => {
+    const { cardModels, tab, answerRead, writtenFiles } = await openUnread()
+
+    tab.addTemplate('Name it')
+    answerRead()
+    await settle()
+    await cardModels.store.flush()
+
+    expect(tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
+      'Recognise',
+    ])
+    expect(writtenFiles).toStrictEqual([])
   })
 })
 

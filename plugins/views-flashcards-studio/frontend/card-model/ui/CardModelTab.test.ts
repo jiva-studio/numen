@@ -92,6 +92,55 @@ const twice: DeckProblem = {
   text: 'declared twice',
 }
 
+/** The button that adds a template, found by its text. */
+const findAddTemplate = (window: ReturnType<typeof mount>) =>
+  window.findAll('button').find((one) => one.text() === 'Add a template')
+
+/** A window with one card model open on a read that answers as given, drawn. */
+const mountWithRead = async (readCardModel: Cards['readCardModel']) => {
+  const core: Cards = {
+    cardModels: async () => ({ cardModels: [], total: 0 }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' }),
+    readDeck: async () => asFailure({ code: 'notFound' as const, bound: 0 }),
+    writeDeck: async () => asValue({ at: '' }),
+    readCardModel,
+    writeCardModel: async () => asValue({ at: 'written' }),
+  }
+  const windowTabs = createMockTabWindow()
+  const cardModels = createCardModelTabs(core, {
+    buffers: createMockBufferHost(),
+    closeTab: windowTabs.finishClose,
+  })
+  windowTabs.register(cardModels.kind)
+  const id = await windowTabs.openTab(CARD_MODEL, 'Animal.md')
+  await settle()
+  const tab = windowTabs.getTabState<CardModelTabState>(id) as CardModelTabState
+  return mount(CardModelTab, { props: { state: tab }, attachTo: document.body })
+}
+
+describe('a card model whose file is being read', () => {
+  it('takes no gesture until the file is read', async () => {
+    // The read never answers.
+    const window = await mountWithRead(() => new Promise(() => undefined))
+
+    expect(findAddTemplate(window)?.element.matches(':disabled')).toBe(true)
+  })
+
+  it('takes no gesture where the read failed', async () => {
+    const window = await mountWithRead(async () => asFailure('notACardModel' as const))
+
+    expect(findAddTemplate(window)?.element.matches(':disabled')).toBe(true)
+  })
+
+  it('takes gestures once the file is read', async () => {
+    const { window } = await mountCardModel()
+
+    expect(findAddTemplate(window)?.element.matches(':disabled')).toBe(false)
+  })
+})
+
 describe('a card model drawn', () => {
   it('draws a row for every field and one for every template', async () => {
     const { window } = await mountCardModel()

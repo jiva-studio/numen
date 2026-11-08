@@ -15,6 +15,7 @@ const props = defineProps<{ state: CardModelTabState }>()
 // --- State ---
 const cardModel = computed(() => props.state.cardModel.value)
 const marks = computed(() => props.state.marks.value)
+const isRead = computed(() => props.state.note.value.isRead)
 
 // --- Handlers ---
 function onKeep() {
@@ -78,22 +79,25 @@ function onWriteTemplate(id: string, half: Half, text: string) {
       <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
     </ul>
 
-    <CardModelEditor
-      class="card-model-tab__body"
-      :fields="cardModel.fields"
-      :templates="cardModel.templates"
-      :wrong="marks"
-      :name="words.cardModel"
-      @add-field="onAddField"
-      @rename-field="onRenameField"
-      @remove-field="onRemoveField"
-      @move-field="onMoveField"
-      @add-template="onAddTemplate"
-      @rename-template="onRenameTemplate"
-      @remove-template="onRemoveTemplate"
-      @move-template="onMoveTemplate"
-      @write="onWriteTemplate"
-    />
+    <!-- The editor takes no input until the file is read. -->
+    <fieldset class="card-model-tab__body" :disabled="!isRead">
+      <CardModelEditor
+        class="card-model-tab__editor"
+        :fields="cardModel.fields"
+        :templates="cardModel.templates"
+        :wrong="marks"
+        :name="words.cardModel"
+        @add-field="onAddField"
+        @rename-field="onRenameField"
+        @remove-field="onRemoveField"
+        @move-field="onMoveField"
+        @add-template="onAddTemplate"
+        @rename-template="onRenameTemplate"
+        @remove-template="onRemoveTemplate"
+        @move-template="onMoveTemplate"
+        @write="onWriteTemplate"
+      />
+    </fieldset>
   </div>
 </template>
 
@@ -107,6 +111,17 @@ function onWriteTemplate(id: string, half: Half, text: string) {
 }
 
 .card-model-tab__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.card-model-tab__editor {
   flex: 1;
   min-block-size: 0;
 }
