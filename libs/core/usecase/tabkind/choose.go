@@ -2,6 +2,7 @@
 package tabkind
 
 import (
+	"errors"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -18,9 +19,12 @@ type Choose struct {
 }
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
-// settings a condition reads as config. Without tab kinds it chooses none.
-func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
-	return &Choose{kinds: kinds, types: types, config: config}
+// settings a condition reads as config, which may be none. It needs the tab kinds and the table.
+func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) (*Choose, error) {
+	if kinds == nil || types == nil {
+		return nil, errors.New("the choice of a tab kind needs the tab kinds and the content type table")
+	}
+	return &Choose{kinds: kinds, types: types, config: config}, nil
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
@@ -28,13 +32,7 @@ func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTyp
 // domain.ChooseHandler picks, the lower plugin id first. A kind without a condition takes no note.
 // Empty where no condition holds.
 func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[string]any) string {
-	if u.kinds == nil {
-		return ""
-	}
-	contentType := domain.UnknownContentType
-	if u.types != nil {
-		contentType = u.types.GetContentType(path)
-	}
+	contentType := u.types.GetContentType(path)
 	values := pluginport.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range u.kinds.ListTabKinds() {

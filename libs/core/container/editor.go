@@ -105,12 +105,12 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		StartVaultFn:             cfg.startVault(db),
 		PluginServicesFn:         cfg.GetPluginServices,
 		PluginCommandsFn:         cfg.GetPluginCommands,
-		TabKindChoiceFn:          cfg.GetTabKindChoice,
+		OpenChooseTabKindFn:      cfg.OpenChooseTabKind,
 		PluginCatalogFn:          cfg.getEditorCatalog,
 		AgentVal:                 cfg.getToolProvider(),
 		SetTextVersionListenerFn: cfg.setTextVersionListener,
 		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
-		OpenFileMenuFn:           cfg.openFileMenu,
+		OpenVersionItemsFn:       cfg.openVersionItems,
 		WatchPluginChangesFn:     cfg.WatchPluginChanges,
 		OpenTriggersFn: func() *trigger.Triggers {
 			return cfg.openTriggers()
@@ -182,7 +182,7 @@ func (c Config) startVault(db *Index) func(
 	}
 }
 
-func (c Config) openFileMenu() *textversion.FileMenu {
+func (c Config) openVersionItems() *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
@@ -192,7 +192,7 @@ func (c Config) openFileMenu() *textversion.FileMenu {
 		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
 	}
 	run := plugincommand.NewCommands(commands, types, c.VaultReaders(), c.getWhenConfig()).Run
-	menu, err := textversion.NewFileMenu(c.TextVersions, run, types)
+	menu, err := textversion.NewVersionItems(c.TextVersions, run, types)
 	if err != nil {
 		c.handleError(err)
 		return nil

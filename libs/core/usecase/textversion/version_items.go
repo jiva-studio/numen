@@ -13,22 +13,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
-// FileMenu is the text versions of a vault file that the commands of the
+// VersionItems is the text versions of a vault file that the commands of the
 // enabled plugins whose condition names version.* offer as their items, and
 // the run of such a command over one of them.
-type FileMenu struct {
+type VersionItems struct {
 	versions *Versions
 	run      CommandRun
 	types    contenttypeport.ContentTypeTable
 }
 
-// NewFileMenu returns the menu of plugin commands for the vault files, using the
-// table to find the type of a file.
-func NewFileMenu(versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
+// NewVersionItems returns the version items of the vault files, run with run and using the table
+// to find the type of a file.
+func NewVersionItems(versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*VersionItems, error) {
 	if versions == nil || run == nil || types == nil {
-		return nil, errors.New("file menu: text versions, the run of commands and content type table are required")
+		return nil, errors.New("version items: text versions, the run of commands and content type table are required")
 	}
-	return &FileMenu{versions: versions, run: run, types: types}, nil
+	return &VersionItems{versions: versions, run: run, types: types}, nil
 }
 
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
@@ -37,7 +37,7 @@ type CommandRun interface {
 	Execute(ctx context.Context, v domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
 }
 
-func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
+func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
@@ -68,7 +68,7 @@ func listVersionItems(condition pluginport.PluginCondition, target pluginport.Ta
 
 // ListVersionItems lists the text versions of the file at the path over which the when condition of
 // the command holds; a command whose condition names no version.* variable has none.
-func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]VersionItem, error) {
+func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]VersionItem, error) {
 	condition, err := pluginport.ParseCondition(entry.Command.When)
 	if err != nil || !condition.HasItems() {
 		return nil, err
@@ -87,7 +87,7 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
 // command DeleteCommand.
-func (u *FileMenu) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]VersionItem, error) {
+func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]VersionItem, error) {
 	versions, err := u.versions.getVersions(ctx, v, path)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (u *FileMenu) ListEveryVersion(ctx context.Context, v domain.Vault, path st
 
 // DeleteVersion deletes the version of the file at the path, its record and its file; see
 // Versions.DeleteVersion.
-func (u *FileMenu) DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error {
+func (u *VersionItems) DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error {
 	return u.versions.DeleteVersion(ctx, v, path, version)
 }
 
@@ -117,7 +117,7 @@ const DeleteCommand = "app:version.delete"
 // RunVersionItem runs the command of the entry over the version of the file at the path, which it gets
 // as its argument version-id. A version the command does not offer over the file now, or a command
 // without items, is ErrInvalidVersion.
-func (u *FileMenu) RunVersionItem(
+func (u *VersionItems) RunVersionItem(
 	ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
 ) (pluginport.PluginCommandResult, error) {
 	items, err := u.ListVersionItems(ctx, v, path, entry)

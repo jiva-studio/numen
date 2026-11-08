@@ -84,13 +84,18 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders(), c.getWhenConfig())
 }
 
-// GetTabKindChoice is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
-// plugins. Where there is no plugin host it chooses none.
-func (c Config) GetTabKindChoice() *tabkind.Choose {
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
+// plugins. Where there is no plugin host there is none.
+func (c Config) OpenChooseTabKind() *tabkind.Choose {
 	if c.PluginHost == nil {
-		return tabkind.NewChoose(nil, nil, nil)
+		return nil
 	}
-	return tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
+	choose, err := tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost, c.getWhenConfig())
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return choose
 }
 
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions

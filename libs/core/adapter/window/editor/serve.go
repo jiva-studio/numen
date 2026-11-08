@@ -286,7 +286,7 @@ func createWindow(
 	services.Search.GetTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
-	services.File.chooseTabKind = made.GetTabKindChoice()
+	services.File.chooseTabKind = made.OpenChooseTabKind()
 	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
 
 	// The editor is open on one vault, and answers which as itself.
@@ -330,7 +330,7 @@ func (o *Installation) wireUseCases() {
 	services.PluginServices = made.GetPluginServices()
 	services.Playing.setPluginServices(services.PluginServices)
 	var versions command.VersionItems
-	if menu := made.OpenFileMenu(); menu != nil {
+	if menu := made.OpenVersionItems(); menu != nil {
 		versions = menu
 	}
 	services.Command = command.NewHandler(o.State, made.GetPluginCommands(), versions)

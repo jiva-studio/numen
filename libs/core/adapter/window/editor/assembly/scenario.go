@@ -14,7 +14,7 @@ import (
 
 type textScenarioAssembly interface {
 	OpenVaults(moves note.Move) vaults.Scenarios
-	OpenFileMenu() *textversion.FileMenu
+	OpenVersionItems() *textversion.VersionItems
 	OpenFileText() *textversion.FileText
 	OpenPluginData() *textversion.PluginData
 }
