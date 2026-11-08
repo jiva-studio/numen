@@ -10,6 +10,11 @@ Feature: External changes of a note
       When another program writes "milk" in the note titled "Shopping list"
       Then the note titled "Shopping list" has "milk"
 
+    Scenario: The note has the last text of its file after two changes
+      When another program writes "milk" in the note titled "Shopping list"
+      And another program writes "eggs" in the note titled "Shopping list"
+      Then the note titled "Shopping list" has "eggs"
+
   Rule: Unsaved text is not lost when the file changes
 
     Scenario: Unsaved text is kept when the note changes on disk
