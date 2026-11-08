@@ -97,45 +97,36 @@ describe('the updater frontend', () => {
     wrapper.unmount()
   })
 
-  it('draws a neutral chip with the running version for a build that is current', async () => {
+  it('draws nothing for a build that is current', async () => {
     const { context } = setup({ state: 'current' })
     await flush()
 
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
-    expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.9.0')
-    expect(wrapper.find('.update-indicator').classes()).not.toContain('update-indicator--available')
-    expect(wrapper.find('.update-indicator__trigger').attributes('title')).toBe(
-      'Numen v2026.9.0. This is the latest version.',
-    )
-    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.find('.update-indicator').exists()).toBe(false)
   })
 
-  it('draws the neutral chip before the first check has an answer', () => {
+  it('draws nothing before the first check has an answer', () => {
     const { context } = setup(AVAILABLE)
 
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
-    expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.9.0')
-    expect(wrapper.find('.update-indicator__trigger').attributes('title')).toBe(
-      'Numen v2026.9.0, the version you run.',
-    )
+    expect(wrapper.find('.update-indicator').exists()).toBe(false)
   })
 
-  it('takes the accent and says so in its tooltip when an update is available', async () => {
+  it('says so in its tooltip when an update is available', async () => {
     const { context } = setup(AVAILABLE)
     await flush()
 
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
-    expect(wrapper.find('.update-indicator').classes()).toContain('update-indicator--available')
     expect(wrapper.find('.update-indicator__trigger').attributes('tabindex')).toBe('-1')
     expect(wrapper.find('.update-indicator__trigger').attributes('title')).toBe(
       'Update available: v2026.10.1. You run v2026.9.0. Click to download.',
     )
   })
 
-  it('draws the neutral chip again once the update is dismissed', async () => {
+  it('draws nothing again once the update is dismissed', async () => {
     const { context } = setup(AVAILABLE)
     await flush()
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
@@ -146,8 +137,7 @@ describe('the updater frontend', () => {
       .find((one) => one.text() === 'Dismiss')
       ?.trigger('click')
 
-    expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.9.0')
-    expect(wrapper.find('.update-indicator').classes()).not.toContain('update-indicator--available')
+    expect(wrapper.find('.update-indicator').exists()).toBe(false)
   })
 
   it('waits the interval of the setting between checks and stops with the plugin', async () => {

@@ -8,8 +8,7 @@
 }
 
 /* The chip: flat, with a ground and no border. Height, text size and padding are the same in the
-   three title bar chips; only the width follows the content. The version that runs is neutral; the
-   accent means an update waits. */
+   three title bar chips; only the width follows the content. */
 .update-indicator__trigger {
   --chip-height: 20px;
   --chip-text: 12px;
@@ -20,26 +19,21 @@
   box-sizing: border-box;
   height: var(--chip-height);
   padding: 0 var(--chip-pad);
-  background: var(--numen-surface);
+  background: var(--numen-accent);
   border: none;
   border-radius: var(--numen-radius);
   outline: none;
-  color: var(--numen-ink);
+  color: var(--numen-accent-ink);
   font: inherit;
   font-size: var(--chip-text);
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
   line-height: 1;
   white-space: nowrap;
 }
 
 button.update-indicator__trigger {
   cursor: pointer;
-}
-
-.update-indicator--available .update-indicator__trigger {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
-  font-weight: 500;
 }
 
 button.update-indicator__trigger:hover,

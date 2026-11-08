@@ -13,18 +13,8 @@ const UPDATE: Update = {
 
 describe('the tooltip of the version chip', () => {
   it('names both versions and the action when an update waits', () => {
-    expect(getTooltip('2026.9.0', UPDATE, 'available')).toBe(
+    expect(getTooltip('2026.9.0', UPDATE)).toBe(
       'Update available: v2026.10.1. You run v2026.9.0. Click to download.',
     )
-  })
-
-  it('says the build is the latest once a check found no newer one', () => {
-    expect(getTooltip('2026.9.0', null, 'current')).toBe(
-      'Numen v2026.9.0. This is the latest version.',
-    )
-  })
-
-  it('says only which version runs while nothing is known of a newer one', () => {
-    expect(getTooltip('2026.9.0', null, 'unchecked')).toBe('Numen v2026.9.0, the version you run.')
   })
 })

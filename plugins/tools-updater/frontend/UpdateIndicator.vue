@@ -4,7 +4,7 @@
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
-import type { State, Update } from './api/updater'
+import type { Update } from './api/updater'
 import { getTooltip } from './model/tooltip'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
@@ -12,7 +12,6 @@ import UpdatePopover from './UpdatePopover.vue'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   version: string
-  state: State
   update: Update | null
   platform: Platform
 }>()
@@ -26,7 +25,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
-const tooltip = computed(() => getTooltip(props.version, props.update, props.state))
+const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose)
 
@@ -59,13 +58,8 @@ function onDismiss() {
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="update-indicator"
-    :class="{ 'update-indicator--available': update !== null }"
-  >
+  <div v-if="update" ref="root" class="update-indicator">
     <button
-      v-if="update"
       type="button"
       tabindex="-1"
       class="update-indicator__trigger"
@@ -77,15 +71,6 @@ function onDismiss() {
     >
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
-    <span
-      v-else
-      class="update-indicator__trigger"
-      role="img"
-      :aria-label="tooltip"
-      :title="tooltip"
-    >
-      <span class="update-indicator__label">v{{ version }}</span>
-    </span>
 
     <UpdatePopover
       v-if="isOpen && update"
