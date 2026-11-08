@@ -6,6 +6,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"io/fs"
 	"net/http"
 	"path/filepath"
@@ -421,4 +424,56 @@ func (c Config) setSecretSource() {
 		List:  ledger.GetSecrets,
 		Prune: c.OpenSecrets().Prune.Execute,
 	})
+}
+
+// WatchPluginChanges reports each time the plugin host applied a batch of settings, which enables,
+// disables and configures plugins, and each time it forgot the failure of a plugin, as after a retry
+// that succeeded. The returned function stops the reports.
+func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
+	return c.getResources().pluginChanges.Subscribe()
+}
+
+// commandManifests lists what the manifests of the enabled plugins declare.
+type commandManifests interface {
+	ListCommands() []pluginport.PluginCommandEntry
+	ListSlots() []pluginport.PluginSlotEntry
+	ListHandlers() []pluginport.PluginCommandEntry
+	GetParts(pluginID string) pluginport.PluginParts
+}
+
+// commandRuns runs a command in the backend of its plugin.
+type commandRuns interface {
+	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+}
+
+// pluginCommands is the commands the manifests declare, listed from the manifests, and run in the
+// backends of their plugins.
+type pluginCommands struct {
+	commandManifests
+	commandRuns
+}
+
+func (c Config) openPluginCommands() pluginCommands {
+	if c.PluginHost == nil {
+		return pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
+	}
+	return pluginCommands{manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost)}
+}
+
+func (c Config) openTriggers() *trigger.Triggers {
+	if c.PluginHost == nil || c.SafeMode || c.TextVersions == nil {
+		return nil
+	}
+	return trigger.NewTriggers(
+		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders(), c.PluginHost,
+		c.TextVersions, c.getWhenConfig(),
+	)
+}
+
+func (c Config) getWhenConfig() pluginport.WhenConfig {
+	settings := whenconfig.Settings{App: c.listAppSettings}
+	if c.PluginHost != nil {
+		settings.Plugins = c.PluginHost.GetPluginInfos
+	}
+	return settings
 }
