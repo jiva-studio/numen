@@ -29,6 +29,4 @@ export {
   sortByUsability,
   type RowDraft,
   type StoredRow,
-  type Usability,
-  type UsabilityWords,
 } from './lib/rows'
