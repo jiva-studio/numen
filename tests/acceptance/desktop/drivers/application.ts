@@ -31,36 +31,10 @@ export class ApplicationDriver {
     await this.scenario.ensureWorkspace()
     const { page } = this.scenario
     const field = page.locator('input[data-palette="field"]').first()
+    const name = new RegExp('^' + getEscaped(label) + '$')
     const command = page
       .getByRole('option')
-      .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${getEscaped(label)}/** The person at the application as a whole: starting it, running a command, looking at the vault. */
-import fs from 'node:fs'
-import path from 'node:path'
-import { expect } from 'playwright/test'
-import {
-  getPaletteField,
-  runPaletteCommand,
-  waitForWindow,
-} from '../../../e2e/desktop/tests/support/workspace.js'
-import { getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, getEscaped, parseAsk, parseCount, readNoteType } from './rules.js'
-import type { Scenario } from './scenario.js'
-
-export class ApplicationDriver {
-  constructor(private readonly scenario: Scenario) {}
-
-  async startApplication(name: string): Promise<void> {
-    assertApplication(name)
-    const { page } = this.scenario
-    if (this.scenario.isOpen) {
-      await page.reload()
-    } else {
-      await this.scenario.ensureWorkspace()
-    }
-    await waitForWindow(page)
-  }
-
-) }) })
+      .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
       .first()
     // The palette lists the commands the open tab has when it opens: a command that a download adds is listed on the next opening.
     await expect(async () => {
