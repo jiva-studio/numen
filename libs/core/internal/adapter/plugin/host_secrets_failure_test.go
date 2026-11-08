@@ -79,12 +79,6 @@ func (l *listing) rename(name string) {
 	l.name = name
 }
 
-func (l *listing) current() string {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.name
-}
-
 func (l *listing) regroup(group string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()

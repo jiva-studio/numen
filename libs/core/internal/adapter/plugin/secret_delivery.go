@@ -162,7 +162,10 @@ func (d *secretDelivery) refresh(ctx context.Context, forced []string) error {
 
 func (d *secretDelivery) refreshPlugin(ctx context.Context, pluginID string) error {
 	snapshot, isRunning, err := d.getSnapshot(pluginID)
-	if !isRunning || err != nil {
+	if err != nil {
+		return err
+	}
+	if !isRunning {
 		return nil
 	}
 	lists, listErr := d.listAllowed(snapshot)
