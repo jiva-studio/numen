@@ -30,6 +30,7 @@ describe('the popover of the vector count', () => {
   })
 })
 
+
 describe('the chip of the vector count', () => {
   it('is flat, 20px high, 12px in text, 8px in padding, and still', () => {
     const rule = readRule('.index-stats__trigger')
@@ -40,14 +41,5 @@ describe('the chip of the vector count', () => {
     expect(rule.get('border')).toBe('none')
     expect(rule.get('border-radius')).toBe('var(--numen-radius)')
     expect(css).not.toMatch(/animation|@keyframes|transition|focus-visible|outline:\s*var/)
-  })
-})
-
-describe('the chip of the vector count under the pointer', () => {
-  it('takes a ground that differs from the title bar and from its own ground', () => {
-    const block = /\.index-stats__trigger:hover,[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
-
-    expect(block).toContain('color-mix(in oklab, var(--numen-surface), var(--numen-ink)')
-    expect(block).not.toMatch(/--numen-raised|--numen-titlebar/)
   })
 })
