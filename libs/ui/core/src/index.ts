@@ -17,6 +17,9 @@ export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
 
+/** A box that is ticked or not, with an optional label beside it. */
+export { Checkbox } from './shared/ui/checkbox'
+
 /** One value along a track, moved by a handle. */
 export { Slider } from './shared/ui/slider'
 
