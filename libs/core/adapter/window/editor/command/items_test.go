@@ -62,51 +62,86 @@ func TestListCommands_ListsACommandWithItemsAndMarksIt(t *testing.T) {
 	}
 }
 
-func TestListCommandItems_ListsTheVersionsOfTheFileByKind(t *testing.T) {
-	res, err := newItemsHandler(&versionItems{}).ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
-		PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "talks/a.mp3",
+// listItemsOfOne sends a request for the items of one command over the path and returns its one list.
+func listItemsOfOne(t *testing.T, handler *command.Handler, pluginID, commandID, path string) *v1.CommandItemList {
+	t.Helper()
+	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
+		Path: path, Commands: []*v1.PluginCommandId{{PluginId: pluginID, Command: commandID}},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(res.Msg.GetLists()) != 1 {
+		t.Fatalf("got %d lists for one command", len(res.Msg.GetLists()))
+	}
+	return res.Msg.GetLists()[0]
+}
+
+func TestListCommandItems_ListsTheVersionsOfTheFileByKind(t *testing.T) {
+	list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "md.numen.tools.proofreading", "proofreading.create", "talks/a.mp3")
 
 	var got [][2]string
-	for _, one := range res.Msg.GetItems() {
+	for _, one := range list.GetItems() {
 		got = append(got, [2]string{one.GetId(), one.GetTitle()})
 	}
 	want := [][2]string{{"org.example.ears/ears", "transcript (live)"}, {"org.example.ears/older", "transcript"}}
-	if !reflect.DeepEqual(got, want) || res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
-		t.Errorf("got %v, %v, want %v", got, res.Msg.GetError(), want)
+	if !reflect.DeepEqual(got, want) || list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+		t.Errorf("got %v, %v, want %v", got, list.GetError(), want)
 	}
 }
 
 func TestListCommandItems_AnswersNoneForACommandWithoutItems(t *testing.T) {
-	res, err := newItemsHandler(&versionItems{}).ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
-		PluginId: "md.numen.tools.updater", Command: "updater.check", Path: "talks/a.mp3",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(res.Msg.GetItems()) != 0 || res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
-		t.Errorf("got %v, %v", res.Msg.GetItems(), res.Msg.GetError())
+	list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "md.numen.tools.updater", "updater.check", "talks/a.mp3")
+
+	if len(list.GetItems()) != 0 || list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+		t.Errorf("got %v, %v", list.GetItems(), list.GetError())
 	}
 }
 
 func TestListCommandItems_AnswersAnUnknownCommandAndAFailedListWithACode(t *testing.T) {
 	for name, tc := range map[string]struct {
-		request *v1.ListCommandItemsRequest
-		want    v1.CommandErrorCode
+		command, path string
+		want          v1.CommandErrorCode
 	}{
-		"unknown":     {&v1.ListCommandItemsRequest{PluginId: "md.numen.tools.proofreading", Command: "proofreading.gone"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND},
-		"failed list": {&v1.ListCommandItemsRequest{PluginId: "md.numen.tools.proofreading", Command: "proofreading.create", Path: "gone.mp3"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED},
+		"unknown":     {"proofreading.gone", "", v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND},
+		"failed list": {"proofreading.create", "gone.mp3", v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED},
 	} {
-		res, err := newItemsHandler(&versionItems{}).ListCommandItems(t.Context(), connect.NewRequest(tc.request))
-		if err != nil {
-			t.Fatal(err)
+		list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "md.numen.tools.proofreading", tc.command, tc.path)
+		if list.GetError() != tc.want || list.GetMessage() == "" {
+			t.Errorf("%s: got %v %q, want %v", name, list.GetError(), list.GetMessage(), tc.want)
 		}
-		if res.Msg.GetError() != tc.want || res.Msg.GetMessage() == "" {
-			t.Errorf("%s: got %v %q, want %v", name, res.Msg.GetError(), res.Msg.GetMessage(), tc.want)
-		}
+	}
+}
+
+func TestListCommandItems_AnswersOneListPerCommandInTheOrderOfTheRequest(t *testing.T) {
+	res, err := newItemsHandler(&versionItems{}).ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
+		Path: "talks/a.mp3",
+		Commands: []*v1.PluginCommandId{
+			{PluginId: "md.numen.tools.updater", Command: "updater.check"},
+			{PluginId: "md.numen.tools.proofreading", Command: "proofreading.gone"},
+			{PluginId: "md.numen.tools.proofreading", Command: "proofreading.create"},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type answer struct {
+		pluginID, command string
+		items             int
+		error             v1.CommandErrorCode
+	}
+	var got []answer
+	for _, one := range res.Msg.GetLists() {
+		got = append(got, answer{one.GetPluginId(), one.GetCommand(), len(one.GetItems()), one.GetError()})
+	}
+	want := []answer{
+		{"md.numen.tools.updater", "updater.check", 0, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED},
+		{"md.numen.tools.proofreading", "proofreading.gone", 0, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND},
+		{"md.numen.tools.proofreading", "proofreading.create", 2, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 

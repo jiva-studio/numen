@@ -240,26 +240,37 @@ describe('a run', () => {
 describe('the items of a command', () => {
   it('are the items the core lists over the file', async () => {
     request.listCommandItems.mockResolvedValue({
-      items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
-      message: '',
+      lists: [
+        {
+          pluginId: 'org.example.ink',
+          command: 'ink.proofread',
+          items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
+          error: COMMAND_ERROR_CODE.UNSPECIFIED,
+          message: '',
+        },
+      ],
     })
 
     expect(await listDeclaredCommandItems(proofread, 'talks/a.mp3')).toStrictEqual([
       { id: 'org.example.ears/ears', title: 'transcript (live)' },
     ])
     expect(request.listCommandItems).toHaveBeenLastCalledWith({
-      pluginId: 'org.example.ink',
-      command: 'ink.proofread',
       path: 'talks/a.mp3',
+      commands: [{ pluginId: 'org.example.ink', command: 'ink.proofread' }],
     })
   })
 
   it('that cannot be listed fail with why', async () => {
     request.listCommandItems.mockResolvedValue({
-      items: [],
-      error: COMMAND_ERROR_CODE.FAILED,
-      message: 'talks/a.mp3 is not in the vault',
+      lists: [
+        {
+          pluginId: 'org.example.ink',
+          command: 'ink.proofread',
+          items: [],
+          error: COMMAND_ERROR_CODE.FAILED,
+          message: 'talks/a.mp3 is not in the vault',
+        },
+      ],
     })
 
     await expect(listDeclaredCommandItems(proofread, 'talks/a.mp3')).rejects.toThrow(

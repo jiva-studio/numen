@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -145,7 +146,7 @@ func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
-	o.made.SetTextVersionListener(indexed)
+	o.made.SetTextVersionListener(newVersionChangeReporter(o.State, indexed))
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
@@ -184,4 +185,21 @@ func (o *Installation) resetStatus() {
 	if o.embedderError != nil {
 		o.State.reportTask(run.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
+}
+
+// versionChangeReporter asks the index session to cut a file whose text versions changed, and
+// reports the file to the window.
+type versionChangeReporter struct {
+	state *State
+	index *indexing.Session
+}
+
+// newVersionChangeReporter is the listener of the text versions of the vault the window shows.
+func newVersionChangeReporter(state *State, index *indexing.Session) versionChangeReporter {
+	return versionChangeReporter{state: state, index: index}
+}
+
+func (r versionChangeReporter) ReportVersionsChanged(v domain.Vault, path string) {
+	r.index.ReportVersionsChanged(v, path)
+	r.state.ChangeEvents.publish(change{versionPaths: []string{path}})
 }

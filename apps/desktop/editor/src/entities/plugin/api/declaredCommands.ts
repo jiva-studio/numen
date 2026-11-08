@@ -219,12 +219,13 @@ export async function listDeclaredCommandItems(
   path: string,
 ): Promise<readonly CommandItem[]> {
   const answer = await pluginCommands.listCommandItems({
-    pluginId: command.pluginId,
-    command: command.id,
     path,
+    commands: [{ pluginId: command.pluginId, command: command.id }],
   })
-  if (answer.error !== COMMAND_ERROR_CODE.UNSPECIFIED) throw new Error(answer.message)
-  return answer.items.map((one) => ({ id: one.id, title: one.title }))
+  const list = answer.lists[0]
+  if (!list) throw new Error(`no list of the items of ${command.id}`)
+  if (list.error !== COMMAND_ERROR_CODE.UNSPECIFIED) throw new Error(list.message)
+  return list.items.map((one) => ({ id: one.id, title: one.title }))
 }
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */

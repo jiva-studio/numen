@@ -26,6 +26,8 @@ type Versions struct {
 
 	mu       sync.Mutex
 	listener textport.VersionListener
+	// lives is the live version last found for each file with versions; empty for none live.
+	lives map[liveKey]domain.TextVersionID
 }
 
 // NewVersions returns the versions use case. It takes the version repositories,
@@ -44,7 +46,7 @@ func NewVersions(
 	}
 	return &Versions{
 		repos: repos, files: files, plugins: plugins, readers: readers, clock: clock,
-		listener: noListener{},
+		listener: noListener{}, lives: map[liveKey]domain.TextVersionID{},
 	}, nil
 }
 
@@ -59,8 +61,20 @@ func (u *Versions) SetListener(listener textport.VersionListener) {
 	u.listener = listener
 }
 
-// reportChanged notifies the listener that the versions of a file changed.
-func (u *Versions) reportChanged(v domain.Vault, path string) {
+// reportChanged notifies the listener that the versions of a file changed, and records the live
+// version the file has now. A live version that cannot be found is not recorded, so the next change of
+// the file is reported.
+func (u *Versions) reportChanged(ctx context.Context, v domain.Vault, path string) {
+	if _, err := u.updateLive(ctx, v, path); err != nil {
+		u.mu.Lock()
+		delete(u.lives, liveKey{vault: v.ID, path: path})
+		u.mu.Unlock()
+	}
+	u.notifyListener(v, path)
+}
+
+// notifyListener tells the listener that the versions of a file changed.
+func (u *Versions) notifyListener(v domain.Vault, path string) {
 	u.mu.Lock()
 	listener := u.listener
 	u.mu.Unlock()
@@ -129,7 +143,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err := repo.SaveVersion(ctx, version); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), version.Path, err)
 	}
-	u.reportChanged(v, version.Path)
+	u.reportChanged(ctx, v, version.Path)
 	return version, nil
 }
 
@@ -164,7 +178,7 @@ func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, 
 	if err := repo.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
 		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
 	}
-	u.reportChanged(v, path)
+	u.reportChanged(ctx, v, path)
 	return nil
 }
 
@@ -236,7 +250,7 @@ func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, plu
 	for _, one := range removed {
 		if !slices.Contains(paths, one.Path) {
 			paths = append(paths, one.Path)
-			u.reportChanged(v, one.Path)
+			u.reportChanged(ctx, v, one.Path)
 		}
 	}
 	return nil

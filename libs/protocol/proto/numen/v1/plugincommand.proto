@@ -71,9 +71,9 @@ service CommandService {
   // declares it.
   rpc RunPluginCommand(RunPluginCommandRequest) returns (RunPluginCommandResponse);
 
-  // ListCommandItems lists the items a command offers over a path: for a
-  // command whose when names version.*, the text versions of the file over
-  // which it holds. A command without items offers none.
+  // ListCommandItems lists the items each of the commands offers over a path:
+  // for a command whose when names version.*, the text versions of the file
+  // over which it holds. A command without items offers none.
   rpc ListCommandItems(ListCommandItemsRequest) returns (ListCommandItemsResponse);
 }
 
@@ -164,22 +164,39 @@ message RunPluginCommandRequest {
 }
 
 message ListCommandItemsRequest {
+  // The file the items are listed over, relative to the vault the window
+  // shows.
+  string path = 1;
+
+  repeated PluginCommandId commands = 2;
+}
+
+// PluginCommandId is one command of a plugin: a command it declares, or its
+// handler of a shared command.
+message PluginCommandId {
+  string plugin_id = 1;
+
+  string command = 2;
+}
+
+message ListCommandItemsResponse {
+  // One list for each command of the request, in the order of the request.
+  repeated CommandItemList lists = 1;
+}
+
+// CommandItemList is the items one command offers over the path of the
+// request.
+message CommandItemList {
   string plugin_id = 1;
 
   string command = 2;
 
-  // The file the items are listed over, relative to the vault the window
-  // shows.
-  string path = 3;
-}
-
-message ListCommandItemsResponse {
-  repeated CommandItem items = 1;
+  repeated CommandItem items = 3;
 
   // Set when the items could not be listed; the message then says why.
-  CommandErrorCode error = 2;
+  CommandErrorCode error = 4;
 
-  string message = 3;
+  string message = 5;
 }
 
 // CommandItem is one item a command offers: the id the run takes as its

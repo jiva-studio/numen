@@ -112,8 +112,13 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 	var running sync.WaitGroup
 
 	wakeTriggers := make(chan struct{}, 1)
+	checkTexts := func(paths []string) {
+		if err := made.ReportTextFilesChanged(ctx, v, paths); err != nil {
+			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
+		}
+	}
 	read, run, refresh, unwatched := made.StartVault(
-		ctx, v, rebuild, newChangeReporter(state, worker, wakeTriggers), newErrorReporter(state))
+		ctx, v, rebuild, newChangeReporter(state, worker, wakeTriggers, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
@@ -155,14 +160,17 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 	}
 }
 
-// newChangeReporter reports changes to the window and wakes the passes that
-// process them, the triggers among them.
-func newChangeReporter(state *State, worker *indexing.Worker, triggers chan<- struct{}) func(paths, assets []string, reload bool) {
+// newChangeReporter reports changes to the window, wakes the passes that process them, the triggers
+// among them, and checks the changed files for a change of their live text version.
+func newChangeReporter(
+	state *State, worker *indexing.Worker, triggers chan<- struct{}, checkTexts func(paths []string),
+) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		signal(triggers)
 		// A client shows every file in the vault, so an asset is reported as a note is.
 		changePaths := slices.Concat(paths, assets)
 		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
+		checkTexts(changePaths)
 		worker.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {
 			// A book added to an open vault is read without a request.

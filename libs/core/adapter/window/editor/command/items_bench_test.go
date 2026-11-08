@@ -38,11 +38,11 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 func BenchmarkListCommandItems_OfASharedCommandOverTheRepositoryPlugins(b *testing.B) {
 	handler := newRepositoryHandler(b)
 	request := connect.NewRequest(&v1.ListCommandItemsRequest{
-		PluginId: "md.numen.engines.ocr", Command: "app:version.delete", Path: "scans/page.png",
+		Path: "scans/page.png", Commands: []*v1.PluginCommandId{{PluginId: "md.numen.engines.ocr", Command: "app:version.delete"}},
 	})
 	for b.Loop() {
 		res, err := handler.ListCommandItems(b.Context(), request)
-		if err != nil || res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+		if err != nil || res.Msg.GetLists()[0].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
 			b.Fatalf("got %v, %v", res, err)
 		}
 	}

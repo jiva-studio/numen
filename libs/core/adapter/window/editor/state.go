@@ -294,7 +294,9 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 	for _, went := range what.renamed {
 		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
 	}
-	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
+	return &v1.WatchVaultChangesResponse{
+		Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves, VersionPaths: what.versionPaths,
+	}
 }
 
 // GetWindow returns the window handle for requesting place focus.
@@ -344,6 +346,9 @@ type change struct {
 	shouldReload bool
 	// renamed lists notes that moved, each with its old and new path.
 	renamed []domain.Move
+	// versionPaths lists the files whose text versions changed: one was made or deleted, or became
+	// live or no longer live.
+	versionPaths []string
 }
 
 // newChangeBroadcaster delivers what moved to its subscribers.

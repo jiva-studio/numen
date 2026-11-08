@@ -113,7 +113,8 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 				cfg.TextVersions.SetListener(listener)
 			}
 		},
-		OpenFileMenuFn: cfg.openFileMenu,
+		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
+		OpenFileMenuFn:           cfg.openFileMenu,
 		OpenTriggersFn: func() *trigger.Triggers {
 			return cfg.openTriggers(settings.NewGet(cfg.ReadSettings(), nil, cfg.Plugins(), cfg.listAppSettings))
 		},

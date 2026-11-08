@@ -79,6 +79,7 @@ type Runtime[H, V any] struct {
 	TabKindChoiceFn          func() *tabkind.Choose
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
+	ReportTextFilesChangedFn func(ctx context.Context, v domain.Vault, paths []string) error
 	OpenFileMenuFn           func() *textversion.FileMenu
 	OpenPluginFileFn         func() *file.OpenPluginFile
 	OpenTriggersFn           func() *trigger.Triggers
@@ -177,6 +178,15 @@ func (e Runtime[H, V]) GetTabKindChoice() *tabkind.Choose {
 }
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
+}
+
+// ReportTextFilesChanged reports each changed file whose live text version changed; an assembly with no
+// text versions reports none.
+func (e Runtime[H, V]) ReportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
+	if e.ReportTextFilesChangedFn == nil {
+		return nil
+	}
+	return e.ReportTextFilesChangedFn(ctx, v, paths)
 }
 func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu  { return e.OpenFileMenuFn() }
 func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile { return e.OpenPluginFileFn() }

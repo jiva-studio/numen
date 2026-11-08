@@ -25,30 +25,46 @@ type VersionItems interface {
 // errNoVersions is a command with items run where the window has no text versions.
 var errNoVersions = errors.New("the window has no text versions")
 
-// ListCommandItems lists the items the command offers over the path: the text versions of the file
-// for a command with items, none for any other command.
+// ListCommandItems lists the items each command of the request offers over the path, one list per
+// command in the order of the request: the text versions of the file for a command with items, none
+// for any other command. A command that is unknown, or whose items cannot be listed, has a list with
+// the code and message of the error.
 func (h *Handler) ListCommandItems(
 	ctx context.Context, r *connect.Request[v1.ListCommandItemsRequest],
 ) (*connect.Response[v1.ListCommandItemsResponse], error) {
-	entry, found := h.findEntry(r.Msg.GetPluginId(), r.Msg.GetCommand())
+	lists := make([]*v1.CommandItemList, 0, len(r.Msg.GetCommands()))
+	for _, one := range r.Msg.GetCommands() {
+		list := h.listItems(ctx, r.Msg.GetPath(), one.GetPluginId(), one.GetCommand())
+		list.PluginId, list.Command = one.GetPluginId(), one.GetCommand()
+		lists = append(lists, list)
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
+	return connect.NewResponse(&v1.ListCommandItemsResponse{Lists: lists}), nil
+}
+
+// listItems lists the items one command offers over the path.
+func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID string) *v1.CommandItemList {
+	entry, found := h.findEntry(pluginID, commandID)
 	if !found {
-		return newItemsFailure(fmt.Errorf("%w: %s of %s", plugincommand.ErrUnknownCommand, r.Msg.GetCommand(), r.Msg.GetPluginId())), nil
+		return newItemsFailure(fmt.Errorf("%w: %s of %s", plugincommand.ErrUnknownCommand, commandID, pluginID))
 	}
 	if !plugincommand.HasItems(entry.Command) {
-		return connect.NewResponse(&v1.ListCommandItemsResponse{}), nil
+		return &v1.CommandItemList{}
 	}
 	if h.versions == nil {
-		return newItemsFailure(errNoVersions), nil
+		return newItemsFailure(errNoVersions)
 	}
-	versions, err := h.versions.ListVersionItems(ctx, h.vaults.GetCurrentVault(), r.Msg.GetPath(), entry)
+	versions, err := h.versions.ListVersionItems(ctx, h.vaults.GetCurrentVault(), path, entry)
 	if err != nil {
-		return newItemsFailure(err), nil
+		return newItemsFailure(err)
 	}
 	items := make([]*v1.CommandItem, 0, len(versions))
 	for _, one := range versions {
 		items = append(items, &v1.CommandItem{Id: string(one.Version), Title: getVersionTitle(one)})
 	}
-	return connect.NewResponse(&v1.ListCommandItemsResponse{Items: items}), nil
+	return &v1.CommandItemList{Items: items}
 }
 
 // runWithArgument runs the command of a call that names an item, or a command with items, over the
@@ -102,7 +118,7 @@ func getVersionTitle(item textversion.VersionItem) string {
 	return kind
 }
 
-// newItemsFailure answers a list of items that could not be made with the code and message of the error.
-func newItemsFailure(err error) *connect.Response[v1.ListCommandItemsResponse] {
-	return connect.NewResponse(&v1.ListCommandItemsResponse{Error: getErrorCode(err), Message: err.Error()})
+// newItemsFailure is a list of items that could not be made, with the code and message of the error.
+func newItemsFailure(err error) *v1.CommandItemList {
+	return &v1.CommandItemList{Error: getErrorCode(err), Message: err.Error()}
 }

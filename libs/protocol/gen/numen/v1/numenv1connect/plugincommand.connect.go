@@ -129,9 +129,9 @@ type CommandServiceClient interface {
 	// RunPluginCommand runs one of them in the backend of the plugin that
 	// declares it.
 	RunPluginCommand(context.Context, *connect.Request[v1.RunPluginCommandRequest]) (*connect.Response[v1.RunPluginCommandResponse], error)
-	// ListCommandItems lists the items a command offers over a path: for a
-	// command whose when names version.*, the text versions of the file over
-	// which it holds. A command without items offers none.
+	// ListCommandItems lists the items each of the commands offers over a path:
+	// for a command whose when names version.*, the text versions of the file
+	// over which it holds. A command without items offers none.
 	ListCommandItems(context.Context, *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error)
 }
 
@@ -197,9 +197,9 @@ type CommandServiceHandler interface {
 	// RunPluginCommand runs one of them in the backend of the plugin that
 	// declares it.
 	RunPluginCommand(context.Context, *connect.Request[v1.RunPluginCommandRequest]) (*connect.Response[v1.RunPluginCommandResponse], error)
-	// ListCommandItems lists the items a command offers over a path: for a
-	// command whose when names version.*, the text versions of the file over
-	// which it holds. A command without items offers none.
+	// ListCommandItems lists the items each of the commands offers over a path:
+	// for a command whose when names version.*, the text versions of the file
+	// over which it holds. A command without items offers none.
 	ListCommandItems(context.Context, *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error)
 }
 

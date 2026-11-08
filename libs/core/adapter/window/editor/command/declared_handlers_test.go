@@ -67,15 +67,10 @@ func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, nil, nil)
 	handler := command.NewHandler(shownVault{}, commands, &versionItems{})
 
-	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
-		PluginId: "org.example.scans", Command: "app:version.delete", Path: "scans/page.png",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	list := listItemsOfOne(t, handler, "org.example.scans", "app:version.delete", "scans/page.png")
 
-	if len(res.Msg.GetItems()) != 2 {
-		t.Errorf("got %v, want the two versions", res.Msg)
+	if len(list.GetItems()) != 2 {
+		t.Errorf("got %v, want the two versions", list)
 	}
 	if reads != 0 {
 		t.Errorf("the items of a shared command read the commands of the plugins %d times", reads)

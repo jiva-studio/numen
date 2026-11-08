@@ -1,6 +1,10 @@
 package container
 
 import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
@@ -62,4 +66,13 @@ func (c Config) openPluginData() *textversion.PluginData {
 		return nil
 	}
 	return data
+}
+
+// reportTextFilesChanged reports each changed file of the vault whose live text version changed; a
+// configuration with no text versions reports none.
+func (c Config) reportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
+	if c.TextVersions == nil {
+		return nil
+	}
+	return c.TextVersions.ReportFilesChanged(ctx, v, paths)
 }
