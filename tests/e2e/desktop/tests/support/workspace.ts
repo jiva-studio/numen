@@ -5,12 +5,12 @@ import { forgetOpenTabs } from './test.js'
 export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Neighbourhood' })
 
 /**
- * Waits until the window is drawn: its status bar is there. The bar says "Ready" only until the
- * first list of tasks arrives, a moment after the page loads, and that list holds the failed task of
- * corrupted.pdf in every run, so the label cannot be waited for.
+ * Waits until the window is drawn: the task status of the title bar is there. It says "Idle" only
+ * until the first list of tasks arrives, a moment after the page loads, and that list holds the
+ * failed task of corrupted.pdf in every run, so the label cannot be waited for.
  */
 export const waitForWindow = async (page: Page): Promise<void> => {
-  await expect(page.getByRole('region', { name: 'Status Bar' })).toBeVisible()
+  await expect(page.locator('[data-tasks-status]')).toBeVisible()
 }
 
 /** Presses Enter on the row at `path` of the files tab once it is drawn: a folder opens, a file opens in a tab. */
@@ -73,6 +73,17 @@ export const runCommand = async (page: Page, query: string, name: RegExp): Promi
   await page.getByRole('option', { name }).first().click()
 }
 
+/** Runs a command that offers items over the item the palette lists under the name `item`. */
+export const runCommandOverItem = async (
+  page: Page,
+  query: string,
+  name: RegExp,
+  item: RegExp,
+): Promise<void> => {
+  await runCommand(page, query, name)
+  await page.getByRole('option', { name: item }).first().click()
+}
+
 /**
  * Opens a file of the vault from the files tab and gives back the panel it is drawn in, found by
  * the file's name without its extension.
@@ -131,9 +142,9 @@ export const expectWorkspaceDrawn = async (page: Page): Promise<void> => {
   await expect(page.getByRole('tab', { name: /^Files/ })).toBeVisible(within)
 }
 
-/** Opens the list of background tasks from the status bar, where a failed action and a warning are listed. */
+/** Opens the list of background tasks from the title bar, where a failed action and a warning are listed. */
 export const openTaskList = async (page: Page): Promise<Locator> => {
-  await page.locator('.status-bar__trigger').click()
+  await page.locator('.tasks-status__trigger').click()
   const popover = page.locator('.task-popover')
   await expect(popover).toBeVisible()
   return popover

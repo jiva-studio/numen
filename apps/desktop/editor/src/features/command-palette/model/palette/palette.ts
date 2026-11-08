@@ -246,7 +246,7 @@ function createPaletteStepsAndSearch(
   const previewItem = (item: string) => {
     // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     const step = stepsRef.current?.here.value
-    if (step?.step === 'choice') deps.lists.previewItem(step.command.id, item)
+    if (step?.step === 'items') deps.lists.previewItem(step.command.id, item)
   }
 
   const setOpen = (now: boolean) => {
@@ -382,7 +382,7 @@ function createPalettePresentation(
   /** The icon a command declares, and nothing for one that declares none. */
   const findCommandIcon = (id: string): Component | null => byId.value.get(id)?.icon ?? null
 
-  return { groups, findNoteType: draws.findNoteType, findCommandIcon, ...execution }
+  return { groups, findTabKind: draws.findTabKind, findCommandIcon, ...execution }
 }
 
 export function useCommandPalette(
@@ -421,7 +421,7 @@ export function useCommandPalette(
     chooseItem: presentation.chooseItem,
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
-    findNoteType: presentation.findNoteType,
+    findTabKind: presentation.findTabKind,
     findCommandIcon: presentation.findCommandIcon,
   }
   return api

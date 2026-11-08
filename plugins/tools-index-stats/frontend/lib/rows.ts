@@ -71,7 +71,6 @@ export function getRows(stats: Stats, locale?: string): Row[] {
     row('sources', words.sources, formatCount(stats.sources, locale), { hint: words.sourcesHint }),
     ...stats.kinds.flatMap((one) => getKindRow(one, locale)),
     row('model', words.model, stats.model),
-    row('recipe', words.recipe, stats.recipe, { hint: words.recipeHint }),
     row(
       'dimensions',
       words.dimensions,

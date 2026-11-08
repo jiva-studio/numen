@@ -6,7 +6,14 @@
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createRemoteValues } from '@numen/ui'
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '../lib/configuration'
+import type {
+  Model,
+  PluginInfo,
+  PluginSettingInfo,
+  SecretMenu,
+  SecretSection,
+  SettingEdit,
+} from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 
@@ -25,6 +32,9 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
     readonly app?: readonly PluginSettingInfo[] | undefined
+    readonly secretSections?: readonly SecretSection[] | undefined
+    readonly secretMenus?: readonly SecretMenu[] | undefined
+    readonly credentialsPath?: string | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
@@ -75,6 +85,35 @@ const getDeclaredDefault = (
     ?.default
 }
 
+const askVault = async (
+  core: SettingsStoreDeps,
+): Promise<Awaited<ReturnType<SettingsStoreDeps['getSettings']>> | undefined> => {
+  try {
+    return await core.getSettings()
+  } catch {
+    return undefined
+  }
+}
+
+const parseSettingsText = (text: string): unknown => {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
+const readVault = async (core: SettingsStoreDeps, words: Words, say: MessageWriter) => {
+  const answer = await askVault(core)
+  if (answer === undefined) return undefined
+  const file = parseSettingsText(answer.written)
+  if (file === undefined) {
+    say(words.unreadSettings, 'error')
+    return undefined
+  }
+  return { answer, file }
+}
+
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<unknown>({})
@@ -84,6 +123,9 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
+  const secretSections = shallowRef<readonly SecretSection[]>([])
+  const secretMenus = shallowRef<readonly SecretMenu[]>([])
+  const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -92,30 +134,18 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
     const pendingRead = requested.beginRead()
-    let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
-    try {
-      answer = await core.getSettings()
-    } catch {
-      // A vault that cannot be queried leaves the settings unchanged, and the
-      // window already reports the lost connection to the vault.
-      return
-    }
-    let settingsFile: unknown
-    try {
-      settingsFile = JSON.parse(answer.written)
-    } catch {
-      // The vault answered with something no settings can be read out of. It is
-      // not a vault that has gone away, and a write followed by this leaves the
-      // person watching their setting go back with no word for it.
-      say(words.unreadSettings, 'error')
-      return
-    }
+    const read = await readVault(core, words, say)
+    if (read === undefined) return
+    const { answer } = read
     requested.takeRead(pendingRead, () => {
-      target.value = settingsFile
+      target.value = read.file
       path.value = answer.path
       models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
+      secretSections.value = answer.secretSections ?? []
+      secretMenus.value = answer.secretMenus ?? []
+      credentialsPath.value = answer.credentialsPath ?? ''
     })
   }
 
@@ -171,6 +201,9 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     models,
     plugins,
     app,
+    secretSections,
+    secretMenus,
+    credentialsPath,
     start,
     getSetting,
     getCommittedSetting,

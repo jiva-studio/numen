@@ -44,6 +44,9 @@ const (
 	// CommandServiceRunPluginCommandProcedure is the fully-qualified name of the CommandService's
 	// RunPluginCommand RPC.
 	CommandServiceRunPluginCommandProcedure = "/numen.v1.CommandService/RunPluginCommand"
+	// CommandServiceListCommandItemsProcedure is the fully-qualified name of the CommandService's
+	// ListCommandItems RPC.
+	CommandServiceListCommandItemsProcedure = "/numen.v1.CommandService/ListCommandItems"
 )
 
 // PluginCommandServiceClient is a client for the numen.v1.PluginCommandService service.
@@ -126,6 +129,10 @@ type CommandServiceClient interface {
 	// RunPluginCommand runs one of them in the backend of the plugin that
 	// declares it.
 	RunPluginCommand(context.Context, *connect.Request[v1.RunPluginCommandRequest]) (*connect.Response[v1.RunPluginCommandResponse], error)
+	// ListCommandItems lists the items each of the commands offers over a path:
+	// for a command whose when names version.*, the text versions of the file
+	// over which it holds. A command without items offers none.
+	ListCommandItems(context.Context, *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error)
 }
 
 // NewCommandServiceClient constructs a client for the numen.v1.CommandService service. By default,
@@ -151,6 +158,12 @@ func NewCommandServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(commandServiceMethods.ByName("RunPluginCommand")),
 			connect.WithClientOptions(opts...),
 		),
+		listCommandItems: connect.NewClient[v1.ListCommandItemsRequest, v1.ListCommandItemsResponse](
+			httpClient,
+			baseURL+CommandServiceListCommandItemsProcedure,
+			connect.WithSchema(commandServiceMethods.ByName("ListCommandItems")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -158,6 +171,7 @@ func NewCommandServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 type commandServiceClient struct {
 	listCommands     *connect.Client[v1.ListCommandsRequest, v1.ListCommandsResponse]
 	runPluginCommand *connect.Client[v1.RunPluginCommandRequest, v1.RunPluginCommandResponse]
+	listCommandItems *connect.Client[v1.ListCommandItemsRequest, v1.ListCommandItemsResponse]
 }
 
 // ListCommands calls numen.v1.CommandService.ListCommands.
@@ -170,6 +184,11 @@ func (c *commandServiceClient) RunPluginCommand(ctx context.Context, req *connec
 	return c.runPluginCommand.CallUnary(ctx, req)
 }
 
+// ListCommandItems calls numen.v1.CommandService.ListCommandItems.
+func (c *commandServiceClient) ListCommandItems(ctx context.Context, req *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error) {
+	return c.listCommandItems.CallUnary(ctx, req)
+}
+
 // CommandServiceHandler is an implementation of the numen.v1.CommandService service.
 type CommandServiceHandler interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of
@@ -178,6 +197,10 @@ type CommandServiceHandler interface {
 	// RunPluginCommand runs one of them in the backend of the plugin that
 	// declares it.
 	RunPluginCommand(context.Context, *connect.Request[v1.RunPluginCommandRequest]) (*connect.Response[v1.RunPluginCommandResponse], error)
+	// ListCommandItems lists the items each of the commands offers over a path:
+	// for a command whose when names version.*, the text versions of the file
+	// over which it holds. A command without items offers none.
+	ListCommandItems(context.Context, *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error)
 }
 
 // NewCommandServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -199,12 +222,20 @@ func NewCommandServiceHandler(svc CommandServiceHandler, opts ...connect.Handler
 		connect.WithSchema(commandServiceMethods.ByName("RunPluginCommand")),
 		connect.WithHandlerOptions(opts...),
 	)
+	commandServiceListCommandItemsHandler := connect.NewUnaryHandler(
+		CommandServiceListCommandItemsProcedure,
+		svc.ListCommandItems,
+		connect.WithSchema(commandServiceMethods.ByName("ListCommandItems")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.CommandService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CommandServiceListCommandsProcedure:
 			commandServiceListCommandsHandler.ServeHTTP(w, r)
 		case CommandServiceRunPluginCommandProcedure:
 			commandServiceRunPluginCommandHandler.ServeHTTP(w, r)
+		case CommandServiceListCommandItemsProcedure:
+			commandServiceListCommandItemsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -220,4 +251,8 @@ func (UnimplementedCommandServiceHandler) ListCommands(context.Context, *connect
 
 func (UnimplementedCommandServiceHandler) RunPluginCommand(context.Context, *connect.Request[v1.RunPluginCommandRequest]) (*connect.Response[v1.RunPluginCommandResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CommandService.RunPluginCommand is not implemented"))
+}
+
+func (UnimplementedCommandServiceHandler) ListCommandItems(context.Context, *connect.Request[v1.ListCommandItemsRequest]) (*connect.Response[v1.ListCommandItemsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CommandService.ListCommandItems is not implemented"))
 }

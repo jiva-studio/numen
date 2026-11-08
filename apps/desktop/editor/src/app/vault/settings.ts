@@ -3,13 +3,20 @@
  */
 import { settingsService } from '@/shared/clients'
 import { fetched } from './words'
-import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
+import type {
+  Configuration,
+  PluginSettingCondition,
+  PluginSettingInfo,
+  SecretMenu,
+  SecretSection,
+} from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
-const readOption = (one: { value: string; title: string; detail: string }) => ({
+const readOption = (one: { value: string; title: string; detail: string; when: string }) => ({
   value: one.value,
   title: one.title,
   detail: one.detail,
+  when: one.when,
 })
 
 const readCondition = (
@@ -20,6 +27,42 @@ const readCondition = (
 type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
+
+type ServedSection = NonNullable<ServedSettings['secretSections']>[number]
+type ServedMenu = NonNullable<ServedSettings['secretMenus']>[number]
+
+const readSecretSections = (sections: readonly ServedSection[]): readonly SecretSection[] =>
+  sections.map((section) => ({
+    group: section.group,
+    isAsked: section.isAsked,
+    secrets: section.secrets.map((one) => ({
+      id: one.id,
+      name: one.name,
+      group: one.group,
+      allowed: one.allowed.map((entry) => ({
+        pluginId: entry.pluginId,
+        name: entry.name,
+        group: entry.group,
+      })),
+    })),
+  }))
+
+const readSecretMenus = (
+  menus: readonly ServedMenu[],
+  sections: readonly ServedSection[],
+): readonly SecretMenu[] => {
+  const byId = new Map(
+    readSecretSections(sections)
+      .flatMap((one) => one.secrets)
+      .map((one) => [one.id, one]),
+  )
+  return menus.map((menu) => ({
+    pluginId: menu.pluginId,
+    name: menu.name,
+    group: menu.group,
+    secrets: menu.secretIds.flatMap((id) => byId.get(id) ?? []),
+  }))
+}
 
 const readJson = (text: string): unknown => {
   // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
@@ -97,9 +140,9 @@ export const settingsCore: SettingsPort = {
           name: one.name,
           title: one.title || one.name,
           description: one.description,
+          group: one.group,
           when: readCondition(one.when),
         })),
-        storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         hasBackend: p.hasBackend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
@@ -116,6 +159,9 @@ export const settingsCore: SettingsPort = {
         settings: (p.settings ?? []).map(readPluginSetting),
       })),
       app: (answer.app ?? []).map(readPluginSetting),
+      secretSections: readSecretSections(answer.secretSections ?? []),
+      secretMenus: readSecretMenus(answer.secretMenus ?? [], answer.secretSections ?? []),
+      credentialsPath: answer.credentialsPath ?? '',
     } satisfies Configuration
   },
   updateSettings: async (edits) => {
@@ -128,11 +174,37 @@ export const settingsCore: SettingsPort = {
       yield update.changed.map((one) => ({ at: [...one.at], value: one.value }))
     }
   },
-  writePluginSecret: async (pluginId, name, key) => {
-    await settingsService.writePluginSecret({ pluginId, name, key })
+  createSecret: async (group, name, value) => {
+    const answer = await settingsService.createSecret({ group, name, value })
+    return answer.id
   },
-  deletePluginSecret: async (pluginId, name) => {
-    await settingsService.deletePluginSecret({ pluginId, name })
+  renameSecret: async (id, name) => {
+    await settingsService.renameSecret({ id, name })
+  },
+  writeSecret: async (id, value) => {
+    await settingsService.writeSecret({ id, value })
+  },
+  deleteSecret: async (id) => {
+    await settingsService.deleteSecret({ id })
+  },
+  deleteSecretGroup: async (group) => {
+    await settingsService.deleteSecretGroup({ group })
+  },
+  listSecretStates: async () => {
+    const answer = await settingsService.listSecretStates({})
+    return new Map(answer.states.map((one) => [one.id, one.hasValue]))
+  },
+  moveSecret: async (id, beforeId) => {
+    await settingsService.moveSecret({ id, beforeId })
+  },
+  renameSecretGroup: async (group, name) => {
+    await settingsService.renameSecretGroup({ group, name })
+  },
+  allowPluginSecret: async (secretId, pluginId, name, group) => {
+    await settingsService.allowPluginSecret({ secretId, pluginId, name, group })
+  },
+  denyPluginSecret: async (secretId, pluginId, name, group) => {
+    await settingsService.denyPluginSecret({ secretId, pluginId, name, group })
   },
   choosePluginPath: async (pluginId, key) => {
     const answer = await settingsService.choosePluginPath({ pluginId, key })

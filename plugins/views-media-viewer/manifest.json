@@ -1,0 +1,55 @@
+{
+  "id": "md.numen.views.media.viewer",
+  "name": "Media Viewer & Recorder",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Audio and video player with interactive transcripts and voice recording",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [
+      {
+        "kind": "recording",
+        "title": "Record Audio",
+        "icon": "mic"
+      },
+      {
+        "kind": "reader:media-viewer",
+        "title": "Audio Player",
+        "icon": "audio-lines"
+      },
+      {
+        "kind": "media",
+        "title": "Media",
+        "icon": "play",
+        "when": "has(target.properties.media) || target.noteType == 'link'"
+      }
+    ],
+    "feature": "audio and video playback and recording",
+    "category": "views",
+    "readers": [
+      {
+        "id": "media-viewer",
+        "contentTypes": [
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/vnd.wave",
+          "audio/ogg",
+          "audio/aac",
+          "audio/flac",
+          "video/mp4",
+          "video/webm"
+        ],
+        "rank": "default"
+      }
+    ],
+    "commands": [
+      {
+        "id": "recording.create",
+        "title": "Record audio",
+        "icon": "mic"
+      }
+    ]
+  },
+  "permissions": ["vault:read", "vault:write"],
+  "frontend": {}
+}

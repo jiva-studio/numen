@@ -4,8 +4,12 @@
  */
 import type { InjectionKey, Ref } from 'vue'
 import type { NodeId, Tab, TabId } from '../lib/node'
+import type { StripEdge } from '../lib/edges'
+
+export { NO_STRIP_EDGE } from '../lib/edges'
 
 export interface WorkspaceContext {
+  readonly getStripEdge: (pane: NodeId) => StripEdge
   readonly findTab: (id: TabId) => Tab | undefined
   readonly focus: NodeId
   readonly minimum: number

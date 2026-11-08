@@ -13,6 +13,7 @@ import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './useWindowPlugins'
 import { getNoteIcon } from '@/entities/note'
+import { createBackendHandlers } from '../commands/backendHandlers'
 
 const createSupport = () => {
   const windowTabs = useWindowTabs()
@@ -36,6 +37,14 @@ const coreKind = (state: object): AnyTabKind => ({
   kind: 'core',
   open: () => state,
   pane: {},
+})
+
+describe('the platform plugins read', () => {
+  it('is Windows where the window gives none, as the frame reports without the runtime', () => {
+    const { support } = createSupport()
+
+    expect(support.pluginHost.createContext('md.numen.a').app.platform).toBe('windows')
+  })
 })
 
 describe('closing the tabs of a plugin', () => {
@@ -230,6 +239,99 @@ describe('the settings and notices a plugin is given', () => {
     expect(reportCommandIssue).toHaveBeenCalledExactlyOnceWith(
       'md.numen.tree',
       expect.stringContaining('tree.open'),
+    )
+  })
+
+  it('lists the handlers of a shared command and runs one in its backend', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.pages', hasFrontend: false, hasBackend: true }]) }
+    const runBackendHandler = vi.fn(async () => undefined)
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers: {
+        getHandlerDeclarations: () => [
+          {
+            pluginId: 'md.numen.pages',
+            command: 'app:file.createText',
+            title: 'Extract text layer',
+            hasItems: false,
+          },
+        ],
+        runBackendHandler,
+      },
+    })
+    const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
+
+    expect(await pluginHost.listCommandItems('app:file.createText', target)).toStrictEqual([
+      { id: 'md.numen.pages', title: 'Extract text layer' },
+    ])
+    await pluginHost.executeCommand('app:file.createText', { ...target, type: '' })
+
+    expect(runBackendHandler).toHaveBeenCalledWith({
+      pluginId: 'md.numen.pages',
+      command: 'app:file.createText',
+      target: expect.objectContaining({ path: 'scan.pdf' }),
+      itemId: undefined,
+    })
+  })
+
+  it('rejects a run awaited through the host with the error of a backend handler, and writes nothing', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.ears', hasFrontend: false, hasBackend: true }]) }
+    const writeMessage = vi.fn()
+    const onError = vi.fn()
+    const handlers = createBackendHandlers({
+      getHandlers: () => [
+        {
+          pluginId: 'md.numen.ears',
+          command: 'app:file.createText',
+          title: 'Transcribe',
+          hasItems: false,
+        },
+      ],
+      list: async () => [],
+      run: async () => ({ ok: false, error: 'the recording has no audio' }),
+      writeMessage,
+      openFile: async () => undefined,
+    })
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers,
+      reportError: onError,
+    })
+    const note = { path: 'talks/a.mp3', title: 'a', type: '', isFolder: false, others: [], tab: '' }
+
+    await expect(
+      pluginHost.executeCommand('app:file.createText', note, { isAwaited: true }),
+    ).rejects.toThrow('the recording has no audio')
+    expect(writeMessage).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  it('lists the items of a handler the core lists them for', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.ocr', hasFrontend: false, hasBackend: true }]) }
+    const listBackendHandlerItems = vi.fn(async () => [{ id: 'v1', title: 'Recognition' }])
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers: {
+        getHandlerDeclarations: () => [
+          {
+            pluginId: 'md.numen.ocr',
+            command: 'app:link.downloadMedia',
+            title: 'Delete',
+            hasItems: true,
+          },
+        ],
+        listBackendHandlerItems,
+      },
+    })
+    const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
+
+    expect(await pluginHost.listCommandItems('app:link.downloadMedia', target)).toStrictEqual([
+      { id: 'md.numen.ocr:v1', title: 'Recognition', group: 'md.numen.ocr' },
+    ])
+    expect(listBackendHandlerItems).toHaveBeenCalledWith(
+      'md.numen.ocr',
+      'app:link.downloadMedia',
+      expect.objectContaining({ path: 'scan.pdf' }),
     )
   })
 

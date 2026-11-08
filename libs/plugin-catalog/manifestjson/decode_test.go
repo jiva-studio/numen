@@ -23,7 +23,7 @@ func TestReadManifest(t *testing.T) {
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
 		},
-		"services": ["numen.v1.TextProviderService"],
+		"services": ["md.numen.engines.ocr"],
 		"frontend": {},
 		"settings": [
 			{
@@ -61,7 +61,7 @@ func TestReadManifest(t *testing.T) {
 	if !m.IsActivatedByAnyEvent() {
 		t.Errorf("expected activation on every event")
 	}
-	if !m.HasService("numen.v1.TextProviderService") || !m.HasFrontend() {
+	if !m.HasService("md.numen.engines.ocr") || !m.HasFrontend() {
 		t.Errorf("expected the service and the frontend")
 	}
 }
@@ -317,25 +317,6 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 			_, err := manifestjson.Read(strings.NewReader(text + "}"))
 			if one.wrong != errors.Is(err, manifest.ErrInvalidSecret) {
 				t.Errorf("error = %v, want invalid secret: %v", err, one.wrong)
-			}
-		})
-	}
-}
-
-// The name under which the host records the stored secrets is
-// neither a setting nor a secret of a manifest.
-func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
-	for _, one := range []struct {
-		name  string
-		field string
-	}{
-		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
-		{"a secret", `"secrets":[{"name":"storedSecrets","title":"T"}]`},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
-			if !errors.Is(err, manifest.ErrReservedSettingKey) {
-				t.Errorf("error = %v, want port.ErrReservedSettingKey", err)
 			}
 		})
 	}

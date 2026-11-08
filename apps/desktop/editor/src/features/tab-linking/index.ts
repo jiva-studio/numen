@@ -3,6 +3,6 @@
  */
 export * from './types'
 export { useTabLinks } from './model/useTabLinks'
-export { useTabLinkMenu } from './model/useTabLinkMenu'
+export { getWindowName } from './lib/windowName'
+export { getAllTabs, getEligibleTabs } from './lib/eligibility'
 export { default as TabLinkIndicator } from './ui/TabLinkIndicator.vue'
-export { default as TabLinkMenu } from './ui/TabLinkMenu.vue'

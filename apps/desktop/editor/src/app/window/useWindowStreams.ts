@@ -24,6 +24,7 @@ export interface WindowStreamsDeps {
   readonly onVaultChanged: (
     paths: readonly string[],
     renamed: readonly PathRename[],
+    versionPaths: readonly string[],
   ) => Promise<void> | void
   readonly readInitialNote: () => Promise<string>
   readonly ask: () => Promise<unknown>
@@ -37,15 +38,19 @@ interface VaultChangeData {
   paths: readonly string[]
   shouldReload?: boolean
   renamed: readonly PathRename[]
+  versionPaths?: readonly string[]
 }
 
 async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDeps): Promise<void> {
-  if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
+  const versionPaths = change.versionPaths ?? []
+  const isEmpty = change.paths.length === 0 && change.renamed.length === 0
+  if (isEmpty && !change.shouldReload && versionPaths.length === 0) return
   if (change.shouldReload && (await deps.isVaultSwapped())) {
     deps.reload()
     return
   }
-  await deps.onVaultChanged(change.shouldReload ? [] : change.paths, change.renamed)
+  if (change.shouldReload) await deps.onVaultChanged([], change.renamed, [])
+  else await deps.onVaultChanged(change.paths, change.renamed, versionPaths)
   if (change.renamed.some((went) => went.from === deps.opening.value)) {
     try {
       await deps.readInitialNote()

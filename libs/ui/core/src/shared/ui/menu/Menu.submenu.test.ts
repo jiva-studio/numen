@@ -355,3 +355,18 @@ describe('the highlight event', () => {
     expect(menu.emitted('highlight')).toEqual([['open'], ['move'], ['archive'], [null]])
   })
 })
+
+describe('the active row with a submenu', () => {
+  it('stays on the parent row while its submenu is open and the pointer is inside it', async () => {
+    mountMenu()
+    await settle()
+    const parent = getRows(getMenus()[0])[1]
+    await restOnRow(parent, { clientX: 5, clientY: 5 })
+
+    getMenus()[0]?.dispatchEvent(new MouseEvent('mouseleave'))
+    await settle()
+
+    expect(parent?.hasAttribute('data-active')).toBe(true)
+    expect(getMenus()[0]?.querySelectorAll('[data-active]')).toHaveLength(1)
+  })
+})

@@ -1,5 +1,5 @@
 /**
- * Every item in either menu is drawn with an icon.
+ * Every command the palette and the welcome screen draw has an icon.
  *
  * A menu reserves the icon column on every row, so an item without an icon
  * leaves a gap where its neighbours have one.
@@ -8,31 +8,16 @@ import { describe, expect, it } from 'vitest'
 
 import { COMMAND } from '@/shared/commandIds'
 import { findIcon, getNamedIcon } from '@/shared/icons'
-import { getNoteIcon, registerNoteIcon } from '@/entities/note'
-import { createCommands, createPathCommands } from '@/features/command-palette'
+import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
+import { createCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 
-/** An item of a menu, and the items it opens. */
-type Item = { readonly id: string; readonly children?: readonly Item[] | undefined }
-
-const flatten = (items: readonly Item[]): readonly Item[] =>
-  items.flatMap((item) => [item, ...flatten(item.children ?? [])])
-
-/** The window's commands over a row: on a row of each kind, and over several rows. */
-const onARow = flatten(
-  [
-    ...[true, false].flatMap((isNote) => [
-      createPathCommands({ isNote, isFolder: false }, false),
-      createPathCommands({ isNote, isFolder: true }, false),
-    ]),
-    createPathCommands({ isNote: true, isFolder: false }, true),
-  ].flat(),
-)
-
 describe('the icon a command is drawn with', () => {
-  it('is there for every command the window offers over a row', () => {
-    for (const item of onARow) expect(findIcon(item.id), item.id).not.toBeNull()
+  it('is there for every command the window places in the menu of a row of the file tree', () => {
+    for (const id of [COMMAND.openNote, COMMAND.copyNotePath, COMMAND.trashNote]) {
+      expect(findIcon(id), id).not.toBeNull()
+    }
   })
 
   it('is there for every command the palette draws', () => {
@@ -64,18 +49,17 @@ describe('the icon a command is drawn with', () => {
   })
 })
 
-// One mark to a type.
-describe('the icon of a type of note', () => {
-  it('is the icon of a note for a type no plugin draws', () => {
-    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
+describe('the icon of a note', () => {
+  it('is the icon of a note for a tab kind no plugin draws, and for none', () => {
+    expect(getNoteIcon('sample')).toBe(getNoteIcon(undefined))
   })
 
-  it('is the icon a plugin registers for its type, until the plugin lets go of it', () => {
+  it('is the icon a plugin registers for the tab kind that opens the note, until it unregisters it', () => {
     const icon = {}
-    const unregister = registerNoteIcon('sample', icon)
+    const unregister = registerTabKindIcon('sample', icon)
     expect(getNoteIcon('sample')).toBe(icon)
 
     unregister()
-    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
+    expect(getNoteIcon('sample')).toBe(getNoteIcon(undefined))
   })
 })

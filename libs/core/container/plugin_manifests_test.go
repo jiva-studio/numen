@@ -3,7 +3,6 @@ package container
 import (
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -13,6 +12,10 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 
@@ -344,9 +347,24 @@ func isNamedIn(source, key string) bool {
 	return false
 }
 
+func isReadByCondition(manifest pluginport.PluginManifest, key string) bool {
+	conditions := make([]string, 0, len(manifest.Contributes.Triggers)+len(manifest.Contributes.Handlers))
+	for _, one := range manifest.Contributes.Triggers {
+		conditions = append(conditions, one.When)
+	}
+	for _, one := range manifest.Contributes.Handlers {
+		conditions = append(conditions, one.When)
+	}
+	name := "config." + manifest.ID + "." + key
+	return slices.ContainsFunc(conditions, func(condition string) bool { return strings.Contains(condition, name) })
+}
+
 func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
+		if isReadByCondition(manifest, setting.Key) {
+			continue
+		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
 			unread = append(unread, setting.Key)
 		}
@@ -378,17 +396,22 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 }
 
 func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
-	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
+	scans := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
 		{Key: "language"}, {Key: "dpi"},
 	}}
-	if got := listUnreadSettings(manifest, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
+	if got := listUnreadSettings(scans, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
 		t.Errorf("settings that are read are found unread: %v", got)
 	}
-	if got := listUnreadSettings(manifest, []string{`values["language"]`}); !slices.Equal(got, []string{"dpi"}) {
+	if got := listUnreadSettings(scans, []string{`values["language"]`}); !slices.Equal(got, []string{"dpi"}) {
 		t.Errorf("a setting nothing names is found as %v", got)
 	}
-	if got := listUnreadSettings(manifest, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
+	if got := listUnreadSettings(scans, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
+	}
+	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
+	triggered.Contributes.Triggers = []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
+	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
+		t.Errorf("a setting the condition of a trigger reads is found unread: %v", got)
 	}
 }
 
@@ -426,14 +449,30 @@ func listDomainPlugins() []string {
 	return []string{"notes"}
 }
 
+func getKebabName(id string) string {
+	var out strings.Builder
+	for _, r := range id {
+		switch {
+		case r == '.':
+			out.WriteRune('-')
+		case r >= 'A' && r <= 'Z':
+			out.WriteRune('-')
+			out.WriteRune(r - 'A' + 'a')
+		default:
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
+}
+
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
 	if !strings.HasPrefix(id, "md.numen.") {
 		issues = append(issues, fmt.Sprintf("id %q does not start with md.numen.", id))
 	}
 	dotFolder := strings.ReplaceAll(folder, "-", ".")
-	expectedID := "md.numen." + dotFolder
-	if id != expectedID && id != "md.numen."+folder {
+	name, hasPrefix := strings.CutPrefix(id, "md.numen.")
+	if !hasPrefix || getKebabName(name) != strings.ReplaceAll(folder, ".", "-") {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
 	parts := strings.Split(dotFolder, ".")
@@ -468,6 +507,8 @@ func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 		"missing md.numen prefix": {"views-file-tree", "views.file.tree", 2},
 		"no name segment":         {"views", "md.numen.views", 1},
 		"domain plugin":           {"notes", "md.numen.notes", 0},
+		"camelCase segment":       {"views-title-bar", "md.numen.views.titleBar", 0},
+		"camelCase folder":        {"views-titleBar", "md.numen.views.titleBar", 1},
 	} {
 		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)

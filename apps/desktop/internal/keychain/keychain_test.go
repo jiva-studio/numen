@@ -3,7 +3,9 @@ package keychain
 import (
 	"context"
 	"errors"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/zalando/go-keyring"
 
@@ -103,8 +105,8 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if err := check(ctx, "n"); !errors.Is(err, context.Canceled) {
-		t.Errorf("check with canceled context = %v, want context.Canceled", err)
+	if err := checkName(ctx, "n"); !errors.Is(err, context.Canceled) {
+		t.Errorf("checkName with canceled context = %v, want context.Canceled", err)
 	}
 	if err := store.SetKey(ctx, "", "value"); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled", err)
@@ -121,8 +123,8 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 // the keychain has not answered.
 func TestACancelledContextEndsAStalledCall(t *testing.T) {
 	release := make(chan struct{})
-	t.Cleanup(func() { close(release) })
 	ctx, cancel := context.WithCancel(t.Context())
+	baseline := runtime.NumGoroutine()
 	returned := make(chan error, 1)
 	go func() {
 		_, err := await(ctx, func() (string, error) {
@@ -134,5 +136,15 @@ func TestACancelledContextEndsAStalledCall(t *testing.T) {
 	cancel()
 	if err := <-returned; !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled", err)
+	}
+	close(release)
+	for range 400 {
+		if runtime.NumGoroutine() <= baseline {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := runtime.NumGoroutine(); got > baseline {
+		t.Errorf("%d goroutines after the stalled call answered, %d before it", got, baseline)
 	}
 }

@@ -31,7 +31,7 @@ func getFailure(t *testing.T, host *plugin.Host, id string) *pluginport.PluginFa
 	return nil
 }
 
-func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
+func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion+1, &procs))
@@ -82,7 +82,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	}
 }
 
-func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
+func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.SetLauncher(failLaunching)
 	var notified []pluginport.PluginFailure
@@ -103,6 +103,32 @@ func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	}
 	if len(notified) != 1 || notified[0].PluginID != failingPluginID {
 		t.Fatalf("failure callbacks = %+v, want one for %s", notified, failingPluginID)
+	}
+}
+
+func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
+	host := newDiscoveredHost(t)
+	var procs []*os.Process
+	host.SetLauncher(failLaunching)
+	if _, err := host.EnsureActive(t.Context(), failingPluginID); err == nil {
+		t.Fatal("expected the first start to fail")
+	}
+	if got := getFailure(t, host, failingPluginID); got == nil {
+		t.Fatal("the failed start is listed without its reason")
+	}
+	var recovered []string
+	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
+
+	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
+	if _, err := host.EnsureActive(t.Context(), failingPluginID); err != nil {
+		t.Fatalf("EnsureActive() on the next use = %v, want the plugin started", err)
+	}
+
+	if got := getFailure(t, host, failingPluginID); got != nil {
+		t.Fatalf("failure after a start that succeeded = %+v, want none", got)
+	}
+	if len(recovered) != 1 || recovered[0] != failingPluginID {
+		t.Fatalf("recovered = %v, want one report of %s", recovered, failingPluginID)
 	}
 }
 

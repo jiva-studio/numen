@@ -21,11 +21,11 @@ import (
 
 // fileServer answers with one file of one vault, as it is read.
 type fileServer struct {
-	state      *State
-	find       *vaults.Find
-	openCopy   *file.OpenProxy
-	openFile   *file.OpenFile
-	mediaTypes *file.GetMediaType
+	state          *State
+	find           *vaults.Find
+	openFile       *file.OpenFile
+	openPluginFile *file.OpenPluginFile
+	mediaTypes     *file.GetMediaType
 }
 
 // A Loopback is a socket on the loopback address that serves the vault's files.
@@ -103,8 +103,8 @@ func (l *Loopback) getHandler() http.Handler {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
 		}
-		if id == pluginPageSegment {
-			l.servePluginPage(w, r, rest)
+		if id == pluginFileSegment {
+			l.servePluginFile(w, r, rest)
 			return
 		}
 		path, err := url.PathUnescape(rest)
@@ -165,11 +165,6 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, errNoVault)
 		return
 	}
-	// A file a plugin keeps a copy of is played from the copy. Every other file of the vault is
-	// served as the file it is.
-	if h.serveCopy(w, r, target, targetPath, named) {
-		return
-	}
 	opened, err := h.openFile.Execute(r.Context(), target, targetPath, named)
 	if err != nil {
 		refuse(w, err)
@@ -182,31 +177,6 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		w.Header().Set("Content-Type", named)
 	}
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
-}
-
-func (h *fileServer) serveCopy(
-	w http.ResponseWriter, r *http.Request, target domain.Vault, path string, named domain.FileStat,
-) bool {
-	if h.openCopy == nil {
-		return false
-	}
-	played, found, err := h.openCopy.Execute(r.Context(), target, path)
-	if err != nil {
-		refuse(w, err)
-		return true
-	}
-	if !found {
-		return false
-	}
-	defer closeAndReport(h.state.reportTask, played.Body)
-	if named.Size != played.Size {
-		refuse(w, file.ErrChanged)
-		return true
-	}
-	w.Header().Set("Cache-Control", immutable)
-	w.Header().Set("Content-Type", played.MediaType)
-	http.ServeContent(w, r, "", time.Time{}, played.Body)
-	return true
 }
 
 func (h *fileServer) findVault(id string) (domain.Vault, bool) {

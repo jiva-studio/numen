@@ -30,6 +30,7 @@ export interface VaultPort {
     paths: string[]
     shouldReload: boolean
     renamed: readonly PathRename[]
+    versionPaths?: string[]
   }>
   /**
    * Everything the application is doing in the background, until the caller aborts the signal.
@@ -66,11 +67,14 @@ export interface VaultPort {
   /** Reports that this client has written all pending data. */
   reportFlush(token: string, outcome?: 'written' | 'unsaved'): Promise<void>
   /**
-   * Opens a tab in a new window at a screen point. The new window reads the tab and its saved
-   * state by id and reuses the id, so the tab keeps its links. Resolves after the new window
-   * accepts the tab.
+   * Opens a tab in a new window at a screen point, with a size in CSS pixels; a size of 0 keeps
+   * the default size. The new window reads the tab and its saved state by id and reuses the id,
+   * so the tab keeps its links. Resolves after the new window accepts the tab.
    */
-  detachTab(tab: Tab, position: { x: number; y: number }): Promise<Result<void, TabMoveError>>
+  detachTab(
+    tab: Tab,
+    place: { x: number; y: number; width: number; height: number },
+  ): Promise<Result<void, TabMoveError>>
   /**
    * Returns the tab of a pending detach to the first window that reads it, or null when no detach
    * of the tab is pending for the window.

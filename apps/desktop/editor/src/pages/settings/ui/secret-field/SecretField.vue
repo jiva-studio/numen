@@ -1,127 +1,86 @@
 <script setup lang="ts">
 /**
- * The key of one secret a plugin declares: whether one is set, a field to type
- * one into, and an icon button inside the field to delete a stored key. A key
- * typed here goes to the vault and is never drawn back.
+ * The secret one declaration of a plugin reads: a select of the secrets, each under the name of
+ * its group. Choosing a secret allows the declaration to read it, or stops it, as the check box
+ * on the page of secrets does. Where the declared group has no secret, an icon button beside the
+ * name opens the page of secrets.
  */
-import { computed, ref, useId } from 'vue'
-import { X } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { computed } from 'vue'
+import { KeyRound } from '@lucide/vue'
+import { getServiceInfo } from '@numen/core-client'
+import { Button, MultiSelect, type SelectChoice } from '@numen/ui'
+import { isAllowed, type Secret, type SecretMenu } from '@/entities/settings'
+import {
+  getMenuSecrets,
+  hasGroupSecrets,
+  type Declaration,
+  type SecretSection,
+} from '../../lib/secretSections'
+import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   at: string
   name: string
-  isStored: boolean
-  words: {
-    readonly keyStored: string
-    readonly keyMissing: string
-    readonly keyDetail: string
-    readonly keyPlaceholder: string
-    readonly keyDelete: string
-  }
+  detail: string
+  declaration: Declaration
+  sections: readonly SecretSection[]
+  menus: readonly SecretMenu[]
 }>()
 
 const emit = defineEmits<{
-  save: [key: string]
-  delete: []
+  (e: 'toggle', secret: Secret, isAllowed: boolean): void
+  (e: 'open-secrets'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const inputValue = ref('')
-const fieldId = useId()
-const detail = computed(
-  () =>
-    `${props.isStored ? props.words.keyStored : props.words.keyMissing}. ${props.words.keyDetail}`,
+const secrets = computed(() => getMenuSecrets(props.menus, props.declaration))
+const choices = computed<readonly SelectChoice[]>(() =>
+  secrets.value.map((one) => ({
+    id: one.id,
+    text: one.name,
+    ...(one.group === '' ? {} : { detail: getServiceInfo(one.group).title || one.group }),
+  })),
 )
+const allowedIds = computed(() =>
+  secrets.value.filter((one) => isAllowed(one, props.declaration)).map((one) => one.id),
+)
+/** The id SettingRow gives the name it labels the field by. */
+const labelledBy = computed(() => `settings-${props.at}`)
+const hasOwnSecrets = computed(() => hasGroupSecrets(props.sections, props.declaration))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onSave() {
-  const key = inputValue.value.trim()
-  if (key === '') return
-  inputValue.value = ''
-  emit('save', key)
-}
-
-function onDelete() {
-  inputValue.value = ''
-  emit('delete')
+function onToggle(id: string, isOn: boolean): void {
+  const secret = secrets.value.find((one) => one.id === id)
+  if (secret) emit('toggle', secret, isOn)
 }
 </script>
 
 <template>
-  <SettingRow v-slot="{ labelledBy }" :at="at" :name="name" :detail="detail">
-    <span class="settings__secret">
-      <label :for="fieldId" class="sr-only">{{ name }}</label>
-      <input
-        :id="fieldId"
-        v-model="inputValue"
-        type="password"
-        autocomplete="off"
-        spellcheck="false"
-        :placeholder="isStored ? '••••••••' : words.keyPlaceholder"
-        :aria-labelledby="labelledBy"
-        class="settings__secret-input"
-        @blur="onSave"
-        @change="onSave"
-        @keydown.enter="onSave"
-      />
+  <SettingRow :at="at" :name="name" :detail="detail">
+    <template v-if="!hasOwnSecrets && declaration.group !== ''" #action>
       <Button
-        v-if="isStored"
         variant="ghost"
         size="icon-small"
-        class="settings__secret-delete"
-        :aria-label="words.keyDelete"
-        :title="words.keyDelete"
-        @mousedown.prevent
-        @click="onDelete"
+        :aria-label="words.secretOpenPage"
+        :title="words.secretOpenPage"
+        @click="emit('open-secrets')"
       >
-        <X :size="14" aria-hidden="true" />
+        <KeyRound :size="14" aria-hidden="true" />
       </Button>
-    </span>
+    </template>
+
+    <MultiSelect
+      class="settings__secret"
+      :selected="allowedIds"
+      :choices="choices"
+      :placeholder="words.secretFieldNone"
+      :name="words.secretChoose"
+      :search-name="words.secretSearch"
+      :get-more-text="words.secretMore"
+      :aria-labelledby="labelledBy"
+      @toggle="onToggle"
+    />
   </SettingRow>
 </template>
-
-<style scoped>
-.settings__secret {
-  position: relative;
-  display: flex;
-  align-items: center;
-  inline-size: var(--settings-choice);
-  min-inline-size: 0;
-  max-inline-size: 100%;
-}
-
-.settings__secret-input {
-  box-sizing: border-box;
-  inline-size: var(--settings-choice);
-  block-size: var(--numen-action-size);
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  max-inline-size: 24rem;
-  padding: 0.25rem 2rem 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font-family: inherit;
-  font-size: var(--numen-text-2);
-}
-
-.settings__secret-input:focus {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.settings__secret-delete {
-  position: absolute;
-  inset-inline-end: 0.25rem;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  color: var(--numen-hushed);
-}
-
-.settings__secret-delete:hover {
-  color: var(--numen-ink);
-}
-</style>

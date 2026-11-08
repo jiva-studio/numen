@@ -163,6 +163,48 @@ export const LongList: Story = {
 }
 export const LongListDark: Story = inDark(LongList)
 
+/**
+ * The item in force set from outside, as a reader's position moves on: the active row and the scroll
+ * follow it, over a row the pointer rests on.
+ */
+export const FollowsTheItemInForce: Story = {
+  render: () => ({
+    components: { SearchableList },
+    setup() {
+      const current = ref<string | null>('shelf-0')
+      return { current, items: SHELVES }
+    },
+    template: `
+      <div class="numen" style="padding:2rem;inline-size:22rem;background:var(--numen-surface);color:var(--numen-ink)">
+        <button type="button" @click="current = 'shelf-49'">Go to shelf 50</button>
+        <SearchableList v-model="current" :items="items" label="Shelves" placeholder="Search shelves" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const list = canvas.getByRole('listbox')
+    await userEvent.hover(canvas.getByRole('option', { name: 'Shelf 2' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('option', { name: 'Shelf 2' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    )
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Go to shelf 50' }))
+
+    const target = canvas.getByRole('option', { name: 'Shelf 50' })
+    await waitFor(() => expect(target).toHaveAttribute('aria-selected', 'true'))
+    await waitFor(async () => {
+      const box = target.getBoundingClientRect()
+      const inside = list.getBoundingClientRect()
+      await expect(box.top).toBeGreaterThanOrEqual(inside.top - 1)
+      await expect(box.bottom).toBeLessThanOrEqual(inside.bottom + 1)
+    })
+  },
+}
+
 /** Nothing matches the words typed. */
 export const Empty: Story = {
   play: async ({ canvasElement }) => {

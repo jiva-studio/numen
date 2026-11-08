@@ -7,8 +7,6 @@ import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
 const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title'> = {
-  contentTypes: [],
-  extensions: [],
   arguments: [],
 }
 
@@ -23,7 +21,7 @@ const openPreset: DeclaredCommand = {
   pluginId: 'md.cards',
   id: 'preset.open',
   title: 'Open preset',
-  scope: 'note',
+  when: 'target.isNote',
   shortcut: 'mod+shift+o',
 }
 const openTree: DeclaredCommand = {
@@ -39,7 +37,7 @@ async function load(
   hasBackend: (pluginId: string) => boolean = () => true,
 ) {
   const declared = useDeclaredCommands({
-    list: async () => ({ commands: [createDeck, openPreset, openTree], menus: [] }),
+    list: async () => ({ commands: [createDeck, openPreset, openTree], slots: [] }),
     isListed,
     hasBackend,
   })
@@ -76,7 +74,7 @@ describe('the declared commands the palette runs in a backend', () => {
 })
 
 describe('the declarations for the plugin host', () => {
-  it('carry every declared command with its title, icon, scope and shortcut', async () => {
+  it('carry every declared command with its title, icon, condition and shortcut', async () => {
     const declared = await load(() => false)
 
     expect(declared.declarations.value).toStrictEqual([
@@ -89,7 +87,7 @@ describe('the declarations for the plugin host', () => {
         pluginId: 'md.cards',
         id: 'preset.open',
         title: 'Open preset',
-        scope: 'note',
+        when: 'target.isNote',
         shortcut: 'mod+shift+o',
       },
       {
@@ -99,5 +97,24 @@ describe('the declarations for the plugin host', () => {
         icon: 'folder-tree',
       },
     ])
+  })
+})
+
+describe('the handlers for the plugin host', () => {
+  it('are the handlers of shared commands the core lists, undefined before the first list', async () => {
+    const handler = {
+      pluginId: 'md.pages',
+      command: 'app:file.createText',
+      title: 'Extract text layer',
+      hasItems: false,
+    }
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [], slots: [], handlers: [handler] }),
+    })
+    expect(declared.handlers.value).toBeUndefined()
+
+    await declared.load()
+
+    expect(declared.handlers.value).toStrictEqual([handler])
   })
 })

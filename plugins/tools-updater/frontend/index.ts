@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Update Notifier plugin: a status bar view that announces a newer
+ * Frontend entrypoint for the Update Notifier plugin: a title bar view that announces a newer
  * build of the application and offers its download.
  */
 import { defineComponent, h } from 'vue'
@@ -12,7 +12,7 @@ import './styles.css'
 
 export { UpdateIndicator }
 
-/** The id the manifest declares the status bar view under. */
+/** The id the manifest declares the title bar view under. */
 export const UPDATE_VIEW = 'update'
 
 /** What the plugin is made of outside the window, replaced by a test. */
@@ -28,12 +28,13 @@ const browserTimer: Timer = {
 
 const browserParts: UpdateParts = { api: updater, timer: browserTimer }
 
-/** The component of the status bar view: the indicator over the announcement of the model. */
+/** The component of the title bar view: the indicator over the announcement of the model. */
 export function createStatusView(context: PluginContext, updates: Updates) {
   return defineComponent({
     name: 'UpdateStatusView',
     setup: () => () =>
       h(UpdateIndicator, {
+        version: context.app.version,
         update: updates.announced.value,
         platform: context.app.platform,
         onDownload: () => showFailure(context, updates.openDownload()),
@@ -66,7 +67,7 @@ export const activate = (context: PluginContext, parts: UpdateParts = browserPar
     getIntervalHours: () => context.getSetting('checkIntervalHours'),
     timer: parts.timer,
   })
-  context.registerStatusView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
+  context.registerSlotView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
   context.onSettingChange('checkIntervalHours', () => updates.reschedule())
   const warnOfMissingAddress = () => showMissingAddress(context)
   context.onSettingChange('endpoint', () => {

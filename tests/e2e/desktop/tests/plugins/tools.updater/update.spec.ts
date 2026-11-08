@@ -92,11 +92,15 @@ test.describe('the update indicator', () => {
 
     await openWorkspace(page)
 
-    const indicator = page.getByRole('button', { name: 'Application update available' })
+    const indicator = page.getByRole('button', { name: /^Update available: v/ })
     await expect(indicator).toHaveText(`v${NEW_RELEASE.version}`)
     await indicator.click()
     await expect(page.getByText('Update available')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
+    await expect(
+      page
+        .getByRole('dialog', { name: 'Update available' })
+        .getByRole('button', { name: 'Download' }),
+    ).toBeVisible()
   })
 
   test('opens a framed popover above the indicator, with its details laid out, and closes it on Escape', async ({
@@ -105,7 +109,7 @@ test.describe('the update indicator', () => {
   }) => {
     await publishNewRelease(request, origin)
     await openWorkspace(page)
-    const indicator = page.getByRole('button', { name: 'Application update available' })
+    const indicator = page.getByRole('button', { name: /^Update available: v/ })
     await indicator.click()
 
     const popover = page.getByRole('dialog', { name: 'Update available' })
@@ -117,8 +121,8 @@ test.describe('the update indicator', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
 
-    const bar = await getBox(page.getByRole('region', { name: 'Status Bar' }))
-    expect(box.y + box.height).toBeLessThanOrEqual(bar.y)
+    const bar = await getBox(page.locator('[data-title-bar]'))
+    expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height)
     const trigger = await getBox(indicator)
     expect(box.x).toBeLessThan(trigger.x + trigger.width)
     expect(box.x + box.width).toBeGreaterThan(trigger.x)
@@ -165,7 +169,7 @@ test.describe('the update indicator', () => {
   }) => {
     await openWorkspace(page)
     await expect.poll(() => countManifestRequests(request, origin)).toBeGreaterThan(0)
-    const indicator = page.getByRole('button', { name: 'Application update available' })
+    const indicator = page.getByRole('button', { name: /^Update available: v/ })
     await expect(indicator).toHaveCount(0)
     const requestCount = await countManifestRequests(request, origin)
     await publishNewRelease(request, origin)

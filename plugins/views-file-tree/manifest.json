@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.file.tree",
   "name": "File Tree Explorer",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
@@ -21,16 +21,64 @@
         "id": "tree.open",
         "title": "Open file tree",
         "icon": "folder-tree",
-        "shortcut": "mod+shift+e"
+        "shortcut": "mod+shift+e",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "tree.revealNote",
         "title": "Show note in file tree",
         "icon": "folder-open",
-        "scope": "note"
+        "when": "target.isNote"
+      },
+      {
+        "id": "tree.renameFile",
+        "title": "Rename file",
+        "icon": "pencil"
+      },
+      {
+        "id": "tree.createNote",
+        "title": "Create note here",
+        "icon": "file-plus"
+      },
+      {
+        "id": "tree.createFolder",
+        "title": "Create folder",
+        "icon": "folder-plus"
       }
     ],
-    "menus": [{ "location": "titleBar", "command": "tree.open", "group": "navigate", "order": 10 }]
+    "slots": [
+      { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 },
+      {
+        "slot": "fileTree.context",
+        "submenu": "fileTree.new",
+        "title": "New",
+        "icon": "plus",
+        "group": "1-new",
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "tree.createNote",
+        "group": "0-tree",
+        "order": 10,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "tree.createFolder",
+        "group": "0-tree",
+        "order": 20,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "tree.renameFile",
+        "group": "2-edit",
+        "order": 10,
+        "when": "!target.isRoot && !target.isMultiple"
+      },
+      { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
   "frontend": {}

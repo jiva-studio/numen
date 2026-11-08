@@ -2,6 +2,7 @@ package settings
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -20,10 +22,10 @@ type File struct {
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
-	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
 	Plugins     map[string]map[string]any
+	Secrets     []pluginport.Secret
 	Notices     []string
 }
 
@@ -32,7 +34,6 @@ type appObject struct {
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
-	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
 }
@@ -43,7 +44,6 @@ type appSections struct {
 	Appearance  *Appearance           `json:"appearance"`
 	Agent       *Agent                `json:"agent"`
 	Titles      *Titles               `json:"naming"`
-	Window      *Window               `json:"window"`
 	Performance *hardware.Performance `json:"performance"`
 	AI          *AI                   `json:"ai"`
 }
@@ -74,7 +74,8 @@ func (f File) WriteJSON() (string, error) {
 	return string(content), nil
 }
 
-// MarshalJSON writes the version, the object of the owner app, and the object of each plugin by id.
+// MarshalJSON writes the version, the object of the owner app, the secrets when there are any, and
+// the object of each plugin by id.
 func (f File) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
 	out.WriteString(`{`)
@@ -83,7 +84,13 @@ func (f File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Window, f.Performance, f.AI}},
+		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
+	}
+	if len(f.Secrets) > 0 {
+		members = append(members, struct {
+			key   string
+			value any
+		}{keySecrets, newSecretEntries(f.Secrets)})
 	}
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		members = append(members, struct {
@@ -132,6 +139,8 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 				return err
 			}
 			hasInterfaceScale = has
+		case keySecrets:
+			f.readSecrets(root[key])
 		default:
 			f.readPlugin(key, root[key])
 		}
@@ -174,7 +183,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Window, &f.Performance, &f.AI}
+	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Performance, &f.AI}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -271,7 +280,35 @@ func DefaultFile() File {
 		Version:     DefaultVersion,
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
-		Window:      DefaultWindow(),
 		Performance: DefaultPerformance(),
+		Plugins:     getDefaultPlugins(),
 	}
+}
+
+// defaultPlugins lists, under "off", the plugins an installation runs only once the person turns
+// them on.
+//
+//go:embed plugins.json
+var defaultPlugins []byte
+
+func listPluginsOffByDefault() []string {
+	var declared struct {
+		Off []string `json:"off"`
+	}
+	if err := json.Unmarshal(defaultPlugins, &declared); err != nil {
+		return nil
+	}
+	return declared.Off
+}
+
+func getDefaultPlugins() map[string]map[string]any {
+	plugins := map[string]map[string]any{}
+	for _, id := range listPluginsOffByDefault() {
+		plugins[id] = map[string]any{manifest.SettingEnabled: false}
+	}
+	return plugins
+}
+
+func isDefaultPlugin(id string, values map[string]any) bool {
+	return maps.EqualFunc(values, getDefaultPlugins()[id], func(a, b any) bool { return a == b })
 }

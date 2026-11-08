@@ -1,4 +1,4 @@
-// Package report turns what the host says of the index into what the status bar shows: the kind of
+// Package report turns what the host says of the index into what the title bar shows: the kind of
 // each source, the speed of embedding and the time of the last change.
 package report
 

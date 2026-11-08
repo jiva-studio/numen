@@ -1,12 +1,12 @@
 # Index stats
 
-Shows in the status bar how many vectors the search index holds, so you can watch it grow when you add a book or a PDF or edit a note, and shrink when you delete something.
+Shows in the title bar how many vectors the search index holds, so you can watch it grow when you add a book or a PDF or edit a note, and shrink when you delete something.
 
 <!-- more -->
 
 ## What You Can Do
 
-- **Watch the index**: The status bar shows `⬡ 12 480`, the number of chunks of text that carry a vector. While chunks still wait for their vector, the mark pulses softly in green; when none wait, it stands still. The item never shows the total of chunks: the details are in the popover.
+- **Watch the index**: The title bar shows `⬡ 12 480`, the number of chunks of text that carry a vector. While chunks still wait for their vector, the mark pulses softly in green; when none wait, it stands still. The item never shows the total of chunks: the details are in the popover.
 - **See the details**: Click the item for a list of the counts and settings behind the number. Press Escape or click elsewhere to close it.
 
 The popover lists:

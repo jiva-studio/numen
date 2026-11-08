@@ -6,6 +6,7 @@ import {
   getFilteredPluginItems,
   getPluginCategory,
   matchesPluginQuery,
+  matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
@@ -338,5 +339,15 @@ describe('getFilteredPluginItems', () => {
 
   it('formats the label of a category', () => {
     expect(formatCategoryLabel('views')).toBe('Views')
+  })
+})
+
+describe('matchesSecretsRow', () => {
+  it('shows for an empty query and for words about secrets, not for qualifiers or other words', () => {
+    expect(matchesSecretsRow(parsePluginQuery(''))).toBe(true)
+    expect(matchesSecretsRow(parsePluginQuery('secret'))).toBe(true)
+    expect(matchesSecretsRow(parsePluginQuery('api key'))).toBe(true)
+    expect(matchesSecretsRow(parsePluginQuery('tree'))).toBe(false)
+    expect(matchesSecretsRow(parsePluginQuery('@disabled'))).toBe(false)
   })
 })

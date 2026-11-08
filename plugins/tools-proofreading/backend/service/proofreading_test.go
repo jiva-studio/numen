@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 const (
@@ -147,13 +148,13 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 		})
 	}
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	parts, live := s.readLive(t, scanPath)
-	if live.PluginID != PluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != kindRecognition {
+	if live.PluginID != PluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != proofreadingKind {
 		t.Fatalf("the live version is %+v", live)
 	}
 	if res.Lines != 3 || res.Corrected != 1 {
@@ -202,7 +203,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 
 func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 	s := newScene(t)
-	s.settings.updateConfig(map[string]string{"batchSize": "2", "overlap": "1", "inFlight": "1"})
+	s.settings.updateConfig(map[string]string{"batchSize": "2", "overlap": "1", "inFlight": "1"}, nil)
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
 	s.model.script = func(prompt string) string {
 		return getRows(prompt, func(_, text string) string { return text + "!" })
@@ -293,7 +294,7 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
 
-	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Physics", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Physics", Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -377,7 +378,7 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Chemistry", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Chemistry", Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -437,11 +438,13 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 		"provider": "custom",
 		"baseUrl":  srv.URL,
 		"model":    "google/gemini-2.5-flash",
-		"apiKey":   "secret-key",
-	})
+	}, server.Secrets{server.SecretAPIKey: {
+		{ID: "s00000001", Name: "Work", Group: "", Value: "secret-key"},
+		{ID: "s00000002", Name: "Home", Group: "", Value: "other-key"},
+	}})
 	scan := s.holdScan(t)
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 	if err != nil {
 		t.Fatal(err)
 	}

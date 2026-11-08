@@ -3,7 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/hosttext.proto";
-import "numen/v1/textprovider.proto";
+import "numen/v1/textsegment.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 

@@ -136,6 +136,8 @@ type PluginDiscoverer interface {
 	GetPluginInfos() []PluginInfo
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
+	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
+	IsPluginSuspended(pluginID string) bool
 }
 
 // PluginSettingDeclarer returns the settings a plugin declares.
@@ -147,8 +149,11 @@ type PluginSettingDeclarer interface {
 
 type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
-	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
-	DeletePluginSecret(ctx context.Context, pluginID, name string) error
+	SetSecretSource(source SecretSource)
+	// Refresh configures the running plugins whose list of secrets differs from the one they were
+	// last given, and the plugins named in forced.
+	Refresh(ctx context.Context, forced ...string) error
+	ListDeclarations() []SecretPermission
 }
 
 type pluginSettingsPush interface {

@@ -80,12 +80,12 @@ func (f *Downloader) GetText(ctx context.Context, address string, want Preferred
 }
 
 // Download brings media bytes into the writer.
-func (f *Downloader) Download(ctx context.Context, address string, into io.Writer) (Copy, error) {
+func (f *Downloader) Download(ctx context.Context, address string, media Media, into io.Writer) (Copy, error) {
 	plays, err := f.playerFor(address)
 	if err != nil {
 		return Copy{}, err
 	}
-	return plays.Download(ctx, address, into)
+	return plays.Download(ctx, address, media, into)
 }
 
 type program struct {

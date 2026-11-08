@@ -18,18 +18,9 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     response: {
       url: 'https://www.youtube.com/watch?v=tidalmill01',
       isCopyable: true,
-      copySize: 6000,
-      isTextDeleted: false,
-      embedPage: 'embed?address=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dtidalmill01',
     },
   },
-  ReadArticle: {
-    request: { path: 'links/article.md' },
-    response: { text: 'A tidal mill stored seawater.' },
-  },
-  FetchText: { request: { path: 'links/clip.md', isUserStarted: true }, response: {} },
-  CopyVideo: { request: { path: 'links/clip.md' }, response: {} },
-  DeleteCopy: { request: { path: 'links/clip.md' }, response: {} },
+  CopyMedia: { request: { path: 'links/clip.md', kind: 'audio' }, response: {} },
   CreateLinks: {
     request: {
       folder: 'talks',

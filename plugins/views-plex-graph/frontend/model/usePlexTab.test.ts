@@ -8,7 +8,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, type Component } from 'vue'
 import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
-import { ITEMS, NEW_NOTE, NONE } from '../lib/menu'
+import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import { NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
 import {
@@ -26,6 +27,29 @@ import { getRenamedPath } from '@numen/plugin-sdk'
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
 const SAMPLE_ICON: Component = { name: 'SampleIcon', render: () => null }
 
+const createEntry = (command: string, extra: Partial<SlotCommand> = {}): SlotCommand => ({
+  kind: 'command',
+  key: `org.example.sample/command/${command}`,
+  pluginId: 'org.example.sample',
+  command,
+  title: command,
+  shortcut: '',
+  hasItems: false,
+  ...extra,
+})
+
+/** The row of the entry that opens the note. */
+const OPEN_ROW = 'org.example.sample/command/app:note.open'
+
+/** The entries the slot of the node menu holds in these tests. */
+const NODE_MENU: readonly SlotItem[] = [
+  createEntry('app:note.open', { icon: SHARE_ICON }),
+  { kind: 'separator', key: 'separator/1' },
+  createEntry('org.example.sample:share.run', { icon: SHARE_ICON }),
+  { kind: 'separator', key: 'separator/2' },
+  createEntry('app:note.trash'),
+]
+
 const createDeps = (
   editor: PlexTabDeps['editor'],
   overrides: Partial<PlexTabDeps> = {},
@@ -36,10 +60,10 @@ const createDeps = (
   headings: ref(6),
   openNote: () => undefined,
   readHeadings: async () => new Map(),
-  getNoteCommands: () => [],
-  getCommandIcon: () => null,
+  getMenuEntries: () => [],
+  listItems: async () => [],
   getNoteIcon: () => null,
-  runCommand: () => undefined,
+  runCommand: async () => undefined,
   openingPath: ref(''),
   readOpeningPath: async () => '',
   dragged: ref([]),
@@ -60,6 +84,7 @@ const tab = (
   const openedCalls: [string, string, string][] = []
   const request: string[] = []
   const ran: [string, string, string][] = []
+  const menuTargets: CommandTarget[] = []
   const messages: string[] = []
   /** Every note the vault received a standalone create request for. */
   const wrote: string[] = []
@@ -89,11 +114,15 @@ const tab = (
       requestedHeadings.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    getNoteCommands: () => [{ id: 'org.example.sample:share.run', text: 'Share the note' }],
-    getCommandIcon: (id) =>
-      id === 'org.example.sample:share.run' || id === 'app:note.open' ? SHARE_ICON : null,
-    getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
-    runCommand: (id, path, title) => ran.push([id, path, title]),
+    getMenuEntries: (target) => {
+      menuTargets.push(target)
+      return NODE_MENU
+    },
+    listItems: async () => [],
+    getNoteIcon: (tabKind) => (tabKind === 'sample' ? SAMPLE_ICON : null),
+    runCommand: async (id, target) => {
+      ran.push([id, target.path, target.title])
+    },
     openingPath: ref('Opening.md'),
     readOpeningPath: async () => 'Opening.md',
     dragged: dragging,
@@ -123,6 +152,7 @@ const tab = (
     requested: request,
     requestLog: request,
     ran,
+    menuTargets,
     messages,
   }
 }
@@ -188,52 +218,50 @@ describe('the menu on a node', () => {
     const one = tab('Root.md', ['Child.md'])
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
-    one.state.chooseMenuItem('app:note.open')
+    one.state.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toEqual([['app:note.open', 'Child.md', 'Child']])
     expect(one.state.menu.value).toBeNull()
   })
 
-  it('passes over every command it offers, and nothing it does not', () => {
+  it('draws the entries of the slot over the note of the node, and runs nothing it does not offer', () => {
     const one = tab('Root.md', ['Child.md'])
-    for (const item of ITEMS) {
-      one.state.openMenu(createMenuRequest(one.node('Child.md')))
-      one.state.chooseMenuItem(item.id)
-    }
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
+
+    expect(one.state.menuItems.value.map((item) => [item.id, item.group])).toStrictEqual([
+      ['org.example.sample/command/app:note.open', '0'],
+      ['org.example.sample/command/org.example.sample:share.run', '1'],
+      ['org.example.sample/command/app:note.trash', '2'],
+    ])
+    expect(one.menuTargets).toStrictEqual([
+      { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '' },
+    ])
     one.state.chooseMenuItem('constructor')
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
-    one.state.chooseMenuItem('app:note.delete')
-
-    expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
-  })
-
-  it('offers the commands plugins declare over a note after what opens it, and runs them', () => {
-    const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
-
-    expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
-      'app:note.open',
-      'org.example.sample:share.run',
-      'app:note.copyPath',
-    ])
-    one.state.chooseMenuItem('org.example.sample:share.run')
+    one.state.chooseMenuItem('org.example.sample/command/org.example.sample:share.run')
 
     expect(one.ran).toEqual([['org.example.sample:share.run', 'Child.md', 'Child']])
   })
 
-  it('uses the window icon of a command, and none without one', () => {
-    const one = tab('Root.md')
+  it('passes the note type of a node that is not a plain note', () => {
+    const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
+    one.state.openMenu(createMenuRequest(one.node('Sample.md')))
 
-    expect(one.state.getMenuIcon('org.example.sample:share.run')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('app:note.open')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('org.example.sample:unknown.run')).toBeNull()
+    expect(one.menuTargets.at(-1)).toMatchObject({ path: 'Sample.md', noteType: 'sample' })
+  })
+
+  it('draws a row with the icon of its entry, and none without one', () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+
+    expect(one.state.getMenuIcon('org.example.sample/command/app:note.open')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('org.example.sample/command/app:note.trash')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {
     const one = tab('Root.md')
 
-    one.state.chooseMenuItem('app:note.open')
+    one.state.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toEqual([])
   })
@@ -319,7 +347,7 @@ describe('the menu off every node', () => {
     const one = tab('Root.md')
     one.state.openMenu(request)
 
-    one.state.chooseMenuItem('app:note.open')
+    one.state.chooseMenuItem(OPEN_ROW)
     await settle()
 
     expect(one.wrote).toStrictEqual([])
@@ -694,7 +722,10 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     createDeps(vault.editor, {
       openNote: (path, options) =>
         openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
-      runCommand: (id, path, title) => ran.push([id, path, title]),
+      getMenuEntries: () => NODE_MENU,
+      runCommand: async (id, target) => {
+        ran.push([id, target.path, target.title])
+      },
     }),
   )
   await view.go(focus)
@@ -881,7 +912,7 @@ describe('a gesture the plex reports', () => {
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.state.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
-    one.state.chooseMenuItem('app:note.open')
+    one.state.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toStrictEqual([['app:note.open', 'physics/Heat.md', 'Heat']])
   })
@@ -913,7 +944,7 @@ describe('a gesture the plex reports', () => {
       one.state.activate(node)
       one.state.openNode(node, 'current')
       one.state.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
-      one.state.chooseMenuItem('app:note.open')
+      one.state.chooseMenuItem(OPEN_ROW)
       await one.state.createNode(node, 'child')
       await one.state.joinNodes(node, one.node('Root'), 'jump')
     }
@@ -1000,7 +1031,7 @@ describe('what a node remains for', () => {
     expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
 
-  it('is drawn with the icon the window gives its type, and an ordinary note with none', () => {
+  it('is drawn with the icon of the tab kind the core chose for it, and a note it reports none for with none', () => {
     const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
 
     expect(one.state.getNodeIcon(one.node('Sample.md'))).toBe(SAMPLE_ICON)

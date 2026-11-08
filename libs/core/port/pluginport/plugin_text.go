@@ -9,12 +9,13 @@ import (
 // PluginTextPut is what a plugin reports of one of its text versions. File is
 // the name of the version's file in the plugin's folder.
 type PluginTextPut struct {
-	Path      string
-	Key       string
-	Source    domain.TextVersionID
-	Kind      domain.TextKind
-	InputHash string
-	File      string
+	Path           string
+	Key            string
+	Source         domain.TextVersionID
+	SourceProperty domain.TextSourceProperty
+	Kind           domain.TextKind
+	InputHash      string
+	File           string
 }
 
 // PluginTextListing is the versions of a file and the live one, which is empty

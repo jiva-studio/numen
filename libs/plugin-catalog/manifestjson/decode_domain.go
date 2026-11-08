@@ -13,3 +13,10 @@ func newContentTypes(texts []string) []domain.ContentType {
 func newHandlerRank(text string) domain.HandlerRank {
 	return domain.HandlerRank(text)
 }
+
+func newTabKindRank(text string) domain.HandlerRank {
+	if text == "" {
+		return domain.RankDefault
+	}
+	return domain.HandlerRank(text)
+}

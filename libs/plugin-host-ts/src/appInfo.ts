@@ -3,13 +3,16 @@
  */
 import type { AppInfo } from '@numen/plugin-sdk'
 
+/** The name of the application, as its windows are titled. */
+const APP_NAME = 'numen'
+
 /** The version a build made without an injected version calls itself. */
 export const DEV_VERSION = '0.0.0-dev'
 
 export interface AppInfoSource {
   readonly version?: string | undefined
   readonly build?: string | undefined
-  readonly userAgent: string
+  readonly getPlatform: () => AppInfo['platform']
 }
 
 /** The build number a text holds; 0 where it holds none. */
@@ -20,18 +23,13 @@ export function parseBuildNumber(text: string | undefined): number {
   return Number.isSafeInteger(value) && value > 0 ? value : 0
 }
 
-/** The operating system a user agent names; linux for any it does not recognize. */
-export function getPlatform(userAgent: string): AppInfo['platform'] {
-  const agent = userAgent.toLowerCase()
-  if (agent.includes('mac') || agent.includes('darwin')) return 'darwin'
-  if (agent.includes('win')) return 'windows'
-  return 'linux'
-}
-
 export function createAppInfo(source: AppInfoSource): AppInfo {
   return {
+    name: APP_NAME,
     version: source.version || DEV_VERSION,
     build: parseBuildNumber(source.build),
-    platform: getPlatform(source.userAgent),
+    get platform() {
+      return source.getPlatform()
+    },
   }
 }

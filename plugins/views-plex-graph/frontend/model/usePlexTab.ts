@@ -2,15 +2,18 @@
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
 import { computed, ref, watch, type Component } from 'vue'
+import type { MenuItem } from '@numen/ui'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import {
   formatErrorMessage,
   getFileName,
   getRelationErrorWords,
   NOTE_TYPE,
+  useSlotMenu,
+  type CommandTarget,
 } from '@numen/plugin-sdk'
-import { createNodeItems, NEW_NOTE, NONE, AVAILABLE } from '../lib/menu'
-import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
+import { NEW_NOTE, NONE } from '../lib/menu'
+import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { WORDS as words } from '../words'
@@ -79,6 +82,13 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
 
+  const tabKinds = computed<ReadonlyMap<string, string>>(() => {
+    const neighbourhood = view.neighbourhood.value
+    return neighbourhood ? getTabKinds(neighbourhood) : new Map()
+  })
+
+  const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
+
   const activePaths = computed<readonly string[]>(() => {
     const neighbourhood = view.neighbourhood.value
     if (!neighbourhood) return []
@@ -87,7 +97,7 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, drawn: activePaths }
+  return { picture, empty, dragged, types, getType, getTabKind, drawn: activePaths }
 }
 
 function createPlexNodeActions(options: {
@@ -170,42 +180,74 @@ function createPlexNodeActions(options: {
   return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, createNote }
 }
 
+/** The words of the rows the menu on a node writes itself. */
+const MENU_WORDS = { loadingText: words.loadingItems }
+
+/** What the menu on a node is over: where it was requested, and the note of the node. */
+interface NodeMenuTarget {
+  readonly request: MenuRequest
+  readonly target: CommandTarget
+}
+
 function usePlexMenu(options: {
   map: ReturnType<typeof createNodeIdMap>
   tabDeps: PlexTabDeps
   getName: (path: string) => string
+  getType: (node: string) => NoteType
   createNote: () => Promise<void>
 }) {
-  const { map, tabDeps: deps, getName, createNote } = options
-  const menu = ref<MenuRequest | null>(null)
-  const declared = computed(() => (menu.value?.node === null ? [] : deps.getNoteCommands()))
-  const menuItems = computed(() =>
-    menu.value?.node === null ? NONE : createNodeItems(declared.value),
+  const { map, tabDeps: deps, getName, getType, createNote } = options
+  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+  const canvasMenu = ref<MenuRequest | null>(null)
+  const nodeMenu = useSlotMenu<NodeMenuTarget>({
+    listItems: (command, { target }) => deps.listItems(command, target),
+    words: MENU_WORDS,
+    onError: reportFailure,
+  })
+  const menu = computed(() => canvasMenu.value ?? nodeMenu.target.value?.request ?? null)
+  const menuItems = computed<readonly MenuItem[]>(() =>
+    canvasMenu.value ? NONE : (nodeMenu.menu.value?.items ?? []),
   )
 
+  const getNodeTarget = (node: string, path: string): CommandTarget => {
+    const type = getType(node)
+    const target = { path, title: getName(path), isFolder: false, others: [], tab: '' }
+    return type === NOTE_TYPE ? target : { ...target, noteType: type }
+  }
+
+  const close = () => {
+    canvasMenu.value = null
+    nodeMenu.close()
+  }
+
   const openMenu = (request: MenuRequest) => {
-    menu.value = request
+    close()
+    if (request.node === null) {
+      canvasMenu.value = request
+      return
+    }
+    const path = map.getNodePath(request.node)
+    if (!path) return
+    const target = getNodeTarget(request.node, path)
+    nodeMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
   }
 
   const chooseMenuItem = (id: string) => {
-    const on = menu.value
-    menu.value = null
-    if (!on) return
-    if (on.node === null) {
-      if (id === NEW_NOTE) {
-        createNote().catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
-      }
+    if (canvasMenu.value) {
+      close()
+      if (id === NEW_NOTE) createNote().catch(reportFailure)
       return
     }
-    if (!AVAILABLE.has(id) && !declared.value.some((one) => one.id === id)) return
-    const path = map.getNodePath(on.node)
-    if (path) deps.runCommand(id, path, getName(path))
+    const choice = nodeMenu.pick(id)
+    if (!choice) return
+    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
   }
 
-  /** The icon of an item, which is the one the window draws the command with. */
-  const getMenuIcon = (id: string): Component | null => deps.getCommandIcon(id)
+  /** The icon of a row, which is the one of the command or submenu of its entry. */
+  const getMenuIcon = (id: string): Component | null =>
+    (nodeMenu.getIcon(id) as Component | undefined) ?? null
 
-  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon }
+  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close }
 }
 
 function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
@@ -223,6 +265,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     dragged,
     types,
     getType,
+    getTabKind,
     drawn: drawnNodes,
   } = usePlexImage(view, deps, map)
 
@@ -243,10 +286,11 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     getName,
     openQuickLink: quickLinkModel.openQuickLink,
   })
-  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon } = usePlexMenu({
+  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close } = usePlexMenu({
     map,
     tabDeps: deps,
     getName,
+    getType,
     createNote: nodeActions.createNote,
   })
 
@@ -262,8 +306,8 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     menuItems,
     getMenuIcon,
     getNodeIcon: (node: string) => {
-      const type = getType(node)
-      return type === NOTE_TYPE ? null : deps.getNoteIcon(type)
+      const tabKind = getTabKind(node)
+      return tabKind === undefined ? null : deps.getNoteIcon(tabKind)
     },
     creatable: deps.creatable,
     getType,
@@ -272,7 +316,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     readHeadings,
     openMenu,
     dismiss: () => {
-      menu.value = null
+      close()
       quickLinkModel.dismissQuickLink()
       linkInspectorModel.dismissLinkInspector()
     },

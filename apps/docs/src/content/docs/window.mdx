@@ -86,8 +86,10 @@ being read_.
 
 The [keyboard page](/keyboard/) lists what has its own key.
 
-## The status bar and background tasks
+## Background tasks
 
-The bottom status bar shows what is running in the background: vault scanning, vector embedding, document OCR, and audio transcription progress. Clicking the task indicator opens a background task popover detailing active pipelines, completed items, and errors.
+The title bar shows what is running in the background: vault scanning, vector embedding, document OCR, and audio transcription progress. It says **Ready** while nothing runs, or how many tasks are active, with a badge for the ones that failed. A click on it opens the list of the tasks with their progress and errors; a running task can be cancelled there, and a failure or a notice taken out of the list. The Tasks plugin draws it; turned off, no task status is shown.
 
-It is also where the window reports overall vault status — _not following the vault_, _the vault could not be read_. See [when something is wrong](/trouble/).
+A bar at the bottom of the window comes from the Status bar plugin, which is off by default. It shows the commands and views other plugins place in it, and without the plugin there is no bar.
+
+The list of tasks is also where the window reports overall vault status — _not following the vault_, _the vault could not be read_. See [when something is wrong](/trouble/).

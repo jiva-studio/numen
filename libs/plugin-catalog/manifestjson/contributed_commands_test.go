@@ -14,7 +14,7 @@ const contributedManifestHead = `{"id":"a.b","name":"A","version":"1.0.0"`
 
 func TestReadManifest_ContributedCommands(t *testing.T) {
 	text := contributedManifestHead + `,"frontend":{},"contributes":{"commands":[
-		{"id":"tree.revealNote","title":"Show note in file tree","icon":"folder-open","scope":"note","shortcut":"mod+shift+e"}
+		{"id":"tree.revealNote","title":"Show note in file tree","icon":"folder-open","when":"target.isNote","shortcut":"mod+shift+e"}
 	]}}`
 
 	parsed, err := manifestjson.Read(strings.NewReader(text))
@@ -29,8 +29,8 @@ func TestReadManifest_ContributedCommands(t *testing.T) {
 	if command.ID != "tree.revealNote" || command.Title != "Show note in file tree" || command.Icon != "folder-open" {
 		t.Errorf("the command came out as %+v", command)
 	}
-	if command.Scope != "note" || command.Shortcut != "mod+shift+e" {
-		t.Errorf("the command lost its scope or shortcut: %+v", command)
+	if command.When != "target.isNote" || command.Shortcut != "mod+shift+e" {
+		t.Errorf("the command lost its condition or shortcut: %+v", command)
 	}
 }
 

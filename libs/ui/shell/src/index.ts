@@ -3,14 +3,18 @@
  * palette, and the status bar.
  */
 import './styles.css'
+// The package marks only stylesheets as side effects, so the frame's stylesheets are imported by the
+// entry, which every window loads, and not by the module of the frame's sizes.
+import './features/window-frame/tokens/frame.css'
+import './features/window-frame/ui/windowFrame.css'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
-export { paneById, getPanes } from './features/workspace'
-export type { Tab, Workspace } from './features/workspace'
+export { paneById, getPanes, getTabPaneRect } from './features/workspace'
+export type { Tab, TabMenu, WindowEdge, Workspace } from './features/workspace'
 
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'
@@ -24,18 +28,22 @@ export { createNotice } from './features/notices'
 export { createNoticeQueue, type NoticeQueue } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
-export { StatusBar } from './features/status-bar'
-export type { StatusBarTask } from './features/status-bar'
-
 /** The screen a window opens on, and the letter a vault on it is opened by. */
 export { WelcomePage, getVaultForKey } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
-/** The bar every window draws at its top, with its actions and the window controls. */
-export { TitleBar } from './features/title-bar'
+/**
+ * The room the macOS buttons take at the left of a strip of tabs at the top of a window without a
+ * title bar. The shell draws no bar and no window buttons.
+ */
+export { MAC_BUTTONS_INSET } from './features/window-frame'
+
+/** The frame of the desktop window a page is drawn in, as both windows read it. */
+export { getWindowEdge, useWindowFrame } from './features/window-frame'
 export type {
-  ControlsStyle,
-  TitleBarAction,
-  TitleBarWords,
-  TitleChoice,
-} from './features/title-bar'
+  FrameEdge,
+  FrameRuntime,
+  FrameRuntimeLoader,
+  WindowFrame,
+  WindowPlatform,
+} from './features/window-frame'

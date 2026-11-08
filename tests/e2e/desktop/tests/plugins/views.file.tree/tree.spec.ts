@@ -48,7 +48,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     await createFolder(request, 'Saltworks')
     try {
-      await nameNewItem(page, 'Saltworks', 'New folder', 'Brine tanks')
+      await nameNewItem(page, 'Saltworks', 'Create folder', 'Brine tanks')
 
       await expect
         .poll(async () => listPaths(request, 'Saltworks'))
@@ -65,7 +65,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     await createFolder(request, 'Saltpans')
     try {
-      await nameNewItem(page, 'Saltpans', 'New note', 'Evaporation pans')
+      await nameNewItem(page, 'Saltpans', 'Create note here', 'Evaporation pans')
 
       await expect
         .poll(async () => listPaths(request, 'Saltpans'))
@@ -96,7 +96,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
 
       await getTab(page, 'Files').click()
       await getRow(page, before).click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Rename file', exact: true }).click()
       await expect(getNameField(page)).toHaveValue('Sluice log.md')
       await getNameField(page).fill('Brine pump.md')
       await getNameField(page).press('Enter')
@@ -113,7 +113,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
     }
   })
 
-  test('moves two notes selected with Ctrl-click to the trash with Remove', async ({
+  test('moves two notes selected with Ctrl-click to the trash with Move note to trash', async ({
     page,
     request,
   }) => {
@@ -130,7 +130,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
       await expect(getRow(page, first)).toHaveAttribute('aria-selected', 'true')
       await expect(getRow(page, second)).toHaveAttribute('aria-selected', 'true')
       await getRow(page, second).click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Remove', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Move note to trash', exact: true }).click()
 
       await expect
         .poll(async () =>

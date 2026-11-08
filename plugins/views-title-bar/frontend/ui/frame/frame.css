@@ -1,0 +1,69 @@
+.window-drag-area {
+  display: flex;
+  min-width: 0;
+}
+
+/* The 4px after the system buttons keep the first command off them. */
+.mac-buttons-inset {
+  flex: none;
+  width: 80px;
+  margin-inline-end: 4px;
+}
+
+.window-controls {
+  position: relative;
+  top: var(--numen-window-edge);
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+}
+
+.window-controls--windows .window-controls__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.window-controls--windows .window-controls__button:hover {
+  background: var(--numen-surface);
+}
+
+.window-controls--windows .window-controls__button--close:hover {
+  background: var(--numen-alarm);
+  color: var(--numen-surface);
+}
+
+.window-controls--mac {
+  gap: 8px;
+  padding-inline: 12px;
+}
+
+.window-controls--mac .window-controls__button {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.window-controls--mac .window-controls__button--close {
+  background: var(--numen-alarm);
+}
+
+.window-controls--mac .window-controls__button--minimize {
+  background: var(--numen-caution-fg);
+}
+
+.window-controls--mac .window-controls__button--maximize {
+  background: var(--numen-positive);
+}

@@ -21,7 +21,7 @@ const mountRows = (props: Record<string, unknown> = {}) =>
     props: {
       rows: ROWS,
       activeIndex: 1,
-      current: 'a',
+      current: ['a'],
       listId: 'models',
       label: 'Models',
       ...props,
@@ -60,6 +60,30 @@ describe('what the rows say', () => {
       undefined,
     ])
     expect(options.map((one) => one.attributes('id'))).toEqual(['models-0', 'models-1', 'models-2'])
+  })
+
+  it('draws a line above an item that asks for a separator, and above no other', () => {
+    const rows = mountRows({
+      rows: [
+        { key: 'a', kind: 'item', item: { id: 'a', text: 'Orchard notes' } },
+        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create vault', hasSeparator: true } },
+      ],
+    })
+
+    const list = rows.get('[role="listbox"]').element
+    const separators = list.querySelectorAll('[role="separator"]')
+    expect(separators).toHaveLength(1)
+    expect(separators[0]?.nextElementSibling?.textContent?.trim()).toBe('Create vault')
+  })
+
+  it('draws no line above the first row, as when a search leaves the item alone', () => {
+    const rows = mountRows({
+      rows: [
+        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create vault', hasSeparator: true } },
+      ],
+    })
+
+    expect(rows.findAll('[role="separator"]')).toHaveLength(0)
   })
 
   it('names a group once, over the row that begins it', () => {

@@ -27,11 +27,12 @@ const PluginID = "md.numen.tools.media.importer"
 
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
-		Vault: host.NewClient(endpoint),
-		Store: host.NewStoreClient(endpoint),
-		Texts: host.NewTextClient(endpoint),
-		Queue: host.NewQueueClient(endpoint),
-		Clock: clock.System{},
+		PluginID: PluginID,
+		Vault:    host.NewClient(endpoint),
+		Store:    host.NewStoreClient(endpoint),
+		Texts:    host.NewTextClient(endpoint),
+		Queue:    host.NewQueueClient(endpoint),
+		Clock:    clock.System{},
 	}
 }
 
@@ -117,12 +118,12 @@ func getLanguages(value string) []string {
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
 	links := link.New(hosted, f.getFetcher, f.getSettings)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(f.updateConfig)
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { f.updateConfig(values) })
 	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
 	if err := mountAPI(s, links); err != nil {
 		return err
@@ -133,7 +134,6 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
 	s.OnClose(func() error {
 		links.Close()
 		return nil

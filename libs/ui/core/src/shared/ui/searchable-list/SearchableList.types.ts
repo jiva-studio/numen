@@ -12,6 +12,7 @@ export interface SearchableListProps {
   isPending?: boolean
   hasAction?: boolean
   needsQuery?: boolean
+  chosen?: readonly string[] | undefined
 }
 
 export interface SearchableListPopupProps {

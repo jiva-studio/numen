@@ -1,7 +1,12 @@
 /** Running an entry of the menu of a search result, and what the window hands the search. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage } from '@numen/core-client'
-import type { Menus, PlacedCommand } from '@numen/plugin-host'
+import {
+  SLOT,
+  type SlotCommand,
+  type SlotHost,
+  type CommandTarget as RunTarget,
+} from '@numen/plugin-host'
 import type { CommandTarget, ResultChoice } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
@@ -13,7 +18,7 @@ const h = vi.hoisted(() => ({
   isCommandsOpen: { value: false },
   runInvocation: vi.fn(() => Promise.resolve()),
   searchOptions: null as null | {
-    menu?: { getEntries(): readonly unknown[] }
+    menu?: { getEntries(target: RunTarget): readonly unknown[] }
     getTarget?: () => unknown
   },
   getExtraCommands: null as null | (() => readonly unknown[]),
@@ -61,21 +66,33 @@ const choice = (command: string, line = -1): ResultChoice => ({
   input: '',
 })
 
-const entry = (command: string, title: string): PlacedCommand => ({
+const entry = (command: string, title: string): SlotCommand => ({
+  kind: 'command',
+  key: `${ATLAS}/command/${command}`,
   pluginId: ATLAS,
   command,
   title,
-  group: '',
+  shortcut: '',
+  hasItems: false,
+})
+
+const REEF: RunTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: '' }
+
+const createSlots = (getEntries: SlotHost['getEntries']): SlotHost => ({
+  getEntries,
+  watchEntries: () => ({ dispose: () => undefined }),
 })
 
 function setup(
-  options: { menus?: Menus; hasCommand?: (id: string) => boolean; target?: CommandTarget } = {},
+  options: { slots?: SlotHost; hasCommand?: (id: string) => boolean; target?: CommandTarget } = {},
 ) {
   const executeCommand = vi.fn(async () => true)
   const writeMessage = vi.fn()
   const pluginHost = {
     getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
+    hasCommandItems: () => false,
     hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
+    isSharedCommand: (id: string) => id === 'app:file.createText',
     executeCommand,
     handleShortcut: () => false,
   }
@@ -88,13 +105,13 @@ function setup(
     windowTabs: { onKeyPress: () => false },
     getTarget: () => options.target ?? front,
     knows: {},
-    kept: {},
+    paletteLists: {},
     runs: {},
     coverage: () => ({}),
     rest: {},
     writeMessage,
     pluginHost,
-    ...(options.menus ? { menus: options.menus } : {}),
+    ...(options.slots ? { slots: options.slots } : {}),
   } as unknown as CommandsDepsOptions)
   return { executeCommand, writeMessage, ...used }
 }
@@ -116,7 +133,23 @@ describe('running the action of a search result that is an entry of its menu', (
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
+    expect(h.startCommand).not.toHaveBeenCalled()
+  })
+
+  it('runs a shared command in the plugin host, which runs its one handler', async () => {
+    const one = setup()
+
+    one.runChoice(choice('app:file.createText'))
+    await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
+
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(
+      'app:file.createText',
+      expect.objectContaining({ path: 'Reef.md', type: 'sample' }),
+    )
     expect(h.startCommand).not.toHaveBeenCalled()
   })
 
@@ -275,6 +308,9 @@ describe('opening the note of a search result as a command', () => {
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
   })
 
@@ -413,21 +449,26 @@ describe('running a command with a text typed for it', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: 'tab-1',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })
 })
 
 describe('the search the window builds', () => {
-  it('reads its menu from the entries of the place for a result', () => {
-    const getEntries = vi.fn((location: string) =>
-      location === 'searchResult' ? [entry(SHOW, 'Show note in plex')] : [entry('x:y.z', 'Wrong')],
+  it('reads its menu from the entries of the slot of a search result, over its note', () => {
+    const getEntries = vi.fn((slot: string) =>
+      slot === SLOT.paletteSearchResult
+        ? [entry(SHOW, 'Show note in plex')]
+        : [entry('x:y.z', 'Wrong')],
     )
 
-    setup({ menus: { getEntries } })
+    setup({ slots: createSlots(getEntries) })
 
-    expect(h.searchOptions?.menu?.getEntries()).toEqual([entry(SHOW, 'Show note in plex')])
-    expect(getEntries).toHaveBeenCalledWith('searchResult')
+    expect(h.searchOptions?.menu?.getEntries(REEF)).toEqual([entry(SHOW, 'Show note in plex')])
+    expect(getEntries).toHaveBeenCalledWith(SLOT.paletteSearchResult, REEF)
   })
 
   it('reads the target of the window for the row that creates a note', () => {
@@ -436,24 +477,22 @@ describe('the search the window builds', () => {
     expect(h.searchOptions?.getTarget?.()).toBe(front)
   })
 
-  it('has no entry in its menu where the window has no places', () => {
+  it('has no entry in its menu where the window has no slots', () => {
     setup()
 
-    expect(h.searchOptions?.menu?.getEntries() ?? []).toEqual([])
+    expect(h.searchOptions?.menu?.getEntries(REEF) ?? []).toEqual([])
   })
 })
 
 describe('the commands of the palette', () => {
-  it('are the same whatever the plugins place in menus', () => {
+  it('are the same whatever the plugins place in slots', () => {
     const listCommands = () =>
       ((h.getExtraCommands?.() ?? []) as { id: string; text: string; group: string }[]).map(
         ({ id, text, group }) => ({ id, text, group }),
       )
     setup()
     const baseline = listCommands()
-    const menus: Menus = { getEntries: () => [entry(SHOW, 'Show note in plex')] }
-
-    setup({ menus })
+    setup({ slots: createSlots(() => [entry(SHOW, 'Show note in plex')]) })
     const withPlacements = listCommands()
 
     expect(withPlacements).toEqual(baseline)

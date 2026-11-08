@@ -10,8 +10,14 @@ describe('the fields of a plugin', () => {
         { key: 'baseUrl', type: 'string', title: 'B', description: '', default: 'b' },
       ],
       secrets: [
-        { name: 's1', title: 'S1', description: '' },
-        { name: 's2', title: 'S2', description: '', when: { setting: 'baseUrl', is: ['b'] } },
+        { name: 's1', title: 'S1', description: '', group: '' },
+        {
+          name: 's2',
+          title: 'S2',
+          description: '',
+          group: '',
+          when: { setting: 'baseUrl', is: ['b'] },
+        },
       ],
     })
     const fields1 = createEnumFields(
@@ -24,7 +30,7 @@ describe('the fields of a plugin', () => {
 
     const withBaseUrlOnly = createPluginInfo('p', 'P', {
       settings: [{ key: 'baseUrl', type: 'string', title: 'B', description: '', default: 'b' }],
-      secrets: [{ name: 's1', title: 'S1', description: '' }],
+      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
     })
     const fields2 = createEnumFields(
       () => withBaseUrlOnly,
@@ -35,7 +41,7 @@ describe('the fields of a plugin', () => {
 
     const withNeither = createPluginInfo('p', 'P', {
       settings: [{ key: 'other', type: 'string', title: 'O', description: '', default: 'o' }],
-      secrets: [{ name: 's1', title: 'S1', description: '' }],
+      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
     })
     const fields3 = createEnumFields(
       () => withNeither,
@@ -43,5 +49,100 @@ describe('the fields of a plugin', () => {
     )
     expect(fields3.getTopSecrets().map((s) => s.name)).toStrictEqual(['s1'])
     expect(fields3.getSecretsAfter('')).toStrictEqual([])
+  })
+
+  describe('the choices of an enum whose options carry a condition', () => {
+    const plugin = createPluginInfo('p', 'P', {
+      settings: [
+        {
+          key: 'buttons',
+          type: 'enum',
+          title: 'Buttons',
+          description: '',
+          default: 'mac',
+          options: [
+            { value: 'mac', title: 'Left', detail: '' },
+            { value: 'windows', title: 'Right', detail: '', when: "app.platform != 'darwin'" },
+            { value: 'none', title: 'None', detail: '', when: "app.platform != 'darwin'" },
+          ],
+        },
+      ],
+    })
+    const getChoices = (platform: string) => {
+      const fields = createEnumFields(
+        () => plugin,
+        () => undefined,
+        () => false,
+        () => platform,
+      )
+      return fields.getEnumChoices(plugin.settings[0]!).map((one) => [one.id, one.isDisabled])
+    }
+
+    it.each(['linux', 'windows'])('offers all three on %s', (platform) => {
+      expect(getChoices(platform)).toStrictEqual([
+        ['mac', undefined],
+        ['windows', undefined],
+        ['none', undefined],
+      ])
+    })
+
+    it('offers only Left on macOS and disables the others', () => {
+      expect(getChoices('darwin')).toStrictEqual([
+        ['mac', undefined],
+        ['windows', true],
+        ['none', true],
+      ])
+    })
+
+    describe('the value shown', () => {
+      const getShown = (platform: string, stored?: string) => {
+        const buttons = { ...plugin.settings[0]!, default: 'windows' }
+        const fields = createEnumFields(
+          () => plugin,
+          () => stored,
+          () => false,
+          () => platform,
+        )
+        return fields.getEnumValue(buttons)
+      }
+
+      it('is Left on macOS where the default is Right', () => {
+        expect(getShown('darwin')).toBe('mac')
+      })
+
+      it('is Left on macOS where the stored value is Right or None', () => {
+        expect(getShown('darwin', 'windows')).toBe('mac')
+        expect(getShown('darwin', 'none')).toBe('mac')
+      })
+
+      it.each(['linux', 'windows'])('stays Right by default on %s', (platform) => {
+        expect(getShown(platform)).toBe('windows')
+      })
+
+      it('is a stored value that is offered, as stored', () => {
+        expect(getShown('darwin', 'mac')).toBe('mac')
+        expect(getShown('linux', 'none')).toBe('none')
+      })
+    })
+
+    it('offers an option whose condition cannot be read', () => {
+      const broken = createPluginInfo('p', 'P', {
+        settings: [
+          {
+            key: 'k',
+            type: 'enum',
+            title: 'K',
+            description: '',
+            default: 'a',
+            options: [{ value: 'a', title: 'A', detail: '', when: 'app.os ==' }],
+          },
+        ],
+      })
+      const fields = createEnumFields(
+        () => broken,
+        () => undefined,
+      )
+      expect(fields.getEnumChoices(broken.settings[0]!)[0]?.isDisabled).toBeUndefined()
+    })
   })
 })

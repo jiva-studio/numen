@@ -26,7 +26,6 @@ import {
   TabMoveErrorCode,
   TextErrorCode,
   TextService,
-  TextVersionService,
   ThemeService,
   Unit,
   VaultService,
@@ -54,7 +53,6 @@ export const vaultsService = createClient(VaultsService, transport)
 export const settingsService = createClient(SettingsService, transport)
 export const windowService = createClient(WindowService, transport)
 export const theme = createClient(ThemeService, transport)
-export const textVersions = createClient(TextVersionService, transport)
 export const texts = createClient(TextService, transport)
 export const pluginCommands = createClient(CommandService, transport)
 export const pluginService = createClient(PluginService, transport)

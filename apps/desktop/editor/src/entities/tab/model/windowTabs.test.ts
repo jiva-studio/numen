@@ -478,7 +478,7 @@ describe('reconciling tabs for a path', () => {
     })
     const window = notifiedCalls([noteKind.declared, sampleKind.declared])
 
-    let fileKind: FileKind = { isNote: true, type: 'note' }
+    let fileKind: FileKind = { isNote: true, type: 'note', tabKind: 'note' }
     const openers = fileOpeners({
       fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
       reconcileTab: window.reconcileTab,
@@ -494,7 +494,7 @@ describe('reconciling tabs for a path', () => {
     expect(window.tabs.value).toHaveLength(1)
     expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('note')
 
-    fileKind = { isNote: true, type: 'sample' as const }
+    fileKind = { isNote: true, type: 'sample', tabKind: 'sample' }
     await openers.openFile('Animals.md')
 
     expect(window.tabs.value).toHaveLength(1)

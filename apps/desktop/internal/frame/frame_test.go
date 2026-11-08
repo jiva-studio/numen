@@ -21,6 +21,15 @@ func TestApplyDrawsNoSystemFrameOnWindowsAndLinux(t *testing.T) {
 	}
 }
 
+func TestApplyHostsTheWindowsPageForTheSystemButtonRegions(t *testing.T) {
+	if !Apply(application.WebviewWindowOptions{}, "windows").Windows.WebView2CompositionHosting {
+		t.Error("the Windows window does not map the page's window buttons to the system buttons")
+	}
+	if Apply(application.WebviewWindowOptions{}, "linux").Windows.WebView2CompositionHosting {
+		t.Error("the Linux window sets an option of Windows")
+	}
+}
+
 func TestApplyKeepsTheSystemButtonsOnMac(t *testing.T) {
 	got := Apply(application.WebviewWindowOptions{Title: "numen"}, "darwin")
 
@@ -30,8 +39,13 @@ func TestApplyKeepsTheSystemButtonsOnMac(t *testing.T) {
 	if got.Mac.TitleBar != application.MacTitleBarHidden {
 		t.Errorf("title bar = %+v, want the hidden bar", got.Mac.TitleBar)
 	}
-	if got.Mac.InvisibleTitleBarHeight != BarHeight {
-		t.Errorf("invisible title bar height = %d, want %d", got.Mac.InvisibleTitleBarHeight, BarHeight)
+}
+
+func TestApplyKeepsNoNativeDragAreaOnMac(t *testing.T) {
+	got := Apply(application.WebviewWindowOptions{}, "darwin")
+
+	if got.Mac.InvisibleTitleBarHeight != 0 {
+		t.Errorf("invisible title bar height = %d; the tabs at the top would move the window", got.Mac.InvisibleTitleBarHeight)
 	}
 }
 

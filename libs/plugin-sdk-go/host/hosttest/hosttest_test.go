@@ -283,6 +283,18 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 	}
 }
 
+// A folder is no file of the vault, as the host answers it.
+func TestAFolderOnDiskIsNoFileToStat(t *testing.T) {
+	v := hosttest.OnDisk(t, "Physics", map[string]string{"samples/Heat.md": "# Heat\n"})
+
+	_, folderErr := v.StatFile(t.Context(), "samples")
+	_, fileErr := v.StatFile(t.Context(), "samples/Heat.md")
+
+	if !errors.Is(folderErr, host.ErrNotANote) || fileErr != nil {
+		t.Errorf("a folder answered %v and a file %v", folderErr, fileErr)
+	}
+}
+
 func TestGetFingerprintNamesANoteByItsExtension(t *testing.T) {
 	ctx := t.Context()
 	v := hosttest.New("Physics")

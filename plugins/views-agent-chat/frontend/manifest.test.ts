@@ -60,13 +60,21 @@ describe('the title bar', () => {
   ) as {
     contributes: {
       commands: readonly { id: string; title: string }[]
-      menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+      slots?: readonly {
+        slot: string
+        command?: string
+        view?: string
+        group?: string
+        order?: number
+      }[]
     }
   }
 
   it('places opening the chat third among the navigation entries', () => {
-    expect(contributes.menus).toStrictEqual([
-      { location: 'titleBar', command: 'chat.open', group: 'navigate', order: 30 },
+    expect(
+      (contributes.slots ?? []).filter((one) => one.slot === 'titleBar.commands'),
+    ).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'chat.open', group: 'navigate', order: 30 },
     ])
   })
 
@@ -77,7 +85,7 @@ describe('the title bar', () => {
   })
 
   it('keeps the command that asks about a note out of the title bar, which has no note', () => {
-    const entries = (contributes.menus ?? []).filter((one) => one.location === 'titleBar')
+    const entries = (contributes.slots ?? []).filter((one) => one.slot === 'titleBar.commands')
 
     expect(entries.map((one) => one.command)).not.toContain('note.ask')
   })
@@ -88,5 +96,19 @@ describe('the readme', () => {
     const readme = readFileSync(resolve(import.meta.dirname, '../README.md'), 'utf8')
 
     expect(readme).toMatch(/title bar/i)
+  })
+})
+
+describe('the menu of a row of the file tree', () => {
+  it('holds asking the agent about the note of the row', () => {
+    const { contributes } = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+    ) as { contributes: { slots?: readonly { slot: string }[] } }
+
+    expect(
+      (contributes.slots ?? []).filter((one) => one.slot === 'fileTree.context'),
+    ).toStrictEqual([
+      { slot: 'fileTree.context', command: 'note.ask', group: '5-agent', order: 10 },
+    ])
   })
 })

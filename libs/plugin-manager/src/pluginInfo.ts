@@ -11,6 +11,7 @@ export interface PluginSettingOption {
   readonly value: string
   readonly title: string
   readonly detail: string
+  readonly when?: string | undefined
 }
 
 /** A setting is shown, and handed to its plugin, while another holds one of the values listed. */
@@ -30,6 +31,7 @@ export interface PluginSecret {
   readonly name: string
   readonly title: string
   readonly description: string
+  readonly group: string
   readonly when?: PluginSettingCondition | undefined
 }
 
@@ -76,7 +78,6 @@ export interface PluginInfo {
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
   readonly secrets: readonly PluginSecret[]
-  readonly storedSecrets: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
   readonly failure?: PluginFailure | undefined

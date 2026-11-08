@@ -15,6 +15,7 @@ import {
   listFilePaths,
   openNote,
 } from '../../support/vault.js'
+import { getRow, showInFiles } from '../../support/layout.js'
 
 const getPlexNode = (page: Page, title: string, relation: string) =>
   getGraph(page).getByRole(relation === 'focus' ? 'img' : 'button', {
@@ -119,6 +120,33 @@ test.describe('Making a related note', () => {
       await expect(getPlexNode(page, fromTitle, 'jump')).toBeAttached()
     } finally {
       await destroyNote(request, from)
+    }
+  })
+})
+
+test.describe('The Relation submenu of a row of the file tree', () => {
+  test('makes a child of the note of the row under the name typed, joined below it', async ({
+    page,
+    request,
+  }) => {
+    const parentTitle = createUniqueTitle('Lagoon')
+    const childTitle = createUniqueTitle('Reef flat')
+    const parent = await createNote(request, parentTitle)
+    let child = ''
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
+      await getRow(page, parent).click({ button: 'right' })
+      const relation = page.getByRole('menuitem', { name: 'Relation', exact: true })
+      await relation.focus()
+      await relation.press('ArrowRight')
+      await page.getByRole('menuitem', { name: 'Create child note', exact: true }).click()
+      await nameNote(page, childTitle)
+
+      child = await waitForMadeNote(page, childTitle)
+      expect((await getConnection(request, parent, child)).role).toBe('ROLE_CHILD')
+    } finally {
+      for (const one of [parent, child].filter(Boolean)) await destroyNote(request, one)
     }
   })
 })

@@ -1,78 +1,12 @@
 /**
- * The menu on a node, and what it offers.
+ * The menu off every node, and what it offers.
  */
 import { describe, expect, it } from 'vitest'
-import { createNodeItems, ITEMS, NEW_NOTE, NONE, AVAILABLE } from './menu'
-
-describe('what the menu offers', () => {
-  it('offers the commands of the window over a note', () => {
-    const expected = [
-      'app:note.open',
-      'app:note.copyPath',
-      'app:note.createChild',
-      'app:note.createParent',
-      'app:note.createJump',
-      'app:note.rename',
-      'app:note.trash',
-    ]
-    expect([...ITEMS.map((item) => item.id)].sort()).toStrictEqual([...expected].sort())
-  })
-
-  it('says what each of them does', () => {
-    for (const item of ITEMS) {
-      expect(item.text).not.toBe('')
-    }
-  })
-
-  it('remains the items in groups, each group whole and unbroken', () => {
-    const groups = ITEMS.map((item) => item.group)
-    for (const item of ITEMS) expect(item.group).not.toBeUndefined()
-    expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'remove'])
-    expect(groups.filter((group, index) => group !== groups[index - 1])).toStrictEqual([
-      ...new Set(groups),
-    ])
-  })
-
-  it('holds every item it draws, and no command reached on another row', () => {
-    for (const item of ITEMS) expect(AVAILABLE.has(item.id)).toBe(true)
-
-    expect(AVAILABLE.has('app:note.delete')).toBe(false)
-    expect(AVAILABLE.has('constructor')).toBe(false)
-  })
-})
-
-describe('what the menu on a node offers of the commands plugins declare', () => {
-  it('draws them after what opens the note, in a band of their own', () => {
-    const items = createNodeItems([
-      { id: 'org.example.sample:share.run', text: 'Share the note' },
-      { id: 'org.example.sample:print.run', text: 'Print the note' },
-    ])
-
-    expect(items.map((item) => [item.id, item.group])).toStrictEqual([
-      ['app:note.open', 'open'],
-      ['org.example.sample:share.run', 'declared'],
-      ['org.example.sample:print.run', 'declared'],
-      ['app:note.copyPath', 'file'],
-      ['app:note.createChild', 'plex'],
-      ['app:note.createParent', 'plex'],
-      ['app:note.createJump', 'plex'],
-      ['app:note.rename', 'plex'],
-      ['app:note.trash', 'remove'],
-    ])
-  })
-
-  it('is the commands of the window alone where no plugin declares one', () => {
-    expect(createNodeItems([])).toStrictEqual(ITEMS)
-  })
-})
+import { NEW_NOTE, NONE } from './menu'
 
 describe('what the menu off every node offers', () => {
   it('offers a note to be made, and says so', () => {
     expect(NONE.map((item) => item.id)).toStrictEqual([NEW_NOTE])
     for (const item of NONE) expect(item.text).not.toBe('')
-  })
-
-  it('offers no command over a note, there being no note it would be over', () => {
-    for (const item of NONE) expect(AVAILABLE.has(item.id)).toBe(false)
   })
 })

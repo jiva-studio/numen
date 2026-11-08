@@ -15,6 +15,7 @@ package numenv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -134,7 +135,10 @@ type Entry struct {
 	IsNote bool `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about an entry that is not a note.
-	Type          string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+	// where none holds, and for an entry that is not a note.
+	TabKind       string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -200,6 +204,13 @@ func (x *Entry) GetIsNote() bool {
 func (x *Entry) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *Entry) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
 	}
 	return ""
 }
@@ -301,7 +312,14 @@ type FileKind struct {
 	IsNote bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about a path holding no note.
-	Type          string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	// The frontmatter of the note by its keys, which when conditions read as
+	// target.properties. Empty for a path holding no note.
+	Properties *structpb.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
+	// The kind of tab the note opens in: of the tab kinds of the enabled plugins whose when condition
+	// holds over the note, the one chosen as a reader is. Empty where none holds, and for a path
+	// holding no note.
+	TabKind       string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -353,6 +371,20 @@ func (x *FileKind) GetIsNote() bool {
 func (x *FileKind) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *FileKind) GetProperties() *structpb.Struct {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+func (x *FileKind) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
 	}
 	return ""
 }
@@ -776,25 +808,30 @@ var File_numen_v1_file_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"&\n" +
+	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x15numen/v1/shared.proto\"&\n" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"y\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x94\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
 	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12\x17\n" +
 	"\ais_note\x18\x06 \x01(\bR\x06isNote\x12\x12\n" +
-	"\x04type\x18\x05 \x01(\tR\x04type\",\n" +
+	"\x04type\x18\x05 \x01(\tR\x04type\x12\x19\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
-	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"K\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"\x9f\x01\n" +
 	"\bFileKind\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
 	"\ais_note\x18\x05 \x01(\bR\x06isNote\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\"5\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x127\n" +
+	"\n" +
+	"properties\x18\x06 \x01(\v2\x17.google.protobuf.StructR\n" +
+	"properties\x12\x19\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\xb3\x01\n" +
@@ -859,30 +896,32 @@ var file_numen_v1_file_proto_goTypes = []any{
 	(*RemoveFileResponse)(nil),    // 10: numen.v1.RemoveFileResponse
 	(*CreateFolderRequest)(nil),   // 11: numen.v1.CreateFolderRequest
 	(*CreateFolderResponse)(nil),  // 12: numen.v1.CreateFolderResponse
-	(ErrorCode)(0),                // 13: numen.v1.ErrorCode
+	(*structpb.Struct)(nil),       // 13: google.protobuf.Struct
+	(ErrorCode)(0),                // 14: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	5,  // 1: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
-	8,  // 2: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
-	13, // 3: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	13, // 4: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	13, // 5: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
-	0,  // 6: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
-	3,  // 7: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
-	6,  // 8: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
-	9,  // 9: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
-	11, // 10: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
-	1,  // 11: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	4,  // 12: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	7,  // 13: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	10, // 14: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	12, // 15: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	13, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
+	8,  // 3: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
+	14, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	14, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	14, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 7: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
+	3,  // 8: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
+	6,  // 9: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
+	9,  // 10: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
+	11, // 11: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
+	1,  // 12: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	4,  // 13: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	7,  // 14: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	10, // 15: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	12, // 16: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	12, // [12:17] is the sub-list for method output_type
+	7,  // [7:12] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_file_proto_init() }

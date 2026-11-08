@@ -23,12 +23,13 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Text
 	files.File(name, string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue())
+	texts.SetStore(pluginID, files.Store())
+	server := NewTextServer(files, texts, files.Store(), hosttest.NewQueue())
 	t.Cleanup(server.Close)
 	return texts, server
 }
 
-func createText(t *testing.T, server *TextServer, req host.TextCreation) {
+func createText(t *testing.T, server *TextServer, req TextRequest) {
 	t.Helper()
 	if err := server.CreateText(t.Context(), req); err != nil {
 		t.Fatalf("CreateText: %v", err)
@@ -63,7 +64,7 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createText(t, server, host.TextCreation{Path: "book.epub"})
+	createText(t, server, TextRequest{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
 	if text.Version().Kind != textKind || !text.Version().IsFromFile() {
@@ -105,7 +106,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			texts, server := newTextVault(t, name, raw)
 
-			createText(t, server, host.TextCreation{Path: name})
+			createText(t, server, TextRequest{Path: name})
 
 			listing, err := texts.ListVersions(t.Context(), name)
 			if err != nil {
@@ -189,7 +190,7 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
 	t.Cleanup(server.Close)
 
-	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "book.epub"})
+	createText(t, server, TextRequest{Vault: "Chemistry", Path: "book.epub"})
 
 	if text := readLive(t, other, "book.epub"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
@@ -244,7 +245,7 @@ func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
 	raw := createImageEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 
-	createText(t, server, host.TextCreation{Path: "book.epub"})
+	createText(t, server, TextRequest{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
 	selector, err := readCFISelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
@@ -282,6 +283,8 @@ func (f *failingStore) Write(_ context.Context, _ string, _ []byte) error {
 	return f.err
 }
 
+func (f *failingStore) With(domain.VaultID) host.Store { return f }
+
 type failingTexts struct {
 	host.Texts
 	err error
@@ -291,24 +294,27 @@ func (f *failingTexts) PutVersion(_ context.Context, _ host.TextPut) (domain.Tex
 	return domain.TextVersion{}, f.err
 }
 
+func (f *failingTexts) With(domain.VaultID) host.Texts { return f }
+
 func TestTextServerLifecycleAndFailures(t *testing.T) {
 	raw := createImageEpub(t)
 	files := hosttest.New("vault")
 	files.File("book.epub", string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File("book.epub", raw)
+	texts.SetStore(pluginID, files.Store())
 	queue := hosttest.NewQueue()
 	held, err := queue.EnqueueWork(t.Context(), host.Work{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := NewTextServer(files, texts, texts.GetStore(pluginID), queue)
+	srv := NewTextServer(files, texts, files.Store(), queue)
 
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	// Duplicate call while running is a no-op
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.Close()
@@ -316,15 +322,15 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 		t.Error(err)
 	}
 	// Call after Close is a no-op
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Failure reporting when file does not exist
 	q2 := hosttest.NewQueue()
-	srv2 := NewTextServer(files, texts, texts.GetStore(pluginID), q2)
+	srv2 := NewTextServer(files, texts, files.Store(), q2)
 	t.Cleanup(srv2.Close)
-	createText(t, srv2, host.TextCreation{Path: "missing.epub"})
+	createText(t, srv2, TextRequest{Path: "missing.epub"})
 	tasks := q2.ListTasks()
 	if len(tasks) != 1 || tasks[0].FailureReason == "" {
 		t.Errorf("expected failed task for missing file, got %+v", tasks)
@@ -332,49 +338,49 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 
 	// EnqueueWork failure
 	q3 := &failingQueue{Queue: hosttest.NewQueue(), enqueueErr: errors.New("queue down")}
-	srv3 := NewTextServer(files, texts, texts.GetStore(pluginID), q3)
+	srv3 := NewTextServer(files, texts, files.Store(), q3)
 	t.Cleanup(srv3.Close)
-	createText(t, srv3, host.TextCreation{Path: "book.epub"})
+	createText(t, srv3, TextRequest{Path: "book.epub"})
 	if tasks := q3.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "queue down") {
 		t.Errorf("expected queue down task failure, got %+v", tasks)
 	}
 
 	// ReportTask failure
 	q4 := &failingQueue{Queue: hosttest.NewQueue(), reportErr: errors.New("report failed")}
-	srv4 := NewTextServer(files, texts, texts.GetStore(pluginID), q4)
+	srv4 := NewTextServer(files, texts, files.Store(), q4)
 	t.Cleanup(srv4.Close)
-	createText(t, srv4, host.TextCreation{Path: "book.epub"})
+	createText(t, srv4, TextRequest{Path: "book.epub"})
 	if tasks := q4.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "report failed") {
 		t.Errorf("expected report failed task failure, got %+v", tasks)
 	}
 
 	// Store Write failure
 	q5 := hosttest.NewQueue()
-	srv5 := NewTextServer(files, texts, &failingStore{Store: texts.GetStore(pluginID), err: errors.New("store full")}, q5)
+	srv5 := NewTextServer(files, texts, &failingStore{Store: files.Store(), err: errors.New("store full")}, q5)
 	t.Cleanup(srv5.Close)
-	createText(t, srv5, host.TextCreation{Path: "book.epub"})
+	createText(t, srv5, TextRequest{Path: "book.epub"})
 	if tasks := q5.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "store full") {
 		t.Errorf("expected store full task failure, got %+v", tasks)
 	}
 
 	// PutVersion failure
 	q6 := hosttest.NewQueue()
-	srv6 := NewTextServer(files, &failingTexts{Texts: texts, err: errors.New("put version failed")}, texts.GetStore(pluginID), q6)
+	srv6 := NewTextServer(files, &failingTexts{Texts: texts, err: errors.New("put version failed")}, files.Store(), q6)
 	t.Cleanup(srv6.Close)
-	createText(t, srv6, host.TextCreation{Path: "book.epub"})
+	createText(t, srv6, TextRequest{Path: "book.epub"})
 	if tasks := q6.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "put version failed") {
 		t.Errorf("expected put version failed task failure, got %+v", tasks)
 	}
 
 	// Sequential CreateText after completion works (verifies delete(s.running, key))
 	q7 := hosttest.NewQueue()
-	srv7 := NewTextServer(files, texts, texts.GetStore(pluginID), q7)
+	srv7 := NewTextServer(files, texts, files.Store(), q7)
 	t.Cleanup(srv7.Close)
-	createText(t, srv7, host.TextCreation{Path: "book.epub"})
+	createText(t, srv7, TextRequest{Path: "book.epub"})
 	guided := createGuidedEpub(t)
 	files.File("book.epub", string(guided))
 	texts.File("book.epub", guided)
-	createText(t, srv7, host.TextCreation{Path: "book.epub"})
+	createText(t, srv7, TextRequest{Path: "book.epub"})
 	if live := readLive(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)
 	}

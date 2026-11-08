@@ -20,6 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 const vaultToken = "vault-token"
@@ -288,9 +289,14 @@ func getSpoken(steps []*agentrun.Response) []string {
 	return response
 }
 
+func keySecrets(value string) server.Secrets {
+	return server.Secrets{SettingAPIKey: {{ID: "s00000001", Name: "Work", Group: "openrouter", Value: value}}}
+}
+
 func newServer(chatURL string) *Server {
 	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: chatURL, SettingAPIKey: "host-key", SettingModel: "m1"})
+	s.Configure(map[string]string{SettingBaseURL: chatURL, SettingModel: "m1"})
+	s.ApplySecrets(keySecrets("host-key"))
 	return s
 }
 
@@ -399,9 +405,9 @@ func TestTheKeyIsTheOneConfigurePassesOverAndNoneIsSentWithoutOne(t *testing.T) 
 	s.Configure(map[string]string{SettingBaseURL: model.serve(t).URL})
 
 	ask(t, s, newTask("", "Hello?"))
-	s.Configure(map[string]string{SettingAPIKey: "host-key"})
+	s.ApplySecrets(keySecrets("host-key"))
 	ask(t, s, newTask("", "Hello?"))
-	s.Configure(map[string]string{SettingAPIKey: ""})
+	s.ApplySecrets(server.Secrets{SettingAPIKey: {}})
 	ask(t, s, newTask("", "Hello?"))
 
 	requests := model.getRequests()
@@ -530,7 +536,8 @@ func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 
 func TestAKeyIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
 	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: "http://192.0.2.1/v1", SettingAPIKey: "host-key"})
+	s.Configure(map[string]string{SettingBaseURL: "http://192.0.2.1/v1"})
+	s.ApplySecrets(keySecrets("host-key"))
 
 	steps := ask(t, s, newTask("", "Hello?"))
 

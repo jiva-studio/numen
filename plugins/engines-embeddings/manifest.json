@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
@@ -19,10 +19,30 @@
     {
       "name": "apiKey",
       "title": "API key",
-      "description": "Key of the remote service",
+      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
+      "group": "openrouter",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": ["openrouter"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
+      "group": "openai",
+      "when": {
+        "setting": "provider",
+        "is": ["openai"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
       }
     }
   ],

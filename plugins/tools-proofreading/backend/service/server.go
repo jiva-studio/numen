@@ -97,7 +97,7 @@ func newSettings() *settings {
 	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
-func (s *settings) updateConfig(values map[string]string) {
+func (s *settings) updateConfig(values map[string]string, secrets server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if provider := values["provider"]; provider != "" {
@@ -109,8 +109,11 @@ func (s *settings) updateConfig(values map[string]string) {
 	if model := values["model"]; model != "" {
 		s.cfg.model = model
 	}
-	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
-		s.cfg.apiKey = key
+	if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
+		s.cfg.apiKey = ""
+		if len(list) > 0 {
+			s.cfg.apiKey = list[0].Value
+		}
 	}
 	applyIntConfig(values, "batchSize", &s.cfg.batchSize, 1)
 	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
@@ -286,17 +289,22 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	}
 	config := newSettings()
 	if len(vars) > 0 {
-		config.updateConfig(vars)
+		config.updateConfig(vars, nil)
 	}
 	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
-	commands := command.New()
-	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
-		return err
-	}
-	if err := commands.Add("proofreading.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+	commands, err := newCommands(run)
+	if err != nil {
 		return err
 	}
 	s.SetUpdateConfig(config.updateConfig)
 	command.Mount(s, commands)
 	return nil
+}
+
+func newCommands(run *Proofreading) (*command.Registry, error) {
+	commands := command.New()
+	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
+		return nil, err
+	}
+	return commands, nil
 }

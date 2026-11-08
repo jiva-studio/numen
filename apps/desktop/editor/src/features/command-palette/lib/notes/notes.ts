@@ -14,7 +14,6 @@ export interface NoteOpeners {
     options:
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
   ): unknown
-  openNewFile: Notes['openNewFile']
 }
 
 const createPlacement = (
@@ -49,6 +48,5 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
     close: (id) => holder(id)?.close(id),
     openFile: (path, title, showing, place) =>
       noteOpeners.openFile(path, title, createPlacement(showing, place)),
-    openNewFile: noteOpeners.openNewFile,
   }
 }

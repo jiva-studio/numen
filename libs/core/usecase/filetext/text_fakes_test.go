@@ -22,12 +22,11 @@ const bookReader = "test.books"
 type libraryTexts struct {
 	shelves indexfake.Vaults
 
-	mu        sync.Mutex
-	extra     map[string][]placedVersion
-	books     map[string]placedVersion
-	requested []string
-	failure   error
-	outside   map[string]bool
+	mu      sync.Mutex
+	extra   map[string][]placedVersion
+	books   map[string]placedVersion
+	failure error
+	outside map[string]bool
 }
 
 type placedVersion struct {
@@ -54,12 +53,6 @@ func (s *libraryTexts) drop(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.extra, path)
-}
-
-func (s *libraryTexts) getRequested() []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return slices.Clone(s.requested)
 }
 
 func (s *libraryTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
@@ -141,13 +134,6 @@ func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id d
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return domain.NewVersionText(live.version, live.parts), nil
-}
-
-func (t libraryVaultTexts) RequestText(_ context.Context, path, _ string) error {
-	t.texts.mu.Lock()
-	defer t.texts.mu.Unlock()
-	t.texts.requested = append(t.texts.requested, path)
-	return nil
 }
 
 // IsTextSource reports every file as a text source except those a test excluded with leaveOut.

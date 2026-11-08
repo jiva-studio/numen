@@ -6,14 +6,10 @@ import "github.com/jiva-studio/numen/libs/core/port/textport"
 type (
 	ContentHash         = textport.ContentHash
 	ContentHashes       = textport.ContentHashes
-	TextCreation        = textport.TextCreation
 	TextFile            = textport.TextFile
 	TextFileStores      = textport.TextFileStores
 	TextFiles           = textport.TextFiles
-	TextPlugin          = textport.TextPlugin
 	TextPlugins         = textport.TextPlugins
-	TextProvider        = textport.TextProvider
-	TextProviders       = textport.TextProviders
 	TextReaders         = textport.TextReaders
 	Texts               = textport.Texts
 	VaultTexts          = textport.VaultTexts
@@ -23,8 +19,7 @@ type (
 )
 
 var (
-	ErrInvalidVersion    = textport.ErrInvalidVersion
-	ErrNoText            = textport.ErrNoText
-	ErrNotTextPlugin     = textport.ErrNotTextPlugin
-	ErrSourceNotAccepted = textport.ErrSourceNotAccepted
+	ErrInvalidVersion = textport.ErrInvalidVersion
+	ErrNoText         = textport.ErrNoText
+	ErrNotTextPlugin  = textport.ErrNotTextPlugin
 )

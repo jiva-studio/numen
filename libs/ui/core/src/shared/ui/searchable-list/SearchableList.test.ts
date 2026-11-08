@@ -186,6 +186,27 @@ describe('the keyboard', () => {
     expect(getOptions(list)).toHaveLength(4)
   })
 
+  it('returns to the item in force when it changes from outside, over a row under the pointer', async () => {
+    const list = mountList({ modelValue: 'opus' })
+    await getOptions(list)[2]!.trigger('pointerenter')
+    expect(getActive(list)).toBe(2)
+
+    await list.setProps({ modelValue: 'sonnet' })
+
+    expect(getActive(list)).toBe(1)
+  })
+
+  it('keeps the keyboard on a row chosen with Enter while a query is typed', async () => {
+    const list = mountList({ isFiltered: false })
+    await getInput(list).setValue('5')
+    await press(list, 'ArrowDown')
+    await press(list, 'ArrowDown')
+    await press(list, 'Enter')
+    await nextTick()
+
+    expect(getActive(list)).toBe(2)
+  })
+
   it('returns to the first row as the query changes', async () => {
     const list = mountList({ modelValue: 'sonnet' })
     expect(getActive(list)).toBe(1)

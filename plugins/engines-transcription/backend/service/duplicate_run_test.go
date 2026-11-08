@@ -12,7 +12,7 @@ func TestTranscriptCreateDuringPaletteTranscriptionReportsRunning(t *testing.T) 
 	s := newToolFixture(t)
 	result := make(chan error, 1)
 	go func() {
-		_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
+		_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "app:file.createText", Path: lecture})
 		result <- err
 	}()
 	s.waitStarted(t)

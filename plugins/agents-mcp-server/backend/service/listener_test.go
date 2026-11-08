@@ -95,7 +95,7 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 
 func configureToken(t *testing.T, s *server.Server, token string) {
 	t.Helper()
-	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}); err != nil {
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}, nil); err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
 }
@@ -142,7 +142,7 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 	}
 	s, _ := serveMounted(t)
 
-	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"port": port}); err != nil {
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"port": port}, nil); err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
 

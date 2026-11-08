@@ -66,11 +66,11 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, lifecycle.ErrPluginFailed) {
-				t.Fatalf("second EnsureActive() = %v, want %v", err, lifecycle.ErrPluginFailed)
+			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
+				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, pluginport.ErrUnsupportedProtocol)
 			}
-			if len(procs) != 1 {
-				t.Fatalf("launched %d processes, want 1", len(procs))
+			if len(procs) != 2 {
+				t.Fatalf("launched %d processes, want one for each use", len(procs))
 			}
 		})
 	}

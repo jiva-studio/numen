@@ -383,7 +383,7 @@ func (u Index) source(
 		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
 			return u.dropVersionOfNote(ctx, v, path)
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
+		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
@@ -408,7 +408,6 @@ func (u Index) source(
 func (u Index) saveWithoutText(
 	ctx context.Context,
 	v domain.Vault,
-	on openVault,
 	source domain.Source,
 	readErr error,
 	res *IndexResult,
@@ -419,11 +418,6 @@ func (u Index) saveWithoutText(
 	}
 	if err := u.sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: source}); err != nil {
 		return fmt.Errorf("write the chunks of %s: %w", source.FileStat.Path, err)
-	}
-	if errors.Is(readErr, textport.ErrNoText) {
-		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.ContentHash); err != nil {
-			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.FileStat.Path, err))
-		}
 	}
 	return nil
 }
@@ -530,8 +524,6 @@ func (noTexts) GetLiveText(context.Context, string, string) (domain.VersionText,
 func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (domain.VersionText, error) {
 	return domain.VersionText{}, textport.ErrNoText
 }
-
-func (noTexts) RequestText(context.Context, string, string) error { return nil }
 
 func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }
 

@@ -11,21 +11,20 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-// Handler answers every setting read and written, and the keys of the secrets
-// plugins declare, stored and removed.
+// Handler answers every setting read and written, and the secrets shared between plugins.
 type Handler struct {
-	Get          *setting.Get
-	Write        *setting.Write
-	Watch        *setting.Watch
-	WriteSecret  *setting.WriteSecret
-	DeleteSecret *setting.DeleteSecret
-	PluginRetry  *setting.RetryPlugin
-	PluginData   PluginData
-	Vaults       VaultProvider
-	ChoosePath   *setting.ChoosePluginPath
+	Get         *setting.Get
+	Write       *setting.Write
+	Watch       *setting.Watch
+	Secrets     *secret.Secrets
+	PluginRetry *setting.RetryPlugin
+	PluginData  PluginData
+	Vaults      VaultProvider
+	ChoosePath  *setting.ChoosePluginPath
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -36,7 +35,7 @@ var errNoSettings = errors.New("this build serves no settings")
 // GetSettings returns every setting of the file this installation is configured in,
 // and the models that settings naming a model can be set to.
 func (h *Handler) GetSettings(
-	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
+	ctx context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
 	if h.Get == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
@@ -45,13 +44,23 @@ func (h *Handler) GetSettings(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.GetSettingsResponse{
+	reply := &v1.GetSettingsResponse{
 		Written: got.Written,
 		Path:    got.Path,
 		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
-	}), nil
+	}
+	if h.Secrets != nil {
+		listing, err := h.Secrets.List.Execute()
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		reply.SecretSections = newWireSecretSections(listing.Sections)
+		reply.SecretMenus = newWireSecretMenus(listing.Menus)
+		reply.CredentialsPath = listing.CredentialsPath
+	}
+	return connect.NewResponse(reply), nil
 }
 
 // WriteSettings writes settings into that file. A value the settings could not
@@ -118,17 +127,15 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
 		infos = append(infos, &v1.PluginInfo{
-			Id:           one.ID,
-			Name:         one.Name,
-			Version:      one.Version,
-			Description:  one.Description,
-			Capabilities: one.Capabilities,
-			Settings:     newWirePluginSettings(one.Settings),
-			IsActive:     one.IsActive,
-			Permissions:  one.Permissions,
-			Secrets:      newWireSecrets(one.Secrets),
-			// The names of the stored secrets travel, and a key never does.
-			StoredSecrets: one.StoredSecrets,
+			Id:            one.ID,
+			Name:          one.Name,
+			Version:       one.Version,
+			Description:   one.Description,
+			Capabilities:  one.Capabilities,
+			Settings:      newWirePluginSettings(one.Settings),
+			IsActive:      one.IsActive,
+			Permissions:   one.Permissions,
+			Secrets:       newWireSecrets(one.Secrets),
 			Failure:       newWirePluginFailure(one.Failure),
 			HasFrontend:   one.HasFrontend,
 			HasBackend:    one.HasBackend,
@@ -168,34 +175,6 @@ func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
 	return settings
 }
 
-// WritePluginSecret stores the key of a secret a plugin declares. A secret the
-// plugin does not declare, and a machine without a key store, are reported to
-// the client.
-func (h *Handler) WritePluginSecret(
-	ctx context.Context, r *connect.Request[v1.WritePluginSecretRequest],
-) (*connect.Response[v1.WritePluginSecretResponse], error) {
-	if h.WriteSecret == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	if err := h.WriteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
-	}
-	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
-}
-
-// DeletePluginSecret removes the key, if any, of a secret a plugin declares.
-func (h *Handler) DeletePluginSecret(
-	ctx context.Context, r *connect.Request[v1.DeletePluginSecretRequest],
-) (*connect.Response[v1.DeletePluginSecretResponse], error) {
-	if h.DeleteSecret == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	if err := h.DeleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
-	}
-	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
-}
-
 func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
@@ -203,7 +182,7 @@ func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
-// RetryPlugin starts a plugin the host suspends once more. A plugin that fails
+// RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
 func (h *Handler) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
@@ -249,7 +228,7 @@ func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOpti
 }
 
 func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
-	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail}
+	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
 }
 
 func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {
@@ -270,11 +249,11 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-func newWireSecrets(target []setting.PluginSecret) []*v1.PluginSecret {
-	secrets := make([]*v1.PluginSecret, 0, len(target))
+func newWireSecrets(target []setting.PluginSecret) []*v1.SecretRequest {
+	secrets := make([]*v1.SecretRequest, 0, len(target))
 	for _, one := range target {
-		secrets = append(secrets, &v1.PluginSecret{
-			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireCondition(one.When),
+		secrets = append(secrets, &v1.SecretRequest{
+			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireCondition(one.When), Group: one.Group,
 		})
 	}
 	return secrets

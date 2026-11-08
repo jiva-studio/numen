@@ -326,7 +326,10 @@ type WatchVaultChangesResponse struct {
 	Reload bool `protobuf:"varint,2,opt,name=reload,proto3" json:"reload,omitempty"`
 	// The notes that were renamed by this application, each by where it was and
 	// where it now is. A client showing one of them follows it there.
-	Renamed       []*Move `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
+	Renamed []*Move `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
+	// Paths of the files whose text versions changed: a version was made or
+	// deleted, or became live or no longer live.
+	VersionPaths  []string `protobuf:"bytes,4,rep,name=version_paths,json=versionPaths,proto3" json:"version_paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -378,6 +381,13 @@ func (x *WatchVaultChangesResponse) GetReload() bool {
 func (x *WatchVaultChangesResponse) GetRenamed() []*Move {
 	if x != nil {
 		return x.Renamed
+	}
+	return nil
+}
+
+func (x *WatchVaultChangesResponse) GetVersionPaths() []string {
+	if x != nil {
+		return x.VersionPaths
 	}
 	return nil
 }
@@ -460,11 +470,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"chunkCount\x12%\n" +
 	"\x0eembedded_count\x18\x02 \x01(\x03R\rembeddedCount\x12!\n" +
 	"\fis_embedding\x18\x03 \x01(\bR\visEmbedding\"\x1a\n" +
-	"\x18WatchVaultChangesRequest\"s\n" +
+	"\x18WatchVaultChangesRequest\"\x98\x01\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
 	"\x06reload\x18\x02 \x01(\bR\x06reload\x12(\n" +
-	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.MoveR\arenamed\"*\n" +
+	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.MoveR\arenamed\x12#\n" +
+	"\rversion_paths\x18\x04 \x03(\tR\fversionPaths\"*\n" +
 	"\x04Move\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to2\xc0\x01\n" +

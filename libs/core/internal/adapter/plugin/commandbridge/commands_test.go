@@ -40,13 +40,17 @@ type commandHost struct {
 	endpoints map[string]pluginport.Endpoint
 	acquired  int
 	released  int
+	infoReads int
 }
 
 func (h *commandHost) Discover() error { return nil }
 
 func (h *commandHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
 
+func (h *commandHost) IsPluginSuspended(string) bool { return false }
+
 func (h *commandHost) GetPluginInfos() []pluginport.PluginInfo {
+	h.infoReads++
 	infos := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, one := range h.plugins {
 		infos = append(infos, pluginport.PluginInfo{ID: one.Manifest.ID})
@@ -111,31 +115,6 @@ func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
 	return pluginport.DiscoveredPlugin{Manifest: manifest}
 }
 
-func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
-	host := &commandHost{
-		plugins: []pluginport.DiscoveredPlugin{
-			declaring("md.numen.a", "first", "second"),
-			declaring("md.numen.b", "third"),
-			declaring("md.numen.c", "fourth"),
-		},
-		disabled: map[string]bool{"md.numen.b": true},
-	}
-
-	entries := Open(host).ListCommands()
-
-	var ids []string
-	for _, one := range entries {
-		ids = append(ids, one.PluginID+"/"+one.Command.ID)
-	}
-	want := []string{"md.numen.a/first", "md.numen.a/second", "md.numen.c/fourth"}
-	if len(ids) != len(want) || ids[0] != want[0] || ids[1] != want[1] || ids[2] != want[2] {
-		t.Errorf("got %v, want %v", ids, want)
-	}
-	if host.acquired != 0 {
-		t.Errorf("listing started %d plugins", host.acquired)
-	}
-}
-
 func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{
@@ -144,13 +123,14 @@ func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	}
 
 	result, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{
-		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"},
+		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"}, ItemID: "audio",
 	})
 	if err != nil || result.Message != "made it" || result.OpenedPath != "Made.md" {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 	request := plugin.received[0]
-	if request.GetCommand() != "make" || request.GetPath() != "a.pdf" || request.GetArguments()["title"] != "T" {
+	if request.GetCommand() != "make" || request.GetPath() != "a.pdf" || request.GetArguments()["title"] != "T" ||
+		request.GetItemId() != "audio" {
 		t.Errorf("the plugin received %v", request)
 	}
 	if host.acquired != 1 || host.released != 1 {

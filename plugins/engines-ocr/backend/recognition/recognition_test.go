@@ -108,6 +108,15 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 	return t.Texts.PutVersion(ctx, params)
 }
 
+func (t textsOfVault) With(id domain.VaultID) host.Texts {
+	texts, isTexts := t.Texts.With(id).(*hosttest.Texts)
+	vault, isVault := t.vault.With(id).(*hosttest.Vault)
+	if !isTexts || !isVault {
+		return t.Texts.With(id)
+	}
+	return textsOfVault{Texts: texts, vault: vault}
+}
+
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
 type scene struct {
 	vault      *hosttest.Vault
@@ -183,7 +192,7 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
-	if err != nil || res.Pages != 2 || res.IsSkipped || res.IsEmpty {
+	if err != nil || res.Pages != 2 || res.IsEmpty {
 		t.Fatalf("recognised %+v (%v), want two pages", res, err)
 	}
 	text := s.readLive(t, "books/scan.pdf")
@@ -210,43 +219,19 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	}
 }
 
-func TestRecogniseSkipsTextLayerUnlessUserStarted(t *testing.T) {
+func TestRecogniseReadsAPDFWithATextLayer(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf"})
-	if err != nil || !res.IsSkipped || s.recogniser.getPageCount() != 0 {
-		t.Fatalf("a PDF with a layer, unasked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
-	}
-	res, err = s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf", IsUserStarted: true})
-	if err != nil || res.IsSkipped || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
-		t.Fatalf("a PDF with a layer, asked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
+	if err != nil || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
+		t.Fatalf("a PDF with a layer: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
 	}
 }
 
-func TestRecogniseSkipsUnchangedFile(t *testing.T) {
+func TestRecogniseReadsARecognisedFileAgain(t *testing.T) {
 	s := newScene(t)
 	for range 2 {
 		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if got := s.recogniser.getPageCount(); got != 2 {
-		t.Fatalf("%d pages were read, want the two of one run", got)
-	}
-
-	s.vault.File("books/scan.pdf", readFixture(t, "scan.pdf")+"\n% a second printing\n")
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
-		t.Fatal(err)
-	}
-	if got := s.recogniser.getPageCount(); got != 4 {
-		t.Fatalf("%d pages were read, want the replaced file read again", got)
-	}
-}
-
-func TestRecogniseUserStartedReadsARecognisedFileAgain(t *testing.T) {
-	s := newScene(t)
-	for _, isUserStarted := range []bool{false, true} {
-		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: isUserStarted}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -292,7 +277,7 @@ func TestRecogniseReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
-	if err != nil || res.IsSkipped || s.recogniser.getPageCount() != 4 {
+	if err != nil || s.recogniser.getPageCount() != 4 {
 		t.Fatalf("recognised %+v (%v) after %d pages, want the file read again", res, err, s.recogniser.getPageCount())
 	}
 }
@@ -343,13 +328,17 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	if len(files) != 0 {
 		t.Errorf("a scan that says nothing keeps %+v", files)
 	}
+	tasks := s.queue.ListTasks()
+	if len(tasks) != 1 || tasks[0].FailureReason != "books/scan.pdf says nothing that could be read, and nothing was kept" {
+		t.Errorf("tasks %+v, want the task failed with what was read", tasks)
+	}
 }
 
 func TestRecogniseFailureReportsTaskError(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.err = errors.New("the model ran out of memory")
 
-	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err == nil {
+	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err == nil {
 		t.Fatal("a recogniser that failed recognised the file")
 	}
 	tasks := s.queue.ListTasks()
@@ -380,7 +369,7 @@ func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.onRecognise = func() { s.vault.Remove("books/scan.pdf") }
 
-	_, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
+	_, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
 	if !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file deleted during its recognition answered %v", err)

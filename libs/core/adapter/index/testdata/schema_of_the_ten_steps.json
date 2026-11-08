@@ -247,7 +247,7 @@
   {
     "Kind": "table",
     "Name": "text_versions",
-    "Body": "CREATE TABLE text_versions (\n    id                INTEGER PRIMARY KEY,\n    vault             TEXT NOT NULL,\n    path              TEXT NOT NULL,\n    plugin_id         TEXT NOT NULL,\n    key               TEXT NOT NULL,\n    source_version_id TEXT NOT NULL,\n    kind              TEXT NOT NULL,\n    file              TEXT NOT NULL,\n    input_hash        TEXT NOT NULL,\n    text_hash         TEXT NOT NULL,\n    create_time       INTEGER NOT NULL,\n    UNIQUE (vault, path, plugin_id, key)\n)"
+    "Body": "CREATE TABLE text_versions (\n    id                    INTEGER PRIMARY KEY,\n    vault                 TEXT NOT NULL,\n    path                  TEXT NOT NULL,\n    plugin_id             TEXT NOT NULL,\n    key                   TEXT NOT NULL,\n    source_version_id     TEXT NOT NULL,\n    source_property_key   TEXT NOT NULL DEFAULT '',\n    source_property_value TEXT NOT NULL DEFAULT '',\n    kind                  TEXT NOT NULL,\n    file                  TEXT NOT NULL,\n    input_hash            TEXT NOT NULL,\n    text_hash             TEXT NOT NULL,\n    create_time           INTEGER NOT NULL,\n    UNIQUE (vault, path, plugin_id, key)\n)"
   },
   {
     "Kind": "table",

@@ -25,10 +25,11 @@ type PluginWork struct {
 	mu      sync.Mutex
 	plugins map[string]*pluginState
 	next    uint64
+	changed chan struct{}
 }
 
-// pluginState is what one plugin holds: the ids of its tasks, its leases and
-// the cancellations of its waits.
+// pluginState is what one plugin holds: the ids of its tasks, each true while
+// it runs and false once it failed, its leases and the cancellations of its waits.
 type pluginState struct {
 	tasks  map[string]bool
 	leases map[*lease]bool
@@ -40,7 +41,7 @@ var _ pluginport.PluginWork = (*PluginWork)(nil)
 // NewPluginWork opens the lock and the list of tasks to the plugins. getName
 // returns the name a plugin's tasks are listed under; nil lists them unnamed.
 func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) string) *PluginWork {
-	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}}
+	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}, changed: make(chan struct{})}
 }
 
 // EnqueueWork waits at the lock for a lease for the plugin and returns it.
@@ -54,12 +55,14 @@ func (w *PluginWork) EnqueueWork(
 	w.next++
 	key := w.next
 	w.getStateLocked(pluginID).waits[key] = cancel
+	w.notifyLocked()
 	w.mu.Unlock()
 
 	release, err := w.lock.Acquire(ctx, isUserStarted, onWaiting)
 
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	defer w.notifyLocked()
 	state, isKnown := w.plugins[pluginID]
 	isWaiting := isKnown && state.waits[key] != nil
 	if isWaiting {
@@ -83,6 +86,7 @@ func (w *PluginWork) EnqueueWork(
 		if state, isKnown := w.plugins[pluginID]; isKnown {
 			delete(state.leases, one)
 		}
+		w.notifyLocked()
 	}
 	state.leases[one] = true
 	return one, nil
@@ -95,7 +99,8 @@ func (w *PluginWork) ReportTask(pluginID string, task pluginport.PluginTask) {
 		return
 	}
 	w.mu.Lock()
-	w.getStateLocked(pluginID).tasks[task.ID] = true
+	w.getStateLocked(pluginID).tasks[task.ID] = task.Error == ""
+	w.notifyLocked()
 	w.mu.Unlock()
 	w.tasks.Set(Task{
 		ID:            getPluginTaskID(pluginID, task.ID),
@@ -124,6 +129,7 @@ func (w *PluginWork) FinishTask(pluginID, taskID string) {
 	if state, isKnown := w.plugins[pluginID]; isKnown {
 		delete(state.tasks, taskID)
 	}
+	w.notifyLocked()
 	w.mu.Unlock()
 	w.tasks.Remove(getPluginTaskID(pluginID, taskID))
 }
@@ -134,6 +140,7 @@ func (w *PluginWork) ClearPlugin(pluginID string) {
 	w.mu.Lock()
 	state, isKnown := w.plugins[pluginID]
 	delete(w.plugins, pluginID)
+	w.notifyLocked()
 	w.mu.Unlock()
 	if !isKnown {
 		return
@@ -147,6 +154,43 @@ func (w *PluginWork) ClearPlugin(pluginID string) {
 	for taskID := range state.tasks {
 		w.tasks.Remove(getPluginTaskID(pluginID, taskID))
 	}
+}
+
+// WaitIdle returns once no plugin holds a lease, waits for one or has a task that has not failed, or
+// with the error of the context where it ends first.
+func (w *PluginWork) WaitIdle(ctx context.Context) error {
+	for {
+		w.mu.Lock()
+		isIdle, changed := w.isIdleLocked(), w.changed
+		w.mu.Unlock()
+		if isIdle {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-changed:
+		}
+	}
+}
+
+func (w *PluginWork) isIdleLocked() bool {
+	for _, state := range w.plugins {
+		if len(state.leases) > 0 || len(state.waits) > 0 {
+			return false
+		}
+		for _, isRunning := range state.tasks {
+			if isRunning {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (w *PluginWork) notifyLocked() {
+	close(w.changed)
+	w.changed = make(chan struct{})
 }
 
 func (w *PluginWork) getStateLocked(pluginID string) *pluginState {

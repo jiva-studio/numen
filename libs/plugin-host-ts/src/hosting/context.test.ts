@@ -23,8 +23,8 @@ describe('PluginContext', () => {
         return { dispose: vi.fn() }
       }),
       registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      registerStatusView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      app: { version: '2026.10.1', build: 884, platform: 'linux' },
+      registerSlotView: vi.fn((_id, _slot, _reg) => ({ dispose: vi.fn() })),
+      app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
       openExternal: vi.fn(async (_url: string) => undefined),
       registerTabKind: vi.fn((_id, _reg) => {
         calls.registerTabKind++
@@ -32,9 +32,6 @@ describe('PluginContext', () => {
       }),
       registerCommand: vi.fn((_id, _reg) => {
         calls.registerCommand++
-        return { dispose: vi.fn() }
-      }),
-      registerContextMenu: vi.fn((_id, _reg) => {
         return { dispose: vi.fn() }
       }),
       registerAgentProvider: vi.fn((_id, _reg) => {
@@ -260,23 +257,38 @@ describe('PluginContext', () => {
     expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
   })
 
-  it('tracks the status views a plugin registers', () => {
+  it('registers a view in the slot its manifest places the id in', () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('test.plugin', host)
+    const ctx = createPluginContext('org.example.orchard', host, {
+      id: 'org.example.orchard',
+      name: 'Orchard',
+      version: '1.0.0',
+      contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
+    } as unknown as Parameters<typeof createPluginContext>[2])
 
-    ctx.registerStatusView({ id: 'update', component: null })
+    ctx.registerSlotView({ id: 'bar', component: null })
 
     expect(ctx.subscriptions).toHaveLength(1)
-    expect(host.registerStatusView).toHaveBeenCalledWith(
-      'test.plugin',
-      expect.objectContaining({ id: 'update' }),
+    expect(host.registerSlotView).toHaveBeenCalledWith(
+      'org.example.orchard',
+      'titleBar',
+      expect.objectContaining({ id: 'bar' }),
     )
+  })
+
+  it('rejects a view its manifest places nowhere', () => {
+    const { host } = createMockHost()
+    const ctx = createPluginContext('org.example.orchard', host)
+
+    expect(() => ctx.registerSlotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
+    expect(host.registerSlotView).not.toHaveBeenCalled()
   })
 
   it('reports the application build the host runs', () => {
     const { host } = createMockHost()
 
     expect(createPluginContext('test.plugin', host).app).toEqual({
+      name: 'numen',
       version: '2026.10.1',
       build: 884,
       platform: 'linux',

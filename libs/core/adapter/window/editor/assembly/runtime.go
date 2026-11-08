@@ -14,9 +14,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
@@ -57,8 +60,7 @@ type Runtime[H, V any] struct {
 	OpenGetSettingsFn        func() *settings.Get
 	OpenWriteSettingsFn      func() *settings.Write
 	OpenWatchSettingsFn      func() *settings.Watch
-	OpenWritePluginSecretFn  func() *settings.WriteSecret
-	OpenDeletePluginSecretFn func() *settings.DeleteSecret
+	OpenSecretsFn            func() *secret.Secrets
 	OpenRetryPluginFn        func() *settings.RetryPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
 	SetPluginWorkFn          func(tasks *run.Tasks, models *run.Lock)
@@ -74,10 +76,14 @@ type Runtime[H, V any] struct {
 	PluginServicesFn         func() PluginServices
 	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
+	OpenChooseTabKindFn      func() *tabkind.Choose
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
-	OpenFileMenuFn           func() *textversion.FileMenu
-	OpenProxyFn              func() *file.OpenProxy
+	ReportTextFilesChangedFn func(ctx context.Context, v domain.Vault, paths []string) error
+	OpenVersionItemsFn       func() *textversion.VersionItems
+	OpenPluginFileFn         func() *file.OpenPluginFile
+	OpenTriggersFn           func() *trigger.Triggers
+	WatchPluginChangesFn     func() (<-chan struct{}, func())
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -106,14 +112,9 @@ func (e Runtime[H, V]) CloseIndex() error                            { return e.
 func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }
 func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
 func (e Runtime[H, V]) OpenWatchSettings() *settings.Watch           { return e.OpenWatchSettingsFn() }
-func (e Runtime[H, V]) OpenWritePluginSecret() *settings.WriteSecret {
-	return e.OpenWritePluginSecretFn()
-}
-func (e Runtime[H, V]) OpenDeletePluginSecret() *settings.DeleteSecret {
-	return e.OpenDeletePluginSecretFn()
-}
-func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
-func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
+func (e Runtime[H, V]) OpenSecrets() *secret.Secrets                 { return e.OpenSecretsFn() }
+func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin       { return e.OpenRetryPluginFn() }
+func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)        { e.ReportPluginFailuresFn(tasks) }
 func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	e.SetPluginWorkFn(tasks, models)
 }
@@ -162,12 +163,47 @@ func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
 }
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
+
+// OpenChooseTabKind is the choice of the kind of tab a note opens in, nil where the assembly names
+// none.
+func (e Runtime[H, V]) OpenChooseTabKind() *tabkind.Choose {
+	if e.OpenChooseTabKindFn == nil {
+		return nil
+	}
+	return e.OpenChooseTabKindFn()
+}
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
 }
-func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu { return e.OpenFileMenuFn() }
-func (e Runtime[H, V]) OpenProxy() *file.OpenProxy          { return e.OpenProxyFn() }
-func (e Runtime[H, V]) GetMediaType() *file.GetMediaType    { return e.GetMediaTypeFn() }
+
+// ReportTextFilesChanged reports each changed file whose live text version changed; an assembly with no
+// text versions reports none.
+func (e Runtime[H, V]) ReportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
+	if e.ReportTextFilesChangedFn == nil {
+		return nil
+	}
+	return e.ReportTextFilesChangedFn(ctx, v, paths)
+}
+func (e Runtime[H, V]) OpenVersionItems() *textversion.VersionItems { return e.OpenVersionItemsFn() }
+func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile        { return e.OpenPluginFileFn() }
+
+func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
+	if e.OpenTriggersFn == nil {
+		return nil
+	}
+	return e.OpenTriggersFn()
+}
+
+// WatchPluginChanges reports each time the host applied settings or forgot the failure of a plugin,
+// and never where the installation runs no plugins.
+func (e Runtime[H, V]) WatchPluginChanges() (<-chan struct{}, func()) {
+	if e.WatchPluginChangesFn == nil {
+		return nil, func() {}
+	}
+	return e.WatchPluginChangesFn()
+}
+
+func (e Runtime[H, V]) GetMediaType() *file.GetMediaType { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)
 }

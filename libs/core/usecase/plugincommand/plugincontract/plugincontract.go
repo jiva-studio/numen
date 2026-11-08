@@ -26,9 +26,9 @@ type (
 	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
-	PluginMenuEntry        = pluginport.PluginMenuEntry
-	PluginContextCondition = pluginport.PluginContextCondition
-	PluginContext          = pluginport.PluginContext
+	PluginSlotEntry        = pluginport.PluginSlotEntry
+	PluginTabKindEntry     = pluginport.PluginTabKindEntry
+	PluginTriggerEntry     = pluginport.PluginTriggerEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginParts            = pluginport.PluginParts
@@ -54,7 +54,6 @@ type (
 	PluginManifestSetting  = pluginport.PluginManifestSetting
 	PluginNoteType         = pluginport.PluginNoteType
 	PluginPersistHandler   = pluginport.PluginPersistHandler
-	PluginHandle           = pluginport.PluginHandle
 	PluginReader           = pluginport.PluginReader
 	PluginReaderInfo       = pluginport.PluginReaderInfo
 	PluginRegistryManager  = pluginport.PluginRegistryManager
@@ -68,6 +67,9 @@ type (
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
 	PluginSimilaritySample = pluginport.PluginSimilaritySample
 	PluginSecret           = pluginport.PluginSecret
+	SecretSource           = pluginport.SecretSource
+	Secret                 = pluginport.Secret
+	SecretPermission       = pluginport.SecretPermission
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition
@@ -141,11 +143,7 @@ const (
 	PluginProtocolVersion       = pluginport.PluginProtocolVersion
 	PluginWithoutBackend        = pluginport.PluginWithoutBackend
 	RuntimeONNX                 = pluginport.RuntimeONNX
-	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
-	HandleTextProvider          = pluginport.HandleTextProvider
-	ContextAnyValue             = pluginport.ContextAnyValue
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
-	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
 	SettingTypeFile             = pluginport.SettingTypeFile
 	SettingTypeString           = pluginport.SettingTypeString
@@ -175,7 +173,6 @@ var (
 	ErrInvalidID              = pluginport.ErrInvalidID
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
-	ErrInvalidHandle          = pluginport.ErrInvalidHandle
 	ErrInvalidReader          = pluginport.ErrInvalidReader
 	ErrInvalidSettingsView    = pluginport.ErrInvalidSettingsView
 	ErrInvalidSecret          = pluginport.ErrInvalidSecret
@@ -216,4 +213,9 @@ func PluginPermissions() []string { return pluginport.PluginPermissions() }
 
 func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
 	return pluginport.NewPluginSetting(declared, defaultJSON, options)
+}
+
+// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
+func GetSharedCommandArguments(id string) []PluginCommandArgument {
+	return pluginport.GetSharedCommandArguments(id)
 }

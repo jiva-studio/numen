@@ -33,6 +33,9 @@ const readVersion = (one: TextVersionMessage): TextVersion => ({
   pluginId: one.pluginId,
   key: one.key,
   sourceVersionId: one.sourceVersionId,
+  ...(one.sourceProperty === undefined || one.sourceProperty.key === ''
+    ? {}
+    : { sourceProperty: { key: one.sourceProperty.key, value: one.sourceProperty.value } }),
   kind: one.kind,
   file: one.file,
   createTime: new Date(Number(one.createTimeUnixMs)),

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/textprovider.proto";
+import "numen/v1/textsegment.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
@@ -33,12 +33,22 @@ service HostTextService {
   rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
 }
 
+// TextSourceProperty is a frontmatter property of a note that a text version
+// was made from: the key and its string value.
+message TextSourceProperty {
+  string key = 1;
+  string value = 2;
+}
+
 // TextVersion is the host's record of one text of a file.
 //
-// source_version_id is empty for a version made from the file. input_hash is
-// the SHA-256, in hex, of the file's bytes for such a version, and the hash of
-// the source version otherwise. file is the name of the version's file in the
-// folder of the plugin that made it; text_hash is the SHA-256 of that file's bytes.
+// A version has one root. source_version_id names another version, and
+// input_hash is the hash of that version. source_property names a property of
+// the note: the version is live while the note's frontmatter holds the key as
+// that string, and input_hash is empty. With neither, the version is made from
+// the file, and input_hash is the SHA-256, in hex, of the file's bytes. file
+// is the name of the version's file in the folder of the plugin that made it;
+// text_hash is the SHA-256 of that file's bytes.
 // kind is what the text is, as the plugin that made it names it;
 // the host compares it as an opaque string.
 message TextVersion {
@@ -52,6 +62,7 @@ message TextVersion {
   string text_hash = 8;
   int64 create_time_unix_ms = 9;
   string file = 10;
+  TextSourceProperty source_property = 11;
 }
 
 message PutTextVersionRequest {
@@ -62,6 +73,9 @@ message PutTextVersionRequest {
   string input_hash = 5;
   // file is the name of the version's file in the calling plugin's folder.
   string file = 6;
+  // source_property is set for a version made from a property of the note,
+  // with no source_version_id and no input_hash.
+  TextSourceProperty source_property = 7;
 }
 
 message PutTextVersionResponse {

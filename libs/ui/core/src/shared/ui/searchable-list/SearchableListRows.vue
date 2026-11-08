@@ -11,7 +11,7 @@ import { getHeadings, type ListRow } from './rows'
 const props = defineProps<{
   rows: readonly ListRow[]
   activeIndex: number
-  current: string | null
+  current: readonly string[]
   listId: string
   label: string
 }>()
@@ -49,8 +49,9 @@ defineExpose({ scrollToActive })
       :key="row.key"
       :row="row"
       :heading="headings[index]"
+      :has-separator="index > 0 && row.kind === 'item' && row.item.hasSeparator === true"
       :is-active="index === activeIndex"
-      :is-current="row.kind === 'item' && row.item.id === current"
+      :is-current="row.kind === 'item' && current.includes(row.item.id)"
       @choose="$emit('choose', row.key)"
       @hover="$emit('hover', row.key)"
     />

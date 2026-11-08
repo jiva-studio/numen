@@ -9,7 +9,6 @@ import {
 import { VAULT_SUMMARY, type WorkspaceHost } from '@numen/plugin-sdk'
 import { effectScope } from 'vue'
 import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
-import { cards, presets } from './cards'
 
 const createContext = () => {
   const writers: string[] = []
@@ -167,7 +166,14 @@ describe('flashcards-studio plugin', () => {
     const openTab = vi.spyOn(ctx, 'openTab')
     activate(ctx)
 
-    await ctx.triggerCommand('preset.open', { path: 'Plan.md', title: 'Plan', type: 'note' })
+    await ctx.triggerCommand('preset.open', {
+      path: 'Plan.md',
+      title: 'Plan',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(openTab).toHaveBeenCalledExactlyOnceWith(PRESET, 'Plan.md')
   })
@@ -203,37 +209,12 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(3)
   })
 
-  it('registers context menu items when files service is available', async () => {
-    const createDeck = vi
-      .spyOn(cards, 'createDeck')
-      .mockResolvedValue({ ok: true, value: { path: 'Decks/New deck.md' } } as never)
-    const createCardModel = vi
-      .spyOn(cards, 'createCardModel')
-      .mockResolvedValue({ ok: true, value: { path: 'Card models/New card model.md' } } as never)
-    const createPreset = vi
-      .spyOn(presets, 'createPreset')
-      .mockResolvedValue({ ok: true, value: { path: 'Presets/New preset.md' } } as never)
+  it('registers no command of its own for the New submenu, where the files of the vault are given', () => {
     const { ctx } = createContext()
-    ;(ctx as unknown as { files: unknown }).files = {}
+    ;(ctx as unknown as { files: unknown }).files = { list: async () => [] }
 
     activate(ctx)
 
-    const menus = ctx.getRegisteredContextMenus()
-    expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newCardModel', 'newPreset'])
-    expect(menus.every((m) => m.parentId === 'new')).toBe(true)
-
-    await menus[0]?.handler({ path: 'Decks', isFolder: true, isNote: false, isSeveral: false })
-    expect(createDeck).toHaveBeenCalledWith('New deck', 'Decks')
-
-    await menus[1]?.handler({
-      path: 'Decks/One.md',
-      isFolder: false,
-      isNote: true,
-      isSeveral: false,
-    })
-    expect(createCardModel).toHaveBeenCalledWith('New card model', 'Decks', [])
-
-    await menus[2]?.handler({ path: '', isFolder: false, isNote: false, isSeveral: false })
-    expect(createPreset).toHaveBeenCalledWith('New preset', '')
+    expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual(['preset.open'])
   })
 })

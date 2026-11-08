@@ -10,7 +10,7 @@ import {
   type Timer,
 } from './updates'
 
-const APP: AppInfo = { version: '2026.9.0', build: 900, platform: 'windows' }
+const APP: AppInfo = { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' }
 const HOUR = 60 * 60 * 1000
 
 const AVAILABLE: Status = {

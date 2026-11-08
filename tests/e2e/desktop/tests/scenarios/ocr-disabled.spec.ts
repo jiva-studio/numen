@@ -4,6 +4,7 @@ import {
   openVaultFile,
   openWorkspace,
   runCommand,
+  runCommandOverItem,
   waitForPassage,
 } from '../support/workspace.js'
 
@@ -39,7 +40,7 @@ test.describe('With the OCR plugin disabled', () => {
     await waitForPassage(page, LAYER_WORDS, PATH)
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
     await waitForPassage(page, SCANNED_WORDS, PATH)
     await page.keyboard.press('Escape')
 
@@ -61,11 +62,11 @@ test.describe('With the OCR plugin disabled after a proofreading', () => {
   test('keeps the proofread recognition shown and found', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'flywheel.pdf')
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
     await waitForPassage(page, SCANNED_WORDS, PATH)
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
     await waitForPassage(page, PROOFREAD_MARK, PATH)
     await page.keyboard.press('Escape')
 

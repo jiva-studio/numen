@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -20,10 +21,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	service := linkServer{links: links}
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetLink, service.getLink)
-	server.Handle(a, api.MethodReadArticle, service.readArticle)
-	server.Handle(a, api.MethodFetchText, service.fetchText)
-	server.Handle(a, api.MethodCopyVideo, service.copyVideo)
-	server.Handle(a, api.MethodDeleteCopy, service.deleteCopy)
+	server.Handle(a, api.MethodCopyMedia, service.copyMedia)
 	server.Handle(a, api.MethodCreateLinks, service.createLinks)
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="compile-time API service and method constants are valid so a.Err() is always nil"
 	return a.Err()
@@ -55,59 +53,22 @@ func (s linkServer) getLink(ctx context.Context, req api.GetLinkRequest) (api.Ge
 	if err != nil {
 		return api.GetLinkResponse{}, err
 	}
-	size, err := s.links.FindCopy(ctx, found)
-	if err != nil {
-		return api.GetLinkResponse{}, err
-	}
-	isDeleted, err := s.links.IsTextDeleted(ctx, found)
-	if err != nil {
-		return api.GetLinkResponse{}, err
-	}
 	return api.GetLinkResponse{
-		URL: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address), CopySize: size,
-		IsTextDeleted: isDeleted, EmbedPage: getEmbedPage(found.Address),
+		URL: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address),
 	}, nil
 }
 
-func (s linkServer) readArticle(ctx context.Context, req api.ReadArticleRequest) (api.ReadArticleResponse, error) {
+func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (api.CopyMediaResponse, error) {
 	found, err := s.readLink(ctx, req.Path)
 	if err != nil {
-		return api.ReadArticleResponse{}, err
+		return api.CopyMediaResponse{}, err
 	}
-	text, err := s.links.ReadArticle(ctx, found)
-	if err != nil {
-		return api.ReadArticleResponse{}, err
+	media := download.MediaVideo
+	if req.Kind == string(download.MediaAudio) {
+		media = download.MediaAudio
 	}
-	return api.ReadArticleResponse{Text: text}, nil
-}
-
-func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (api.FetchTextResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.FetchTextResponse{}, err
-	}
-	s.links.StartFetchText(ctx, found, req.IsUserStarted)
-	return api.FetchTextResponse{}, nil
-}
-
-func (s linkServer) copyVideo(ctx context.Context, req api.CopyVideoRequest) (api.CopyVideoResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.CopyVideoResponse{}, err
-	}
-	s.links.StartCopy(ctx, found)
-	return api.CopyVideoResponse{}, nil
-}
-
-func (s linkServer) deleteCopy(ctx context.Context, req api.DeleteCopyRequest) (api.DeleteCopyResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.DeleteCopyResponse{}, err
-	}
-	if err := s.links.DeleteCopy(ctx, found); err != nil {
-		return api.DeleteCopyResponse{}, err
-	}
-	return api.DeleteCopyResponse{}, nil
+	s.links.StartCopy(ctx, found, media)
+	return api.CopyMediaResponse{}, nil
 }
 
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {

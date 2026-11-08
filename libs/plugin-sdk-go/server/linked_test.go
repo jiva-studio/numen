@@ -17,7 +17,7 @@ import (
 func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 	var configured map[string]string
 	handler, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
-		s.SetUpdateConfig(func(values map[string]string) { configured = values })
+		s.SetUpdateConfig(func(values map[string]string, _ Secrets) { configured = values })
 		return nil
 	})
 	if err != nil {

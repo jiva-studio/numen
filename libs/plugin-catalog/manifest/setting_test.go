@@ -296,14 +296,12 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"dep http url":             {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
 		"dep bad checksum":         {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
 		"secret bad name":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"a/b","title":"T"}]}`, ErrInvalidSecret},
-		"secret reserved":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"storedSecrets","title":"T"}]}`, ErrReservedSettingKey},
 		"secret duplicate":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"},{"name":"s","title":"T"}]}`, ErrInvalidSecret},
 		"secret is setting":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"}],"settings":[{"key":"s","type":"string","title":"S"}]}`, ErrInvalidSecret},
 		"secret bad when":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T","when":{"setting":"none","is":["x"]}}]}`, ErrInvalidSetting},
 		"service bad name":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["Bad"]}`, ErrInvalidService},
 		"service duplicate":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
-		"setting reserved key":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"storedSecrets","type":"string","title":"T"}]}`, ErrReservedSettingKey},
 		"setting named enabled":    {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
 		"setting duplicate key":    {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"}]}`, ErrDuplicateSettingKey},
 		"setting empty title":      {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, ErrEmptySettingTitle},
@@ -316,6 +314,34 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		_, err := manifestjson.Read(strings.NewReader(tc.json))
 		if !errors.Is(err, tc.want) {
 			t.Errorf("%s: got %v, want %v", name, err, tc.want)
+		}
+	}
+}
+
+func readOptionWhenManifest(option string) error {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":["x",` + option + `]}]}`))
+	return err
+}
+
+func TestAnOptionMayCarryACondition(t *testing.T) {
+	if err := readOptionWhenManifest(`{"value":"y","when":"app.platform != 'darwin'"}`); err != nil {
+		t.Fatal(err)
+	}
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":[{"value":"y","when":"app.platform == 'linux'"}]}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	setting, _ := m.GetSetting("a")
+	if got := setting.Options[0].When; got != "app.platform == 'linux'" {
+		t.Errorf("When = %q", got)
+	}
+}
+
+func TestAnOptionConditionThatIsNotValidIsRejected(t *testing.T) {
+	for _, text := range []string{"app.os == 'linux'", "app.platform =="} {
+		err := readOptionWhenManifest(`{"value":"y","when":"` + text + `"}`)
+		if !errors.Is(err, ErrInvalidSetting) || !strings.Contains(err.Error(), "when") {
+			t.Errorf("%q: err = %v, want an invalid setting naming when", text, err)
 		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/notes/markdown"
 	"github.com/jiva-studio/numen/libs/notes/textfile"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -130,18 +131,25 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
+func (w *textWorld) isValidPut(params host.TextPut, version domain.TextVersion) bool {
+	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
+		return false
+	}
+	if version.IsFromProperty() && (params.Source != "" || params.InputHash != "") {
+		return false
+	}
+	return params.Source != version.GetID() && (params.Source == "" || w.indexOf(params.Path, params.Source) >= 0)
+}
+
 func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
-		return domain.TextVersion{}, host.ErrInvalidVersion
-	}
 	version := domain.TextVersion{
-		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		File: params.File, InputHash: params.InputHash,
+		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, SourceProperty: params.SourceProperty,
+		Kind: params.Kind, File: params.File, InputHash: params.InputHash,
 	}
-	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
+	if !w.isValidPut(params, version) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	_, hash, err := w.readFile(ctx, version)
@@ -185,7 +193,7 @@ func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing
 		_, hash, err := w.readFile(ctx, v)
 		return err == nil && hash == v.TextHash
 	}
-	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isIntact); ok {
+	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), w.readProperties(path), isIntact); ok {
 		listing.Live = live.GetID()
 	}
 	return listing, nil
@@ -247,6 +255,10 @@ func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domai
 
 func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
+}
+
+func (w *textWorld) readProperties(path string) map[string]any {
+	return notesmarkdown.Parse(notesdomain.FileStat{Path: path}, w.files[path]).Frontmatter
 }
 
 // ReadTextRange returns the segments of the version that cover the range of its whole text, truncated at

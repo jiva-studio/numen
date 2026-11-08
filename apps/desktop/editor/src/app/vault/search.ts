@@ -25,6 +25,7 @@ export const searchCore: SearchDeps = {
       line: one.heading?.line ?? -1,
       at: one.ranges.map(mapRange),
       type: mapNoteType(one.type),
+      ...(one.tabKind ? { tabKind: one.tabKind } : {}),
     }))
   },
   search: async (query, mode, limit) => {
@@ -34,6 +35,7 @@ export const searchCore: SearchDeps = {
       title: one.note?.title ?? '',
       isNote: one.note !== undefined,
       type: mapNoteType(one.type),
+      ...(one.tabKind ? { tabKind: one.tabKind } : {}),
       selector: parseSelector(one.selector),
       text: one.text,
       start: one.range?.start ?? 0,

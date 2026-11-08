@@ -8,6 +8,7 @@ import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import {
   getFilteredPluginItems,
+  matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
@@ -35,6 +36,8 @@ const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 
 const showsSystem = computed(() => matchesSystemRow(parsedQuery.value))
 
+const showsSecrets = computed(() => matchesSecretsRow(parsedQuery.value))
+
 const flatPlugins = computed(() =>
   getFilteredPluginItems(props.plugins, parsedQuery.value, filterContext),
 )
@@ -46,6 +49,10 @@ function onSelectPlugin(pluginId: string): void {
 
 function onSelectSystem(): void {
   emit('select-plugin', 'system')
+}
+
+function onSelectSecrets(): void {
+  emit('select-plugin', 'secrets')
 }
 
 function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
@@ -72,6 +79,13 @@ function isPluginEnabled(pluginId: string): boolean {
 
     <div class="plugins-list__items">
       <SystemRow v-if="showsSystem" @select="onSelectSystem" />
+      <SystemRow
+        v-if="showsSecrets"
+        class="secrets-row"
+        :name="words.secrets"
+        :detail="words.secretsDetail"
+        @select="onSelectSecrets"
+      />
       <PluginRow
         v-for="item in flatPlugins"
         :key="item.plugin.id"
@@ -86,7 +100,10 @@ function isPluginEnabled(pluginId: string): boolean {
     <div v-if="props.plugins.length === 0" class="plugins-list__empty">
       {{ words.noPlugins }}
     </div>
-    <div v-else-if="flatPlugins.length === 0 && !showsSystem" class="plugins-list__empty">
+    <div
+      v-else-if="flatPlugins.length === 0 && !showsSystem && !showsSecrets"
+      class="plugins-list__empty"
+    >
       {{ words.noPluginsFound }}
     </div>
   </div>
@@ -99,12 +116,15 @@ function isPluginEnabled(pluginId: string): boolean {
 }
 
 .plugins-list__search {
+  display: flex;
+  gap: 0.5rem;
   margin-block-end: 1rem;
 }
 
 .plugins-list__search-input {
   box-sizing: border-box;
-  inline-size: 100%;
+  flex: 1 1 auto;
+  min-inline-size: 0;
   padding: 0.5rem 0.75rem;
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-rule);
@@ -121,6 +141,7 @@ function isPluginEnabled(pluginId: string): boolean {
 .plugins-list__items {
   display: flex;
   flex-direction: column;
+  gap: 0.125rem;
 }
 
 .plugins-list__empty {

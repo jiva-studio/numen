@@ -235,6 +235,10 @@ linters:
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/trash"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/whenconfig"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/pluginchanges"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
 
         # A bridge calls a plugin for the core. It uses the shared bridge package and no other
         # bridge, and nothing of the host side that serves plugin calls.
@@ -476,6 +480,9 @@ linters:
           files:
             - "**/libs/plugin-catalog/manifest/**"
             - "!$test"
+          allow:
+            # The manifest checks the when clauses of its slot entries with package when.
+            - "github.com/jiva-studio/numen/libs/plugin-catalog/when"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog"
               desc: "the manifest model depends on no other package of the catalog"

@@ -1143,7 +1143,8 @@ func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	return answer.Msg.GetEntries()
 }
 
-func getEntryNames(entries []*v1.Entry) []string {
+// GetEntryNames is the entries by name, in the order they arrived.
+func GetEntryNames(entries []*v1.Entry) []string {
 	out := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		out = append(out, entry.GetName())
@@ -1171,7 +1172,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 
 	root := getEntries(t, f, "")
 	want := []string{"library", "physics", "alpha.md", "Notes.txt", "Zeta.md"}
-	if got := getEntryNames(root); !slices.Equal(got, want) {
+	if got := GetEntryNames(root); !slices.Equal(got, want) {
 		t.Fatalf("the root is drawn as %v", got)
 	}
 	target := map[string]*v1.Entry{}
@@ -1189,7 +1190,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	}
 
 	entries := getEntries(t, f, "physics")
-	if got := getEntryNames(entries); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
+	if got := GetEntryNames(entries); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
 		t.Fatalf("the folder is drawn as %v", got)
 	}
 	if path := entries[0].GetPath(); path != "physics/Entropy.md" {
@@ -1216,7 +1217,7 @@ func TestAListingPreservesOutWhatTheVaultPreservesAlone(t *testing.T) {
 		t.Fatal("the vault does not hold what the listing has to leave out")
 	}
 
-	if got := getEntryNames(getEntries(t, f, "")); !slices.Equal(got, []string{"Entropy.md"}) {
+	if got := GetEntryNames(getEntries(t, f, "")); !slices.Equal(got, []string{"Entropy.md"}) {
 		t.Errorf("the root is drawn as %v", got)
 	}
 }
@@ -1387,7 +1388,7 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	if !folder(t, f.root, "science/physics") {
 		t.Fatal("the folder is not on the disk")
 	}
-	if got := getEntryNames(getEntries(t, f, "science")); !slices.Equal(got, []string{"physics"}) {
+	if got := GetEntryNames(getEntries(t, f, "science")); !slices.Equal(got, []string{"physics"}) {
 		t.Errorf("the folder above is drawn as %v", got)
 	}
 	if len(getEntries(t, f, "science/physics")) != 0 {

@@ -1,7 +1,7 @@
 /** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
 import { COMMAND } from '@/shared/commandIds'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SlotCommand } from '@numen/plugin-host'
 import {
   createNameItem,
   createPassageItem,
@@ -32,15 +32,22 @@ const WORDS: Words = {
 
 const ATLAS = 'org.example.atlas'
 
-const entry = (command: string, title: string, overrides: Partial<PlacedCommand> = {}) => ({
+const entry = (
+  command: string,
+  title: string,
+  overrides: Partial<SlotCommand> = {},
+): SlotCommand => ({
+  kind: 'command',
+  key: `${ATLAS}/command/${command}`,
   pluginId: ATLAS,
   command,
   title,
-  group: '',
+  shortcut: '',
+  hasItems: false,
   ...overrides,
 })
 
-const SHOW = entry(`${ATLAS}:graph.showNote`, 'Show note in plex', { group: 'navigate', order: 20 })
+const SHOW = entry(`${ATLAS}:graph.showNote`, 'Show note in plex')
 const OTHER = entry(`${ATLAS}:other.run`, 'Another')
 const ENTRIES = [SHOW, OTHER]
 
@@ -91,7 +98,7 @@ describe('a note found by its title', () => {
   })
 
   it('offers opening the note first whatever group the first entry is in', () => {
-    const first = entry(`${ATLAS}:first.run`, 'First', { group: 'a', order: 0 })
+    const first = entry(`${ATLAS}:first.run`, 'First')
 
     const row = createNameItem(createName(), WORDS, [first, SHOW])
 

@@ -342,13 +342,13 @@ describe('the commands of the settings over how the window is drawn and works', 
 
     it('says what the settings rejected, where the window says what it could not do', async () => {
       mockVaultState.writeError = 'appearance.interfaceScale is 2, which is outside 0.8 to 1.5'
-      const window = await runCommand('interface')
+      await runCommand('interface')
       await press('End')
 
       await press('Enter')
       await wait()
 
-      expect(cards(window).join(' ')).toContain(WORDS.unturned)
+      expect(cards().join(' ')).toContain(WORDS.unturned)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
   })

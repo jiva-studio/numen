@@ -70,7 +70,7 @@ export function createFileCreators(
   ): Promise<string> => {
     const path = await createFile(what, folder, name)
     if (!path) return ''
-    tabOpeners.openNewFile(path, '', what)
+    await tabOpeners.openFile(path)
     return path
   }
 

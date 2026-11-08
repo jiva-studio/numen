@@ -96,17 +96,25 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "help", "-h", "--help":
 		return writeUsage(out, deps)
 	default:
-		if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
-			return runPluginCommand(ctx, out, deps, entry, rest[1:])
-		}
-		return fmt.Errorf("unknown command %q", rest[0])
+		return runCommandOfPlugins(ctx, out, deps, rest)
 	}
+}
+
+func runCommandOfPlugins(ctx context.Context, out io.Writer, deps Deps, rest []string) error {
+	if handlers := listSharedHandlers(deps, rest[0]); len(handlers) > 0 {
+		return runSharedCommand(ctx, out, deps, handlers, rest[1:])
+	}
+	if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
+		return runPluginCommand(ctx, out, deps, entry, rest[1:])
+	}
+	return fmt.Errorf("unknown command %q", rest[0])
 }
 
 func writeUsage(out io.Writer, deps Deps) error {
 	r := newReporter(out)
 	r.Print(usage)
 	writePluginCommandUsage(r, deps)
+	writeSharedCommandUsage(r, deps)
 	return r.Err()
 }
 

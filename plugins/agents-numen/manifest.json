@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
   "capabilities": ["ai.agent.provider"],
@@ -15,7 +15,14 @@
     "window:focus",
     "index:read"
   ],
-  "secrets": [{ "name": "apiKey", "title": "API key" }],
+  "secrets": [
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets the Numen Agent talk to the AI service you chose and answer on your behalf.",
+      "group": "openrouter"
+    }
+  ],
   "backend": { "entrypoint": "bin/agents-numen" },
   "services": ["numen.v1.AgentService"],
   "settings": [

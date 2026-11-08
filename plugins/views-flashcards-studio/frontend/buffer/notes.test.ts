@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { openNotes } from './notes'
-import type { Notes } from './types'
+import type { NoteResult, Notes } from './types'
 
 describe('openNotes for flashcards studio', () => {
   it('opens note and loads body asynchronously', async () => {
@@ -22,6 +22,99 @@ describe('openNotes for flashcards studio', () => {
 
     expect(store.getOpenNote('tab-1').body).toBe('deck content')
     expect(store.getFilePath('tab-1')).toBe('v1')
+  })
+
+  it('takes no edit while the file is read, so the read replaces nothing', async () => {
+    let answerRead = (): void => undefined
+    const notes: Notes = {
+      read: vi.fn(
+        () =>
+          new Promise<NoteResult>((resolve) => {
+            answerRead = () => resolve(asValue({ body: 'deck content', at: 'v1' }))
+          }),
+      ),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    store.setBody('tab-1', 'typed before the read')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'loading' })
+
+    answerRead()
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    await store.flush()
+    expect(store.getOpenNote('tab-1').body).toBe('deck content')
+    expect(notes.write).not.toHaveBeenCalled()
+  })
+
+  it('takes no edit where the first read failed', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asFailure('notADeck')),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'bad.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('error'))
+    store.setBody('tab-1', 'typed after the read failed')
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'error', isRead: false })
+    expect(notes.write).not.toHaveBeenCalled()
+  })
+
+  it('is read once a read answered with the body', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'deck content', at: 'v1' })),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    expect(store.getOpenNote('tab-1').isRead).toBe(false)
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').isRead).toBe(true))
+  })
+
+  it('writes an edit made after a write failed with a retryable error', async () => {
+    const write = vi
+      .fn<Notes['write']>()
+      .mockResolvedValueOnce(asFailure('unreachable'))
+      .mockResolvedValue(asValue({ body: '', at: 'v2' }))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'unreachable' })
+
+    store.setBody('tab-1', 'second edit')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'unsaved', error: null })
+    await store.flushPending('tab-1')
+
+    expect(write).toHaveBeenLastCalledWith('Decks.md', 'second edit', {
+      prose: 'initial',
+      stat: 'v1',
+    })
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
+  it('keeps a write error that an edit cannot fix, and writes nothing', async () => {
+    const write = vi.fn<Notes['write']>().mockResolvedValue(asFailure('notADeck'))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    store.setBody('tab-1', 'second edit')
+    await store.flushPending('tab-1')
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'notANote' })
+    expect(write).toHaveBeenCalledTimes(1)
   })
 
   it('marks error when read fails or throws', async () => {

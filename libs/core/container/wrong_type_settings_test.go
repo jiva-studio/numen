@@ -125,43 +125,9 @@ func TestATextWhereThePluginIsSwitchedOnOrOffIsDroppedAndTheFileReads(t *testing
 	}
 }
 
-func TestStoredSecretsThatAreNoListOfNamesAreDroppedAndTheFileReads(t *testing.T) {
-	for name, stored := range map[string]string{
-		"a text":           `"openai"`,
-		"an object":        `{"openai":true}`,
-		"a list of number": `[1,2]`,
-	} {
-		t.Run(name, func(t *testing.T) {
-			cfg, _ := installationWith(t, `{"`+importerID+`":{"storedSecrets":`+stored+`,"retries":2}}`)
-			got, err := cfg.Settings()
-			if err != nil {
-				t.Fatalf("the read stops: %v", err)
-			}
-			owner := got.GetOwner(importerID)
-			if _, found := owner["storedSecrets"]; found || owner["retries"] != 2.0 {
-				t.Errorf("the object of the plugin is %v", owner)
-			}
-			if len(got.Notices) != 1 || countNotices(got.Notices, importerID+".storedSecrets") != 1 {
-				t.Errorf("the notices are %q", got.Notices)
-			}
-		})
-	}
-}
-
-func TestAListOfNamesInStoredSecretsStaysInForce(t *testing.T) {
-	cfg, _ := installationWith(t, `{"`+importerID+`":{"storedSecrets":["openai"]}}`)
-	got, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, found := got.GetOwner(importerID)["storedSecrets"]; !found || len(got.Notices) != 0 {
-		t.Errorf("the object is %v, the notices %q", got.GetOwner(importerID), got.Notices)
-	}
-}
-
 func TestTheFileIsUnchangedByReadingValuesOfTheWrongType(t *testing.T) {
 	const body = `{"app":{"appearance":{"textScale":"big"}},"` + importerID +
-		`":{"ytDlp":{"a":1},"retries":"many","enabled":"yes","storedSecrets":"x"}}`
+		`":{"ytDlp":{"a":1},"retries":"many","enabled":"yes"}}`
 	cfg, path := installationWith(t, body)
 	if _, err := cfg.Settings(); err != nil {
 		t.Fatal(err)

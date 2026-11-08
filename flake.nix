@@ -6,8 +6,10 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+  inputs.nixpkgs-node.url = "github:NixOS/nixpkgs/f9a75f41be3a74eab55d3a7679d34ad6cc0da977";
+
   outputs =
-    { self, nixpkgs }:
+    { self, nixpkgs, nixpkgs-node }:
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" ];
@@ -103,7 +105,7 @@
         in
         lib.mapAttrsToList requireVersion {
           inherit go golangci-lint protoc-gen-connect-go;
-          node = pkgs.nodejs_22;
+          node = nixpkgs-node.legacyPackages.${pkgs.stdenv.hostPlatform.system}.nodejs_22;
           inherit (pkgs) buf protoc-gen-go;
         };
     in

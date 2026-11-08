@@ -12,7 +12,7 @@ const showNote: CommandDeclaration = {
   pluginId: PLUGIN,
   id: 'graph.showNote',
   title: 'Show note in plex',
-  scope: 'note',
+  when: 'target.isNote',
 }
 
 function createWindow(activate: (context: PluginContext) => void | Promise<void>) {
@@ -112,6 +112,83 @@ describe('a command whose handler is missing after the plugin has started', () =
       PLUGIN,
       'the command graph.showNote is declared in the manifest and has no handler',
     )
+  })
+})
+
+describe('the commands of a plugin that is turned off', () => {
+  it('are not reported as missing while its handlers are removed', async () => {
+    const { host, loader, reportCommandIssue } = createWindow((context) => {
+      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+    })
+    await loader.start()
+    const reports = followCommands(host)
+
+    host.disposePlugin(PLUGIN)
+
+    expect(reportCommandIssue).not.toHaveBeenCalled()
+    expect(reports.at(-1)).toStrictEqual([])
+  })
+})
+
+describe('a plugin whose start passes 30 s', () => {
+  it('holds no registration and stays inactive when its start ends later', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host, loader, onError } = createWindow(async (context) => {
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(30_000 + 100)
+
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      await vi.advanceTimersByTimeAsync(1_000)
+      await started
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(false)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      expect(host.getPaletteCommands()).toStrictEqual([])
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('a start cancelled at 30 s that ends after a newer start', () => {
+  it('leaves what the newer start registered', async () => {
+    vi.useFakeTimers()
+    try {
+      let starts = 0
+      const { host, loader } = createWindow(async (context) => {
+        starts += 1
+        if (starts === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 30_000 + 2_000))
+          return
+        }
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(30_000 + 100)
+      await started
+
+      expect(await loader.activatePlugin(PLUGIN)).toBe(true)
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(true)
+      expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+        'graph.open',
+        'graph.showNote',
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

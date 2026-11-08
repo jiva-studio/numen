@@ -27,7 +27,10 @@ func Mount(s *server.Server) error {
 		isListed:      false,
 		registry:      agentrun.Registry{},
 	}
-	s.SetUpdateConfig(agent.Configure)
+	s.SetUpdateConfig(func(values map[string]string, secrets server.Secrets) {
+		agent.Configure(values)
+		agent.ApplySecrets(secrets)
+	})
 	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	s.OnClose(agent.Close)
 	return nil

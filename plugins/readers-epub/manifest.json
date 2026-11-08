@@ -1,22 +1,56 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
-    "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
+    "textKinds": [{ "kind": "book-text", "title": "Book text" }],
+    "tabKinds": [
+      {
+        "kind": "reader:reader-epub",
+        "title": "EPUB Reader",
+        "icon": "book-open"
+      }
+    ],
     "feature": "EPUB books",
     "category": "readers",
-    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/epub+zip"] }],
     "readers": [
-      { "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }
+      {
+        "id": "reader-epub",
+        "contentTypes": ["application/epub+zip"],
+        "rank": "default"
+      }
+    ],
+    "slots": [
+      {
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Extract text",
+        "when": "target.contentType == 'application/epub+zip'"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "target.contentType == 'application/epub+zip' && !target.versions.exists(v, v.kind == 'book-text' && v.isValid)"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
   "services": ["md.numen.readers.epub"],
-  "backend": { "entrypoint": "bin/readers-epub" },
+  "backend": {
+    "entrypoint": "bin/readers-epub"
+  },
   "frontend": {}
 }

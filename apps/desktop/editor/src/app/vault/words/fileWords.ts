@@ -10,6 +10,7 @@ interface EntryWire {
   readonly isFolder: boolean
   readonly isNote: boolean
   readonly type: string
+  readonly tabKind?: string
 }
 
 interface MoveResultWire {
@@ -25,6 +26,7 @@ export const mapEntry = (one: EntryWire): Entry => ({
   isFolder: one.isFolder,
   isNote: one.isNote,
   type: mapNoteType(one.type),
+  ...(one.tabKind ? { tabKind: one.tabKind } : {}),
 })
 
 /** What the file did, in the shape the window carries it. */
