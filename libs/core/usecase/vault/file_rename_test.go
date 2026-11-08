@@ -15,8 +15,6 @@ import (
 // The file tree renames a file, and the note in it is called by the name the
 // file now carries.
 
-// title returns the title the vault displays for the note at this path, read
-// from the index and not from the file.
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
 	displayed, err := f.db.Queries().GetNotes(t.Context(), f.vault.ID, []string{path})

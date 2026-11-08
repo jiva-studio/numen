@@ -118,7 +118,6 @@ export const createSeries = (
   }))
 }
 
-/** A height inside the plot the line is drawn in. */
 const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
@@ -148,11 +147,6 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
   return runs.join(' ')
 }
 
-/**
- * The number of days one place of the curve is drawn over. A goal of a date
- * schedules nothing after the day it names, so the run after that day is the
- * result of doing nothing and is not part of the choice being made.
- */
 const getDayLimit = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
 
@@ -181,5 +175,4 @@ export const getPlaceAtX = (x: number, places: number): number => {
   return Math.max(Math.min(Math.round(inside * (places - 1)), places - 1), 0)
 }
 
-/** Rounds to two decimal places, which is precise enough for a path. */
 const round = (value: number): number => Math.round(value * 100) / 100

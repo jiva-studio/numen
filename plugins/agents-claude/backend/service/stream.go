@@ -40,8 +40,7 @@ type streamParser struct {
 	offset       int
 	reason       string
 	expectsVault bool
-	// sendErr is the first error send returned. Later reports are not sent.
-	sendErr error
+	sendErr      error
 }
 
 func (p *streamParser) emit(resp *agentrun.Response) {
@@ -50,7 +49,6 @@ func (p *streamParser) emit(resp *agentrun.Response) {
 	}
 }
 
-// getReason returns why the stream ended: the reason the program gave, else the failure to send.
 func (p *streamParser) getReason() string {
 	if p.reason == "" && p.sendErr != nil {
 		return p.sendErr.Error()
@@ -119,8 +117,6 @@ type streamOptions struct {
 	expectsVault bool
 }
 
-// parseStreamWithClock is parseStream for a run that expects the vault tools, with the clock that paces the
-// reports of a change.
 func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
@@ -145,9 +141,9 @@ func parseStream(ctx context.Context, r io.Reader, send func(*agentrun.Response)
 		tool:         "",
 		arguments:    strings.Builder{},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial offset is reset to zero on every content_block_start before tool deltas arrive."
-		offset:       0,
-		reason:       "",
-		sendErr:      nil,
+		offset:  0,
+		reason:  "",
+		sendErr: nil,
 	}
 	scanner := bufio.NewReader(r)
 	for {
@@ -306,8 +302,6 @@ func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.Respon
 	return &agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: call}}
 }
 
-// reportEdit reports the change a call is writing, once the text that replaces the match has
-// begun to arrive. A change is reported at most once every previewInterval.
 func (p *streamParser) reportEdit() {
 	words := p.words[stripServerPrefix(p.tool)]
 	if words.Text == "" {
@@ -336,8 +330,6 @@ func (p *streamParser) reportEdit() {
 	}})
 }
 
-// getUnreachableReason is why the vault's tools did not arrive, empty when they did and when the
-// line reports no server status.
 func getUnreachableReason(response event) string {
 	for _, skipped := range response.ServerErrors {
 		if skipped.Name == serverName {
@@ -359,7 +351,6 @@ func getUnreachableReason(response event) string {
 	return "the agent was started without this vault"
 }
 
-// getResultError is the error the last line reports.
 func getResultError(response event) string {
 	if text := strings.TrimSpace(response.Result); text != "" && text != response.Subtype {
 		return text
@@ -370,7 +361,6 @@ func getResultError(response event) string {
 	return "the agent stopped without finishing"
 }
 
-// formatSubtype words a machine error subtype for the user.
 func formatSubtype(subtype string) string {
 	switch subtype {
 	case "error_max_turns", "max_turns":

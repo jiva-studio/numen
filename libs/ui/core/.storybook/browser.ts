@@ -15,10 +15,6 @@ interface Position {
   readonly y: number
 }
 
-/**
- * The pointer put down at one place, carried to another and lifted, by the
- * the browser's own.
- */
 const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, from, to) => {
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()
@@ -26,7 +22,6 @@ const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, f
   await page.mouse.up()
 }
 
-/** The scheme the machine prefers, as `prefers-color-scheme` reads it; null restores the machine's own. */
 const setSystemScheme: BrowserCommand<[scheme: 'light' | 'dark' | null]> = async (
   { page },
   scheme,
@@ -43,7 +38,6 @@ declare module 'vitest/browser' {
 
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
 
-/** Whether path is a file this process may run. */
 const isExecutable = (path: string): boolean => {
   try {
     accessSync(path, constants.X_OK)
@@ -53,7 +47,6 @@ const isExecutable = (path: string): boolean => {
   }
 }
 
-/** The first of names that is an executable in a directory on PATH, in PATH order. */
 const findExecutable = (names: readonly string[]): string | undefined =>
   (process.env['PATH'] ?? '')
     .split(delimiter)
@@ -61,12 +54,6 @@ const findExecutable = (names: readonly string[]): string | undefined =>
     .flatMap((directory) => names.map((name) => join(directory, name)))
     .find(isExecutable)
 
-/**
- * A browser already on the machine; undefined uses Playwright's own.
- *
- * A run under `CI` takes the pinned build unless it was pointed at one, so the
- * version the stories are drawn in is the version the workflow fetched.
- */
 const getSystemChrome = (): string | undefined => {
   const explicit = process.env['CHROME_PATH']
   if (explicit) return explicit

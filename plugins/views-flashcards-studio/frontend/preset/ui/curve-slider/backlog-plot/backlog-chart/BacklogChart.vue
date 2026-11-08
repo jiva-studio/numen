@@ -14,7 +14,6 @@ import '../../curve-slider.css'
 
 // --- Props & Emits ---
 defineProps<{
-  /** The run of the backlog, as a path. */
   line: string
 }>()
 

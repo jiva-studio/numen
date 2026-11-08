@@ -8,11 +8,8 @@ import type { MountedView } from '@numen/plugin-host'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** What the view does, as the plugin declaring it names it. */
   capability: string
-  /** What the view is passed. */
   context: unknown
-  /** How the window draws a declared view into an element. */
   mountView: (capability: string, element: HTMLElement, context: unknown) => MountedView
 }>()
 

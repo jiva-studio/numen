@@ -18,9 +18,7 @@ const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 export interface Core {
   port: number
   dir: string
-  /** The vault itself: what it is, and what has changed in it. */
   vault: ReturnType<typeof vaultClient>
-  /** Its notes: what one holds, what it is joined to, and how one is written. */
   notes: ReturnType<typeof noteClient>
 }
 

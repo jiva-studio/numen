@@ -99,10 +99,6 @@ interface AxisPlacement {
   readonly near: number
 }
 
-/**
- * One relation, in lines running away from the focus. `clearance` is what the
- * first line has to clear.
- */
 function line(
   nodes: readonly PlexNode[],
   direction: Direction,
@@ -116,10 +112,6 @@ function line(
     : inColumns(nodes, placement, context)
 }
 
-/**
- * A row is as long as its boxes and the gaps between them, and is centred on
- * the focus. Heights are uniform, so each line is placed one box beyond the last.
- */
 function inRows(
   nodes: readonly PlexNode[],
   placement: AxisPlacement,
@@ -154,11 +146,6 @@ function inRows(
   return placedNodes
 }
 
-/**
- * Every box of a column has the same edge facing the focus, regardless of its
- * measured size. A line is placed clear of the widest box of the preceding
- * line.
- */
 function inColumns(
   nodes: readonly PlexNode[],
   placement: AxisPlacement,
@@ -193,13 +180,6 @@ function inColumns(
   return placedNodes
 }
 
-/**
- * The nodes of a relation cut into lines, nearest the focus first. `depth` counts
- * the lines out from the focus and `first` the nodes before.
- *
- * `perLine` is the longest a line may be, and the lines a relation runs to share
- * its nodes out evenly: every line is within one node of every other.
- */
 function lines(
   nodes: readonly PlexNode[],
   perLine: number,
@@ -213,14 +193,12 @@ function lines(
   })
 }
 
-/** How far above and below the focus a column of `count` nodes extends. */
 function getReach(count: number, options: PlexOptions, limits: RoleLimits): number {
   const perColumn = Math.min(limits.perLine, count)
   const step = options.nodeSize.height + options.gap
   return ((perColumn - 1) / 2) * step + options.nodeSize.height / 2
 }
 
-/** How far the placed nodes within `reach` of the axis extend sideways. */
 function measureWidestWithin(nodes: readonly PlacedNode[], reach: number): number {
   let half = 0
   for (const node of nodes) {

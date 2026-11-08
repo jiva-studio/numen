@@ -4,7 +4,6 @@
 import { defineComponent, h } from 'vue'
 import { requests } from './requests'
 
-/** A component rendered in a pane that returns the given values for the window's calls. */
 const createStub = (name: string, answers: Record<string, unknown>) =>
   defineComponent({
     name,

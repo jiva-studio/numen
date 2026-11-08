@@ -13,9 +13,7 @@ import type { FooterEntry, VaultRow } from '../../lib/welcome'
 withDefaults(
   defineProps<{
     vaults: readonly VaultRow[]
-    /** What the list is called. */
     heading: string
-    /** The row below the list, where a window offers one. */
     footer?: FooterEntry | null
   }>(),
   { footer: null },

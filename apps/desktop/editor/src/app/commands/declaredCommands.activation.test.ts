@@ -17,7 +17,6 @@ const declare = (pluginId: string, id: string): DeclaredCommand => ({
 const VIEW = 'md.numen.views.file.tree'
 const BACKEND = 'md.numen.importing'
 
-/** A window with a view plugin, which has a frontend only, and a plugin that runs its commands in a backend. */
 async function createWindow() {
   const hasBackend = (pluginId: string): boolean => pluginId === BACKEND
   const holder: { current?: PluginHost } = {}

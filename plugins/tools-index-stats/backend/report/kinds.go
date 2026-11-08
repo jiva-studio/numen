@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
 )
 
-// getExtensionKinds maps the file extensions the index knows to the kind they belong to. An extension
-// that is not here is KindOther.
 func getExtensionKinds() map[string]api.Kind {
 	kinds := map[string]api.Kind{}
 	for _, extension := range []string{"md", "markdown", "mdx", "txt"} {
@@ -25,7 +23,6 @@ func getExtensionKinds() map[string]api.Kind {
 	return kinds
 }
 
-// getKindOrder is the sequence the kinds are listed in.
 func getKindOrder() []api.Kind {
 	return []api.Kind{api.KindNotes, api.KindPDF, api.KindEPUB, api.KindMedia, api.KindOther}
 }

@@ -71,7 +71,6 @@ export const themes: Themes = {
   },
 }
 
-/** How far a size goes. A bound the application left out is no bound at all. */
 const parseBounds = (bounds: { min: number; max: number } | undefined): Bounds => ({
   min: bounds?.min ?? 0,
   max: bounds?.max ?? 0,

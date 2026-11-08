@@ -11,11 +11,8 @@
 export const MENU_INPUT_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const
 
 export interface ScrollGate {
-  /** Forgets the input seen: a new opening starts with none. */
   readonly reset: () => void
-  /** Records that the user gave input. */
   readonly noteInput: () => void
-  /** Whether a scroll occurring now is the user's. */
   readonly isUserScroll: () => boolean
 }
 

@@ -6,7 +6,6 @@ import { LONG_PRESS_DELAY } from './longPress'
 
 const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as PointerEvent
 
-/** A node resting a finger under the given wait, and what it reached out with. */
 function createRest(after?: number) {
   const reach = vi.fn<ReachSite['reach']>()
   const scope = effectScope()

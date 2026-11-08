@@ -37,7 +37,6 @@ func IsOffline() bool {
 	return slices.Contains(getOfflineValues(), strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
 }
 
-// offlineValues are the spellings of EnvOffline that forbid fetching.
 func getOfflineValues() []string { return []string{"1", "true", "yes", "on"} }
 
 // FromEnvironment returns the configuration the environment names: the

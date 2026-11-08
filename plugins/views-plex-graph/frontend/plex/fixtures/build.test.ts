@@ -8,7 +8,6 @@ import { arrangePlex } from '../lib/arrange'
 
 const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 
-/** Select a node and return the neighbourhood around it, as a story does. */
 function step(current: ReturnType<typeof build>, id: string) {
   const selected = current.nodes.find((node) => node.id === id)!
   const was = current.nodes.find((node) => node.relation === 'focus')!

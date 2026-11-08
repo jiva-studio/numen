@@ -4,9 +4,7 @@ import PlexNodeView from './PlexNodeView.vue'
 import type { PlacedNode } from '../../lib/node'
 
 defineProps<{
-  /** The line itself, as a path. */
   d: string
-  /** The shape letting go would leave, and nothing where it would leave none. */
   ghost?: PlacedNode | null
 }>()
 </script>

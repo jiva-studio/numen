@@ -7,7 +7,6 @@ import { openWorkspace } from '../../support/workspace.js'
  * prose, a book in a reader.
  */
 
-/** The row of a file in the tree, its folder opened first. */
 const openFromTree = async (page: Page, folder: string, path: string): Promise<void> => {
   await page.getByRole('tab', { name: /^Files/ }).click()
   const folderRow = page.locator(`[data-tree-row="${folder}"]`)
@@ -18,9 +17,6 @@ const openFromTree = async (page: Page, folder: string, path: string): Promise<v
   await row.press('Enter')
 }
 
-/**
- * The file the search of the vault turned up under its name, opened with Enter.
- */
 const openFromSearch = async (page: Page, name: string): Promise<void> => {
   await page.keyboard.press('Control+k')
   const field = page.locator('input[placeholder="Search the vault"]')

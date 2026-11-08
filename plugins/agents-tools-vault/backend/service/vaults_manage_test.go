@@ -27,7 +27,6 @@ type vaultRemoveOutput struct {
 	Path string `json:"path"`
 }
 
-// requireExactKeys fails the test unless the result has exactly the keys.
 func requireExactKeys(t *testing.T, structured []byte, want ...string) {
 	t.Helper()
 	var answer map[string]any
@@ -44,8 +43,6 @@ func requireExactKeys(t *testing.T, structured []byte, want ...string) {
 	}
 }
 
-// newTwoVaults is the geology vault, which the calls work on, and a garden vault whose name
-// differs from its identity and its folder.
 func newTwoVaults(t *testing.T) (*hosttest.Vault, *hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	geology, registry := newGeologyVault(t)
@@ -58,12 +55,10 @@ func newTwoVaults(t *testing.T) (*hosttest.Vault, *hosttest.Vault, *tools.Regist
 	return geology, garden, registry
 }
 
-// getGardenAddresses is the three ways a call can name the garden vault: its name, its folder, its identity.
 func getGardenAddresses() map[string]string {
 	return map[string]string{"name": gardenName, "folder": gardenFolder, "id": gardenID}
 }
 
-// getVaultsByID is the vaults vault_list gives, by identity.
 func getVaultsByID(t *testing.T, registry *tools.Registry) map[string]vaultEntry {
 	t.Helper()
 	var out vaultListOutput
@@ -294,8 +289,6 @@ func TestVaultOpenAndRemoveRejectTheCurrentVault(t *testing.T) {
 	}
 }
 
-// getFailingCalls is a call of each vault and note tool whose arguments make it fail: an unknown
-// vault, a missing note, an empty path and the like.
 func getFailingCalls() []struct{ name, arguments string } {
 	return []struct{ name, arguments string }{
 		{"vault_add", `{"path":""}`},

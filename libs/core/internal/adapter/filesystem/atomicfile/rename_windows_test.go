@@ -55,9 +55,6 @@ func TestASaveWaitsOutAHandleAnotherProgramContains(t *testing.T) {
 	}
 }
 
-// openHandle opens a file as another program does. The share mode excludes
-// deletion, and Windows rejects a rename over the file while the handle is
-// open.
 func openHandle(t *testing.T, path string) windows.Handle {
 	t.Helper()
 

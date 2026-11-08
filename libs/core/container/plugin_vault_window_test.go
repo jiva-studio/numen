@@ -73,8 +73,6 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	}
 }
 
-// openTwoPluginVaults registers a shown vault of rivers and another vault of lakes, whose notes share
-// no words, and returns the assembly over both with the shown one current.
 func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (domain.Vault, bool), assembly container.EditorAssembly) {
 	t.Helper()
 	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})

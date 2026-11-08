@@ -122,14 +122,11 @@ const { onKey } = usePaletteKeys({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-// The action panel is about the item that was lit when it opened, and stays
-// about it while a pointer crosses the list.
 const onOver = (pos: number, event: PointerEvent) => {
   if (!isPanelOpen.value) places.lightAt(pos, event)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What is lit is brought into sight. */
 function reveal(): void {
   const pending = results.value?.reveal(selectedId.value)
   if (pending) runInBackground(pending, reportFailure)

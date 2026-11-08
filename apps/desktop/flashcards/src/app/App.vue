@@ -16,7 +16,6 @@ import { useShell, type ShellDeps } from './useShell'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** What the shell is given in place of the window's own services. */
   deps?: ShellDeps
 }>()
 

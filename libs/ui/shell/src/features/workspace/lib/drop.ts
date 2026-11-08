@@ -19,9 +19,7 @@ export type TabDropTarget = { readonly box: Rect } & (
 )
 
 export interface DropOptions {
-  /** How much of a box each edge zone takes, along its own axis. */
   readonly share: number
-  /** The most an edge zone takes, in the units the box is measured in. */
   readonly limit: number
 }
 

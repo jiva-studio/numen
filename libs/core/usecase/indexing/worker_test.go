@@ -25,8 +25,6 @@ func getBefore() []string {
 	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
 }
 
-// noteWith is a note of n words of one vocabulary, long enough to be cut into
-// windows that carry a vector.
 func noteWith(vocabulary []string, n int) string {
 	out := make([]string, 0, n)
 	for i := range n {
@@ -48,8 +46,6 @@ func (r *recorder) ReportError(error)                              {}
 func (r *recorder) ReportNotes(domain.Vault, int)                  {}
 func (r *recorder) ReportTexts(domain.Vault, filetext.IndexResult) {}
 
-// findTask is one piece of work as the list holds it, or nothing where the list
-// does not hold it.
 func findTask(t *testing.T, r *recorder, id string) *run.Task {
 	t.Helper()
 	for _, item := range r.tasks.List() {
@@ -60,8 +56,6 @@ func findTask(t *testing.T, r *recorder, id string) *run.Task {
 	return nil
 }
 
-// reading is an index and the assembly over it, for a pass driven without a
-// window in front of it.
 func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	t.Helper()
 
@@ -74,7 +68,6 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	return container.NewEditorAssembly(cfg, nil, db), db
 }
 
-// newPass is the indexing of one vault over an embedder, reporting into events.
 func newPass(
 	made container.EditorAssembly, db *container.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
@@ -92,7 +85,6 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-// cut reads the vault's notes into the index as chunks with pending vectors.
 func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
 	t.Helper()
 
@@ -108,7 +100,6 @@ func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v dom
 	}
 }
 
-// fit prepares the index to hold the vectors of a model.
 func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
 	t.Helper()
 	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
@@ -138,7 +129,6 @@ func (*fakeEmbedder) Close() error { return nil }
 
 func (*fakeEmbedder) Concurrency() int { return 1 }
 
-// direction is a vector that belongs to one text and no other.
 func direction(text string, dims int) []float32 {
 	sum := fnv.New64a()
 	sum.Write([]byte(text))
@@ -221,7 +211,6 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*peeking) Concurrency() int { return 1 }
 
-// opening returns the task as it was when the first vector was requested.
 func (p *peeking) opening(id string) (run.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

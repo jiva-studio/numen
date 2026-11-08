@@ -67,7 +67,6 @@ function onTake() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The untyped values a card cut by that card model is made with. */
 function empty(cardModel: string) {
   return cardBlanks(
     cardFields(cardModels.value.find((one) => one.name === cardModel)?.fields ?? []),

@@ -22,9 +22,6 @@ func (e event) Event() notify.Event { return notify.Write }
 func (e event) Path() string        { return e.path }
 func (e event) Sys() any            { return nil }
 
-// makeVaultOfNotes makes a vault of notes and the reader that answers for it. The root
-// it gives back is the reader's own, which is every link resolved: that is the
-// path the operating system names a change at.
 func makeVaultOfNotes(t *testing.T, notes int) (root string, reader *vaultreader.VaultReader) {
 	t.Helper()
 	pos := t.TempDir()
@@ -41,7 +38,6 @@ func makeVaultOfNotes(t *testing.T, notes int) (root string, reader *vaultreader
 	return reader.Root(), reader
 }
 
-// shapeOf is a reader's vault currently before the first event.
 func shapeOf(t *testing.T, reader *vaultreader.VaultReader) *vaultreader.Folders {
 	t.Helper()
 	shape, err := vaultreader.ReadShape(reader)
@@ -51,7 +47,6 @@ func shapeOf(t *testing.T, reader *vaultreader.VaultReader) *vaultreader.Folders
 	return shape
 }
 
-// feed sends a burst of notes into the watcher's channel.
 func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int) {
 	t.Helper()
 	for i := from; i < from+notes; i++ {
@@ -59,8 +54,6 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 	}
 }
 
-// waitForQueue waits until the queue holds what the burst produced, so the input to
-// debouncing is determined by the burst and not by timing.
 func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
 	deadline := testsupport.GetMachine().Now().Add(5 * time.Second)

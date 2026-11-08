@@ -10,47 +10,27 @@ type ChunkID string
 // `Start` and `Length` address the large chunk enclosing the hit, in bytes of the file
 // `Source` names, and `Text` is the content there once the file has been read.
 type Passage struct {
-	// ChunkID is the chunk a ranking named. Two rankings are merged on it.
 	ChunkID ChunkID
 
-	// Source is the path of the file the text is read from, relative to the
-	// vault folder.
 	Source string
 
-	// Kind is what the vault holds there, so a caller drawing a passage draws
-	// the source it came out of as what it is.
 	Kind SourceKind
 
 	Start  int
 	Length int
 
-	// Location is what the source's own numbering calls the place, and is empty
-	// when the format offered none.
 	Location string
 
-	// Producer is what made the text the words are read from. Empty where the
-	// source's own bytes are the text.
 	Producer string
 
-	// Selector locates the hit in the file, from the text version segment it is
-	// in. Empty for a note.
 	Selector Selector
 
-	// ContentHash is the SHA-256 of the source content; text versions are
-	// stored under it. Reading a passage back composes the name from this
-	// and Producer.
 	ContentHash string
 
-	// HitAt is where the chunk that matched begins inside Text, in bytes. A
-	// passage whose hit is the chunk itself begins at its own beginning.
 	HitAt int
 
-	// Line is the line of the chunk that matched, counted from the first line of the
-	// source's prose. A note's frontmatter is not prose and is not counted.
 	Line int
 
-	// ChunkHash addresses the text this chunk held when the index cut it. It is
-	// what a vector made from that text is kept under and found by.
 	ChunkHash string
 
 	Text string

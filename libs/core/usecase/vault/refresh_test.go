@@ -23,8 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// newRefresh is a vault already scanned once, and the use case that brings named
-// notes up to date afterwards.
 func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
@@ -41,8 +39,6 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	), db, v
 }
 
-// passages is what the index itself answers with, before anything opens the
-// file a passage names.
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
@@ -389,8 +385,6 @@ func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes [
 
 const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
 
-// newCounted is a vault scanned once with every file long settled, and a refresh
-// whose saves are counted.
 func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)

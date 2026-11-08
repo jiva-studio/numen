@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// writeSegments is the segments of a text as the protocol carries them.
 func writeSegments(segments []domain.TextSegment) []*v1.TextSegment {
 	out := make([]*v1.TextSegment, 0, len(segments))
 	for _, s := range segments {
@@ -15,7 +14,6 @@ func writeSegments(segments []domain.TextSegment) []*v1.TextSegment {
 	return out
 }
 
-// writeVersion is a version as the protocol carries it.
 func writeVersion(v domain.TextVersion) *v1.TextVersion {
 	return &v1.TextVersion{
 		Id:               string(v.GetID()),

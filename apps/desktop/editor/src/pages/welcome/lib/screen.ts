@@ -13,22 +13,17 @@ import { COMMAND } from '@/shared/commandIds'
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
   readonly vault: string
-  /** Whether that vault has been read and can serve requests. */
   readonly isReady: boolean
 }
 
 /** Every label the welcome screen shows. */
 export interface Words {
-  /** The palette and the commands, each with the keystroke that puts it up. */
   readonly find: string
   readonly findKeys: PaletteKeys
   readonly commands: string
   readonly commandsKeys: PaletteKeys
-  /** What each of the ways into the vault the window names is called. */
   readonly newNote: string
-  /** Everything this installation is configured as. */
   readonly settings: string
-  /** The vaults, and what a row of that list carries beside its name. */
   readonly vaults: string
   readonly current: string
   readonly gone: string

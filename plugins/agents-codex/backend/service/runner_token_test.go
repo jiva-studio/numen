@@ -16,8 +16,6 @@ const (
 	orchardToolsToken = "orchard-secret-7731"
 )
 
-// runCodexWithTools starts a tools run of a stand-in Codex that records its arguments, one per
-// line, and the value of NUMEN_TOKEN in its environment, and returns both once the run ends.
 func runCodexWithTools(t *testing.T) (arguments []string, token string) {
 	t.Helper()
 	record := t.TempDir()

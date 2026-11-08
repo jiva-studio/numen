@@ -5,19 +5,14 @@ import type { Result } from '@numen/core-client'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {
-  /** The identity stored in the folder, the key for looking up the vault. */
   readonly id: string
-  /** The display name of the vault. */
   readonly name: string
-  /** The folder, absolute on this machine. */
   readonly path: string
-  /** Whether the path does not exist. The vault stays on the list. */
   readonly isMissing: boolean
 }
 
 export interface VaultList {
   readonly vaults: readonly Vault[]
-  /** The identity of the vault currently shown. */
   readonly showing: string
 }
 

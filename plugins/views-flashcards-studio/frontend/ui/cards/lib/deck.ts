@@ -30,15 +30,8 @@ export const getRunEnd = (target: InsertionPoint): string | null =>
 
 /** One card as the deck draws it. */
 export interface DeckCard {
-  /**
-   * Distinguishes this card from every other card of the deck while it is
-   * displayed. It is the caller's identifier for the card and is returned in
-   * every event about it, so no two cards may share one.
-   */
   readonly id: string
-  /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
-  /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
   readonly cardModel: string | null
   readonly filled: readonly FieldValue[]
 }
@@ -59,14 +52,8 @@ export interface CardWords {
   readonly drag: string
   readonly cut: string
   readonly cardStem: string
-  /** The text for a card with no values. */
   readonly nothing: string
-  /**
-   * The text for a card whose card model was not supplied, and for a card that
-   * names none; the strip displays it in place of a card model's name.
-   */
   readonly unknown: (cardModel: string | null) => string
-  /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }
 
@@ -77,12 +64,7 @@ export interface CardWords {
 export interface DeckWords extends CardWords {
   readonly add: string
   readonly addSection: string
-  /** The base of a generated section name, followed by its position among the sections. */
   readonly sectionStem: string
-  /**
-   * The message for an unusable section name. Two sections may share a name, so
-   * only an empty name is unusable.
-   */
   readonly sectionObjection: string
 }
 
@@ -107,11 +89,7 @@ export const DECK_WORDS: DeckWords = {
  * appears next to what it concerns.
  */
 export interface DeckProblems {
-  /** What is wrong with each card, under the identity it was drawn by. */
   readonly at: Problems
-  /**
-   * What is wrong with one value of a card, under that card's identity and then
-   */
   readonly under: ReadonlyMap<string, Problems>
 }
 
@@ -123,7 +101,6 @@ export const NO_DECK_PROBLEMS: DeckProblems = Object.freeze({
 
 /** One value of a card, laid out under the card model that cuts it. */
 export interface CardFieldValue extends FieldValue {
-  /** The card model names this slot. */
   readonly isDeclared: boolean
 }
 

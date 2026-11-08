@@ -4,25 +4,13 @@ import type { RowDropTarget } from '../lib/drop'
 import type { Row, RowId, RowMarker } from '../lib/row'
 
 export interface TreeProps {
-  /** What is drawn, nested. */
   rows: readonly Row[]
-  /** The rows whose contents are drawn. */
   open?: readonly RowId[]
-  /** The rows the selection relies on. */
   selected?: readonly RowId[]
-  /** The distance the pointer moves before a press becomes a drag. */
   threshold?: number
-  /** What the tree is announced as. */
   name?: string
-  /** Returns the label announced at the pointer for the number of rows being dragged. */
   counted?: (rows: number) => string
-  /**
-   * An attribute written onto the rows and onto the tree, for external code to
-   * locate them. Both the name and the values are chosen by the caller. A row
-   * mapped to nothing is left unmarked; the tree itself is queried as a null row.
-   */
   marking?: RowMarker | undefined
-  /** The clock. Browser by default; a test hands in its own. */
   clock?: Clock
 }
 

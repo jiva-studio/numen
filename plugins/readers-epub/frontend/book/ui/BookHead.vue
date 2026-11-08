@@ -4,7 +4,6 @@
  */
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** What the book calls the place in front. */
   chapter: string
 }>()
 </script>

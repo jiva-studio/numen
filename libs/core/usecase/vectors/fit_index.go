@@ -11,11 +11,8 @@ import (
 type FitIndex struct {
 	index embeddingport.VectorIndex
 
-	// ShouldRebuildIndex removes the vectors of every other recipe.
 	ShouldRebuildIndex bool
-	// ErrorHandler, if set, receives a failed compaction. The removed rows stay
-	// removed.
-	ErrorHandler func(error)
+	ErrorHandler       func(error)
 }
 
 // NewFitIndex returns the use case over the vector index given.

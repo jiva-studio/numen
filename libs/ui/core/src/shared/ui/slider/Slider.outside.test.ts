@@ -22,7 +22,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** A slider whose caller takes what the handle hands on, as the page does. */
 const mountSlider = () => {
   const control = mount(Slider, {
     props: {

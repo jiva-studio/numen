@@ -4,7 +4,6 @@ import type { AgentPort, AgentStep, ConversationContext } from '@numen/plugin-sd
 import { WORDS } from '../words'
 import { useConversationView } from './useConversationView'
 
-/** A port that records the questions it receives and the conversations reported as finished, and replies with the steps a test supplies. */
 const createAgent = (says: AgentStep[] = [{ kind: 'text', text: 'Because of the leaves.' }]) => {
   const questions: { question: string; focus: string; conversation: string }[] = []
   const finished: string[] = []
@@ -24,7 +23,6 @@ const createAgent = (says: AgentStep[] = [{ kind: 'text', text: 'Because of the 
   return { agent, questions, finished }
 }
 
-/** The view's state in a scope of its own, which a test disposes as the host unmounts the view. */
 const open = (context: Partial<ConversationContext> = {}) => {
   const port = createAgent()
   const scope = effectScope()

@@ -4,19 +4,12 @@
 import { nextTick, onBeforeUnmount, watch } from 'vue'
 
 export interface MenuOpenOptions {
-  /** Whether the menu is requested to be rendered. */
   readonly isOpen: () => boolean
-  /** Registers the window listeners as the menu opens. */
   readonly listen: () => void
-  /** Removes the window listeners as the menu closes. */
   readonly release: () => void
-  /** Its size taken, once it is drawn. */
   readonly measure: () => void
-  /** The keyboard put where an open menu starts it. */
   readonly focusInitial: () => void
-  /** Where the keyboard was, forgotten. */
   readonly reset: () => void
-  /** Where the keyboard goes back to once the menu closes. */
   readonly getFrom: () => HTMLElement | SVGElement | null
 }
 

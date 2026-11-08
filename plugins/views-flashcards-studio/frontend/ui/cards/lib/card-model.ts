@@ -40,15 +40,10 @@ export interface CardModelWords {
   readonly noTemplates: string
   readonly fieldStem: string
   readonly templateStem: string
-  /** The message for the first field, which cannot be moved or removed. */
   readonly pinned: string
-  /** The message for the slots a template names that the fields do not. */
   readonly stray: (fields: readonly string[]) => string
-  /** The message for an unusable field name. */
   readonly objection: (objection: Objection) => string
-  /** The message for an unusable template name. */
   readonly templateObjection: (objection: HeadingObjection) => string
-  /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }
 
@@ -84,9 +79,7 @@ export const CARD_MODEL_WORDS: CardModelWords = {
  * beside its name and a field's under that field's row.
  */
 export interface CardModelProblems {
-  /** What is wrong with each template, under the identity it was drawn by. */
   readonly at: Problems
-  /** What is wrong with each field, under the name it is declared by. */
   readonly fields: Problems
 }
 
@@ -99,13 +92,9 @@ export const NO_CARD_MODEL_PROBLEMS: CardModelProblems = Object.freeze({
 /** One field of a card model, as its row is drawn. */
 export interface FieldRow {
   readonly field: string
-  /** at its current position, counting from one, which is what it is announced as. */
   readonly at: number
-  /** How many fields stand with it. */
   readonly of: number
-  /** It is first, so cards of this card model are named by it. */
   readonly hasNames: boolean
-  /** It is on its way somewhere else in the order. */
   readonly isDragged: boolean
 }
 
@@ -128,21 +117,14 @@ export function fieldRows(
 export interface TemplateRow {
   readonly id: string
   readonly name: string
-  /** at its current position, counting from one, which is what it is announced as. */
   readonly at: number
-  /** How many templates stand with it. */
   readonly of: number
-  /** The fields the card model provides, which may be inserted into a half. */
   readonly fields: readonly string[]
-  /** The names the other templates carry, which this one's is measured against. */
   readonly taken: readonly string[]
-  /** What is written in the two boxes. */
   readonly front: string
   readonly back: string
-  /** The same two, with the sample values standing in the braces. */
   readonly frontPreview: string
   readonly backPreview: string
-  /** The slots each half names that the fields do not, each listed once. */
   readonly frontStray: readonly string[]
   readonly backStray: readonly string[]
 }
@@ -183,12 +165,9 @@ export interface Pane {
   readonly half: Half
   readonly mode: PaneMode
   readonly label: string
-  /** What the part is announced as. */
   readonly named: string
-  /** The markup as it is written, or the sample standing in its braces. */
   readonly text: string
   readonly isBlank: boolean
-  /** The slots the half names that the fields do not, listed under the markup. */
   readonly stray: readonly string[]
 }
 

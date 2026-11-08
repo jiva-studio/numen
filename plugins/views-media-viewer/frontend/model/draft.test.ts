@@ -13,7 +13,6 @@ const CUES: readonly Cue[] = [
   { text: 'The second thing said.', from: 2_500, to: 5_000 },
 ]
 
-/** The words have been still long enough to be written, and were, if anything was. */
 const waitForStill = () => new Promise((resolve) => setTimeout(resolve, 20))
 
 describe('a draft told nothing more is typed here', () => {
@@ -43,7 +42,6 @@ const TEST_WRITE_IDLE_MS = 100
 const EDITED = 'The first thing meant.\nThe second thing said.'
 const EDITED_AGAIN = 'The first thing meant twice.\nThe second thing said.'
 
-/** A write that stays pending until the test resolves it. */
 const createPendingWrite = () => {
   const calls: (readonly Cue[])[] = []
   const answers: { resolve: () => void; reject: (why: Error) => void }[] = []
@@ -56,7 +54,6 @@ const createPendingWrite = () => {
   return { calls, answers, write }
 }
 
-/** A draft of the two cues on screen, over a recording that writes as the test directs. */
 const createDraft = (
   how: {
     write?: (cues: readonly Cue[]) => Promise<void>

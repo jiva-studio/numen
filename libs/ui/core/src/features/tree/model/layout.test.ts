@@ -23,7 +23,6 @@ const ROW_HEIGHT = 20
 const makeRows = (count: number): ShownRow[] =>
   Array.from({ length: count }, (_, index) => ({ id: `row-${index}` }) as unknown as ShownRow)
 
-/** A box that is `height` tall, with the layout mounted over it. */
 function mountLayout(count: number, height: number, withBox = true) {
   const box: Ref<HTMLElement | null> = ref(null)
   const visibleRows = computed(() => makeRows(count))

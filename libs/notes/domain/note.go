@@ -7,13 +7,8 @@ type Note struct {
 	FileStat FileStat
 	Title    string
 
-	// Type is what the note is. A note carrying no `type` is a note,
-	// which is nearly every file in a vault.
 	Type NoteType
 
-	// ID is what the note carries in its frontmatter, if it carries one. A note
-	// written outside the application has none: it is indexed in full and cannot
-	// be a stable target.
 	ID string
 
 	Frontmatter map[string]any
@@ -21,15 +16,8 @@ type Note struct {
 	Links       []Link
 	Body        string
 
-	// Problems are what was wrong with the file and could not be repaired: an
-	// unreadable frontmatter block, a link with no role. They are shown rather
-	// than fixed, because fixing means guessing at what the user wrote.
 	Problems []string
 
-	// FrontmatterErr is set when the block between the delimiters is not valid
-	// YAML. The note is still indexed — its body is readable text either way —
-	// and the file is never repaired in place, because that means guessing at
-	// what the user wrote.
 	FrontmatterErr string
 }
 
@@ -61,14 +49,11 @@ type Heading struct {
 // For a link that matches two notes, that is the note the link is written in,
 // not either of the candidates.
 type VaultProblem struct {
-	Path string
-	Kind Check
-	// Detail describes the problem in the terms of the file itself.
+	Path   string
+	Kind   Check
 	Detail string
 
-	// Target is where the link goes, for the checks that are about one.
-	Target Address
-	// Candidates is what that link could mean, when several notes answer to it.
+	Target     Address
 	Candidates []string
 }
 

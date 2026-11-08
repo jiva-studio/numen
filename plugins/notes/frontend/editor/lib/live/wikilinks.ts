@@ -77,7 +77,6 @@ export const getWikilinkMarks = (
   return Decoration.set(ranges, true)
 }
 
-/** Whether a position lies on a bracket of a wikilink. */
 const isWikilinkBracket = (state: EditorState, pos: number): boolean => {
   const row = state.doc.lineAt(pos)
   if (!row.text.includes('[[')) return false

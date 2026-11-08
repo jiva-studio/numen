@@ -5,7 +5,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
 
-/** The registry a browser that draws ranges keeps, and the ranges it holds. */
 const registry = () => {
   const target = new Map<string, Set<unknown>>()
   globalThis.CSS = { highlights: target } as unknown as typeof CSS
@@ -18,7 +17,6 @@ const registry = () => {
   return target
 }
 
-/** An arbitrary range, which is all the registry requires. */
 const range = (): Range => document.createRange()
 
 /** The books a test holds, each known to the registry by being itself. */

@@ -150,7 +150,6 @@ func checkCanceled(t *testing.T, factory Factory, entries []catalog.Entry) {
 	}
 }
 
-// assertSameEntries compares the identity, the contributions and the state of the entries, in any order.
 func assertSameEntries(t *testing.T, source catalog.Source, got, want []catalog.Entry) {
 	t.Helper()
 	if len(got) != len(want) {
@@ -166,7 +165,6 @@ func assertSameEntries(t *testing.T, source catalog.Source, got, want []catalog.
 	}
 }
 
-// assertSameEntry compares one entry with the entry wanted.
 func assertSameEntry(t *testing.T, source catalog.Source, entry, wanted catalog.Entry) {
 	t.Helper()
 	if entry.Source != source.Name() {

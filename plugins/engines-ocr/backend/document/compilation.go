@@ -14,8 +14,6 @@ func (r *Reader) SetCompilationCache(cache wazero.CompilationCache) {
 	r.compilationCache = cache
 }
 
-// getRuntimeConfig returns the configuration of the WebAssembly runtime, or nil for the library's
-// own when no compilation cache is set. The bundled PDFium needs the exception handling feature.
 func (r *Reader) getRuntimeConfig() wazero.RuntimeConfig {
 	if r.compilationCache == nil {
 		return nil

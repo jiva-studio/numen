@@ -39,14 +39,12 @@ const getBox = (wrapper: Editor, field: string) => getRow(wrapper, field).get('i
 const getDrawnFields = (wrapper: Editor) =>
   wrapper.findAll('[data-field]').map((row) => row.attributes('data-field'))
 
-/** A name typed into a box and not yet committed. */
 const type = async (wrapper: Editor, field: string, name: string): Promise<void> => {
   const box = getBox(wrapper, field)
   box.element.value = name
   await box.trigger('input')
 }
 
-/** A field picked up by its grip and let go over another, or over the tail. */
 const dragTo = async (wrapper: Editor, field: string, onto: string | null): Promise<void> => {
   await getRow(wrapper, field).get('[data-grip]').trigger('dragstart')
   if (onto === null) {
@@ -58,14 +56,12 @@ const dragTo = async (wrapper: Editor, field: string, onto: string | null): Prom
   await getRow(wrapper, onto).trigger('drop')
 }
 
-/** A key pressed on something, as the event it was pressed with. */
 const pressKey = (on: Element, key: string): KeyboardEvent => {
   const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   on.dispatchEvent(press)
   return press
 }
 
-/** A field picked up and the drag ended without it being let go anywhere. */
 const dragOff = async (
   wrapper: Editor,
   field: string,

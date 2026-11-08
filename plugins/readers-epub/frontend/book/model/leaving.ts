@@ -6,9 +6,7 @@
 /** A copy of the spread in front, carried out by a turn into the adjacent document. */
 export interface LeavingSpread {
   readonly copy: HTMLElement
-  /** The `translate` in pixels the paper was going to when it was copied. */
   readonly target: number
-  /** Removes the copy and its highlights. */
   readonly remove: () => void
 }
 

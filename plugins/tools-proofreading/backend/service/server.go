@@ -52,7 +52,6 @@ type Host struct {
 	Queue host.Queue
 }
 
-// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) Host {
 	return Host{
 		Store: host.NewStoreClient(endpoint),
@@ -137,7 +136,6 @@ func (s *settings) getConfig() proofreadingConfig {
 	return s.cfg
 }
 
-// newAskModel returns the model as a system instruction and a prompt are put to it.
 func newAskModel(complete completer, getConfig ...func() proofreadingConfig) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
 		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != mockEnabled {

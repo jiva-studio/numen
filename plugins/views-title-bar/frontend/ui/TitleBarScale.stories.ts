@@ -75,7 +75,6 @@ const resetScales = (): void => {
   style.removeProperty('--numen-text-scale')
 }
 
-/** What `measure` reads at each scale, which must be the same list for every scale. */
 const measureAtEveryScale = async <T>(measure: () => T): Promise<T[]> => {
   const found: T[] = []
   try {

@@ -28,10 +28,8 @@ const target: Record<string, readonly Entry[]> = {
   physics: [file('physics/Kelvin.md')],
 }
 
-/** Waits one tick for the responses to the tab's vault requests. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** Mounts a tab of that vault, and records what it requested from the window. */
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
   const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
@@ -73,7 +71,6 @@ const mountFiles = async (open: readonly string[] = []) => {
   return { recorded: isDone, list, tab, window }
 }
 
-/** What the tree was handed, as a path and the paths under it. */
 const getRowIds = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unknown =>
   rows.map((one) => [one.id, getRowIds((one.rows ?? []) as never)])
 

@@ -27,8 +27,6 @@ const TrashDir = ".trash"
 type Remove struct {
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries
-	// queries is what the index holds about each file, and identifies which
-	// sources lie under the path being removed.
 	queries sourceport.SourceQueries
 	index   IndexUpdater
 }
@@ -49,12 +47,8 @@ func (u Remove) WithIndex(index IndexUpdater) Remove {
 }
 
 type RemoveResult struct {
-	Path string
-	// Trashed is the file's location in the trash, empty when it was destroyed.
-	Trashed string
-	// Dangling is the notes whose links pointed at what was removed and now resolve
-	// to nothing. They are reported and not repaired: the link is not wrong, its
-	// target is gone, and only the user can decide the intent.
+	Path     string
+	Trashed  string
 	Dangling []string
 }
 
@@ -108,8 +102,6 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	return res, indexErr
 }
 
-// getBacklinksOfNotes is the links that point at any of the notes among the
-// sources.
 func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.FileStat) ([]domain.ResolvedLink, error) {
 	var pointing []domain.ResolvedLink
 	for _, source := range sources {
@@ -125,9 +117,6 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 	return pointing, nil
 }
 
-// moveToTrash moves path under the trash and is where it landed. Keeping the
-// path underneath the trash means two notes of the same name do not land on each
-// other, and that putting one back is obvious.
 func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string) (string, error) {
 	target := pathpkg.Join(TrashDir, path)
 	for attempt := 2; ; attempt++ {
@@ -177,8 +166,6 @@ func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
-// withSuffix puts something before the extension: `note.md` and `-2` make
-// `note-2.md`, which reads as a copy.
 func withSuffix(path, suffix string) string {
 	ext := pathpkg.Ext(path)
 	return path[:len(path)-len(ext)] + suffix + ext

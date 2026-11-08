@@ -16,9 +16,7 @@ import {
 import type { PlexHost } from '../model/tabDeps'
 
 export interface HostOptions {
-  /** The note the vault opens with. */
   readonly opening?: string
-  /** The tabs linked to each plex tab, by the identity of the plex tab. */
   readonly linked?: Readonly<Record<string, boolean>>
 }
 

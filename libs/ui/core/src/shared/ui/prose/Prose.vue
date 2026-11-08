@@ -6,19 +6,9 @@ import { render } from './render'
 
 const props = withDefaults(
   defineProps<{
-    /** Markdown, whole or as far as it has arrived. */
     text: string
-    /** Content is still streaming in: a word that arrived in the last update is rendered as arriving. */
     isArriving?: boolean
-    /**
-     * The addresses this text points at that reach nothing. A link carrying
-     * one is drawn as not resolving.
-     */
     unresolved?: readonly string[]
-    /**
-     * Pieces of the text drawn as links. A press on one is never followed by
-     * the browser: the caller named it, and the caller follows it.
-     */
     links?: readonly LinkPiece[]
   }>(),
   { isArriving: false, unresolved: () => [], links: () => [] },

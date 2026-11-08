@@ -18,9 +18,7 @@ export interface ApiError {
 export const UNAVAILABLE = 'unavailable'
 
 export interface ApiOptions {
-  /** The origin the methods are called at; the page origin when empty. */
   readonly origin?: string
-  /** The function that makes the requests, for a window without one or a test. */
   readonly fetch?: typeof fetch
 }
 
@@ -88,7 +86,6 @@ export const parseEvents = (
   return { events, rest }
 }
 
-/** Yields the events of a Server-Sent Events body as they complete, and releases the body when the reader stops. */
 async function* readEvents(
   body: NonNullable<Response['body']>,
 ): AsyncGenerator<{ name: string; data: string }> {

@@ -28,10 +28,8 @@ const (
 
 // App is the running build the frontend reports.
 type App struct {
-	Version string `json:"version"`
-	// Build is the build number; 0 where the build has none.
-	Build int64 `json:"build"`
-	// Platform is darwin, windows or linux.
+	Version  string `json:"version"`
+	Build    int64  `json:"build"`
 	Platform string `json:"platform"`
 }
 
@@ -56,21 +54,17 @@ type File struct {
 
 // Update describes a build newer than the running one.
 type Update struct {
-	Version    string `json:"version"`
-	Build      int64  `json:"build"`
-	Channel    string `json:"channel"`
-	ReleasedAt string `json:"releasedAt"`
-	// NotesURL is the page that lists what the release changed.
-	NotesURL string `json:"notesUrl"`
-	// DownloadURL is the address the build is downloaded from by hand.
+	Version     string `json:"version"`
+	Build       int64  `json:"build"`
+	Channel     string `json:"channel"`
+	ReleasedAt  string `json:"releasedAt"`
+	NotesURL    string `json:"notesUrl"`
 	DownloadURL string `json:"downloadUrl"`
-	// File is the file of the release for the running platform; absent where the release has none.
-	File *File `json:"file,omitempty"`
+	File        *File  `json:"file,omitempty"`
 }
 
 // Status is the result of the last check.
 type Status struct {
-	State State `json:"state"`
-	// Update is present in the available state only.
+	State  State   `json:"state"`
 	Update *Update `json:"update,omitempty"`
 }

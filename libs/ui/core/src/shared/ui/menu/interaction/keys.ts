@@ -16,13 +16,9 @@ interface RowHandle {
 }
 
 export interface MenuKeysState {
-  /** Which item the keyboard is on, or -1 when it is on none. */
   readonly here: Ref<number>
-  /** A rendered row, stored under the item it belongs to. */
   readonly holdRow: (item: string, row: unknown) => void
-  /** The keyboard onto an item, or onto the menu itself where there is none. */
   readonly goTo: (pos: number) => void
-  /** A key pressed inside the menu. */
   readonly onKey: (event: KeyboardEvent) => void
 }
 
@@ -31,7 +27,6 @@ export interface MenuSubmenuActions {
   readonly onDismissSubmenu?: (() => void) | undefined
 }
 
-/** The arrow keys that open or dismiss a submenu. */
 function onSubmenuKey(
   event: KeyboardEvent,
   item: MenuItem | undefined,
@@ -48,7 +43,6 @@ function onSubmenuKey(
   }
 }
 
-/** The keys that move the keyboard along the items. */
 function onStepKey(
   event: KeyboardEvent,
   stepForward: () => void,

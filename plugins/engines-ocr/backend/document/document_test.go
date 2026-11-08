@@ -35,7 +35,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// newCompilation returns the compilation cache of this test run, closed when the test ends.
 func newCompilation(t *testing.T) wazero.CompilationCache {
 	t.Helper()
 	compilation := wasm.NewCompilationCache(os.Getenv(cacheEnv))
@@ -47,7 +46,6 @@ func newCompilation(t *testing.T) wazero.CompilationCache {
 	return compilation
 }
 
-// newReader returns a reader that compiles PDFium through the cache of this test run.
 func newReader(t *testing.T) *document.Reader {
 	t.Helper()
 	reader := document.NewReader()

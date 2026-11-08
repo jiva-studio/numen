@@ -78,7 +78,6 @@ export const whereOf = (element: Element): string => {
   return `${tag}${role ? `[role=${role}]` : ''}${cls ? `.${cls}` : ''}`
 }
 
-/** Whether the browser draws this where a person could see it. */
 const displayed = (element: Element): boolean => {
   if (element.getClientRects().length === 0) return false
   const style = getComputedStyle(element)
@@ -89,11 +88,6 @@ const displayed = (element: Element): boolean => {
 const REACHABLE =
   'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
 
-/**
- * Whether the page holds somewhere else for the keyboard to go. A story with
- * one control is one the browser walks in a circle, and a control it comes back
- * to is where the walk ends and not something keeping it.
- */
 const elsewhere = (from: Element): boolean =>
   [...document.querySelectorAll(REACHABLE)].some(
     (one) =>
@@ -127,17 +121,11 @@ const SETTLING = 500
  */
 const MOVING = '[class*="-enter-active"], [class*="-leave-active"]'
 
-/** One drawn frame, which is when a transition the page has queued begins. */
 const frame = (): Promise<void> =>
   new Promise((wake) => {
     requestAnimationFrame(() => wake())
   })
 
-/**
- * Whether anything on the page is on its way somewhere. An animation that has
- * finished stays on the list when it fills forwards, and where it stopped is
- * where it stays.
- */
 const moving = (): boolean =>
   document.getAnimations().some((one) => one.playState === 'running') ||
   document.querySelector(MOVING) !== null
@@ -145,10 +133,6 @@ const moving = (): boolean =>
 /** How many still frames running say the page is done and not between halves. */
 const STILLNESS = 3
 
-/**
- * halves one after the other and holds nothing moving between them, so several
- * still frames running are asked for and one proves nothing.
- */
 const settles = async (): Promise<boolean> => {
   const until = performance.now() + SETTLING
   let still = 0

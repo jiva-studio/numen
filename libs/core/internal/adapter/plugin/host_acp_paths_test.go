@@ -26,8 +26,6 @@ const (
 	otherPluginID = "md.numen.agents.other"
 )
 
-// newHostWithGemini returns a host of the ACP plugin, whose setting takes several paths, and another
-// agent plugin of one path, on a PATH that holds an executable named gemini, and that executable.
 func newHostWithGemini(t *testing.T) (*Host, string) {
 	t.Helper()
 	bin := t.TempDir()

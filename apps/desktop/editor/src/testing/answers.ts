@@ -39,7 +39,6 @@ interface MockVaultState {
   embedded: number
   listable: boolean
   writeError: string
-  /** The settings the shell declares, which the core serves with the value in force of each. */
   app: readonly PluginSettingInfo[]
   applied: string
   mode: 'system' | 'light' | 'dark'

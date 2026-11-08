@@ -5,7 +5,6 @@
 import type { ComposerAction } from '../../state'
 
 defineProps<{
-  /** What pressing the disc does. */
   action: ComposerAction
 }>()
 </script>

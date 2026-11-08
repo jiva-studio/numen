@@ -15,7 +15,6 @@ export const formatFingerprint = (at?: {
   mtime: bigint
 }): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
 
-/** The two numbers first: a path holds spaces, and everything after them is it. */
 const parseFingerprint = (stat: string) => {
   // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
   const [size = '0', mtime = '0', ...rest] = stat.split(' ')

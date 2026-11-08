@@ -12,9 +12,7 @@ import { write } from '../lib/write'
 
 /** Every label shown in the window. */
 export interface Words {
-  /** The setting could not be written. */
   readonly unturned: string
-  /** The settings the vault answered with could not be read. */
   readonly unreadSettings: string
 }
 
@@ -40,7 +38,6 @@ export const getSettingAt = (settings: unknown, at: readonly string[]): unknown 
   return value
 }
 
-/** The settings with the value at a path replaced, and nothing else changed. */
 const withSettingAt = (settings: unknown, at: readonly string[], value: unknown): unknown => {
   const [step, ...rest] = at
   if (step === undefined) return value
@@ -53,7 +50,6 @@ const PATH_JOIN = '\u0000'
 
 const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
 
-/** The value an edit writes, and nothing where its text is not JSON. */
 const readEditValue = (edit: SettingEdit): unknown => {
   /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
@@ -67,11 +63,6 @@ const readEditValue = (edit: SettingEdit): unknown => {
 /** The first element of the path of a setting of the shell. */
 const OWNER_APP = 'app'
 
-/**
- * The default the declaration gives the setting at a path, and nothing where it declares none. The
- * first element of the path is the owner: `app` is declared by the core, and any other is the id of
- * a plugin whose key is the one element after it.
- */
 const getDeclaredDefault = (
   app: readonly PluginSettingInfo[],
   plugins: readonly PluginInfo[],

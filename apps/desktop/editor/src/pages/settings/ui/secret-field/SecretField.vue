@@ -11,7 +11,6 @@ import SettingRow from '../setting-row/SettingRow.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** What the row is about, which its name is addressed by. */
   at: string
   name: string
   isStored: boolean

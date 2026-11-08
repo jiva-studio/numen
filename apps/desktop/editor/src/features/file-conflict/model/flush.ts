@@ -22,11 +22,8 @@ export type FlushHandler = () => Promise<unknown>
 
 /** Text a file moved out from under, and the two ways of settling it. */
 export interface Conflict {
-  /** The identity the note holding the text opened under. */
   readonly note: string
-  /** Write the user's text over the file's content. */
   readonly keep: () => Promise<unknown>
-  /** Take what the file holds, and let the typing go. */
   readonly take: () => Promise<unknown>
 }
 
@@ -35,14 +32,9 @@ export interface ConflictPrompt {
   readonly note: string
   readonly keep: () => Promise<unknown>
   readonly take: () => Promise<unknown>
-  /** Put it off. It stays standing, undrawn, and the window stays. */
   readonly later: () => void
 }
 
-/**
- * Tracks unresolved conflicts. `raise` registers one and returns a function
- * that removes it; a postponed conflict stays outstanding but is not prompted.
- */
 function createConflictRegistry(onChanged: () => void) {
   const outstanding = new Set<Conflict>()
   const postponed = new Set<string>()
@@ -82,13 +74,6 @@ function createConflictRegistry(onChanged: () => void) {
   }
 }
 
-/**
- * Answers the application's quit request: every registered handler writes its
- * unsaved work, and all writes finish before the response is sent. An error
- * does not keep the window open, since the user requested the close. A conflict
- * does: the text is still present and only the user decides where it is
- * written.
- */
 function createFlushReporter(
   core: FlushDeps,
   registry: ReturnType<typeof createConflictRegistry>,

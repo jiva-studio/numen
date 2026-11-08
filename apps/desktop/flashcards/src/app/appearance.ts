@@ -45,7 +45,6 @@ export interface ThemeEntry {
   readonly title: string
   readonly origin: ThemeOriginCode
   readonly pluginId: string
-  /** The theme declares light and dark itself, so the mode has nothing left to choose. */
   readonly isPinned: boolean
 }
 
@@ -68,14 +67,11 @@ export interface ThemeClient {
 
 export interface AppearanceDeps {
   readonly client: ThemeClient
-  /** The name a plugin is listed under, given its id. */
   readonly getPluginName: (pluginId: string) => string
-  /** Reports a failure to the window's notices. */
   readonly onError: (text: string) => void
   readonly document?: Document
 }
 
-/** The style element of the page marked as one of the two, created when the page carries none. */
 function findStyle(is: string, page: Document): HTMLStyleElement {
   const found = page.head.querySelector<HTMLStyleElement>(`style[${MARKER}="${is}"]`)
   if (found) return found
@@ -85,7 +81,6 @@ function findStyle(is: string, page: Document): HTMLStyleElement {
   return created
 }
 
-/** The mode in the window's own words; a mode with no word is the system's. */
 function getModeWord(code: ThemeModeCode): Mode {
   return MODES.find((word) => MODE_CODES[word] === code) ?? 'system'
 }
@@ -97,7 +92,6 @@ interface AppearanceState {
   readonly getPluginName: (pluginId: string) => string
 }
 
-/** The palette groups the themes and the modes make, filtered by the text typed. */
 function createPaletteGroups({ themes, applied, mode, getPluginName }: AppearanceState) {
   const isPinned = () => themes.value.find((one) => one.name === applied.value)?.isPinned ?? false
 

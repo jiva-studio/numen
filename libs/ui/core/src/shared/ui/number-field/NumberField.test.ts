@@ -16,7 +16,6 @@ const mountField = (props: Partial<FieldProps> = {}) =>
     props: { modelValue: 20, min: 0, max: 240, step: 5, ...props },
   })
 
-/** Every number the field has handed on, in the order it handed them on. */
 const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 

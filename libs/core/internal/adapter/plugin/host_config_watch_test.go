@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 )
 
-// waitForCount waits until the counter reaches want.
 func waitForCount(t *testing.T, got *atomic.Int32, want int32) {
 	t.Helper()
 	plugintest.WaitUntil(t, "the watcher to run", func() bool { return got.Load() >= want })

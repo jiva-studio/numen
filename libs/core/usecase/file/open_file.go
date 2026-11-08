@@ -52,7 +52,6 @@ func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, nam
 	return OpenedFile{Body: body, Path: found.Path, ModTime: found.ModTime}, nil
 }
 
-// getStamp is a modification time in nanoseconds since the epoch, and zero for none.
 func getStamp(t time.Time) int64 {
 	if t.IsZero() {
 		return 0

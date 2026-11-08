@@ -28,8 +28,6 @@ type headSpan struct {
 	from int
 }
 
-// sectionHeads is where each of a deck's sections opens, in the order they
-// stand in the file.
 func sectionHeads(body []byte) []headSpan {
 	var out []headSpan
 	for _, s := range sections(body, SectionLevel, FieldLevel) {
@@ -40,23 +38,15 @@ func sectionHeads(body []byte) []headSpan {
 	return out
 }
 
-// isDeckHeadingLevel reports whether a heading of this level begins something of the deck's
-// own, which is what a section's text and a card's values stop at.
 func isDeckHeadingLevel(level int) bool { return level == SectionLevel || level == CardLevel }
 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
-	name   string
-	cardID cardid.ID
-	// head is the byte the heading line begins at and from is the byte after
-	// it, which is the run the first field's value occupies. end is where the
-	// card stops: the next card, the next section, or the end of the file.
-	head int
-	from int
-	end  int
-	// linkFrom and linkTo are the run the wikilink naming the card model occupies,
-	// without the break it ends on. A card naming no card model holds an empty run
-	// at the byte one would be written at.
+	name     string
+	cardID   cardid.ID
+	head     int
+	from     int
+	end      int
 	linkFrom int
 	linkTo   int
 	values   []valueSpan
@@ -153,7 +143,6 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 	b.spans = append(b.spans, span)
 }
 
-// createEmptyStat is the file stat of a deck that was not read from a file.
 func createEmptyStat() domain.FileStat {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Empty FileStat Size is unused by internal span readers."
 	return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
@@ -199,11 +188,6 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 	return b.deck, b.spans
 }
 
-// findDuplicateCardIDs returns one problem for each card whose card id is also
-// carried by another card in this deck. Both cards are read and displayed
-// marked: no user content is hidden from the screen, and the choice between
-// them is left to the user. Neither card is given a new card id, because
-// choosing would decide which of the two keeps its history.
 func findDuplicateCardIDs(cs []Card) []Problem {
 	carried := map[cardid.ID]int{}
 	for _, c := range cs {
@@ -222,10 +206,6 @@ func findDuplicateCardIDs(cs []Card) []Problem {
 	return out
 }
 
-// readCardModelLink reads the single-wikilink paragraph directly after a
-// card's heading. It returns the link target and the byte where the lead
-// begins; a card whose first paragraph is anything else has no card model
-// link, and everything after the heading is lead.
 func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) {
 	pos := from
 	for pos < to {
@@ -249,9 +229,6 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 	return "", from
 }
 
-// paragraphEnds reports whether the line read last is a paragraph by itself:
-// the next line is blank, or there is no next line. A wikilink followed by
-// prose is a paragraph that begins with a link.
 func paragraphEnds(body []byte, pos, to int) bool {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF,RETURN_FALSE reason="When pos >= to, body[pos:to] is empty and trims to empty string, returning true below."
 	if pos >= to {

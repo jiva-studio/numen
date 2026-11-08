@@ -41,7 +41,6 @@ func (r *recordedTools) CallTool(
 	return &v1.CallToolResponse{Result: &v1.ToolResult{Text: string(vault)}}, nil
 }
 
-// newToolClient serves the tools of the callers and returns a client calling them with the token.
 func newToolClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()

@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// newProofreadCommand proofreads the version identified by the version argument, or the live text of
-// the file when the argument is absent, and waits for the run to finish.
 func newProofreadCommand(proofreading *Proofreading) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		source := domain.TextVersionID(req.Arguments.GetString(command.ArgumentVersion))

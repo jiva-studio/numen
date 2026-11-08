@@ -45,15 +45,13 @@ type memWorld struct {
 	item  map[string][]domain.FileStat
 	clock func() time.Time
 
-	openErr     error
-	registerErr error
-	queriesErr  error
-	removeErr   error
-	sourcesErr  error
-	// saveFailures is how many saves fail before the rest succeed.
+	openErr      error
+	registerErr  error
+	queriesErr   error
+	removeErr    error
+	sourcesErr   error
 	saveFailures int
-	// afterRead runs after every successful read.
-	afterRead func()
+	afterRead    func()
 
 	opens          int
 	registers      int
@@ -79,7 +77,6 @@ func (w *memWorld) addNote(path, content string, mtime time.Time) *memFile {
 	return f
 }
 
-// index makes the index hold the file as it is.
 func (w *memWorld) index(path string) {
 	w.item[path] = []domain.FileStat{w.files[path].fp}
 }

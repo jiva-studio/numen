@@ -23,11 +23,8 @@ export type PanelPlace = (typeof PANEL_PLACES)[number]
 
 /** What the strip's movement is given: the elements it measures, and the answer. */
 export interface CarouselStripDeps {
-  /** The window the strip is seen through. */
   readonly window: Readonly<ShallowRef<HTMLElement | null>>
-  /** The middle of the three, which the stops are read off. */
   readonly middle: Readonly<ShallowRef<HTMLElement | null>>
-  /** Which of the three is visible, changed by a pointer as much as by the owner. */
   readonly currentPlace: Ref<PanelPlace>
 }
 

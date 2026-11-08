@@ -43,7 +43,6 @@ export function createStatusView(context: PluginContext, updates: Updates) {
   })
 }
 
-/** Shows the person why an address did not open. */
 function showFailure(context: PluginContext, opening: ReturnType<Updates['openDownload']>): void {
   opening.then(
     (result) => {
@@ -53,7 +52,6 @@ function showFailure(context: PluginContext, opening: ReturnType<Updates['openDo
   )
 }
 
-/** Tells the person that the Custom channel has no release feed address to ask. */
 function showMissingAddress(context: PluginContext): void {
   const address = context.getSetting<string>('endpoint')
   if (context.getSetting<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return

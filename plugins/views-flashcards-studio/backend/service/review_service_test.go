@@ -21,8 +21,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// recordReview answers one card of a session and returns the line recorded for
-// it.
 func recordReview(t *testing.T, handler *API, vault string, session *api.StartSessionResponse) string {
 	t.Helper()
 	if len(session.Cards) == 0 {

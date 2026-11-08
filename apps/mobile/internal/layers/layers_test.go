@@ -14,8 +14,6 @@ import (
 	"testing"
 )
 
-// named are files the walk has to have reached: the binding the phone starts
-// the core through. A count does not identify which files were read.
 func getNamed() []string { return []string{"bind/mobile.go"} }
 
 // standing is a file of this application, parsed.
@@ -24,9 +22,6 @@ type standing struct {
 	file *ast.File
 }
 
-// readSources is every hand-written Go file of this application, parsed.
-//
-// Test files are excluded: they live outside the package they exercise.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -64,9 +59,6 @@ func readSources(t *testing.T) []standing {
 	return found
 }
 
-// logging are the words a package that keeps a record is named by, read off the
-// last element of an import path. The standard library holds two of them, and
-// the rest are the libraries reached for when one of those will not do.
 func getLogging() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
@@ -74,7 +66,6 @@ func getLogging() map[string]bool {
 	}
 }
 
-// logs answers whether an import is a logger.
 func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. The binding is where the process's own streams are named,

@@ -18,11 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// failWithDialog shows what stopped the application, in a window.
-//
-// A user who launched numen from a dock has no terminal, and a message written
-// to one is never seen. Whatever this build could not do is reported here,
-// with the state of the installation it found.
 func failWithDialog(cfg container.Config, why error) error {
 	page, err := fatalReport{}.page(cfg, why)
 	if err != nil {
@@ -60,7 +55,6 @@ func failWithDialog(cfg container.Config, why error) error {
 	}
 }
 
-// getFatalWindowOptions is the report window: the page draws its own title bar.
 func getFatalWindowOptions() application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
 		Title:  appName,
@@ -77,9 +71,7 @@ type fatalReport struct {
 	Sentence string
 	Facts    []detail
 	Remedy   string
-	// Error is the underlying error text, shown on request. Empty when the
-	// sentence is complete.
-	Error string
+	Error    string
 }
 
 type detail struct{ Name, Content string }
@@ -93,7 +85,6 @@ const (
 
 const factSettings = "settings"
 
-// page is the report as one self-contained document; a build that failed to start cannot serve its own assets.
 func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
@@ -119,7 +110,6 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	return []byte(out.String()), nil
 }
 
-// getFatalReport maps a start error to the page: what failed, the paths involved, and the next step.
 func getFatalReport(cfg container.Config, why error) fatalReport {
 	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
@@ -164,7 +154,6 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	}
 }
 
-// getSizeFatalReport is a scale value out of range, from the file or the command line.
 func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Min, outside.Max)
 	content := fmt.Sprint(outside.Number)
@@ -202,7 +191,6 @@ const (
 	cannotOpen   = 14
 )
 
-// getIndexFatalReport is the index failing to open, one report per way a path can fail.
 func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
 	pos := getIndexPath(cfg)
 	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", pos}}}
@@ -232,11 +220,8 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 	return response
 }
 
-// getIndexPath is the file the index is kept in.
 func getIndexPath(cfg container.Config) string { return cfg.IndexPath }
 
-// getSettingsPath returns the file this installation is configured in. A registry
-// at a custom location takes the settings file with it.
 func getSettingsPath(cfg container.Config) string {
 	if cfg.SettingsPath != "" {
 		return cfg.SettingsPath

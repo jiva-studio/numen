@@ -39,8 +39,7 @@ type mockEmbeddingServer struct {
 	minChunk      atomic.Int32
 	chunkTokens   atomic.Int32
 	handling      atomic.Value
-	// failRead makes the read of the model fail, after it has been counted.
-	failRead atomic.Bool
+	failRead      atomic.Bool
 
 	mu    sync.Mutex
 	roles []v1.EmbedRole

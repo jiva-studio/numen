@@ -22,19 +22,12 @@ const MaxThemeSize = 256 << 10
 
 // Theme is a stylesheet a plugin adds to the list of themes.
 type Theme struct {
-	// ID is the slug the theme is named by inside the plugin.
-	ID string
-	// Name is the title the theme is listed with.
-	Name string
-	// Appearance is AppearanceLight or AppearanceDark when the theme sets one color scheme, and empty
-	// when it follows the mode.
+	ID         string
+	Name       string
 	Appearance string
-	// File is the slash-separated path of the stylesheet inside the plugin folder.
-	File string
+	File       string
 }
 
-// listThemeIssues returns each rule a theme declaration breaks: a slug id listed once, a name, an
-// appearance of light, dark or none, and a stylesheet path that stays inside the plugin folder.
 func (c Contributes) listThemeIssues() []error {
 	var issues []error
 	observed := map[string]bool{}

@@ -154,7 +154,6 @@ func removeIfPresent(path string) error {
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="chunk buffer size does not affect copied stream"
 const copyChunkSize = 64 * 1024
 
-// copyContext copies the source to the writer and stops when the context ends.
 func copyContext(ctx context.Context, destination io.Writer, source io.Reader) error {
 	buffer := make([]byte, copyChunkSize)
 	for {

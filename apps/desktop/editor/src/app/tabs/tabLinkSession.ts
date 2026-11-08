@@ -22,17 +22,12 @@ export interface TabLinkSessionDeps {
     VaultPort,
     'watchTabLinks' | 'cancelTabLinksWatch' | 'writeTabLinks' | 'acceptTabMove'
   >
-  /** Window id used for the watch and for writes. */
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly applySync: (sync: TabPathSync) => void
-  /** Moves the tabs of this window to the path of each group of a snapshot. */
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
-  /** Opens a tab that another window sends to this window. */
   readonly openMovedTab: (moved: MovedTab) => void
-  /** Sets whether the window shows the highlight outline. */
   readonly setHighlighted: (isOn: boolean) => void
-  /** Returns the linkable tabs and the window summary shown in the menus of other windows. */
   readonly getReport: () => WindowTabsReport
   readonly wait: (ms: number) => Promise<unknown>
   readonly onError: (error: unknown) => void

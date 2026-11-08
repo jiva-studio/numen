@@ -19,7 +19,6 @@ export interface PlexFrame {
   readonly nodes: readonly PlacedNode[]
   readonly edges: readonly PlacedEdge[]
   readonly extent: Extent
-  /** Nodes of a relation that did not fit. Empty when everything fit. */
   readonly overflow: Readonly<Partial<Record<PlexRelation, number>>>
 }
 

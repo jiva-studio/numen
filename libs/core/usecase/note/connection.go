@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note/query"
 )
 
-// connectionRoles are the roles whose records make up a connection.
 func getConnectionRoles() [3]domain.LinkRole {
 	return [...]domain.LinkRole{domain.RoleParent, domain.RoleChild, domain.RoleJump}
 }
@@ -38,8 +37,6 @@ type connectionEditor struct {
 	connections query.GetConnection
 }
 
-// getAddresses returns every address under which `from` writes a link to `to`,
-// with the canonical address first.
 func (e connectionEditor) getAddresses(
 	ctx context.Context, v domain.Vault, from, to string,
 ) ([]domain.Address, error) {
@@ -67,8 +64,6 @@ func (e connectionEditor) getAddresses(
 	return out, nil
 }
 
-// getParents returns the notes that have path as a child, from both ends of the
-// links: `parent: X` written in path, and `child: path` written in X.
 func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	links, err := e.links.GetLinks(ctx, v.ID, path)
 	if err != nil {
@@ -92,8 +87,6 @@ func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path s
 	return parents, nil
 }
 
-// check refuses a connection that cannot be written: a malformed one, or one that
-// would put a note above itself.
 func (e connectionEditor) check(ctx context.Context, v domain.Vault, c domain.Connection) error {
 	if err := c.Validate(); err != nil {
 		return err
@@ -101,8 +94,6 @@ func (e connectionEditor) check(ctx context.Context, v domain.Vault, c domain.Co
 	return c.CheckAcyclic(func(path string) ([]string, error) { return e.getParents(ctx, v, path) })
 }
 
-// setChange makes the note hold `side` as its record about `other`, or no record
-// of type `kind` when side is nil.
 func (e connectionEditor) setChange(
 	ctx context.Context, v domain.Vault, from, other, kind string, side *domain.Side,
 ) (noteChange, error) {
@@ -129,7 +120,6 @@ func (e connectionEditor) setChange(
 	return noteChange{path: from, change: change}, nil
 }
 
-// getChanges returns the edit of each of the two notes of a connection.
 func (e connectionEditor) getChanges(
 	ctx context.Context, v domain.Vault, c domain.Connection, kind string,
 ) ([]noteChange, error) {
@@ -144,10 +134,6 @@ func (e connectionEditor) getChanges(
 	return []noteChange{ab, ba}, nil
 }
 
-// apply runs the changes against their notes. Every change is first applied to
-// the note's current content in memory, so a note that cannot be edited leaves
-// all of them unwritten. A write that fails after an earlier one landed restores
-// the earlier notes to the content they had.
 func (e connectionEditor) apply(ctx context.Context, v domain.Vault, changes []noteChange) error {
 	reader, err := e.readers.Open(v)
 	if err != nil {
@@ -182,7 +168,6 @@ func (e connectionEditor) apply(ctx context.Context, v domain.Vault, changes []n
 	return e.updateIndex(ctx, v, changes)
 }
 
-// restore writes the original content back into the notes already written.
 func (e connectionEditor) restore(
 	ctx context.Context, v domain.Vault, landed []noteChange, originals [][]byte, stats []domain.FileStat,
 ) error {
@@ -205,7 +190,6 @@ func (e connectionEditor) restore(
 	return errors.Join(failures...)
 }
 
-// updateIndex updates the index for the notes written.
 func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, changes []noteChange) error {
 	if e.index == nil {
 		return nil
@@ -218,8 +202,6 @@ func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, chang
 	return WrapIndexOutdated(e.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
-// getKind is the type the records of a connection are addressed by: the type of
-// a side it holds.
 func getKind(c domain.Connection) string {
 	switch {
 	case c.AB != nil:

@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// vaultDir is the fixture vault at the root of the repository, found by walking up from this file.
 func vaultDir(t *testing.T) string {
 	t.Helper()
 	_, self, _, ok := runtime.Caller(0)
@@ -137,7 +136,6 @@ func TestAHeadingInAFileSavedWithCRLFBeginsWhereItReturns(t *testing.T) {
 	}
 }
 
-// shortenText cuts text down for a failure message.
 func shortenText(s string) string {
 	if len(s) > 20 {
 		return s[:20]

@@ -24,7 +24,6 @@ const MISSING_PAGE_ADDRESS = 'http://unreachable.numen.test/tide-tables'
 const OLD_CORNER =
   '.notices, .notices__stack, .notice, article.notice, .notice__work, .notice__away'
 
-/** The corner region as it was announced: a status or alert region holding cards. */
 const getOldRegions = (page: Page) =>
   page.locator('[role="status"], [role="alert"]').filter({ has: page.locator('.notice') })
 

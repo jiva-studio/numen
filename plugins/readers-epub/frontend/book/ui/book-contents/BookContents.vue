@@ -12,11 +12,8 @@ import { CONTENTS_WORDS, findLineAt, type ContentsEntry, type ContentsWords } fr
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** What the book divides into, ascending by offset. */
     entries?: readonly ContentsEntry[]
-    /** The reading position, in bytes of the book's text. */
     at?: number
-    /** The words it is read with. */
     words?: ContentsWords
   }>(),
   {

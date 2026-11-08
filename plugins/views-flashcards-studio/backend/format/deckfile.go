@@ -65,7 +65,6 @@ func (f *DeckFile) WriteIdentifier(identifier string) (bool, error) {
 	return writeIdentifier(f.doc, identifier)
 }
 
-// writeIdentifier writes an identifier into a file that carries none.
 func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
 	if _, carried := doc.Identifier(); carried {
 		return false, nil
@@ -192,9 +191,6 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	return f.doc.SpliceBody(head, to, content)
 }
 
-// getCardSpan returns the span of the card with a card id. A deck with no card
-// of that card id yields ErrNoSuchCard, and a deck with two yields
-// ErrTwoCards.
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 	_, spans := readDeck(createEmptyStat(), body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
@@ -292,9 +288,6 @@ func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 	return f.doc.SpliceBody(content, content, insert(body, content, cardBlock(card)))
 }
 
-// cardBlock is the markdown one card is written as: its heading, the wikilink
-// naming the card model it is cut by, the lead beneath it, and each value under a
-// heading of its field's name.
 func cardBlock(card Card) string {
 	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.CardID))}
 	if card.CardModelLink != "" {
@@ -420,9 +413,6 @@ func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to st
 	return len(heads), nil
 }
 
-// usesCardModel reports whether a card is cut by the card model filed at card model. The name
-// under the heading is an ordinary wikilink, so what cuts the card is the note
-// that name lands on.
 func usesCardModel(card Card, linkTargets map[string]string, cardModel string) bool {
 	pos, lands := linkTargets[card.CardModelLink]
 	return lands && pos == cardModel

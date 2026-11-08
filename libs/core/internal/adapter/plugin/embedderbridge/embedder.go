@@ -36,12 +36,9 @@ type Embedder struct {
 	concurrency int
 	floorHint   float64
 
-	// changeMu orders the reads that follow a configuration of the plugin.
-	changeMu sync.Mutex
-	// announced is the model the listeners were last notified of. A read by GetModel does not change it.
-	announced embeddingport.EmbeddingModel
-	listeners []func()
-	// onReadError receives the error of a failed read after a configuration of the plugin.
+	changeMu    sync.Mutex
+	announced   embeddingport.EmbeddingModel
+	listeners   []func()
 	onReadError func(error)
 	stopWatch   func()
 }
@@ -205,22 +202,18 @@ func (b *Embedder) OnModelReadError(fn func(error)) {
 	b.onReadError = fn
 }
 
-// reportReadError passes err to the callback of OnModelReadError, when there is one.
 func (b *Embedder) reportReadError(err error) {
 	if b.onReadError != nil {
 		b.onReadError(err)
 	}
 }
 
-// announceModelChange reads the model and runs the listeners when it differs from the announced one.
-// The listeners run after changeMu is released, so a listener may register another one.
 func (b *Embedder) announceModelChange() {
 	for _, fn := range b.readModelChange() {
 		fn()
 	}
 }
 
-// readModelChange reads the model under changeMu and returns the listeners to run, none when the model is the announced one.
 func (b *Embedder) readModelChange() []func() {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()

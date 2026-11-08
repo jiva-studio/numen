@@ -15,15 +15,12 @@ import Select from './Select.vue'
 import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
 
 interface Knobs {
-  /** The option labels, one per line. A line after a tab names its group. */
   words: string
   chosen: string
   isDisabled: boolean
-  /** How wide the box drawing the control is. */
   width: string
 }
 
-/** One line of the knob: the words on the row, and the group after a tab. */
 const getChoice = (line: string, pos: number) => {
   const [text = '', group] = line.split('\t')
   const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${pos}`
@@ -83,7 +80,6 @@ const groups = (): readonly string[] =>
     (one) => one.textContent?.trim() ?? '',
   )
 
-/** Opens the option list, as a user does before choosing. */
 const openSelect = async (canvas: HTMLElement) => {
   await userEvent.click(control(canvas))
 }

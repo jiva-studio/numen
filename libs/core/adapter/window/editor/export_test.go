@@ -57,7 +57,6 @@ type watched struct {
 	watcher vaultport.VaultWatcher
 }
 
-// newWatched is that assembly over an index and the pieces a test drives.
 func newWatched(
 	cfg container.Config, db *container.Index,
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher,

@@ -13,35 +13,27 @@ import (
 
 // protocolLeak is a protocol type mentioned by the type of an exported identifier of a public package.
 type protocolLeak struct {
-	// subject is the qualified name of the exported identifier or the exported type that mentions the protocol type.
-	subject string
-	// protocolType is the qualified name of the protocol type.
+	subject      string
 	protocolType string
 }
 
 // leakWalk collects the protocol types that the public API of one set of packages mentions.
 type leakWalk struct {
-	// protocolRoot is the import path of the protocol module; every package at or below it is a
-	// protocol package.
 	protocolRoot string
-	// familyPrefix is the import path prefix of the packages whose declarations are part of the API.
 	familyPrefix string
 	subject      string
 	visited      map[*types.TypeName]bool
 	found        map[protocolLeak]bool
 }
 
-// isInternalPackage reports whether path names a package below an internal directory.
 func isInternalPackage(path string) bool {
 	return slices.Contains(strings.Split(path, "/"), "internal")
 }
 
-// isProtocolPackage reports whether the package path is a protocol package.
 func (w *leakWalk) isProtocolPackage(path string) bool {
 	return isWithin(path, w.protocolRoot)
 }
 
-// walkNamed records a protocol type, and descends into the declaration of a type of the family.
 func (w *leakWalk) walkNamed(named *types.Named) {
 	origin := named.Origin().Obj()
 	if origin.Pkg() == nil {
@@ -70,8 +62,6 @@ func (w *leakWalk) walkNamed(named *types.Named) {
 	}
 }
 
-// walk records the protocol types that t mentions: in a field or method that a user of t can name, in a
-// signature, an element type, a type argument or a constraint.
 func (w *leakWalk) walk(t types.Type) {
 	switch current := types.Unalias(t).(type) {
 	case *types.Named:
@@ -121,10 +111,6 @@ func (w *leakWalk) walk(t types.Type) {
 	}
 }
 
-// getProtocolLeaks returns the protocol types that the exported identifiers of the public (non-internal)
-// packages of pkgs mention in their types, along with the number of exported identifiers examined.
-// A protocol type is a type declared in a package whose path is protocolRoot or one below it; the API
-// includes every type declared under familyPrefix that an exported identifier reaches.
 func getProtocolLeaks(pkgs []*packages.Package, protocolRoot, familyPrefix string) ([]protocolLeak, int) {
 	walk := &leakWalk{
 		protocolRoot: protocolRoot,
@@ -161,7 +147,6 @@ func getProtocolLeaks(pkgs []*packages.Package, protocolRoot, familyPrefix strin
 	return leaks, examined
 }
 
-// loadAPIPackages loads the packages of the module in dir with their types, test files excluded.
 func loadAPIPackages(t *testing.T, dir string, env []string) []*packages.Package {
 	t.Helper()
 	config := &packages.Config{
@@ -181,8 +166,6 @@ func loadAPIPackages(t *testing.T, dir string, env []string) []*packages.Package
 	return loaded
 }
 
-// The exported identifiers of the public packages of the plugin SDK and its feature modules mention no
-// type declared in the protocol module: a plugin that compiles against the SDK names no protocol type.
 func checkSDKNamesNoProtocolType(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	var pkgs []*packages.Package
@@ -231,7 +214,6 @@ func checkSDKNamesNoProtocolType(t *testing.T, workspace workspacePackages) {
 	}
 }
 
-// writeFiles writes the files, keyed by slash-separated path, into a new module named fixture.
 func writeFiles(t *testing.T, files map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()

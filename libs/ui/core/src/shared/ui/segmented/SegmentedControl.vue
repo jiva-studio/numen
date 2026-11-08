@@ -14,7 +14,6 @@ import type { SegmentedChoice } from '.'
 
 const props = withDefaults(
   defineProps<{
-    /** The choices, in the order they are offered. */
     choices: readonly SegmentedChoice[]
     isDisabled?: boolean
     class?: HTMLAttributes['class']
@@ -29,7 +28,6 @@ const onChoose = (value: unknown) => {
   if (typeof value === 'string') model.value = value
 }
 
-/** Home and End go to the ends of the row, and the choice follows the keyboard. */
 const onKey = (event: KeyboardEvent) => {
   if (props.isDisabled) return
   let choice = undefined

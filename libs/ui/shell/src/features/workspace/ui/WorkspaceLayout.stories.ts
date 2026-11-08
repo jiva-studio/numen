@@ -57,9 +57,7 @@ interface Knobs {
   arrangement: Arrangement
   edge: number
   threshold: number
-  /** What each tab is carrying, by tab. */
   marks: Readonly<Record<string, string>>
-  /** Given by the story, and nothing a reader turns. */
   tabs?: never
   naming?: never
   modelValue?: never
@@ -158,11 +156,6 @@ interface Position {
   readonly y: number
 }
 
-/**
- * Maps a story position to the window position that drives the pointer, and
- * back to the story position of that whole window pixel. The story is drawn at
- * a scale, and the pointer moves in whole window pixels.
- */
 const mapToFrame = (point: Position): { window: Position; story: Position } => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) {
@@ -183,10 +176,6 @@ const mapToFrame = (point: Position): { window: Position; story: Position } => {
   }
 }
 
-/**
- * A drag performed by the browser, from one position to another. The splitter
- * captures the pointer by position, which only a browser can verify.
- */
 const sweep = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
   await (
@@ -195,7 +184,6 @@ const sweep = async (from: Position, to: Position): Promise<void> => {
   await new Promise((isDone) => setTimeout(isDone, 16))
 }
 
-/** The cursor the splitter puts over the whole page while it has the pointer. */
 function getCursor(): string | null {
   const cursorPrefix = '*{cursor:'
 
@@ -223,11 +211,6 @@ interface Caught {
  */
 const AWAY = [-10, -6, -3, 0, 3, 6, 10]
 
-/**
- * Where the splitter has the pointer along a line across a handle, and the
- * cursor it draws there. The line is taken a quarter of the way along the
- * handle, clear of the handles a branch further in lays across this one.
- */
 async function measureAcross(handle: HTMLElement, axis: 'x' | 'y'): Promise<readonly Caught[]> {
   const box = getRect(handle)
   const found: Caught[] = []
@@ -244,10 +227,8 @@ async function measureAcross(handle: HTMLElement, axis: 'x' | 'y'): Promise<read
   return found
 }
 
-/** What a handle that catches its whole reach, and no further, draws at those places. */
 const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
-/** The getFurthest out along that line the splitter still had the pointer. */
 function getFurthest(places: readonly Caught[]): Position {
   const target = places.filter((place) => place.cursor)
   const edge = target[target.length - 1]?.pos
@@ -255,7 +236,6 @@ function getFurthest(places: readonly Caught[]): Position {
   return edge
 }
 
-/** Drags a tab from one position to another in incremental pointer steps. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
   const start = getRect(from)
   const point = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }

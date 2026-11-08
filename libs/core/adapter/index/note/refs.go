@@ -23,9 +23,6 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 	})
 }
 
-// queryEachPath prepares query and runs read once for each
-// path, keeping the results read reports as found. One prepared statement is
-// executed repeatedly: the query text is the same for any number of paths.
 func queryEachPath[T any](
 	ctx context.Context, db *sql.DB, vaultID domain.VaultID, paths []string, query string,
 	read func(statement *sql.Stmt, vault int64, path string) (T, bool, error),
@@ -132,7 +129,6 @@ func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths
 	})
 }
 
-// getHeadingsAt is one note's headings, read off a statement already prepared.
 func getHeadingsAt(
 	ctx context.Context,
 	statement *sql.Stmt,

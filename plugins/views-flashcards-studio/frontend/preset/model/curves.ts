@@ -81,7 +81,6 @@ export interface CurveContext {
   setErrorMessage: (msg: string) => void
 }
 
-/** Requests one curve and applies the result. */
 const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
   const { path, getSettings, core, bounds, today, setErrorMessage } = context
   const mine = state.asks.acquireRequest()

@@ -17,7 +17,6 @@ const createRow = (id: RowId): ShownRow => ({
 
 const ROWS = ['a', 'b', 'c', 'd'].map(createRow)
 
-/** The selection held by the owner, changed only through notifications. */
 function createOwner(initial: readonly RowId[] = []) {
   let target = initial
   const select = vi.fn<(rows: readonly RowId[]) => void>((rows) => {

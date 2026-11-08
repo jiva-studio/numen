@@ -21,7 +21,6 @@ interface Props {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
-  /** A tab of the host passes the error ref of its state. */
   readonly errorMessage?: string | Readonly<Ref<string>>
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[] | undefined

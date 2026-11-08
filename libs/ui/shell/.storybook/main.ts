@@ -21,10 +21,6 @@ const APPS = [
  */
 const drawing = !process.env['VITEST']
 
-/**
- * How a story reaches its imports: `@/` from the source of the module it is
- * written in, `@numen/ui` through its build, and `@numen/shell` from this source.
- */
 const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
   ...config,
   resolve: {

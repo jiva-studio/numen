@@ -91,7 +91,6 @@ class Grid extends WidgetType {
   }
 }
 
-/** The one thing a widget cannot read back from the DOM: at its current position. */
 const span = (frame: HTMLElement, table: Table) => {
   frame.dataset['from'] = String(table.from)
   frame.dataset['to'] = String(table.to)
@@ -104,7 +103,6 @@ const createAddButton = (name: string) => {
   return button
 }
 
-/** A cell that is written somewhere can be typed into; one that is not cannot. */
 const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => {
   if (!cell || !isWritable) {
     element.removeAttribute('contenteditable')

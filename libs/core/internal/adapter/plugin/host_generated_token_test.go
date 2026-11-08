@@ -37,8 +37,6 @@ func (w *tokenWrites) get(pluginID, key string) []any {
 	return append([]any(nil), w.values[pluginID+"/"+key]...)
 }
 
-// newTokenHost discovers a plugin whose settings token and secondToken ask the host for a generated
-// token, beside a plain string setting label.
 func newTokenHost(t *testing.T) *Host {
 	t.Helper()
 	root := t.TempDir()
@@ -67,8 +65,6 @@ func newTokenHost(t *testing.T) *Host {
 	return host
 }
 
-// loadTokenHost loads the stored settings in the order the container does: the values first, then
-// the persist handler.
 func loadTokenHost(host *Host, stored map[string]map[string]any, writes *tokenWrites) {
 	host.SetSettings(stored)
 	host.SetPersistHandler(writes.add)

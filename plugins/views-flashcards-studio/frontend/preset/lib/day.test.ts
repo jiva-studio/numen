@@ -47,10 +47,6 @@ const point: Point = {
   backlog: [],
 }
 
-/**
- * A curve of a date as the core answers one: the grid counts days from the day
- * holding now, and each place names the day it falls on.
- */
 const createHonestCurve = (): Curve => {
   const grid = Array.from({ length: PLACES }, (_, index) =>
     Math.round(1 + (29 * index) / (PLACES - 1)),
@@ -70,7 +66,6 @@ const createHonestCurve = (): Curve => {
   }
 }
 
-/** A tab over one preset, answered with the curve given, or with none at all. */
 const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   const content: Settings[] = []
   const core: Presets = {

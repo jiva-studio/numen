@@ -7,7 +7,6 @@ import { createPluginLoader } from './loader'
 import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { getLifecycleHooks, resolveModule } from './module'
 
-/** The loader, with a module registered under each plugin id. */
 function registerModules(
   loader: ReturnType<typeof createPluginLoader>,
   modules: Record<string, () => Promise<unknown>>,

@@ -11,12 +11,10 @@ import { openNotes, type Notes } from '@/entities/note'
 import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
 import type { NoteResult } from '@/entities/note'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
 
-/** What the application sends over the quit stream during tests. */
 function createMockStream() {
   const events: { token: string; flush: boolean }[] = []
   let wake: (() => void) | null = null
@@ -83,9 +81,6 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
   }
 }
 
-/**
- * A tab whose text changed under the file. Records the action taken.
- */
 function createConflict(note: string) {
   const actions: string[] = []
   let drop: () => void = vi.fn()

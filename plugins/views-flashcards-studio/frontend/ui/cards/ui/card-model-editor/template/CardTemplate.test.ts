@@ -22,7 +22,6 @@ const TEMPLATE: CardModelTemplate = {
   back: '<b>Height:</b> {{Height}}',
 }
 
-/** One template, laid out against the fields a card model declares. */
 const createTemplate = (
   template: CardModelTemplate,
   fields: readonly string[] = FIELDS,
@@ -53,7 +52,6 @@ const getBox = (wrapper: Drawn, half: string) =>
 
 const getName = (wrapper: Drawn) => wrapper.get<HTMLInputElement>('header input')
 
-/** A name typed into the name box and not yet committed. */
 const type = async (wrapper: Drawn, name: string): Promise<void> => {
   const box = getName(wrapper)
   box.element.value = name

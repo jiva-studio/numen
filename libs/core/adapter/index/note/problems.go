@@ -20,9 +20,6 @@ func (q *Queries) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]
 	return q.getProblems(ctx, vaultID, frontmatterErrorsSQL)
 }
 
-// getProblems reads the two questions that come back as a path and a line of
-// text. What the line means is the caller's to say: a query answers what is
-// stored and does not compose sentences about it.
 func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -136,8 +133,6 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 	return out, nil
 }
 
-// scanLinkAsWritten reads one link as written, before anything queries where it
-// currently goes.
 func scanLinkAsWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink
 	var role, marker string

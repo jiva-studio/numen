@@ -14,9 +14,8 @@ import (
 // models, which open no model and load no runtime. A program the machine holds
 // is still the machine's own.
 type PlaceholderProvisioner struct {
-	dir       string
-	discovery discovery
-	// runtimeVars are the variables each runtime is named to a plugin by, by runtime id.
+	dir         string
+	discovery   discovery
 	runtimeVars map[string]func(primary string) map[string]string
 }
 

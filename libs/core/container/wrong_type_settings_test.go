@@ -31,8 +31,6 @@ const importerManifest = `{
 	]
 }`
 
-// installationWith is a configuration over a settings file with the content given, and a plugin host
-// that discovered the importer.
 func installationWith(t *testing.T, content string) (container.Config, string) {
 	t.Helper()
 	plugins := t.TempDir()

@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
-/** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */
 async function openTranscriptionSettings(page: Page): Promise<void> {
   await runPaletteCommand(page, 'Open settings', 'Open settings')
   await page
@@ -11,7 +10,6 @@ async function openTranscriptionSettings(page: Page): Promise<void> {
   await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })
 }
 
-/** Opens the Settings tab again, which shows the plugin it last showed. */
 async function reopenSettings(page: Page): Promise<void> {
   await runPaletteCommand(page, 'Open settings', 'Open settings')
   await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })

@@ -34,8 +34,6 @@ func (j keyJar) DeleteKey(_ context.Context, name string) error {
 	return nil
 }
 
-// writeSecretPlugin puts a plugin that declares the apiKey secret in a folder
-// and returns the folder.
 func writeSecretPlugin(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()

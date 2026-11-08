@@ -18,10 +18,8 @@ const defaultACPProgram = "acp"
 
 // acpAgent is an agent that serves the Agent Client Protocol over its standard streams.
 type acpAgent struct {
-	// Program is what a completion model names the agent by.
 	Program string
 	Title   string
-	// Command starts the agent's ACP server.
 	Command []string
 }
 
@@ -55,8 +53,6 @@ func getExecutableProgramName(path string) string {
 	return name
 }
 
-// getACPAgentsFromCommands returns the agents the command lines of the settings name, in the order
-// of their programs: each program with the ACP prefix and a command line.
 func getACPAgentsFromCommands(commands map[string][]string) []acpAgent {
 	var agents []acpAgent
 	for name, command := range commands {

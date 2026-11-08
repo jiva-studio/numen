@@ -19,52 +19,20 @@ export interface PlexPending {
 
 export interface PlexViewProps {
   frame: PlexFrame
-  /** The viewport to centre on, measured by the element's owner. */
   viewport: { width: number; height: number }
-  /** How big a node the gesture would make, for the shape drawn under it. */
   nodeSize: { width: number; height: number }
-  /** Draw the title a typed relationship carries. */
   showEdgeLabels?: boolean
-  /** Whether reaching out is allowed at all, and so whether any node may
-   *  offer a handle. */
   canReach?: boolean
-  /**
-   * Label of a relation, used where a relation is written into the drawing:
-   * the outline of a gesture shows the relation it would create.
-   */
   relationName?: (relation: PlexRelation) => string
-  /**
-   * The box a node expands to while it has focus, or null for a node whose
-   * title is already fully shown. Text is measured where the plex is drawn, so
-   * the box is passed in already computed.
-   */
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
-  /**
-   * The headings a node shows under its box while it has focus, or null for a
-   * node with none. The drawing determines which headings a node has.
-   */
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  /** Pointer and animation behaviour of the nodes. Defaults to the standard behaviour. */
   behaviour?: PlexBehaviour
-  /** A gesture in progress: where it started, where it is, what it means. */
   gestureFrom?: string | null
   gestureAt?: Position | null
   gestureOutcome?: Drop | null
-  /**
-   * A node awaiting a partner: the node a line starts from, and the point it
-   * ends at, in plex pixels from the top-left corner.
-   */
   pending?: PlexPending | null
-  /**
-   * An external drag over the drawing: the pointer position and the relation
-   * created by dropping there. Both must be set; with either unset nothing is drawn.
-   */
   draggedAt?: Position | null
   dropRelation?: PlexRelation | null
-  /**
-   * Label of the relation an external drop would create, written into the
-   * drawing. English by default.
-   */
   dropName?: (relation: PlexRelation) => string
 }
 
@@ -87,19 +55,9 @@ export interface PlexViewEvents {
 
 export interface PlexNodeProps {
   node: PlacedNode
-  /** The role of this node in the current gesture; it cannot be derived from the node. */
   gestureRole?: GestureRole
-  /**
-   * The box the node expands to while it has focus, or null when its title is
-   * already fully shown.
-   */
   wide?: WideBox | null
-  /**
-   * The headings shown under the node's box while it has focus, or null for a
-   * node with none.
-   */
   hung?: NodeHeadings | null
-  /** Pointer and animation behaviour of this node. Defaults to the standard behaviour. */
   behaviour?: PlexBehaviour
 }
 

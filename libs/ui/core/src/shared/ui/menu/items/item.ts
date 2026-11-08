@@ -12,19 +12,10 @@ import type { Position, Size } from '@/shared/lib/math/geometry'
  */
 export interface MenuItem {
   readonly id: string
-  /** What is written on it. */
   readonly text: string
-  /** A second line under the words, in the small print. */
   readonly detail?: string
-  /** Drawn and announced, and not choosable. */
   readonly isDisabled?: boolean
-  /**
-   * The group it belongs to. Items of one group stand together, and a rule is
-   * drawn where one group gives way to the next. A menu whose items name no
-   * group is one group and carries no rules.
-   */
   readonly group?: string
-  /** Submenu items that expand from this row. */
   readonly children?: readonly MenuItem[]
   /**
    * A component the row holds in place of the text. The text stays the name the row is
@@ -53,13 +44,9 @@ export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] =
 
 /** What placing a menu needs to know. */
 export interface MenuPlacement {
-  /** The point where the menu was requested. */
   readonly at: Position
-  /** How big it turned out to be. */
   readonly size: Size
-  /** The area it is placed in. */
   readonly viewport: Size
-  /** Clearance from that area's edges. */
   readonly margin: number
 }
 
@@ -94,7 +81,6 @@ export const placeMenu = ({ at: point, size, viewport, margin }: MenuPlacement):
  * appears is derived from this table.
  */
 export interface MenuTriggerDescriptor {
-  /** Whether the keyboard lands on an item as the menu appears. */
   readonly hasInitialFocus: boolean
 }
 

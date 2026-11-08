@@ -20,7 +20,6 @@ export const renameSection = (deck: BufferDeck, id: string, name: string): Buffe
   sections: deck.sections.map((section) => (section.id === id ? { ...section, name } : section)),
 })
 
-/** One piece of a deck's prose after another, with a line between the two. */
 const joinProse = (above: string, below: string): string =>
   above && below ? `${above.trimEnd()}\n\n${below}` : above || below
 

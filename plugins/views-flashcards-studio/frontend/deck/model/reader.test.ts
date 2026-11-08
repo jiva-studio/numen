@@ -34,7 +34,6 @@ const problem = (overrides: Partial<DeckProblem>): DeckProblem => ({
   ...overrides,
 })
 
-/** A store holding one string per tab, and a reader over it. */
 const open = (problems: () => readonly DeckProblem[] = () => []) => {
   const bodies = new Map<string, string>()
   const store: ShownStore = {

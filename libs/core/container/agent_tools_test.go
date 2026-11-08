@@ -82,7 +82,6 @@ func (a *toolAgent) AskAgent(
 	return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}})
 }
 
-// callTools lists the tools at the url and makes the calls of the stand-in.
 func (a *toolAgent) callTools(ctx context.Context, url, token string) (err error) {
 	session, err := connectTools(ctx, url, token)
 	if err != nil {
@@ -142,7 +141,6 @@ func (b bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-// connectTools opens an MCP session on the tools at the url, presenting the token.
 func connectTools(ctx context.Context, url, token string) (*sdk.ClientSession, error) {
 	client := sdk.NewClient(&sdk.Implementation{Name: "stand-in", Version: "1"}, nil)
 	return client.Connect(ctx, &sdk.StreamableClientTransport{
@@ -208,7 +206,6 @@ type testPlugin struct {
 	mount        func(mux *http.ServeMux)
 }
 
-// hostOver is a plugin host over the plugins, each served in this process.
 func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 	t.Helper()
 	tmp := t.TempDir()
@@ -266,8 +263,6 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 	return host
 }
 
-// agentAt is the agent plugin of the test host. It holds vault:read and vault:write, the permissions
-// of the effects of the tools the tests offer it.
 func agentAt(agent *toolAgent) testPlugin {
 	return testPlugin{
 		id: agentPlugin, capabilities: []string{"ai.agent.provider"}, permissions: []string{"vault:read", "vault:write"},
@@ -282,7 +277,6 @@ func toolsAt(id string, permissions []string, tools *toolPlugin) testPlugin {
 	}
 }
 
-// vaultAndCards is a host with an agent, a plugin of vault tools and a plugin of card tools.
 func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *toolPlugin) {
 	t.Helper()
 	vault := &toolPlugin{tools: []*v1.PluginTool{
@@ -300,7 +294,6 @@ func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *
 	return host, vault, cards
 }
 
-// runToEnd starts the task and reads its steps to the end, then stops the run.
 func runToEnd(t *testing.T, agent agentport.Agent, task agentport.Task) []agentport.Step {
 	t.Helper()
 	run, err := agent.StartRun(t.Context(), task)

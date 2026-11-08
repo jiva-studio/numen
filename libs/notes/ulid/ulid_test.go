@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-// newID returns an identifier for the instant with random bits from crypto/rand.
 func newID(t *testing.T, when time.Time) string {
 	t.Helper()
 	id, err := ulid.NewGenerator(rand.Reader).NewID(when)

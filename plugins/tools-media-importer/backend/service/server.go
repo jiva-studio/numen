@@ -25,7 +25,6 @@ const EnvMockML = "NUMEN_MOCK_ML"
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.tools.media.importer"
 
-// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
 		PluginID: PluginID,
@@ -74,7 +73,6 @@ func (f *fetchers) getSettings() link.Settings {
 	return f.settings
 }
 
-// updateConfig applies the settings the host supplies. A size that is not a number is left unchanged.
 func (f *fetchers) updateConfig(values map[string]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -104,7 +102,6 @@ func getTool(path string) download.Tool {
 	return download.Tool{Command: []string{path}, Arguments: nil, Environment: nil}
 }
 
-// getLanguages is the languages a setting names, separated by commas, best first.
 func getLanguages(value string) []string {
 	var out []string
 	for _, one := range strings.Split(value, ",") {

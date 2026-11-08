@@ -16,11 +16,9 @@ import { type Branch, type Tab, type TabId } from '../../lib/node'
 
 const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three: 'Three' }
 
-/** Two panes side by side, in unequal shares. */
 const twoPanes = (): Branch =>
   split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch
 
-/** A pane beside a branch of two, so a branch holds a branch. */
 const createNested = (): Branch =>
   split('root', [
     stack('left', 'one'),
@@ -56,11 +54,6 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
   return { wrapper, resize, claim }
 }
 
-/**
- * The branch length, from which the smallest share is computed. Nothing here
- * has a size, so the observer that tracks the branch element is replaced by a
- * stub. Call it before mounting.
- */
 const stubResizeObserver = (): ((length: number) => void) => {
   const callbacks: ResizeObserverCallback[] = []
 
@@ -89,7 +82,6 @@ const groups = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(Splitte
 
 const getHandles = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(SplitterResizeHandle)
 
-/** The splitter reporting the shares it has settled on, in percent. */
 const layout = (one: BranchFixture, pos: number, sizes: number[]) =>
   groups(one)[pos]!.vm.$emit('layout', sizes)
 

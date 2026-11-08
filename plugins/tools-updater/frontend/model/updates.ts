@@ -31,14 +31,12 @@ export interface UpdateDeps {
   readonly api: UpdateApi
   readonly app: AppInfo
   readonly openExternal: (url: string) => Promise<Result<null>>
-  /** The hours between two checks, as the setting holds them. */
   readonly getIntervalHours: () => unknown
   readonly timer: Timer
 }
 
 export interface Updates {
   readonly status: Readonly<Ref<Status>>
-  /** The update to announce: the one found, unless the person dismissed it. */
   readonly announced: ComputedRef<Update | null>
   /** Checks now and keeps checking at the interval of the setting. */
   start(): void

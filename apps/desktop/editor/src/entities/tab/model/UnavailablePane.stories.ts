@@ -41,7 +41,6 @@ const OPTIONS: Record<Exclude<Answer, 'pending' | 'missing'>, MockCatalogEntryOp
 const enablePlugin = fn(() => createDeferred<void>().promise)
 const openPlugin = fn()
 
-/** A catalog that answers as the knob says; `pending` never answers. */
 const createCatalog = (answer: Answer): PluginCatalog => {
   if (answer === 'missing') return createMockPluginCatalog()
   if (answer === 'pending') {

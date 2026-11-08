@@ -21,7 +21,6 @@ const (
 	maxArchiveBytes = 1 << 30
 )
 
-// newClient returns a client that follows a redirect only to another https address.
 func newClient() *http.Client {
 	return &http.Client{
 		CheckRedirect: func(request *http.Request, via []*http.Request) error {
@@ -36,7 +35,6 @@ func newClient() *http.Client {
 	}
 }
 
-// verifyFile returns an error when the file at name does not hold the sha256 sum.
 func verifyFile(name, sum string) (err error) {
 	info, err := os.Stat(name)
 	if err != nil {
@@ -60,8 +58,6 @@ func verifyFile(name, sum string) (err error) {
 	return nil
 }
 
-// download writes the archive at the address to at. The bytes go through a file
-// beside at and are put in place only when they hold the pinned sum.
 func download(ctx context.Context, client *http.Client, r Release, pos string, onProgress func(count, total int64)) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, downloadTimeout)
 	defer cancel()

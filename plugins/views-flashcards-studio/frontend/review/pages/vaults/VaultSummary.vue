@@ -14,7 +14,6 @@ import { VAULTS_WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The vault as the count has it, and nothing before the count names it. */
   vault: VaultCardsDue | null
 }>()
 

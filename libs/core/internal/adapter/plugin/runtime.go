@@ -30,9 +30,6 @@ func (h *Host) GetDependencies() pluginport.DependencyCatalog {
 	return h.dependencies
 }
 
-// getRuntimeVars provisions the dependencies a plugin declares and returns the
-// environment variables that name them. A dependency that cannot be
-// provisioned is an error: the plugin is not launched without it.
 func (h *Host) getRuntimeVars(ctx context.Context, requirements []pluginport.DependencyRequirement) ([]string, error) {
 	var vars []string
 	for _, req := range requirements {
@@ -57,8 +54,6 @@ func (h *Host) getRuntimeVars(ctx context.Context, requirements []pluginport.Dep
 
 var dependencyEnvName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-// isDependencyEnvName reports whether a dependency may set the variable: a
-// well-formed name that the host does not set for the plugin itself.
 func isDependencyEnvName(name string) bool {
 	if !dependencyEnvName.MatchString(name) {
 		return false

@@ -126,7 +126,6 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
 }
 
-/** Whether the index holds the note at the path: ResolveAddresses resolves the path to it. */
 const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
   const answer = await callRPC(request, 'NoteService/ResolveAddresses', { written: [notePath] })
   const resolved = (answer['resolved'] as { path?: string }[] | undefined) ?? []
@@ -296,7 +295,6 @@ export const revealTreeRow = async (page: Page, filePath: string): Promise<Locat
 /** The name a note tab is called by: the name of its file without the extension. */
 export const getTabName = (notePath: string): string => path.posix.basename(notePath, '.md')
 
-/** What a tab and its panel are labelled by: the tab's name and its close button. */
 const getTabLabel = (notePath: string): string =>
   `${getTabName(notePath)} Close ${getTabName(notePath)}`
 

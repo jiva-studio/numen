@@ -27,7 +27,6 @@ const (
 	modelRecipe = "test|test-model|4|0|mean|int8@0.4"
 )
 
-// getMeasuredAt returns the instant every measurement of these tests is taken at.
 func getMeasuredAt() time.Time {
 	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
 }
@@ -49,7 +48,6 @@ func passages(n, sources int) []hosttest.SearchPassage {
 	return out
 }
 
-// setNotes makes the vault hold n notes and no other.
 func setNotes(vault *hosttest.Vault, n int) {
 	for i := 1; i <= maxNotes; i++ {
 		if i > n {
@@ -86,8 +84,6 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	return &fixture{app: app, search: search, vault: vault, queue: queue, web: web}
 }
 
-// call posts the request to a method of the service the way the window's forwarding does, and decodes
-// the answer into res when the method succeeded. It returns the status and the failure otherwise.
 func (f *fixture) call(t *testing.T, method string, req, res any) (int, server.APIError) {
 	t.Helper()
 	return f.callWith(t, token, method, req, res)

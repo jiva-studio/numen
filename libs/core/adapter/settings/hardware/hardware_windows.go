@@ -27,7 +27,6 @@ type memoryStatusEx struct {
 	AvailExtendedVirtual uint64
 }
 
-// readPlatformHardware reads memory with GlobalMemoryStatusEx and cores with GetLogicalProcessorInformationEx; the performance CPUs are the cores of the highest efficiency class.
 func readPlatformHardware() Specs {
 	var hw Specs
 	if total, available, err := readWindowsMemory(); err == nil {
@@ -41,7 +40,6 @@ func readPlatformHardware() Specs {
 	return hw
 }
 
-// readWindowsMemory is the physical memory and the available physical memory, in megabytes.
 func readWindowsMemory() (total, available int64, err error) {
 	status := memoryStatusEx{Length: uint32(unsafe.Sizeof(memoryStatusEx{}))}
 	ret, _, callErr := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&status)))

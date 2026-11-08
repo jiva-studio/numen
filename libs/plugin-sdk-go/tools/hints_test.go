@@ -10,8 +10,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// newHintedRegistry adds one tool for each combination of effect, step and required permission that
-// decides a hint.
 func newHintedRegistry(t *testing.T) *Registry {
 	t.Helper()
 	registry := New()

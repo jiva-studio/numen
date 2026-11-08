@@ -17,7 +17,6 @@ const (
 	nightCSS       = ":root { color-scheme: dark; --numen-surface: #101010 }"
 )
 
-// writeThemesPlugin writes a plugin with no backend and no frontend that declares two themes.
 func writeThemesPlugin(t *testing.T, root, id, targets string) string {
 	t.Helper()
 	dir := filepath.Join(root, id)

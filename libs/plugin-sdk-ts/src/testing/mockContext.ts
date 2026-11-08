@@ -85,7 +85,6 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
   })
 }
 
-// Calls the listener and rethrows a rejection as an uncaught error, so a failing handler stays visible.
 function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
   Promise.resolve(listener(event)).catch((error: unknown) => {
     queueMicrotask(() => {
@@ -105,7 +104,6 @@ const EMPTY_NOTE: CommandNote = {
   tab: '',
 }
 
-// Reports whether the address is an absolute http or https address, as the window opens only those.
 function isWebAddress(url: string): boolean {
   try {
     const { protocol } = new URL(url)

@@ -14,7 +14,6 @@ import { cards } from '../shared/clients'
 import { useReviewCounter } from '../entities/vault'
 
 export interface VaultCountsDeps {
-  /** Reports a failure to the user. */
   readonly reportError: (why: unknown) => void
 }
 

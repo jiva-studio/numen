@@ -123,8 +123,6 @@ func TestTheSystemPromptIsTheTasksInstructionsAndNoNoteName(t *testing.T) {
 	}
 }
 
-// echoSession is a program that reports the session "s-" and the prompt it
-// received, and records the session it is given to resume.
 func echoSession(t *testing.T, dir string) string {
 	t.Helper()
 	return writeScript(t, "claude",
@@ -137,7 +135,6 @@ func echoSession(t *testing.T, dir string) string {
 			"printf '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-%s\"}\\n' \"$asked\"\n")
 }
 
-// resumed returns the sessions requested for resumption by each task, one per task.
 func resumed(t *testing.T, dir, requested string) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+requested))
@@ -206,7 +203,6 @@ func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
 // announce is what a script writes to tell the test it is running: one word of the answer.
 const announce = `printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"up"}}}'` + "\n"
 
-// awaitUp reads the stream until the program reports that it is running.
 func awaitUp(t *testing.T, stream *agentrun.Stream) {
 	t.Helper()
 	for stream.Receive() {
@@ -217,7 +213,6 @@ func awaitUp(t *testing.T, stream *agentrun.Stream) {
 	t.Fatalf("the program never said it was running: %v", stream.Err())
 }
 
-// endsWithin runs the function and fails the test if it has not returned in time.
 func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
 	t.Helper()
 	isDone := make(chan struct{})

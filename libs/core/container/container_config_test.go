@@ -16,8 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// isolate points everything the platform keeps per user at folders of the
-// test's own.
 func isolate(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
@@ -27,7 +25,6 @@ func isolate(t *testing.T) string {
 	return home
 }
 
-// isolateWithNoHome leaves the platform no folder to keep anything per user in.
 func isolateWithNoHome(t *testing.T) {
 	t.Helper()
 	t.Setenv("HOME", "")

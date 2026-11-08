@@ -10,9 +10,7 @@ const APP_NAME = 'numen'
 export const DEV_VERSION = '0.0.0-dev'
 
 export interface AppInfoSource {
-  /** The version injected while the page is built. */
   readonly version?: string | undefined
-  /** The build number injected while the page is built, as text. */
   readonly build?: string | undefined
   /** The platform the window runs on, as its Wails runtime reports it; read on each access. */
   readonly getPlatform: () => AppInfo['platform']

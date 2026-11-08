@@ -6,26 +6,19 @@ import type { PlexFrame } from '../../lib/frame'
 
 export interface EdgeLine {
   readonly edge: PlacedEdge
-  /** One drawing per pair and direction, so a pair may carry two lines. */
   readonly key: string
-  /** The edge under the pointer: two lines between one pair are one line to target. */
   readonly pair: string
   readonly d: string
-  /** Each head, by the end of the line it is drawn at, with the transform that puts it there. */
   readonly arrows: readonly { readonly end: EdgeArrow; readonly transform: string }[]
-  /** Each title the line carries; none for a line with no title. */
   readonly titles: readonly TitleLine[]
 }
 
 /** One title of a line, with the path it is set along. */
 export interface TitleLine {
   readonly words: string
-  /** The name of the path the title is set along. */
   readonly path: string
   readonly line: string
-  /** How far along that path the middle of the title is. */
   readonly at: string
-  /** How far the baseline of the title is moved across the path, to the right of its reading. */
   readonly across: number
 }
 

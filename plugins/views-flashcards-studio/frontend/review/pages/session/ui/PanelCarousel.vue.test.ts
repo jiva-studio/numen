@@ -6,11 +6,6 @@ import { nextTick } from 'vue'
 import PanelCarousel from './PanelCarousel.vue'
 import type { PanelPlace } from '../model/carousel'
 
-/**
- * The three panels. jsdom performs no layout, so the strip is given fixed widths:
- * a panel on each side of a card as wide as the container, with
- * a gap between each pair.
- */
 const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
     // The parent handles the event by setting the prop, so the parent owns
@@ -36,11 +31,9 @@ const strip = (place: PanelPlace = 'here') => {
   return { one, window_ }
 }
 
-/** A pointer event on the strip: press, move or release. */
 const hand = (kind: string, clientX: number) =>
   new MouseEvent(kind, { button: 0, clientX, bubbles: true })
 
-/** Scrolls the strip to a position and notifies the container. */
 const scrollStrip = async (window_: HTMLElement, to: number) => {
   window_.scrollLeft = to
   window_.dispatchEvent(new Event('scroll'))

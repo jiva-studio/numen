@@ -17,7 +17,6 @@ export interface Row {
   readonly id: RowId
   readonly name: string
   readonly hasChildren: boolean
-  /** The rows it holds. A row that holds may hold none yet. */
   readonly rows?: readonly Row[]
 }
 
@@ -28,7 +27,6 @@ export interface Row {
  */
 export interface RowMarker {
   readonly attribute: string
-  /** The attribute value on a row, and nothing for an unmarked row. */
   readonly getAttributeValue: (row: RowId | null) => string | null
 }
 
@@ -46,15 +44,10 @@ export interface ShownRow {
   readonly id: RowId
   readonly name: string
   readonly hasChildren: boolean
-  /** The row holding it. Null at the top level. */
   readonly parent: RowId | null
-  /** Depth, counting from one, which is what it is announced as. */
   readonly level: number
-  /** The last of the rows its holder holds. */
   readonly isLast: boolean
-  /** Holding at least one row. */
   readonly hasRows: boolean
-  /** What it holds is drawn. */
   readonly isOpen: boolean
 }
 

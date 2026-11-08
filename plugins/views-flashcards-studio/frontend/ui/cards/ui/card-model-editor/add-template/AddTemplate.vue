@@ -7,7 +7,6 @@ import { Icon } from '../../icon'
 import { Divider } from '../../divider'
 
 defineProps<{
-  /** The button text, which is also its accessible name. */
   label: string
 }>()
 

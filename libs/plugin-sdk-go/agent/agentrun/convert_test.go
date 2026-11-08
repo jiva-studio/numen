@@ -11,16 +11,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// getOmittedFields returns the protocol fields that the types of this package do not carry, because no
-// plugin reads them.
 func getOmittedFields() map[protoreflect.FullName]bool {
 	return map[protoreflect.FullName]bool{
 		"numen.v1.AskAgentRequest.vault_id": true,
 	}
 }
 
-// collectFields adds the full names of the fields that msg sets, and those of the messages inside
-// it, to covered.
 func collectFields(msg protoreflect.Message, covered map[protoreflect.FullName]bool) {
 	msg.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		covered[field.FullName()] = true
@@ -41,8 +37,6 @@ func collectFields(msg protoreflect.Message, covered map[protoreflect.FullName]b
 	})
 }
 
-// requireAllFields fails the test for each field of the message and of the messages inside it that
-// covered lacks and omittedFields does not list.
 func requireAllFields(t *testing.T, descriptor protoreflect.MessageDescriptor, covered map[protoreflect.FullName]bool) {
 	t.Helper()
 	visited := map[protoreflect.FullName]bool{}

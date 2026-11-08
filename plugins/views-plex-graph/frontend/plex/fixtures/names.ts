@@ -70,7 +70,6 @@ const NAMES = [
   'Overflow',
 ] as const
 
-/** Small, stable, and enough to spread a neighbourhood across the pool. */
 function hash(text: string): number {
   let value = 2166136261
   for (let i = 0; i < text.length; i++) {

@@ -146,8 +146,6 @@ func (c Connection) GetHierarchyEdge() (parent, child string, ok bool) {
 	return "", "", false
 }
 
-// getEdge returns the parent and the child of a record written in `from` about
-// `to`: `parent` makes `to` the parent, and `child` makes it the child.
 func getEdge(role LinkRole, from, to string) (parent, child string, ok bool) {
 	if role == RoleParent {
 		return to, from, true
@@ -198,14 +196,9 @@ func (c Connection) isPair(x, y string) bool {
 
 // RelatedNote is a note to create next to an existing one.
 type RelatedNote struct {
-	// From is the note the new one is related to.
-	From string
-	// Role is what the new note is to From: its parent, its child, or a jump.
-	Role LinkRole
-	// Title names the note. Empty takes the first free "Untitled note N".
-	Title string
-	// Type is the type of the record the new note writes about From.
-	Type string
-	// Marker is what the record the new note writes draws at From.
+	From   string
+	Role   LinkRole
+	Title  string
+	Type   string
 	Marker LinkMarker
 }

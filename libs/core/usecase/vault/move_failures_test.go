@@ -83,8 +83,6 @@ func (f filing) wiring() wiring {
 	}
 }
 
-// moveOver returns the move of an unconfigured installation, built from what
-// the test supplies.
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
@@ -98,7 +96,6 @@ func (f filing) moveOver(w wiring) vaults.Move {
 	return vaults.NewMove(w.writers, w.links, w.queries, w.sources, notes)
 }
 
-// recordBooks files the books the vault holds in the index.
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
 	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown(), testsupport.Texts{Readers: vaultreader.Readers{}})
@@ -107,7 +104,6 @@ func (f filing) recordBooks(t *testing.T) {
 	}
 }
 
-// exists is whether the vault holds anything at the path.
 func (f filing) exists(path string) bool {
 	_, err := os.Lstat(filepath.Join(f.vault.Path, filepath.FromSlash(path)))
 	return err == nil

@@ -7,12 +7,6 @@ import { neighbourhoods } from '../../../fixtures/neighbourhoods'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
 
-/**
- * Nodes that extend beyond the viewport minus the margin.
- *
- * The margin applies on both axes, as the setting specifies; comparing against
- * the bare half-viewport would let a row touch the top of the screen.
- */
 const findEscaped = (
   frame: PlexFrame,
   viewport: { width: number; height: number },

@@ -41,9 +41,6 @@ func GetCoreMLCacheDir(modelPath string) (string, error) {
 	return dir, nil
 }
 
-// lockCoreMLCache takes the lock of the compiled models of the model at modelPath, which ONNX Runtime
-// does not guard against two processes writing them at once. It locks nothing where CoreML is not
-// the provider.
 func lockCoreMLCache(modelPath string) (func() error, error) {
 	if runtime.GOOS != "darwin" {
 		return func() error { return nil }, nil
@@ -55,8 +52,6 @@ func lockCoreMLCache(modelPath string) (func() error, error) {
 	return shared.Lock(dir)
 }
 
-// findCoreMLCacheDir is GetCoreMLCacheDir that reports only whether there is a folder: without one the
-// session is compiled uncached.
 func findCoreMLCacheDir(modelPath string) (string, bool) {
 	dir, err := GetCoreMLCacheDir(modelPath)
 	return dir, err == nil

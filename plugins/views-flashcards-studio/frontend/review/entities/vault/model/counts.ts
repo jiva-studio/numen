@@ -62,15 +62,11 @@ export interface VaultCounts {
 
 /** One message of the count. */
 export interface DueCounts {
-  /** The review day these counts stand in, which begins at the hour the settings name. */
   day: string
-  /** Every vault the installation holds, in the first message and in no other. */
   vaults: readonly VaultCounts[]
-  /** One vault worked out, in every message after the first. */
   counted?: VaultCounts | undefined
 }
 
-/** A length of time as the application holds one, which is in minutes. */
 const getMinutes = (ms: number): number => ms / 60000
 
 export interface CountsDeps {

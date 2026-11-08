@@ -20,14 +20,12 @@ interface CoverageState {
   readonly isEmbedding: boolean
 }
 
-/** How far the scan of the vault has got. */
 const parseScan = (scan: ScanState | undefined) => ({
   isReady: scan?.isReady ?? false,
   error: scan?.error ?? '',
   unwatchedPath: scan?.watchError ?? '',
 })
 
-/** How much of the vault the index holds. */
 const parseCoverage = (coverage: CoverageState | undefined) => ({
   chunkCount: coverage?.chunkCount ?? 0n,
   embeddedCount: coverage?.embeddedCount ?? 0n,

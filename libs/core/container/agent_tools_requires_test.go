@@ -12,16 +12,12 @@ import (
 
 const atlasToolsPlugin = "md.test.atlastools"
 
-// newToolRequiring is a tool of a test plugin that requires the permissions given besides the one of
-// its effect.
 func newToolRequiring(name string, effect v1.ToolEffect, requires ...string) *v1.PluginTool {
 	tool := newPluginTool(name, effect)
 	tool.Requires = requires
 	return tool
 }
 
-// getRequireCases is a tool requiring each permission a tool can require, with the permissions of
-// its effect.
 func getRequireCases() map[string]struct {
 	tool   *v1.PluginTool
 	effect []string

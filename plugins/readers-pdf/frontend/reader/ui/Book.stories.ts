@@ -100,7 +100,6 @@ const renderPage = (page: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-/** Where a run of lines relies on the page, in fractions of it. */
 const overLines = (from: number, to: number, ends: number) => ({
   minX: (MARGIN - 4) / PAPER.wide,
   maxX: (MARGIN + ends) / PAPER.wide,

@@ -70,7 +70,6 @@ export const presets: Presets = {
   },
 }
 
-/** The result of a read, whichever of the two requests produced it. */
 const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
   const error = findErrorCode(answer)
   if (error) return asFailure(error)
@@ -81,7 +80,6 @@ const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetRe
   })
 }
 
-/** How far each setting goes, as the read answered it. */
 const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBounds => {
   const out: { -readonly [field in keyof SettingsBounds]: Bounds } = {}
   if (all === undefined) return out
@@ -95,13 +93,11 @@ const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBo
   return out
 }
 
-/** One pair of ends, in the window's own words. */
 const parseBounds = (bounds: Bounds): Bounds => ({
   min: bounds.min,
   max: bounds.max,
 })
 
-/** One preset as the window carries it. */
 const parsePreset = (one: PresetMessage): Preset => ({
   path: one.path,
   title: one.title,
@@ -111,7 +107,6 @@ const parsePreset = (one: PresetMessage): Preset => ({
   stopsOn: one.stopsOn,
 })
 
-/** One place of the grid, as the window carries what the preset evaluates to there. */
 const parsePoint = (one: PointMessage): Point => ({
   reviews: one.reviews,
   minutes: one.minutes,
@@ -143,7 +138,6 @@ const NO_CURVE: Curve = {
   isHonest: true,
 }
 
-/** A curve as the window carries it. An answer holding none is an empty one. */
 const parseCurve = (curve: CurveMessage | undefined): Curve =>
   curve === undefined
     ? NO_CURVE

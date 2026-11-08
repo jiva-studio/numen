@@ -11,15 +11,12 @@ import (
 type eventReader struct {
 	reader *reader
 
-	// isTextStreamed is set once the agent has emitted any of its answer in
-	// step updates.
 	isTextStreamed bool
 
 	currentTool string
 	currentArgs strings.Builder
 }
 
-// newEventHandler is what the run calls with each event of the Antigravity output.
 func newEventHandler(r *reader) func(map[string]any) {
 	return (&eventReader{reader: r, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}).handle
 }
@@ -182,9 +179,6 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 	}
 }
 
-// handleCliEvent handles an event of the stream the CLI writes: "init",
-// "step_update" and "result". The agent's text arrives as the text deltas of
-// its response steps, and a run that ends in error reports it in its result.
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
@@ -212,8 +206,6 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 	r.reader.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
 }
 
-// handleCliResult emits the response of a run that streamed no text, and stops
-// a run whose status is not success with the error the CLI reported.
 func (r *eventReader) handleCliResult(result map[string]any) {
 	r.reader.isFinished = true
 	if session, ok := result["conversation_id"].(string); ok {

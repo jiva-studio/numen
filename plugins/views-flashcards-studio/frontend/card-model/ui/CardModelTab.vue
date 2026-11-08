@@ -17,7 +17,6 @@ const cardModel = computed(() => props.state.cardModel.value)
 const marks = computed(() => props.state.marks.value)
 const isRead = computed(() => props.state.note.value.isRead)
 
-// --- Handlers ---
 function onKeep() {
   props.state.keepMine()
 }

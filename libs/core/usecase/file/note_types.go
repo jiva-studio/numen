@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// getNoteTypes is what each note among the entries is, keyed by path, and nothing when there is no index.
 func getNoteTypes(
 	ctx context.Context, queries noteport.NoteQueries, v domain.Vault, entries []domain.Entry,
 ) (map[string]domain.NoteType, error) {

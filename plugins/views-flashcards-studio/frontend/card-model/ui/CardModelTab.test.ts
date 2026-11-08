@@ -15,7 +15,6 @@ import CardModelTab from './CardModelTab.vue'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from '../kind'
 import { WORDS as words } from '../../cards'
 
-/** Waits for the vault requests made by the tab to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is rendered into the page, so the previous one is unmounted before the
@@ -23,7 +22,6 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 // page.
 enableAutoUnmount(afterEach)
 
-/** A window with one card model open, drawn. */
 const mountCardModel = async (problems: readonly DeckProblem[] = []) => {
   /** Each field rename the editor requested from the vault. */
   const renameCalls: string[] = []

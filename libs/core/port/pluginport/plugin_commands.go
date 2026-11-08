@@ -22,33 +22,22 @@ type PluginSlotEntry struct {
 
 // PluginParts is what one plugin has and whether the host runs it.
 type PluginParts struct {
-	// HasBackend is set where the plugin declares a backend. A command is run in the backend only
-	// where the plugin has one.
-	HasBackend bool
-	// HasFrontend is set where the plugin declares a frontend bundle the windows load.
+	HasBackend  bool
 	HasFrontend bool
-	// IsSuspended is set while the host holds the plugin suspended after it failed to start; its
-	// backend runs nothing then.
 	IsSuspended bool
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.
 type PluginCommandCall struct {
-	PluginID string
-	Command  string
-	// Path is the file the command runs over, relative to the vault folder. Empty for a command over
-	// no file.
-	Path string
-	// Arguments are the values by argument name, each as text.
+	PluginID  string
+	Command   string
+	Path      string
 	Arguments map[string]string
 }
 
 // PluginCommandResult is the result of a command that ran.
 type PluginCommandResult struct {
-	// Message is the outcome text to show to the user.
-	Message string
-	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
-	// for a command that leaves nothing to open.
+	Message    string
 	OpenedPath string
 }
 

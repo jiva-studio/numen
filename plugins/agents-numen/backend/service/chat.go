@@ -62,27 +62,21 @@ type functionTool struct {
 
 // model is one model the chat API lists.
 type model struct {
-	Name  string
-	Title string
-	// ReasoningField is the field of a request through which the chat API takes the depth of reasoning
-	// for the model, empty where the API does not list one.
-	ReasoningField string
-	// ReasoningLevels are the depths the chat API lists for the model: those of its reasoning object,
-	// else the common ones where it lists only the field.
-	ReasoningLevels []reasoning.Level
-	// DefaultReasoning is the depth the chat API lists the model working at unasked, empty where it lists none.
+	Name             string
+	Title            string
+	ReasoningField   string
+	ReasoningLevels  []reasoning.Level
 	DefaultReasoning string
 }
 
 // chatRequest is the request body for the next message of a conversation.
 type chatRequest struct {
-	Model       string         `json:"model"`
-	Messages    []message      `json:"messages"`
-	Tools       []functionTool `json:"tools,omitempty"`
-	Stream      bool           `json:"stream,omitempty"`
-	Temperature *float64       `json:"temperature,omitempty"`
-	MaxTokens   *int           `json:"max_tokens,omitempty"`
-	// ReasoningEffort and Reasoning are the two forms in which a chat API takes the depth of reasoning.
+	Model           string            `json:"model"`
+	Messages        []message         `json:"messages"`
+	Tools           []functionTool    `json:"tools,omitempty"`
+	Stream          bool              `json:"stream,omitempty"`
+	Temperature     *float64          `json:"temperature,omitempty"`
+	MaxTokens       *int              `json:"max_tokens,omitempty"`
 	ReasoningEffort string            `json:"reasoning_effort,omitempty"`
 	Reasoning       *reasoningRequest `json:"reasoning,omitempty"`
 }
@@ -97,11 +91,8 @@ type chat struct {
 	maxTokens   *int
 }
 
-// newText is a pointer to the text, for the content of a message.
 func newText(text string) *string { return &text }
 
-// send requests the next message of the conversation from the model, offering the tools. It returns
-// the message and the finish reason, 'length' for a message truncated at its limit.
 func (c chat) send(ctx context.Context, model string, effort effort, messages []message, tools []functionTool) (message, string, error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
@@ -120,8 +111,6 @@ func (c chat) send(ctx context.Context, model string, effort effort, messages []
 	return readReply(answer)
 }
 
-// readReply decodes a whole answer of the chat API into its first message and why the model
-// stopped writing it.
 func readReply(answer []byte) (message, string, error) {
 	var reply struct {
 		Choices []struct {
@@ -138,7 +127,6 @@ func readReply(answer []byte) (message, string, error) {
 	return reply.Choices[0].Message, reply.Choices[0].FinishReason, nil
 }
 
-// listModels returns the models the chat API serves.
 func (c chat) listModels(ctx context.Context) ([]model, error) {
 	answer, err := c.do(ctx, http.MethodGet, "/models", nil)
 	if err != nil {
@@ -164,8 +152,6 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	return models, nil
 }
 
-// do sends one request to the chat API and returns its answer. An answer other than 200 OK is an
-// error.
 func (c chat) do(ctx context.Context, method, path string, body []byte) (answer []byte, err error) {
 	resp, err := c.open(ctx, method, path, body)
 	if err != nil {
@@ -183,8 +169,6 @@ func (c chat) do(ctx context.Context, method, path string, body []byte) (answer 
 	return answer, nil
 }
 
-// open sends one request to the chat API and returns the response as soon as it begins. A key is
-// sent only where isPrivate allows, and no redirect takes it anywhere else.
 func (c chat) open(ctx context.Context, method, path string, body []byte) (*http.Response, error) {
 	base := strings.TrimSuffix(c.baseURL, "/")
 	if base == "" {
@@ -221,7 +205,6 @@ func (c chat) open(ctx context.Context, method, path string, body []byte) (*http
 	return resp, nil
 }
 
-// newStatusError returns the error for a chat API response other than 200 OK: its status and body.
 func newStatusError(resp *http.Response, answer []byte) error {
 	text := fmt.Sprintf("the chat API answered %s: %s", resp.Status, strings.TrimSpace(string(answer)))
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
@@ -230,8 +213,6 @@ func newStatusError(resp *http.Response, answer []byte) error {
 	return errors.New(text)
 }
 
-// checkKey returns errNoKey for a chat API that requires a key when none is set. An endpoint on
-// this machine requires none.
 func (c chat) checkKey() error {
 	if c.key != "" {
 		return nil
@@ -250,7 +231,6 @@ func (c chat) checkKey() error {
 	return errNoKey
 }
 
-// isLocalHost reports whether the host name is this machine.
 func isLocalHost(host string) bool {
 	if host == "localhost" {
 		return true
@@ -259,8 +239,6 @@ func isLocalHost(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// isPrivate reports whether what is sent to the address stays private: over https, or over http to
-// this machine.
 func isPrivate(address *url.URL) bool {
 	if address.Scheme == "https" {
 		return true
@@ -271,7 +249,6 @@ func isPrivate(address *url.URL) bool {
 	return isLocalHost(address.Hostname())
 }
 
-// refuseDowngrade follows a redirect only while what is sent stays private, and at most ten times.
 func refuseDowngrade(req *http.Request, via []*http.Request) error {
 	if !isPrivate(req.URL) {
 		return errDowngrade

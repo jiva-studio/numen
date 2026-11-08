@@ -6,9 +6,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// One name each, composed and decomposed. The two forms are computed rather
-// than typed out: these become filenames, and an editor that composed this file
-// on the way in would leave the tests testing nothing.
 func getHangulComposed() string { return norm.NFC.String("한글") }
 
 func getHangulDecomposed() string { return norm.NFD.String("한글") }

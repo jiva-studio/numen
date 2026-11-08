@@ -6,9 +6,7 @@ import { StopReason } from '../../api/types'
 
 /** The day and the weekday as a window words them; a reason that names a day reads them. */
 export interface StopDetail {
-  /** The day the preset aimed at. */
   readonly day?: string | undefined
-  /** The day of the week that carries no load. */
   readonly weekday?: string | undefined
 }
 

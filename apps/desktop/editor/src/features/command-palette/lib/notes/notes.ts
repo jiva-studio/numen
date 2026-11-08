@@ -16,7 +16,6 @@ export interface NoteOpeners {
   ): unknown
 }
 
-/** The placement a file opens in, with the line or selector of the place in it where one is given. */
 const createPlacement = (
   showing: 'current' | 'split',
   place: CommandPlace | undefined,

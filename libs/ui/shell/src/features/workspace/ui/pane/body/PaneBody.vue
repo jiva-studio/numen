@@ -32,10 +32,6 @@ defineSlots<{
 const hosts = inject(TAB_HOSTS, null)
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * The way out of what a tab holds, back to the tab itself. A panel that acts
- * on Escape itself keeps it.
- */
 function onPanelEscape(event: KeyboardEvent): void {
   if (event.defaultPrevented) return
 

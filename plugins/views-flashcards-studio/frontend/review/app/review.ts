@@ -23,17 +23,11 @@ import type { Report } from '../pages/session'
 
 /** What the review is given by the window it is opened in. */
 export interface ReviewDeps {
-  /** The vault the window opened the review on. */
   readonly vault: string
-  /** The cards due in every vault, from which the review of one vault reads its own. */
   readonly counts: VaultCounts
-  /** The corner of the window the notices are drawn in. */
   readonly notices: NoticeHost
-  /** The agent of the window, which reports whether it is reachable and answers questions about a card. */
   readonly agent: AgentHost
-  /** How the agent panel mounts the conversation another plugin declares. */
   readonly mountView: MountView
-  /** Out of the vault: the window closes the review and offers its vaults again. */
   readonly goToVaults: () => void
 }
 
@@ -113,11 +107,6 @@ function createReviewActions(deps: ReviewActionDeps) {
   return { readSchedules, start, startPreset, leave, goToVaults, recordReview, refresh }
 }
 
-/**
- * The vault counted is the vault the decks are drawn from. Its presets are read
- * once it is, and the counting of the other vaults ends there: they are not
- * drawn again until the review is left.
- */
 function useChosenVault(deps: {
   vaultCount: ComputedRef<VaultCardsDue | null>
   counts: VaultCounts

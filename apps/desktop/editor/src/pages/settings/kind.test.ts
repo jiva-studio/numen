@@ -10,7 +10,6 @@ import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
 import { createInstallation } from '@/testing/installation'
 
-/** A window that records the kinds it was requested to open. */
 const window_ = () => {
   const openedTab: string[] = []
   const handle = {

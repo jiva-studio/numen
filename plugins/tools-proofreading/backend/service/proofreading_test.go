@@ -73,7 +73,6 @@ func newScene(t *testing.T) *scene {
 	return s
 }
 
-// hold puts a version another plugin made from the file.
 func (s *scene) hold(t *testing.T, pluginID, path, key string, kind domain.TextKind, raw string, parts []domain.TextSegment) domain.TextVersion {
 	t.Helper()
 	if err := host.WriteText(t.Context(), s.texts.GetStore(pluginID), key+".jsonl", parts); err != nil {
@@ -108,7 +107,6 @@ func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }
 
-// readLive is the parts of the file's live version and its record.
 func (s *scene) readLive(t *testing.T, path string) ([]domain.TextSegment, domain.TextVersion) {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), path)
@@ -128,7 +126,6 @@ func (s *scene) readLive(t *testing.T, path string) ([]domain.TextSegment, domai
 	return nil, domain.TextVersion{}
 }
 
-// getRows answers every numbered line of a prompt whose words the replace function changes.
 func getRows(prompt string, replace func(number, text string) string) string {
 	var rows []string
 	for _, segment := range strings.Split(prompt, Opens)[1:] {

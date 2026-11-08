@@ -25,15 +25,12 @@ import (
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = editor.FlushTimeout / 2
 
-// bindVaultSwitch binds the change of vault of the state the way the desktop app does.
 func (f *showing) bindVaultSwitch() {
 	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
 		return f.installation.Show(ctx, v, open)
 	}
 }
 
-// respondToFlushes reports NOTHING for each flush of the page. Before the first report it sends on
-// flushRequest and waits for release. It stops at the first report that fails.
 func (f *showing) respondToFlushes(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], flushRequest chan<- struct{}, release <-chan struct{},
 ) {
@@ -74,8 +71,6 @@ func (p *promptingPage) getFlushCount() int {
 	return p.flushCount
 }
 
-// startPromptingPage starts a promptingPage on the stream; closing userResponded closes the page's
-// prompt.
 func (f *showing) startPromptingPage(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
 ) *promptingPage {
@@ -112,15 +107,12 @@ func (f *showing) startPromptingPage(
 	return page
 }
 
-// callOpenVault runs the plugin's open of the vault and returns its result.
 func callOpenVault(ctx context.Context, list pluginport.PluginVaultList, id domain.VaultID) <-chan error {
 	result := make(chan error, 1)
 	go func() { result <- list.OpenVault(ctx, id) }()
 	return result
 }
 
-// requireUnsavedChanges fails the test unless the plugin's open returns ErrUnsavedChanges with its
-// text within immediateBound.
 func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string) {
 	t.Helper()
 	select {
@@ -370,8 +362,6 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	}
 }
 
-// watchFlushRequests returns a channel that receives once the page receives a flush request. The page never
-// reports a result.
 func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) <-chan struct{} {
 	flushRequest := make(chan struct{}, 1)
 	go func() {
@@ -387,8 +377,6 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitRespon
 	return flushRequest
 }
 
-// startPluginOpen runs a plugin's open of the second vault and returns its result once the page has
-// received a flush request for it.
 func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, release chan struct{}) <-chan error {
 	t.Helper()
 	list := editor.NewPluginVaultList(f.installation)
@@ -404,7 +392,6 @@ func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, rel
 	return openResult
 }
 
-// expectOpenUnavailable checks that the plugin's open was cancelled by the user action.
 func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	t.Helper()
 	select {
@@ -417,8 +404,6 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	}
 }
 
-// closeAsDesktopApp is the close of apps/desktop/app: a rejected flush waits for the running flush and
-// closes again once every page is written.
 func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
 	if o.FlushPending(ctx) {
 		return true
@@ -536,7 +521,6 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	}
 }
 
-// reportFlush reports the result of one flush of the page.
 func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult) error {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 5*time.Second)
 	defer cancel()
@@ -546,8 +530,6 @@ func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult)
 	return err
 }
 
-// respondPromptUntil reports UNSAVED for every flush until userResponded is closed, then reports NOTHING
-// for the last token, as a page whose prompt the user has closed.
 func (f *showing) respondPromptUntil(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
 ) {
@@ -584,7 +566,6 @@ func (f *showing) respondPromptUntil(
 	}()
 }
 
-// respondToAllFlushes reports NOTHING for every flush of the page at once.
 func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
 	go func() {
 		for stream.Receive() {
@@ -735,9 +716,6 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	}
 }
 
-// isFlushRequestedOfANewPage connects one more page to the window and reports whether it receives a
-// flush request within the wait. The window sends one to a page that connects only while a flush
-// request is open. The page reports NOTHING for it and disconnects.
 func (f *showing) isFlushRequestedOfANewPage(t *testing.T, wait time.Duration) bool {
 	t.Helper()
 	stream, isDone := f.watchQuit(t)

@@ -12,8 +12,6 @@ import (
 	"testing"
 )
 
-// line is one run of words at a position on the page, in the form a detector
-// returns it.
 func line(x0, y0, x1, y1 int, text string) Line {
 	return Line{Box: image.Rect(x0, y0, x1, y1), Text: text, Score: 1}
 }
@@ -158,8 +156,6 @@ func TestAJoinedWordPreservesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 	}
 }
 
-// createDocument is a page of rows lines, every third of which breaks a word
-// with a hyphen.
 func createDocument(rows int) []Line {
 	lines := make([]Line, 0, rows)
 	for i := range rows {
@@ -187,8 +183,6 @@ func BenchmarkAssemble(b *testing.B) {
 	}
 }
 
-// createWordPage is a page of rows lines, each cut into one box per word, every
-// third of which ends in a hyphen.
 func createWordPage(rows int) []Line {
 	words := strings.Fields("the quick brown fox jumps over the lazy dog and keeps running far")
 	lines := make([]Line, 0, rows*len(words))
@@ -217,8 +211,6 @@ func BenchmarkAssembleWords(b *testing.B) {
 
 var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
 
-// assembleByRegexp joins one-box lines that are already in reading order, by
-// matching the whole text written so far.
 func assembleByRegexp(lines []Line) (string, []Box) {
 	var out strings.Builder
 	var retained []Box
@@ -269,8 +261,6 @@ func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
 	}
 }
 
-// createRegions is n regions in a scrambled reading order, a third of which
-// repeat another and a third of which sit inside another.
 func createRegions(n int) []Region {
 	regions := make([]Region, 0, n)
 	for i := range n {
@@ -292,7 +282,6 @@ func createRegions(n int) []Region {
 	return regions
 }
 
-// createRows is rows lines of three skewed boxes each, in scrambled order.
 func createRows(rows int) []Line {
 	lines := make([]Line, 0, rows*3)
 	for i := range rows * 3 {

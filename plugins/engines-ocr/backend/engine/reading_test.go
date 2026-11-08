@@ -425,7 +425,6 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 	})
 }
 
-// raiseMax lifts peak to cur when cur is higher.
 func raiseMax(peak *atomic.Int32, cur int32) {
 	for {
 		old := peak.Load()

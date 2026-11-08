@@ -142,7 +142,6 @@ func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	}
 }
 
-// getRemovedToolNames returns the tool names that no plugin registers any more.
 func getRemovedToolNames() []string {
 	return []string{
 		"search_query", "note_neighbourhood", "vault_info",

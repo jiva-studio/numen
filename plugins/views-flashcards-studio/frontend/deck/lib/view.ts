@@ -44,7 +44,6 @@ export const createCardModelChoices = (
   return cardModels
 }
 
-/** The cards as written, without the heading, which a write reads back from the file. */
 const getWrittenCards = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[] =>
   serializeBufferCardsToVaultCards(deck).map(({ heading: _heading, ...card }) => card)
 

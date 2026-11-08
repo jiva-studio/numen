@@ -9,7 +9,6 @@ import (
 // of its own.
 const PlayerOrigin = "https://www.youtube-nocookie.com"
 
-// isPlayerSite reports whether GetPlayerURL has a player for the host, written without `www.`.
 func isPlayerSite(key string) bool {
 	switch key {
 	case "youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com", "youtu.be":
@@ -32,7 +31,6 @@ func GetPlayerURL(link URL) (string, bool) {
 	return PlayerOrigin + "/embed/" + id, true
 }
 
-// getVideoID is the id of the video the address names, and empty where it names none.
 func getVideoID(parsed *url.URL) string {
 	if strings.TrimPrefix(parsed.Hostname(), "www.") == "youtu.be" {
 		return readVideoID(strings.TrimPrefix(parsed.Path, "/"))
@@ -48,8 +46,6 @@ func getVideoID(parsed *url.URL) string {
 	return ""
 }
 
-// readVideoID returns the first segment when it is a video id (eleven
-// characters of letters, digits, `-` and `_`), and empty for any other segment.
 func readVideoID(segment string) string {
 	segment, _, _ = strings.Cut(segment, "/")
 	if len(segment) != 11 {

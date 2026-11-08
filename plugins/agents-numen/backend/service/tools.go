@@ -26,8 +26,7 @@ const emptySchema = `{"type":"object","properties":{}}`
 type toolbox struct {
 	session *sdk.ClientSession
 	tools   []functionTool
-	// meta is the context of the task, sent as the `_meta` of every call.
-	meta sdk.Meta
+	meta    sdk.Meta
 }
 
 // bearer presents the token on every request to the tool server.
@@ -43,8 +42,6 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 	return b.base.RoundTrip(req)
 }
 
-// openToolbox connects to the tool server of the task and lists the tools of it the task names. An
-// empty url, or a task naming no tool, is a run with no tools, and no connection is made.
 func openToolbox(ctx context.Context, task *agentrun.Request) (*toolbox, error) {
 	url, named := task.ToolsURL, task.Tools
 	if url == "" || len(named) == 0 {
@@ -86,7 +83,6 @@ func openToolbox(ctx context.Context, task *agentrun.Request) (*toolbox, error) 
 	return box, nil
 }
 
-// readFunctionTool is the tool as the chat API is offered it.
 func readFunctionTool(tool *sdk.Tool) functionTool {
 	var proposed functionTool
 	proposed.Type = "function"
@@ -101,8 +97,6 @@ func readFunctionTool(tool *sdk.Tool) functionTool {
 	return proposed
 }
 
-// call runs the tool with the arguments the model wrote and returns the result
-// for the model: the tool's text, or the error.
 func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if b.session == nil || !slices.ContainsFunc(b.tools, func(t functionTool) bool { return t.Function.Name == name }) {
 		return fmt.Sprintf("error: there is no tool %q", name)
@@ -127,7 +121,6 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	return text
 }
 
-// readResultText is the text of what a tool returned, each content written out on its own line.
 func readResultText(result *sdk.CallToolResult) string {
 	parts := make([]string, 0, len(result.Content))
 	for _, content := range result.Content {
@@ -147,7 +140,6 @@ func readResultText(result *sdk.CallToolResult) string {
 	return strings.Join(parts, "\n")
 }
 
-// close ends the session with the tool server.
 func (b *toolbox) close() error {
 	if b.session == nil {
 		return nil
@@ -155,7 +147,6 @@ func (b *toolbox) close() error {
 	return b.session.Close()
 }
 
-// readMeta is the context of a task as MCP `_meta`, nil for a task with none.
 func readMeta(values map[string]string) sdk.Meta {
 	if len(values) == 0 {
 		return nil

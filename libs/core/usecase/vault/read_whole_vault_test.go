@@ -220,7 +220,6 @@ func limit(ctx context.Context) *limited {
 	}
 }
 
-// reachLimit is the limit being met.
 func (l *limited) reachLimit() { close(l.overChan) }
 
 func (l *limited) Deadline() (time.Time, bool) { return l.deadline() }

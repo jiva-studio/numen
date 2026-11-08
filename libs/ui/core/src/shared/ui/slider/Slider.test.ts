@@ -32,10 +32,8 @@ type SliderProps = InstanceType<typeof Slider>['$props']
 const mountSlider = (props: Partial<SliderProps> = {}) =>
   mount(Slider, { props: { modelValue: 40, ...props } })
 
-/** The handle, which is the thing the keyboard moves. */
 const handle = (control: ReturnType<typeof mountSlider>) => control.get('[role="slider"]')
 
-/** Every value the control has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 

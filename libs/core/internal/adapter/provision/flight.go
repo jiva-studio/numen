@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// getFlightKey returns the key of the work a requirement requests: two
-// requirements with the same key are one run.
 func getFlightKey(req pluginport.DependencyRequirement) string {
 	return strings.Join([]string{string(req.Kind), req.ID, req.Version, req.SourceURL, req.ChecksumSHA256, req.PluginDir}, "\x00")
 }
@@ -40,8 +38,6 @@ func (g *flightGroup) isRunning(key string) bool {
 	return ok
 }
 
-// do returns what the one run for the key returns. The run is cancelled when
-// every caller sharing it has given up.
 func (g *flightGroup) do(
 	ctx context.Context,
 	key string,

@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// answer is one frame's scores: the token the joiner names, and how many frames
-// it covers.
 func answer(blank, token, step, steps int) []float32 {
 	out := make([]float32, blank+1+steps)
 	out[token] = 1

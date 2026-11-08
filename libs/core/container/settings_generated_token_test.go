@@ -12,8 +12,6 @@ import (
 
 const tokenPlugin = "org.example.courier"
 
-// writeTokenPlugin puts a plugin whose setting token asks the host for a generated token in a folder,
-// and returns the folder.
 func writeTokenPlugin(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -34,8 +32,6 @@ func writeTokenPlugin(t *testing.T) string {
 	return root
 }
 
-// loadTokenSettings starts a host on the plugin folder and loads the settings file into it as the app
-// does on startup, then returns the token the file holds.
 func loadTokenSettings(t *testing.T, cfg Config, plugins, path string) any {
 	t.Helper()
 	host := NewPluginHost("desktop.editor", plugins)

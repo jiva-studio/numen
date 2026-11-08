@@ -9,9 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// cutSeeds are texts a cut has to survive: prose, a book that puts a chapter on
-// one line, a text of no letters at all, one of a single word longer than any
-// limit, one written in another script, and the empty text.
 func getCutSeeds() []string {
 	return []string{
 		"The first sentence. The second sentence.\n\nA second paragraph, longer than the first one is.\n",
@@ -84,8 +81,6 @@ func FuzzCut(f *testing.F) {
 	})
 }
 
-// assertChunkInText fails unless a chunk is a stretch of the text, cut at a
-// character.
 func assertChunkInText(t *testing.T, text string, c chunking.Chunk, cuts bool, what string) {
 	t.Helper()
 	switch {

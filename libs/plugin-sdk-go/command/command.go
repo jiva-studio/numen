@@ -43,6 +43,8 @@ func (a Arguments) GetString(name string) string {
 }
 
 // Request is one run of a command.
+//
+//numen:api
 type Request struct {
 	// Command is the id the manifest declares the command under.
 	Command string
@@ -53,6 +55,8 @@ type Request struct {
 }
 
 // Result is what a command that ran answers.
+//
+//numen:api
 type Result struct {
 	// Message is the outcome text shown to the user.
 	Message string

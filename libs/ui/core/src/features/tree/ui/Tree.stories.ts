@@ -13,7 +13,6 @@ import type { Row, RowId } from '../lib/row'
 import type { RowDropTarget } from '../lib/drop'
 import { WORK_ROWS } from '../fixtures/rows'
 
-/** A row removed from its position. */
 const removeRow = (rows: readonly Row[], id: RowId): readonly Row[] =>
   rows
     .filter((row) => row.id !== id)
@@ -28,7 +27,6 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
   return null
 }
 
-/** Rows placed where a drop target indicates, in drag order. */
 const insertRows = (
   rows: readonly Row[],
   target: RowDropTarget,
@@ -43,7 +41,6 @@ const insertRows = (
     return [below]
   })
 
-/** The application's part: what a move evaluates to, in the rows it holds. */
 const moveRows = (
   rows: readonly Row[],
   dragIds: readonly RowId[],
@@ -54,11 +51,9 @@ const moveRows = (
   return target.length ? insertRows(remainingRows, dropTarget, target) : rows
 }
 
-/** The application's part again: rows taken out of the tree. */
 const removeRows = (rows: readonly Row[], dragIds: readonly RowId[]): readonly Row[] =>
   dragIds.reduce((rest, row) => removeRow(rest, row), rows)
 
-/** The application's part again: a row under a new name. */
 const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
   rows.map((each) => ({
     ...each,
@@ -68,7 +63,6 @@ const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row
 
 const FEW = WORK_ROWS
 
-/** One row inside the next, as far down as it goes. */
 const deep = (levels: number): readonly Row[] => {
   const createLevel = (level: number): readonly Row[] =>
     level > levels
@@ -156,11 +150,8 @@ interface Knobs {
   corpus: Corpora
   threshold: number
   name: string
-  /** The row whose name starts out in a field. */
   renamingPath: RowId | null
-  /** The rows the selection starts out on. */
   selected: readonly RowId[]
-  /** Given by the story, and nothing a reader turns. */
   rows?: never
   open?: never
   counted?: never
@@ -301,7 +292,6 @@ const getRow = (canvas: HTMLElement, row: string) => {
 const getDrawnRows = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[data-tree-row]')].map((row) => row.getAttribute('data-tree-row'))
 
-/** The rows the tree announces as selected, in the order they are drawn. */
 const getSelected = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[aria-selected="true"]')].map((row) =>
     row.getAttribute('data-tree-row'),
@@ -312,7 +302,6 @@ const getMiddle = (element: Element) => {
   return { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 }
 }
 
-/** A row picked up and dropped elsewhere, in as many steps as a pointer takes. */
 async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
   const start = getMiddle(from)
   await userEvent.pointer([

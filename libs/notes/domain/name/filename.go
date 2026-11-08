@@ -83,10 +83,6 @@ func isDuplicateBracket(r, last rune) bool {
 	return (r == '[' || r == ']') && r == last
 }
 
-// isDevice reports whether Windows keeps this name for a device, which no file
-// there may carry. The name is the device whatever extension follows it, and
-// whatever case it is written in: `con`, `CON.md` and `Con.notes.md` are all
-// the console.
 func isDevice(name string) bool {
 	stem, _, _ := strings.Cut(name, ".")
 	stem = strings.ToUpper(stem)
@@ -100,16 +96,12 @@ func isDevice(name string) bool {
 	return stem[:3] == "COM" || stem[:3] == "LPT"
 }
 
-// trimEnds is a name carrying at neither end a dot or a space. A leading dot
-// files the note where nothing looks, a trailing one is dropped by Windows, and
-// a space is no part of the name a link is written by.
 func trimEnds(name string) string {
 	return strings.TrimFunc(name, func(r rune) bool {
 		return r == '.' || unicode.IsSpace(r)
 	})
 }
 
-// truncateAtRuneBoundary shortens to at most n bytes without splitting a character in half.
 func truncateAtRuneBoundary(s string, n int) string {
 	if len(s) <= n {
 		return s

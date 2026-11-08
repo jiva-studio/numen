@@ -14,7 +14,6 @@ const mountCard = (front: string, overrides: { back?: string; isShown?: boolean 
     },
   })
 
-/** A pointer drag on the card by the given distance, followed by release. */
 const dragCard = async (reviewCard: ReturnType<typeof mountCard>, distance: number) => {
   const card = reviewCard.find('.card').element as HTMLElement
   card.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100 }))

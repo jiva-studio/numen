@@ -14,7 +14,6 @@ import { WORDS as words } from './words'
 const props = defineProps<{
   stats: Stats | null
   phase: Phase
-  /** The locale numbers and times are written in; the locale of the window when empty. */
   locale?: string | undefined
 }>()
 

@@ -42,7 +42,6 @@ func Wait(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// dateLayouts are the three forms of an HTTP date.
 func getDateLayouts() []string {
 	return []string{
 		"Mon, 02 Jan 2006 15:04:05 GMT",

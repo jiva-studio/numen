@@ -33,20 +33,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// openVault is a vault with the full window stack (index, first scan, watcher)
-// and a client connected to it as the window connects.
-//
-// It tests the wire: that a change arrives at a client over the stream in the
-// shape the schema describes. The meaning of a change is tested at the use
-// case, where no server is needed.
 func openVault(t *testing.T, notes map[string]string) (questions, string) {
 	t.Helper()
 	client, _, root, _ := openVaultWithWindow(t, notes)
 	return client, root
 }
 
-// openVaultWithWindow is openVault with the window side included, for tests of
-// what a window action delivers to the client.
 func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
 ) {
@@ -192,9 +184,6 @@ type questions struct {
 	numenv1connect.SearchServiceClient
 }
 
-// openChanges subscribes to the vault changes and receives the message that
-// opens the stream. The stream has its own context, cancelled before the
-// server closes: a stream is an open request, and a test server waits for those.
 func openChanges(t *testing.T, client numenv1connect.VaultServiceClient) *connect.ServerStreamForClient[v1.WatchVaultChangesResponse] {
 	t.Helper()
 	listening, hangUp := context.WithCancel(t.Context())
@@ -213,8 +202,6 @@ func openChanges(t *testing.T, client numenv1connect.VaultServiceClient) *connec
 	return changes
 }
 
-// getReportedPaths returns a channel that receives the first non-empty set of
-// paths the stream reports.
 func getReportedPaths(changes *connect.ServerStreamForClient[v1.WatchVaultChangesResponse]) <-chan []string {
 	reported := make(chan []string, 1)
 	go func() {
@@ -228,7 +215,6 @@ func getReportedPaths(changes *connect.ServerStreamForClient[v1.WatchVaultChange
 	return reported
 }
 
-// newQuestionsClient is that client against a server those services are mounted on.
 func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	return questions{
 		VaultServiceClient:     numenv1connect.NewVaultServiceClient(client, pos),
@@ -239,7 +225,6 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-// mountQuestionsServices puts them on a mux, which is what a window serves them from.
 func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
 	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
@@ -251,19 +236,13 @@ func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
 // going is one vault with everything a window has behind it, and a client
 // talking to it the way the window does.
 type going struct {
-	client questions
-	// configuring is the settings file client of this installation, a service
-	// separate from the vault.
-	configuring numenv1connect.SettingsServiceClient
-	// drawn is the window itself: what is being done behind it, and the drain
-	// that holds it back when it goes.
+	client       questions
+	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
 	root         string
-	// settings is the vault list this window keeps, which is the folder its
-	settings string
-	// order is what happened, in the order it happened.
-	order *order
+	settings     string
+	order        *order
 }
 
 // order is a record of the moments a test is asking about the sequence of.
@@ -284,16 +263,11 @@ func (o *order) getAll() []string {
 	return append([]string(nil), o.outMsg...)
 }
 
-// openWindow opens a vault as the window does for an installation without
-// configuration, recording the time of each write and, where a test requests
-// it, holding the write.
 func openWindow(t *testing.T, hold *held, notes map[string]string) *going {
 	t.Helper()
 	return opening(t, hold, notes, true)
 }
 
-// writeNamingSettings writes the settings file a rename reads, beside the vault list, which
-// is where an installation pointed somewhere of its own keeps one.
 func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
 	t.Helper()
 	body := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(sync))
@@ -304,8 +278,6 @@ func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFi
 	}
 }
 
-// opening is openWindow with the title and filename either synchronized or kept
-// separate, the one setting a rename reads.
 func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTitleAndFilename) *going {
 	t.Helper()
 
@@ -380,8 +352,6 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 }
 
-// read waits until the window's vault walk has finished, so the index state of
-// a note can be queried.
 func (f *going) read(t *testing.T) {
 	t.Helper()
 
@@ -633,8 +603,6 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	}
 }
 
-// hasBody reports whether a note's file carries this prose below whatever
-// frontmatter it has.
 func hasBody(file, body string) bool {
 	return len(file) >= len(body) && file[len(file)-len(body):] == body
 }
@@ -647,12 +615,10 @@ type speaking struct {
 	question chan string
 	hangUp   context.CancelFunc
 
-	mu sync.Mutex
-	// failures are the errors of the flush reports, read when the test ends.
+	mu       sync.Mutex
 	failures []error
 }
 
-// openQuitStream opens the quit stream and takes the token it opens with.
 func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
@@ -692,8 +658,6 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	return p
 }
 
-// answerFlushes answers every flush request with the result the handler
-// returns.
 func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 	go func() {
 		for token := range p.question {
@@ -702,7 +666,6 @@ func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 	}()
 }
 
-// sendFlush is the page telling the application what it has left.
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
 	_, err := p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
@@ -716,8 +679,6 @@ func (p *speaking) sendFlush(token string, response v1.FlushResult) {
 	}
 }
 
-// endStream is the page's stream ending, and waits for the application to have
-// noticed.
 func (p *speaking) endStream(t *testing.T) {
 	t.Helper()
 
@@ -919,8 +880,6 @@ func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	}
 }
 
-// getSetting reads all settings through the window and returns the value at the
-// given path. A setting absent from the file has its default value.
 func getSetting(t *testing.T, f *going, pos ...string) any {
 	t.Helper()
 	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))

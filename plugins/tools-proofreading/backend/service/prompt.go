@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// buildPrompt is one batch as the model receives it: its prose, with each line
-// opened by its number. A line ending mid-word is finished by the next one, and
-// the topic of the text precedes the first of them.
 func buildPrompt(batch Batch) string {
 	var out strings.Builder
 	if batch.Context != "" {

@@ -77,7 +77,6 @@ const { onLayout, onHold: onSplitterHold } = useBranchResize({
 })
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>
 

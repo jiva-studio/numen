@@ -58,8 +58,6 @@ func StreamAgentTask(
 	}
 }
 
-// sendStep writes a step to the stream in the schema's representation and
-// reports whether it was the last step of the work.
 func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.Step) (bool, error) {
 	if step.Kind == domain.StepStop {
 		return true, finishStream(stream, step.Detail)
@@ -72,8 +70,6 @@ func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.
 	return false, nil
 }
 
-// finishStream writes why the work stopped, followed by an empty frame that hands the stop to the
-// window. An empty detail is work that finished.
 func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail string) error {
 	if detail == "" {
 		detail = "done"
@@ -84,11 +80,6 @@ func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail stri
 	return stream.Send(&v1.AskAgentResponse{})
 }
 
-// convertSteps converts a step of an agent's work to the schema's
-// representation.
-//
-// Every kind that names a tool is sent as a tool step, whatever that tool does
-// to the vault, and carries the vault location it works on.
 func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case domain.StepToolCall, domain.StepRead, domain.StepEdit,
@@ -113,8 +104,6 @@ func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 	}
 }
 
-// convertRange is the one span a call names, and nothing where it named the source
-// and no place inside it.
 func convertRange(spans []domain.ByteRange) *v1.Range {
 	if len(spans) == 0 {
 		return nil

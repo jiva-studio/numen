@@ -14,7 +14,6 @@ const ITEMS: MenuItem[] = [
   { id: 'cut', text: 'Cut' },
 ]
 
-/** A word typed one letter at a time, each letter a moment after the last. */
 const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
   let testTypeahead = NOTHING_TYPED
   let pos: number | null = null

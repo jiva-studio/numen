@@ -14,11 +14,8 @@ interface Host {
 }
 
 export interface TabHosts {
-  /** The element a tab is drawn into, or undefined while no pane holds it. */
   readonly getElement: (tab: TabId) => HTMLElement | undefined
-  /** Registers the element of a pane as the host of a tab. Repeating it changes nothing. */
   readonly attach: (tab: TabId, pane: NodeId, element: HTMLElement) => void
-  /** Removes the host of a tab, unless another pane has taken it over since. */
   readonly detach: (tab: TabId, pane: NodeId) => void
 }
 

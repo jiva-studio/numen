@@ -16,17 +16,13 @@ export type Measure = (node: PlexNode) => number
 /** What a plex measures its own text with. */
 export interface PlexMetrics {
   readonly node: Measure
-  /** The words of a label, which stand on a line and carry no padding. */
   readonly label: (label: string) => number
-  /** The width a heading's box needs for its words, padding included. */
   readonly heading: (text: string) => number
-  /** The heights of the capitals, descenders and lowercase letters of the font of a label. */
   readonly labelType: LabelType
 }
 
 /** The type and the lengths a plex is drawn with, in pixels. */
 interface PlexType {
-  /** A font shorthand, ready for a canvas. */
   readonly font: string
   readonly labelFont: string
   readonly padding: number
@@ -64,7 +60,6 @@ interface Probe {
   readonly label: HTMLElement
 }
 
-/** A resolved length, which a document writes in pixels. */
 const parsePixels = (value: string): number => {
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : 0
@@ -103,7 +98,6 @@ export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined>
   return computed(() => createMetrics(type.value, icon()))
 }
 
-/** A box of the plex's own type, standing in the page. */
 function openProbe(): Probe | null {
   if (!hasDocument() || !doc.body) return null
 
@@ -127,7 +121,6 @@ function word(style: string): HTMLElement {
   return span
 }
 
-/** What the document makes of the tokens, read off the probe. */
 function getType(probe: Probe): PlexType {
   const box = getComputedStyle(probe.box)
   const label = getComputedStyle(probe.label)
@@ -165,11 +158,6 @@ function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
   }
 }
 
-/**
- * The ink of one font, measured from the font in use: the height of a capital and the
- * depth of a descender above and below the baseline, and the height of a lowercase x.
- * Where the platform reports none of them, proportions of the font size stand in.
- */
 function getLabelType(context: CanvasRenderingContext2D, font: string): LabelType {
   context.font = font
   const size = parsePixels(font)
@@ -180,7 +168,6 @@ function getLabelType(context: CanvasRenderingContext2D, font: string): LabelTyp
   }
 }
 
-/** Text in one type, each distinct string measured once. */
 function textWidths(context: CanvasRenderingContext2D, font: string): (text: string) => number {
   const widths = new Map<string, number>()
 
@@ -195,10 +182,6 @@ function textWidths(context: CanvasRenderingContext2D, font: string): (text: str
   }
 }
 
-/**
- * A canvas to measure text with, kept off the page. Nothing where the platform
- * has none of its own.
- */
 function getMeasuringContext(): CanvasRenderingContext2D | null {
   if (typeof CanvasRenderingContext2D === 'undefined') return null
   try {

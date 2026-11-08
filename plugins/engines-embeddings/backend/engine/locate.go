@@ -205,7 +205,6 @@ func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file s
 	return p, nil
 }
 
-// listRepoFiles returns the files of the model folder with their sizes, and the size of the tokenizer beside it.
 func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, int64, error) {
 	var out []string
 	var tokenizer int64
@@ -306,8 +305,6 @@ func isFileOfAnyModel(name string, siblings []string) bool {
 	return false
 }
 
-// checkPinned returns an error when the file at path holds other than the sum
-// pinned for name. A name with no pin is not checked.
 func checkPinned(sums map[string]string, name, path string) error {
 	sum, ok := sums[name]
 	if !ok {
@@ -319,9 +316,6 @@ func checkPinned(sums map[string]string, name, path string) error {
 	return nil
 }
 
-// discardDownload removes a file that does not hold its pinned sum, and the blob its link points to, so
-// the next start fetches it again. The downloader moves a file into place before its sum is checked, and
-// finds a file that is in place complete.
 func discardDownload(path string) error {
 	target, err := filepath.EvalSymlinks(path)
 	// gomutants:disable-next-line BRANCH_IF reason="an empty target from a failed EvalSymlinks is ignored as fs.ErrNotExist"
@@ -341,10 +335,6 @@ func discardDownload(path string) error {
 	return errors.Join(removed...)
 }
 
-// locateCached returns the files of a snapshot that the cache already holds. A
-// model pinned to a revision takes that snapshot, each file checked against its
-// pinned sum. A model with no revision takes the newest snapshot that holds both
-// the model and the tokenizer.
 func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
 	cache, err := repo.CacheDir()
 	if err != nil {
@@ -368,9 +358,6 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 	return p, true, nil
 }
 
-// locateNewestSnapshot returns the files of the most recently downloaded
-// snapshot in cache that holds both the model and the tokenizer. The downloader
-// links a file into a snapshot only after the download has finished.
 func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 	snapshots := filepath.Join(cache, "snapshots")
 	entries, err := os.ReadDir(snapshots)
@@ -405,7 +392,6 @@ func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 	return newest, isFound, nil
 }
 
-// snapshotPaths returns where the model and the tokenizer lie in a snapshot.
 func snapshotPaths(snapshot, file string) Paths {
 	return Paths{
 		Model:     filepath.Join(snapshot, ModelFolder, file),

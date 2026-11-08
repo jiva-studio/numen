@@ -39,7 +39,6 @@ const day = (overrides: Partial<Day> = {}): Day => ({
 const mountDetail = (overrides: Partial<Day> = {}) =>
   mount(DaySummary, { props: { day: day(overrides), words: WORDS } })
 
-/** Each of the four ratings, with its count. */
 const getRatings = (wrapper: ReturnType<typeof mountDetail>) =>
   wrapper
     .findAll('[data-day-detail="ratings"] li')

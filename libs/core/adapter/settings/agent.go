@@ -8,6 +8,8 @@ import "encoding/json"
 // A program's section is kept whether or not the program is selected, so
 // switching to another agent preserves the settings of the previous one. The
 // programs are the ones listed by the plugins that provide agents.
+//
+//numen:settings
 type Agent struct {
 	// Use names the program the panel uses. When absent, the program that the
 	// providers mark as default is used. When empty, no program is used and the
@@ -20,12 +22,8 @@ type Agent struct {
 
 // AgentProgram is how one program is run.
 type AgentProgram struct {
-	// Command is the command line that starts the program: its path and any
-	// launcher it runs through. When empty, the path is searched, then the
-	// folders its installers write to.
 	Command []string `json:"command"`
 
-	// Model is the model the program uses, by the name the program gives it.
 	Model string `json:"model"`
 }
 
@@ -78,7 +76,6 @@ func (a *Agent) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// readSection reads one key of the section: `use`, else a program.
 func (a *Agent) readSection(key string, section json.RawMessage) error {
 	if key == "use" {
 		return json.Unmarshal(section, &a.Use)
@@ -124,7 +121,6 @@ func (p *AgentProgram) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// readField reads one key of the section of a program.
 func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 	switch key {
 	case "command":
@@ -145,6 +141,8 @@ func (p AgentProgram) MarshalJSON() ([]byte, error) {
 
 // AI is the section of the settings file that selects the agent that handles
 // the questions of a plugin whose own setting names none.
+//
+//numen:settings
 type AI struct {
 	// Default is the agent and the model that handle the questions of a plugin
 	// whose own setting names no agent, and how many questions one agent handles
@@ -153,6 +151,8 @@ type AI struct {
 }
 
 // AIRoute is an agent, the model it uses, and the limit of its questions.
+//
+//numen:settings
 type AIRoute struct {
 	// Agent is the id of the agent plugin to use. Empty selects the provider with
 	// the lowest id.

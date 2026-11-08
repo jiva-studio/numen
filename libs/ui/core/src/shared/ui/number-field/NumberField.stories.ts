@@ -136,7 +136,6 @@ export const BoundedOnTheWayOut: Story = {
   },
 }
 
-/** Presses each run of keys in the field, and expects the number it leaves. */
 const pressKeys = async (
   canvasElement: HTMLElement,
   steps: readonly (readonly [keys: string, value: string])[],

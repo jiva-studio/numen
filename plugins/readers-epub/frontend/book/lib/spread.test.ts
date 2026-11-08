@@ -28,11 +28,6 @@ import type { PageNavigationAction } from '@numen/ui'
 const WIDE = 800
 const NARROW = 420
 
-/**
- * The columns a document of so many of them evaluates to, in a given reading area.
- * A column takes its share of the area, gap and all, which is how the browser
- * lays them out and how far a spread has to move.
- */
 const createFlow = (width: number, columns: number, all: number): Flow => ({
   contentWidth: (all * width) / columns,
   width,

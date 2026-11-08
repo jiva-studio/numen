@@ -268,8 +268,6 @@ func TestProcessLimits(t *testing.T) {
 	}
 }
 
-// gpuEnvironment is a host environment holding the loader and accelerator
-// variables, a secret and the host's own NUMEN variables.
 func getGpuEnvironment() []string {
 	return []string{
 		"PATH=/usr/bin",
@@ -289,7 +287,6 @@ func getGpuEnvironment() []string {
 	}
 }
 
-// runtimeVarNames are the variables gpuEnvironment holds for an ONNX Runtime plugin.
 func getRuntimeVarNames() []string {
 	return []string{
 		"LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_PATH_V12_4", "CUDA_HOME",
@@ -297,7 +294,6 @@ func getRuntimeVarNames() []string {
 	}
 }
 
-// readEnvironment returns the launch environment as a map.
 func readEnvironment(env []string) map[string]string {
 	observed := make(map[string]string, len(env))
 	for _, entry := range env {

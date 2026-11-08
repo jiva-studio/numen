@@ -24,14 +24,11 @@ import (
 // filing is a scanned vault whose files can be moved about, with the index kept
 // up to date as a real caller keeps it.
 type filing struct {
-	db    *container.Index
-	vault domain.Vault
-	index func(ctx context.Context, v domain.Vault, paths []string) error
-	// readers is every reader this vault is opened through, keeping the tally of
-	// files whose bytes were read.
+	db      *container.Index
+	vault   domain.Vault
+	index   func(ctx context.Context, v domain.Vault, paths []string) error
 	readers *countingReaders
-	// went is every move reported to the observer, in order.
-	went *[]domain.Move
+	went    *[]domain.Move
 }
 
 func openFiling(t *testing.T, notes map[string]string) filing {
@@ -55,11 +52,8 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 	}
 }
 
-// move returns the move an unconfigured installation performs: title and
-// filename kept as one name.
 func (f filing) move() vaults.Move { return f.newMove(true) }
 
-// moveApart is the move an installation that has turned the two apart does.
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
@@ -78,7 +72,6 @@ func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	)
 }
 
-// resolves returns the target of the one link written in a note.
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
 	found, err := f.db.Links().GetLinks(t.Context(), f.vault.ID, in)
@@ -142,7 +135,6 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	}
 }
 
-// sources is what the index holds at a path and beneath it, by path.
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
 	found, err := f.db.SourcesKnown().GetSourcesUnder(t.Context(), f.vault.ID, path)
@@ -184,8 +176,6 @@ func TestWhatIsBelowAPathIsWhatAWalkFinds(t *testing.T) {
 	}
 }
 
-// walkSources is every source a walk of the vault reports at a path and beneath
-// it, by path.
 func walkSources(t *testing.T, f filing, path string) []string {
 	t.Helper()
 	reader, err := vaultreader.Readers{}.Open(f.vault)

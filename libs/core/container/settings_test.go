@@ -18,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// writeSettings is a settings file holding that text, and the container reading
-// it.
 func writeSettings(t *testing.T, output string) (Config, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")

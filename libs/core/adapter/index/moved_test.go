@@ -7,9 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// chunksOf is the rows the chunks of one source sit on, in order. A source
-// filed somewhere else keeps them, and the vectors addressed by their text with
-// them.
 func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	t.Helper()
 	return rowsOf(t, db,

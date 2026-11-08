@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
-// getAntigravityPlaces returns where the CLI is looked for after PATH. A leading ~/ is the home
-// directory.
 func getAntigravityPlaces() []string {
 	return []string{
 		"~/.local/bin/antigravity",
@@ -37,8 +35,6 @@ func FindAntigravity(customPath ...string) string {
 	return findAntigravityIn(getAntigravityPlaces(), customPath...)
 }
 
-// findAntigravityIn returns the path of the Antigravity CLI, searched in customPath, PATH and
-// places, or the bare name where not found.
 func findAntigravityIn(places []string, customPath ...string) string {
 	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
 		return customPath[0]

@@ -3,14 +3,8 @@ import { readBox } from '../../support/browser.js'
 import { getTab } from '../../support/layout.js'
 import { openWorkspace, openVaultFile } from '../../support/workspace.js'
 
-/** The panes of the window, in the order they are drawn. */
 const getPanes = (page: Page): Locator => page.locator('section[data-workspace-pane]')
 
-/**
- * Whether the page is drawn under the middle of the reader showing, with an image that has
- * loaded and is not one flat colour. A page outside the visible part of the row is a black area
- * to the person.
- */
 const isDrawnInView = (page: Page, pageIndex: number): Promise<boolean> =>
   page.locator('.reader__viewport:visible').evaluate(async (area, index) => {
     const frame = area.getBoundingClientRect()
@@ -33,7 +27,6 @@ const isDrawnInView = (page: Page, pageIndex: number): Promise<boolean> =>
     return colours.size > 2
   }, pageIndex)
 
-/** Drags the tab of pages.pdf into the pane that does not hold it, and waits for it to arrive. */
 const dragToOtherPane = async (page: Page): Promise<void> => {
   // Panes are taken by position: a locator that filters on the tab would follow it.
   const holderIndex = await getPanes(page).evaluateAll((panes) =>

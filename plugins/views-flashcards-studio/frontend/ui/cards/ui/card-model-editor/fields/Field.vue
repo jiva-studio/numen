@@ -18,17 +18,11 @@ import { CARD_MODEL_WORDS, type FieldRow, type CardModelWords } from '../../../l
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** Field row data and positional state. */
     row: FieldRow
-    /** Name entry state managing this field. */
     naming: NameEntryState<Objection>
-    /** Unique element identifier for error messages. */
     objectionsId: string
-    /** Validation error messages for the field. */
     wrong?: readonly string[]
-    /** Whether the drop indicator is positioned above this row. */
     isDropAbove?: boolean
-    /** Localization words for card model UI. */
     words?: CardModelWords
   }>(),
   { wrong: () => [], isDropAbove: false, words: () => CARD_MODEL_WORDS },

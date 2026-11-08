@@ -8,7 +8,6 @@ export interface TabLinkGroup {
   readonly id: string
   readonly colorIndex: number
   readonly tabs: readonly TabId[]
-  /** Last path synced in the group, and its title; empty before the first sync. */
   readonly path: string
   readonly title: string
 }
@@ -18,7 +17,6 @@ export interface LinkableTab {
   readonly id: TabId
   readonly kind: string
   readonly title: string
-  /** Id of the window that has the tab open. */
   readonly windowId: string
 }
 
@@ -26,10 +24,8 @@ export interface LinkableTab {
 export interface TabWindow {
   readonly id: string
   readonly isMain: boolean
-  /** The active tab; both fields are empty for a window with no tabs. */
   readonly activeTitle: string
   readonly activeKind: string
-  /** Every tab the window has open, linkable or not. */
   readonly tabCount: number
 }
 
@@ -37,7 +33,6 @@ export interface TabWindow {
 export interface TabLinksSnapshot {
   readonly groups: readonly TabLinkGroup[]
   readonly tabs: readonly LinkableTab[]
-  /** The main window first. */
   readonly windows: readonly TabWindow[]
 }
 
@@ -50,9 +45,7 @@ export type TabLinksWriter = (change: TabLinksChange) => Promise<void>
 
 export interface TabLinksState {
   readonly groups: ReadonlyMap<string, TabLinkGroup>
-  /** Linkable tabs of all windows. */
   readonly tabs: readonly LinkableTab[]
-  /** Every window that reported its tabs, the main window first. */
   readonly windows: readonly TabWindow[]
   linkTabs(sourceTabId: TabId, targetTabId: TabId): void
   unlinkTab(tabId: TabId): void

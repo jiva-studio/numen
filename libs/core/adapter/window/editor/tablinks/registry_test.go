@@ -29,7 +29,6 @@ func (s *timers) schedule(d time.Duration, f func()) func() bool {
 	}
 }
 
-// fireAll runs every scheduled func that is not cancelled.
 func (s *timers) fireAll() {
 	for _, one := range s.pending {
 		if !one.isCancelled {
@@ -358,8 +357,6 @@ type received struct {
 	sync  PathSync
 }
 
-// readUntilSync reads a watch up to its first sync and returns the sync and
-// the last snapshot before it.
 func readUntilSync(t *testing.T, watch *Watch) received {
 	t.Helper()
 	var out received
@@ -379,7 +376,6 @@ func readUntilSync(t *testing.T, watch *Watch) received {
 	}
 }
 
-// writeTabs writes the tabs of a window and opens a watch if the window has none.
 func writeTabs(r *Registry, windowID string, tabs []Tab) {
 	r.mu.Lock()
 	isWatched := len(r.watches[windowID]) > 0

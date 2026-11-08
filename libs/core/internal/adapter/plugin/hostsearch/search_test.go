@@ -34,8 +34,7 @@ type stubEmbedder struct {
 	hint     float64
 	switchTo *embeddingport.EmbeddingModel
 	calls    int
-	// queried holds the texts that were embedded as queries.
-	queried []string
+	queried  []string
 }
 
 func (e *stubEmbedder) GetModel() embeddingport.EmbeddingModel {

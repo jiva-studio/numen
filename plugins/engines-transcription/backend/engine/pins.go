@@ -7,9 +7,6 @@ const (
 	segmenterDefault = "https://huggingface.co/onnx-community/silero-vad/resolve/e71cae966052b992a7eca6b17738916ce0eca4ec/onnx/model.onnx"
 )
 
-// getModels returns the Parakeet exports the plugin provisions, by the name the settings give each.
-// Both are FastConformer-TDT transducers over 128 mel features and differ in their vocabulary: v3
-// recognises 25 European languages and detects which, v2 recognises English.
 func getModels() []ParakeetModel {
 	return []ParakeetModel{
 		{

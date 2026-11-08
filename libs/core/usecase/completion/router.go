@@ -71,9 +71,6 @@ func (r *Router) Complete(ctx context.Context, _ string, question completionport
 	return text, err
 }
 
-// getReplacementModel is the model to ask the program when the model chosen is not among those it lists: the
-// one it answers with unasked, else the first. It reports false where the model is offered, none is
-// chosen, or the program lists none.
 func getReplacementModel(program agentport.AgentProgram, selected string) (string, bool) {
 	if selected == "" || len(program.Models) == 0 {
 		return "", false
@@ -91,9 +88,6 @@ func getReplacementModel(program agentport.AgentProgram, selected string) (strin
 	return program.Models[0].Name, true
 }
 
-// newTask is the question as a task: the system messages are the instructions,
-// and the other messages are the prompt, as written when there is one and with
-// their roles when there are several.
 func newTask(question completionport.Question) (agentport.Task, error) {
 	var system []string
 	var turns []completionport.Message

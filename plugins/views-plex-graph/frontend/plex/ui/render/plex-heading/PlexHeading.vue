@@ -7,9 +7,7 @@ import type { NodeHeadings } from '../../../lib/inside'
 import type { DrawnHeading } from '../../../lib/open'
 
 const props = defineProps<{
-  /** The heading, as far out from under the box as it has come. */
   heading: DrawnHeading
-  /** The headings and the space they are given. */
   hung: NodeHeadings
 }>()
 

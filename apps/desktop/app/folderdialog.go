@@ -58,7 +58,6 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 	return selected, selected != "", nil
 }
 
-// tryAcquire takes the dialog, and answers false where it is already up.
 func (d *folderDialog) tryAcquire() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()

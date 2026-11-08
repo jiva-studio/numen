@@ -19,7 +19,6 @@ type SegmentedControlProps = InstanceType<typeof SegmentedControl>['$props']
 const mountSegmentedControl = (props: Partial<SegmentedControlProps> = {}) =>
   mount(SegmentedControl, { props: { choices: CHOICES, modelValue: 'small', ...props } })
 
-/** Every choice the control has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSegmentedControl>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 

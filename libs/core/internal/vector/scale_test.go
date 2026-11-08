@@ -16,14 +16,8 @@ import (
 // signed byte has on either side of zero.
 const step = embeddingport.Int8Scale / 127
 
-// widths are the vector widths this application admits: the default embedding
-// model produces 384 dimensions, and the settings accept any model the user
-// names, with widths up to 3072 among the models a service offers.
 func getWidths() []int { return []int{384, 768, 1024, 1536, 3072} }
 
-// unit is an invented vector of the width given, pointing nowhere in
-// particular. Its length is one, so its components are around 1/sqrt(d) and the
-// number of levels a byte spends on it falls as it grows wider.
 func unit(rng *rand.Rand, d int) []float32 {
 	v := make([]float32, d)
 	for i := range v {
@@ -32,8 +26,6 @@ func unit(rng *rand.Rand, d int) []float32 {
 	return vector.Normalise(v)
 }
 
-// exact is the cosine of two vectors before either is quantised, which is what
-// the rerank would order by if it could afford to keep floats.
 func exact(a, b []float32) float64 {
 	var dot, remaining, right float64
 	for i := range a {
@@ -112,7 +104,6 @@ func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 	})
 }
 
-// similarity is the stored vector's cosine against the query.
 func similarity(query []float32, stored []int8) float64 {
 	raw := make([]byte, len(stored))
 	for i, q := range stored {

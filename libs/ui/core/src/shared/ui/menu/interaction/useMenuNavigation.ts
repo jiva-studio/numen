@@ -65,7 +65,6 @@ export interface MenuNavigationState {
   readonly onResetNavigation: () => void
 }
 
-/** The submenu that is open, and what opening, closing and choosing do with it. */
 function useSubmenuActions(options: MenuNavigationOptions) {
   const active = ref<ActiveSubmenu | null>(null)
   const trigger = ref<MenuTrigger>('pointer')

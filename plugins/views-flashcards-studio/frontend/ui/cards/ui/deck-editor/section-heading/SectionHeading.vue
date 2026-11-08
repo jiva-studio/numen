@@ -14,9 +14,7 @@ import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
   defineProps<{
-    /** The section, and at its current position among them. */
     section: PlacedSection
-    /** The words it is drawn with. */
     words?: DeckWords
   }>(),
   { words: () => DECK_WORDS },

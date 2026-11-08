@@ -20,33 +20,20 @@ const MostRead = 30
 
 // Neighbourhood is what a deck is joined to.
 type Neighbourhood struct {
-	Notes []Neighbour
-	// Unread is how many at the end came without their text.
+	Notes  []Neighbour
 	Unread int
 }
 
 // Neighbour is one note the deck is joined to.
 type Neighbour struct {
-	// Written is the address as the deck wrote it, and all a dangling link
-	// has. Empty for a note that points at the deck: what it wrote there names
-	// the deck, not itself.
-	Written string
-	// Path is empty when the link resolves to nothing.
-	Path  string
-	Title string
-	Body  string
-	// Label is the relationship label given in the link, when one was given.
-	Label string
-	// IsBacklink is this note pointing at the deck. False is the deck pointing
-	// at it.
-	IsBacklink bool
-	// IsAmbiguous is whether several notes match the name that was written. The link
-	// resolves to the nearest match; this flag is the only signal that another note
-	// shares the name.
+	Written     string
+	Path        string
+	Title       string
+	Body        string
+	Label       string
+	IsBacklink  bool
 	IsAmbiguous bool
-	// Outcome is how reading the text ended. Empty for a note whose text was not
-	// requested.
-	Outcome note.ReadOutcome
+	Outcome     note.ReadOutcome
 }
 
 // ShowNeighbourhood is what the deck being reviewed is joined to, with the text
@@ -117,8 +104,6 @@ func (u ShowNeighbourhood) Execute(
 	return out, nil
 }
 
-// getNeighbours is what the links of a deck lead to: what it points at first,
-// then what points at it. A deck naming itself, and a card naming the deck it
 func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbour {
 	observed := map[string]bool{deck: true}
 	var found []Neighbour
@@ -140,8 +125,6 @@ func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbour {
 	return found
 }
 
-// getLinkedNeighbour is the neighbour a link of the deck leads to, and whether
-// it is one to show. A note reached is marked in seen.
 func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbour, bool) {
 	// Only an address that names a note can name a missing note. Attachments and web
 	// addresses are neither read here nor missing, and drawing them as notes with
@@ -173,9 +156,6 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	return one, true
 }
 
-// getNeighbourTitle is the neighbour with its title, and whether it is one to show.
-// A neighbour with a path is shown when the index still holds a note there and
-// the note is one the cards were written from.
 func getNeighbourTitle(
 	one Neighbour, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
 ) (Neighbour, bool) {
@@ -214,10 +194,6 @@ func getNeighbourTitle(
 	return one, true
 }
 
-// readBodies reads the prose of the first MostRead notes that have a path. A
-// read fails when the vault itself is out of reach, and a panel of titles with
-// no prose under any of them would say nothing about why; what is wrong with
-// one note is an outcome, not an error.
 func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neighbours []Neighbour) error {
 	for i := range neighbours {
 		if i == MostRead {
@@ -249,11 +225,8 @@ type AssignCardIDs struct {
 	writers ports.VaultWriters
 	notes   ports.NoteQueries
 	links   ports.LinkQueries
-	// index brings what a write touched up to date. A build holding none leaves
-	// the index to the next scan.
-	index func(ctx context.Context, v domain.Vault, paths []string) error
-	// now is when this is happening. A card id written here carries it.
-	now ports.Clock
+	index   func(ctx context.Context, v domain.Vault, paths []string) error
+	now     ports.Clock
 }
 
 // NewAssignCardIDs constructs an AssignCardIDs from the vault readers and writers
@@ -283,8 +256,6 @@ func (u AssignCardIDs) WithIndex(index func(ctx context.Context, v domain.Vault,
 
 // AssignCardIDsResult is what the assigning of card ids came to: the decks it could not write.
 type AssignCardIDsResult struct {
-	// Unwritten are the paths of the decks holding a card with no card id that
-	// could not be given one. Their cards are left out of this session.
 	Unwritten []string
 }
 
@@ -330,7 +301,6 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 	return out, nil
 }
 
-// hasCardWithoutID reports whether any card of a deck carries no card id.
 func hasCardWithoutID(d format.Deck) bool {
 	for _, c := range d.Cards {
 		if c.CardID == "" {

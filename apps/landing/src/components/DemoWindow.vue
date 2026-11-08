@@ -1012,7 +1012,6 @@ function setReaderRef(tabId: string) {
 // and each write applies the change and hands the groups back as a snapshot.
 const MAX_LINK_COLOR_INDEX = 4
 
-/** Returns the lowest color no group has, or 1 when every color is taken. */
 function getNextLinkColorIndex(groups: readonly TabLinkGroup[]): number {
   const used = new Set(groups.map((group) => group.colorIndex))
   for (let index = 1; index <= MAX_LINK_COLOR_INDEX; index++) {
@@ -1021,7 +1020,6 @@ function getNextLinkColorIndex(groups: readonly TabLinkGroup[]): number {
   return 1
 }
 
-/** Returns the groups with two tabs linked: a tab joins the group of the other, two groups merge. */
 function linkDemoTabs(
   groups: readonly TabLinkGroup[],
   source: TabId,
@@ -1055,14 +1053,12 @@ function linkDemoTabs(
   return [...groups, created]
 }
 
-/** Returns the groups without the tab; a group left with one tab is removed. */
 function unlinkDemoTab(groups: readonly TabLinkGroup[], tabId: TabId): readonly TabLinkGroup[] {
   return groups
     .map((group) => ({ ...group, tabs: group.tabs.filter((id) => id !== tabId) }))
     .filter((group) => group.tabs.length >= 2)
 }
 
-/** Returns tab links whose groups are held in memory. */
 function createDemoTabLinks() {
   let groups: readonly TabLinkGroup[] = []
   const tabLinks = useTabLinks({
@@ -2424,7 +2420,6 @@ function ensureToolTabOpen(tabId: string, preferredPaneId: string) {
 /** The ids of every command the demo window handles. */
 const DEMO_COMMAND_IDS: ReadonlySet<string> = new Set(Object.values(DEMO_COMMAND))
 
-/** The relation a command creates a note in, and nothing for any other command. */
 function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' | null {
   const found = Object.entries(NAMING_COMMAND).find(([, id]) => id === command)
   return (found?.[0] as 'child' | 'parent' | 'jump' | 'title' | undefined) ?? null

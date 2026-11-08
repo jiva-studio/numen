@@ -35,7 +35,6 @@ const setUp = (edge = 0) => {
 const pointer = (clientX: number, target: unknown = null, button = 0): PointerEvent =>
   ({ button, clientX, target }) as unknown as PointerEvent
 
-/** A selection at the position the test sets. */
 const select = (selection: {
   isCollapsed: boolean
   text: string

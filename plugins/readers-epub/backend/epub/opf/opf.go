@@ -22,10 +22,6 @@ const (
 // ErrNoPackage is returned when the package document is missing or cannot be read.
 var ErrNoPackage = errors.New("epub: no package document")
 
-// isTitleNamespace reports whether a title is written in the namespace. A prefix is the writer's
-// choice, so a name that carries one is matched by its namespace; the empty namespace is a book
-// that
-// declares none.
 func isTitleNamespace(key string) bool {
 	switch key {
 	case "", "http://purl.org/dc/elements/1.1/", "http://purl.org/dc/terms/":
@@ -36,17 +32,12 @@ func isTitleNamespace(key string) bool {
 
 // A Package is the package document, read down to what a reader needs.
 type Package struct {
-	Title string
-	// relative to that.
-	base string
-	// Spine is the documents of the spine, in reading order.
-	Spine []SpineItem
-	// SpineStep is the CFI step of the spine element among the package element's children.
+	Title     string
+	base      string
+	Spine     []SpineItem
 	SpineStep int
-	// NCX and Nav are the archive paths of the two kinds of navigation
-	// document, empty when the book has neither.
-	NCX string
-	Nav string
+	NCX       string
+	Nav       string
 
 	Layout    Layout
 	Direction Direction
@@ -58,8 +49,7 @@ type SpineItem struct {
 	MediaType string
 	IsLinear  bool
 	Layout    Layout
-	// Step is the CFI step of the itemref among the spine element's children.
-	Step int
+	Step      int
 }
 
 type rawPackageDocument struct {
@@ -145,9 +135,6 @@ func readSpine(read *Package, doc *rawPackageDocument, manifest map[string]manif
 	}
 }
 
-// readSpineSteps is the CFI step of the spine element among the package element's children, and the
-// step of each itemref among the spine's children. A step counts the elements before it, whatever
-// else the package document holds (EPUB CFI 1.1 §3.1.3).
 func readSpineSteps(raw []byte) (int, []int) {
 	d := archive.NewXMLDecoder(raw)
 	var steps spineSteps
@@ -167,10 +154,9 @@ func readSpineSteps(raw []byte) (int, []int) {
 
 // spineSteps counts the elements of a package document as they open.
 type spineSteps struct {
-	depth    int
-	children int
-	inSpine  bool
-	// spineChildren counts the children of the spine element.
+	depth         int
+	children      int
+	inSpine       bool
 	spineChildren int
 	spine         int
 	items         []int
@@ -231,8 +217,6 @@ func Read(files map[string]*zip.File, opfPath string) (Package, error) {
 	return read, nil
 }
 
-// parseLayout returns the layout a rendition:layout value names, and inForce
-// for a value that names neither.
 func parseLayout(value string, inForce Layout) Layout {
 	switch Layout(strings.ToLower(strings.TrimSpace(value))) {
 	case PrePaginated:
@@ -243,8 +227,6 @@ func parseLayout(value string, inForce Layout) Layout {
 	return inForce
 }
 
-// parseItemLayout returns the layout an itemref's properties name, and the
-// book's when they name none.
 func parseItemLayout(properties string, book Layout) Layout {
 	switch {
 	case words.HasToken(properties, "rendition:layout-pre-paginated"):
@@ -255,7 +237,6 @@ func parseItemLayout(properties string, book Layout) Layout {
 	return book
 }
 
-// parseDirection returns the direction a page-progression-direction value names.
 func parseDirection(value string) Direction {
 	named := Direction(strings.ToLower(strings.TrimSpace(value)))
 	if named == LeftToRight || named == RightToLeft {

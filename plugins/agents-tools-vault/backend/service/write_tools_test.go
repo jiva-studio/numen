@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// getWriteToolArguments is the tools that rename, move and remove notes, edit links and manage
-// vaults, each with arguments it accepts.
 func getWriteToolArguments() map[string]string {
 	return map[string]string{
 		"note_rename":  `{"path":"Rocks/Basalt.md","title":"Flood Basalt"}`,

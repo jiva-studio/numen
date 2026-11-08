@@ -54,8 +54,6 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 	return u.view.FocusPlace(ctx, domain.Place{Path: in.Path, Ranges: in.Passages})
 }
 
-// checkPassages returns an error for an input with no file, a passage that starts before the text
-// or is empty, or more passages than one file may highlight.
 func checkPassages(in FocusPassagesInput) error {
 	if in.Path == "" {
 		return fmt.Errorf("path is empty: %w", ErrInvalidPassage)

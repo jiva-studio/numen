@@ -2,7 +2,6 @@ import { test, expect, type Page } from '../../support/test.js'
 import { openTaskList, openWorkspace } from '../../support/workspace.js'
 import { createFolder, trashFiles, getRow, listPaths, showInFiles } from '../../support/layout.js'
 
-/** A deck or a card model made through the palette, under the name typed on its step. */
 const make = async (page: Page, command: string, name: string): Promise<void> => {
   await page.keyboard.press('Control+p')
   const field = page.locator('input[data-palette="field"]').first()

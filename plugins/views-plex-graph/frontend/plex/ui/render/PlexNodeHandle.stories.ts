@@ -12,19 +12,15 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
 
 interface Knobs {
-  /** where it is located, in the coordinates of whatever draws it. */
   x: number
   y: number
-  /** Whose hue it takes. The focus has none, and it falls back to the border. */
   relation: PlexNodeRelation
-  /** How far the drawing is scaled up, to look at nine pixels of it. */
   zoom: number
 
   onReach: (pointer: PointerEvent) => void
   onAsk: () => void
 }
 
-/** What a node puts on itself, and the handle inherits. */
 const hue = (relation: PlexNodeRelation) => ({
   '--relation-hue': `var(--numen-relation-${relation})`,
 })

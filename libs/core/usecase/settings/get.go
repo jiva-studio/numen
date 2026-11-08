@@ -7,8 +7,7 @@ type Current struct {
 	Path    string
 	Models  []Model
 	Plugins []PluginInfo
-	// App is the declaration of the settings of the owner app.
-	App []PluginSetting
+	App     []PluginSetting
 }
 
 // Get reads every setting, the models a setting can name, and the limits the

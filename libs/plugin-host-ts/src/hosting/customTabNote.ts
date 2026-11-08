@@ -45,13 +45,11 @@ export interface NoteReadState {
 
 type NoteRead = Awaited<ReturnType<NonNullable<PluginHostDeps['readNote']>>>
 
-/** What a read answers, as the body and the error it holds. */
 const splitRead = (result: NoteRead): { body?: string; error?: string } => {
   if (typeof result === 'string') return { body: result }
   return result ?? {}
 }
 
-/** The body and the error a read answered, put where the tab shows them. */
 const applyRead = (targetPath: string, result: NoteRead, state: NoteReadState): void => {
   const { body, error } = splitRead(result)
   if (body !== undefined) state.note.value = { path: targetPath, body }

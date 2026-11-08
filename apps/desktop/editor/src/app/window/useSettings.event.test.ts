@@ -34,7 +34,6 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
   },
 }))
 
-/** A feed the test pushes the changes of settings into, as the core would. */
 const createFeed = () => {
   const pending: ((batch: readonly SettingEdit[]) => void)[] = []
   const queued: (readonly SettingEdit[])[] = []
@@ -95,7 +94,6 @@ const create = () => {
   return { settings, core, feed, windowTabs }
 }
 
-/** The settings as the core changes them, and the event that tells every window. */
 const change = (feed: ReturnType<typeof createFeed>, path: readonly string[], value: unknown) => {
   let target = file.current
   for (const step of path.slice(0, -1)) {

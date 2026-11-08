@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-// probe is a migration of these tests' own, applied over an index at version 1.
 func getProbe() migration {
 	return migration{
 		version: 2,
@@ -18,13 +17,10 @@ func getProbe() migration {
 	}
 }
 
-// containing holds for every statement carrying the text given.
 func containing(text string) func(string) bool {
 	return func(query string) bool { return strings.Contains(query, text) }
 }
 
-// openAtVersionOne is a new index file, through the breaking driver, that one
-// migration of the test's own has been applied to.
 func openAtVersionOne(t *testing.T) (*sql.DB, *faults) {
 	t.Helper()
 	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))

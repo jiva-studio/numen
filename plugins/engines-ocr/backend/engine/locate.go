@@ -47,10 +47,6 @@ func findInHome(fileName string) string {
 	return ""
 }
 
-// locateModel finds a model file by checking:
-// 1. Explicit path in settings
-// 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
-// 3. Plugin directory / models folder fallback
 func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 	if explicitPath != "" {
 		if _, err := os.Stat(explicitPath); err != nil {

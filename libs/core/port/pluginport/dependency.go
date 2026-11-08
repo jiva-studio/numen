@@ -21,10 +21,8 @@ var ErrNoProvisioner = errors.New("no provisioner for the dependency")
 
 // ResolvedDependency is the install location of a ready dependency and how a process uses it.
 type ResolvedDependency struct {
-	ID string
-	// RootPath is the folder that holds everything the dependency installed.
-	RootPath string
-	// PrimaryPath is the file a plugin opens or runs.
+	ID          string
+	RootPath    string
 	PrimaryPath string
 	EnvVars     map[string]string
 	Metadata    map[string]string
@@ -38,10 +36,8 @@ type DependencyStatus struct {
 	BytesTotal      int64
 	ProgressPercent float64
 	Message         string
-	// Error is set while State is failed.
-	Error string
-	// Resolved is set while State is ready.
-	Resolved *ResolvedDependency
+	Error           string
+	Resolved        *ResolvedDependency
 }
 
 // DependencyProvisioner makes the dependencies it can handle ready on this machine.

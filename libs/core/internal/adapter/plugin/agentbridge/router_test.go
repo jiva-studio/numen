@@ -42,7 +42,6 @@ func (answeringServer) GetAgentPrograms(
 	}}}), nil
 }
 
-// writeAgentProvider writes the manifest of an agent provider plugin of the id under dir.
 func writeAgentProvider(t *testing.T, dir, id string) {
 	t.Helper()
 	pluginDir := filepath.Join(dir, id)

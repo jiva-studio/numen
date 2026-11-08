@@ -13,7 +13,6 @@ const BODY = Array.from(
     `The keeper of the tide clock winds the brass drum at the change of watch ${line + 1}.`,
 ).join(' ')
 
-/** Calls a unary RPC of the debug server with a JSON body and returns its answer. */
 const callRPC = async (
   request: APIRequestContext,
   method: string,

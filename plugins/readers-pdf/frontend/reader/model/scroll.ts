@@ -12,38 +12,13 @@ import { Hand, getWheelOffset } from '../lib/hand'
 const THERE = 1
 
 export interface PanScroll {
-  /** How far the row has been scrolled, in CSS pixels. */
   readonly along: Ref<number>
-  /** Whether a pointer drag is in progress, which determines the cursor style. */
   readonly isDragging: Ref<boolean>
-  /**
-   * The scroll offset of the strip, or the target offset when a programmatic
-   * scroll is in progress. A scroll updates the element before an event
-   * reports it.
-   */
   readonly getScrollOffset: () => number
-  /**
-   * The row sent to a place along itself, travelling or at once. A send to the place the row
-   * is at ends a travel still in flight to another place.
-   */
   readonly send: (to: number, how: ScrollBehavior) => void
-  /**
-   * The row put back at the place it was travelling to, or at the last offset it was scrolled to,
-   * when the browser has moved it since without a scroll event. A row that is hidden or moved in
-   * the document loses a travel it was on, and no scroll event reports the end of it.
-   */
   readonly restore: () => void
-  /**
-   * Whether the browser has moved the row away from the place the row was last sent or reported
-   * at, with no scroll event reporting it yet.
-   */
   readonly isMoved: () => boolean
-  /**
-   * Whether the strip is stationary. A strip scrolling towards a target passes
-   * pages the user did not navigate to.
-   */
   readonly isStill: () => boolean
-  /** Pointer drag and wheel handlers for the strip. */
   readonly onPointerDown: (event: PointerEvent) => void
   readonly onPointerMove: (event: PointerEvent) => void
   readonly letGo: (event: PointerEvent) => void

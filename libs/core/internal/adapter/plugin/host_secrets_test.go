@@ -132,7 +132,6 @@ func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
 	return c.calls[len(c.calls)-1]
 }
 
-// newSecretHost returns a host with a running agent plugin that declares the apiKey secret.
 func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured) {
 	t.Helper()
 	probe := &configured{}
@@ -459,8 +458,6 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 
 var errLockedKeychain = errors.New("the keychain is locked")
 
-// recordStored records the apiKey secret as stored, the way the settings file
-// holds the record.
 func recordStored(host *Host) {
 	host.SetSettings(map[string]map[string]any{secretPluginID: {pluginport.SettingStoredSecrets: []any{declared}}})
 }

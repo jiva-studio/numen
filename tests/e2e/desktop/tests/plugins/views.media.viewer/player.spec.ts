@@ -17,10 +17,8 @@ const CAPTION = 'The mill pond fills behind the gate.'
 /** An address the proxy of `scripts/start-server.mjs` answers 404 for. */
 const MISSING_PAGE_ADDRESS = 'http://unreachable.numen.test/tide-tables'
 
-/** The copies of videos the importer keeps in its folder. */
 const listCopies = (): string[] => listPluginFiles(IMPORTER).filter((name) => name.endsWith('.wav'))
 
-/** The link note the importer names after a video's address, at the root of the vault. */
 const getLinkNote = (id: string): string => `https---www.youtube.com-watch-v=${id}.md`
 
 /**

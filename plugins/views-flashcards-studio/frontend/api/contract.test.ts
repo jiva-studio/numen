@@ -17,7 +17,6 @@ interface Field {
   readonly isList: boolean
 }
 
-/** The fields of each interface and the values of each enumeration declared in `types.ts`. */
 const parseTypes = (source: string) => {
   const interfaces = new Map<string, Map<string, Field>>()
   const enums = new Map<string, readonly string[]>()
@@ -49,7 +48,6 @@ const parseTypes = (source: string) => {
 
 const { interfaces, enums } = parseTypes(typesSource)
 
-/** The problems of a value against the interface, one text for each. */
 const check = (value: unknown, typeName: string, path: string, isRequest: boolean): string[] => {
   if (typeName === 'string') return typeof value === 'string' ? [] : [`${path}: not a string`]
   if (typeName === 'number') return typeof value === 'number' ? [] : [`${path}: not a number`]

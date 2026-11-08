@@ -25,31 +25,16 @@ type Scan struct {
 	indexedVal  FileStatQueries
 	maintenance indexport.IndexMaintenance
 
-	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
-	// GetOtherRecipePaths reads the paths of the notes whose recorded cut is not recipe. Nil skips the check.
 	GetOtherRecipePaths func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
 
-	// ShouldRecut is whether the check runs: the chunk size is known.
 	ShouldRecut bool
 
-	// Walks serializes the walks of the vaults being scanned. A scan without it
-	// runs without waiting for any other scan.
 	Walks *Walks
 
-	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
-	// index remembers about it.
-	//
-	// What it remembers is a path, a size and a modification time, so a file whose
-	// content changed while those did not is skipped — an archive restored by
-	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
-	// that, and the only one.
 	ShouldRebuildIndex bool
 
-	// OnProgress, if set, is called each time a group of notes is written. A
-	// scan of a large vault takes a minute, and something has to be able to say
-	// so while it happens. What is done with that is the caller's business.
 	OnProgress func(ScanResult)
 }
 
@@ -146,7 +131,6 @@ type vaultWalk struct {
 	recutPaths map[string]bool
 }
 
-// readWalk registers the vault and reads its files and what the index holds of them.
 func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -172,8 +156,6 @@ func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 	return vaultWalk{reader: reader, found: found, recognized: recognized, recutPaths: recutPaths}, nil
 }
 
-// getRecutPaths is the set of the paths of the notes whose recorded cut is not the cut of this scan,
-// and empty where the chunk size is not known or no check is given.
 func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]bool, error) {
 	if !u.ShouldRecut || u.GetOtherRecipePaths == nil {
 		return nil, nil
@@ -189,9 +171,6 @@ func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]boo
 	return recutPaths, nil
 }
 
-// walkVault is every file of the vault, the most recently modified first. The walk
-// is collected before any file is read so the order can be applied: recently
-// modified notes are scanned first.
 func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.FileStat, error) {
 	var found []domain.FileStat
 	if err := reader.WalkFiles(ctx, func(ref domain.FileStat) error {
@@ -204,8 +183,6 @@ func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.File
 	return found, nil
 }
 
-// newGroup is the grouping that saves a vault's notes and adds each group to
-// res.Indexed.
 func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
@@ -221,8 +198,6 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	}}
 }
 
-// indexChanged reads and groups every note whose file stat differs from the
-// index's, and is the paths of the notes the walk found.
 func (u Scan) indexChanged(
 	ctx context.Context, walk vaultWalk, group *grouping, res *ScanResult,
 ) (map[string]bool, error) {
@@ -256,9 +231,6 @@ func (u Scan) indexChanged(
 	return observed, nil
 }
 
-// readNoteBytes is the bytes of the note at path and whether they were read. A
-// note that cannot be read is counted in res and the scan goes on, and its path
-// stays among those seen: the row is still about the file.
 func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
@@ -277,7 +249,6 @@ func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path strin
 	return nil, false
 }
 
-// removeGone takes out of the index the notes the walk did not find.
 func (u Scan) removeGone(
 	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *ScanResult,
 ) error {

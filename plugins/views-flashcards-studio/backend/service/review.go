@@ -49,12 +49,6 @@ func (s *sessions) store(v domain.Vault, run *flashcards.LogWriter) {
 	s.run[v.ID] = run
 }
 
-// getRun returns the run this backend has open on a vault, found only under the name that run writes.
-//
-// The vault is part of the lookup, because an answer is written to the vault its run was
-// opened on: a run named against another vault would put an answer in the wrong history, and a
-// written answer is not written again. The name is part of the lookup as well, so a page
-// holding the name of a finished session cannot continue writing to it.
 func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -65,7 +59,6 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 	return run, nil
 }
 
-// person's session is on.
 func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
 	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now.Now())
 	if err != nil {
@@ -75,8 +68,6 @@ func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcard
 	return run, nil
 }
 
-// formatTime formats an instant for the page: the one shape everything here writes, so the page
-// parses a single format.
 func formatTime(t time.Time) string {
 	if t.IsZero() {
 		return ""
@@ -152,9 +143,6 @@ func (h *reviewHandler) WatchCardsDue(
 	return nil
 }
 
-// countVaults works the vaults out, a few at a time, and hands each over as it
-// comes. A vault that takes a minute holds up nothing but the ones behind it in
-// the queue.
 func (h *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-chan *api.VaultCardsDue {
 	counted := make(chan *api.VaultCardsDue)
 	go func() {
@@ -184,7 +172,6 @@ func (h *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-c
 	return counted
 }
 
-// newVaultCardsDue returns a vault entry that carries no count.
 func newVaultCardsDue(v domain.Vault) *api.VaultCardsDue {
 	return &api.VaultCardsDue{
 		ID: string(v.ID), Name: v.Name, Path: v.Path,
@@ -315,7 +302,6 @@ func newWireSessionCard(one flashcards.QueuedReviewCard) *api.SessionCard {
 	}
 }
 
-// newWireIntervals is where each of the four would leave the card, in seconds.
 func newWireIntervals(ahead map[review.Rating]time.Duration) *api.Intervals {
 	if ahead == nil {
 		return nil
@@ -354,7 +340,6 @@ func (h *reviewHandler) RecordReview(
 	return &api.RecordReviewResponse{Answer: provided.ID}, nil
 }
 
-// case, which is where the rule is.
 func parseRating(r api.Rating) review.Rating {
 	switch r {
 	case api.RatingAgain:
@@ -464,7 +449,6 @@ func (h *reviewHandler) ListReviewDays(
 	}, nil
 }
 
-// sortReviewDays puts the days oldest first.
 func sortReviewDays(days []*api.ReviewDay) []*api.ReviewDay {
 	slices.SortFunc(days, func(one, other *api.ReviewDay) int {
 		return cmp.Compare(one.Day, other.Day)
@@ -561,8 +545,6 @@ func (h *reviewHandler) WatchReloads(
 	}
 }
 
-// sendReload drops the cached review cards and tells the page to reload after a move, and returns the
-// failure that ended the watch of moves.
 func (h *reviewHandler) sendReload(move host.Move, send func(*api.WatchReloadsResponse) error) error {
 	if move.Err != nil {
 		return newError(server.CodeUnavailable, move.Err)

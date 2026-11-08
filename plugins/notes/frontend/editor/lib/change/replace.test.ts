@@ -7,7 +7,6 @@ const DOC = 'one\ntwo\nthree\nfour'
 /** A user can place a caret in several places at once. */
 const SEVERAL = EditorState.allowMultipleSelections.of(true)
 
-/** Where every end of every range lands, as a line and a column. */
 const replaceIn = (doc: string, selection: EditorSelection, newText: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
   const updatedState = state.update(replace(state, newText)).state
@@ -25,7 +24,6 @@ const replaceIn = (doc: string, selection: EditorSelection, newText: string) => 
 const caret = (doc: string, line: number, column: number) =>
   EditorSelection.single(EditorState.create({ doc }).doc.line(line).from + column)
 
-/** Every stretch of text the change puts something else in the place of. */
 const applyChange = (doc: string, newText: string) => {
   const state = EditorState.create({ doc })
   const found: [number, number, string][] = []

@@ -45,7 +45,6 @@ func (f folders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return nil, fs.ErrNotExist
 }
 
-// two vaults, both of whose folders exist at the path the list records.
 func twoRows() (*theList, folders) {
 	return &theList{rows: []domain.Vault{
 		{ID: "wren", Name: "Wren", Path: "/notes/wren"},

@@ -23,15 +23,12 @@ var (
 
 // Question is what a plugin sends to a model.
 type Question struct {
-	// Messages are the conversation so far, oldest first.
 	Messages []Message
-	// Purpose is what the answer is for. It routes nothing.
-	Purpose string
+	Purpose  string
 }
 
 // Message is one turn of the conversation a question carries.
 type Message struct {
-	// Role is who wrote the text: "system", "user" or "assistant".
 	Role string
 	Text string
 }

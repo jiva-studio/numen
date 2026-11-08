@@ -25,8 +25,6 @@ func (w *windowIndex) getPaths() []string {
 	return slices.Clone(w.paths)
 }
 
-// openWindowScenarios is the window's note use cases over the assembly, whose index updater records
-// the paths it updates before it refreshes them.
 func openWindowScenarios(assembly container.EditorAssembly) (container.PluginVaultHooks, *windowIndex) {
 	refresh := assembly.GetRefresh()
 	index := &windowIndex{}

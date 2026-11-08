@@ -19,8 +19,6 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 	l.vaults = append(l.vaults, v.ID)
 }
 
-// readyPass is a pass over a vault of one note that reports into events and tells log when the
-// vectors exist.
 func readyPass(t *testing.T, model embeddingport.Embedder, log *readyLog) *pass {
 	t.Helper()
 	made, db := reading(t)

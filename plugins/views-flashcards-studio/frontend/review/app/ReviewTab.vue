@@ -17,7 +17,6 @@ import { REVIEW_WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The review the window opened on a vault. */
   state: Review
 }>()
 

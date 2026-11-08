@@ -164,14 +164,10 @@ func (s *Scan) GetFittingWidth(index, want, maxPixels int) (int, error) {
 	return max(min(want, fitting), 1), nil
 }
 
-// getHeightAt is how high a page of that shape is drawn width pixels across.
 func getHeightAt(width int, pageWidth, pageHeight float64) int {
 	return max(int(math.Round(float64(width)*pageHeight/pageWidth)), 1)
 }
 
-// copyRendered copies the pixels of a rendered page out of the memory the library owns and
-// releases that memory. The copy is made because the image outlives the call that rendered it.
-// A page is rendered in color unless a format was requested, and none is.
 func copyRendered(index int, rendered image.Image, release func()) (image.Image, error) {
 	page, isColour := rendered.(*image.RGBA)
 	// gomutants:disable-next-line BRANCH_IF reason="non-RGBA render output is rejected"

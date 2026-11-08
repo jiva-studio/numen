@@ -14,36 +14,21 @@ export type { PaletteAction }
  */
 export interface PaletteItem {
   readonly id: string
-  /** What it is called. */
   readonly title: string
-  /** Where in the title the words stand. */
   readonly at?: readonly TextRange[]
-  /** A second line: the location of the item, or the text the item was found in. */
   readonly detail?: string
-  /** Where the words stand in that line. */
   readonly detailAt?: readonly TextRange[]
   readonly actions?: readonly PaletteAction[]
-  /**
-   * The shortcut that triggers this item outside the palette, as the caller
-   * defines it. Displayed at the end of the row.
-   */
   readonly keys?: PaletteKeys
-  /** Drawn and announced, and not choosable. */
   readonly isDisabled?: boolean
 }
 
 /** One group of the list. What the groups are is the caller's. */
 export interface PaletteGroup {
   readonly id: string
-  /** What the group is called. */
   readonly title: string
   readonly items: readonly PaletteItem[]
-  /** More items are loading, so the list shown is incomplete. */
   readonly isWorking?: boolean
-  /**
-   * The text shown in place of items when the group has none. A group with no
-   * such text and no pending items is not drawn.
-   */
   readonly silence?: string
 }
 

@@ -7,9 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveTypedNoteWithHeadings stores one note, of the type its file declares,
-// divided by the given headings. The body is the headings written out, so a
-// note that is cut has text to cut.
 func saveTypedNoteWithHeadings(
 	t *testing.T,
 	db *DB,
@@ -38,7 +35,6 @@ func saveTypedNoteWithHeadings(
 	}
 }
 
-// chunksOfNote is how many chunks one note of one vault holds, of both sizes.
 func chunksOfNote(t *testing.T, db *DB, vault domain.Vault, path string) int {
 	t.Helper()
 	return countRows(t, db, `SELECT COUNT(*) FROM chunks c
@@ -47,7 +43,6 @@ func chunksOfNote(t *testing.T, db *DB, vault domain.Vault, path string) int {
 	                       WHERE v.identifier = ? AND s.path = ?`, vault.ID, path)
 }
 
-// headingTexts is what the index holds as the outline of one note.
 func headingTexts(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 

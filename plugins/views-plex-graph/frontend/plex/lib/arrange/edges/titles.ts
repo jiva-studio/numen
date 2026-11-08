@@ -106,11 +106,6 @@ interface MeasuredTitle {
   readonly metrics: TitleMetrics
 }
 
-/**
- * The titles with measurable text, least free space first. A line as long as
- * its text comes before a line with free space to spare, and titles with equal
- * free space keep their input order.
- */
 function sortTightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
@@ -143,7 +138,6 @@ function sortTightestFirst(
 interface SettleOptions {
   readonly metrics: TitleMetrics
   readonly width: (label: string) => number
-  /** The position the title asks for, as a fraction of the line from its `from` end. */
   readonly target: number
 }
 
@@ -178,12 +172,6 @@ interface ClearSpanOptions {
   readonly step: number
 }
 
-/**
- * The runs of a line with nothing in the way, `ends` of it kept clear at
- * either end for whatever is drawn there. Every step of the line is looked at
- * on its own, so a line crossing a box comes back as the spans to either
- * side of it.
- */
 function clearSpans(
   boxAt: (from: number, to: number) => Box,
   boxes: readonly Box[],
@@ -210,11 +198,6 @@ function clearSpans(
   return spans
 }
 
-/**
- * The part of the spans on the side of the middle that `anchor` is on. A line
- * with several titles keeps each on its own half, so the order they were asked
- * for in is the order they are read in.
- */
 function clipToHalf(spans: readonly Span[], anchor: number): Span[] {
   const [low, high] = anchor < MIDDLE ? [0, MIDDLE] : [MIDDLE, 1]
   return spans
@@ -222,10 +205,6 @@ function clipToHalf(spans: readonly Span[], anchor: number): Span[] {
     .filter((span) => getSpanLength(span) > 0)
 }
 
-/**
- * The position of a title of this half-length nearest the target that keeps
- * the whole text inside one clear span. Null when no span is long enough.
- */
 function findNearestPlace(clear: readonly Span[], half: number, target: number): number | null {
   let nearest: number | null = null
 

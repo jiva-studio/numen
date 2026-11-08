@@ -9,13 +9,11 @@ const DRACULA_SURFACE = '#21222c'
 const STEP_MS = 50
 const WATCH_MS = 3_000
 
-/** The text of the style element the window carries its theme in. */
 const getThemeStyle = (page: Page): Promise<string> =>
   page.evaluate(
     () => document.head.querySelector('style[data-appearance="theme"]')?.textContent ?? '',
   )
 
-/** Opens the page System of the settings tab, and gives back the tab. */
 const openSystemSettings = async (page: Page): Promise<Locator> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
@@ -26,12 +24,6 @@ const openSystemSettings = async (page: Page): Promise<Locator> => {
 /** What the control of a list or a slider shows, read in the page. */
 type Control = { readonly list: string } | { readonly slider: string }
 
-/**
- * Reads the control every STEP_MS in the page itself while `change` runs and for WATCH_MS after it.
- * A slider is also read at every change of its value, because keys pressed one after the other
- * draw their values milliseconds apart, closer than STEP_MS. Gives every value read, in order; the
- * first is the value before `change` started.
- */
 const watchControl = async (
   page: Page,
   control: Control,
@@ -78,7 +70,6 @@ const watchControl = async (
   return { before: samples[0] ?? '', samples }
 }
 
-/** The values in the order they were first samples, a value that returns is counted again. */
 const getRuns = (samples: readonly string[]): string[] =>
   samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 

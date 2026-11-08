@@ -15,11 +15,9 @@ import (
 // Record is what the plugin keeps for one vault under one recipe: the floor a person set, if any, and
 // the last measurement. The statistics of a measurement are kept here and nowhere else.
 type Record struct {
-	Recipe string
-	// IsManual is whether the person set the floor, and ManualFloor the value they set.
+	Recipe      string
 	IsManual    bool
 	ManualFloor float64
-	// Calibration is nil before the first measurement.
 	Calibration *Calibration
 }
 
@@ -59,8 +57,6 @@ type calibrationFile struct {
 	CalibratedAt int64   `json:"calibratedAt"`
 }
 
-// getRecordName is the name of the file of the recipe. A recipe holds characters a file name does not,
-// so the name is a digest of it.
 func getRecordName(recipe string) string {
 	sum := sha256.Sum256([]byte(recipe))
 	return "floor-" + hex.EncodeToString(sum[:8]) + ".json"

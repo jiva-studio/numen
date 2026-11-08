@@ -34,8 +34,6 @@ const mockShare = 0.9
 // model. A word listed in getConcept counts as its concept, so a text is near a
 // question that names the concept by another word.
 type MockEmbedder struct {
-	// LogPath, when set, is a file each batch is appended to as one line of JSON: the texts the
-	// model was given, prefixes included. End-to-end tests read it.
 	LogPath string
 }
 
@@ -85,7 +83,6 @@ func (m MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, e
 	return out, nil
 }
 
-// stripMockPrefix removes the prefix of a role from a text.
 func stripMockPrefix(text string) string {
 	if rest, ok := strings.CutPrefix(text, MockQueryPrefix); ok {
 		return rest
@@ -93,7 +90,6 @@ func stripMockPrefix(text string) string {
 	return strings.TrimPrefix(text, MockDocumentPrefix)
 }
 
-// record appends a batch to the log, and reports on stderr a log that cannot be written.
 func (m MockEmbedder) record(texts []string) {
 	if m.LogPath == "" {
 		return
@@ -127,8 +123,6 @@ func (MockEmbedder) Concurrency() int { return 1 }
 // Close releases nothing.
 func (MockEmbedder) Close() error { return nil }
 
-// embedMock places the count of each of a text's concepts in the dimensions of
-// that concept, and adds the shared part.
 func embedMock(text string) []float32 {
 	counts := map[string]int{}
 	for _, word := range strings.FieldsFunc(strings.ToLower(text), isNotWordRune) {
@@ -156,8 +150,6 @@ func embedMock(text string) []float32 {
 	return Normalise(v)
 }
 
-// addTerm adds weight to the dimensions of term in v, each with its sign: both
-// drawn from a generator seeded by the term.
 func addTerm(v []float32, term string, weight float64) {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(term)) // a hash.Hash never returns an error
@@ -177,8 +169,6 @@ func isNotWordRune(r rune) bool {
 	return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 }
 
-// getConcept returns the concept a word maps to: the first word of its group,
-// or the word itself.
 func getConcept(word string) string {
 	switch word {
 	case "boat", "ferry", "ship", "vessel":

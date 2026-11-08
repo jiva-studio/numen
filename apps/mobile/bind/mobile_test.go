@@ -20,7 +20,6 @@ import (
 // children, a sibling and a jump.
 const graphCentre = "Physics.md"
 
-// writeGraph writes a small graph of notes into the vault folder.
 func writeGraph(t *testing.T, root string) {
 	t.Helper()
 	if err := os.MkdirAll(root, 0o755); err != nil {
@@ -356,7 +355,6 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	}
 }
 
-// asList returns value as a JSON array and fails the test when it is another type.
 func asList(t *testing.T, value any) []any {
 	t.Helper()
 	list, isList := value.([]any)
@@ -366,7 +364,6 @@ func asList(t *testing.T, value any) []any {
 	return list
 }
 
-// asMap returns value as a JSON object and fails the test when it is another type.
 func asMap(t *testing.T, value any) map[string]any {
 	t.Helper()
 	object, isObject := value.(map[string]any)
@@ -376,7 +373,6 @@ func asMap(t *testing.T, value any) map[string]any {
 	return object
 }
 
-// asString returns value as a JSON string and fails the test when it is another type.
 func asString(t *testing.T, value any) string {
 	t.Helper()
 	text, isString := value.(string)

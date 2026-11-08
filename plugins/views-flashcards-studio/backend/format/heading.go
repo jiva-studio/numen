@@ -98,10 +98,6 @@ var emphasisRe = regexp.MustCompile(
 // for: one character that opens and closes nothing.
 const maskRune = 'x'
 
-// getUnsplittableRanges returns every range of the line that a cut may not fall
-// inside: its links and its runs of emphasis. Link brackets hold arbitrary text,
-// so runs of emphasis are searched in the line with every link masked, and a run
-// containing a link is one run.
 func getUnsplittableRanges(line string) [][]int {
 	found := links(line)
 	masked := []byte(line)
@@ -141,9 +137,6 @@ func linkStart(line string, pos int) int {
 	return pos
 }
 
-// links is every wikilink and embed of the line. The brackets are counted, so a
-// link holding another closes on its own last pair, and a pair that is never
-// closed is no link and neither is anything after it.
 func links(line string) [][]int {
 	var out [][]int
 	for pos := 0; pos+1 < len(line); {
@@ -162,8 +155,6 @@ func links(line string) [][]int {
 	return out
 }
 
-// oneLine returns the first line of a name, normalised and trimmed, because a
-// heading is a single line.
 func oneLine(name string) string {
 	line := markdown.Normalise(name)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, line[:0] is empty and TrimSpace on the rest is only affected if newline is at index 0."
@@ -173,8 +164,6 @@ func oneLine(name string) string {
 	return strings.TrimSpace(line)
 }
 
-// headingLine is the line a card, a template, a field or a side is placed under. A
-// heading carrying no text is the hashes and nothing after them.
 func headingLine(level int, name string) string {
 	hashes := strings.Repeat("#", level)
 	if name == "" {

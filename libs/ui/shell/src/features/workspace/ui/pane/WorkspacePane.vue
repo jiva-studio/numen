@@ -14,7 +14,6 @@ import type { Pane, TabId } from '../../lib/node'
 const props = withDefaults(
   defineProps<{
     pane: Pane
-    /** The pane a tab would open into. */
     isFocused?: boolean
   }>(),
   { isFocused: false },
@@ -62,12 +61,10 @@ watch(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-/** A pane is claimed under the primary button and under no other. */
 function onClaim(event: PointerEvent): void {
   if (event.button === 0) emit('claim')
 }
 
-/** A panel release puts the keyboard back on the tab it is held under. */
 function onLeave(tab: TabId): void {
   strip.value?.reach(tab)
 }

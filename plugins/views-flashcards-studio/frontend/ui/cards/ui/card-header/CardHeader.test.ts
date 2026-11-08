@@ -19,7 +19,6 @@ afterEach(() => {
 const header = (strip: ReturnType<typeof mountHeader>) => strip.get('.card-header')
 const grip = (strip: ReturnType<typeof mountHeader>) => strip.get('.card-header__grip')
 
-/** A press that lands on something inside the strip and rises to it. */
 const pressOn = async (strip: ReturnType<typeof mountHeader>, selector: string) => {
   await strip.get(selector).trigger('pointerdown')
 }

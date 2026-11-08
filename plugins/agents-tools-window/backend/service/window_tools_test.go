@@ -42,7 +42,6 @@ func newWindowTools(t *testing.T) windowTools {
 	return windowTools{window: window, registry: newRegistry(t, service.Host{Vault: vault, Window: window})}
 }
 
-// newRegistry is the window tools registered over the host.
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
@@ -53,8 +52,6 @@ func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	return registry
 }
 
-// call runs a tool on the vault with the call context and returns the structured result, or the
-// text of the tool error.
 func (w windowTools) call(t *testing.T, name, arguments string, callContext map[string]string, out any) (failure string) {
 	t.Helper()
 	res, err := w.registry.InvokeTool(t.Context(), tools.Call{
@@ -95,8 +92,6 @@ func (w windowTools) getToolInfo(t *testing.T, name string) *tools.ToolInfo {
 	return nil
 }
 
-// isOnServer reports whether the tool is on the server. A tool that names no server is on the full
-// server alone.
 func isOnServer(info *tools.ToolInfo, server tools.Server) bool {
 	if len(info.GetServers()) == 0 {
 		return server == tools.Full
@@ -120,8 +115,6 @@ type tabsOutput struct {
 	ActiveTabID string      `json:"activeTabId"`
 }
 
-// requirePlace fails the test unless the place is the JSON object want, or absent where want
-// is empty.
 func requirePlace(t *testing.T, what string, place json.RawMessage, want string) {
 	t.Helper()
 	if want == "" {
@@ -251,7 +244,6 @@ func TestSourceFocusReportsAHostErrorAsAToolError(t *testing.T) {
 	}
 }
 
-// readTabs sets the window's tabs and returns what window_tab_list returns.
 func (w windowTools) readTabs(t *testing.T, tabs []host.OpenTab, activeID string) tabsOutput {
 	t.Helper()
 	w.window.SetOpenTabs(tabs, activeID)
@@ -283,7 +275,6 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	requirePlace(t, "the PDF tab", second.Place, `{"page":4,"pageCount":120}`)
 }
 
-// seconds is a time of a recording, from its start.
 func seconds(n float64) *float64 { return &n }
 
 func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {

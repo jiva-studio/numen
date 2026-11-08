@@ -38,23 +38,15 @@ type Timer interface {
 // time. The pool starts with the first document and is released once no document has been open
 // for its idle release.
 type Workers struct {
-	mu   sync.Mutex
-	pool pdfium.Pool
-	// size is the worker count the pool is started with; zero is one per CPU.
-	size int
-	// idle is how many returned workers the pool keeps alive; zero keeps none.
-	idle int
-	// open is the number of documents open on the pool.
-	open int
-	// isWarmed records whether Warmup has started the pool.
-	isWarmed bool
-	// release fires when the pool has had no open document for idleRelease.
-	release Timer
-	// afterFunc arms a timer for idleRelease.
-	afterFunc func(time.Duration, func()) Timer
-	// idleRelease is how long an unused pool keeps its workers.
+	mu          sync.Mutex
+	pool        pdfium.Pool
+	size        int
+	idle        int
+	open        int
+	isWarmed    bool
+	release     Timer
+	afterFunc   func(time.Duration, func()) Timer
 	idleRelease time.Duration
-	// compilation holds the compiled PDFium module across pools; nil compiles it for each pool.
 	compilation wazero.CompilationCache
 }
 
@@ -75,8 +67,6 @@ func (w *Workers) SetCompilationCache(cache wazero.CompilationCache) {
 	w.compilation = cache
 }
 
-// getRuntimeConfig is the runtime configuration the pool starts with, or nil for the default of the
-// library. The caller holds the lock.
 func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
 	if w.compilation == nil {
 		return nil
@@ -143,8 +133,6 @@ func (w *Workers) SetWorkers(n int) {
 	w.size = n
 }
 
-// getPoolSize is the worker count the pool starts with. The caller holds the
-// lock.
 func (w *Workers) getPoolSize() int {
 	if w.size > 0 {
 		return max(w.size, minWorkers)
@@ -158,10 +146,6 @@ func (w *Workers) getPoolSize() int {
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
-// acquirePool returns the running pool, starting one when none is running or
-// the last was released, and counts a document open on it. The pool is chosen
-// and counted under one lock, so a release cannot close it between the two. A
-// start that failed is tried again by the next reader.
 func (w *Workers) acquirePool() (pdfium.Pool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -196,7 +180,6 @@ func (w *Workers) acquirePool() (pdfium.Pool, error) {
 	return w.pool, nil
 }
 
-// getWorker borrows a worker and counts the document that will be open on it.
 func (w *Workers) getWorker() (pdfium.Pdfium, error) {
 	p, err := w.acquirePool()
 	// gomutants:disable-next-line BRANCH_IF reason="acquirePool failure aborts getWorker"
@@ -212,15 +195,12 @@ func (w *Workers) getWorker() (pdfium.Pdfium, error) {
 	return worker, nil
 }
 
-// putWorker returns a worker to the pool.
 func (w *Workers) putWorker(worker pdfium.Pdfium) error {
 	err := worker.Close()
 	w.markDocumentClosed()
 	return err
 }
 
-// markDocumentClosed counts a document closed and, once none is open, schedules the
-// pool's release.
 func (w *Workers) markDocumentClosed() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -239,8 +219,6 @@ func (w *Workers) markDocumentClosed() {
 	}
 }
 
-// releasePool closes the pool and every worker in it when no document is
-// open; the next document starts a new pool.
 func (w *Workers) releasePool() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -293,8 +271,6 @@ type source struct {
 	file   io.Closer
 }
 
-// withCloseError is err, joined with the error of closing what the failed operation had open. It is
-// err itself where closing succeeded.
 func withCloseError(err, closeErr error) error {
 	if closeErr == nil {
 		return err
@@ -306,9 +282,6 @@ func (w *Workers) openBytes(raw []byte) (*document, error) {
 	return w.openSource(source{reader: bytes.NewReader(raw), size: int64(len(raw)), file: nil})
 }
 
-// openReader opens a document from a file the caller has open. It takes
-// ownership of the file and closes it when the document is closed, or when
-// opening fails.
 func (w *Workers) openReader(file io.ReadSeekCloser) (*document, error) {
 	size, err := file.Seek(0, io.SeekEnd)
 	if err == nil {
@@ -320,8 +293,6 @@ func (w *Workers) openReader(file io.ReadSeekCloser) (*document, error) {
 	return w.openSource(source{reader: file, size: size, file: file})
 }
 
-// openSource takes ownership of the source's file and closes it when the document is
-// closed, or when opening fails.
 func (w *Workers) openSource(src source) (*document, error) {
 	closeFile := func() error {
 		if src.file != nil {
@@ -374,8 +345,6 @@ func (d *document) Close() error {
 	return err
 }
 
-// title returns the document's title metadata. Most documents have none, and
-// many of the rest contain the name of the program that produced them.
 func (d *document) title() string {
 	meta, err := d.worker.FPDF_GetMetaText(&requests.FPDF_GetMetaText{Document: d.ref, Tag: "Title"})
 	if err != nil {
@@ -384,10 +353,6 @@ func (d *document) title() string {
 	return normalizeSpaces(meta.Value)
 }
 
-// text is the text layer of one page, and is empty for a page that has none.
-//
-// A page that cannot be read yields empty text: one unreadable page does not
-// justify rejecting the document.
 func (d *document) text(index int) string {
 	page, err := d.worker.GetPageText(&requests.GetPageText{
 		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil},

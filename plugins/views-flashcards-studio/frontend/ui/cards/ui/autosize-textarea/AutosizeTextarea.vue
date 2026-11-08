@@ -12,9 +12,7 @@ import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 defineOptions({ inheritAttrs: false })
 
 defineProps<{
-  /** The current text of the box. */
   text: string
-  /** What a `<label for>` names the box by. Without one the box makes up its own. */
   id?: string
 }>()
 

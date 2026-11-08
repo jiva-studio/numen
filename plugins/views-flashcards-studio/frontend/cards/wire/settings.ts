@@ -20,7 +20,6 @@ export type Load = Readonly<Record<string, number>>
 /** How the decks pointing at one preset are scheduled. */
 export interface Settings {
   readonly goal: Goal
-  /** The day the material is to be in the head, as `2026-09-30`. Empty for none. */
   readonly byDate: string
   readonly minutesADay: number
   readonly newADay: number

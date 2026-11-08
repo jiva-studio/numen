@@ -32,8 +32,6 @@ import (
 // scheme.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
-// newPageHandler is the complete handler as the application assembles it: the
-// services, the themes, and the built page behind them.
 func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
@@ -48,7 +46,6 @@ func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1co
 	return newThemedServices(themes).NewHandler(files), themes
 }
 
-// writeTheme writes a theme in the themes directory.
 func writeTheme(t *testing.T, cfg container.Config, name, body string) {
 	t.Helper()
 	folder := filepath.Join(filepath.Dir(cfg.RegistryPath), "themes")
@@ -62,7 +59,6 @@ func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string
 	writeAppearance(t, themes, &v1.WriteAppearanceRequest{Name: name, Mode: mode})
 }
 
-// writeAppearance is one choice as a client makes it, whatever of it the client names.
 func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, requested *v1.WriteAppearanceRequest) {
 	t.Helper()
 	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(requested))
@@ -74,11 +70,8 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 	}
 }
 
-// size is a size a choice names.
 func size(response float64) *float64 { return &response }
 
-// getResponse is what comes back at exactly this path. The page is passed as
-// the empty path as well, which no URL parses to.
 func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	r.URL.Path = path

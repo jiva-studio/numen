@@ -21,7 +21,6 @@ import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
 import type { LeavingSpread } from './leaving'
 
-/** Reading the width forces a layout pass, so the style written before it is applied first. */
 function flushLayout(element: HTMLElement): number {
   return element.offsetWidth
 }
@@ -44,7 +43,6 @@ export function getEasedProgress(time: number): number {
   return getBezier(y1, y2, (low + high) / 2)
 }
 
-/** The length of a turn, from the `--numen-motion` the paper inherits, in milliseconds. */
 function getTurnDuration(text: HTMLElement): number {
   const motion = getComputedStyle(text).getPropertyValue('--numen-motion').trim()
   const value = Number.parseFloat(motion)
@@ -54,7 +52,6 @@ function getTurnDuration(text: HTMLElement): number {
 
 interface RunningTurn {
   frame: number
-  /** The `translate` the turn is going to. */
   to: string
 }
 
@@ -66,23 +63,12 @@ export function getTurnTarget(text: HTMLElement): number {
   return Number.isFinite(target) ? target : 0
 }
 
-/** Stops the turn of a paper. The columns are where the last frame wrote them. */
 function stopTurn(text: HTMLElement): void {
   const running = runningTurns.get(text)
   if (running) cancelAnimationFrame(running.frame)
   runningTurns.delete(text)
 }
 
-/**
- * Moves the columns by writing `translate` on every frame, not by a CSS transition: when a
- * transition of `translate` ended, WebKitGTK drew the columns for one frame as they had been drawn
- * earlier, with the left of the text at one place and the right of it at another, and the page
- * seemed to go back and come forward again. A turn written frame by frame has no end that the
- * compositor handles, the last frame writes the place the turn goes to as it is, and the place the
- * columns stand at is always the one in the style, so a turn started during another one goes on from it.
- * A layout that asks for the place a turn is already going to leaves that turn running, since a
- * layout the turn did not wait for would otherwise cut it short.
- */
 function translatePaper(
   text: HTMLElement,
   to: string,

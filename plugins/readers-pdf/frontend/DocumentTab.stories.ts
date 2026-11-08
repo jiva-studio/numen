@@ -35,7 +35,6 @@ const RANGES: readonly TextRange[] = [
   { start: 2_310, end: 2_355 },
 ]
 
-/** A page rendered at the requested width, showing its page number. */
 const renderPage = (page: number, width: number): string => {
   const tall = Math.round((width * 792) / 612)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${tall}">
@@ -59,7 +58,6 @@ const DOCUMENTS: Documents = {
 
 let places: Selector[] = []
 
-/** A PDF tab whose window sets `ranges` once the document has loaded. */
 const openAt =
   (ranges: readonly TextRange[]): NonNullable<Story['render']> =>
   () => ({

@@ -18,7 +18,6 @@ defineOptions({ inheritAttrs: false })
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The track range and the step size. */
     min?: number
     max?: number
     step?: number
@@ -33,7 +32,6 @@ const props = withDefaults(
 const model = defineModel<number>({ default: 0 })
 
 const emit = defineEmits<{
-  /** The handle was released, at the end of a drag or of a key sequence. */
   commit: [value: number]
 }>()
 
@@ -56,7 +54,6 @@ let began = 0
 /** Whether the pointer is down on the handle or the track. */
 let dragging = false
 
-/** Whether the person is moving the handle: a value from outside does not move it then. */
 const isMoving = () => walking || dragging
 
 const setValue = (value: number) => {
@@ -84,11 +81,6 @@ const onMove = (value: number[] | undefined) => {
   if (typeof next === 'number') setValue(next)
 }
 
-/**
- * The handle taken hold of by the keys, and moved to where the key leaves it. A
- * key held down and a key struck again are one walk, which is over when the key
- * is release.
- */
 const onKeyDown = (event: KeyboardEvent) => {
   if (!isWalkingKey(event.key)) return
   event.preventDefault()
@@ -105,18 +97,12 @@ const onKeyDown = (event: KeyboardEvent) => {
   if (next !== null) setValue(next)
 }
 
-/** The handle release, at what the walk left it standing at. */
 const onRelease = () => {
   if (!walking) return
   walking = false
   if (handed !== began) emit('commit', handed)
 }
 
-/**
- * The handle come to rest under the pointer. What it came to rest at is handed
- * on before the commit is emitted, so a caller acting on the second has
- * the first.
- */
 const onCommit = (value: number[]) => {
   const next = value[0]
   if (typeof next !== 'number') return
@@ -124,12 +110,10 @@ const onCommit = (value: number[]) => {
   emit('commit', next)
 }
 
-/** The pointer goes down: the handle is the person's until the pointer is up. */
 const onPointerDown = () => {
   if (!props.isDisabled) dragging = true
 }
 
-/** The pointer is up or cancelled, or the track lost it. */
 const onPointerEnd = () => {
   dragging = false
 }

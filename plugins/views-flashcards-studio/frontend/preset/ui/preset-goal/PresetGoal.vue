@@ -44,7 +44,6 @@ const targetValueText = computed(() =>
 /** Why the preset schedules nothing, and empty while it schedules something. */
 const stoppedMessage = computed(() => words.stopped(stoppedAt.value))
 
-// --- Handlers ---
 function onSelectGoal(one: string) {
   props.state.chooseGoal(one as Goal)
 }

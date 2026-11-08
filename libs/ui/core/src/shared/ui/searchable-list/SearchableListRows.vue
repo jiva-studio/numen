@@ -10,11 +10,8 @@ import { getHeadings, type ListRow } from './rows'
 
 const props = defineProps<{
   rows: readonly ListRow[]
-  /** The row the keyboard is on. */
   activeIndex: number
-  /** The identifier of the item in force. */
   current: string | null
-  /** The identifier of the list, which the ones of its rows are made from. */
   listId: string
   label: string
 }>()
@@ -31,10 +28,6 @@ const list = useTemplateRef<HTMLElement>('list')
 /** The group name drawn over each row, where there is one. */
 const headings = computed(() => getHeadings(props.rows))
 
-/**
- * Brings the row the keyboard is on into view by scrolling the list alone: scrolling the page
- * to a row the frame still hides would move whatever the frame is placed over.
- */
 const scrollToActive = (): void => {
   const view = list.value
   const row = view?.querySelector('[aria-selected="true"]')

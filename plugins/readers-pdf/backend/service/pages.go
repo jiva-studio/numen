@@ -76,7 +76,6 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// renderPage draws one page of the PDF bytes raw as JPEG bytes, pixelWidth pixels across or as large as fits.
 func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, pixelWidth int) (encoded []byte, err error) {
 	scan, err := workers.OpenBytes(raw)
 	if err != nil {

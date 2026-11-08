@@ -163,8 +163,6 @@ type ReviewAPI interface {
 	ReviewStatsAPI
 }
 
-// mountAPI mounts every method of the three groups on the API and returns the first failure to
-// mount one.
 func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI ReviewAPI) error {
 	handle(a, "ListCardModels", cardsAPI.ListCardModels)
 	handle(a, "CreateCardModel", cardsAPI.CreateCardModel)
@@ -194,8 +192,6 @@ func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI
 	return a.Err()
 }
 
-// handle mounts a unary method. A body that decodes to null is an empty request, and every
-// collection of the response is encoded as an array or an object.
 func handle[Req, Res any](a *server.API, method string, fn func(context.Context, *Req) (*Res, error)) {
 	server.Handle(a, method, func(ctx context.Context, req *Req) (*Res, error) {
 		if req == nil {
@@ -210,7 +206,6 @@ func handle[Req, Res any](a *server.API, method string, fn func(context.Context,
 	})
 }
 
-// stream mounts a server-stream method with the same request and response rules as handle.
 func stream[Req, Res any](
 	a *server.API, method string, fn func(context.Context, *Req, func(*Res) error) error,
 ) {

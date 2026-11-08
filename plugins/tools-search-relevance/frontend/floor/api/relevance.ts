@@ -20,7 +20,6 @@ export interface Calibration {
   readonly histogram: readonly number[]
   readonly queryCount: number
   readonly passageCount: number
-  /** Seconds since the epoch. */
   readonly calibratedAt: number
 }
 

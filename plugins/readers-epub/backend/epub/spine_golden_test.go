@@ -22,7 +22,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// isUpdating reports whether the run was asked to write the goldens again.
 func isUpdating() bool {
 	return flag.Lookup(updateFlag).Value.String() == "true"
 }
@@ -63,8 +62,6 @@ func TestABookIsReadAsTheGoldenReturnsItIs(t *testing.T) {
 	}
 }
 
-// formatGolden is the book as the golden holds it. The text comes last, so a diff in
-// the numbers is read before a diff in the words.
 func formatGolden(book *epub.Book) string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "title\t%s\ntier\t%s\nlayout\t%s\ndirection\t%s\nbytes\t%d\npage\t%d\npages\t%d\n",
@@ -180,7 +177,6 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 	}
 }
 
-// seamMarkup is the spine document the corpus is taken from.
 func seamMarkup(t *testing.T) *epub.Markup {
 	t.Helper()
 	rendered, err := read(t, seamBook(t)).Markup(middleDoc)
@@ -190,14 +186,11 @@ func seamMarkup(t *testing.T) *epub.Markup {
 	return rendered
 }
 
-// seamBook zips the committed fixture the corpus is drawn from.
 func seamBook(t *testing.T) []byte {
 	t.Helper()
 	return buildReversedArchive(t, partsIn(t, filepath.Join("testdata", "seam")))
 }
 
-// pictures are the entries of the archive a document draws, and none of the
-// pictures written into the markup itself.
 func pictures(root *html.Node) []string {
 	var out []string
 	for _, found := range elements(root, "img") {

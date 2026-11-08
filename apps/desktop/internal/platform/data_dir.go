@@ -24,7 +24,6 @@ func GetIndexPath() (string, error) {
 // appFolder is the application's folder inside the data folder.
 const appFolder = "numen"
 
-// getDataDir is the folder an operating system keeps user application data in.
 func getDataDir(goos string, getEnv func(string) string, getHome func() (string, error)) (string, error) {
 	switch goos {
 	case "windows":

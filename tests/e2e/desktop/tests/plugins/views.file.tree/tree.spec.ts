@@ -15,17 +15,14 @@ import {
 } from '../../support/layout.js'
 import { getVaultPath, readNote } from '../../support/vault.js'
 
-/** Whether a file exists at the path, relative to the folder of the vault, on the disk. */
 const isOnDisk = async (vault: string, path: string): Promise<boolean> =>
   access(join(vault, path)).then(
     () => true,
     () => false,
   )
 
-/** The field a row's name is typed into, which the tree opens on the row being named. */
 const getNameField = (page: Page) => page.getByRole('tree').getByRole('textbox')
 
-/** Chooses an item of the New submenu of the menu on a row. */
 const chooseNewItem = async (page: Page, row: string, item: string): Promise<void> => {
   await getRow(page, row).click({ button: 'right' })
   // The submenu opens over the item that opens it once the pointer reaches it.
@@ -35,7 +32,6 @@ const chooseNewItem = async (page: Page, row: string, item: string): Promise<voi
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
-/** Makes `item` in the folder `row` from the files tab, under the name typed. */
 const nameNewItem = async (page: Page, row: string, item: string, name: string) => {
   await openWorkspace(page)
   await showInFiles(page, [])

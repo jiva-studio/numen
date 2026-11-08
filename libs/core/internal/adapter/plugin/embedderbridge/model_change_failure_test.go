@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// failureReports collects the errors of failed reads of the model.
 func failureReports(bridge *Embedder) chan error {
 	reports := make(chan error, 8)
 	bridge.OnModelReadError(func(err error) { reports <- err })

@@ -16,41 +16,29 @@ import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '@numen/pl
 
 /** The words the panel sets up itself. */
 export interface ConversationStrings {
-  /** The line shown before the agent has reached for anything. */
   readonly thinking: string
-  /** Shown when the agent could not be reached at all. */
   readonly unreachable: string
-  /** Shown when the agent finished without saying anything. */
   readonly nothing: string
 }
 
 export interface AskOptions {
   readonly agentId?: string
   readonly modelId?: string
-  /** The depth of reasoning, by the name of the level. */
   readonly reasoning?: string
 }
 
 export interface Conversation {
   readonly turns: Ref<Turn[]>
-  /** True from the moment a question is sent until its answer settles or is stopped. */
   readonly isAnswerPending: Readonly<Ref<boolean>>
   readonly ask: (question: string, focus: string, options?: AskOptions) => Promise<void>
-  /** The location in a source that a line refers to, for a line that opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
-  /** Stops the answer in progress; the conversation keeps what arrived. */
   readonly stop: () => void
-  /**
-   * The conversation has ended: the answer in progress is stopped, and the agent
-   * is notified so it can release its conversation state.
-   */
   readonly finish: () => void
 }
 
 export interface ConversationOptions {
   readonly agent: AgentPort
   readonly words: ConversationStrings
-  /** What this conversation thread is called, for as long as it is open. */
   readonly conversation: string
   readonly paint?: Paint | undefined
 }
@@ -120,7 +108,6 @@ export function useConversation(options: ConversationOptions): Conversation {
   }
 }
 
-/** Tells the agent the conversation is over; the tab closes whether the agent is told or not. */
 function closeAgentConversation(agent: AgentPort, conversation: string): void {
   new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(() => undefined)
 }
@@ -183,10 +170,6 @@ interface Flight {
   readonly clear: () => void
 }
 
-/**
- * The answer on its way. `isAnswerPending` is derived from the one flight held, which is set
- * when a question is sent and dropped once, by `stop` or by `endFlight`, whichever comes first.
- */
 function useFlightState() {
   const flight = shallowRef<Flight | null>(null)
   const isAnswerPending = computed(() => flight.value !== null)

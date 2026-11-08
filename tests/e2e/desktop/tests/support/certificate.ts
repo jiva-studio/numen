@@ -22,7 +22,6 @@ export const getCertificateFile = (port: string): string =>
 export const getKeyFile = (port: string): string =>
   path.join(os.tmpdir(), `numen-e2e-key-${port}.pem`)
 
-/** The base64 SHA-256 of the public key of the certificate in file, the form of Chromium's SPKI list. */
 const getPublicKeyHash = (file: string): string => {
   if (!fs.existsSync(file)) throw new Error(`the debug server wrote no certificate to ${file}`)
   const publicKey = new X509Certificate(fs.readFileSync(file)).publicKey

@@ -8,21 +8,15 @@ import type { PaletteAction } from '../lib/item'
 
 export interface ActionPanelState {
   readonly open: Ref<boolean>
-  /** An action chosen in the panel, on the item it was opened about. */
   readonly chooseAction: (action: string) => void
-  /** A press anywhere but on the panel puts the panel away. */
   readonly onPress: () => void
-  /** A press on the backdrop closes the panel and the palette beneath it. */
   readonly onBackdrop: () => void
 }
 
 export interface ActionPanelOptions {
   readonly getActions: () => readonly PaletteAction[]
-  /** The item the panel is about, by its identity. */
   readonly getLit: () => string | undefined
-  /** An item was chosen with an action. */
   readonly choose: (item: string, action: string) => void
-  /** Requests that the palette close. */
   readonly dismiss: () => void
 }
 

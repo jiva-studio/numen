@@ -10,16 +10,12 @@ import { useLongPress, LONG_PRESS_DELAY } from './longPress'
 
 /** The node a strategy is watching, in the only two terms it needs. */
 export interface ReachSite {
-  /** Whether this node will take a gesture now. */
   readonly ready: () => boolean
-  /** Begin one from this press, which the gesture then follows. */
   readonly reach: (event: PointerEvent) => void
 }
 
 export interface ReachStrategy {
-  /** Whether the node draws a handle for a pointer to press. */
   readonly hasHandle: boolean
-  /** The additional listeners the node attaches. Called once, inside the node's scope. */
   readonly listeners: (site: ReachSite) => Record<string, (event: PointerEvent) => void>
 }
 

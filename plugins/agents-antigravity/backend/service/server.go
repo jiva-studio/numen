@@ -93,7 +93,6 @@ func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.Progr
 	return []*agentrun.Program{antigravity}, nil
 }
 
-// getFamilies are the models the program lists, the ones that differ by level folded into one.
 func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
 	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
 	items, _, err := s.getModelCache().Get(ctx, strings.Join(command, " "), list)
@@ -113,8 +112,6 @@ func foldModels(items []antigravityModel) []reasoning.Family {
 	return reasoning.Fold(models)
 }
 
-// resolveModel sets the model of the request to the one the program lists for the model and the level
-// the request names.
 func (s *agentServer) resolveModel(ctx context.Context, req *agentrun.Request) {
 	if req.Model == "" || req.Model == defaultModelName {
 		return

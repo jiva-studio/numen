@@ -72,8 +72,7 @@ func (r faultyReader) Read(ctx context.Context, path string) ([]byte, error) {
 // unanswered is an index that cannot say where a wikilink lands.
 type unanswered struct {
 	ports.LinkQueries
-	t *testing.T
-	// isQuiet makes any link resolution request fail the test.
+	t       *testing.T
 	isQuiet bool
 }
 

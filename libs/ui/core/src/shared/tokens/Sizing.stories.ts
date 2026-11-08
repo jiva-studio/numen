@@ -129,7 +129,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** One token's length, in the pixels the page draws it at. */
 const measureToken = (token: Token): number => {
   const probe = document.createElement('div')
   probe.style.position = 'fixed'
@@ -141,16 +140,13 @@ const measureToken = (token: Token): number => {
   return width
 }
 
-/** The root's own font size, which is what the interface multiplier sets. */
 const root = () => Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
 
-/** Both multipliers as the page applies them. An empty string is neither. */
 const getScales = () => ({
   interfaceScale: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
   textScale: document.documentElement.style.getPropertyValue('--numen-text-scale'),
 })
 
-/** Put the two on the page, the way the served page carries them. */
 const applyScales = (interfaceScale: string, textScale: string) => {
   const style = document.documentElement.style
   for (const [name, size] of [
@@ -162,11 +158,6 @@ const applyScales = (interfaceScale: string, textScale: string) => {
   }
 }
 
-/**
- * Every token of one kind, against the multiple of itself it should be drawn
- * at. A box is laid out in fractions of a pixel, so each is read to within a
- * twentieth of one.
- */
 const showEach = async (tokens: readonly Token[], times: number) => {
   for (const token of tokens) {
     await expect(measureToken(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)

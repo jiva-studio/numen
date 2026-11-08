@@ -121,8 +121,6 @@ done`+"\n")
 	}
 }
 
-// setUnusableTempDir points every variable the temporary folder is read from at a folder that does
-// not exist.
 func setUnusableTempDir(t *testing.T) {
 	t.Helper()
 	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
@@ -130,7 +128,6 @@ func setUnusableTempDir(t *testing.T) {
 	}
 }
 
-// collect returns every response of a run of the script, for a request that has no tools.
 func collect(t *testing.T, script string) ([]*agentrun.Response, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry

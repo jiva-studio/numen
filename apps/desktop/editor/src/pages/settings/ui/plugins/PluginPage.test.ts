@@ -26,7 +26,6 @@ const FILE = {
   [SECOND.id]: { executablePath: '/opt/second/bin/second-cli' },
 }
 
-/** Answers the test lets through by plugin id, in the order it chooses. */
 const createHeld = <T>() => {
   const answers = new Map<string, (value: T) => void>()
   const call = (pluginId: string) =>

@@ -15,7 +15,6 @@ type linkCache struct {
 	byPath  map[string][]domain.ResolvedLink
 }
 
-// get returns the links of the note at path.
 func (c *linkCache) get(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
 	if links, ok := c.byPath[path]; ok {
 		return links, nil
@@ -31,7 +30,6 @@ func (c *linkCache) get(ctx context.Context, path string) ([]domain.ResolvedLink
 	return links, nil
 }
 
-// isNavigable reports whether a link is a record of a connection inside the vault.
 func (c *linkCache) isNavigable(l domain.ResolvedLink) bool {
 	return l.ToVault == c.vault.ID && domain.IsConnectionRole(l.Role)
 }
@@ -45,11 +43,6 @@ type record struct {
 // pairKey is a pair of notes, the earlier one in the drawing order first.
 type pairKey [2]string
 
-// getConnections returns one connection for every pair of drawn notes that a
-// navigable record joins, in the order the pairs are first found: the records
-// of each note in drawing order, then in the order they are written. Every line
-// the plex draws comes from one of these, whether it ends at the note in focus
-// or joins two other notes.
 func getConnections(ctx context.Context, cache *linkCache, paths []string) ([]domain.Connection, error) {
 	pairs, records, err := collectRecords(ctx, cache, paths)
 	if err != nil {
@@ -69,8 +62,6 @@ type pairRecords struct {
 	byPair   map[pairKey][]record
 }
 
-// add files a record under its pair; a record to a note that is not drawn, or to
-// its own author, joins no pair.
 func (p *pairRecords) add(author string, l domain.ResolvedLink) {
 	target, isDrawn := p.position[l.To]
 	if !isDrawn || l.To == author {
@@ -86,7 +77,6 @@ func (p *pairRecords) add(author string, l domain.ResolvedLink) {
 	p.byPair[key] = append(p.byPair[key], record{author: author, link: l})
 }
 
-// collectRecords groups the navigable records between the given notes by pair.
 func collectRecords(
 	ctx context.Context, cache *linkCache, paths []string,
 ) ([]pairKey, map[pairKey][]record, error) {
@@ -108,8 +98,6 @@ func collectRecords(
 	return found.pairs, found.byPair, nil
 }
 
-// getUpper returns the note a hierarchical record makes the parent of the pair,
-// and an empty string for a jump.
 func getUpper(key pairKey, r record) string {
 	if r.link.Role == domain.RoleChild {
 		return r.author
@@ -123,10 +111,6 @@ func getUpper(key pairKey, r record) string {
 	return key[0]
 }
 
-// getParent returns which note of a pair is the parent and which the child.
-// The later drawn note is the parent when each is the other's parent, so a
-// neighbour outranks the focus as a parent. Notes joined by jumps only keep
-// the same order. The last result is true when the pair is hierarchical.
 func getParent(key pairKey, records []record) (parent, child string, isHierarchical bool) {
 	earlier, later := key[0], key[1]
 	hasEarlierParent, hasLaterParent := false, false
@@ -141,10 +125,6 @@ func getParent(key pairKey, records []record) (parent, child string, isHierarchi
 	return later, earlier, hasLaterParent
 }
 
-// createConnection joins the records of one pair. A hierarchical connection
-// runs from the parent to the child; a connection of jumps runs from the later
-// drawn note to the earlier. A record of another kind or the other direction is
-// left out, and of two equal records the first written stays.
 func createConnection(key pairKey, records []record) domain.Connection {
 	parent, child, isHierarchical := getParent(key, records)
 	roleOfChild, roleOfParent := domain.RoleJump, domain.RoleJump

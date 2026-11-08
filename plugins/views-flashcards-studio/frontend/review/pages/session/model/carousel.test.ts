@@ -26,7 +26,6 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** A press on the strip, by the button and at the place a test names. */
 const press = (more: { button?: number; clientX?: number; pointerId?: number } = {}) => {
   const event = new MouseEvent('pointerdown', {
     button: more.button ?? 0,
@@ -36,11 +35,6 @@ const press = (more: { button?: number; clientX?: number; pointerId?: number } =
   return event as PointerEvent
 }
 
-/**
- * The strip, its window and its card, with what the owner holds standing in a
- * ref. Every place the strip is set to is kept with the smoothing it was set
- * under.
- */
 const createStrip = (
   initialPlace: PanelPlace = 'here',
   more: { hasCard?: boolean; owner?: Ref<PanelPlace> } = {},
@@ -384,7 +378,6 @@ describe('a strip taken off the screen', () => {
   })
 })
 
-/** The owner of the strip's position, which records every write made to it. */
 const createOwner = (place: PanelPlace) => {
   const target = ref<PanelPlace>(place)
   const writes: PanelPlace[] = []

@@ -15,7 +15,6 @@ import type { Conflict } from './flush'
 /** The words this test puts its notes in. A screen has more; these are enough. */
 type Word = 'clean' | 'unsaved' | 'stale' | 'gone'
 
-/** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
   const states = ref<Record<string, Word>>({})
   const calls: string[] = []
@@ -34,7 +33,6 @@ const notes = () => {
   }
 }
 
-/** A quit that keeps every conflict standing until it is dropped. */
 const quit = () => {
   const raised = new Map<string, Conflict>()
   return {

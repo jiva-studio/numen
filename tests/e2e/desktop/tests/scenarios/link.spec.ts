@@ -27,7 +27,6 @@ const SECOND_VIDEO_ADDRESS = 'https://www.youtube.com/watch?v=tidalmill02'
 /** The link note the importer names after the second video's address, at the root of the vault. */
 const LINK_NOTE = 'https---www.youtube.com-watch-v=tidalmill02.md'
 
-/** The paths of the tabs the core keeps for the vault, which the window opens after a reload. */
 const readOpenPaths = async (page: Page): Promise<string[]> => {
   const answer = await page.request.post('/numen.v1.WorkspaceService/ReadOpenTabs', {
     data: {},

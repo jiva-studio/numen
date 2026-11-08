@@ -11,11 +11,8 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    /** Width, as a length. */
     wide?: string
-    /** Height, as a length. */
     high?: string
-    /** Rounded to its own ends, where what is awaited is drawn as a pill. */
     isPill?: boolean
   }>(),
   { wide: '100%', high: '1em', isPill: false },

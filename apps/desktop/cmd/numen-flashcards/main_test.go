@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// notes is a vault holding two notes.
 func getNotes() map[string]string {
 	return map[string]string{
 		"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
@@ -26,8 +25,6 @@ func getNotes() map[string]string {
 	}
 }
 
-// makeWindow is this window as the binary builds it: an installation of its own, an index it may
-// write, and two vaults.
 func makeWindow(
 	t *testing.T,
 ) (container.Config, *container.Index, *container.OpenVaults, *shell.API, []domain.Vault) {
@@ -60,7 +57,6 @@ func makeWindow(
 	return cfg, db, vaults, &shell.API{}, target
 }
 
-// vaultOf is a folder holding the notes, as a vault.
 func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 

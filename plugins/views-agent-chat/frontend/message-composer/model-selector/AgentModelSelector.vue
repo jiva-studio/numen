@@ -12,9 +12,7 @@ export interface AgentModelOption {
   readonly modelTitle: string
   readonly isAvailable: boolean
   readonly isDefault?: boolean
-  /** The reasoning depths the model supports. None when it offers no choice. */
   readonly reasoningLevels?: readonly ReasoningLevelOption[]
-  /** The level the model works at unasked, empty where it names none. */
   readonly defaultReasoning?: string
 }
 
@@ -24,7 +22,6 @@ const props = withDefaults(
     selectedAgentId?: string
     selectedModelId?: string
     isDisabled?: boolean
-    /** What the control reads where there are no options. */
     emptyLabel?: string
   }>(),
   {

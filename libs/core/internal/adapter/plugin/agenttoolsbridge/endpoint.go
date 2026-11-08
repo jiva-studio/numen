@@ -32,23 +32,18 @@ const endpointPath = "/mcp"
 
 // endpoint is an MCP server on a loopback port that serves a fixed set of tools behind a token.
 type endpoint struct {
-	url    string
-	token  string
-	server *http.Server
-	// stopped is closed once the server has stopped serving.
-	stopped chan struct{}
-	// limit is how long close waits for the requests in progress.
-	limit time.Duration
-	// states holds the state of each open connection of the server.
+	url      string
+	token    string
+	server   *http.Server
+	stopped  chan struct{}
+	limit    time.Duration
 	statesMu sync.Mutex
 	states   map[net.Conn]http.ConnState
 	once     sync.Once
 	err      error
-	// serveErr is the error that ended the server other than a close. It is set before stopped is closed.
 	serveErr error
 }
 
-// trackConnection records the state of a connection of the server.
 func (e *endpoint) trackConnection(conn net.Conn, state http.ConnState) {
 	e.statesMu.Lock()
 	defer e.statesMu.Unlock()
@@ -59,7 +54,6 @@ func (e *endpoint) trackConnection(conn net.Conn, state http.ConnState) {
 	e.states[conn] = state
 }
 
-// getActiveCount is the number of connections with a request in progress.
 func (e *endpoint) getActiveCount() int {
 	e.statesMu.Lock()
 	defer e.statesMu.Unlock()
@@ -77,8 +71,6 @@ type toolCaller interface {
 	callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (*v1.CallToolResponse, error)
 }
 
-// serveEndpoint serves the tools on a loopback port the machine picks, under a new token. Every call
-// is made in the scope given, whatever `_meta` the agent sends.
 func serveEndpoint(ctx context.Context, tools []tool, scope callScope, caller toolCaller) (*endpoint, error) {
 	token, err := createToken()
 	if err != nil {
@@ -124,9 +116,6 @@ func serveEndpoint(ctx context.Context, tools []tool, scope callScope, caller to
 	return served, nil
 }
 
-// close stops the endpoint once and returns when it has stopped serving. Requests in progress
-// get the limit to finish, and connections still serving a request after it are cut, which close
-// reports as an error. A connection with no request in progress is closed immediately.
 func (e *endpoint) close(ctx context.Context) error {
 	e.once.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, e.limit)
@@ -158,7 +147,6 @@ func (e *endpoint) shutdown(ctx context.Context) error {
 	}
 }
 
-// declareTool returns the tool as an MCP client sees it. The annotations are the hints of the tool.
 func declareTool(spec *v1.PluginTool) *sdk.Tool {
 	hints := spec.GetHints()
 	isDestructive, isOpenWorld := hints.GetDestructive(), hints.GetOpenWorld()
@@ -180,10 +168,6 @@ func declareTool(spec *v1.PluginTool) *sdk.Tool {
 	return declared
 }
 
-// readInputSchema returns the input schema of a tool as a JSON object of type "object", which MCP
-// requires. A JSON object of another type or none is given the type "object" and keeps its other
-// keys; anything else is replaced by the empty object schema. The same rules are in
-// plugins/agents-mcp-server/backend/service/aggregator.go.
 func readInputSchema(raw []byte) json.RawMessage {
 	schema, isObject := readObject(raw)
 	if !isObject {
@@ -200,7 +184,6 @@ func readInputSchema(raw []byte) json.RawMessage {
 	return encoded
 }
 
-// readObject decodes raw as a JSON object, and reports false for anything else.
 func readObject(raw []byte) (map[string]json.RawMessage, bool) {
 	var object map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
@@ -209,13 +192,11 @@ func readObject(raw []byte) (map[string]json.RawMessage, bool) {
 	return object, true
 }
 
-// hasObjectType reports whether the type of the schema is the string "object".
 func hasObjectType(schema map[string]json.RawMessage) bool {
 	var schemaType string
 	return json.Unmarshal(schema["type"], &schemaType) == nil && schemaType == "object"
 }
 
-// readResult is what the plugin answered, as the result an agent reads.
 func readResult(name string, res *v1.CallToolResponse) *sdk.CallToolResult {
 	switch res.GetError() {
 	case v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED:
@@ -243,7 +224,6 @@ func newErrorResult(text string) *sdk.CallToolResult {
 	return &sdk.CallToolResult{IsError: true, Content: []sdk.Content{&sdk.TextContent{Text: text}}}
 }
 
-// createToken is 32 random bytes in hex.
 func createToken() (string, error) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
@@ -252,9 +232,6 @@ func createToken() (string, error) {
 	return hex.EncodeToString(raw), nil
 }
 
-// requireToken rejects a request from a browser page outside the machine with 403, then answers only
-// the requests that present the token as a bearer. The same rules are in
-// plugins/agents-mcp-server/backend/service/auth.go.
 func requireToken(token string, next http.Handler) http.Handler {
 	expected := []byte("Bearer " + token)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -272,8 +249,6 @@ func requireToken(token string, next http.Handler) http.Handler {
 	})
 }
 
-// isLoopbackOrigin reports whether origin is an http or https URL whose host is localhost or a
-// loopback IP address.
 func isLoopbackOrigin(origin string) bool {
 	parsed, err := url.Parse(origin)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {

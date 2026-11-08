@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// opening is a store on a vault of one file, which is what the store operations
-// below are measured on.
 func opening(b *testing.B) *derivedfile.DerivedStore {
 	b.Helper()
 	root := b.TempDir()

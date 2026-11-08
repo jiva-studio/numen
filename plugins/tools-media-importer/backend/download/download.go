@@ -112,7 +112,6 @@ func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cm
 
 const stopGrace = 5 * time.Second
 
-// resolveProgram picks the program a setting names, then the tool on PATH.
 func resolveProgram(named Tool, tool string) program {
 	if len(named.Command) > 0 {
 		return program{

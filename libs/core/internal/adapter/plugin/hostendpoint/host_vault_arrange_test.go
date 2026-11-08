@@ -224,8 +224,6 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 	return l.missing[v.ID]
 }
 
-// newArrangeClient serves the vault endpoint over a host lending the vault of rivers and the list,
-// nil for none, with md.numen.a granted the permissions named.
 func newArrangeClient(
 	t *testing.T, list pluginport.PluginVaultList, granted ...string,
 ) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
@@ -247,7 +245,6 @@ func isDenied(err error) bool {
 	return errors.As(err, &failure) && failure.Code() == connect.CodePermissionDenied
 }
 
-// callNoteChanges makes the rename, the move and the removal of a note and returns the error of each.
 func callNoteChanges(t *testing.T, client numenv1connect.HostVaultServiceClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
@@ -257,7 +254,6 @@ func callNoteChanges(t *testing.T, client numenv1connect.HostVaultServiceClient)
 	return map[string]error{"RenameNote": renameErr, "MoveNotes": moveErr, "RemoveNotes": removeErr}
 }
 
-// callVaultChanges makes the four changes of the list of vaults and returns the error of each.
 func callVaultChanges(t *testing.T, client numenv1connect.HostVaultServiceClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()

@@ -13,8 +13,6 @@ type fetched struct {
 	Body       []byte
 }
 
-// fetch sends a GET request bound to the test context, reads the whole response
-// body and closes it. It fails the test when any step fails.
 func fetch(t testing.TB, client *http.Client, address string) fetched {
 	t.Helper()
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, address, nil)

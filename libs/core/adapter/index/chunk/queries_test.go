@@ -28,7 +28,6 @@ const (
 	century                = int64(1_000_000_000_000_000_000)
 )
 
-// migrated is the schema, built once for this binary.
 func newMigrated() *testsupport.Template {
 	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path)
@@ -39,7 +38,6 @@ func newMigrated() *testsupport.Template {
 	})
 }
 
-// seedBits is a coarse vector: one bit per dimension, every byte the seed.
 func seedBits(seed byte) []byte {
 	b := make([]byte, 128)
 	for i := range b {
@@ -48,7 +46,6 @@ func seedBits(seed byte) []byte {
 	return b
 }
 
-// seedVector is the vector a seed maps to; quantised it gives seedBits.
 func seedVector(seed byte) []float32 {
 	v := make([]float32, 1024)
 	for i := range v {
@@ -158,7 +155,6 @@ func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Pas
 	return unembedded
 }
 
-// embed assigns a vector at the seed to every small chunk of the path that lacks one.
 func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed byte) {
 	t.Helper()
 	var vectors []chunk.Vector
@@ -195,8 +191,6 @@ func getSources(found []domain.Passage) []string {
 	return out
 }
 
-// broken is a reader over an index whose file was altered, after `seed` filled
-// it, by the statements given. The vaults are still known to it.
 func broken(t *testing.T, seed func(db *index.DB), statements ...string) *chunk.Queries {
 	t.Helper()
 	db, path := openIndexAt(t)
@@ -217,7 +211,6 @@ func broken(t *testing.T, seed func(db *index.DB), statements ...string) *chunk.
 	return chunk.NewQueries(raw)
 }
 
-// closed is a reader over an index that was closed.
 func closed(t *testing.T) *chunk.Queries {
 	t.Helper()
 	db := openIndex(t)
@@ -367,8 +360,6 @@ func TestWhatIsBelowAPathFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-// searchFixture holds a book, a note and a book of the other vault, each with
-// a word of its own and one they share.
 func searchFixture(t *testing.T) *index.DB {
 	t.Helper()
 	db := openIndex(t)
@@ -616,8 +607,6 @@ func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-// meaningFixture holds three books whose vectors lie at different distances
-// from the seed 0xF0, a note at the farthest, and a book of the other vault.
 func meaningFixture(t *testing.T) *index.DB {
 	t.Helper()
 	db := openIndex(t)

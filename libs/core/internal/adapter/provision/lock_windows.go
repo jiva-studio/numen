@@ -9,8 +9,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// acquireFileLock takes a lock on the first byte of the file and returns what lets it go.
-// Windows drops the lock when the handle closes.
 func acquireFileLock(path string) (func() error, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {

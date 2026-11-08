@@ -17,7 +17,6 @@ import type {
 
 export interface TabLinksDeps {
   readonly write: TabLinksWriter
-  /** Receives changes the core rejected. */
   readonly onError: (error: unknown) => void
 }
 

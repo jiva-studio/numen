@@ -13,49 +13,22 @@ import (
 //
 // It is read from the frontmatter of a note of `type: preset`. A key the file
 type Preset struct {
-	// Goal is the value the one control steers. The value itself is in the
-	// field that goal names.
 	Goal Goal
-	// By is the day the material is to be in the head, and is read when the
-	// goal is GoalDate.
-	By time.Time
+	By   time.Time
 
-	// MinutesADay is how long a day of review runs, spent against the time each
-	// answer took. It closes the day under a goal of minutes, where zero is a
-	// pause, and no other goal reads it.
 	MinutesADay int
-	// NewADay and ReviewsADay are how many cards of each kind a day holds.
 	NewADay     int
 	ReviewsADay int
-	// Retention is the share of cards recalled when they come round again.
-	Retention float64
+	Retention   float64
 
-	// Rule is the criterion for a learned review card: Interval is used under
-	// RuleInterval, Retention under RuleRetention.
-	Rule LearnedRule
-	// Interval is how long a review card is sent away for before it is learned, in
-	// days, and is read under RuleInterval.
+	Rule     LearnedRule
 	Interval int
 
-	// Counts is the unit of a day's budget: the cards a day holds, or the number
-	// of times they are presented.
 	Counts BudgetUnit
 
-	// Backlog is how much of a day goes to what is overdue before anything
-	// unbegun is offered, as a share in hundredths. At a hundred the debt is
-	// paid first and new cards are begun on what is left; at nothing the new
-	// material comes first; between them the day is split, and a side that runs
-	// short leaves the rest to the other.
-	//
-	// It sets what a day is spent on, closes nothing, and applies where one budget
-	// is divided between the two.
 	Backlog int
 
-	// Load is how much of a day's load each day of the week carries, in per
-	// cent. A day the preset does not name carries the whole of it, and a day
-	// at nothing schedules nothing.
-	Load map[time.Weekday]int
-	// IsEvenLoad is whether days are made to resemble each other.
+	Load       map[time.Weekday]int
 	IsEvenLoad bool
 }
 
@@ -350,12 +323,6 @@ const NeverLearns = -1
 // learned.
 const LearnsUnasked = -2
 
-// getPace is how much of the material a day holds when a date sets the pace: what
-// is left to begin, over the days on which beginning a card still leaves it time
-// to be learned by the day the preset aims at. A day past the one it aims at
-// holds none of it.
-//
-// pace that gets there every review card that can.
 func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	reviewDays := p.getReviewDays(d, now)
 	if reviewDays <= 0 {
@@ -371,13 +338,6 @@ func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int
 	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
-// getCapacityToBegin returns the capacity a date leaves for beginning cards: the
-// review days from the day containing now up to the last day on which a card
-// begun still completes its learning before the day the preset targets.
-//
-// Each day counts for the share of the load its weekday carries, and learning
-// is counted in review days, so the days it takes are weighted by the shares
-// they carry.
 func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -398,12 +358,6 @@ func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float6
 	return p.getDaysOfReview(from, span)
 }
 
-// getReviewDays returns how many days of review there are from the day holding now through to
-// the day this preset aims at, counting both. A preset aiming at no day, or at
-// one behind us, has none.
-//
-// Each day counts for the share of the load its day of the week carries, so a
-// day at nothing is no day of review at all and a day at half is half of one.
 func (p Preset) getReviewDays(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -417,8 +371,6 @@ func (p Preset) getReviewDays(d Day, now time.Time) float64 {
 	return p.getDaysOfReview(from, int(to.Sub(from).Hours()/24)+1)
 }
 
-// getDaysOfReview is how many whole days of review the preset holds over the
-// calendar days from this one.
 func (p Preset) getDaysOfReview(from time.Time, days int) float64 {
 	if days <= 0 {
 		return 0
@@ -440,9 +392,6 @@ func (p Preset) IsPast(d Day, now time.Time) bool {
 	return !now.Before(d.GetEndOfDate(p.By))
 }
 
-// readGoal parses the goal field from frontmatter. A key that cannot be read is
-// recorded as a problem against the note and keeps its default; the file is
-// never repaired.
 func readGoal(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["goal"]
 	if !present || raw == nil {
@@ -459,7 +408,6 @@ func readGoal(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readLearnedRule parses the learned field from frontmatter.
 func readLearnedRule(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["learned"]
 	if !present || raw == nil {
@@ -476,7 +424,6 @@ func readLearnedRule(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readBudgetUnit parses the counts field from frontmatter.
 func readBudgetUnit(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["counts"]
 	if !present || raw == nil {
@@ -493,7 +440,6 @@ func readBudgetUnit(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readByDate parses the by_date field from frontmatter.
 func readByDate(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["by_date"]
 	if !present || raw == nil {
@@ -520,7 +466,6 @@ func readByDate(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readSchedule parses goal, learned rule, counts unit, and target date from frontmatter.
 func readSchedule(front map[string]any, p *Preset, problems *[]string) {
 	readGoal(front, p, problems)
 	readLearnedRule(front, p, problems)
@@ -528,7 +473,6 @@ func readSchedule(front map[string]any, p *Preset, problems *[]string) {
 	readByDate(front, p, problems)
 }
 
-// readLimits parses review limits and intervals from frontmatter.
 func readLimits(front map[string]any, p *Preset, problems *[]string) {
 	p.MinutesADay = readWholeNumber(front, "minutes_a_day", GetMinutesADayBounds(), p.MinutesADay, problems)
 	p.NewADay = readWholeNumber(front, "new_a_day", GetNewADayBounds(), p.NewADay, problems)
@@ -537,7 +481,6 @@ func readLimits(front map[string]any, p *Preset, problems *[]string) {
 	p.Interval = readWholeNumber(front, "interval", GetIntervalBounds(), p.Interval, problems)
 }
 
-// readRetention parses the retention target from frontmatter.
 func readRetention(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["retention"]
 	if !present || raw == nil {
@@ -555,7 +498,6 @@ func readRetention(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readEvenLoad parses the even_load boolean flag from frontmatter.
 func readEvenLoad(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["even_load"]
 	if !present || raw == nil {
@@ -569,7 +511,6 @@ func readEvenLoad(front map[string]any, p *Preset, problems *[]string) {
 	p.IsEvenLoad = value
 }
 
-// readDayShare parses a single weekday load percentage from frontmatter.
 func readDayShare(name string, raw any, p *Preset, daysLen int, problems *[]string) {
 	day, recognized := Weekday(name)
 	if !recognized {
@@ -593,7 +534,6 @@ func readDayShare(name string, raw any, p *Preset, daysLen int, problems *[]stri
 	}
 }
 
-// readLoad parses weekly load distribution from frontmatter.
 func readLoad(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["load"]
 	if !present || raw == nil {
@@ -611,7 +551,6 @@ func readLoad(front map[string]any, p *Preset, problems *[]string) {
 	}
 }
 
-// readWeights parses retention, even_load, and weekday load distribution from frontmatter.
 func readWeights(front map[string]any, p *Preset, problems *[]string) {
 	readRetention(front, p, problems)
 	readEvenLoad(front, p, problems)
@@ -646,8 +585,6 @@ func DayName(day time.Weekday) string {
 	return strings.ToLower(day.String()[:3])
 }
 
-// readWholeNumber reads one setting written as a whole number and records a
-// problem when the note's value is invalid.
 func readWholeNumber(
 	front map[string]any, key string, bounds Bounds, fallback int, problems *[]string,
 ) int {
@@ -670,7 +607,6 @@ func readWholeNumber(
 	return fallback
 }
 
-// number converts a YAML number to float64, whichever of the two numeric types the parser produced.
 func number(raw any) (float64, bool) {
 	switch value := raw.(type) {
 	case int:

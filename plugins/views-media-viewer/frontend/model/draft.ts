@@ -8,17 +8,11 @@ import { formatErrorMessage } from '@numen/plugin-sdk'
 
 /** What the words being edited are kept against. */
 export interface DraftOptions {
-  /** The words heard in the recording, in the order they were spoken. */
   cues: Ref<readonly Cue[]>
-  /** Whether the transcript may be written over now. */
   isEditable: Ref<boolean>
-  /** The last write error, shown above the transcript. */
   error: Ref<string>
-  /** How long the typing settles for before the words are written. */
   idleMs: number
-  /** Whether the recording tab is still open. */
   isOpen: () => boolean
-  /** The transcript text as the user has edited it, saved to the recording. */
   write: (cues: readonly Cue[]) => Promise<void>
 }
 

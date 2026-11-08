@@ -17,14 +17,12 @@ type Title = Pick<PlacedEdge, 'titles'>
 
 const getTitles = (edge: PlacedEdge): Title => ({ titles: edge.titles })
 
-/** Where an arriving node unfolds from: the place the new focus started at. */
 function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Position {
   const newFocus = to.nodes.find((node) => node.relation === 'focus')
   const cameFrom = newFocus ? was.get(newFocus.id) : undefined
   return { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
 }
 
-/** A node partway from its start position to its target position. */
 function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode {
   return {
     ...target,
@@ -41,7 +39,6 @@ interface NodeTweenOptions {
   readonly opacity: number
 }
 
-/** A node that was not there before, unfolding from the origin. */
 function openNode(target: PlacedNode, origin: Position, options: NodeTweenOptions): PlacedNode {
   return {
     ...target,
@@ -57,7 +54,6 @@ interface NodeTiming {
   readonly exit: number
 }
 
-/** Every node of both arrangements, currently partway through the movement. */
 function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedNode[] {
   const was = new Map(from.nodes.map((node) => [node.id, node]))
   const will = new Set(to.nodes.map((node) => node.id))
@@ -91,7 +87,6 @@ interface EdgeTweenContext {
   readonly exitOpacity: number
 }
 
-/** Every edge of both arrangements, routed against the nodes as they now stand. */
 function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): PlacedEdge[] {
   const { byId, routing, entryOpacity, exitOpacity } = context
   const wasEdge = new Set(from.edges.map(edgeKey))

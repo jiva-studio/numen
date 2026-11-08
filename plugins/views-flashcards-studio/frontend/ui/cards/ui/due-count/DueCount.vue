@@ -11,16 +11,9 @@ import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
   defineProps<{
-    /** Cards due today. Null until it is counted. */
     due: number | null
-    /**
-     * The number alone. Where a list is long and space is short, the word is
-     * shown once above the list and not on every row of it.
-     */
     isBare?: boolean
-    /** Drawn with its own background, for use on a filled button. */
     isOnButton?: boolean
-    /** The words it is drawn with. */
     words?: DueWords
   }>(),
   { isBare: false, isOnButton: false, words: () => DUE_WORDS },

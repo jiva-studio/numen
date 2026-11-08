@@ -11,7 +11,6 @@ type perfLevel struct {
 	LogicalCPUs  int
 }
 
-// getPerfLevelRank orders the level names Apple chips use; a name outside the list ranks lowest.
 func getPerfLevelRank(name string) int {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "super":
@@ -25,7 +24,6 @@ func getPerfLevelRank(name string) int {
 	}
 }
 
-// pickPerformanceLevel selects the level with the highest-ranked name, and the lowest index among equal ranks.
 func pickPerformanceLevel(levels []perfLevel) (perfLevel, bool) {
 	best := -1
 	for i, level := range levels {

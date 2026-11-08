@@ -5,10 +5,6 @@
 import { writeCharCount, type Turn } from '../lib/turn'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
-/**
- * A tool name as displayed in the panel. A tool with its own title arrives with
- * it; the others arrive named as a program is named.
- */
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
 export interface WorkCall {
@@ -19,15 +15,10 @@ export interface WorkCall {
 }
 
 export interface WorkLine {
-  /** The agent reached for a tool, and how much of it has been written. */
   readonly reach: (call: WorkCall) => void
-  /** What it reached for has answered, so the line stops claiming to run. */
   readonly settle: () => void
-  /** The line comes down. */
   readonly takeDown: () => void
-  /** The wait under it, up whenever nothing more particular is known. */
   readonly setWaiting: (isOn: boolean) => void
-  /** Both lines come down. */
   readonly clear: () => void
 }
 

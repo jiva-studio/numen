@@ -88,9 +88,7 @@ export type HeadingObjection = 'blank' | 'taken'
 
 /** What checking a name came back with. */
 export interface NameCheckResult<Why extends Objection> {
-  /** The name as it would be written, without the space around it. */
   readonly name: string
-  /** Why it cannot be used, and nothing where it can. */
   readonly objection: Why | null
 }
 

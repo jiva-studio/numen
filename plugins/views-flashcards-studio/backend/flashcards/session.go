@@ -18,9 +18,7 @@ var ErrSchedulesNothing = errors.New("this preset schedules nothing today")
 
 // Scope defines the boundaries of a review session.
 type Scope struct {
-	// Deck is the path of one deck.
-	Deck string
-	// Preset is the note path of the preset.
+	Deck    string
 	Preset  string
 	IsNamed bool
 }
@@ -29,18 +27,14 @@ type Scope struct {
 type QueuedReviewCard struct {
 	ReviewCard
 	Schedule review.Schedule
-	// Ahead maps each rating to its resulting interval from now.
-	Ahead map[review.Rating]time.Duration
+	Ahead    map[review.Rating]time.Duration
 }
 
 // SessionResult contains the queued cards and any unwritten decks or skipped log entries.
 type SessionResult struct {
-	// Queue is the list of cards to review in order.
-	Queue []QueuedReviewCard
-	// Unwritten lists deck paths containing cards without an id that could not be saved.
+	Queue     []QueuedReviewCard
 	Unwritten []string
-	// Skipped is the count of unparseable review log lines.
-	Skipped int
+	Skipped   int
 }
 
 // Session builds and orders the cards for a review session.
@@ -127,7 +121,6 @@ func (u Session) Execute(
 	return out, nil
 }
 
-// queueCards lists the due cards with their schedules, then the new cards with none.
 func queueCards(
 	holds asking, schedules map[review.CardID]review.Schedule, policy review.Assignment,
 	dueTable *review.DueByDay, now time.Time,
@@ -150,7 +143,6 @@ func queueCards(
 	return queue
 }
 
-// getIntervals returns the duration until the next review for each rating.
 func getIntervals(
 	assign review.Assignment, dueTable *review.DueByDay, reviewCard review.CardID,
 	s review.Schedule, now time.Time,

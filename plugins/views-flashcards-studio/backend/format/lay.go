@@ -30,7 +30,6 @@ func fillPlaceholders(template string, card Card) string {
 	})
 }
 
-// placeholders is every name a template places, in the order it places them.
 func placeholders(template string) []string {
 	var out []string
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: any negative count returns every match"

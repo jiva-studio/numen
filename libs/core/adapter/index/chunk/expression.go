@@ -49,9 +49,6 @@ func Expression(typed string, growing bool) string {
 	return out.String()
 }
 
-// writeQuoted appends word as an FTS5 string literal, separated from the
-// previous word by a space. Doubling is how a quote is escaped inside an FTS5
-// string.
 func writeQuoted(out *strings.Builder, word string) {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 1: a builder holding a word is at least 3 bytes long, so its length is never 1"
 	if out.Len() > 0 {

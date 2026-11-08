@@ -31,7 +31,6 @@ const model = (
   presence,
 })
 
-/** An agent tab over the models listed and the settings kept. */
 const open = (models: readonly Model[] = [], settings: Record<string, string> = {}) =>
   useAgentConversation(createConversation(), {
     openFileAt: () => undefined,
@@ -43,7 +42,6 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
       models.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
 
-/** The agents the tab offers, each once, in the order offered. */
 const proposed = (state: ReturnType<typeof open>) => [
   ...new Set(state.modelOptions.value.map((one) => one.agentId)),
 ]

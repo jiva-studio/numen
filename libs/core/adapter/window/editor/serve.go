@@ -39,44 +39,26 @@ import (
 // passes behind a vault belong to that vault, and are taken down and built
 // again when another is opened.
 type Installation struct {
-	// State is what every handler reads, and Services the handlers themselves.
 	State    *State
 	Services *Services
 
-	// Embedder fills the index and Asking converts a query into a vector. They
-	// are one object when the settings name one provider, and two providers of
-	// one model when a vault indexed over a network is queried on a machine
-	// without that provider. Nil when the installation has no embedder; Asking
-	// is also nil when the two are not one model. Search then uses words only.
 	Embedder embeddingport.Embedder
 	Asking   embeddingport.Embedder
 
-	// notes and vaults are this installation's use cases, built once.
-	// Everything else working the same vault is served these, so a dependency
-	// named here is named for all of them.
 	notes  note.Scenarios
 	vaults vaults.Scenarios
 
-	made  Assembly
-	tasks *run.Tasks
-	out   io.Writer
-	// checkIdentity rejects a vault whose folder does not carry its identity.
+	made          Assembly
+	tasks         *run.Tasks
+	out           io.Writer
 	checkIdentity vaults.CheckIdentity
-	// models is this machine's models and processor. Each task that
-	// needs them holds them, one run at a time.
-	models *run.Lock
-	// closing signals when the window root context ends.
-	closing <-chan struct{}
-	// indexer updates the index of the vault in the window.
-	indexer *indexing.Worker
-	// embedderError records the error if embedding model initialization failed.
+	models        *run.Lock
+	closing       <-chan struct{}
+	indexer       *indexing.Worker
 	embedderError error
-	// stopEmbedder gives back the models the installation is holding.
-	stopEmbedder func() error
+	stopEmbedder  func() error
 
-	shutdown shutdownState
-	// sessionMu serializes the builds of the vault session: a swap of the vault and a change of the
-	// chunk size.
+	shutdown  shutdownState
 	sessionMu sync.Mutex
 }
 
@@ -228,9 +210,6 @@ func (o *Installation) Refresh() vaults.Refresh {
 	return o.made.GetRefresh()
 }
 
-// updateIndex updates the index for named notes, through whatever is
-// following the vault they are in. A note the window makes is in the index before the
-// answer comes back, so it is drawn as soon as it exists.
 func (o *Installation) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
@@ -277,8 +256,6 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// createWindow is the state a window answers from and the handlers that read
-// it, with the pieces that need no vault.
 func createWindow(
 	made Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
 ) (*State, *Services, error) {
@@ -326,8 +303,6 @@ func createWindow(
 	return state, services, nil
 }
 
-// wireUseCases builds the use cases the window and everything else working its
-// vault are served, and hands each handler the ones it answers through.
 func (o *Installation) wireUseCases() {
 	made, services := o.made, o.Services
 
@@ -400,11 +375,9 @@ func (o *Installation) GetSearch() *search.Search { return o.Services.Search.Fin
 //
 // A window that has closed shows no other vault.
 type shutdownState struct {
-	mu        sync.Mutex
-	isBusy    bool
-	isClosing bool
-	// pluginOpen is the running vault open of a plugin. A close, a quit or a user vault switch
-	// cancels it and waits for it to end.
+	mu         sync.Mutex
+	isBusy     bool
+	isClosing  bool
 	pluginOpen *PluginOpen
 }
 
@@ -412,16 +385,13 @@ type shutdownState struct {
 // given the running open shares the open's lock; a user vault switch is given nil.
 type PluginOpen struct {
 	cancel context.CancelCauseFunc
-	// end closes when the open ends.
-	end chan struct{}
+	end    chan struct{}
 }
 
 // errCancelledByUser is the cause a plugin's vault open is cancelled with when the user closes the window,
 // quits or switches its vault.
 var errCancelledByUser = errors.New("the user closed the window or switched its vault")
 
-// tryBegin starts a flush, or returns the reason one cannot start. A running vault open of a plugin is
-// cancelled and waited for first.
 func (s *shutdownState) tryBegin() error {
 	s.mu.Lock()
 	for s.pluginOpen != nil {
@@ -443,9 +413,6 @@ func (s *shutdownState) tryBegin() error {
 	return nil
 }
 
-// tryBeginPluginOpen starts a plugin's vault open, which a tryBegin cancels with
-// errCancelledByUser. It returns the context of the open, the open and the function that ends it.
-// A vault switch given the open shares the open's lock.
 func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -468,9 +435,6 @@ func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context
 	}, nil
 }
 
-// tryBeginSwitch starts the flush of a vault switch and returns the function that ends it, and
-// whether the switch shares the lock of the running plugin open named by open. Such a switch takes no
-// lock of its own, and a nil open is a user vault switch.
 func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	s.mu.Lock()
 	isInsidePluginOpen := open != nil && s.pluginOpen == open
@@ -484,21 +448,18 @@ func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	return s.endKeepOpen, false, nil
 }
 
-// isClosed is whether the window has closed.
 func (s *shutdownState) isClosed() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.isClosing
 }
 
-// endKeepOpen ends the flush and leaves the window open.
 func (s *shutdownState) endKeepOpen() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.isBusy = false
 }
 
-// end ends the flush. closed is whether the window is now closed.
 func (s *shutdownState) end(closed bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -539,12 +500,6 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
 
-// flushPending has every client write what only it holds, then waits for the
-// writes already taken. It returns whether the flush completed.
-//
-// A silent client is bounded by ctx. A client with a pending user prompt ends the
-// flush with false: the vault stays open until the user responds. The writes
-// themselves have no bound.
 func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
 	if !pages.RequestFlush(ctx) {
 		return false
@@ -615,7 +570,6 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	state.finishTask(pos.ID)
 }
 
-// getDirectChildren returns items in the target folder.
 func getDirectChildren(into string, landed []string) []string {
 	children := make([]string, 0, len(landed))
 	for _, path := range landed {
@@ -626,7 +580,6 @@ func getDirectChildren(into string, landed []string) []string {
 	return children
 }
 
-// describeImportFailures formats import failures into a single descriptive message.
 func describeImportFailures(errs []vaults.ImportFailure) string {
 	if len(errs) == 0 {
 		return ""

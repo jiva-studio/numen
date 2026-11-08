@@ -11,22 +11,13 @@ import (
 // keyPrefix starts the key of every version the plugin makes.
 const keyPrefix = "proofread-"
 
-// getVersionKey is the key of the proofreading of a version. One version has one proofreading,
-// rewritten when it is proofread again.
 func getVersionKey(source domain.TextVersionID) string {
 	sum := sha256.Sum256([]byte(source))
 	return keyPrefix + hex.EncodeToString(sum[:8])
 }
 
-// getFileName is the file of the plugin's folder the corrected text kept under the key is written
-// to, in the common format of text versions.
 func getFileName(key string) string { return key + ".jsonl" }
 
-// applyCorrections is the parts with the corrections in place of the lines they answer for, a
-// line numbered as readLines numbers the parts. A correction keeps the space around the words of
-// the parts it replaces. A correction answering for a run of lines is one part: the place of a
-// timed run spans from the first part's start to the last part's end, and a positioned run keeps
-// the rectangles of its parts on the first part's page.
 func applyCorrections(parts []domain.TextSegment, corrections []Line) []domain.TextSegment {
 	byLine := make(map[int]Line, len(corrections))
 	for _, line := range corrections {
@@ -63,8 +54,6 @@ func getTrailingSpace(text string) string {
 	return text[len(strings.TrimRight(text, " \t\r\n")):]
 }
 
-// joinSelectors is the selector of a run of segments made one: the span of a recording from the
-// first segment's start to the last one's end, and the boxes of the segments on the first one's page.
 func joinSelectors(run []domain.TextSegment) domain.Selector {
 	first, err := readSegmentSelector(run[0].Selector)
 	if err != nil {

@@ -17,7 +17,6 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-// getStatement returns the statement in sql/<name>.sql.
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the text versions of every vault. Reads go through read and
@@ -106,8 +105,6 @@ func (r *Repository) MoveVersions(ctx context.Context, vaultID domain.VaultID, f
 	})
 }
 
-// getRangeUnder is the range of paths under a folder: from its slash to the
-// byte after the slash.
 func getRangeUnder(folder string) (first, past string) {
 	return folder + "/", folder + "0"
 }

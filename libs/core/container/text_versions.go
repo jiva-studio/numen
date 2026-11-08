@@ -28,8 +28,6 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), c.Clock())
 }
 
-// getTextReaders is the text versions sources are read from, or nil where the
-// configuration has none.
 func (c Config) getTextReaders() textport.TextReaders {
 	if c.TextReaders != nil {
 		return c.TextReaders
@@ -54,8 +52,6 @@ func (c Config) SetPluginTexts() {
 	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
-// OpenPluginData is the folders plugins keep in a vault's store and the records of their text
-// versions, and nil where the installation keeps no text versions.
 func (c Config) openPluginData() *textversion.PluginData {
 	if c.TextVersions == nil {
 		return nil

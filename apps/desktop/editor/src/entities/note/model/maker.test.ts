@@ -15,7 +15,6 @@ import type { NewNote } from '@/entities/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
 
-/** A core double that records the requests it receives and answers as the test configures. */
 function fake(
   created: CreateResult = { ok: true, value: { path: 'Untitled note.md' } },
   related: { ok: true; value: string } | { ok: false; error: RelationError } = {

@@ -282,16 +282,12 @@ func TestAProjectionAnswersTheCallersCancellation(t *testing.T) {
 	}
 }
 
-// ahead is the day a projection is counted in, on this machine.
 func getAhead() review.Day {
 	return review.Day{Starts: review.DayStartTime}
 }
 
-// getDayStart is the hour a day begins at, which is where a projection puts its
-// answers.
 func getDayStart(pos time.Time) time.Time { return getAhead().GetEnd(pos).AddDate(0, 0, -1) }
 
-// runProjection is one projection, over a context nothing gives up on.
 func runProjection(
 	t *testing.T, run projection.Simulation, now time.Time, p review.Preset,
 	pos map[review.CardID]review.Schedule, unbegunCount int,
@@ -304,8 +300,6 @@ func runProjection(
 	return out
 }
 
-// everyDay is every day of a run, as the days a run answers the returning share
-// for.
 func everyDay(days int) []int {
 	out := make([]int, days)
 	for i := range out {
@@ -314,8 +308,6 @@ func everyDay(days int) []int {
 	return out
 }
 
-// makeLearnedCards is a vault of review cards answered a few times each, which
-// leaves them at stabilities of days and weeks.
 func makeLearnedCards(
 	delta review.Scheduler, pos time.Time, reviewCards int,
 ) map[review.CardID]review.Schedule {
@@ -366,11 +358,6 @@ func TestMinutesADayCountedOneCardAtATime(t *testing.T) {
 	}
 }
 
-// countRounds is the number of times one review card is answered over these
-// days, walked from one review to the next.
-//
-// It applies its own copy of the answer update to the review card, which makes the
-// count independent of the projection under test.
 func countRounds(
 	delta review.Scheduler, c review.Schedule, from time.Time, days int,
 ) int {
@@ -501,7 +488,6 @@ func TestADayCarryingNoneOfTheLoadConsumesNoCard(t *testing.T) {
 	}
 }
 
-// weekdays is the day of the week each day of a projection falls on.
 func weekdays(now time.Time, days int) []time.Weekday {
 	out := make([]time.Weekday, days)
 	open := getDayStart(now)
@@ -700,8 +686,6 @@ func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
 	}
 }
 
-// makeSentAway is one review card last answered this many days before an instant
-// and sent away for this many days from that answer.
 func makeSentAway(
 	name string, pos time.Time, since, away int, stability float64,
 ) (review.CardID, review.Schedule) {
@@ -1190,7 +1174,6 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	}
 }
 
-// makeOverdueCards creates overdue review cards for testing.
 func makeOverdueCards(
 	delta review.Scheduler, pos time.Time, reviewCards int,
 ) map[review.CardID]review.Schedule {
@@ -1279,8 +1262,6 @@ func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	}
 }
 
-// allForgotten is a recall model in which no answered review card is recalled.
-// It places a lapse inside the day it was answered in, on every card.
 func allForgotten(review.Schedule, time.Time) float64 { return 0 }
 
 // A day counting showings spends a slot on every showing, and a day counting
@@ -1545,8 +1526,6 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	}
 }
 
-// getWidestWeek is the largest difference between a week's busiest and
-// lightest day, over every week of a projection.
 func getWidestWeek(load []int) int {
 	out := 0
 	for i := 0; i+7 <= len(load); i++ {

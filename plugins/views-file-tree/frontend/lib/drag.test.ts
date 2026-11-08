@@ -4,7 +4,6 @@
 import { describe, expect, it } from 'vitest'
 import { getDragTypes, readDroppedData } from './drag'
 
-/** A drag holding the data given, by type. */
 const createDrag = (data: Record<string, string>): DataTransfer =>
   ({
     types: Object.keys(data),

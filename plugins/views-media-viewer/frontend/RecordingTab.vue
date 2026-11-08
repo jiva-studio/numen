@@ -20,7 +20,6 @@ const props = defineProps<{
   readonly path?: string
   readonly file?: string
   readonly state?: Partial<ReaderTabState> & { file?: string; [key: string]: unknown }
-  /** What the tab reads the recording through, and how it plays it. The window's own by default. */
   readonly recordings?: Recordings
   readonly how?: TranscriptOptions
 }>()
@@ -35,16 +34,11 @@ const { pageUrl } = tab.content
 const hasMedia = computed(() => url.value !== '' || !targetPath.toLowerCase().endsWith('.md'))
 
 /* --------------------------------- Hooks ---------------------------------- */
-/**
- * Saves `ms` as the place the tab opens at after a restart, and reports it to the window in seconds
- * from the start.
- */
 const saveTime = (ms: number) => {
   props.state?.savePlace?.(createTimeSelector(ms))
   props.state?.reportPlace?.({ positionSeconds: Math.max(0, ms) / 1000 })
 }
 
-/** Seeks playback to the first of the spans and saves that time before playback starts. */
 const seekToSpans = async (...spans: readonly TextRange[]) => {
   const ms = await tab.navigation.seekToSpans(...spans)
   if (ms !== null) saveTime(ms)
@@ -57,7 +51,6 @@ onMounted(() => {
   }
 })
 
-/** Seeks playback to the start of a selector and returns it, or null when the selector has none. */
 const seekToSelector = (selector: Selector | null | undefined): number | null => {
   const start = getSelectorStart(selector)
   if (start !== null) tab.playback.controls.go(start)
@@ -85,10 +78,6 @@ watch(
   { immediate: true },
 )
 
-/**
- * Saves the current playback time as the place the tab opens at after a restart. While the shared
- * player is playing another recording this tab has no time of its own, so nothing is saved.
- */
 const savePlace = () => {
   if (tab.playback.isLoaded.value) saveTime(now.value)
 }

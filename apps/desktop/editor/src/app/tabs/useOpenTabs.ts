@@ -10,14 +10,8 @@ import type { SavedTab, useWindowTabs } from '@/entities/tab'
 
 export interface OpenTabsDeps {
   core: Pick<VaultPort, 'writeOpenTabs'>
-  /** The window tabs manager. */
   windowTabs: ReturnType<typeof useWindowTabs>
-  /**
-   * Whether this window writes its tabs. It is false until the tabs the core kept are open again,
-   * and stays false in a window a tab was detached into.
-   */
   isWriting?: Readonly<Ref<boolean>>
-  /** Receives a failure of the background write that the write itself did not handle. */
   reportError: (error: unknown) => void
 }
 
@@ -127,7 +121,6 @@ export function useOpenTabs({
   }
 }
 
-/** The state a kind saved, parsed from its JSON, and nothing where it is empty or not JSON. */
 const parseSavedState = (state: string): unknown => {
   /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {

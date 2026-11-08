@@ -168,9 +168,6 @@ func (c Commands) RunCommand(
 	return pluginport.PluginCommandResult{}, &pluginport.CommandFailedError{Message: message}
 }
 
-// readCommandError sorts the failure of a call: the end of the caller's context is the caller's own,
-// a plugin that serves no commands or cannot be reached is unavailable, and anything else is returned
-// as it is.
 func readCommandError(ctx context.Context, pluginID string, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr

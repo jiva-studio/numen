@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
-// findRuntime returns an ONNX Runtime library present on this machine: the one the host names, else
-// one provisioned in the user's Numen models folder.
 func findRuntime(t *testing.T) string {
 	t.Helper()
 	if lib := onnx.GetLibrary(); lib != "" {

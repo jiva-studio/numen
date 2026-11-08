@@ -192,7 +192,6 @@ type deckLoad struct {
 	dueCards, unbegun int
 }
 
-// newDeckLoads generates the decks of one preset, each under a path of its own.
 func newDeckLoads(t *rapid.T) []deckLoad {
 	decks := rapid.IntRange(1, 5).Draw(t, "decks")
 	out := make([]deckLoad, decks)
@@ -206,12 +205,6 @@ func newDeckLoads(t *rapid.T) []deckLoad {
 	return out
 }
 
-// getTakenCards returns the review cards, by name, that a day of this budget
-// takes, with the decks visited in this order.
-//
-// The order represents the order the vault was walked in. Each deck's own cards
-// keep the deck's order, not the walk's. A budget of no minutes is a day that
-// does not close on them.
 func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review.CardID]bool {
 	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
@@ -269,8 +262,6 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 	return out
 }
 
-// countHandedOver is how many cards each deck was handed of a day of this
-// budget.
 func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 	places := make([]int, len(load))
 	for item := range places {
@@ -340,14 +331,12 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 	})
 }
 
-// getSize returns the number of review cards held.
 func (c *reviewCardCache) getSize() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.total
 }
 
-// hasDeck says whether the deck at key is held.
 func (c *reviewCardCache) hasDeck(key deckKey) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()

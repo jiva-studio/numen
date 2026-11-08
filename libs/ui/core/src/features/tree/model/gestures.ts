@@ -29,12 +29,10 @@ export interface TreeGesturesTell {
 export interface TreeGesturesOptions {
   readonly getShownRows: () => readonly ShownRow[]
   readonly getSelected: () => readonly RowId[]
-  /** The row whose name is in a field. */
   readonly renamingPath: Ref<RowId | null>
   readonly rows: DrawnRowsState
   readonly selection: RowSelectionState
   readonly drag: RowDragState
-  /** Where a menu requested from the keyboard opens, positioned from its row. */
   readonly getMenuAt: (row: RowId) => Position | null
   readonly tell: TreeGesturesTell
 }
@@ -52,7 +50,6 @@ export interface TreeGesturesState {
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
-/** Moves the keyboard to a row; a rejection is rethrown as an uncaught error. */
 function focusInBackground(rows: DrawnRowsState, row: RowId | null): void {
   runInBackground(rows.focusRow(row), reportFailure)
 }

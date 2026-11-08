@@ -2,16 +2,9 @@
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
-    /** What the tool is called, in the words it is to be shown by. */
     tool: string
-    /** What it is working on, when that is worth saying. */
     subject?: string
-    /**
-     * What is true of it beside its name: how much has been written, how long
-     * the wait has lasted. It is what moves exclusively.
-     */
     aside?: string
-    /** Still running. */
     isWorking?: boolean
   }>(),
   { subject: '', aside: '', isWorking: false },

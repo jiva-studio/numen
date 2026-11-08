@@ -24,11 +24,8 @@ const props = defineProps<{
   commands: Commands
   search: SearchState
   doing: CommandDeps
-  /** The target the commands apply to, as the window is now. */
   getTarget: () => CommandTarget
-  /** What the window knows of the files a search turns up, for their icons. */
   places: FileIcons
-  /** Runs the command of a chosen action of a search result, over what it was chosen on. */
   runChoice: (choice: ResultChoice) => void
 }>()
 

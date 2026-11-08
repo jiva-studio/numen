@@ -23,6 +23,8 @@ const (
 )
 
 // ModelInfo describes the embedding model served by the plugin.
+//
+//numen:api
 type ModelInfo struct {
 	Name        string
 	Dimensions  int32
@@ -127,7 +129,6 @@ func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
 	}
 }
 
-// readRole returns the role a request names. A request that names none is for documents.
 func readRole(role v1.EmbedRole) Role {
 	if role == v1.EmbedRole_EMBED_ROLE_QUERY {
 		return RoleQuery

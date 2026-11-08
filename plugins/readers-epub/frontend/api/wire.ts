@@ -40,16 +40,13 @@ export class BookApiError extends Error {
   }
 }
 
-/** The file stat of a fingerprint `<size> <mtime> <path>`. */
 const parseStat = (stat: string): FileStat => {
   const [size = '0', mtime = '0', ...rest] = stat.split(' ')
   return { path: rest.join(' '), size: Number(size), mtime }
 }
 
-/** The fingerprint `<size> <mtime> <path>` of a file stat. */
 const formatStat = (stat: FileStat): string => `${stat.size} ${stat.mtime} ${stat.path}`
 
-/** One document of the spine, as the window carries it. */
 const readSpineDocument = (one: SpineDocumentMessage): SpineDocument => ({
   path: one.path,
   span: { start: one.offset, end: one.offset + one.length },

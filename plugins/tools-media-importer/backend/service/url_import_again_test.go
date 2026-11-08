@@ -50,8 +50,6 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 	return text, nil
 }
 
-// newRevisedFixture is the import tool over the vault Mills, whose article changes after its first
-// fetch.
 func newRevisedFixture(t *testing.T) *importFixture {
 	t.Helper()
 	return newRefetchFixture(t, nil)
@@ -84,7 +82,6 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	return &importFixture{vault: vault, store: store, texts: texts, links: links, registry: registry}
 }
 
-// readLiveText is the text of the live version of the file, and fails the test where it has none.
 func readLiveText(t *testing.T, texts *hosttest.Texts, filePath string) string {
 	t.Helper()
 	listing, err := texts.ListVersions(t.Context(), filePath)
@@ -105,7 +102,6 @@ func readLiveText(t *testing.T, texts *hosttest.Texts, filePath string) string {
 	return ""
 }
 
-// decodeImportAnswer is the result of a url_import call that was not rejected.
 func decodeImportAnswer(t *testing.T, res *tools.CallResponse) importAnswer {
 	t.Helper()
 	var out importAnswer
@@ -115,7 +111,6 @@ func decodeImportAnswer(t *testing.T, res *tools.CallResponse) importAnswer {
 	return out
 }
 
-// readNoteID is the identifier the frontmatter of the note has.
 func readNoteID(filePath, content string) string {
 	return markdown.Parse(domain.FileStat{Path: filePath}, []byte(content)).ID
 }

@@ -78,8 +78,6 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	}
 }
 
-// getOpenVaultsSamples returns a vault holding a note of type form and a note of type
-// sample that links to it.
 func getOpenVaultsSamples() map[string]string {
 	return map[string]string{
 		"Term.md": "---\ntype: form\n---\n" +
@@ -90,8 +88,6 @@ func getOpenVaultsSamples() map[string]string {
 	}
 }
 
-// makeOpenVaults is an installation of its own, an index it may write, and two
-// vaults to open.
 func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	t.Helper()
 
@@ -118,7 +114,6 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	return vaults, target
 }
 
-// makeSampleVault is a folder holding openVaultsSamples, as a vault.
 func makeSampleVault(t *testing.T, cfg Config) string {
 	t.Helper()
 

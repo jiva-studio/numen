@@ -6,7 +6,6 @@ import { TriangleAlert } from '@lucide/vue'
 import { Button } from '@numen/ui'
 
 defineProps<{
-  /** What did not load, and why. */
   message: string
 }>()
 

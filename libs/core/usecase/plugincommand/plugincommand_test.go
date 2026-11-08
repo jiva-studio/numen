@@ -38,7 +38,6 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 	return out
 }
 
-// vault is the vault every command of these tests runs over.
 func getVault() domain.Vault { return domain.Vault{ID: "v1", Name: "v1"} }
 
 func getTypes() fileTypes {
@@ -105,7 +104,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 		"a file of a type it does not run over": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.epub", Arguments: map[string]string{"pages": "1"},
 		},
-		"a required argument left out":        {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
+		"a required argument left out": {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
 		"an argument it does not take": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.pdf",
 			Arguments: map[string]string{"pages": "1", "colour": "red"},

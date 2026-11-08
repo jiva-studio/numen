@@ -8,9 +8,6 @@ import (
 	"github.com/ebitengine/purego"
 )
 
-// checkLibrary opens the library at a path with the platform loader and returns
-// an error when it does not open or serves no apiVersion table. The library
-// stays loaded.
 func checkLibrary(pos string) error {
 	preloadCppRuntime()
 	handle, err := purego.Dlopen(pos, purego.RTLD_NOW|purego.RTLD_LOCAL)
@@ -24,11 +21,6 @@ func checkLibrary(pos string) error {
 	return checkAPI(symbol)
 }
 
-// preloadCppRuntime loads the C++ runtime into the global namespace when the
-// loader does not find it by name, from the folders shared libraries live in or
-// the package store. A build published for Linux in general names it and
-// expects the system to hold it. The loader counts each open of a library it holds, so a second
-// call loads nothing again.
 func preloadCppRuntime() {
 	const name = "libstdc++.so.6"
 	if _, err := purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {

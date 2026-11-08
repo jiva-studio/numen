@@ -55,7 +55,6 @@ func (d scriptedDriver) Open(string) (driver.Conn, error)             { return d
 func (d scriptedDriver) Connect(context.Context) (driver.Conn, error) { return d.conn, nil }
 func (d scriptedDriver) Driver() driver.Driver                        { return d }
 
-// scripted is a Queries whose vector query answers with the rows given.
 func scripted(t *testing.T, data [][]driver.Value, fail error) *Queries {
 	t.Helper()
 	db := sql.OpenDB(scriptedDriver{conn: &scriptedConn{data: data, fail: fail}})

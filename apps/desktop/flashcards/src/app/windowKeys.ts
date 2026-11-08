@@ -7,7 +7,6 @@ import type { WindowTab } from './host'
 
 export interface WindowKeysDeps {
   readonly getTab: () => WindowTab | null
-  /** The vaults on the list, in the order they are drawn. */
   readonly getVaults: () => readonly VaultRow[]
   readonly openVault: (id: string) => void
 }

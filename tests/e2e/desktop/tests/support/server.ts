@@ -21,12 +21,10 @@ export interface InstalledPlugin {
 }
 
 export interface OwnServer {
-  /** The address the window is loaded from. */
   readonly url: string
   stop(): Promise<void>
 }
 
-/** A port the system has free. */
 const getFreePort = (): Promise<number> =>
   new Promise((resolve, reject) => {
     const probe = net.createServer()
@@ -37,7 +35,6 @@ const getFreePort = (): Promise<number> =>
     })
   })
 
-/** The variables that make a server serve the certificate and key of the project's shared server. */
 const getSharedPairEnv = (): Record<string, string> => {
   const port = new URL(test.info().project.use.baseURL ?? '').port
   return {
@@ -48,9 +45,7 @@ const getSharedPairEnv = (): Record<string, string> => {
 
 /** What a scenario sets on the server beyond the plugins it installs. */
 export interface OwnServerOptions {
-  /** Variables the server and its plugins start with. */
   readonly env?: Readonly<Record<string, string>>
-  /** The content of numen.json the server finds when it starts. */
   readonly settings?: string
 }
 

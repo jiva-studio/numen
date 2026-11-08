@@ -4,17 +4,9 @@ import { getFileName } from '@numen/plugin-sdk'
 
 /** What the vault reported about one file the last time it was read or written. */
 export interface VaultAnswer {
-  /**
-   * What is wrong with the file, in the order the cards were read in. Which
-   * card each relies on is decided against the deck the grid is drawing, so a
-   * card the window is holding through a re-read keeps its card id.
-   */
   readonly problems: readonly DeckProblem[]
-  /** What the last read of the file encountered as error. */
   readonly reading: ErrorCode | null
-  /** What the last write of it encountered as error. */
   readonly writing: ErrorCode | null
-  /** The size a deck is read up to, where that is what caused the error. */
   readonly bound: number
 }
 

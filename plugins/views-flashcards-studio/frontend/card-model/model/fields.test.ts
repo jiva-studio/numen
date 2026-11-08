@@ -24,7 +24,6 @@ const lacking = (template: number, text: string): DeckProblem => ({
   text,
 })
 
-/** The fields of one card model tab over a body held in a variable, and what the tab requested. */
 const create = () => {
   let count = 0
   const state = {

@@ -72,7 +72,6 @@ export interface SettingUpdate {
   value: SettingValue
 }
 
-/** Clamps a number to the field's bounds, rounding where the field is whole. */
 const applyNumberSetting = (
   settings: Settings,
   change: { field: NumberField; value: number },
@@ -86,7 +85,6 @@ const applyNumberSetting = (
   return out
 }
 
-/** Sets a field that takes no bounds, or nothing where the value is not its own. */
 const applyChoiceSetting = (
   settings: Settings,
   field: Field,

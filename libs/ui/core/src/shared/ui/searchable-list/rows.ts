@@ -7,11 +7,8 @@ import { stepTo } from '@/shared/lib/dom/roving'
 /** One entry of a searchable list. The identifier is the caller's, returned as given. */
 export interface ListItem {
   readonly id: string
-  /** What is written on the row. */
   readonly text: string
-  /** A second line under the words, in the small print. */
   readonly detail?: string
-  /** The group it belongs to. Items of one group follow each other. */
   readonly group?: string
   /** Whether a line is drawn above it, dividing it from the row before. */
   readonly hasSeparator?: boolean

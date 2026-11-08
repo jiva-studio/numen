@@ -26,33 +26,23 @@ var ErrNoConnections = errors.New("the host has no operations on connections")
 
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
-	Current func() (domain.Vault, bool)
-	Readers vaultport.VaultReaders
-	Writers vaultport.VaultWriters
-	Notes   noteport.NoteQueries
-	Links   noteport.LinkQueries
-	// Connections reads and writes the relationships between notes. Without it
-	// every call about a connection fails with ErrNoConnections.
+	Current     func() (domain.Vault, bool)
+	Readers     vaultport.VaultReaders
+	Writers     vaultport.VaultWriters
+	Notes       noteport.NoteQueries
+	Links       noteport.LinkQueries
 	Connections noteport.ConnectionOperations
-	// Problems answers what parsing turned up. Without it nothing is.
-	Problems problemport.ProblemQueries
-	Arranger Arranger
-	Stores   pluginport.PluginStores
-	Cache    pluginport.PluginCache
-	Watcher  vaultport.VaultWatcher
-	// Vaults lists every vault in the installation, and Find returns the vault with a given identity or
-	// fs.ErrNotExist. Without them the installation contains only the vault Current names.
-	Vaults func() ([]domain.Vault, error)
-	Find   func(id domain.VaultID) (domain.Vault, error)
-	// IndexState starts reading a vault into the index when it is not there and returns the index state.
-	// Without it every vault is treated as indexed.
-	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// Moved signals that something moved in some vault. Without it nothing is signalled.
-	Moved func(ctx context.Context) (<-chan struct{}, error)
-	// Written is called after a plugin has changed the vault.
-	Written func()
-	// Index updates the index for the paths a plugin changed. Without it nothing is done.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Problems    problemport.ProblemQueries
+	Arranger    Arranger
+	Stores      pluginport.PluginStores
+	Cache       pluginport.PluginCache
+	Watcher     vaultport.VaultWatcher
+	Vaults      func() ([]domain.Vault, error)
+	Find        func(id domain.VaultID) (domain.Vault, error)
+	IndexState  func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
+	Moved       func(ctx context.Context) (<-chan struct{}, error)
+	Written     func()
+	Index       func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 func (a Vault) GetVault() (domain.Vault, bool) {
@@ -82,8 +72,6 @@ func (a Vault) With(id domain.VaultID) (pluginport.PluginVault, error) {
 	return linked, nil
 }
 
-// find is the vault an identifier names: through the lookup where there is one, else
-// the vault shown, when that is the one named.
 func (a Vault) find(id domain.VaultID) (domain.Vault, error) {
 	if a.Find != nil {
 		return a.Find(id)
@@ -416,8 +404,6 @@ func (a Vault) CreateInRelation(ctx context.Context, in domain.RelatedNote) (str
 	return path, err
 }
 
-// notifyAfterWrite tells the host a plugin changed the vault when the write reached it.
-// An index that could not follow a write that landed is still a write.
 func (a Vault) notifyAfterWrite(err error) error {
 	if err == nil || errors.Is(err, edit.ErrIndexOutdated) {
 		a.notifyFileWritten()

@@ -22,17 +22,15 @@ import (
 
 const atlasPath = "books/atlas.pdf"
 
-// getAtlasTime is when the atlas last changed: a stamp with nanoseconds, as a file system gives it.
 func getAtlasTime() time.Time { return time.Date(2026, 3, 1, 9, 0, 0, 123456789, time.UTC) }
 
 func getAtlasContent() []byte { return []byte("%PDF atlas of rivers, first edition") }
 
 // statFile is one file of a statVault: its bytes and the stat the file system gives it.
 type statFile struct {
-	raw     []byte
-	modTime time.Time
-	id      domain.FileID
-	// isIgnored is a file the vault ignores: a stat of it returns ErrNotANote, and it still opens.
+	raw       []byte
+	modTime   time.Time
+	id        domain.FileID
 	isIgnored bool
 }
 
@@ -165,8 +163,6 @@ func (l *lookup) getHash(t *testing.T) string {
 	return hash
 }
 
-// checkAccesses fails the test unless the atlas was opened the number of times
-// given and never read whole.
 func (l *lookup) checkAccesses(t *testing.T, wantOpens int) {
 	t.Helper()
 	opens, reads := l.files.getAccesses()

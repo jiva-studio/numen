@@ -12,7 +12,6 @@ import {
 
 const toDegrees = (radians: number) => (radians * 180) / Math.PI
 
-/** A curve with no sideways run: it goes up and down the page along x = 0. */
 const axisColumn = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
   fromPoint: { x: 0, y: from },
   control1: { x: 0, y: control1 },
@@ -20,7 +19,6 @@ const axisColumn = (from: number, control1: number, control2: number, to: number
   toPoint: { x: 0, y: to },
 })
 
-/** A curve with no vertical run: it goes across the page along y = 0. */
 const axisRow = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
   fromPoint: { x: from, y: 0 },
   control1: { x: control1, y: 0 },

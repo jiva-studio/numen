@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// makeLines is a transcript of the words, one line to each of them, numbered by
-// place. A line of no words is left in so the numbering shows the gap.
 func makeLines(response ...string) []Line {
 	out := make([]Line, 0, len(response))
 	for item, text := range response {
@@ -16,8 +14,6 @@ func makeLines(response ...string) []Line {
 	return out
 }
 
-// getListedWords is the words a digest lists, and nothing for a digest listing
-// none.
 func getListedWords(t *testing.T, about string) string {
 	t.Helper()
 	for _, line := range strings.Split(about, "\n") {

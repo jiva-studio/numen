@@ -12,9 +12,7 @@ export interface WriteQueue {
   revision: string
   isWriting: boolean
   isWriteQueued: boolean
-  /** The options of the newest request made while a write was in flight. */
   queuedOptions: WriteOptions | null
-  /** The writes in flight and settled, against which a read tells whether it predates one. */
   readonly order: WriteOrder
   activeWrite: Promise<void> | null
   hasWarned: boolean

@@ -43,8 +43,7 @@ func noteNamed(title string) string {
 // showing is one installation holding two vaults, with a window open on the
 // first and a client talking to it the way the window does.
 type showing struct {
-	client questions
-	// drawn is the window itself, which the blocking drain queries.
+	client       questions
 	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
 	cfg          container.Config
@@ -52,8 +51,6 @@ type showing struct {
 	second       domain.Vault
 }
 
-// openTwoVaults opens a window on the first of two vaults, both on the list this
-// installation keeps.
 func openTwoVaults(t *testing.T) *showing {
 	t.Helper()
 
@@ -96,7 +93,6 @@ func openTwoVaults(t *testing.T) *showing {
 	return f
 }
 
-// newListedVault writes a folder of notes, makes it a vault and puts it on the list.
 func newListedVault(
 	t *testing.T,
 	cfg container.Config,
@@ -126,7 +122,6 @@ func newListedVault(
 	return v
 }
 
-// read waits for the vault in the window to have been read through.
 func (f *showing) read(t *testing.T) {
 	t.Helper()
 
@@ -151,7 +146,6 @@ func (f *showing) state(t *testing.T) *v1.GetVaultStateResponse {
 	return out.Msg
 }
 
-// getFoundNames is the notes the window answers with under a name.
 func (f *showing) getFoundNames(t *testing.T, query string) []string {
 	t.Helper()
 
@@ -193,7 +187,6 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	}
 }
 
-// getShownVault returns the identity of the vault the named window displays.
 func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
@@ -390,8 +383,6 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 	}
 }
 
-// watchQuit opens a stream saying the window is going, and answers with the token
-// this page will flush under.
 func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
 	t.Helper()
 
@@ -554,13 +545,10 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 // Two processes write the index, so a write can complete while the index is
 // behind: the file is on disk and search does not yet contain its content.
 
-// refuseToUpdate is an index that cannot be updated for what was written.
 func refuseToUpdate(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is held open elsewhere")
 }
 
-// unwritten is a vault with those notes in it and an index that never catches
-// up with any write, queried the way the editor's window queries.
 func unwritten(t *testing.T, notes map[string]string) *going {
 	t.Helper()
 
@@ -649,9 +637,6 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	}
 }
 
-// findUpdateIndexTask returns the task-list entry about the index, requested the
-// way the window requests it. The first stream message is the current list, so
-// nothing here waits.
 func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
@@ -725,8 +710,6 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-// openInstallation returns a window composed the way the application composes
-// it: through the composition root, on a vault owned by this test.
 func openInstallation(t *testing.T) *editor.Installation {
 	t.Helper()
 
@@ -798,11 +781,6 @@ type nothing struct {
 	elsewhere    string
 }
 
-// openEmptyWindow opens a window on an installation that has added nothing.
-//
-// The documents folder and the fallback home directory are both test-owned
-// locations, so anything created for the user lands where the test can inspect
-// it.
 func openEmptyWindow(t *testing.T) *nothing {
 	t.Helper()
 

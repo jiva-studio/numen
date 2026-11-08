@@ -28,7 +28,6 @@ func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) {
 // testWindow is the name the window under test answers to.
 const testWindow = "test"
 
-// newAPI is the window over an index that holds the vaults named.
 func newAPI(t testing.TB, target ...domain.Vault) *API {
 	t.Helper()
 	index := carrying{targetVault: map[domain.VaultID]bool{}}
@@ -38,7 +37,6 @@ func newAPI(t testing.TB, target ...domain.Vault) *API {
 	return &API{Window: NewWindow(testWindow, run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}
 }
 
-// newWindowClient is the window itself, over the handler it answers with.
 func newWindowClient(t *testing.T, api *API) numenv1connect.WindowServiceClient {
 	t.Helper()
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))

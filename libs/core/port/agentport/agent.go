@@ -25,43 +25,20 @@ type Agent interface {
 // Task is the user's question, the focus it originates from, and the
 // conversation it belongs to.
 type Task struct {
-	Question string
-	Focus    string
-	// Conversation names the conversation thread this question belongs to,
-	// chosen by the caller. Questions with the same name are answered in one
-	// conversation with the agent, so the name is unique among the caller's
-	// open conversations and is never reused during the lifetime of the process.
-	// Empty means no conversation: the question is answered on its own.
-	Conversation string
-	// Agent is which agent answers for this task (the id an agent plugin registers).
-	// Empty falls back to the configured default agent.
-	Agent string
-	// Model is which model answers for this task. Empty uses default.
-	Model string
-	// Reasoning is the depth of reasoning the model works at, by the name of one of the levels it offers.
-	// Empty leaves the depth to the program.
-	Reasoning string
-	// Instructions is the text the agent is given about the user it answers.
-	Instructions string
-	// Tools are the vault tools the agent may call, by the name the vault serves them under.
-	// Nothing outside them is allowed.
-	Tools []string
-	// MaxSteps is how many steps the agent may take before it is stopped. Zero leaves the limit
-	// to the agent.
-	MaxSteps int
-	// Root is the folder the agent works in. Empty leaves it where the agent runs.
-	Root string
-	// Command is the command line that starts the program the task names, as the installation set it.
-	// Empty starts the program where the provider finds it.
-	Command []string
-	// Endpoint is the address of the vault's tools. Empty gives the agent no tools endpoint.
-	Endpoint ToolEndpoint
-	// Context is what the asking view shows, which every tool the agent calls is given. Each key
-	// starts with the id of the plugin that wrote it and a slash.
-	Context map[string]string
-	// Vault is the vault the run works, which every tool the agent calls is given. Empty is none.
-	Vault domain.VaultID
-	// written.
+	Question         string
+	Focus            string
+	Conversation     string
+	Agent            string
+	Model            string
+	Reasoning        string
+	Instructions     string
+	Tools            []string
+	MaxSteps         int
+	Root             string
+	Command          []string
+	Endpoint         ToolEndpoint
+	Context          map[string]string
+	Vault            domain.VaultID
 	ToolDeclarations []ToolDeclaration
 }
 
@@ -73,22 +50,13 @@ type ToolEndpoint struct {
 
 // read while it is being written.
 type ToolDeclaration struct {
-	// Name is the tool, by the name the vault serves it under.
-	Name string
-	// Title is the display name of the tool.
-	Title string
-	// Kind is what a call of the tool does to the vault. A tool that declares nothing about it is
-	// domain.StepToolCall.
-	Kind domain.StepKind
-	// About names the argument that describes the subject of a call.
-	About string
-	// Element names the field that identifies one element, for a call that takes a
-	// collection.
+	Name    string
+	Title   string
+	Kind    domain.StepKind
+	About   string
 	Element string
-	// Match and Text name the arguments carrying the text a call replaces and the text that takes its
-	// place. Both are empty for a call that replaces no text.
-	Match string
-	Text  string
+	Match   string
+	Text    string
 }
 
 // Run is one task being worked. Task is the request; this is its execution.
@@ -102,27 +70,14 @@ type Run interface {
 
 // Step is one event of a run: agent text, a tool call, or a stop.
 type Step struct {
-	Kind domain.StepKind
-	// Call is what the agent named this call. Every step of one call carries the
-	// same name, and a step that is not a call carries none.
-	Call string
-	// Text is the agent's output, for a step that carries text.
-	Text string
-	// Tool is what it is using, by the name it is served under.
-	Tool string
-	// About is the subject of that call, such as a note or a query. Empty when the
-	// call has nothing to display.
-	About string
-	// Place is where in the vault the call is working, empty when what the
-	// call is about is not a source the vault holds.
-	Place domain.Place
-	// Count is how much of the call has been written, in characters. A call
-	// carrying the text of a note is written for minutes, and this is the only
-	// thing that moves while it is.
-	Count int
-	// Match is the text a change replaces, for a step that draws one.
-	Match string
-	// Detail is why the work stopped, empty when the agent was done.
+	Kind   domain.StepKind
+	Call   string
+	Text   string
+	Tool   string
+	About  string
+	Place  domain.Place
+	Count  int
+	Match  string
 	Detail string
 }
 
@@ -131,32 +86,21 @@ type ReasoningLevel = domain.ReasoningLevel
 
 // AgentModel is one model a program offers.
 type AgentModel struct {
-	Name  string
-	Title string
-	// IsDefault is set where the program names the model it answers with unasked.
-	IsDefault bool
-	// ReasoningLevels are the reasoning depths the model supports, from least to
-	// most. Empty when the model offers no choice.
-	ReasoningLevels []ReasoningLevel
-	// DefaultReasoning is the level the model works at unasked, empty where it names none.
+	Name             string
+	Title            string
+	IsDefault        bool
+	ReasoningLevels  []ReasoningLevel
 	DefaultReasoning string
 }
 
 // AgentProgram is one program a provider runs.
 type AgentProgram struct {
-	// Provider is the plugin that runs it, by its identifier.
-	Provider string
-	// Name is the key a task uses to select the program, and the key of its settings section.
-	Name string
-	// Title is the display name of the program.
-	Title string
-	// IsInstalled is set where the program is on this machine.
+	Provider    string
+	Name        string
+	Title       string
 	IsInstalled bool
-	// IsDefault is set on the program an unconfigured installation uses.
-	IsDefault bool
-	// Models are the models the program reports, empty when it reports none.
-	Models []AgentModel
-	// LimitsTools is set where the program runs only the vault tools a task names.
+	IsDefault   bool
+	Models      []AgentModel
 	LimitsTools bool
 }
 
@@ -231,7 +175,6 @@ func Answer(ctx context.Context, agent Starter, task Task) (_ string, err error)
 	return readAnswer(ctx, run.GetSteps())
 }
 
-// readAnswer returns the text of the agent's steps until the steps end or the context is done.
 func readAnswer(ctx context.Context, steps <-chan Step) (string, error) {
 	var response strings.Builder
 	for {
@@ -252,8 +195,6 @@ func readAnswer(ctx context.Context, steps <-chan Step) (string, error) {
 	}
 }
 
-// finishAnswer returns the collected text once the steps have ended. A done context
-// fails with the context's error.
 func finishAnswer(ctx context.Context, response string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
@@ -264,8 +205,6 @@ func finishAnswer(ctx context.Context, response string) (string, error) {
 	return response, nil
 }
 
-// failAnswer is the failure of an answer: the end of the caller's context is the caller's own, and
-// any other is an unavailability.
 func failAnswer(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr

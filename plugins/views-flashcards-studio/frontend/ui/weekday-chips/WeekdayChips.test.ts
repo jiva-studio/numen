@@ -12,7 +12,6 @@ import { rotateWeek, WEEK, type Day } from './week'
 /** The levels a day is offered, from nothing to the whole of it. */
 const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 
-/** The week, every day at the whole of it but for the ones named. */
 const week = (
   levelOf: Readonly<Record<string, number>> = {},
   days: readonly { id: string; short: string; long: string }[] = WEEK,
@@ -26,11 +25,9 @@ const mountChips = (props: Partial<ChipsProps> = {}) =>
     attachTo: document.body,
   })
 
-/** Every day the row has returned, with the level chosen for it. */
 const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
   (row.emitted('choose') ?? []) as unknown[][]
 
-/** The levels on offer, once a chip has been pressed. */
 const getMenuLabels = (): readonly string[] =>
   [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 

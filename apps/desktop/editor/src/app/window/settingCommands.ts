@@ -20,9 +20,7 @@ export const APP_OWNER = 'app'
 
 /** An owner of settings and the settings it declares, with the values in force the core resolved. */
 export interface SettingOwner {
-  /** `app`, or the id of a plugin. */
   readonly id: string
-  /** The name a command is prefixed with, `Name: Title`. Empty for `app`, whose commands are the title alone. */
   readonly name: string
   readonly settings: readonly PluginSettingInfo[]
 }
@@ -43,18 +41,15 @@ export interface SettingPreview {
 }
 
 export interface SettingPaletteDeps {
-  /** The owners as they stand now; read each time a command or a list is asked for. */
   readonly getOwners: () => readonly SettingOwner[]
   readonly words: SettingWords
   readonly preview: SettingPreview
-  /** Writes the settings; rejects with the reason a write is refused. */
   readonly write: (edits: readonly SettingEdit[]) => Promise<void>
 }
 
 export interface SettingPalette {
   /** The commands of the settings flagged for the palette. */
   getCommands(): readonly Command[]
-  /** The rows each command offers and the preview of the focused row. */
   readonly lists: PaletteLists
   /** Writes the row chosen in the step of a command. */
   choose(command: string, item: string): Promise<void>
@@ -71,7 +66,6 @@ export const parseSettingCommandId = (
   return match?.[1] && match[2] ? { owner: match[1], key: match[2] } : null
 }
 
-/** A setting is offered when it has a list of values to choose from. */
 const isChoiceKind = (setting: PluginSettingInfo): boolean =>
   setting.type === 'boolean' || setting.type === 'enum' || setting.type === 'range'
 
@@ -87,7 +81,6 @@ interface Choice {
   readonly value: boolean | string | number
 }
 
-/** Rounds away the error of adding steps one by one. */
 const round = (value: number): number => Math.round(value * 1e6) / 1e6
 
 const getRangeValues = (setting: PluginSettingInfo): readonly number[] => {
@@ -104,7 +97,6 @@ const getOptions = (setting: PluginSettingInfo): readonly PluginSettingOption[] 
     ? setting.activeOptions
     : (setting.options ?? [])
 
-/** The detail and the mark of a row: what the option says, else that it is the one in force. */
 const getMark = (
   isCurrent: boolean,
   detail: string,
@@ -148,7 +140,6 @@ const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly C
   return []
 }
 
-/** The path a setting is written at: the nested path of the shell, or the plugin and its key. */
 const getSettingPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
 

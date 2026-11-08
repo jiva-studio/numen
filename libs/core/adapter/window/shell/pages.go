@@ -14,7 +14,6 @@ import (
 //go:embed all:pages
 var pages embed.FS
 
-// policy is what this window may load. A plugin draws pictures it carries as `data:` URIs.
 func getPolicy() string { return csp.Sources{Images: []string{"data:"}}.Policy() }
 
 // Pages is the interface itself, built by `make interface` and embedded in the
@@ -56,8 +55,6 @@ type route struct {
 	handler http.Handler
 }
 
-// serveOther answers what no route of the window itself claims: plugin files,
-// plugin services, the pages and the files they are made of.
 func (a *API) serveOther(w http.ResponseWriter, r *http.Request, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):

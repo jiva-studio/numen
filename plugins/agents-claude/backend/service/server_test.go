@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// startAgent serves the agent over HTTP and answers with a client of it.
 func startAgent(t *testing.T, agentSvc *agentServer) *agentrun.Client {
 	t.Helper()
 	if agentSvc.clock == nil {
@@ -31,7 +30,6 @@ func startAgent(t *testing.T, agentSvc *agentServer) *agentrun.Client {
 	return agentrun.NewClient(http.DefaultClient, testServer.URL)
 }
 
-// writeScript writes an executable shell script and answers with its path.
 func writeScript(t *testing.T, name, body string) string {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -163,7 +161,6 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	}
 }
 
-// wordStep words one step of a run.
 func wordStep(msg *agentrun.Response) string {
 	switch s := msg.GetStep().(type) {
 	case *agentrun.ModelStartedStep:
@@ -180,7 +177,6 @@ func wordStep(msg *agentrun.Response) string {
 	return ""
 }
 
-// readSteps reads a run to its end and words each step.
 func readSteps(stream *agentrun.Stream) ([]string, error) {
 	var steps []string
 	for stream.Receive() {
@@ -191,7 +187,6 @@ func readSteps(stream *agentrun.Stream) ([]string, error) {
 	return steps, stream.Err()
 }
 
-// drainSteps is readSteps, reporting an error to the test without ending the calling goroutine.
 func drainSteps(t *testing.T, stream *agentrun.Stream) []string {
 	t.Helper()
 	steps, err := readSteps(stream)
@@ -201,7 +196,6 @@ func drainSteps(t *testing.T, stream *agentrun.Stream) []string {
 	return steps
 }
 
-// collectSteps is readSteps, failing the test on an error.
 func collectSteps(t *testing.T, stream *agentrun.Stream) []string {
 	t.Helper()
 	steps, err := readSteps(stream)
@@ -441,9 +435,6 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	}
 }
 
-// withoutClaudeAnywhere empties PATH, HOME and the command variables, where the program is
-// searched for first, and skips the test on a machine that holds Claude Code in a system-wide
-// place.
 func withoutClaudeAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())

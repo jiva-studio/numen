@@ -11,7 +11,6 @@ import {
   showInFiles,
 } from '../../support/layout.js'
 
-/** Shows the note at the path in the plex, from the menu on its row in the files tab. */
 const showInPlex = async (page: Page, path: string): Promise<void> => {
   await showInFiles(page, ['notes'])
   await getRow(page, path).click({ button: 'right' })
@@ -20,7 +19,6 @@ const showInPlex = async (page: Page, path: string): Promise<void> => {
 
 const SEARCH_NAMES = '**/numen.v1.SearchService/SearchNames'
 
-/** Opens the quick link field from the handle of the focused note and returns its dialog. */
 const openQuickLink = async (page: Page, title: string) => {
   await expect(getTab(page, title)).toBeVisible()
   await getGraph(page)
@@ -32,10 +30,6 @@ const openQuickLink = async (page: Page, title: string) => {
   return page.getByRole('dialog', { name: 'New thought' })
 }
 
-/**
- * Waits until the options panel of the quick link has finished opening. While it opens, the
- * panel clips its rows, so a click at the middle of a row can land on the panel instead.
- */
 const waitForQuickLinkPanel = async (dialog: Locator): Promise<void> => {
   const frame = dialog.locator('[data-numen-searchable-list]')
   await frame.evaluate((el) =>
@@ -43,7 +37,6 @@ const waitForQuickLinkPanel = async (dialog: Locator): Promise<void> => {
   )
 }
 
-/** Holds the name searches of the window until the returned function lets them go. */
 const holdSearches = async (page: Page): Promise<() => Promise<void>> => {
   const parked: Route[] = []
   let isHolding = true

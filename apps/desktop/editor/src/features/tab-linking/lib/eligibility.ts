@@ -5,7 +5,6 @@ import type { EligibleLinkTab, LinkableTab, TabId, TabLinkGroup } from '../types
 
 /** What the eligibility is read from. */
 export interface EligibilityInput {
-  /** The tab a link would leave. */
   readonly from: TabId
   readonly tabs: readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined

@@ -9,7 +9,6 @@ import type { NodeIdFactory } from './splice'
 
 /** What a name is drawn from. The window's own randomness by default. */
 export interface Randomness {
-  /** An identifier no other call gives, where this machine can make one. */
   readonly uuid: () => string | null
 }
 

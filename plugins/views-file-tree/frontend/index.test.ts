@@ -5,7 +5,6 @@ import plugin, { activate, FilesTab, FILES } from './index'
 import { createHost, ROW_MENU, TRASH } from './fixtures/host'
 import type { Entry, FilesTabState } from './types'
 
-/** Waits for the vault responses that the tab requested. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const note = (path: string): Entry => ({

@@ -113,7 +113,6 @@ func (s *Supervisor) SetOnError(fn func(error)) {
 	s.onError = fn
 }
 
-// reportError passes err to the error callback. The caller must not hold s.mu.
 func (s *Supervisor) reportError(err error) {
 	s.mu.Lock()
 	fn := s.onError

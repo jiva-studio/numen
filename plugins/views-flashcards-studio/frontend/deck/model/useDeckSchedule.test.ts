@@ -25,7 +25,6 @@ const named = (path: string, title: string, problems: string[] = []): PresetRead
     bounds: NO_BOUNDS,
   })
 
-/** Presets answering what a test sets, and counting every listing. */
 const fakePresets = () => {
   const state = {
     listings: 0,

@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// paths is every shape a path can arrive in, whether or not any file of that
-// name exists. The rules are about the text of a path, and the two of them
-// have to answer every one of these between them.
 func getPaths() []string {
 	return []string{
 		"note.md",
@@ -121,8 +118,8 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 	tests := []struct {
 		name    string
 		path    string
-		isVault bool // resolveVaultPath accepts it
-		isOurs  bool // service accepts it
+		isVault bool
+		isOurs  bool
 	}{
 		{name: "a note", path: "notes/Entropy.md", isVault: true},
 		{name: "a document", path: "assets/paper.pdf", isVault: true},
@@ -161,13 +158,6 @@ func TestHasReservedDeviceName(t *testing.T) {
 	}
 }
 
-// resolveServicePath is the complement of resolveVaultPath: a path that stays inside the
-// vault, and that is in the folder belonging to the application by both of the
-// same measures.
-//
-// The two overlap nowhere, which is what lets one type write a derived file
-// That property is the subject of a test. A path whose spelling and whose
-// landing disagree is neither's, and both refuse it.
 func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := CleanPath(path)
 	if err != nil {

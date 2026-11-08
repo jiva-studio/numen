@@ -142,8 +142,6 @@ func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	}
 }
 
-// putFiveSegments is a version of a.pdf, made by the plugin of texts, whose file holds the five
-// segments "s0 " to "s4 ".
 func putFiveSegments(t *testing.T, texts *hosttest.Texts) domain.TextVersion {
 	t.Helper()
 	file := []byte("%PDF")

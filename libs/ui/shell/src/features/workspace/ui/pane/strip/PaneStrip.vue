@@ -17,7 +17,6 @@ import type { Pane, TabId } from '../../../lib/node'
 const props = withDefaults(
   defineProps<{
     pane: Pane
-    /** The pane a tab would open into. */
     isFocused?: boolean
   }>(),
   { isFocused: false },
@@ -61,10 +60,6 @@ const onHoldTab = (tab: TabId, element: unknown): void => {
   else drawnTabs.delete(tab)
 }
 
-/**
- * The tabs are what the arrows walk; the way to a new tab is a stop of its
- * own.
- */
 function onStripKey(pos: number, event: KeyboardEvent): void {
   const next = stepTo(event.key, pos, props.pane.tabs.length)
   const tab = next === null ? undefined : props.pane.tabs[next]
@@ -76,16 +71,13 @@ function onStripKey(pos: number, event: KeyboardEvent): void {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What a tab is called. A tab with no title is shown by its identity. */
 const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ?? tab
 
-/** What a tab is carrying, and nothing for a tab carrying nothing. */
 const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
 
 const tabName = (pos: number): string => getTabName(props.pane.id, pos)
 const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 
-/** The keyboard put on one tab of the strip. */
 function reach(tab: TabId): void {
   drawnTabs.get(tab)?.focus()
 }

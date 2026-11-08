@@ -3,10 +3,8 @@ import { effectScope } from 'vue'
 import { openNotes, type Notes } from '@/entities/note'
 import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-host'
 
-/** A file stat that follows what the file holds. */
 const statFile = (body: string): string => `at:${body}`
 
-/** A core answering reads and writes from the files a test puts in it, refusing a stale write. */
 function createFiles() {
   const files = new Map<string, string>()
   const core: Notes = {
@@ -43,7 +41,6 @@ interface BufferedState {
   takeFile(): void
 }
 
-/** A note tab of the notes plugin, openCalls in a scope over the window's store of open notes. */
 function openNoteTab(path: string) {
   const { core, files } = createFiles()
   files.set(path, 'The tide turns at noon.')

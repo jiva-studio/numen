@@ -4,10 +4,8 @@ import { h, type VNode } from 'vue'
 import { indexLinkPieces, type LinkPieces } from '@/shared/lib/text/marks'
 import { WORD, render } from './render'
 
-/** What the marks come out as, drawn. */
 const mountProse = (text: string) => mount({ render: () => h('div', render(text)) })
 
-/** The same, with the pieces the caller draws as links. */
 const mountWith = (text: string, pieces: LinkPieces) =>
   mount({ render: () => h('div', render(text, undefined, pieces)) })
 

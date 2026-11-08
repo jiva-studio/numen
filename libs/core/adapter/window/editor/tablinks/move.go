@@ -22,13 +22,11 @@ type MovedTab struct {
 	Tab      SavedTab
 }
 
-// isMovingInto reports whether a tab has a pending move into a window.
 func (r *Registry) isMovingInto(windowID, tabID string) bool {
 	pending, ok := r.pendingMoves[tabID]
 	return ok && pending.targetWindowID == windowID
 }
 
-// isDetachingInto reports whether a window read the pending detach of a tab.
 func (r *Registry) isDetachingInto(windowID, tabID string) bool {
 	pending, ok := r.pendingDetaches[tabID]
 	return ok && pending.windowID == windowID
@@ -120,7 +118,6 @@ func (r *Registry) Accept(windowID, tabID, moveID string) MoveError {
 	return MoveErrorTimeout
 }
 
-// takeTab makes a known tab a tab of the window.
 func (r *Registry) takeTab(windowID, tabID string) {
 	tab, isKnown := r.tabs[tabID]
 	if !isKnown {
@@ -132,8 +129,6 @@ func (r *Registry) takeTab(windowID, tabID string) {
 	r.publishSnapshot()
 }
 
-// recordAcceptedMove keeps a completed move for a repeated Accept until the
-// grace period ends.
 func (r *Registry) recordAcceptedMove(moveID, windowID string) {
 	r.acceptedMoves[moveID] = windowID
 	r.schedule(r.grace, func() { r.forgetAcceptedMove(moveID) })
@@ -149,7 +144,6 @@ func (r *Registry) CancelMove(tabID string, result <-chan MoveError) {
 	}
 }
 
-// createMoveID returns an id no earlier move or detach has.
 func (r *Registry) createMoveID() string {
 	r.nextMoveID++
 	return "move-" + strconv.Itoa(r.nextMoveID)
@@ -172,8 +166,6 @@ func (r *Registry) Highlight(windowID string, isOn bool) {
 	r.events.Publish(Event{Highlight: &Highlight{WindowID: windowID, IsOn: isOn}})
 }
 
-// expireMove ends a move the target window did not accept in time. An expiry
-// of a move that already ended does nothing.
 func (r *Registry) expireMove(tabID string, pending *move) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -182,8 +174,6 @@ func (r *Registry) expireMove(tabID string, pending *move) {
 	}
 }
 
-// endMovesInto ends every move into a window that stopped watching, and every
-// detach the window read.
 func (r *Registry) endMovesInto(windowID string) {
 	for tabID, pending := range r.pendingMoves {
 		if pending.targetWindowID == windowID {
@@ -203,8 +193,6 @@ func (r *Registry) endMove(tabID string, pending *move, outcome MoveError) {
 	pending.result <- outcome
 }
 
-// endTransfers ends the pending move and the pending detach of a tab, so that
-// a tab has one pending transfer at a time.
 func (r *Registry) endTransfers(tabID string, outcome MoveError) {
 	if pending, ok := r.pendingMoves[tabID]; ok {
 		r.endMove(tabID, pending, outcome)

@@ -13,7 +13,6 @@ import { createLinkResolver } from '../fixtures/links'
 
 type Model = AgentModel & { readonly nameAt: readonly string[] }
 
-/** A conversation that records the requests it receives and the locations its lines point to. */
 const createConversation = (locations: Record<string, { path: string; range: TextRange }> = {}) => {
   const request: [string, string][] = []
   const stopCalls: string[] = []
@@ -31,10 +30,6 @@ const createConversation = (locations: Record<string, { path: string; range: Tex
   return { conversation, turns: turn, requests: request, stopped: stopCalls }
 }
 
-/**
- * An agent tab with the window state it is rendered in recorded. The vault
- * returns the notes it was given, and nothing for every other address.
- */
 const tab = (
   locations: Record<string, { path: string; range: TextRange }> = {},
   notes: Record<string, string> = {},
@@ -58,7 +53,6 @@ const items = (nameAt: readonly string[], name: string, presence: Model['presenc
   isDefault: false,
   presence,
 })
-/** A line of an answer, as the panel hands one back. */
 const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
 describe('a question sent', () => {

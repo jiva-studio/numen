@@ -75,10 +75,6 @@ func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
 	})
 }
 
-// deleteOrphanVectors is called when a source was cut again, which means its
-// text was replaced. A source absent from the vault's listing deletes nothing: a
-// folder that could not be read looks the same from here as one whose files
-// were deleted, and a vector is expensive to recompute.
 func deleteOrphanVectors(ctx context.Context, tx *sqlwrite.Transaction, texts []string) error {
 	for _, hash := range texts {
 		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {

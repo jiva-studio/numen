@@ -16,12 +16,9 @@ import (
 // one over a vault.
 type PluginCommands struct {
 	List plugincommand.List
-	// Open lets the plugins work the vault and returns what runs a command there, with what gives
-	// back what it opened.
 	Open func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
 }
 
-// findPluginCommand returns the command a subcommand names, and false where no plugin declares one.
 func findPluginCommand(deps Deps, name string) (plugincommand.Entry, bool) {
 	if deps.PluginCommands == nil {
 		return plugincommand.Entry{}, false
@@ -29,7 +26,6 @@ func findPluginCommand(deps Deps, name string) (plugincommand.Entry, bool) {
 	return deps.PluginCommands().List.Find(name)
 }
 
-// writePluginCommandUsage writes a line for each command the enabled plugins declare.
 func writePluginCommandUsage(r *reporter, deps Deps) {
 	if deps.PluginCommands == nil {
 		return
@@ -44,8 +40,6 @@ func writePluginCommandUsage(r *reporter, deps Deps) {
 	}
 }
 
-// getPluginCommandSynopsis is how the command is typed: its id, the vault, the file where it runs
-// over one, and a flag for each argument, an optional one in brackets.
 func getPluginCommandSynopsis(command plugincommand.Command) string {
 	words := []string{command.ID, "<vault>"}
 	if plugincommand.HasTargetVariable(command) {
@@ -64,8 +58,6 @@ func getPluginCommandSynopsis(command plugincommand.Command) string {
 	return strings.Join(words, " ")
 }
 
-// runPluginCommand runs a command that a plugin declares over a vault, with the
-// arguments given as flags, and writes the plugin's output.
 func runPluginCommand(
 	ctx context.Context, out io.Writer, deps Deps, entry plugincommand.Entry, args []string,
 ) (err error) {

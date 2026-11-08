@@ -5,8 +5,6 @@ import "math"
 // LeastCeiling is the shortest day a curve of minutes runs to.
 const LeastCeiling = 60
 
-// pickEvenlySpacedDays is up to as many places as are wanted, evenly over the days, and
-// always both ends of them.
 func pickEvenlySpacedDays(days, places int) []int {
 	if days <= places {
 		out := make([]int, days)
@@ -22,11 +20,6 @@ func pickEvenlySpacedDays(days, places int) []int {
 	return out
 }
 
-// setNearestStep replaces the place nearest pos with pos on the grid. The two end
-// places remain fixed: a range begins tomorrow and extends to its natural end,
-// whatever day the file names.
-//
-// The point under the place is worked out for the day the preset aims at.
 func setNearestStep(steps []int, pos int) []int {
 	if pos < 0 || len(steps) < 3 {
 		return steps
@@ -43,11 +36,6 @@ func setNearestStep(steps []int, pos int) []int {
 	return steps
 }
 
-// snap replaces the grid place nearest the value with the value, so the figures
-// drawn at that place are those of the preset's current setting.
-//
-// First and last are the places a value may take: a range whose ends say what
-// the setting may be at all keeps them.
 func snap(grid []float64, value float64, first, last int) {
 	if first < 0 || last >= len(grid) || first > last {
 		return
@@ -61,7 +49,6 @@ func snap(grid []float64, value float64, first, last int) {
 	grid[pos] = value
 }
 
-// abs returns the absolute value of a whole number.
 func abs(one int) int {
 	if one < 0 {
 		return -one
@@ -69,15 +56,11 @@ func abs(one int) int {
 	return one
 }
 
-// getMinutesUpperBound is how far a curve of minutes runs: twice what carrying the whole
-// load costs, and never less than a short day or more than a day holds.
 func getMinutesUpperBound(load, keeping float64) float64 {
 	top := math.Ceil(2 * math.Max(load, keeping))
 	return math.Min(math.Max(top, LeastCeiling), GetMinutesADayBounds().Max)
 }
 
-// findNearest is the place of the grid a value falls at, and -1 for a value outside
-// it.
 func findNearest(grid []float64, value float64) int {
 	if len(grid) == 0 || value < grid[0] || value > grid[len(grid)-1] {
 		return -1

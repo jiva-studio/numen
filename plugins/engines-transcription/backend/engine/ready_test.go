@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
 )
 
-// writeEmptyFile writes an empty file under dir and answers with where it is.
 func writeEmptyFile(t *testing.T, dir, name string) string {
 	t.Helper()
 	pos := filepath.Join(dir, name)

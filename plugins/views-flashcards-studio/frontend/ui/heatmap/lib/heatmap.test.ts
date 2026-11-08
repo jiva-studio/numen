@@ -36,7 +36,6 @@ describe('how much of a year fits', () => {
   })
 })
 
-/** Tallies for the days with answers, with the given number of cards each. */
 const createTallies = (days: [string, number][]) =>
   new Map(
     days.map(([day, reply]) => [

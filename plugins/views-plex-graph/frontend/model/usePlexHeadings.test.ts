@@ -8,7 +8,6 @@ import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexTabDeps, NoteHeading, NoteType } from '../types'
 import { usePlexHeadings } from './usePlexHeadings'
 
-/** A window that hangs headings and answers with the headings it is given. */
 const createDeps = (
   headings: ReadonlyMap<string, readonly NoteHeading[]>,
   request: (readonly string[])[],

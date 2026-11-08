@@ -9,7 +9,6 @@ type taskLeases struct {
 	open map[string]map[string]bool
 }
 
-// hold records the task as open and takes a lease of the plugin the first time it is recorded.
 func (l *taskLeases) hold(callers callerLease, pluginID, taskID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -28,7 +27,6 @@ func (l *taskLeases) hold(callers callerLease, pluginID, taskID string) {
 	callers.Acquire(pluginID)
 }
 
-// release records the task as closed and returns its lease if it held one.
 func (l *taskLeases) release(callers callerLease, pluginID, taskID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -43,8 +41,6 @@ func (l *taskLeases) release(callers callerLease, pluginID, taskID string) {
 	callers.Release(pluginID)
 }
 
-// clear forgets the open tasks of a plugin whose process ended. The supervisor drops the leases
-// of an ended process, so none is returned.
 func (l *taskLeases) clear(pluginID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()

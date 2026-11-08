@@ -278,7 +278,6 @@ func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	}
 }
 
-// marshalJSON encodes value as JSON and fails the test when encoding fails.
 func marshalJSON(t *testing.T, value any) []byte {
 	t.Helper()
 	encoded, err := json.Marshal(value)

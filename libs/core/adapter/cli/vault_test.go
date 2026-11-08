@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// isolate points every directory the machine would offer at one of the test's
-// own.
 func isolate(t *testing.T) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
@@ -60,8 +58,6 @@ func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 	return b.VaultRegistry.RecordOpened(id)
 }
 
-// runBroken runs a command on the installation of the session, with the vaults
-// of it changed by adjust.
 func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer

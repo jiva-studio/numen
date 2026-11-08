@@ -38,18 +38,14 @@ func NewServingRouter(host RouterHost, serve ServeRun) *Router {
 // addresses every plugin with the agent provider capability through the plugin
 // host.
 type Router struct {
-	host RouterHost
-	// serve wraps the agent each run is started through, nil for the agent of the plugin itself.
+	host  RouterHost
 	serve ServeRun
 
-	mu sync.Mutex
-	// providers holds the plugin that runs each program, by program.
-	providers map[string]string
-	// conversations holds the plugins that each conversation used, by conversation.
+	mu            sync.Mutex
+	providers     map[string]string
 	conversations map[string][]string
 }
 
-// getProviders are the identifiers of the enabled plugins that run agent programs, in order.
 func (r *Router) getProviders() []string {
 	var ids []string
 	for _, info := range r.host.GetPluginInfos() {
@@ -93,8 +89,6 @@ func (r *Router) GetPrograms(
 	return programs, errors.Join(failed...)
 }
 
-// listPrograms queries one provider for the programs it provides. A provider disabled after
-// getProviders listed it provides none.
 func (r *Router) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
 ) (programs []agentport.AgentProgram, err error) {
@@ -109,14 +103,11 @@ func (r *Router) listPrograms(
 	return agent.GetPrograms(ctx, commands)
 }
 
-// isDisabled reports whether the error is the host refusing to activate a disabled plugin.
 func isDisabled(err error) bool {
 	var unavailable *pluginport.UnavailableError
 	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginDisabled
 }
 
-// setProviders keeps which plugin runs each program listed. The first plugin to list a program
-// runs it.
 func (r *Router) setProviders(programs []agentport.AgentProgram) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -128,8 +119,6 @@ func (r *Router) setProviders(programs []agentport.AgentProgram) {
 	}
 }
 
-// getProvider is the plugin that runs the program, asking the providers what they run where it is
-// not known yet.
 func (r *Router) getProvider(ctx context.Context, program string, command []string) (string, error) {
 	if program == "" {
 		return "", errors.New("no agent program is named")
@@ -227,7 +216,6 @@ func (r *Router) EndConversation(ctx context.Context, conversation string) error
 	return errors.Join(failed...)
 }
 
-// endConversationOn ends a conversation on one plugin.
 func (r *Router) endConversationOn(ctx context.Context, id, conversation string) (err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
 	if err != nil {

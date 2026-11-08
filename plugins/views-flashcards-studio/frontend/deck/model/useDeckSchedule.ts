@@ -7,12 +7,7 @@ import { type PresetChoice, type Presets, type PresetReadResult, WORDS as words 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface DeckPreset {
   readonly path: string
-  /** What that preset is called, in the words on the line. */
   readonly name: string
-  /**
-   * What is wrong with what the deck names — a preset missing from the vault, a
-   * note that is not a preset — and empty where nothing is.
-   */
   readonly errorMessage: string
 }
 
@@ -33,7 +28,6 @@ export interface ScheduledStore {
   applyPathChanges(paths: readonly string[]): void
 }
 
-/** The preset a deck names, as the line at the top of it draws it. */
 const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
   const readItem = answer.ok ? answer.value.preset : null
   if (readItem === null) return BY_DEFAULT

@@ -2,7 +2,6 @@ package service
 
 import "testing"
 
-// A sentence a recording broke across three stretches of speech.
 func makeBrokenBatch() Batch {
 	return Batch{Number: 1, IsJoinable: true, Lines: []Line{
 		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},

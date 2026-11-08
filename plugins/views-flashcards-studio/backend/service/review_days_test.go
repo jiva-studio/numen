@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// counting is the day as the application counts one.
 func getCounting() review.Day {
 	return review.Day{Starts: review.DayStartTime}
 }

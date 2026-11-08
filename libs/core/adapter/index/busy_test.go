@@ -10,10 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// openWithShortBusyTimeout is a write pool that waits a fifth of a second for the lock instead
-// of the five seconds an installation waits, so a test can meet a locked
-// database without spending a minute on it. Everything else about it is what
-// Open builds.
 func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 	t.Helper()
 	dsn := dsnOf(path, []string{"journal_mode(WAL)", "foreign_keys(1)", "busy_timeout(200)", shipped})

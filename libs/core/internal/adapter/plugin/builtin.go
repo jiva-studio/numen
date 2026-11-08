@@ -13,7 +13,6 @@ type builtInPlugin struct {
 	serve  func(vars map[string]string) (http.Handler, error)
 }
 
-// getBuiltInLocked returns the built-in plugin registered under an id.
 func (h *Host) getBuiltInLocked(pluginID string) (builtInPlugin, bool) {
 	builtIn, ok := h.builtIns[pluginID]
 	return builtIn, ok

@@ -49,7 +49,6 @@ export interface BufferedNoteTarget {
   readonly buffer: NoteBuffer
 }
 
-/** The wikilink completion of a note tab: the notes a link can name, and the headings of one. */
 function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string) {
   return {
     search: async (query: string): Promise<readonly LinkChoice[]> =>
@@ -71,7 +70,6 @@ function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string
   }
 }
 
-/** Opens the note a link address names beside the tab. */
 function createLinkFollower(deps: PluginHostDeps | undefined, getPath: () => string) {
   return (address: string): void => {
     const resolve = deps?.resolveLink

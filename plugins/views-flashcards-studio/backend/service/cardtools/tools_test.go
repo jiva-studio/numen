@@ -33,8 +33,6 @@ const (
 	alpaca = "3n8vr4tqch"
 )
 
-// vault is the two notes a flashcard is made of, and an ordinary note beside
-// them.
 func vault() map[string]string {
 	return map[string]string{
 		"Animal.md":  animalCardModel,
@@ -66,8 +64,6 @@ type cards struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-// getFieldText returns the text of one field of a card. A card has no name, so a
-// test selects a card by this text.
 func getFieldText(c card, field string) string {
 	for _, v := range c.Values {
 		if v.Field == field {
@@ -82,7 +78,6 @@ func readCards(t *testing.T, s *session, args map[string]any) cards {
 	return call[cards](t, s, "card_read", args)
 }
 
-// readVaultFile is what the vault holds at a path.
 func readVaultFile(t *testing.T, v domain.Vault, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
@@ -853,7 +848,6 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 	}
 }
 
-// mergeArgs is one call's arguments beside the ones every call takes.
 func mergeArgs(args, every map[string]any) map[string]any {
 	out := make(map[string]any, len(args)+len(every))
 	for k, v := range args {

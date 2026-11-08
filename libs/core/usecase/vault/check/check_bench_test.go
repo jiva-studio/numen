@@ -45,8 +45,6 @@ func BenchmarkRunDangling(b *testing.B) {
 	}
 }
 
-// vaultOf is a vault where names collide and links are written by them, which
-// is what the ambiguity check has to work through.
 func vaultOf(b *testing.B, notes int) map[string]string {
 	b.Helper()
 	out := make(map[string]string, notes)

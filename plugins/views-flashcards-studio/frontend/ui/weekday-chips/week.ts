@@ -7,17 +7,13 @@
 
 /** What a day is called. */
 export interface DayName {
-  /** The caller's own identifier, returned as given. */
   readonly id: string
-  /** What is drawn on the chip: a letter or two. */
   readonly short: string
-  /** The full name of the day, which is what a screen reader announces. */
   readonly long: string
 }
 
 /** One day as the row renders it: its name, and its fill level. */
 export interface Day extends DayName {
-  /** How full the chip is drawn, from nothing to the whole of it. */
   readonly level: number
 }
 

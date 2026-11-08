@@ -17,15 +17,10 @@ import type { Preset } from '../../types'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   deck: DeckCardsDue
-  /** The position of the deck in the list, which determines the letter that picks it. */
   index: number
-  /** The preset scheduling it, and nothing where none was read. */
   preset: Preset | undefined
-  /** Whether the vault's presets have been read, which a deck missing from them needs. */
   hasPresets: boolean
-  /** Whether the vault has been counted. */
   isCounted: boolean
-  /** Whether a session can be started on it. */
   canOpen: boolean
 }>()
 

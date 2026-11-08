@@ -162,7 +162,6 @@ func (h *Host) activatePlugin(ctx context.Context, p manifest.Discovered, sup *l
 	return h.startBuiltIn(ctx, p, builtIn, sup)
 }
 
-// startBuiltIn makes the handler of a built-in plugin and serves it in this process.
 func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn builtInPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
@@ -207,8 +206,6 @@ func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn 
 	return endpoint, nil
 }
 
-// shutdownBuiltIn shuts down the handler of a built-in plugin that was made and not activated, so
-// what it holds open is closed.
 func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint transport.Endpoint) {
 	if shutdown := h.createRPCShutdown(endpoint, time.Second); shutdown != nil {
 		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
@@ -217,8 +214,6 @@ func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint transport.Endpoint)
 	}
 }
 
-// exportRuntimeVars provisions the runtimes an in-process plugin declares, sets their variables in
-// this process, which is the plugin's own, and returns them.
 func (h *Host) exportRuntimeVars(ctx context.Context, requirements []pluginport.DependencyRequirement) ([]string, error) {
 	vars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {

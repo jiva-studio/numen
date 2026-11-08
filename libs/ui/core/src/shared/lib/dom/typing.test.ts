@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isTyping } from './typing'
 
-/** A keystroke whose target is the element named. */
 const createPress = (target: unknown) => ({ target }) as unknown as KeyboardEvent
 
 describe('a key pressed into something being written in', () => {

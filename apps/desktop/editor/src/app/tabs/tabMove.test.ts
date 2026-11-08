@@ -14,7 +14,6 @@ import type { TabMoveError } from '../ports/vault'
 
 const ORBITS_ID = 'plex:7c1e'
 
-/** Returns a plex tab whose getState returns the focus at call time. */
 const createTab = () => {
   const state = { focus: 'Kepler', path: 'notes/Orbits.md' }
   return {

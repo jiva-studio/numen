@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 )
 
-// createGuidedEpub is a book whose spine is the fourth child of the package element, after a guide,
-// and whose first chapter holds a paragraph longer than one segment, set off by three spaces.
 func createGuidedEpub(t *testing.T) []byte {
 	t.Helper()
 	return createZipEpub(t, map[string][]byte{
@@ -32,7 +30,6 @@ func createGuidedEpub(t *testing.T) []byte {
 	})
 }
 
-// newGuidedBookServer is a book server over a vault holding the guided book as guided.epub.
 func newGuidedBookServer(t *testing.T) (*BookServer, *hosttest.Vault) {
 	t.Helper()
 	files := hosttest.New("vault")

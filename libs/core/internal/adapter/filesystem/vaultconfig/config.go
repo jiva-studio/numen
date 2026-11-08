@@ -22,12 +22,9 @@ const configName = "config.json"
 // Config is what a vault records about itself: an identity, a format version,
 // and what the user has excluded. Nothing that could be recomputed.
 type Config struct {
-	Version int    `json:"v"`
-	ID      string `json:"id"`
-	// Ignore is written by the user, in the syntax of `.gitignore`. An
-	// attachments folder, an export directory, a sync client's scratch space:
-	// what counts as noise is a property of this vault.
-	Ignore []string `json:"ignore,omitempty"`
+	Version int      `json:"v"`
+	ID      string   `json:"id"`
+	Ignore  []string `json:"ignore,omitempty"`
 }
 
 // ErrNotAVault is returned when a folder has no identity, which means it has

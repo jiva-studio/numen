@@ -8,9 +8,6 @@
 import { describe, expect, it } from 'vitest'
 import { dayAfter, parseDay, daysBetween, getDayName, isDay } from './day'
 
-/**
- * it back, since every other test here reads it.
- */
 const inZone = (zone: string, run: () => void) => {
   const was = process.env['TZ']
   process.env['TZ'] = zone

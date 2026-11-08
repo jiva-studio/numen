@@ -13,7 +13,6 @@ import {
 } from '../../support/media.js'
 import { createUniqueTitle, readVaultFile, writeVaultFile } from '../../support/vault.js'
 
-/** Runs a palette command that asks for a name, and gives it the name. */
 const runNamingCommand = async (page: Page, command: string, name: string): Promise<void> => {
   await runPaletteCommand(page, command, command)
   const field = page.locator('input[data-palette="field"]').first()
@@ -22,7 +21,6 @@ const runNamingCommand = async (page: Page, command: string, name: string): Prom
   await page.keyboard.press('Enter')
 }
 
-/** The number a frontmatter key of a preset file holds. */
 const readNumber = (text: string, key: string): number =>
   Number(new RegExp(`^${key}: (.+)$`, 'm').exec(text)?.[1] ?? Number.NaN)
 

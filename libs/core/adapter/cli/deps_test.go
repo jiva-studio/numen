@@ -23,9 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// deps is what the commands of one session run through. The test assembles it
-// itself: a registry and an index of its own, the folders it made, and a trash
-// nothing of this machine's is sent to.
 func (s *session) deps(where cli.Locations) cli.Deps {
 	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
 	return cli.Deps{

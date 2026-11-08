@@ -37,7 +37,6 @@ func (u GetConnection) Execute(
 	return domain.Connection{A: a, B: b, AB: ab, BA: ba}, nil
 }
 
-// getSide returns the first record written in from that resolves to to.
 func (u GetConnection) getSide(
 	ctx context.Context, v domain.Vault, from, to, kind string,
 ) (*domain.Side, error) {

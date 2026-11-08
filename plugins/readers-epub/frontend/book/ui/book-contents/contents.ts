@@ -9,9 +9,7 @@
 /** One line of a book's contents: a name, and where it begins. */
 export interface ContentsEntry {
   readonly title: string
-  /** Where the named text begins, in bytes of the book's text. */
   readonly at: number
-  /** Depth, from zero for a division of the book itself. */
   readonly level: number
 }
 
@@ -30,11 +28,8 @@ export function findLineAt(entries: readonly ContentsEntry[], pos: number): numb
 
 /** The words a book's contents is read with. */
 export interface ContentsWords {
-  /** What the panel is called. */
   readonly contents: string
-  /** What the field the names are typed into is called. */
   readonly find: string
-  /** The text shown where a book is empty and holds no pages either. */
   readonly nothing: string
 }
 

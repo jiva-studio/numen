@@ -15,7 +15,6 @@ export interface NameMatch {
   path: string
   title: string
   heading: string
-  /** Position of that heading, counted from the first line of the prose. */
   line: number
   at: readonly TextRange[]
   type: NoteType
@@ -24,21 +23,11 @@ export interface NameMatch {
 /** One passage: the text around a hit, and where it came from. */
 export interface Passage {
   path: string
-  /** What the note is called. Empty for a source that is not a note. */
   title: string
-  /**
-   * Whether the text was read from a note. It determines what the palette
-   * offers over the passage: a book is no note, so it is not presented as one.
-   */
   isNote: boolean
-  /** The note type. It is meaningless for a file that is no note. */
   type: NoteType
-  /** Where in a file that is no note the text was found, and null for a note. */
   selector: Selector | null
   text: string
-  /**
-   * what the document it came out of is opened at.
-   */
   start: number
   length: number
   line: number
@@ -57,14 +46,11 @@ export interface SearchHit {
   path: string
   title: string
   line: number
-  /** The span of the source's own text the item was found in. */
   start: number
   length: number
   actionIds: readonly string[]
   type: NoteType | null
-  /** The place in a file that is no note, and null for a note. */
   selector: Selector | null
-  /** Whether the hit is the row that creates a note under the words typed, which is no result. */
   isCreation?: boolean
 }
 
@@ -76,7 +62,6 @@ export interface SearchRow {
 
 type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 
-/** The actions of a note: opening it, and then the entries plugins place in the menu of a result. */
 function createNoteActions(
   openText: string,
   menu: readonly PaletteAction[],
@@ -176,7 +161,6 @@ export function createPassageItem(
 /** What a chosen action runs: the command, what it is over, and the text typed for it. */
 export interface ResultChoice {
   readonly command: string
-  /** The chosen result as a target; null: the target the window holds. */
   readonly over: {
     readonly path: string
     readonly file: string
@@ -184,7 +168,6 @@ export interface ResultChoice {
     readonly line?: number
     readonly selector?: Selector
   } | null
-  /** The text typed for it, which answers a step that asks for a name; '' where none. */
   readonly input: string
 }
 

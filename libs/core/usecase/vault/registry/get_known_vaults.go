@@ -13,12 +13,8 @@ import (
 type KnownVault struct {
 	Vault domain.Vault
 
-	// IsMissing is a folder that is absent. The vault stays on the list until the user
-	// removes it.
 	IsMissing bool
 
-	// IsCurrent is the one vault the rest of a screen is about: the one a window
-	// is showing, or the one the next window opens.
 	IsCurrent bool
 }
 

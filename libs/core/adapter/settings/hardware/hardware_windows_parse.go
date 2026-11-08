@@ -10,10 +10,8 @@ import (
 
 // windowsCore is one physical core reported by GetLogicalProcessorInformationEx.
 type windowsCore struct {
-	// EfficiencyClass is higher for cores that favour performance.
 	EfficiencyClass int
-	// LogicalCPUs is the number of hardware threads of the core.
-	LogicalCPUs int
+	LogicalCPUs     int
 }
 
 const (
@@ -25,7 +23,6 @@ const (
 	windowsGroupMaskOffset       = 24
 )
 
-// parseWindowsCores reads the buffer GetLogicalProcessorInformationEx fills for RelationProcessorCore. maskSize is the size of a pointer on the host.
 func parseWindowsCores(buffer []byte, maskSize int) ([]windowsCore, error) {
 	var cores []windowsCore
 	for offset := 0; offset < len(buffer); {
@@ -49,7 +46,6 @@ func parseWindowsCores(buffer []byte, maskSize int) ([]windowsCore, error) {
 	return cores, nil
 }
 
-// parseWindowsCore parses one core record located at offset in the buffer.
 func parseWindowsCore(record []byte, offset, maskSize int) (windowsCore, error) {
 	if len(record) < windowsGroupMaskOffset {
 		return windowsCore{}, fmt.Errorf("parse processor information: short core record at %d", offset)
@@ -67,8 +63,6 @@ func parseWindowsCore(record []byte, offset, maskSize int) (windowsCore, error) 
 	return core, nil
 }
 
-// readWindowsMask is the affinity mask at the start of a group, as wide as a
-// pointer on the host.
 func readWindowsMask(group []byte, maskSize int) uint64 {
 	if maskSize == 8 {
 		return binary.LittleEndian.Uint64(group)
@@ -76,7 +70,6 @@ func readWindowsMask(group []byte, maskSize int) uint64 {
 	return uint64(binary.LittleEndian.Uint32(group))
 }
 
-// countPerformanceCores is the number of cores whose efficiency class is the highest present.
 func countPerformanceCores(cores []windowsCore) int {
 	highest := -1
 	count := 0

@@ -35,7 +35,6 @@ const createCanvas = (): CanvasRenderingContext2D => {
   return ctx
 }
 
-/** The first and last painted rows of a canvas and the stroke thickness, in canvas pixels. */
 const readStroke = (
   ctx: CanvasRenderingContext2D,
 ): { top: number; bottom: number; run: number } => {

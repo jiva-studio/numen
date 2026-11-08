@@ -33,45 +33,29 @@ import (
 
 // A Book is one EPUB file, read.
 type Book struct {
-	// Title is the name the package document gives the book.
 	Title string
 
-	// Text is the spine documents the bounds admit, in reading order, as one
-	// stream.
 	Text string
 
-	// Documents are the spine documents and where each begins in Text.
 	Documents []Document
 
-	// Parts are the parts the book declares, ascending by offset. Tier records
-	// which source they came from.
 	Parts []Part
 
-	// Pages are the pages of the printed book this file was made from,
-	// ascending by offset. Most books carry none.
 	Pages []Page
 
-	// Tier names the tier that produced Parts.
 	Tier Structure
 
 	Layout Layout
 
-	// Direction is the page progression direction of the book, and empty for a
-	// book that declares none.
 	Direction Direction
 
-	// files is the archive the book was read out of, which Markup reads one
-	// document out of again, and documents is the document of each name.
 	files      map[string]*zip.File
 	documents  map[string]Document
 	mediaTypes map[string]string
 
-	// spineStep and itemSteps are the CFI steps of the spine in the package document and of each
-	// itemref in the spine, by spine index.
 	spineStep int
 	itemSteps []int
 
-	// pageBytes is how many bytes of this book's text stand on one page.
 	pageBytes int
 }
 
@@ -186,8 +170,6 @@ func (b *Book) Entry(name string) ([]byte, error) {
 	return readEntry(b.files, name)
 }
 
-// openPackage indexes the archive behind r and checks that it contains a book whose
-// spine is readable.
 func openPackage(r io.ReaderAt, size int64) (map[string]*zip.File, opf.Package, error) {
 	reader, err := zip.NewReader(r, size)
 	if err != nil {
@@ -247,15 +229,10 @@ func (a *Archive) Entry(name string) ([]byte, error) {
 
 // A Location is where an offset in the text falls.
 type Location struct {
-	// Document is the spine document holding the offset.
-	Document string
-	// Part is the nearest name at or before the offset, and empty when the
-	// offset precedes every name.
-	Part string
-	// PartOffset is where that part begins.
+	Document   string
+	Part       string
 	PartOffset int
-	// Page is the printed page in force, and empty when the book has none.
-	Page string
+	Page       string
 }
 
 // Locate answers where one offset in the book's text is.
@@ -273,8 +250,6 @@ func (b *Book) Locate(offset int) Location {
 	return loc
 }
 
-// findPreceding is the index of the last item at or before an offset, and -1 when
-// there is none. The items are ascending by offset.
 func findPreceding(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
 }

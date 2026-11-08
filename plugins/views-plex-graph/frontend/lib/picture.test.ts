@@ -13,7 +13,6 @@ type Stated = readonly [label: string, marker: LinkMarker | null]
 const toSide = (record: Stated | null): ConnectionSide | null =>
   record === null ? null : { label: record[0], marker: record[1], reason: '' }
 
-/** The connection between two notes, running from the first to the second. */
 const createLine = (
   first: string,
   second: string,
@@ -39,19 +38,11 @@ const createNeighbourhood = (
   connections: lines,
 })
 
-/**
- * The graph, and the note each node ID in it identifies. Every note here has no
- * identifier, which is the case the graph has to render.
- */
 const renderImage = (neighbourhood: Neighbourhood) => {
   const map = createNodeIdMap()
   return { plex: convertNeighbourhood(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
 
-/**
- * Every edge, as the notes at its two ends. A token that no note holds resolves
- * to nothing, so an edge built from any other token is visible here.
- */
 const getEdges = (neighbourhood: Neighbourhood) => {
   const { plex, note } = renderImage(neighbourhood)
   return plex.edges.map(

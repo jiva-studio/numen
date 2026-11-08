@@ -20,7 +20,6 @@ const editor = (goToLine: (line: number) => void = () => undefined) => {
   return { times, view: drawGutter(times) }
 }
 
-/** One more editor these times are shown in. */
 const drawGutter = (times: { extension: Extension }) => {
   const view = new EditorView({
     parent: document.body,
@@ -30,13 +29,11 @@ const drawGutter = (times: { extension: Extension }) => {
   return view
 }
 
-/** Everything queued as an editor attached has run. */
 const waitTick = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const gutter = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.textContent ?? '')
 
-/** The lines rendered as active. */
 const current = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-content .cm-current')].map((one) => one.textContent ?? '')
 
@@ -313,7 +310,6 @@ describe('an editor drawn again while the recording remains still', () => {
   })
 })
 
-/** Every list of effects the view was dispatched, in order. */
 const recordEffects = (view: EditorView) => {
   const observed: StateEffect<unknown>[][] = []
   const was = view.dispatch.bind(view)
@@ -327,7 +323,6 @@ const recordEffects = (view: EditorView) => {
   return observed
 }
 
-/** The dispatches that requested a view move. */
 const moves = (observed: StateEffect<unknown>[][]) =>
   observed.filter((effects) => effects.length > 1)
 

@@ -47,8 +47,6 @@ func Shut(tb testing.TB, path string) {
 	}
 }
 
-// opening gives the file back the rights its folder hands down, so what removes
-// the folder may remove it.
 func opening(tb testing.TB, path string) {
 	if err := windows.SetNamedSecurityInfo(
 		path,

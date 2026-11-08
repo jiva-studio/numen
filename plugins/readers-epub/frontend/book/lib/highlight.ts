@@ -16,7 +16,6 @@ export const OTHER_HIGHLIGHT = 'numen-book-other-highlight'
 /** The ranges each book on screen has in each entry. */
 const target = new Map<string, Map<object, readonly Range[]>>()
 
-/** Whether this browser supports the CSS Custom Highlight API. */
 const canHighlight = (): boolean =>
   typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function'
 

@@ -20,7 +20,6 @@ interface Shape {
   readonly name: string
   readonly frontmatter: (id: string) => string
   readonly prose: string
-  /** What the editor shows: the prose, or its placeholder when there is none. */
   readonly visible: string
 }
 
@@ -57,7 +56,6 @@ const SHAPES: readonly Shape[] = [
   },
 ]
 
-/** The id the core gave a note it made, read from the file. */
 const readId = async (
   request: Parameters<typeof readVaultFile>[0],
   notePath: string,

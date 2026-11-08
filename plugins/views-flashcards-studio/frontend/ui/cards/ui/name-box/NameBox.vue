@@ -5,13 +5,9 @@ import type { Objection } from '../../lib/order'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** Name entry state managing this input field. */
   naming: NameEntryState<Objection>
-  /** Target identifier addressed by the name entry state. */
   targetId: string
-  /** Placeholder and accessible label for the input element. */
   stem: string
-  /** Validation description identifier for aria-describedby. */
   describedBy?: string | null
 }>()
 

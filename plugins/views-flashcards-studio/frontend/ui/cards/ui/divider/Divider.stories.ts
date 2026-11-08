@@ -14,11 +14,8 @@ import { Button } from '@numen/ui'
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
-  /** The label of the action the rule holds. */
   label: string
-  /** Where on the rule the label is placed. */
   at: 'middle' | 'start'
-  /** How wide the window drawing the rule is. */
   width: string
 }
 
@@ -57,7 +54,6 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
   return element
 }
 
-/** How wide each side of the line is drawn, which is the divider's own decoration. */
 const sides = (divider: HTMLElement): readonly number[] =>
   ['::before', '::after'].map((side) => Number.parseFloat(getComputedStyle(divider, side).width))
 

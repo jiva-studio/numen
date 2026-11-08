@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// readLinks is the relationships written in the `links:` block of a document.
 func readLinks(d *Document) ([]domain.Link, error) {
 	node, err := d.readMapping()
 	if err != nil || node == nil {

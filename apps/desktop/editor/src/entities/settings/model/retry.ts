@@ -6,9 +6,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 
 /** Notice copy of a retry. */
 export interface RetryWords {
-  /** The plugin failed to start again: "<Name> stopped: <reason>". */
   readonly stopped: (name: string, reason: string) => string
-  /** The retry request itself failed. */
   readonly retryFailed: (name: string, message: string) => string
 }
 
@@ -22,7 +20,6 @@ export interface RetryOptions {
   readonly words: RetryWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
-  /** The display name of a plugin, or its id when it has none. */
   readonly getName: (pluginId: string) => string
 }
 

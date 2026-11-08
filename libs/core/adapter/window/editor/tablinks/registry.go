@@ -21,37 +21,29 @@ const maxPendingEvents = 1024
 // Tab is a linkable tab open in a window.
 type Tab struct {
 	ID, Kind, Title string
-	// WindowID is the id of the window that last reported the tab.
-	WindowID string
+	WindowID        string
 }
 
 // Group is two or more tabs that move to the same path together.
 type Group struct {
-	ID         string
-	ColorIndex int
-	TabIDs     []string
-	// Path and Title are the last path synced in the group; empty before the
-	// first sync. A window that missed a sync moves its tabs to Path from the
-	// next snapshot.
+	ID          string
+	ColorIndex  int
+	TabIDs      []string
 	Path, Title string
 }
 
 // Window is the last report of a window about itself.
 type Window struct {
-	ID     string
-	IsMain bool
-	// ActiveTitle and ActiveKind describe the active tab; both are empty for a
-	// window with no tabs.
+	ID                      string
+	IsMain                  bool
 	ActiveTitle, ActiveKind string
-	// TabCount is every tab the window has open, linkable or not.
-	TabCount int
+	TabCount                int
 }
 
 // Snapshot holds every group, every known tab and every window that reported.
 type Snapshot struct {
-	Groups []Group
-	Tabs   []Tab
-	// Windows lists the main window first, then the others in order of their first report.
+	Groups  []Group
+	Tabs    []Tab
 	Windows []Window
 }
 
@@ -93,32 +85,21 @@ type Registry struct {
 	schedule Schedule
 	events   broadcast.Broadcaster[Event]
 
-	mu       sync.Mutex
-	tabs     map[string]Tab
-	tabOrder []string
-	// windows maps each window to the tab ids it owns, in report order.
-	windows map[string][]string
-	// windowInfo is the last report of each window about itself, and windowOrder
-	// the order of the first reports.
-	windowInfo  map[string]Window
-	windowOrder []string
-	// claims maps each window to the tabs it reported while another live
-	// window owned them. The window receives such a tab when the owner's last
-	// watch closes.
-	claims map[string][]Tab
-	groups []*Group
-	nextID int
-	// pendingDetaches is the pending detach of each tab, with its saved state.
-	pendingDetaches map[string]*detach
-	// pendingWindowRemovals is the pending removal of each window whose last watch closed.
+	mu                    sync.Mutex
+	tabs                  map[string]Tab
+	tabOrder              []string
+	windows               map[string][]string
+	windowInfo            map[string]Window
+	windowOrder           []string
+	claims                map[string][]Tab
+	groups                []*Group
+	nextID                int
+	pendingDetaches       map[string]*detach
 	pendingWindowRemovals map[string]*expiry
-	// pendingMoves holds the pending moves by tab id.
-	pendingMoves map[string]*move
-	nextMoveID   int
-	// acceptedMoves maps the id of each move completed within the grace period to
-	// its target window, so that a repeated Accept succeeds.
-	acceptedMoves map[string]string
-	watches       map[string][]*Watch
+	pendingMoves          map[string]*move
+	nextMoveID            int
+	acceptedMoves         map[string]string
+	watches               map[string][]*Watch
 }
 
 // NewRegistry returns an empty registry. A detached tab that no window reports
@@ -151,10 +132,6 @@ func NewRegistry(grace time.Duration, schedule Schedule) (*Registry, error) {
 	}, nil
 }
 
-// getEventTopic returns one topic for all snapshots, and one topic per group
-// for syncs, per tab for moves and per window for highlights, so a newer event
-// replaces a pending one on the same topic. The newer event is queued last, so
-// a window receives a snapshot and a sync in the order they were published.
 func getEventTopic(e Event) string {
 	switch {
 	case e.Sync != nil:
@@ -170,11 +147,9 @@ func getEventTopic(e Event) string {
 
 // Watch is one window's subscription to the registry.
 type Watch struct {
-	// Initial is the snapshot at watch start; Events delivers every later change.
 	Initial Snapshot
 	Events  <-chan Event
-	// Stop is closed when the window cancels its watch.
-	Stop <-chan struct{}
+	Stop    <-chan struct{}
 
 	windowID    string
 	stop        chan struct{}
@@ -232,8 +207,6 @@ func (r *Registry) Watch(windowID string) *Watch {
 	return w
 }
 
-// expireWindow unlinks the tabs of a window whose last watch closed. It is a
-// no-op when the window watched again.
 func (r *Registry) expireWindow(windowID string, pending *expiry) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -244,7 +217,6 @@ func (r *Registry) expireWindow(windowID string, pending *expiry) {
 	r.removeWindow(windowID)
 }
 
-// moveClaimedTabs gives each tab of a window to a live window that claimed it.
 func (r *Registry) moveClaimedTabs(ownerID string) {
 	claimers := make([]string, 0, len(r.claims))
 	for id := range r.claims {
@@ -326,10 +298,6 @@ func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 	r.publishSnapshot()
 }
 
-// dropUnreportedGroupMates removes the tabs that a window left out of its report from the groups of
-// the tabs it took over from a window that is gone. A window that reloads reports all of its tabs, so
-// a group mate of the old window that is missing from the report was closed, and a tab with a
-// pending detach is kept.
 func (r *Registry) dropUnreportedGroupMates(reported []string, takenFrom map[string]string) {
 	for tabID, oldWindowID := range takenFrom {
 		group := r.findGroup(tabID)
@@ -345,8 +313,6 @@ func (r *Registry) dropUnreportedGroupMates(reported []string, takenFrom map[str
 	}
 }
 
-// acceptTab records a tab reported by a window and returns whether the tab now
-// belongs to that window.
 func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	previous, isKnown := r.tabs[tab.ID]
 	switch {
@@ -360,8 +326,6 @@ func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	return true
 }
 
-// setOwner records a tab as a tab of a window, ends its pending detach, and
-// takes it out of the list of its previous window.
 func (r *Registry) setOwner(windowID string, tab Tab) {
 	tab.WindowID = windowID
 	previous, isKnown := r.tabs[tab.ID]
@@ -481,8 +445,6 @@ type expiry struct {
 	hasAccepted bool
 }
 
-// isLive reports whether a window keeps its tabs against the reports of other
-// windows: it watches, or it accepted a tab and its grace period has not ended.
 func (r *Registry) isLive(windowID string) bool {
 	if len(r.watches[windowID]) > 0 {
 		return true
@@ -491,8 +453,6 @@ func (r *Registry) isLive(windowID string) bool {
 	return ok && pending.hasAccepted
 }
 
-// keepAcceptingWindow keeps a window with no watch that accepted a tab as the
-// owner of its tabs until its grace period ends without a watch.
 func (r *Registry) keepAcceptingWindow(windowID string) {
 	if len(r.watches[windowID]) > 0 {
 		return
@@ -519,8 +479,6 @@ func (r *Registry) CancelDetach(tabID string) {
 	r.dropUnreportedTab(tabID)
 }
 
-// expireDetach removes a detached tab that no window reported. It is a no-op
-// when a report or a newer Detach replaced this detach.
 func (r *Registry) expireDetach(tabID string, pending *detach) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -531,8 +489,6 @@ func (r *Registry) expireDetach(tabID string, pending *detach) {
 	r.dropUnreportedTab(tabID)
 }
 
-// dropUnreportedTab removes a known tab missing from the last report of its
-// window.
 func (r *Registry) dropUnreportedTab(tabID string) {
 	tab, isKnown := r.tabs[tabID]
 	if !isKnown || slices.Contains(r.windows[tab.WindowID], tabID) {
@@ -556,8 +512,6 @@ func (r *Registry) SyncPath(sourceTabID, path, title string) bool {
 	return true
 }
 
-// removeWindow unlinks the tabs of a window, except tabs with a pending
-// detach.
 func (r *Registry) removeWindow(windowID string) {
 	ids, ok := r.windows[windowID]
 	if !ok {
@@ -572,8 +526,6 @@ func (r *Registry) removeWindow(windowID string) {
 	r.publishSnapshot()
 }
 
-// forgetTab removes a tab missing from the report of its window, unless it has a
-// pending detach.
 func (r *Registry) forgetTab(tabID string) {
 	if _, ok := r.pendingDetaches[tabID]; ok {
 		return
@@ -587,8 +539,6 @@ func (r *Registry) dropTab(tabID string) {
 	r.removeFromGroup(tabID)
 }
 
-// removeFromGroup removes a tab from its group and deletes a group left with
-// fewer than two tabs. It returns whether the tab was in a group.
 func (r *Registry) removeFromGroup(tabID string) bool {
 	group := r.findGroup(tabID)
 	if group == nil {
@@ -610,8 +560,6 @@ func (r *Registry) findGroup(tabID string) *Group {
 	return nil
 }
 
-// getNextColorIndex returns the lowest color no group has, or 1 when every
-// color is taken.
 func (r *Registry) getNextColorIndex() int {
 	for index := 1; index <= maxColorIndex; index++ {
 		if !slices.ContainsFunc(r.groups, func(g *Group) bool { return g.ColorIndex == index }) {
@@ -652,8 +600,6 @@ func appendMissing(to []string, ids ...string) []string {
 	return to
 }
 
-// getWindows returns the watching windows that reported, the main window
-// first.
 func (r *Registry) getWindows() []Window {
 	out := make([]Window, 0, len(r.windowOrder))
 	for _, id := range r.windowOrder {

@@ -41,6 +41,8 @@ func (h lifecycleHandler) Configure(
 }
 
 // PingResult is the answer of a plugin to a ping.
+//
+//numen:api
 type PingResult struct {
 	// Status is "ok" for a healthy plugin.
 	Status string

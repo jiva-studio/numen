@@ -54,7 +54,6 @@ func (s Statements) Get(name string) string {
 	return stmt
 }
 
-// rejected returns a SELECT from a table named reason, which no database has.
 func rejected(reason string) string {
 	return `SELECT 1 FROM "` + strings.ReplaceAll(reason, `"`, `""`) + `"`
 }

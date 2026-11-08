@@ -18,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// joined is a vault whose deck points at a prose note, the way cards are cut
-// from a user's own writing.
 func getJoined() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -98,8 +96,6 @@ func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.R
 	return nil, errors.New("the index is out of reach")
 }
 
-// backlinked is a vault whose deck points at one note and is pointed at by
-// another.
 func getBacklinked() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],

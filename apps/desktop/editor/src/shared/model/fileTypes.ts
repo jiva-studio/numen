@@ -25,9 +25,7 @@ export interface FileKind {
 }
 
 export interface Entry {
-  /** What the vault calls it, relative to the root, with forward slashes. */
   readonly path: string
-  /** The last segment of the path, which is what the row shows. */
   readonly name: string
   readonly isFolder: boolean
   readonly isNote: boolean
@@ -44,7 +42,6 @@ export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 export interface MoveResult {
   readonly from: string
   readonly to: string
-  /** The notes whose link stopped resolving and was written again, by name. */
   readonly repaired: readonly string[]
 }
 

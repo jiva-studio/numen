@@ -8,7 +8,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMarks, findOffset, rangesOver, findRun, getRuns } from './runs'
 
-/** A document as it is drawn, held in an element the way the reader holds it. */
 const createMarkupPaper = (markup: string): HTMLElement => {
   const paper = document.createElement('div')
   paper.innerHTML = markup
@@ -139,7 +138,6 @@ describe('a stretch of the book marked at its current position', () => {
   })
 })
 
-/** A run the browser has put somewhere, which jsdom never does by itself. */
 const createPaper = (markup: string, lefts: readonly number[]): HTMLElement => {
   const paper = createMarkupPaper(markup)
   const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')

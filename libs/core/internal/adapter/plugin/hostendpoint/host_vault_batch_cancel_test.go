@@ -80,8 +80,6 @@ func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string
 	return trashPath, broken, err
 }
 
-// newCancellingEndpoint is the vault endpoint over the vault of rivers that cancels the context it
-// returns on its change number cancelIndex, with md.numen.a granted vault:write.
 func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vaultEndpoint, *cancellingVault, context.Context) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -98,7 +96,6 @@ func authorizeAsA[T any](req *connect.Request[T]) *connect.Request[T] {
 	return req
 }
 
-// getCancelledBatch is the paths of the batch the cancel tests change.
 func getCancelledBatch() []string { return []string{"Danube.md", "Rivers/Rhine.md", "Deltas.md"} }
 
 func requireNotAttemptedMove(t *testing.T, entry *v1.HostNoteMove, from string) {

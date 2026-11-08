@@ -18,10 +18,8 @@ import (
 
 // VaultReader reads one vault from disk.
 type VaultReader struct {
-	root string
-	opts vaultconfig.Options
-	// ignored is compiled once and matched against every path of every event and
-	// every path component.
+	root    string
+	opts    vaultconfig.Options
 	ignored *vaultconfig.Ignoring
 }
 
@@ -89,9 +87,6 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) er
 	})
 }
 
-// getWalkedFileStat is what a walk reports of a file, or nil where it reports
-// nothing. A source is a regular file: a device, a socket or a FIFO carries
-// no bytes to read whatever it is named.
 func (s *VaultReader) getWalkedFileStat(p string, d fs.DirEntry) (*domain.FileStat, error) {
 	kind := s.opts.Kind(d.Name())
 	rel := s.getRelPath(p)
@@ -116,7 +111,6 @@ func (s *VaultReader) getWalkedFileStat(p string, d fs.DirEntry) (*domain.FileSt
 	}, nil
 }
 
-// getRelPath names a path under the vault root in slash form.
 func (s *VaultReader) getRelPath(p string) string {
 	if len(p) <= len(s.root) {
 		return ""
@@ -169,8 +163,6 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	return entries, nil
 }
 
-// getEntry is what List reports of one entry of a folder, and whether it
-// reports the entry at all. The kind is set for a regular file only.
 func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Entry, bool) {
 	rel := pathpkg.Join(folder, d.Name())
 	entry := domain.Entry{Path: rel, Name: d.Name(), IsFolder: d.IsDir()}
@@ -186,9 +178,6 @@ func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Ent
 	return entry, true
 }
 
-// getEntryInfo returns the file info of one entry, following links: a note stored
-// as a link to a file elsewhere in the vault is that file. A link whose target does
-// not exist, or a link cycle, is not readable.
 func getEntryInfo(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	if d.Type()&fs.ModeSymlink == 0 {
 		return d.Info()
@@ -200,8 +189,6 @@ func getEntryInfo(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	return found, nil
 }
 
-// inOrder is folders before files, and names compared without regard to case.
-// Two names differing only in case keep a settled order of their own.
 func inOrder(a, b domain.Entry) int {
 	if a.IsFolder != b.IsFolder {
 		if a.IsFolder {
@@ -242,7 +229,6 @@ func (s *VaultReader) Read(ctx context.Context, path string) (_ []byte, err erro
 	return readAll(f, info.Size())
 }
 
-// readAll reads all bytes from r using size to preallocate the buffer.
 func readAll(r io.Reader, size int64) ([]byte, error) {
 	var capSize int
 	if int64(int(size)) == size && size > 0 {
@@ -267,8 +253,6 @@ func readAll(r io.Reader, size int64) ([]byte, error) {
 	}
 }
 
-// checkSize limits the size at which a note is read whole. A book and a
-// recording are read in parts by a caller that has their size.
 func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 	linked := s.opts.GetMaxNoteBytes()
 	if !s.opts.IsNote(pathpkg.Base(path)) || info.Size() <= linked {
@@ -310,9 +294,6 @@ func (s *VaultReader) openWith(
 	return f, nil
 }
 
-// checkReadable holds a path to something the operating system hands bytes over for
-// without waiting: a device, a socket or a FIFO is not a note. A folder is
-// answered by whichever call was going to open it.
 func checkReadable(path string, info fs.FileInfo) error {
 	if info.Mode().IsRegular() || info.IsDir() {
 		return nil
@@ -352,11 +333,6 @@ func (s *VaultReader) StatFile(ctx context.Context, path string) (domain.FileSta
 	}, nil
 }
 
-// getNotANoteError is what a path the vault does not hold as a note is answered with.
-// Something at that path is ErrNotANote; nothing at it is fs.ErrNotExist.
-//
-// It costs a look at the file's metadata and never its bytes, which is what a
-// caller deciding whether to open a 400 MB export has to be able to ask.
 func (s *VaultReader) getNotANoteError(path string) error {
 	target, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir())
 	if err != nil {
@@ -368,14 +344,10 @@ func (s *VaultReader) getNotANoteError(path string) error {
 	return fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 }
 
-// isSkipped reports whether a walk skips a folder without descending. The walk
-// and the watcher both use it, so they skip the same folders.
 func (s *VaultReader) isSkipped(path, name string) bool {
 	return s.opts.IsService(name) || s.ignored.MatchesPath(path+"/")
 }
 
-// relative names a path the way the vault does. Anything outside it is not the
-// vault's to answer for.
 func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 	rel, err := filepath.Rel(s.root, absolute)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
@@ -384,9 +356,6 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 	return filepath.ToSlash(rel), true
 }
 
-// getKind reports a path's source kind inside this vault, and whether a walk
-// would report it at all. The walk and the watcher both use it, so the two
-// agree about what the vault contains.
 func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir()); err != nil {
 		return "", false

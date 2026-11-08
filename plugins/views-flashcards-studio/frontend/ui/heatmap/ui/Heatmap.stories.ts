@@ -41,7 +41,6 @@ const words: Words = {
   recalled: 'of cards you are reviewing came back',
 }
 
-/** A year of days, most of them answered on. */
 function createYear(): Map<string, Tally> {
   const out = new Map<string, Tally>()
   for (let back = 0; back < 300; back += 1) {
@@ -161,7 +160,6 @@ export const Nothing: Story = {
 /** The day the accounts below are pointed at, which is the one holding now. */
 const TODAY = getDayName(now)
 
-/** A day drawn on its own, so the cell pointed at is the one holding now. */
 const createOneDay = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
 
 /**
@@ -179,7 +177,6 @@ const createContainer = (args: InstanceType<typeof Heatmap>['$props']) => ({
     ]),
 })
 
-/** Point at the day holding now, and read back the account it opens. */
 const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()

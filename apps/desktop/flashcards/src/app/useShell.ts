@@ -34,7 +34,6 @@ export interface ShellDeps {
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
   readonly agentClient?: WindowAgentClient
   readonly linkClient?: LinkClient
-  /** The theme service and the plugin names the appearance commands are given. */
   readonly appearance?: AppearanceServices
 }
 
@@ -48,7 +47,6 @@ const listVaults = async (): Promise<readonly VaultRow[]> =>
     path: one.path,
   }))
 
-/** The vaults of the installation, read once as the window opens. */
 function useVaults(list: () => Promise<readonly VaultRow[]>, onError: (text: string) => void) {
   const vaults = shallowRef<readonly VaultRow[]>([])
   const isListing = ref(true)

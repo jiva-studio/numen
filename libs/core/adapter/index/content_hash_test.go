@@ -21,7 +21,6 @@ const (
 	otherHash  = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
 )
 
-// getRiversTime is a modification time with nanoseconds, as a file system gives it.
 func getRiversTime() time.Time { return time.Date(2026, 6, 2, 14, 30, 5, 123456789, time.UTC) }
 
 func openHashIndex(t *testing.T) *DB {
@@ -37,7 +36,6 @@ func openHashIndex(t *testing.T) *DB {
 	return db
 }
 
-// scan writes the row a scan of the vault writes for a file.
 func scan(t *testing.T, db *DB, path string, size int64, modTime time.Time) {
 	t.Helper()
 	if err := db.Sources().SaveSource(t.Context(), hashVault, domain.Source{
@@ -157,7 +155,6 @@ func TestFindContentHashOfAnotherVaultFindsNothing(t *testing.T) {
 	}
 }
 
-// readHashColumns is the file id and the hash time of the row, NULL as invalid.
 func readHashColumns(t *testing.T, db *DB, path string) (sql.NullInt64, sql.NullInt64) {
 	t.Helper()
 	var fileID, hashTime sql.NullInt64
@@ -235,7 +232,6 @@ func TestSaveContentHashWritesOnlyTheRowOfItsVault(t *testing.T) {
 	}
 }
 
-// writeSource writes the row of the file the way the indexer does after reading it.
 func writeSource(t *testing.T, db *DB, size int64, modTime time.Time, contentHash string) {
 	t.Helper()
 	if err := db.Sources().SaveSource(t.Context(), hashVault, domain.Source{

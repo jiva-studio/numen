@@ -14,11 +14,9 @@ import { DARK, expectDark } from '@/shared/fixtures/theme'
 import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
 
 interface Knobs {
-  /** Label of each segment, one per line. */
   words: string
   chosen: string
   isDisabled: boolean
-  /** How wide the box drawing the control is. */
   width: string
 }
 
@@ -77,10 +75,6 @@ const getChosen = (canvas: HTMLElement): string | undefined =>
     .find((one) => one.getAttribute('aria-checked') === 'true')
     ?.textContent?.trim()
 
-/**
- * One press of an arrow key: the choice follows the keyboard while the key is
- * down, so it is held until it has.
- */
 const press = async (key: string, until: () => void | Promise<void>) => {
   await userEvent.keyboard(`{${key}>}`)
   await waitFor(until)

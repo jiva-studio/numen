@@ -19,7 +19,6 @@ import { WORDS as words } from './words'
 /** The word agent tabs are filed under. */
 export const AGENT = 'agent'
 
-/** The title of an agent tab: the first prompt, shortened. */
 const getAgentTitle = (state: AgentTabState): string =>
   createTabTitle(state.turns.value.find((turn) => turn.voice === 'prompt')?.text ?? '') ||
   words.agent

@@ -4,9 +4,7 @@
 /** The words a book is read with. */
 export interface BookWords {
   readonly pages: string
-  /** The position in the book of the front page. */
   readonly of: (page: number, pages: number) => string
-  /** How much of the chapter in front is still to come. */
   readonly left: (pages: number) => string
 }
 

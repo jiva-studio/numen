@@ -43,7 +43,6 @@ const GROUNDS = {
   panel: 'var(--numen-panel-bg)',
 } as const
 
-/** A size with no text in it, whose mark is checked against the ratio of non-text. */
 const isIconOnly = (size: Size): boolean => size === 'icon' || size === 'icon-small'
 
 const meta: Meta = {
@@ -94,14 +93,12 @@ const buttons = () => ({
     </div>`),
 })
 
-/** Puts a case into its state and returns the element to measure. */
 async function putInState(element: HTMLElement, state: string): Promise<void> {
   if (state === 'hover') await hoverOver(element)
   if (state === 'focus') element.focus()
   finishMotion(element)
 }
 
-/** Reads every button of the matrix; the one-off exemption of a disabled control is stated here. */
 async function playButtons(canvasElement: HTMLElement): Promise<void> {
   const cases = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-case]'))
   // Per variant and ground: two text sizes, each plain and with an icon, and two icon sizes,

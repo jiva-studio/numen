@@ -30,9 +30,8 @@ var ErrOverlaps = errors.New("a vault cannot contain or be inside another vault"
 
 // OverlapError is ErrOverlaps for one folder and the vault it overlaps. Its text names both.
 type OverlapError struct {
-	Path  string
-	Vault Vault
-	// IsInside is whether the folder is inside the vault; otherwise the folder contains it.
+	Path     string
+	Vault    Vault
 	IsInside bool
 }
 
@@ -111,7 +110,6 @@ func (vs Vaults) FreeName(name string, self VaultID) string {
 	}
 }
 
-// isBelow reports whether path is below root.
 func isBelow(path, root string) bool {
 	rel, err := filepath.Rel(root, path)
 	if err != nil || rel == "." {

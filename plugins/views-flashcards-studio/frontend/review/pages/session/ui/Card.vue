@@ -12,7 +12,6 @@ import { CardProse, scheme } from '../../../../ui/cards'
 const props = defineProps<{
   front: string
   back: string
-  /** Whether the answer is being shown. */
   isShown: boolean
 }>()
 
@@ -34,10 +33,6 @@ const onPointerDown = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
-/**
- * A link inside a card is never followed — this window has one page — but a
- * link into the vault opens the reading beside the card on the note it names.
- */
 const onFollow = (href: string, press: MouseEvent) => {
   press.preventDefault()
   // A name carrying no scheme points inside the vault, which is where the
@@ -45,7 +40,6 @@ const onFollow = (href: string, press: MouseEvent) => {
   if (scheme(href) === null) emit('read', decodeHref(href))
 }
 
-/** The card is turned over by pressing it, a press spent on a link aside. */
 const onClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
   // A press that did not drag requests the answer.
@@ -55,10 +49,6 @@ const onClick = (press: MouseEvent) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * A name written into an href is URI-escaped. A card's content is author-supplied,
- * so a malformed escape is kept as the literal characters.
- */
 function decodeHref(href: string): string {
   try {
     return decodeURIComponent(href)

@@ -30,12 +30,9 @@ export interface HostModuleBuild {
 
 /** What one window adds to the config every window shares. */
 export interface WindowOptions {
-  /** The Vue plugin, and any other plugin of the window. */
   readonly plugins: readonly PluginOption[]
   readonly hostModules: HostModuleBuild
-  /** The Go package that embeds the build, relative to the window's folder. */
   readonly outDir: string
-  /** The aliases of the window's own, as `createWindowAliases` takes them. */
   readonly own?: Readonly<Record<string, string>>
 }
 

@@ -17,7 +17,6 @@ export type FilePlacement = 'current' | 'split'
 export interface OpenPlacement {
   where?: FilePlacement | undefined
   line?: number | undefined
-  /** The place the reader of a file that is no note shows, such as a search hit. */
   selector?: Selector | undefined
 }
 
@@ -49,7 +48,6 @@ interface ExtensionReader {
 /** The kind assumed for a file the vault cannot be queried about: it opens in its reader. */
 const UNKNOWN: FileKind = { isNote: false, type: '' }
 
-/** The extension of a path, lowercase and without the dot, and empty where it has none. */
 const getExtension = (path: string): string => {
   // Stryker disable next-line LogicalOperator: split('/').pop() on a string always returns a string.
   const name = path.split('/').pop() ?? path

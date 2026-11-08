@@ -25,7 +25,6 @@ const props = (textSize: number): SettledBookProps => ({
   words: BOOK_WORDS,
 })
 
-/** An element the browser has measured at a size, which jsdom never does by itself. */
 const createArea = (width: number, height: number): HTMLElement => {
   const area = document.createElement('div')
   Object.defineProperty(area, 'clientWidth', { value: width })
@@ -33,8 +32,6 @@ const createArea = (width: number, height: number): HTMLElement => {
   return area
 }
 
-/** The columns of a book mounted over an area of a size. */
-/** Mounts a component that runs the composable over the area and the paper. */
 const mountColumns = (area: HTMLElement, paper: HTMLElement, textSize: number) => {
   let columns!: ReturnType<typeof useBookColumns>
   mount(

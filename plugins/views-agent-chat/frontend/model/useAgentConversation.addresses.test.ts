@@ -9,10 +9,8 @@ import { useAgentConversation } from './useAgentConversation'
 import type { TextRange } from '@numen/plugin-sdk'
 import { createLinkResolver } from '../fixtures/links'
 
-/** A line of an answer. */
 const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
-/** An agent tab over existing turns, and a vault that resolves the given notes. */
 const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   const turns = ref<Turn[]>(turn)
   const conversation: Conversation = {
@@ -39,12 +37,10 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   return { state, turns, requests, opened: openedCalls, adjacentItems }
 }
 
-/** Lets the answers come back and the turns be drawn. */
 const settle = async () => {
   for (let step = 0; step < 6; step++) await nextTick()
 }
 
-/** The text of a turn changed at its current position, as it grows while active. */
 const rewrite = (one: Turn, text: string) => {
   ;(one as { text: string }).text = text
 }

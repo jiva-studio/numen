@@ -15,16 +15,13 @@ import type { CardModel } from '../../lib/card'
 interface Corpus {
   readonly cards: readonly DeckCard[]
   readonly cuts: readonly CardModel[]
-  /** The sections the cards stand under, in the order they stand in the deck. */
   readonly sections?: readonly DeckSection[]
-  /** What the vault reading this file found wrong with it, by card and field. */
   readonly wrong?: {
     readonly at?: Readonly<Record<string, readonly string[]>>
     readonly under?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>
   }
 }
 
-/** The validation problems of a corpus, in the form the grid takes. */
 const createProblems = (corpus: Corpus): DeckProblems => ({
   at: new Map(Object.entries(corpus.wrong?.at ?? {})),
   under: new Map(
@@ -41,11 +38,6 @@ const ASKED: CardModel = { name: 'Basic', fields: ['Question', 'Answer'] }
 
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
-/**
- * Cards cut by two card models of different sizes, which is where the tiles differ
- * most: one card model holds four fields and one holds two, and cards leave fields
- * out.
- */
 const many = (count: number): readonly DeckCard[] =>
   Array.from({ length: count }, (_, index) =>
     index % 2 === 0
@@ -285,9 +277,7 @@ type Corpora = keyof typeof CORPORA
 interface Knobs {
   corpus: Corpora
   name: string
-  /** How wide the window drawing the deck is. */
   width: string
-  /** Given by the story, and nothing a reader turns. */
   cards?: never
   cuts?: never
   sections?: never
@@ -408,11 +398,6 @@ const meta: Meta<Knobs> = {
 
 const getSections = (corpus: Corpus): readonly DeckSection[] => corpus.sections ?? []
 
-/**
- * A card let go before another, at the head of the deck, at the head of a
- * section, or at the end of it. A card takes the section of whatever it lands
- * in front of.
- */
 const moveCard = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
@@ -663,7 +648,6 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
   return element
 }
 
-/** Every tile is the size of the fullest of them, and nothing inside one scrolls. */
 const measure = async (canvasElement: HTMLElement, least = 3): Promise<void> => {
   const tiles = [...canvasElement.querySelectorAll<HTMLElement>('[data-card]')]
   await expect(tiles.length).toBeGreaterThanOrEqual(least)

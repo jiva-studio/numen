@@ -74,7 +74,6 @@ export interface Words extends EmptyWords {
 export interface SearchOptions {
   wait?: Wait
   coverage?(): IndexCoverage
-  /** The entries plugins place in the menu of a search result. */
   menu?: SearchMenuDeps
   /** The target of the window, for the row that creates a note. */
   getTarget?(): CommandTarget
@@ -169,10 +168,6 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
   return { groups, hitsById }
 }
 
-/**
- * The groups of a search, and the row that offers to make a note where every group answered with
- * nothing. A group still waiting has not answered.
- */
 function appendCreateNoteRow(
   base: ReturnType<typeof buildSearchGroups>,
   text: string,
@@ -261,7 +256,6 @@ async function executeSearchQuery(
   ])
 }
 
-/** What the palette reads from the hit behind a row: its type, its file, and what choosing it does. */
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
   const findNoteType = (item: string): NoteType | null => getHits().get(item)?.type ?? null
 

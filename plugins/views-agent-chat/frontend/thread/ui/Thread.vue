@@ -59,7 +59,6 @@ function onScroll() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** Scrolls the foot into view. With `again` set, it resumes following new content. */
 function toFoot(again = false) {
   if (again) follows.value = true
   if (!follows.value || !area.value) return

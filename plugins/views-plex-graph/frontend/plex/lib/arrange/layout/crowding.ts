@@ -54,7 +54,6 @@ export function measureCrowding(options: PlexOptions, counts: RelationCounts): P
   return packOptions(options, tight)
 }
 
-/** Whether the window holds every node of every relation. */
 function canRelationAll(options: PlexOptions, counts: RelationCounts): boolean {
   const limits = getLimits(options, counts)
   return RELATION_NAMES.every(

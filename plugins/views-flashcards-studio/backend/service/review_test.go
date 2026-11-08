@@ -23,8 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// deck is one vault of one card model and one deck, whose single card yields one
-// review card.
 func getDeck() map[string]string {
 	return map[string]string{
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -35,9 +33,6 @@ func getDeck() map[string]string {
 	}
 }
 
-// other is a second vault sharing nothing with the first: another card model,
-// another review card, another card id, another word. A claim about one vault not
-// reaching another is worth nothing when both hold the same cards.
 func getOther() map[string]string {
 	return map[string]string{
 		"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
@@ -51,14 +46,12 @@ func getOther() map[string]string {
 // API is the review as these tests ask it.
 type API = reviewHandler
 
-// newAPI is the review over vaults of a test's own, all of them known to the host.
 func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	t.Helper()
 	handler, target, _ := newAPIOn(t, notes...)
 	return handler, target
 }
 
-// newAPIOn is newAPI together with the host the review works through.
 func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, vaulttest.Installation) {
 	t.Helper()
 	installation := vaulttest.NewInstallation()
@@ -70,12 +63,10 @@ func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, v
 	return &reviewHandler{Backend: backend}, target, installation
 }
 
-// newFlashcardsClient returns the client the window uses over the review.
 func newFlashcardsClient(_ *testing.T, handler *API) reviewClient {
 	return reviewClient{reviewHandler: handler}
 }
 
-// front polls WatchCardsDue until all vaults complete indexing.
 func front(t *testing.T, handler *API) *api.WatchCardsDueResponse {
 	t.Helper()
 	client := newFlashcardsClient(t, handler)
@@ -94,7 +85,6 @@ func front(t *testing.T, handler *API) *api.WatchCardsDueResponse {
 	return out
 }
 
-// readCardsDue collects the full response from WatchCardsDue stream.
 func readCardsDue(
 	t *testing.T, client reviewClient,
 ) *api.WatchCardsDueResponse {
@@ -134,7 +124,6 @@ func readCardsDue(
 	return out
 }
 
-// startSession is a session opened on one vault, and what it holds to ask.
 func startSession(t *testing.T, handler *API, v domain.Vault) *api.StartSessionResponse {
 	t.Helper()
 	out, err := handler.StartSession(t.Context(),
@@ -177,7 +166,6 @@ func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 	}
 }
 
-// getRunFiles is the files the plugin's folder of a vault holds.
 func getRunFiles(t *testing.T, store host.Store) []string {
 	t.Helper()
 	entries, err := store.List(t.Context())
@@ -253,7 +241,6 @@ func TestAnAnswerInOneVaultPreservesTheOtherVaultDueCards(t *testing.T) {
 	}
 }
 
-// findVaultCount returns the vault matching id from the response.
 func findVaultCount(t *testing.T, resp *api.WatchCardsDueResponse, id string) *api.VaultCardsDue {
 	t.Helper()
 	for _, one := range resp.Vaults {
@@ -484,7 +471,6 @@ func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	}
 }
 
-// pointed is the one deck of a vault scheduled by a preset of its own.
 func getPointed() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -546,8 +532,6 @@ func TestADeckNamingNoPresetReachesBelowTheDefaults(t *testing.T) {
 	}
 }
 
-// twoPresets is one vault studying two subjects: a preset of one card a day, a
-// preset of two, and a deck of three cards under each.
 func getTwoPresets() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -607,9 +591,6 @@ func TestWatchCardsDue_ReturnsSettingsPerPreset(t *testing.T) {
 	}
 }
 
-// newDeck is a deck of as many cards, pointing at the preset named.
-// Each deck is written from a card id of its own, because a card id is what names a
-// card and two decks writing one card id are writing one card.
 func newDeck(pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if pos != "" {
@@ -624,8 +605,6 @@ func newDeck(pos string, cards, from int) string {
 	return out
 }
 
-// backlogged is a vault of more material than a day of its preset carries, and
-// a deck beside it on the defaults.
 func getBacklogged() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -646,18 +625,12 @@ func getBacklogged() map[string]string {
 // its own goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 	for _, one := range []struct {
-		what   string
-		goal   review.Goal
-		byDate time.Time
-		closed review.BudgetName
-		never  []review.BudgetName
-		// learned is the rule the goal is worked out against, where the goal
-		// reads one. Six days are too few to carry a card past an interval of
-		// three weeks, and a date paces the day for the cards that can get
-		// there.
-		learned review.LearnedRule
-		// isSameDay is whether the control is at today, so the curve at its current
-		// position equals the day the deck screen available.
+		what      string
+		goal      review.Goal
+		byDate    time.Time
+		closed    review.BudgetName
+		never     []review.BudgetName
+		learned   review.LearnedRule
 		isSameDay bool
 	}{
 		{
@@ -847,9 +820,6 @@ func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
 	}
 }
 
-// spread is a lived-in vault of three scopes: a preset closing its day on the
-// minutes, one closing it on the counts, and the defaults over two decks, so a
-// budget shared between decks is one of the three.
 func getSpread() map[string]string {
 	return map[string]string{
 		"Both.md": bothWays,
@@ -1113,7 +1083,6 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 // sessionCounts holds review counts for a session.
 type sessionCounts struct{ total, due, unbegun int }
 
-// session opens a session for one preset.
 func session(t *testing.T, handler *API, v domain.Vault, preset string) sessionCounts {
 	t.Helper()
 	out, err := handler.StartSession(t.Context(), &api.StartSessionRequest{

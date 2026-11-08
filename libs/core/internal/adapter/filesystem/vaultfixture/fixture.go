@@ -44,7 +44,6 @@ func CreateVault(t *testing.T, files map[string]string, ignore []string) string 
 	return root
 }
 
-// writeIgnore sets the ignore list in the vault's configuration file.
 func writeIgnore(t *testing.T, root string, ignore []string) {
 	t.Helper()
 	config := filepath.Join(root, vaultconfig.DefaultServiceDir, "config.json")

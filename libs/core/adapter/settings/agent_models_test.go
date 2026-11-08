@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// listedPrograms are the programs two plugins list: one installed with models of its own, one installed
-// that lists none, and one that is not installed.
 func listedPrograms() []agentport.AgentProgram {
 	return []agentport.AgentProgram{
 		{
@@ -207,8 +205,6 @@ func TestAgentModels_UninstalledProgramYieldsConfiguredOnly(t *testing.T) {
 	}
 }
 
-// modelsAt are the models one setting can be set to, in the order they are
-// offered.
 func modelsAt(t *testing.T, target settings.Agent, programs []agentport.AgentProgram, setting []string) []settingsport.Model {
 	t.Helper()
 	found := []settingsport.Model{}
@@ -225,7 +221,6 @@ func modelsAt(t *testing.T, target settings.Agent, programs []agentport.AgentPro
 
 func modelAt(program string) []string { return []string{"agent", program, "model"} }
 
-// formatPath is a path through the file, as one word.
 func formatPath(path []string) string { return strings.Join(path, ".") }
 
 // The levels of reasoning a model lists, and the one it works at unasked, stay on its row.

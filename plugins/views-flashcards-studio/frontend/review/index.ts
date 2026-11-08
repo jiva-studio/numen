@@ -30,7 +30,6 @@ export interface ReviewKindDeps {
   readonly notices: NoticeHost
   readonly agent: AgentHost
   readonly mountView: MountView
-  /** The tab closed, which takes the window back to its list of vaults. */
   readonly closeTab: (id: string) => void
 }
 

@@ -9,7 +9,6 @@ import { WORDS as words } from '../lib/notesWords'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
 
-/** One note as the window receives it. */
 const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
@@ -22,7 +21,6 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   ...more,
 })
 
-/** The panel over one deck, with the session around it standing in for it. */
 const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return useNotesPanel({
@@ -38,7 +36,6 @@ const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
   })
 }
 
-/** The panel, opened and drawn. */
 const mountPanel = async (neighbourhood: DeckNeighbourhood) => {
   const panel = createPanel(neighbourhood)
   await panel.openPanel()

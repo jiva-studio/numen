@@ -28,7 +28,6 @@ func (c *gatedDeadlineContext) Deadline() (time.Time, bool) {
 	return c.Context.Deadline()
 }
 
-// waitSignal fails the test with msg unless ch is closed within five seconds.
 func waitSignal(t *testing.T, ch <-chan struct{}, msg string) {
 	t.Helper()
 	select {

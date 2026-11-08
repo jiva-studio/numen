@@ -19,20 +19,12 @@ var listenerNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 // Listener is a TCP port on 127.0.0.1 the host binds for the plugin while the plugin is enabled. It
 // has a fixed Port or a PortSetting, exactly one.
 type Listener struct {
-	// Name identifies the listener within the plugin and in the ready line of the plugin process.
-	Name string
-	// Port is the fixed port the host binds. Zero for a listener with a PortSetting.
-	Port int
-	// PortSetting is the key of the number setting of the plugin that stores the port the host binds.
-	// Empty for a listener with a fixed Port.
+	Name        string
+	Port        int
 	PortSetting string
-	// Protocol is the transport, "tcp".
-	Protocol string
+	Protocol    string
 }
 
-// listListenerIssues checks the listeners of the manifest: a unique name of lowercase words joined
-// by hyphens, a fixed port from 1024 to 65535 or a port setting of type number, exactly one, the
-// protocol tcp, and a backend to forward the connections to.
 func (m Manifest) listListenerIssues() []error {
 	var issues []error
 	listeners := m.Contributes.Listeners
@@ -58,8 +50,6 @@ func (m Manifest) listListenerIssues() []error {
 	return issues
 }
 
-// checkListenerPort checks that the listener has a fixed port from 1024 to 65535 or a port setting
-// that names a number setting of the manifest, exactly one.
 func (m Manifest) checkListenerPort(declared Listener) error {
 	switch {
 	case declared.Port != 0 && declared.PortSetting != "":

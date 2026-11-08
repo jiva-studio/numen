@@ -69,7 +69,6 @@ func buildZip(t *testing.T, name string, content []byte) []byte {
 	return out.Bytes()
 }
 
-// serve answers every request with the body and counts the requests.
 func serve(t *testing.T, body []byte) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
 	var hits atomic.Int32
@@ -83,8 +82,6 @@ func serve(t *testing.T, body []byte) (*httptest.Server, *atomic.Int32) {
 	return server, &hits
 }
 
-// newConfig returns a configuration that fetches the archive from the server and
-// opens every library it finds.
 func newConfig(server *httptest.Server, archive []byte) onnxruntime.Config {
 	return onnxruntime.Config{
 		Dir:     "",
@@ -461,7 +458,6 @@ func TestGetHomeIsTheEnvironmentFolderAndNothingElse(t *testing.T) {
 	}
 }
 
-// assertNoFile fails when a file was left under dir.
 func assertNoFile(t *testing.T, dir string) {
 	t.Helper()
 	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
@@ -485,7 +481,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// writeLibrary puts a file named like the platform's library under dir.
 func writeLibrary(t *testing.T, dir string) string {
 	t.Helper()
 	name := "libonnxruntime.so"
@@ -633,7 +628,6 @@ func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
 	}
 }
 
-// writeLibraryDir returns a folder holding a library.
 func writeLibraryDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -641,7 +635,6 @@ func writeLibraryDir(t *testing.T) string {
 	return dir
 }
 
-// refuse returns a check that rejects the libraries at the given paths.
 func refuse(paths ...string) func(string) error {
 	return func(pos string) error {
 		for _, rejected := range paths {

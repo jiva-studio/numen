@@ -25,8 +25,6 @@ type storeEndpoint struct {
 
 var _ numenv1connect.HostStoreServiceHandler = (*storeEndpoint)(nil)
 
-// open authenticates a call and opens the caller's folder in the vault it works. The folder is the
-// caller's own, so it takes no vault permission. A host with no vault to offer answers NO_VAULT.
 func (e *storeEndpoint) open(ctx context.Context, header http.Header) (pluginport.PluginStore, v1.HostStoreErrorCode, error) {
 	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
 	if err != nil {
@@ -47,8 +45,6 @@ func (e *storeEndpoint) open(ctx context.Context, header http.Header) (pluginpor
 	return store, 0, nil
 }
 
-// answerStore is the code a refusal of the store is answered with. The end of the caller's context
-// is cancelled, and anything else is internal.
 func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) {
 	if err == nil {
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED, nil

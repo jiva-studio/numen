@@ -33,15 +33,10 @@ type Queries struct {
 
 // Env is a vault written to a folder of the test's own, and the ports over it.
 type Env struct {
-	// Host is the vault as the host works it.
-	Host *hosttest.Vault
-	// Store is the plugin's folder of the vault's store.
-	Store *hosttest.Store
-	// Vault is the vault as the use cases name it.
-	Vault domain.Vault
-	// Ports answers every port the use cases take.
-	Ports hostports.Ports
-	// Queries answers the index's questions as one value.
+	Host    *hosttest.Vault
+	Store   *hosttest.Store
+	Vault   domain.Vault
+	Ports   hostports.Ports
 	Queries Queries
 }
 
@@ -52,8 +47,6 @@ func New(tb testing.TB, notes map[string]string) Env {
 	return Of(host)
 }
 
-// createVaultName returns a name no other vault of the process has: the name of a new folder of the
-// test, which is unique among the folders of every test.
 func createVaultName(tb testing.TB) string {
 	tb.Helper()
 	own := tb.TempDir()
@@ -75,12 +68,9 @@ func Of(host *hosttest.Vault) Env {
 // Installation is a host with several vaults, as the application has, and the
 // ports over it.
 type Installation struct {
-	vaults map[domain.VaultID]*hosttest.Vault
-	// 	// Host is the host as the plugin addresses it. It has no vault of its own.
-	Host *hosttest.Vault
-	// Ports answers every port the use cases take.
-	Ports hostports.Ports
-	// Queries answers the index's questions as one value.
+	vaults  map[domain.VaultID]*hosttest.Vault
+	Host    *hosttest.Vault
+	Ports   hostports.Ports
 	Queries Queries
 }
 

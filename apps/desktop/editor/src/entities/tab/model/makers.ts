@@ -21,7 +21,6 @@ export interface VaultCreator {
 
 /** What creating a file reports to the window. */
 export interface CreateWords {
-  /** The vault's reported error, in user-readable words. */
   readonly errors: Record<ErrorCode, string>
 }
 

@@ -9,7 +9,6 @@ export type { NoteRelation } from '@numen/plugin-host'
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {
   readonly body: string
-  /** The file the prose came out of, as the next write presents it again. */
   readonly at?: string
 }
 
@@ -34,9 +33,7 @@ export type Neighbourhood = NoteNeighbourhood
 /** One heading inside a note, which is one of the parts the note divides into. */
 export interface NoteHeading {
   readonly text: string
-  /** Nesting depth, starting at one for the shallowest level a note can have. */
   readonly level: number
-  /** The line it relies on, counted from the first line of the prose. */
   readonly line: number
 }
 
@@ -57,20 +54,15 @@ export type WriteResult = Result<NoteContents, NoteFailure>
 
 /** A note to make: what it is called, and where it goes. */
 export interface NewNote {
-  /** What it is called. Empty takes the lowest free "Untitled note N". */
   title: string
-  /** Where in the vault it goes, relative to the root. Empty is the root. */
   folder: string
 }
 
 /** A note renamed, and what its file did. */
 export interface RenamedNote {
-  /** Where the note is filed now. */
   readonly path: string
   readonly title: string
-  /** Whether the rename wrote the title into the frontmatter of the note. */
   readonly hasFrontmatter: boolean
-  /** What the file did. Null when it stayed where it was. */
   readonly moved: MoveResult | null
 }
 
@@ -79,7 +71,6 @@ export type RenameResult = Result<RenamedNote, NoteFailure>
 
 export interface RemovedNote {
   readonly trashed: string
-  /** The notes whose links pointed at it and now reach nothing. */
   readonly dangling: readonly string[]
 }
 

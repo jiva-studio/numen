@@ -92,15 +92,6 @@ type atom struct {
 	isUnbroken bool
 }
 
-// drawAtoms generates a first line as a sequence of pieces whose boundaries
-// are known to the test: prose the cut may fall anywhere in, and runs it must not
-// split: a wikilink, an embed, a run of emphasis, and nested combinations of
-// these.
-//
-// The prose contains no bracket, asterisk, underscore or exclamation mark, so a
-// piece the cut may fall inside cannot open a run of its own or close a run an
-// earlier piece opened. This lets the test determine every unbroken run without
-// repeating the algorithm under test.
 func drawAtoms(t *rapid.T) []atom {
 	prose := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,40}`)
 	target := rapid.StringMatching(`[\p{L}\p{N} .-]{4,30}`)

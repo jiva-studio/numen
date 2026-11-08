@@ -16,10 +16,8 @@ import { findTabKindIcon, SETTINGS } from '@/entities/tab'
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [{ id: SETTINGS, title: 'Settings' }]
 
-/** A tab is drawn as its kind, which is the prefix of the identity. */
 const getTabIcon = (id: string) => findTabKindIcon(id.split(':')[0] ?? id)
 
-/** One tab filling the window, drawn in the chrome the window draws it in. */
 const window = (tab: string, tabPane: Component, state: unknown) => ({
   components: { WorkspaceLayout },
   setup() {
@@ -76,7 +74,6 @@ const AGENT_USE: Model = {
   presence: 'present',
 }
 
-/** One plugin as the settings list it: active, with no settings, secrets or failure of its own. */
 const plugin = (id: string, name: string, description: string): PluginInfo => ({
   id,
   name,

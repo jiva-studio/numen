@@ -68,15 +68,6 @@ func (r *VaultRegistry) save(f registryFile) error {
 	return replace(r.path, raw)
 }
 
-// replace writes a file beside itself and renames it over the top: a
-// half-written registry is the one thing here that costs the user manual work
-// to recover from.
-//
-// Every write gets a temporary file of its own, so two processes writing the
-// file at once each rename a whole one. The bytes are flushed before the
-// rename and the folder after it, so a machine that loses power has either the
-// old file or the new one. The file in place carries privateFileMode, whatever
-// mode the one it replaced had.
 func replace(path string, content []byte) (err error) {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*")
@@ -107,11 +98,6 @@ func replace(path string, content []byte) (err error) {
 	return syncDirectory(dir)
 }
 
-// syncDirectory flushes the folder the rename was recorded in. Flushing the file is
-// what keeps its contents; flushing the folder is what keeps the rename.
-//
-// A folder that cannot be opened or flushed on this platform or filesystem is
-// not an error: the registry is written either way.
 func syncDirectory(dir string) (err error) {
 	if runtime.GOOS == "windows" {
 		return nil

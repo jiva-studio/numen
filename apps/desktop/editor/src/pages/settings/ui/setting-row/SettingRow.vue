@@ -13,7 +13,6 @@ import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** Unique key of the setting; the title id is derived from it. */
   at: string
   name: string
   detail: string

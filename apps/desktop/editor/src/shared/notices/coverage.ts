@@ -7,11 +7,8 @@
 
 /** The vault's state with respect to being indexed for meaning. */
 export interface IndexCoverage {
-  /** Spans of text the index holds. */
   readonly chunks: number
-  /** How many of those spans carry a vector. */
   readonly embedded: number
-  /** Whether anything is going to turn the spans into vectors. */
   readonly isEmbedding: boolean
 }
 

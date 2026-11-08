@@ -34,7 +34,6 @@ interface Day {
   hard: number
   good: number
   easy: number
-  /** The answers given to cards already being reviewed, and how many came back. */
   tested: number
   recalled: number
 }

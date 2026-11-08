@@ -383,7 +383,6 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 const talkPath = "talks/a lecture.mp3"
 
-// timedParts is the text a transcription plugin gives of one talk.
 func timedParts() []domain.TextSegment {
 	return []domain.TextSegment{
 		{Text: indexfake.GetWords(indexfake.GetSanskrit(), 200) + "\n", Selector: `{"t":[1.5,4]}`},

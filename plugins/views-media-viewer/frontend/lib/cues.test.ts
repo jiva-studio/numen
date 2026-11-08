@@ -15,7 +15,6 @@ const CUES: readonly Cue[] = [
   { text: 'Someone counting change.', from: 6_000, to: 10_000 },
 ]
 
-/** Cues run forward, none begins before the one before it ends. */
 const isOrdered = (cues: readonly Cue[]) => {
   for (let index = 0; index < cues.length; index++) {
     const one = cues[index]!
@@ -27,7 +26,6 @@ const isOrdered = (cues: readonly Cue[]) => {
   return cues
 }
 
-/** applyCues, with the result checked for cue order. */
 const applyText = (was: readonly Cue[], text: string) => isOrdered(applyCues(was, text))
 
 describe('the words as they were left', () => {

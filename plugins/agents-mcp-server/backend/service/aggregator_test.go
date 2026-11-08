@@ -335,7 +335,6 @@ func TestToolAggregatorExecuteTransportFailure(t *testing.T) {
 	}
 }
 
-// describeAnnotations writes the hints of annotations, with nil for an unset hint.
 func describeAnnotations(annotations *sdk.ToolAnnotations) string {
 	if annotations == nil {
 		return "no annotations"
@@ -351,7 +350,6 @@ func describeAnnotations(annotations *sdk.ToolAnnotations) string {
 		describe(annotations.DestructiveHint), describe(annotations.OpenWorldHint))
 }
 
-// connectInMemory connects an MCP client with the options to the server over in-memory transports.
 func connectInMemory(t *testing.T, srv *Server, opts *sdk.ClientOptions) *sdk.ClientSession {
 	t.Helper()
 	serverSide, clientSide := sdk.NewInMemoryTransports()
@@ -370,8 +368,6 @@ func connectInMemory(t *testing.T, srv *Server, opts *sdk.ClientOptions) *sdk.Cl
 // 10ms after the last change of the tools.
 const listChangedDelay = 500 * time.Millisecond
 
-// connectCountingNotifications connects an MCP client that sends every notifications/tools/list_changed
-// it receives to the returned channel.
 func connectCountingNotifications(t *testing.T, srv *Server) (*sdk.ClientSession, <-chan struct{}) {
 	t.Helper()
 	notifications := make(chan struct{}, 64)
@@ -395,7 +391,6 @@ func listTools(t *testing.T, session *sdk.ClientSession) []*sdk.Tool {
 	return listed.Tools
 }
 
-// waitForNotification fails the test unless a notification arrives within five seconds.
 func waitForNotification(t *testing.T, notifications <-chan struct{}, what string) {
 	t.Helper()
 	select {
@@ -405,7 +400,6 @@ func waitForNotification(t *testing.T, notifications <-chan struct{}, what strin
 	}
 }
 
-// drainNotifications waits until no notification has arrived for listChangedDelay.
 func drainNotifications(notifications <-chan struct{}) {
 	for {
 		select {

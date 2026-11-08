@@ -114,9 +114,6 @@ func (h *Host) GetPluginSearch() pluginport.PluginSearch {
 	return h.search
 }
 
-// openHostEndpoint returns the port the host endpoint serves on, starting it on
-// the first call after a completer or a vault is set. It returns zero while
-// neither is set.
 func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -134,7 +131,6 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	return endpoint.GetPort(), nil
 }
 
-// closeHostEndpoint stops the host endpoint if it is serving.
 func (h *Host) closeHostEndpoint(ctx context.Context) error {
 	h.mu.Lock()
 	endpoint := h.hostEndpoint
@@ -146,12 +142,6 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 	return endpoint.Close(ctx)
 }
 
-// getLaunchVars is the environment variables the host sets for a plugin process
-// about to start. The host endpoint is started for it if a completer is set. An
-// endpoint that cannot start is reported and leaves the plugin without
-// NUMEN_HOST_PORT; the plugins that never call the host launch all the same. Storage directories
-// that cannot be created are reported and left out the same way. A
-// runtime the plugin declares and the host cannot provision stops the launch.
 func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []pluginport.DependencyRequirement, processPort int, token string) ([]string, error) {
 	runtimeVars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
@@ -160,8 +150,6 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements 
 	return h.getEnvironmentVars(ctx, pluginID, processPort, token, runtimeVars), nil
 }
 
-// getEnvironmentVars is the environment variables of a plugin about to start, with the variables of
-// the runtimes it was provisioned.
 func (h *Host) getEnvironmentVars(ctx context.Context, pluginID string, processPort int, token string, runtimeVars []string) []string {
 	hostPort, err := h.openHostEndpoint(ctx)
 	if err != nil {
@@ -217,15 +205,12 @@ func (h *Host) GetPluginWork() pluginport.PluginWork {
 	return h.work
 }
 
-// clearPluginWork takes out the tasks and ends the turns of a plugin that
-// stopped.
 func (h *Host) clearPluginWork(pluginID string) {
 	if work := h.GetPluginWork(); work != nil {
 		work.ClearPlugin(pluginID)
 	}
 }
 
-// clearPluginTasks forgets the open tasks of a plugin that stopped.
 func (h *Host) clearPluginTasks(pluginID string) {
 	h.mu.RLock()
 	endpoint := h.hostEndpoint

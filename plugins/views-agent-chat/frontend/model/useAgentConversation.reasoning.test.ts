@@ -41,7 +41,6 @@ const LISTED = [
   model(['app', 'agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
 ]
 
-/** An agent tab with the listed models, the stored settings, and the recorded requests. */
 function open(settings: Record<string, string> = {}, reasoning = '') {
   const request: AskOptions[] = []
   const content: [string, unknown][] = []

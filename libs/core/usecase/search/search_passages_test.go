@@ -24,7 +24,6 @@ func (f *recordingFinder) Execute(_ context.Context, v domain.Vault, query strin
 	return f.found, nil
 }
 
-// getMarshVault is the vault every passage search here runs on.
 func getMarshVault() domain.Vault { return domain.Vault{ID: "v-marsh", Name: "Marsh"} }
 
 func TestSearchPassagesRunsKeywordAndEmbeddingWithThreePerSource(t *testing.T) {

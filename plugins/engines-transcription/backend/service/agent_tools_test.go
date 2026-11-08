@@ -137,8 +137,6 @@ func newToolFixture(t *testing.T) *toolFixture {
 	return newToolFixtureWithFiles(t, func(files Files) Files { return files })
 }
 
-// newToolFixtureWithFiles returns the fixture whose transcriber reads recordings through the files of
-// the vault wrapped by wrap.
 func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture {
 	t.Helper()
 	s := &toolFixture{scene: newScene(t)}
@@ -168,7 +166,6 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 	return s
 }
 
-// invokeAtOnce calls the tool and fails the test when the call does not return within callDeadline.
 func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tools.CallResponse {
 	t.Helper()
 	type answer struct {
@@ -216,7 +213,6 @@ func (s *toolFixture) waitStarted(t *testing.T) {
 	}
 }
 
-// waitFinished waits for the task of the id to end.
 func (s *toolFixture) waitFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
@@ -327,9 +323,6 @@ func TestTranscriptCreateRejectsAMissingNoteAsNotFound(t *testing.T) {
 	}
 }
 
-// putTranscript keeps a transcript of the lecture in the plugin's folder and records it as the
-// lecture's version, as a run does: whole, as a finished run leaves it, or partial, as an interrupted
-// run leaves it. It fails the test unless the version is live.
 func (s *toolFixture) putTranscript(t *testing.T, isWhole bool) domain.TextVersion {
 	t.Helper()
 	fileHash := domain.HashContent([]byte(lectureSound))
@@ -364,9 +357,6 @@ func (s *toolFixture) putTranscript(t *testing.T, isWhole bool) domain.TextVersi
 	return listing.Versions[i]
 }
 
-// checkNoRun fails the test where a run of the recording reported a task, requested from the queue a
-// turn, ended a task or opened the recording. The transcriber is closed first, so a run that was
-// started has ended.
 func (s *toolFixture) checkNoRun(t *testing.T) {
 	t.Helper()
 	close(s.blocking.release)
@@ -441,9 +431,6 @@ func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 // proofreaderPluginID is the plugin that makes versions from other versions in the chain tests.
 const proofreaderPluginID = "md.numen.tools.proofreading"
 
-// putProofread records a proofread version of the lecture, made by the plugin proofreaderPluginID from
-// the source version, or from the recording itself where source is the zero version. It fails the
-// test unless the proofread version is live with the intended source.
 func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
 	t.Helper()
 	const file = "proofread-1.jsonl"
@@ -743,9 +730,6 @@ func (t countingTexts) ReadText(ctx context.Context, path string, id domain.Text
 	return t.Texts.ReadText(ctx, path, id, cursor)
 }
 
-// countReads gives the scene a transcriber and a tool whose every read of the recording and of
-// version files is counted. The host's texts keep reading version files to pick the live version;
-// those reads are the host's and are not counted.
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}

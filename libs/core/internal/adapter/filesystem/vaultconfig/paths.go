@@ -39,13 +39,6 @@ func ResolveLinks(root, path, serviceDir string) (string, error) {
 	return resolved, err
 }
 
-// resolveVaultPath returns the user's vault path: one that stays inside the vault
-// and is not in the application's own folder, either as spelled or after resolving
-// links.
-//
-// A link is an alternate spelling of a location, so the folder check applies to
-// both. `link/ocr/abc.txt`, where `link` links to the service folder, looks like
-// vault content but belongs to the application; the resolved path decides.
 func resolveVaultPath(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := CleanPath(path)
 	if err != nil {
@@ -64,10 +57,6 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 	return target, resolved, nil
 }
 
-// isOurs reports whether a path is in the folder the application reserves for
-// itself.
-//
-// The name is compared case-insensitively, matching how macOS and Windows open it.
 func isOurs(clean, serviceDir string) bool {
 	if len(clean) < len(serviceDir) || !strings.EqualFold(clean[:len(serviceDir)], serviceDir) {
 		return false
@@ -93,8 +82,6 @@ func CleanPath(path string) (string, error) {
 	return clean, nil
 }
 
-// hasReservedDeviceName reports whether any element of a slash-separated path
-// names a Windows device, with or without an extension.
 func hasReservedDeviceName(clean string) bool {
 	for _, element := range strings.Split(clean, "/") {
 		name := strings.TrimRight(element, " .")
@@ -112,10 +99,6 @@ func hasReservedDeviceName(clean string) bool {
 	return false
 }
 
-// resolveContained is the containment rule and nothing else: where a cleaned path
-// lands on this machine, where it lands once every link on the way to it is
-// resolved, and that landing named from the root, all three of them under the
-// root or none of them anything.
 func resolveContained(root, clean string) (target, resolved, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
@@ -137,8 +120,6 @@ func resolveContained(root, clean string) (target, resolved, landed string, err 
 	return target, resolved, getRootRelativeName(resolved, root), nil
 }
 
-// getRootRelativeName is a resolved path as a name under the root, in the form the rules
-// are written against. The root itself lands nowhere and is named by nothing.
 func getRootRelativeName(resolved, root string) string {
 	if len(resolved) <= len(root) {
 		return ""

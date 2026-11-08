@@ -83,7 +83,6 @@ export const PANE_HOST_STYLE: Record<string, string> = {
 /** Constructed copies of the window's own sheets, by the sheet they copy. */
 const hostSheetCopies = new WeakMap<CSSStyleSheet, CSSStyleSheet>()
 
-/** A constructed copy of a sheet of the window, read from its rules; nothing where it cannot be read. */
 function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
   const cached = hostSheetCopies.get(sheet)
   if (cached) return cached
@@ -100,11 +99,6 @@ function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
   return copy
 }
 
-/**
- * The window's stylesheets as copies that a shadow root adopts at once, or
- * undefined when any of them cannot be copied. A cloned link would render the
- * pane unstyled until it loads.
- */
 function copyHostSheets(): CSSStyleSheet[] | undefined {
   const copies: CSSStyleSheet[] = []
   for (const sheet of [...document.styleSheets]) {
@@ -164,7 +158,6 @@ export interface PaneContentDeps {
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
   readonly context?: PluginContext | undefined
-  /** Whether the shadow root adopted the plugin's sheet, so no link element is added for it. */
   readonly hasAdoptedStyle?: boolean
 }
 

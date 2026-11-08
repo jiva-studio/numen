@@ -67,7 +67,6 @@ const mountPalette = (props: Partial<PaletteProps> = {}) => {
   return palette
 }
 
-/** Twice: it lands on an item and takes the keyboard a tick after it opens. */
 const settle = async () => {
   await nextTick()
   await nextTick()
@@ -80,15 +79,12 @@ const options = () =>
 const activeItem = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="key"]'))
 
-/** The text of a line, with whitespace runs collapsed. */
 const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
-/** The keystroke a key cap is announced as, which is all a screen reader reads. */
 const getSpokenKey = (cap: Element | null | undefined): string =>
   getText(cap?.querySelector('.sr-only'))
 
-/** The marks a cap draws, by the name Lucide files each under. */
 const getMarks = (cap: Element | null | undefined): readonly string[] =>
   Array.from(cap?.querySelectorAll('svg') ?? []).map(
     (mark) =>

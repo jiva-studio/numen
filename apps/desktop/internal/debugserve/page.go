@@ -17,14 +17,6 @@ const fetchRoute = "/numen-debug/fetch.js"
 //go:embed fetch.js
 var fetchScript []byte
 
-// newHandler wraps handler for access by a browser over HTTP. The page it serves loads the script
-// that sends the page's calls as PUT, and a PUT is handled as the POST the page sent: nothing the
-// window serves handles PUT.
-//
-// A browser that is not the window's own webview opens a connection for every POST, and WebKit
-// opens at most six to one host. The window holds more server streams open than that, so in WebKit
-// every call after the sixth stream waits forever. A PUT shares one HTTP/2 connection with every
-// other request.
 func newHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -42,13 +34,10 @@ func newHandler(handler http.Handler) http.Handler {
 	})
 }
 
-// isPage is whether path names the document a window opens at.
 func isPage(path string) bool {
 	return path == "" || path == "/" || path == "/index.html"
 }
 
-// writePage writes the page handler answers with, loading the script at fetchRoute before
-// anything else in its head.
 func writePage(w http.ResponseWriter, r *http.Request, handler http.Handler) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, r)
@@ -64,16 +53,12 @@ func writePage(w http.ResponseWriter, r *http.Request, handler http.Handler) {
 	writeBody(w, body)
 }
 
-// writeBody writes body as the end of the answer. A write that fails means the browser closed the
-// connection, and there is no one left to answer.
 func writeBody(w http.ResponseWriter, body []byte) {
 	if _, err := w.Write(body); err != nil {
 		return
 	}
 }
 
-// addScript puts the script at fetchRoute first in the head of page. A page with no head is
-// returned as it is.
 func addScript(page []byte) []byte {
 	head := []byte("<head>")
 	headEnd := bytes.Index(page, head)

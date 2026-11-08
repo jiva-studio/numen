@@ -68,7 +68,6 @@ func (h *workspaceHandler) WatchTabLinks(
 	}
 }
 
-// sendTabLinksEvent sends an event to a window it is for, and drops it otherwise.
 func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablinks.Event) error {
 	if !event.IsFor(windowID) {
 		return nil

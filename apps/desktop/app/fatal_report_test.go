@@ -134,7 +134,6 @@ func getStoppings(t *testing.T) []stopping {
 	}
 }
 
-// openIndex is the trouble an index at a path comes back with.
 func openIndex(t *testing.T, path string) error {
 	t.Helper()
 	db, err := index.Open(t.Context(), path)
@@ -147,7 +146,6 @@ func openIndex(t *testing.T, path string) error {
 	return err
 }
 
-// read is the trouble a settings file comes back with.
 func read(t *testing.T, path string) error {
 	t.Helper()
 	target := container.DefaultSettings()

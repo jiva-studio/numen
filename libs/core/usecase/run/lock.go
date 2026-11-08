@@ -21,8 +21,7 @@ type Lock struct {
 	mu        sync.Mutex
 	isIndexed bool
 	waiting   [priorities][]chan struct{}
-	// watchers are closed the next time a run waits.
-	watchers []chan struct{}
+	watchers  []chan struct{}
 }
 
 // Acquire waits for the lock and returns a function that releases it. waiting is
@@ -60,7 +59,6 @@ func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (fun
 	}
 }
 
-// release passes the lock to the run that has waited longest at the highest priority.
 func (g *Lock) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -75,8 +73,6 @@ func (g *Lock) release() {
 	g.isIndexed = false
 }
 
-// leave removes a run that stopped waiting. If the lock was already passed to it,
-// leave takes the lock and passes it on.
 func (g *Lock) leave(pos int, stand chan struct{}) {
 	g.mu.Lock()
 	for i, one := range g.waiting[pos] {

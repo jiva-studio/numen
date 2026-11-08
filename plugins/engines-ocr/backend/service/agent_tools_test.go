@@ -170,7 +170,6 @@ func newToolFixture(t *testing.T) *toolFixture {
 	return s
 }
 
-// invokeAtOnce calls the tool and fails the test when the call does not return within callDeadline.
 func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tools.CallResponse {
 	t.Helper()
 	type answer struct {
@@ -218,7 +217,6 @@ func (s *toolFixture) waitStarted(t *testing.T) {
 	}
 }
 
-// waitFinished waits for the task of the id to end.
 func (s *toolFixture) waitFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
@@ -325,9 +323,6 @@ func TestRecognitionCreateRejectsAFileNotInTheVault(t *testing.T) {
 	}
 }
 
-// putRecognition keeps a recognised text of the scan in the plugin's folder and records it as the
-// scan's version under recognition.VersionKey, as a finished recognition does. It fails the test
-// unless the version is live.
 func (s *toolFixture) putRecognition(t *testing.T) domain.TextVersion {
 	t.Helper()
 	raw, _, err := s.vault.Read(t.Context(), scanPath)
@@ -356,9 +351,6 @@ func (s *toolFixture) putRecognition(t *testing.T) domain.TextVersion {
 	return version
 }
 
-// checkNoRun fails the test where a run of the scan reported a task, requested a turn from the queue,
-// ended a task or opened the recogniser. The tools are closed first, so a run that was started has
-// ended.
 func (s *toolFixture) checkNoRun(t *testing.T) {
 	t.Helper()
 	close(s.recogniser.release)
@@ -419,9 +411,6 @@ func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 // proofreaderPluginID is the plugin that makes versions from other versions in the chain tests.
 const proofreaderPluginID = "md.numen.tools.proofreading"
 
-// putProofread records a proofread text of the scan, made by the plugin proofreaderPluginID from the
-// source version, or from the scan itself where source is the zero version. It fails the test unless
-// the proofread version is live with the intended source.
 func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
 	t.Helper()
 	raw, _, err := s.vault.Read(t.Context(), scanPath)
@@ -618,9 +607,6 @@ func (t countingTexts) ReadText(ctx context.Context, path string, id domain.Text
 	return t.Texts.ReadText(ctx, path, id, cursor)
 }
 
-// countReads gives the fixture a recognition and a tool whose every read of the scan and of version
-// files is counted. The host's texts keep reading version files to pick the live version; those reads
-// are the host's and are not counted.
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}

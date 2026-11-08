@@ -16,7 +16,6 @@ const CURVE: EdgeCurve = {
   toPoint: { x: 30, y: 30 },
 }
 
-/** The numbers in the order the string names them. */
 const getNumbers = (path: string): number[] =>
   [...path.matchAll(/-?\d+(?:\.\d+)?/g)].map((found) => Number(found[0]))
 

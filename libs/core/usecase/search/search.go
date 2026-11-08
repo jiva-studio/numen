@@ -44,34 +44,17 @@ type FloorSource func(ctx context.Context, v domain.Vault, recipe string) float6
 // and the minimum score a candidate must reach. A mode with no candidates does
 // not run; when no mode is configured, all modes run.
 type Parameters struct {
-	// Limit is how many results come back.
-	Limit int
-	// Each is the maximum number of passages returned per document. Zero means
-	// one. A result list shows one line per book.
-	Each int
-	// Lexical is how many candidates the words keep, and Dense how many passages
-	// the meaning returns. The coarse pass under it keeps several
-	// times as many, and the full-precision vectors order those.
-	Lexical int
-	Dense   int
-	// Named is how many sections the name search keeps. A document has far fewer
-	// sections than chunks and a name match is a strong signal, so a small number
-	// suffices.
-	Named int
-	// Floor is the minimum similarity for a passage to count as an answer. Only
-	// the meaning search reads it; the word search has no distance. Zero selects
-	// the floor of the search.
-	Floor float64
-	// IsGrowing marks the last word of the query as possibly incomplete, so the
-	// index matches it as a prefix. A complete query is matched exactly.
-	IsGrowing bool
-	// Kinds are the source kinds the query targets. Empty means every kind.
-	Kinds []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it. Empty means every path.
+	Limit      int
+	Each       int
+	Lexical    int
+	Dense      int
+	Named      int
+	Floor      float64
+	IsGrowing  bool
+	Kinds      []domain.SourceKind
 	PathPrefix string
 }
 
-// fill supplies what the caller left out.
 func (p Parameters) fill() Parameters {
 	if p.Limit <= 0 {
 		p.Limit = defaultLimit
@@ -100,9 +83,7 @@ type Search struct {
 	floorSource  FloorSource
 	errorHandler windowport.ErrorHandler
 	cache        *QueryCache
-	// extractors is how many sources are extracted at once. Zero is
-	// defaultExtractors.
-	extractors int
+	extractors   int
 }
 
 // New returns a search over one vault's index.
@@ -179,7 +160,6 @@ type answers struct {
 	hasDense bool
 }
 
-// getRankings is the orders of the halves that ran, in the order they merge.
 func (a *answers) getRankings(p Parameters) [][]domain.Passage {
 	var out [][]domain.Passage
 	if p.Lexical > 0 {
@@ -194,7 +174,6 @@ func (a *answers) getRankings(p Parameters) [][]domain.Passage {
 	return out
 }
 
-// searchAll runs the halves the parameters name at once and waits for all of them.
 func (u Search) searchAll(ctx context.Context, v domain.Vault, query string, p Parameters) (*answers, error) {
 	a := &answers{}
 	g, gctx := errgroup.WithContext(ctx)
@@ -213,7 +192,6 @@ func (u Search) searchAll(ctx context.Context, v domain.Vault, query string, p P
 	return a, nil
 }
 
-// searchLexical stores the passages the words of the query match.
 func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -226,7 +204,6 @@ func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string,
 	return nil
 }
 
-// searchNamed stores the passages whose section names the query matches.
 func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -239,8 +216,6 @@ func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p
 	return nil
 }
 
-// searchDense stores the passages nearest the meaning of the query. When the
-// model is unreachable (no network, expired key) the word search answers alone.
 func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -265,7 +240,6 @@ func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p
 // has nothing to search with.
 var errNoVector = errors.New("the query was not turned into a vector")
 
-// findNearest searches by meaning, using the vector of the query.
 func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -284,8 +258,6 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
 }
 
-// getQueryVector returns the vector of the query from the cache, or embeds the query
-// and caches the result.
 func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {
 	if u.cache != nil {
 		if cached, ok := u.cache.Get(recipe, query); ok {
@@ -305,8 +277,6 @@ func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]flo
 	return vectors[0], nil
 }
 
-// getFloor is the floor of one query: the query's own, the floor source's, and
-// DefaultFloor, in that order.
 func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p Parameters) float64 {
 	switch {
 	case p.Floor > 0:
@@ -318,17 +288,6 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 	}
 }
 
-// readForQuery fills in the text of each passage from the vault. A chunk is a
-// position in a file; the file holds the text.
-//
-// A passage whose file is missing from the vault is dropped: the file is
-// authoritative and the index follows it.
-//
-// Passages are grouped by source before reading, because a ranking scatters the
-// passages of one source. Up to defaultExtractors sources are extracted
-// concurrently, and each source's decoded text is released once its passages
-// are filled in. The first error, or cancellation of ctx, stops the sources not
-// yet started.
 func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
@@ -396,8 +355,6 @@ type passageFill struct {
 	keep          []bool
 }
 
-// fillSource extracts one source and fills in the passages of `found` at
-// `indices`, which name it. It writes only those indices of `filled` and `keep`.
 func fillSource(
 	ctx context.Context, of sourceTexts, source string, indices []int, fill passageFill,
 ) error {
@@ -434,7 +391,6 @@ func fillSource(
 	return nil
 }
 
-// findHitOffset is the byte offset of the first query word in text, and zero where none appears.
 func findHitOffset(text, query string) int {
 	lower := strings.ToLower(text)
 	best := len(text) + 1
@@ -449,8 +405,6 @@ func findHitOffset(text, query string) int {
 	return best
 }
 
-// groupBySource is the index of each passage in `found`, grouped by source and
-// ordered by a source's first appearance.
 func groupBySource(found []domain.Passage) (map[string][]int, []string) {
 	groups := make(map[string][]int, len(found))
 	order := make([]string, 0, len(found))
@@ -474,10 +428,6 @@ type sourceTexts struct {
 	texts textport.Texts
 }
 
-// getText returns the text a source's chunks address and the version it comes
-// from, if any. A source without a version is a note, and its text is its file.
-// A source with a version reads that version; a missing version is
-// errUnreadable.
 func (s sourceTexts) getText(ctx context.Context, path, version string) (string, *domain.VersionText, error) {
 	if version == "" {
 		raw, err := s.files.Read(ctx, path)
@@ -499,12 +449,6 @@ func (s sourceTexts) getText(ctx context.Context, path, version string) (string,
 	return doc.Text, &doc, nil
 }
 
-// span is the text a chunk addresses, bounded by the current length of the
-// source. A source edited after indexing is shorter than the chunk offsets
-// indicate.
-//
-// The result is copied from the source's decoded text and not sliced from it,
-// so a retained passage holds only the span and not the whole document.
 func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""
@@ -516,8 +460,6 @@ func span(raw string, start, length int) string {
 	return strings.Clone(raw[start:end])
 }
 
-// lineOf is the line a passage begins on, counted from the first line of the
-// prose, which opens at `opens`.
 func lineOf(raw string, opens, start int) int {
 	if start > len(raw) {
 		start = len(raw)
@@ -528,8 +470,6 @@ func lineOf(raw string, opens, start int) int {
 	return strings.Count(raw[opens:start], "\n")
 }
 
-// proseOpens is the byte offset at which a source's prose begins. A note's
-// frontmatter precedes its prose; a text without frontmatter starts at byte 0.
 func proseOpens(raw string) int {
 	rest := strings.TrimPrefix(raw, "\ufeff")
 	first, after, found := strings.Cut(rest, "\n")

@@ -77,7 +77,6 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
 }
 
-/** The id of every action of every item, and the id of the item where it has none. */
 const collectActionIds = (groups: readonly PaletteGroup[]): string[] =>
   groups.flatMap((group) =>
     group.items.flatMap((one) => (one.actions ?? [{ id: one.id }]).map((action) => action.id)),
@@ -160,7 +159,6 @@ describe('the actions of the palette', () => {
   })
 })
 
-/** The source of every script and component under `src`, by its path from `src`. */
 const readSources = (): Record<string, string> => {
   const root = resolve(import.meta.dirname, '../../..')
   const found: Record<string, string> = {}

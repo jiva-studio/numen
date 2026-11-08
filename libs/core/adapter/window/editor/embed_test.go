@@ -39,9 +39,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// The two vocabularies a note in these tests is written in. A save changes
-// which one it holds, so the text the model received identifies which body
-// reached it.
 func getBefore() []string {
 	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
 }
@@ -50,8 +47,6 @@ func getAfter() []string {
 	return []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
 }
 
-// prose is n words of one vocabulary, which is what a buffer holds: the text
-// under the frontmatter, and no frontmatter of its own.
 func prose(vocabulary []string, n int) string {
 	out := make([]string, 0, n)
 	for i := range n {
@@ -60,8 +55,6 @@ func prose(vocabulary []string, n int) string {
 	return strings.Join(out, " ") + "\n"
 }
 
-// noteWith is a note of n words of one vocabulary, long enough to be cut into
-// windows that carry a vector.
 func noteWith(vocabulary []string, n int) string {
 	return "---\ntitle: Note\n---\n\n" + prose(vocabulary, n)
 }
@@ -102,7 +95,6 @@ func (a *fakeEmbedder) times() int {
 	return a.calls
 }
 
-// saw reports whether a word reached the model in any text it received.
 func (a *fakeEmbedder) saw(word string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -144,14 +136,12 @@ func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	return s.fakeEmbedder.Embed(ctx, texts)
 }
 
-// getTurnedDown is how many askings it has turned down.
 func (s *sulking) getTurnedDown() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.turned
 }
 
-// direction is a vector that belongs to one text and no other.
 func direction(text string, dims int) []float32 {
 	sum := fnv.New64a()
 	sum.Write([]byte(text))
@@ -192,8 +182,6 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 	return r.VaultReader.WalkFiles(ctx, fn)
 }
 
-// getVectorProgress is how many of the vault's chunks can carry a vector and how many
-// carry one from the model in use.
 func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (target, embedded int64) {
 	t.Helper()
 	target, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
@@ -349,8 +337,6 @@ func (s *mockEmbeddingServer) EmbedBatch(
 	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
 }
 
-// vaultConfig gives a folder an identity and registers it, and answers with the
-// configuration that opens it.
 func vaultConfig(t *testing.T) container.Config {
 	t.Helper()
 	root := t.TempDir()

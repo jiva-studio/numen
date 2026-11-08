@@ -46,8 +46,6 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// parseBytesQuery reads the size and the modification time of a file from the query, and is nil
-// where the query names no size.
 func parseBytesQuery(query url.Values) *api.FileStat {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="size query parameter is a base-10 64-bit integer"
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)

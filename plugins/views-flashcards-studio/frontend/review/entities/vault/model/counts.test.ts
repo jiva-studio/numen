@@ -38,7 +38,6 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
   ...fields,
 })
 
-/** The vaults as they stand before any of them is counted. */
 const createVaultList = (...all: readonly VaultCounts[]): DueCounts => ({
   day: '2026-09-05',
   vaults: all.map((one) => ({
@@ -51,10 +50,8 @@ const createVaultList = (...all: readonly VaultCounts[]): DueCounts => ({
   })),
 })
 
-/** One vault's count, as it arrives on its own. */
 const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: one })
 
-/** A count fed manually by a test, message by message. */
 const createFeed = () => {
   const target: DueCounts[] = []
   let wake: (() => void) | null = null
@@ -93,12 +90,10 @@ const createFeed = () => {
   }
 }
 
-/** What is on its way settles. */
 const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 
 const countFailures: unknown[] = []
 
-/** Starts counting without waiting for it; a failure is collected for the assertions of the test. */
 const countInBackground = (counter: ReturnType<typeof useReviewCounter>): void => {
   counter.count().catch((error: unknown) => {
     countFailures.push(error)

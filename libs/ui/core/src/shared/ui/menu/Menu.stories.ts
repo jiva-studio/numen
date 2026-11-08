@@ -22,13 +22,10 @@ import {
 
 interface Knobs {
   items: readonly MenuItem[]
-  /** What each item is drawn with, by identity. Nothing named draws nothing. */
   icons?: Readonly<Record<string, Component>>
   at: { x: number; y: number }
   trigger: MenuTrigger
-  /** Which item is the one in force, if the menu names one. */
   current: string | null
-  /** Whether the name of a group is drawn over it. */
   hasGroups: boolean
   margin: number
   name: string
@@ -44,13 +41,8 @@ const ITEMS: MenuItem[] = [
   { id: 'copy', text: 'Copy path' },
 ]
 
-/** The menu's own list, so the placement is read off the element it decorates. */
 const menuElement = () => document.body.querySelector<HTMLElement>('.menu')
 
-/**
- * A surface that opens a menu at the requested position. The story acts as the
- * caller: it holds the open state and closes the menu when the menu requests it.
- */
 const renderMenu = (args: Knobs) => ({
   components: { Menu },
   setup() {
@@ -534,11 +526,6 @@ export const TypingToJump: Story = {
   },
 }
 
-/**
- * A menu opened near the bottom of a scrolling container, which scrolls
- * scrolls itself as the menu opens. The menu stays open through that scroll, and
- * a scroll by the user afterwards closes it.
- */
 const renderScrollingOpening = (args: Knobs) => ({
   components: { Menu },
   setup() {

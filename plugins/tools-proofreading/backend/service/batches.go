@@ -1,13 +1,5 @@
 package service
 
-// speechBatches is the lines of a transcript cut into batches of size lines,
-// each batch opening on the last overlap lines of the one before it. Speech runs
-// on past the cut, so the lines a batch shares with its neighbour are seen whole
-// by one of the two.
-//
-// A batch is known by its place in the run. A line saying nothing is left out.
-// A run of lines is answered for inside one batch, so a sentence broken over a
-// cut is put back together where the overlap carries it whole.
 func speechBatches(all []Line, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
@@ -25,17 +17,6 @@ func speechBatches(all []Line, size, overlap int) []Batch {
 	return out
 }
 
-// cutBatches returns one batch for each cut, holding the size lines around that
-// cut, half before it and half after, numbered after the batches speechBatches
-// returns. A cut is identified by the batch it follows, and cuts are listed in
-// transcript order.
-//
-// A run of lines is checked inside one batch. A sentence spanning a cut by more
-// than the overlap is in no batch speechBatches creates, and the batch over
-// that cut contains it whole.
-//
-// A transcript of one batch has no cut, and a batch of one line cannot hold
-// lines on both sides of a cut. The last batch is followed by no cut.
 func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	batches := speechBatches(all, size, overlap)
 	if size < 2 || len(batches) < 2 {
@@ -68,7 +49,6 @@ func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	return out
 }
 
-// getSpokenLines returns the lines that say something.
 func getSpokenLines(all []Line) []Line {
 	var out []Line
 	for _, line := range all {
@@ -80,9 +60,6 @@ func getSpokenLines(all []Line) []Line {
 	return out
 }
 
-// getSharedLines returns the number of lines a batch shares with the previous
-// batch: always fewer than size, so each batch extends further into the
-// transcript than its predecessor.
 func getSharedLines(size, overlap int) int {
 	if overlap < 0 {
 		return 0

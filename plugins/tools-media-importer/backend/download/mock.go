@@ -19,7 +19,6 @@ func NewMock() *Downloader {
 // mockSeconds is how long the clip runs.
 const mockSeconds = 3
 
-// getMockCues returns the captions the clip is published with.
 func getMockCues() []Cue {
 	return []Cue{
 		{Text: "The tide comes in twice a day.", From: 0, To: 1000},
@@ -55,7 +54,6 @@ func (mockVideo) Download(_ context.Context, _ string, _ Media, into io.Writer) 
 	return Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
 }
 
-// writeQuietWAV is mockSeconds of silence, 8 kHz, 8-bit and mono.
 func writeQuietWAV() []byte {
 	const rate = 8000
 	samples := rate * mockSeconds

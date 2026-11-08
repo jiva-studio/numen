@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
 
-// getGuideTabs is one bird guide open in two tabs, and a note.
 func getGuideTabs() []host.OpenTab {
 	return []host.OpenTab{
 		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
@@ -27,7 +26,6 @@ type tabActivateOutput struct {
 	Tab tabOutput `json:"tab"`
 }
 
-// requireWindowNotMoved fails the test when the window received a call to focus a note or a file.
 func requireWindowNotMoved(t *testing.T, window *hosttest.Window) {
 	t.Helper()
 	if notes, files := window.GetFocusedNotes(), window.GetFocusRequests(); len(notes) != 0 || len(files) != 0 {
@@ -184,8 +182,6 @@ func (w countingWindow) ActivateTab(ctx context.Context, id string) (host.OpenTa
 	return w.Window.ActivateTab(ctx, id)
 }
 
-// newCountingTools is the window tools over a window with the guide tabs and a tab-4 of the guide at
-// page 2, tab-1 active, that count the ActivateTab calls.
 func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	t.Helper()
 	vault := hosttest.New(testVault)

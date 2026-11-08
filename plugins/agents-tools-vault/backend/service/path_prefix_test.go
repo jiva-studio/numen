@@ -15,8 +15,6 @@ const (
 	shelfNFD = "Bücher"
 )
 
-// shelfPassages are the passages of the invented shelves: library has one, library2 has one whose
-// path starts with the letters of library, and the shelf of books has one.
 func shelfPassages() []host.Passage {
 	return []host.Passage{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
@@ -77,7 +75,6 @@ func TestLibrarySearchWithoutAPrefixSearchesTheWholeVault(t *testing.T) {
 	}
 }
 
-// newShelfNotes is a vault of invented notes in the folders notes, notes2 and the shelf of books.
 func newShelfNotes(t *testing.T) *hosttest.Vault {
 	t.Helper()
 	v := hosttest.New(testVault)

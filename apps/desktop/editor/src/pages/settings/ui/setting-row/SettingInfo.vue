@@ -7,9 +7,7 @@ import { Info } from '@lucide/vue'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** Id of the tooltip element. */
   at: string
-  /** Accessible name of the button. */
   label: string
   text: string
 }>()

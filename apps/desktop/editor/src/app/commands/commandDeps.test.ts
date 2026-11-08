@@ -3,7 +3,6 @@ import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
 import { useSettings } from '../window/useSettings'
 import { WORDS } from '@/shared/words'
 
-/** Every dependency a fake that records what it was handed. */
 const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const calls: unknown[][] = []
   const record =

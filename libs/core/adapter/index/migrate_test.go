@@ -270,25 +270,19 @@ type faults struct {
 // errBroken is what every statement the breaking driver fails answers with.
 var errBroken = errors.New("broken for the test")
 
-// breakWhere fails, until the test ends, every statement the predicate holds for.
 func (f *faults) breakWhere(t *testing.T, breaks func(query string) bool) {
 	t.Helper()
 	f.breaks.Store(&breaks)
 	t.Cleanup(f.stop)
 }
 
-// breakOn fails, until the test ends, every statement containing the text given.
 func (f *faults) breakOn(t *testing.T, text string) {
 	t.Helper()
 	f.breakWhere(t, func(query string) bool { return strings.Contains(query, text) })
 }
 
-// stop stops the breaking driver failing any statement.
 func (f *faults) stop() { f.breaks.Store(nil) }
 
-// openBreaking is the index file at path through a driver that fails the statements the faults
-// name and runs every other statement unchanged, opened the way the write pool is. A
-// transaction's BEGIN is the statement "BEGIN".
 func openBreaking(t *testing.T, path string) (*sql.DB, *faults) {
 	t.Helper()
 	base, err := sql.Open("sqlite", ":memory:")
@@ -371,7 +365,6 @@ func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (drive
 	return c.wrapTx(begin.BeginTx(ctx, opts))
 }
 
-// wrapTx returns tx failing with the faults of c, or err where beginning tx failed.
 func (c breakingConn) wrapTx(tx driver.Tx, err error) (driver.Tx, error) {
 	if err != nil {
 		return nil, err
@@ -442,8 +435,6 @@ type rowFault struct {
 	unreadable bool
 }
 
-// breakRows fails the reading of the rows of every statement containing text,
-// until the test ends.
 func (f *faults) breakRows(t *testing.T, text string, unreadable bool) {
 	t.Helper()
 	f.rows.Store(&rowFault{text: text, unreadable: unreadable})

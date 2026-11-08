@@ -13,74 +13,41 @@ import {
 
 /** One value of a card as its tile draws it. */
 export interface PlacedFieldValue extends CardFieldValue {
-  /** at its current position among the values, counting from one. */
   readonly at: number
-  /**
-   * Identifies the value within its tile. Values under one field are
-   * distinguished by their order under it.
-   */
   readonly key: string
-  /** at its current position among the values the card writes under its own field, from one. */
   readonly index: number
-  /**
-   * Whether this is the last box of its field, where the field's error is shown
-   * once.
-   */
   readonly isLast: boolean
 }
 
 /** One card as a tile of the grid. */
 export interface Tile {
-  /** Identifies the card within the deck, as named by the caller. */
   readonly id: string
-  /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
   readonly cardModel: string | null
-  /** Its values, in the order its card model declares them. */
   readonly filled: readonly PlacedFieldValue[]
-  /** at its current position among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
-  /** How many stand in the grid with it, the plus among them. */
   readonly of: number
-  /** The card model it names is among the ones handed in. */
   readonly isKnown: boolean
-  /** It is on its way somewhere else in the order. */
   readonly isDragged: boolean
 }
 
 /** One section as the grid draws it: the section, and at its current position. */
 export interface PlacedSection extends DeckSection {
-  /** at its current position among the sections, counting from one. */
   readonly at: number
 }
 
 /** One run of a deck: a section, where the cards stand under one, and those cards. */
 export interface Run {
-  /** Where a card let go on the run itself lands, which is at the head of it. */
   readonly id: string
-  /** The section they stand under, and nothing for the cards before the first. */
   readonly section: PlacedSection | null
   readonly tiles: readonly Tile[]
-  /**
-   * Whether the run draws a drop target of its own. A run under a section is
-   * targeted by that section's heading and a run holding cards by the first of
-   * them; the cards before the first section have neither when they hold no card.
-   */
   readonly isDropTarget: boolean
-  /**
-   * Position of the run's plus among the grid positions, and null when the run
-   * draws none. A card is created at the end of a run, so every run that can
-   * receive cards has one: every section, and the cards before the first section
-   * when they hold a card or the deck has no section.
-   */
   readonly plusAt: number | null
 }
 
 /** The grid a deck draws: its runs of cards, and how many stand in it. */
 export interface Grid {
-  /** The cards before the first section, and then one run for each section. */
   readonly runs: readonly Run[]
-  /** How many stand in the grid, every plus among them. */
   readonly of: number
 }
 

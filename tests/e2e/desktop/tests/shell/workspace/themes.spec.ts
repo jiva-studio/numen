@@ -3,11 +3,9 @@ import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { getRow, readComputedFontSize, showInFiles } from '../../support/layout.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
-/** The size of the text the interface is drawn in, which every rem of it is measured in. */
 const readRootFontSize = (page: Page): Promise<number> =>
   page.evaluate(() => Number.parseFloat(getComputedStyle(document.documentElement).fontSize))
 
-/** Opens the system section of the settings tab, and gives back the tab. */
 const openSystemSettings = async (page: Page) => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })

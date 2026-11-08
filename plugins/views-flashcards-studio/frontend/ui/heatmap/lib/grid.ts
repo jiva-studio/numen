@@ -12,11 +12,8 @@ export const AHEAD = 4
 
 /** What a grid is laid out to. */
 export interface HeatmapMetrics {
-  /** How wide the grid may be, in pixels. */
   width: number
-  /** How large one cell is drawn. */
   cell: number
-  /** Space between two cells. */
   gap: number
 }
 
@@ -90,7 +87,6 @@ function monday(date: Date): Date {
   return out
 }
 
-/** Monday is the first day of a week, and Sunday the seventh. */
 function weekday(date: Date): number {
   const day = date.getDay()
   return day === 0 ? 7 : day

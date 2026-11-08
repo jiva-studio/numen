@@ -24,14 +24,11 @@ export type ResolvedAddressMap = ReadonlyMap<string, string>
 
 const AGENT_USE_AT = ['app', 'agent', 'use'] as const
 
-/** The path the models of one agent are named at. */
 const getModelAt = (agent: string): readonly string[] => ['app', 'agent', agent, 'model']
 
-/** The setting kept at a path, as text. */
 const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
   String(deps.getSetting?.(path) ?? '')
 
-/** The kept model of the kept agent, else that agent's default. */
 function pickOption(
   options: readonly AgentModelOption[],
   selectedAgentId: string,
@@ -107,7 +104,6 @@ function useAgentSelection(deps: AgentTabDeps) {
   return { ...selection, isAgentMissing, openSettings, ...useReasoningSelection(deps, selection) }
 }
 
-/** The depth of reasoning chosen for the agent, as far as the selected model hasLevel it. */
 function useReasoningSelection(
   deps: AgentTabDeps,
   selection: {

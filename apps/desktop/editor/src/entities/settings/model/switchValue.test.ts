@@ -48,10 +48,6 @@ interface HeldCall {
   readonly reject: (error: unknown) => void
 }
 
-/**
- * A vault holding one plugin. A read takes what the file holds when the vault receives it, and
- * every read and write waits until the test answers it.
- */
 const createHeldVault = (isEnabled: boolean) => {
   const file = { p: { enabled: isEnabled } }
   let isActive = isEnabled

@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// assertFixture decodes the fixture into value and checks that encoding it gives the same JSON.
 func assertFixture[T any](t *testing.T, name string) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", "api", name))

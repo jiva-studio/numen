@@ -22,17 +22,12 @@ var ErrNoAgent = errors.New("no agent is set up for this vault")
 type AgentHandler struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 
-	// GetAgent returns the agent used at each call. Nil, or a nil return, means the window has no agent.
-	GetAgent func() agentport.Agent
-	// GetRoot is the folder a task naming none is started in. Nil leaves it empty.
-	GetRoot func() string
-	// GetVault is the vault a task naming none works. Nil leaves it empty.
-	GetVault func() domain.VaultID
-	// GetUnreachable is why no agent can be reached, empty while one can. Nil is always empty.
+	GetAgent       func() agentport.Agent
+	GetRoot        func() string
+	GetVault       func() domain.VaultID
 	GetUnreachable func() string
 }
 
-// getAgent is the agent the handler is given, nil where it has none.
 func (h *AgentHandler) getAgent() agentport.Agent {
 	if h.GetAgent == nil {
 		return nil

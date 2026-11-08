@@ -28,8 +28,6 @@ func (b *bin) Trash(path string) error {
 	return b.fails
 }
 
-// newErase wires the use case over one registry, recording the order the folder
-// and the rows go in.
 func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows, *[]string) {
 	steps := &[]string{}
 	trash := &bin{steps: steps}

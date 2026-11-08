@@ -16,16 +16,11 @@ export interface Box {
 
 /** What placing something beside a span takes, on one axis. */
 export interface AxisPlacement {
-  /** Start and end of the anchor span the element is placed beside. */
   readonly from: number
   readonly to: number
-  /** How large the thing being placed turned out to be. */
   readonly size: number
-  /** Extent of the container the element is placed in. */
   readonly room: number
-  /** Minimum distance kept from the container's edges. */
   readonly margin: number
-  /** Distance between the element and the anchor span. */
   readonly gap: number
 }
 

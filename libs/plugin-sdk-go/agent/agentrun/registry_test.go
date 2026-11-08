@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
-// start runs a child that waits until it is killed, and the reader that waits for it.
 func start(t *testing.T, registry *agentrun.Registry, conversation string) (*agentrun.Work, <-chan struct{}) {
 	t.Helper()
 
@@ -46,7 +45,6 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 	return w, doneCh
 }
 
-// isOver is whether the child has been waited for.
 func isOver(over <-chan struct{}) bool {
 	select {
 	case <-over:

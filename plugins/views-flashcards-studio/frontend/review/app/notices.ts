@@ -26,7 +26,6 @@ export function createNotices(host: NoticeHost) {
   return { showNotice, reportError, setTasks }
 }
 
-/** One message as a sentence: it starts with a capital letter and ends with punctuation. */
 const sentence = (text: string): string => {
   if (!text) return ''
   const ended = /[.!?]$/.test(text) ? text : `${text}.`

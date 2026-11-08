@@ -102,7 +102,6 @@ func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (str
 	return f.pick, f.isChosen, f.fails
 }
 
-// getRequested returns what the dialog was requested to display and where to open.
 func (f *folders) getRequested() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -126,8 +125,6 @@ type onTheList struct {
 	failure  error
 }
 
-// onAList puts two vaults on a list of its own and serves the questions about
-// them.
 func onAList(t *testing.T) *onTheList {
 	t.Helper()
 
@@ -179,21 +176,18 @@ func onAList(t *testing.T) *onTheList {
 	return f
 }
 
-// opening is what the window returns when requested to show a vault.
 func (f *onTheList) opening(why error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.failure = why
 }
 
-// getShown returns every vault the window was requested to show.
 func (f *onTheList) getShown() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]domain.Vault(nil), f.expected...)
 }
 
-// addVault makes a folder under a parent of its own and puts it on the list.
 func addVault(t *testing.T, add vaults.Add, name string) domain.Vault {
 	t.Helper()
 
@@ -204,7 +198,6 @@ func addVault(t *testing.T, add vaults.Add, name string) domain.Vault {
 	return v
 }
 
-// folderNamed makes a directory named name, under a parent of its own.
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
@@ -215,7 +208,6 @@ func folderNamed(t *testing.T, name string) string {
 	return pos
 }
 
-// getList is the list as the client is answered with it.
 func (f *onTheList) getList(t *testing.T) *v1.ListVaultsResponse {
 	t.Helper()
 
@@ -226,7 +218,6 @@ func (f *onTheList) getList(t *testing.T) *v1.ListVaultsResponse {
 	return out.Msg
 }
 
-// onList is the vault of that identity on the list the client was answered with.
 func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Vault {
 	t.Helper()
 

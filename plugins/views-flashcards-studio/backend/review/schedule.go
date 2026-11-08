@@ -14,24 +14,15 @@ const LeastStability = 1.0 / (24 * 60)
 // Nothing in it is written into a vault. It is worked out from the answers
 // every time it is wanted, and thrown away at no cost but the working out.
 type Schedule struct {
-	// Due is when the review card comes round again.
-	Due time.Time
-	// Last is when it was answered, and is the zero time until it has been.
-	Last time.Time
-	// Reps is how many answers it has had, Lapses how many of them were Again.
-	Reps   int
-	Lapses int
-	// Stability and Difficulty are what the scheduler carries between answers:
-	// how long the card is expected to stay recalled, and how hard it is.
+	Due        time.Time
+	Last       time.Time
+	Reps       int
+	Lapses     int
 	Stability  float64
 	Difficulty float64
-	// Phase is the scheduler's own and means nothing outside it. It is kept so
-	// that a schedule can be put back where it was without the answers being
-	// read again, and it is read by the scheduler that wrote it.
-	Phase uint8
+	Phase      uint8
 }
 
-// newUnansweredSchedule returns the schedule of a review card that has not been answered.
 func newUnansweredSchedule() Schedule {
 	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Schedule value."
 	return Schedule{

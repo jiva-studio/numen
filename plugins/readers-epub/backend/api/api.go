@@ -29,15 +29,13 @@ type GetBookResponse struct {
 	PageCount    int             `json:"pageCount"`
 	TextBytes    int             `json:"textBytes"`
 	PageBytes    int             `json:"pageBytes"`
-	// Stat names the file the book was read from, and is absent where the backend names none.
-	Stat *FileStat `json:"stat,omitempty"`
+	Stat         *FileStat       `json:"stat,omitempty"`
 }
 
 // ReadBookMarkupRequest names a document of a book's spine.
 type ReadBookMarkupRequest struct {
-	Path     string `json:"path"`
-	Document string `json:"document"`
-	// Baseline names the bytes the caller read the book from, and is absent for any bytes.
+	Path     string    `json:"path"`
+	Document string    `json:"document"`
 	Baseline *FileStat `json:"baseline,omitempty"`
 }
 
@@ -48,9 +46,8 @@ type ReadBookMarkupResponse struct {
 
 // ReadBookEntryRequest names one entry of a book's archive.
 type ReadBookEntryRequest struct {
-	Path  string `json:"path"`
-	Entry string `json:"entry"`
-	// Baseline names the bytes the entry must be read from, and is absent for any bytes.
+	Path     string    `json:"path"`
+	Entry    string    `json:"entry"`
 	Baseline *FileStat `json:"baseline,omitempty"`
 }
 

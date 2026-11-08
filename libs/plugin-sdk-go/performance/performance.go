@@ -33,6 +33,8 @@ func Read(values map[string]string) Profile {
 }
 
 // Limits is what a profile lets one plugin occupy on a machine.
+//
+//numen:api
 type Limits struct {
 	// Threads is the most CPU-bound threads at once; at least 1.
 	Threads int

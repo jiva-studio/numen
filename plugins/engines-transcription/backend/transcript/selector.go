@@ -13,7 +13,6 @@ type timeSelector struct {
 	T []float64 `json:"t,omitempty"`
 }
 
-// encode returns the selector as the JSON a segment carries.
 func (s timeSelector) encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {
@@ -22,7 +21,6 @@ func (s timeSelector) encode() (domain.Selector, error) {
 	return domain.Selector(raw), nil
 }
 
-// readTimeSelector reads the span of a segment's selector. An empty selector has none.
 func readTimeSelector(raw domain.Selector) (timeSelector, error) {
 	var out timeSelector
 	// gomutants:disable-next-line BRANCH_IF reason="empty selector fast-path returns zero value directly"

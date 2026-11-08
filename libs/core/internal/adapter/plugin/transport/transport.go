@@ -92,9 +92,7 @@ func GenerateAuthToken() (string, error) {
 
 // Handshake is the ready line of a plugin process.
 type Handshake struct {
-	// Port is the loopback port of the plugin's RPC server.
-	Port int
-	// Listeners maps the name of each listener the plugin opened to its loopback port.
+	Port      int
 	Listeners map[string]int
 }
 
@@ -131,7 +129,6 @@ var (
 	errListenerTokenPort = errors.New("no positive integer port")
 )
 
-// addListenerToken adds the listener of a token <name>=<port> to listeners.
 func addListenerToken(listeners map[string]int, token string) error {
 	name, value, hasValue := strings.Cut(token, "=")
 	if _, isRepeated := listeners[name]; name == "" || isRepeated {

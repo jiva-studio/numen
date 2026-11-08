@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-// createManifestedHost returns a host that treats each plugin as running with the
-// permissions its manifest declares. The manifest is decoded by the production decoder.
 func createManifestedHost(t *testing.T, manifests map[string]string) *Host {
 	t.Helper()
 	plugins := map[string]runningPlugin{}
@@ -32,8 +30,6 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *Host {
 	return newRunningTestHost(t, plugins)
 }
 
-// createRawVaultClient returns a generated protocol client of the host endpoint that carries the token only:
-// no plugin SDK check runs before the call reaches the host.
 func createRawVaultClient(t *testing.T, host *Host, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), host.hostAddress, host)
@@ -86,7 +82,6 @@ func TestACallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T) {
 	}
 }
 
-// createRawSearchClient is createRawVaultClient for the search service.
 func createRawSearchClient(t *testing.T, host *Host, token string) numenv1connect.HostSearchServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), host.hostAddress, host)

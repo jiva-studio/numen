@@ -31,9 +31,6 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 // not hold the window back.
 const programsWait = time.Second
 
-// getAgentPrograms returns the programs the agent plugins list, requested with the command lines
-// from the settings. A provider that does not respond in time lists none, and the read waits for
-// the providers no longer than programsWait: after that it answers with the programs listed last.
 func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settings.Agent) []agentport.AgentProgram {
 	if provider == nil {
 		return nil
@@ -71,9 +68,6 @@ func (c Config) completionAgentSettings() completion.AgentSettings {
 	}
 }
 
-// newCompletionRouter answers the questions plugins ask of a model with the
-// default under ai.default in the settings file, read at every question,
-// through the agent programs of the host's plugins.
 func (c Config) newCompletionRouter() (*completion.Router, error) {
 	provider := c.AgentProvider()
 	if provider == nil {
@@ -87,8 +81,6 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 	)
 }
 
-// setCompleter has the plugin host answer the questions its plugins ask of a
-// model. Safe mode serves none.
 func (c Config) setCompleter() {
 	if c.PluginHost == nil || c.SafeMode {
 		return
@@ -115,9 +107,6 @@ func (c Config) GetSettingsAgent() agentport.Agent {
 	return completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings))
 }
 
-// getToolProvider returns AgentProvider with an MCP endpoint of its own for each run, serving the
-// tools the plugins with the tools capability offer on the full server whose required permissions
-// the plugin that runs the task has. It returns nil when AgentProvider is nil.
 func (c Config) getToolProvider() agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil

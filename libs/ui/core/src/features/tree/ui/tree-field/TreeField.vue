@@ -11,11 +11,8 @@ import { useTemplateRef } from 'vue'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The name currently, which is what is typed over. */
     value: string
-    /** What the field is announced as. */
     name: string
-    /** Whether the row is a folder holding other rows. */
     isFolder?: boolean
   }>(),
   {
@@ -51,7 +48,6 @@ function onKey(event: KeyboardEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The keyboard onto the field, selecting the stem or the whole name. */
 function focus(): void {
   const input = field.value
   if (!input) return

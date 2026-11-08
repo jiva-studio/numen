@@ -24,10 +24,8 @@ const staleDetail = "Deltas.md changed since it was read"
 // AddLinks writes the first link, rejects the second as stale and fails the third with no code.
 type linking struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
-	mu sync.Mutex
-	// callError, when set, is the call-level error of every link edit.
-	callError v1.HostVaultErrorCode
-	// editError and editDetail, when set, are the error of every update and removal.
+	mu         sync.Mutex
+	callError  v1.HostVaultErrorCode
 	editError  v1.HostVaultErrorCode
 	editDetail string
 	added      *v1.HostVaultServiceAddLinksRequest
@@ -82,7 +80,6 @@ func linkingClient(t *testing.T, l *linking) *host.Client {
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-// getReadBaseline is the stat of Deltas.md as the caller read it.
 func getReadBaseline() domain.FileStat {
 	return domain.FileStat{Path: "Deltas.md", Kind: domain.KindNote, Size: 48, ModTime: time.Unix(0, 1700)}
 }

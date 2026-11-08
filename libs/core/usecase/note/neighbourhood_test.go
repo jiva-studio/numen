@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// relationsOf renders a neighbourhood as `relation path` lines, which is what these
-// tests are about: who is shown, and where.
 func relationsOf(n domain.Neighbourhood) []string {
 	out := make([]string, 0, len(n.Related))
 	for _, r := range n.Related {
@@ -54,8 +52,6 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	}
 }
 
-// describeSide renders one record of a line: its label, an arrow where it has
-// one, or "none" for a note that writes nothing about the other.
 func describeSide(s *domain.Side) string {
 	if s == nil {
 		return "none"
@@ -67,12 +63,10 @@ func describeSide(s *domain.Side) string {
 	return text
 }
 
-// describeLine renders a line as `parent>child ab=<record of the parent> ba=<record of the child>`.
 func describeLine(c domain.Connection) string {
 	return c.A + ">" + c.B + " ab=" + describeSide(c.AB) + " ba=" + describeSide(c.BA)
 }
 
-// linesOf renders every line of a neighbourhood.
 func linesOf(n domain.Neighbourhood) []string {
 	out := make([]string, 0, len(n.Connections))
 	for _, c := range n.Connections {

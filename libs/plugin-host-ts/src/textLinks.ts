@@ -9,9 +9,7 @@ import type { TextLink } from '@numen/plugin-sdk'
 /** What the core resolves for one text. Empty fields refer to the window's own. */
 export interface LinkRequest {
   readonly text: string
-  /** The note the text is written in; a name resolves by a path relative to it. */
   readonly from?: string | undefined
-  /** The vault the text is written in. */
   readonly vault?: string | undefined
 }
 

@@ -320,7 +320,6 @@ describe('a command requested for while the vault is being read', () => {
 
 /** The window as rendered, driven like a user with nothing stubbed. */
 
-/** Sample and form notes rendered with the icons their plugin registers. */
 function drawPluginTypes(): void {
   const unregister = [registerNoteIcon('sample', Layers), registerNoteIcon('form', LayoutTemplate)]
   onTestFinished(() => {

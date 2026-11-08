@@ -54,7 +54,6 @@ func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQ
 	return r.Search.SearchPassages(ctx, query)
 }
 
-// newRecordedSearch is a vault of invented reading lists whose search records its queries.
 func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Passage) (*searchCalls, *tools.Registry) {
 	t.Helper()
 	search := hosttest.NewSearch(testVault)

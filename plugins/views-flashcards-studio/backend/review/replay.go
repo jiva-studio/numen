@@ -59,8 +59,6 @@ func (h History) Replay(d Day, assignment Assignment) map[CardID]Schedule {
 // for such a card is whether it is recalled after ten minutes, which gives no
 // information about long-term memory.
 type RecallTally struct {
-	// Tested is the answers given to spaced review cards, and Recalled the subset
-	// of them that were not Again.
 	Tested   int
 	Recalled int
 }
@@ -86,8 +84,6 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 	return out
 }
 
-// walkAnswers iterates over the answers in the order they were given and passes each
-// one to the caller with the schedule the review card had before it.
 func walkAnswers(
 	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardID]Schedule {
@@ -108,12 +104,6 @@ func (h History) walkAnswers(
 	return out
 }
 
-// getActiveAnswers is the answers that count, in the order they were given.
-//
-// An answer some line takes back is left out, and one identifier is one answer
-// however many lines carry it. The files arrive in whatever order they were
-// synchronised, and what a review card has been through is the order of the
-// answers themselves.
 func getActiveAnswers(answers []Answer) []Answer {
 	undoTargets := make(map[string]bool)
 	for _, a := range answers {
@@ -135,12 +125,6 @@ func getActiveAnswers(answers []Answer) []Answer {
 	return out
 }
 
-// compareAnswersByTime puts answers in the order they were given.
-//
-// Two answers of one millisecond are put in the order of their identifiers,
-// which is one order and the same at every launch. Which of them was given
-// first is not known: an identifier carries the millisecond and then
-// randomness.
 func compareAnswersByTime(a, b Answer) int {
 	if !a.At.Equal(b.At) {
 		return a.At.Compare(b.At)

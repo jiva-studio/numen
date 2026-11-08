@@ -202,7 +202,6 @@ func TestCover_ResolvesImageHref(t *testing.T) {
 	}
 }
 
-// coverBook is a book whose spine opens with an SVG cover.
 func coverBook(t *testing.T, cover string) []byte {
 	t.Helper()
 	return buildSpineArchive(t, `<?xml version="1.0"?>
@@ -221,7 +220,6 @@ func coverBook(t *testing.T, cover string) []byte {
 	})
 }
 
-// document is one document of the book, by name.
 func document(t *testing.T, book *epub.Book, path string) epub.Document {
 	t.Helper()
 	for _, doc := range book.Documents {
@@ -233,7 +231,6 @@ func document(t *testing.T, book *epub.Book, path string) epub.Document {
 	return epub.Document{}
 }
 
-// element is the first element of a name, and a failure when there is none.
 func element(t *testing.T, nodes []epub.Node, name string) *epub.Node {
 	t.Helper()
 	found := find(nodes, name)
@@ -260,7 +257,6 @@ func findAll(nodes []epub.Node, name string) []*epub.Node {
 	return out
 }
 
-// getEveryNode node of a document, in reading order.
 func getEveryNode(nodes []epub.Node) []*epub.Node {
 	var out []*epub.Node
 	for i := range nodes {
@@ -270,7 +266,6 @@ func getEveryNode(nodes []epub.Node) []*epub.Node {
 	return out
 }
 
-// getTextNodes answers the nodes that are text.
 func getTextNodes(nodes []epub.Node) []*epub.Node {
 	var out []*epub.Node
 	for _, node := range getEveryNode(nodes) {

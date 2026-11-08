@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { faults, type Stop, type Walk } from './reach'
 
-/** A walk of a page that came to rest and kept the keyboard nowhere. */
 const walkOf = (stops: Stop[]): Walk => ({ stops, trapped: null, settled: true })
 
 /** A stop that breaks none of it, which each case then spoils one way. */

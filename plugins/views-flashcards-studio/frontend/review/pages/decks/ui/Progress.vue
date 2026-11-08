@@ -12,9 +12,7 @@ import { GRADE_LABELS } from '../../../entities/card'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** What was answered on each day, by the day it was. */
   days: ReadonlyMap<string, HeatmapTally>
-  /** How many cards fall on each day still to come, by the day they fall on. */
   due: ReadonlyMap<string, number>
 }>()
 

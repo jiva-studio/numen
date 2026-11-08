@@ -15,11 +15,8 @@ import (
 //
 // It is published as one unit through API.showing, and every request reads it there.
 type vaultSession struct {
-	// refresh brings a note of this vault up to date through the opening it is
-	// being followed by.
 	refresh vaults.Refresh
 
-	// cancel ends every pass behind this vault, and wait waits for them.
 	cancel context.CancelFunc
 	wait   func()
 }
@@ -88,9 +85,6 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpe
 	return err
 }
 
-// rebuildSession builds the session of the vault in the window again, so the scan, the watch and the
-// refresh cut the notes at the chunk size the embedder reports now, and the first scan of the new
-// session cuts the notes recorded with another size.
 func (o *Installation) rebuildSession() {
 	o.sessionMu.Lock()
 	defer o.sessionMu.Unlock()
@@ -105,10 +99,6 @@ func (o *Installation) rebuildSession() {
 	}
 }
 
-// startVault puts a vault in the window and builds everything that belongs to it.
-//
-// The zero vault is a window standing on nothing: it shows no vault, and no
-// pass runs behind it.
 func (o *Installation) startVault(ctx context.Context, v domain.Vault, rebuild bool) error {
 	o.State.setVault(v)
 	if v.ID == "" {
@@ -128,8 +118,6 @@ func (o *Installation) startVault(ctx context.Context, v domain.Vault, rebuild b
 	return nil
 }
 
-// buildSession builds the half of the window that belongs to one vault: the scan
-// and the watch behind it.
 func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild bool) *vaultSession {
 	watching, stop := context.WithCancel(context.WithoutCancel(ctx))
 	if o.closing != nil {
@@ -159,8 +147,6 @@ func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild
 	}
 }
 
-// stopVault takes down the half of the window that belongs to the vault it is
-// showing.
 func (o *Installation) stopVault() {
 	on := o.State.session.Swap(nil)
 	if on == nil {
@@ -170,10 +156,6 @@ func (o *Installation) stopVault() {
 	on.wait()
 }
 
-// about indexing it, and the entries its passes left in the list of running work.
-//
-// An error that prevented embedding for the whole installation is restored, and
-// persists while the window is open.
 func (o *Installation) resetStatus() {
 	o.State.Ready.Store(false)
 	o.State.Error.Store("")

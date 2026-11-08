@@ -11,10 +11,6 @@ import { countBytes } from '../lib/bytes'
 const CHAPTER = createChapter([{ tag: 'p', text: 'Один абзац, и глава окончена.' }], 400)
 const BOOK = { start: 0, end: CHAPTER.span.end + 500 }
 
-/**
- * A book reader in a document with no layout. jsdom measures nothing, so the
- * text has no spread count and the tests cover the reader's behavior without one.
- */
 const reader = async (book = BOOK) => {
   const wrapper = mount(Book, {
     props: { markup: CHAPTER.markup, span: CHAPTER.span, book, at: CHAPTER.span.start },
@@ -26,14 +22,9 @@ const reader = async (book = BOOK) => {
   return wrapper
 }
 
-/** The offsets the reader requested to move to, in request order. */
 const getMoves = (wrapper: Awaited<ReturnType<typeof reader>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 
-/**
- * A key handled by the tab and passed down, returning whether it turned the
- * page. The tab dispatches the key; the reader is queried.
- */
 const pressKey = (wrapper: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
   (wrapper.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(
     new KeyboardEvent('keydown', { key }),
@@ -130,7 +121,6 @@ const POINTING = createChapter(
   400,
 )
 
-/** A reader drawing that document, and the press a link in it was given. */
 const mountPointing = async () => {
   const wrapper = mount(Book, {
     props: {
@@ -148,7 +138,6 @@ const mountPointing = async () => {
   return wrapper
 }
 
-/** One link of the document pressed, and the press as the page left it. */
 const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
@@ -202,7 +191,6 @@ const LAID = createChapter(
   400,
 )
 
-/** Sets the reading area size that a browser would report and jsdom does not. */
 const setSize = (area: HTMLElement, width: number, high: number): void => {
   Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
@@ -227,7 +215,6 @@ const setLayout = (paper: HTMLElement, scrollWidth: number, lefts: readonly numb
   })
 }
 
-/** A reader the browser has measured: an area of two columns, three countSpreads of text. */
 const mountBook = async () => {
   const wrapper = mount(Book, {
     props: {
@@ -252,7 +239,6 @@ const mountBook = async () => {
   return wrapper
 }
 
-/** How far the text is carried sideways, as the reader set it last. */
 const getTranslate = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
   (wrapper.find('.book__paper').element as HTMLElement).style.translate
 

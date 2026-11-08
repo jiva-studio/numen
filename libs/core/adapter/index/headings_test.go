@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveNoteWithHeadings puts one note in, divided by the headings given at the
-// levels given.
 func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string, headings ...domain.Heading) {
 	t.Helper()
 
@@ -27,7 +25,6 @@ func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string,
 	}
 }
 
-// divisions returns the sections the index reports for the queried notes.
 func divisions(
 	t *testing.T,
 	db *DB,

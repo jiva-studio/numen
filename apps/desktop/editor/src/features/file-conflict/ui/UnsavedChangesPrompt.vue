@@ -19,14 +19,12 @@ export interface UnsavedChangesWords {
 // --- Props & Emits ---
 const props = defineProps<{
   conflicts: readonly ConflictPrompt[]
-  /** The display name of a note, which distinguishes the notes. */
   called: (note: string) => string
   words: UnsavedChangesWords
 }>()
 
 // --- State ---
 
-// --- Handlers ---
 async function onKeep(conflict: ConflictPrompt) {
   await conflict.keep()
 }

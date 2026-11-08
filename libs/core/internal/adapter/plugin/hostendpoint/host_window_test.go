@@ -44,8 +44,7 @@ type recordingWindow struct {
 	reads     int
 	activated []string
 	err       error
-	// open is the tabs the window returns in place of the fixed ones, where it is set.
-	open *domain.OpenTabs
+	open      *domain.OpenTabs
 }
 
 func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.NoteRef, error) {
@@ -117,8 +116,6 @@ func (w *recordingWindow) getRequests() ([]string, []domain.Place, int) {
 	return slices.Clone(w.notes), slices.Clone(w.passages), w.reads
 }
 
-// newWindowClient opens the host endpoint over fake callers that provide the window, nil for none, and
-// returns a client calling HostWindowService with the token.
 func newWindowClient(t *testing.T, window pluginport.PluginWindow, token string) (numenv1connect.HostWindowServiceClient, *callers) {
 	t.Helper()
 	fakeCallers := newCallers(nil)
@@ -303,8 +300,6 @@ func TestHostWindowReportsAnyOtherFailureAsInternal(t *testing.T) {
 	}
 }
 
-// readWindowCode is the error code a served call returned with, or the status of a call that was
-// not served.
 func readWindowCode[T any, M interface {
 	*T
 	GetError() v1.HostWindowErrorCode
@@ -379,8 +374,6 @@ func TestHostWindowFocusesAPassageThatEndsAtThe32BitLimit(t *testing.T) {
 	}
 }
 
-// requireOpenTabMessage fails the test unless the field of the message is an OpenTab, the tab a plugin
-// reads, which has no state.
 func requireOpenTabMessage(t *testing.T, message protoreflect.MessageDescriptor, field protoreflect.Name) {
 	t.Helper()
 	tab := message.Fields().ByName(field).Message()

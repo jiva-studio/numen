@@ -48,7 +48,6 @@ func newStats(index Index, clk Clock, cpus int) *stats {
 	}
 }
 
-// configure applies the performance profile the host passes with every configuration.
 func (s *stats) configure(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -61,7 +60,6 @@ func (s *stats) getProfile() performance.Profile {
 	return s.profile
 }
 
-// get reads the index and answers what it holds.
 func (s *stats) get(ctx context.Context, _ api.GetStatsRequest) (api.Stats, error) {
 	raw, err := s.index.GetIndexStats(ctx)
 	if err != nil {
@@ -85,8 +83,6 @@ func (s *stats) get(ctx context.Context, _ api.GetStatsRequest) (api.Stats, erro
 	return answer, nil
 }
 
-// convertError is the failure a client receives for a failed read of the index. An installation with
-// no model, or a window with no vault, has no index to show, which is no fault of the call.
 func convertError(err error) error {
 	switch {
 	case errors.Is(err, host.ErrNoModel), errors.Is(err, host.ErrNoVault):
@@ -97,7 +93,6 @@ func convertError(err error) error {
 	return fmt.Errorf("read the index statistics: %w", err)
 }
 
-// mount registers the service on s.
 func mount(s *server.Server, index Index, clk Clock, cpus int) error {
 	view := newStats(index, clk, cpus)
 	s.SetUpdateConfig(view.configure)

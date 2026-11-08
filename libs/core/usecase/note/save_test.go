@@ -25,8 +25,6 @@ func (c changing) newWrite() note.Write {
 	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
-// openNote is a tab that has read a note: the prose it received and the
-// file it came from.
 func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 	t.Helper()
 	found, err := note.NewRead(vaultreader.Readers{}).Execute(t.Context(), c.vault, path)

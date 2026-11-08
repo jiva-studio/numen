@@ -54,7 +54,6 @@ export interface WindowTab {
 // The disposable of a subscription that holds no resource.
 const NOTHING: Disposable = { dispose: () => undefined }
 
-/** The window's one tab: opened on a vault over the front kind, and closed back to the vaults. */
 function createWindowTab(front: () => PluginView | null) {
   const tab = shallowRef<WindowTab | null>(null)
   let tabCount = 0
@@ -88,7 +87,6 @@ function createWindowTab(front: () => PluginView | null) {
   return { tab, openTab, closeTab }
 }
 
-/** The view the window draws, and nothing while no plugin offers one. */
 function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
   return computed<PluginView | null>(() => {
     const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')

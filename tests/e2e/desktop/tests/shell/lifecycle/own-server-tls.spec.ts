@@ -6,7 +6,6 @@ import { test, expect } from '../../support/test.js'
 import { startOwnServer } from '../../support/server.js'
 import { expectWorkspaceDrawn } from '../../support/workspace.js'
 
-/** Records what the worker writes to stderr until the returned function is called. */
 const recordStderr = (): (() => string) => {
   const chunks: string[] = []
   const write = process.stderr.write.bind(process.stderr)

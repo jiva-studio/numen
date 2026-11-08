@@ -42,23 +42,17 @@ type agentServer struct {
 	defaultModel   string
 	executablePath string
 
-	// mayReadHooks is whether the program reads the hooks, skills and standing instructions of the person.
 	mayReadHooks bool
 
-	// environ is the variables a program of the agent is started with; nil is those of this process.
 	environ []string
 
-	// models are the models the program listed.
 	models *cache.Cache[[]claudeModel]
 
-	// fetch lists the models of the program started as command with env; nil starts the program.
 	fetch func(ctx context.Context, command, env []string) ([]claudeModel, error)
 
-	// clock paces the reports of a change being written.
 	clock timeSource
 }
 
-// getEnvironment returns the variables a program of the agent is started with.
 func (s *agentServer) getEnvironment() []string {
 	if s.environ != nil {
 		return s.environ
@@ -66,8 +60,6 @@ func (s *agentServer) getEnvironment() []string {
 	return os.Environ()
 }
 
-// applyConfig keeps the model that answers a task naming none, the optional executable path and
-// whether the program reads the hooks and skills of the person.
 func (s *agentServer) applyConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -179,7 +171,6 @@ type claudeCommand struct {
 	configFile string
 }
 
-// streamClaude starts the program and streams its responses until it ends.
 func (s *agentServer) streamClaude(
 	ctx context.Context,
 	send func(*agentrun.Response) error,
@@ -290,9 +281,6 @@ func waitAgentCompletion(
 	return "done", true
 }
 
-// getCommand returns the program to start and the arguments that precede its
-// own: the command line set by the installation, or else the program found on
-// the system. An empty program means none was found.
 func (s *agentServer) getCommand(command []string) (string, []string) {
 	if len(command) > 0 {
 		return command[0], command[1:]
@@ -391,8 +379,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-// listModels returns the models the program offers, as it lists them. The aliases of the fallback
-// stand where it is not installed or does not answer.
 func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*reasoning.Model {
 	var models []claudeModel
 	var err error
@@ -413,9 +399,6 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 	return out
 }
 
-// getReasoning returns the reasoning depth the program starts with: the
-// requested depth, where the model supports it. A model the program does not
-// list uses the requested depth unchanged.
 func (s *agentServer) getReasoning(model, requested string) string {
 	if model == "" {
 		model = defaultModelName

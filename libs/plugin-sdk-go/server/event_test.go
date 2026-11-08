@@ -18,7 +18,6 @@ import (
 
 const eventToken = "event-token"
 
-// serveEvents starts a server built with opts and returns its base URL.
 func serveEvents(t *testing.T, opts ...Option) string {
 	t.Helper()
 	s := New(append([]Option{WithPort(0), WithToken(eventToken), WithStdout(io.Discard), WithStdin(nil)}, opts...)...)
@@ -37,7 +36,6 @@ func serveEvents(t *testing.T, opts ...Option) string {
 	return fmt.Sprintf("http://127.0.0.1:%d", port)
 }
 
-// newEventClient returns a client of the event service at baseURL that sends token.
 func newEventClient(baseURL, token string) numenv1connect.PluginEventServiceClient {
 	return numenv1connect.NewPluginEventServiceClient(
 		http.DefaultClient,

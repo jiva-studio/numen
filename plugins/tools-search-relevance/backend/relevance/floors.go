@@ -31,27 +31,20 @@ const (
 
 // State is the floor in force for one vault under the model in use, and what it was derived from.
 type State struct {
-	// Floor is the floor the host applies to a search, and Source is where it comes from.
-	Floor  float64
-	Source Source
-	// Model is the name of the model the floor is for, empty where there is none.
-	Model string
-	// AutomaticFloor is the floor in force when the person has set none.
+	Floor          float64
+	Source         Source
+	Model          string
 	AutomaticFloor float64
-	// IsManual is whether the person set a floor, and ManualFloor its value.
-	IsManual    bool
-	ManualFloor float64
-	// Calibration is nil before the first measurement.
-	Calibration *Calibration
+	IsManual       bool
+	ManualFloor    float64
+	Calibration    *Calibration
 }
 
 // ProbeResult is what a probe measured.
 type ProbeResult struct {
-	// BestSimilarity is the similarity of the nearest passage, zero where the vault has none.
 	BestSimilarity float64
-	// Floor is the floor in force, and DoesPass whether the nearest passage meets it.
-	Floor    float64
-	DoesPass bool
+	Floor          float64
+	DoesPass       bool
 }
 
 // Host is the part of the host the floors work through: the search index, the notes of the vault and
@@ -67,8 +60,6 @@ type Floors struct {
 	host       Host
 	calibrator Calibrator
 
-	// mu serialises the calls that write, so a measurement and a choice of the person do not
-	// interleave their writes to the record and the host.
 	mu sync.Mutex
 }
 
@@ -84,8 +75,6 @@ type scope struct {
 	records Records
 }
 
-// open returns the scope of the vault of the identity, and of the vault the host shows where the
-// identity is empty.
 func (f *Floors) open(vault domain.VaultID) scope {
 	search, notes, store := f.host.Search, f.host.Vault, f.host.Store
 	if vault != "" {
@@ -110,7 +99,6 @@ func (f *Floors) Get(ctx context.Context, vault domain.VaultID) (State, error) {
 	return f.getState(ctx, s, state)
 }
 
-// getState reads the floor the host applies and the record, and puts them together.
 func (f *Floors) getState(ctx context.Context, s scope, embedding host.EmbeddingState) (State, error) {
 	applied, err := s.search.GetSearchFloor(ctx, embedding.Recipe)
 	if err != nil {
@@ -131,8 +119,6 @@ func (f *Floors) getState(ctx context.Context, s scope, embedding host.Embedding
 	}, nil
 }
 
-// getSource is where the floor the host applies comes from. A floor the host stores is the floor of
-// the person where they set one, and the measured floor otherwise.
 func getSource(record Record, applied host.SearchFloor) Source {
 	switch applied.Source {
 	case host.FloorFromStore:
@@ -149,8 +135,6 @@ func getSource(record Record, applied host.SearchFloor) Source {
 	return SourceDefault
 }
 
-// getAutomaticFloor is the floor in force when the person sets none: the measured floor, the hint of
-// the model, or the default.
 func getAutomaticFloor(record Record, applied host.SearchFloor) float64 {
 	switch {
 	case record.Calibration != nil && record.Calibration.Floor > 0:
@@ -185,8 +169,6 @@ func (f *Floors) Calibrate(ctx context.Context, vault domain.VaultID) (Outcome, 
 	return outcome, state, err
 }
 
-// keep writes the measurement into the record and applies the floor it derives, unless the person's
-// floor is in force.
 func (f *Floors) keep(ctx context.Context, s scope, recipe string, calibration Calibration) error {
 	record, _, err := s.records.Read(ctx, recipe)
 	if err != nil {
@@ -231,9 +213,6 @@ func (f *Floors) Set(ctx context.Context, vault domain.VaultID, isManual bool, f
 	return f.getState(ctx, s, embedding)
 }
 
-// apply makes the host apply the floor the record stands for: the floor of the person, else the
-// measured floor, else none, which leaves the floor to the hint of the model. A floor the host already
-// holds is not written again.
 func apply(ctx context.Context, s scope, record Record) error {
 	wanted := 0.0
 	switch {

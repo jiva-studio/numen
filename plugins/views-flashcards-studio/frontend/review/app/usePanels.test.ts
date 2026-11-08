@@ -18,7 +18,6 @@ vi.mock('../shared/clients', async (original) => ({
   },
 }))
 
-/** A card as the session hands one over. */
 const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   deck: 'decks/Words.md',
   section: '',

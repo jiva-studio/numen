@@ -26,7 +26,6 @@ import { getRenamedPath } from '@numen/plugin-sdk'
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
 const SAMPLE_ICON: Component = { name: 'SampleIcon', render: () => null }
 
-/** What a plex tab is built with: a window that answers nothing, with what a test sets put over it. */
 const createDeps = (
   editor: PlexTabDeps['editor'],
   overrides: Partial<PlexTabDeps> = {},
@@ -50,7 +49,6 @@ const createDeps = (
   ...overrides,
 })
 
-/** A plex tab with the window it is drawn in written down. */
 const tab = (
   targetPath: string,
   neighbours: readonly NeighbourSpec[] = [],
@@ -129,7 +127,6 @@ const tab = (
   }
 }
 
-/** The node of the graph drawn for the note of this title, if one is drawn. */
 const getNode = (state: PlexTabState, title: string): string =>
   state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
@@ -658,16 +655,8 @@ describe('a heading of a node chosen', () => {
 /** A note beside another: where it is located, and the note it comes through. */
 type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
 
-/** What a note is shown by, which a move of its file leaves alone. */
 const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
-/**
- * A plex in a vault whose files can be moved.
- *
- * The vault returns the neighbours of any note it is queried about, and no note
- * has an identifier: this is a vault written in another editor. A move renames
- * its files and is reported to the plex like an incoming change.
- */
 const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
   let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
     path,

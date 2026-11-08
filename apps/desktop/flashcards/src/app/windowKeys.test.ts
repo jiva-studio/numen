@@ -8,7 +8,6 @@ const VAULTS = [
   { id: 'words', name: 'Words', path: '/vaults/Words' },
 ]
 
-/** A tab whose kind keeps escape from the page and leaves every other key to it. */
 const createTab = (): WindowTab & { pressed: string[] } => {
   const pressed: string[] = []
   return {

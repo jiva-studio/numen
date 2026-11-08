@@ -15,31 +15,23 @@ import type { Row, RowId, ShownRow } from '../lib/row'
 
 /** Screen measurements of the tree, available only from the rendering. */
 export interface TreeMetrics {
-  /** What the tree takes up: a drop lands only over it. */
   readonly hoverRect: {
     readonly left: number
     readonly right: number
     readonly top: number
     readonly bottom: number
   }
-  /** Where the rows begin, down the window. */
   readonly top: number
-  /** The height of one row. */
   readonly height: number
 }
 
 export interface RowDragOptions {
-  /** What is drawn, nested, and the rows of it that are drawn now. */
   readonly getRows: () => readonly Row[]
   readonly getShownRows: () => readonly ShownRow[]
-  /** The tree as laid out on screen, and null until it is drawn. */
   readonly measure: () => TreeMetrics | null
-  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
-  /** The number of rows being dragged, shown at the pointer. */
   readonly getCountWords: () => (rows: number) => string
-  /** The callback through which the tree reports drag events. */
   readonly tell: RowDragTell
 }
 
@@ -51,18 +43,12 @@ export interface RowDragTell {
 }
 
 export interface RowDragState {
-  /** The row a drop would land inside, and the row it would land above. */
   readonly into: ComputedRef<RowId | null>
   readonly before: ComputedRef<RowId | null>
-  /** The rows a live drag holds, for asking one row at a time. */
   readonly lifted: ComputedRef<ReadonlySet<RowId>>
-  /** What follows the pointer, and nothing until a press has become a drag. */
   readonly label: ComputedRef<DragLabel | null>
-  /** Whether the press being made has travelled far enough to be a drag. */
   readonly hasMoved: ComputedRef<boolean>
-  /** Where a drop would land, for the tree to mark itself with. */
   readonly at: Readonly<Ref<RowDropTarget | null>>
-  /** A press on a row, which a move turns into a drag. */
   readonly lift: (rows: readonly RowId[], event: PointerEvent) => void
 }
 

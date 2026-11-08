@@ -11,7 +11,6 @@ import type { EdgeLine } from './lines'
 withDefaults(
   defineProps<{
     line: EdgeLine
-    /** Drawn over the boxes, with a halo heavy enough for that. */
     isRaised?: boolean
   }>(),
   { isRaised: false },

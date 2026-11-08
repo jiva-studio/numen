@@ -47,10 +47,6 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-/**
- * Every story holds its own text, as the application would: the composer reports
- * what was written and leaves clearing it to the caller.
- */
 const renderComposers =
   (...starts: string[]): Render =>
   (args) => ({

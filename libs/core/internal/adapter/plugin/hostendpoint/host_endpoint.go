@@ -75,14 +75,12 @@ type windowServices interface {
 // interface and serves a call only for a token the host issued to a running
 // plugin.
 type Endpoint struct {
-	callers Callers
-	tasks   taskLeases
-	server  *http.Server
-	port    int
-	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
+	callers     Callers
+	tasks       taskLeases
+	server      *http.Server
+	port        int
 	serveResult chan error
-	// callCount is the number of calls being served.
-	callCount atomic.Int64
+	callCount   atomic.Int64
 }
 
 // Open starts serving the host service on the address, which is a
@@ -175,8 +173,6 @@ func (e *Endpoint) Complete(
 	}), nil
 }
 
-// authorize returns the id of the plugin the Authorization header names once it
-// is known to hold the permission.
 func (e *Endpoint) authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, recognized := e.callers.GetPluginIDByToken(token)
@@ -186,8 +182,6 @@ func (e *Endpoint) authenticate(header string) (string, error) {
 	return pluginID, nil
 }
 
-// authorize returns the id of the plugin the Authorization header names once it
-// is known to hold the permission.
 func (e *Endpoint) authorize(header, permission string) (string, error) {
 	pluginID, err := e.authenticate(header)
 	if err != nil {
@@ -199,8 +193,6 @@ func (e *Endpoint) authorize(header, permission string) (string, error) {
 	return pluginID, nil
 }
 
-// answerFailure answers a call that failed: the end of the caller's context is
-// answered with its code, and anything else is internal.
 func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -218,8 +210,6 @@ func refuseCompletion(code v1.CompletionErrorCode, detail string) *connect.Respo
 	return connect.NewResponse(&v1.HostServiceCompleteResponse{Error: code, Detail: detail})
 }
 
-// checkLoopback accepts only an address that names a loopback IP: an empty host
-// or a name would bind more than the loopback interface.
 func checkLoopback(address string) error {
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {

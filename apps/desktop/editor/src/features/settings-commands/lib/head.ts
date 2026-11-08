@@ -11,7 +11,6 @@ import type { Sizes } from '@/entities/settings'
 export interface StyleElements {
   readonly mode: HTMLStyleElement
   readonly theme: HTMLStyleElement
-  /** Nothing for a page served at no size of its own, until one is written. */
   sizes: HTMLStyleElement | undefined
 }
 
@@ -24,7 +23,6 @@ export const IS_MODE = 'mode'
 export const IS_THEME = 'theme'
 export const IS_SIZES = 'sizes'
 
-/** The element the page was served marked as one of the three, and nothing where it carries none. */
 const findStyle = (sheet: Document, is: string): HTMLStyleElement | null =>
   sheet.head.querySelector<HTMLStyleElement>(`style[${MARKER}="${is}"]`)
 
@@ -38,7 +36,6 @@ export const getStyleElements = (sheet: Document): StyleElements => {
   return { mode, theme, sizes: findStyle(sheet, IS_SIZES) ?? undefined }
 }
 
-/** One of the three, marked as which of them it is. */
 const createStyle = (is: string, sheet: Document): HTMLStyleElement => {
   const one = sheet.createElement('style')
   one.setAttribute(MARKER, is)

@@ -16,16 +16,6 @@ const (
 	mostDepth = 32
 )
 
-// outline is what the document's own outline names, as parts of its text.
-//
-// An entry points at a page, so a part begins where that page begins. That is
-// coarser than an EPUB's anchor, which points inside a document, and it is what
-// the format offers: a destination carries a position on the page, but the text
-// layer's order is not the page's geometry, so a position cannot be turned into
-// an offset without guessing.
-//
-// starts is where each page's text begins, so an entry pointing past the pages
-// that were read is empty and is dropped.
 func (d *document) outline(starts []int) []Part {
 	w := &outlineWalk{doc: d, starts: starts, parts: nil, bookmarks: map[references.FPDF_BOOKMARK]bool{}}
 	w.walk(nil, 1)
@@ -41,8 +31,6 @@ type outlineWalk struct {
 	bookmarks map[references.FPDF_BOOKMARK]bool
 }
 
-// walk reads the children of a bookmark, each with its own children, down to
-// the maximum outline depth.
 func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF reason="recursion stops when level exceeds mostDepth"
 	if level > mostDepth {
@@ -72,8 +60,6 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	}
 }
 
-// visit reads one entry and its children, and reports whether the walk
-// continues. An outline that points back at itself is read once.
 func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INVERT_LOGICAL,BRANCH_IF reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
 	if len(w.parts) >= mostEntries || w.bookmarks[*pos] {
@@ -89,8 +75,6 @@ func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
 	return true
 }
 
-// readPart is one outline entry, as a name and the offset of the page it leads to.
-// An entry with no name, or one that leads nowhere, is not a readPart.
 func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Part, bool) {
 	named, err := d.worker.FPDFBookmark_GetTitle(&requests.FPDFBookmark_GetTitle{Bookmark: bookmark})
 	// gomutants:disable-next-line BRANCH_IF reason="unreadable outline bookmark title drops the entry"
@@ -111,10 +95,6 @@ func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts
 	return Part{Title: title, Offset: starts[page], Level: level}, true
 }
 
-// getDestinationPage returns the page an outline entry leads to.
-//
-// An entry has a destination directly or has an action that holds one. Both are
-// checked, because files differ in which they use.
 func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, bool) {
 	dest, err := d.worker.FPDFBookmark_GetDest(&requests.FPDFBookmark_GetDest{
 		Document: d.ref, Bookmark: bookmark,

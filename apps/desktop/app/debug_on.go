@@ -33,10 +33,6 @@ type dependencySetter interface {
 	SetDependencies(pluginport.DependencyCatalog)
 }
 
-// apply keeps the keys of a run served over HTTP in memory, and makes the plugins started by this
-// run use mock models when the flag requests them. The plugin host is created before the flag is
-// read, so it receives the dependencies a mock-model run provisions: placeholders, with nothing
-// fetched.
 func (d *DebugOptions) apply(cfg *container.Config) error {
 	if d.isServingHTTP() {
 		cfg.KeyStore = debugserve.NewKeyStore()

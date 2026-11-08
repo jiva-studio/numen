@@ -66,11 +66,6 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
   }
 }
 
-/**
- * The whole range of a goal, at the places the line is drawn at. A target is
- * nothing about is no range at all: the sketch draws no places, and the answer
- * brings the honest ones.
- */
 const createGrid = (
   settings: Settings,
   today: string,
@@ -88,17 +83,11 @@ const createGrid = (
   return ladder(0, Math.max(settings.minutesADay, LEAST_CEILING), Math.round)
 }
 
-/** The places between two ends, both ends among them. */
 const ladder = (least: number, most: number, rounds: (one: number) => number): readonly number[] =>
   Array.from({ length: PLACES }, (_, index) =>
     rounds(least + ((most - least) * index) / (PLACES - 1)),
   )
 
-/**
- * What one place of the range evaluates to, guessed from the settings. A day of
- * review brings back more of the material the longer it runs, and asking for
- * more of it back costs more of the day.
- */
 const estimatePoint = (settings: Settings, value: number, grid: readonly number[]): Point => {
   const flat = {
     retained: 0,

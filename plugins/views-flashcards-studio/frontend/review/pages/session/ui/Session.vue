@@ -20,11 +20,8 @@ import type { ReviewCard, Grade } from '../../../entities/card'
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
   card: ReviewCard
-  /** Whether the answer is showing. */
   isShown: boolean
-  /** How many cards are left to ask, this one among them. */
   left: number
-  /** Whether there is an answer to take back. */
   canTakeBack: boolean
 }>()
 
@@ -42,7 +39,6 @@ defineEmits<{
 }>()
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The panels are held with the overlay key, drawn as this machine's own. */
 const chord = (letter: string) => keyChord(letter, nav.userAgent)
 </script>
 

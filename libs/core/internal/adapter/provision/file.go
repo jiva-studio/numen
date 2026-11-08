@@ -23,18 +23,12 @@ var ErrOffline = errors.New("fetching is forbidden")
 
 // Config is what dependencies are provisioned from.
 type Config struct {
-	// Dir is the folder dependencies are kept in. Empty keeps none: nothing is provisioned.
-	Dir string
-	// Offline forbids fetching.
-	Offline bool
-	// Client fetches the files. Nil follows a redirect only to https.
-	Client *http.Client
-	// Discovery looks for what the machine holds. Zero searches this platform's folders.
+	Dir       string
+	Offline   bool
+	Client    *http.Client
 	Discovery discovery
-	// Backoff is the waits between attempts. Zero is the default.
-	Backoff backoff
-	// Clock paces the progress reports.
-	Clock machineport.Clock
+	Backoff   backoff
+	Clock     machineport.Clock
 }
 
 // FileProvisioner provisions a dependency that is one downloadable file with a
@@ -152,7 +146,6 @@ func getPercent(done, total int64) float64 {
 	return float64(done) * 100 / float64(total)
 }
 
-// getFileName returns what the fetched file is called in the dependency's folder.
 func getFileName(req pluginport.DependencyRequirement) (string, error) {
 	name, err := pickFileName(req)
 	if err != nil {
@@ -164,8 +157,6 @@ func getFileName(req pluginport.DependencyRequirement) (string, error) {
 	return name, nil
 }
 
-// pickFileName is the name the requirement states, else the last segment of its
-// address, else its identifier.
 func pickFileName(req pluginport.DependencyRequirement) (string, error) {
 	if named := req.Metadata["fileName"]; named != "" {
 		return cleanName(named), nil
@@ -180,8 +171,6 @@ func pickFileName(req pluginport.DependencyRequirement) (string, error) {
 	return cleanName(req.ID), nil
 }
 
-// readCached returns the dependency a folder with the sentinel holds, when the
-// folder was fetched with the checksum the requirement pins.
 func readCached(req pluginport.DependencyRequirement, dir string) (pluginport.ResolvedDependency, bool) {
 	if !isReady(dir) {
 		return pluginport.ResolvedDependency{}, false
@@ -202,7 +191,6 @@ func readyStatus(req pluginport.DependencyRequirement, root, primary string) plu
 	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
-// newResolved is the dependency at primary, with the variable a process finds it by.
 func newResolved(req pluginport.DependencyRequirement, root, primary string) pluginport.ResolvedDependency {
 	return pluginport.ResolvedDependency{
 		ID: req.ID, RootPath: root, PrimaryPath: primary,

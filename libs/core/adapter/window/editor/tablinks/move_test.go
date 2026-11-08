@@ -6,13 +6,10 @@ import (
 	"time"
 )
 
-// newOrbits returns the tab that the tests move.
 func newOrbits() SavedTab {
 	return SavedTab{ID: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
 }
 
-// readEvent returns the first matching event of a watch, and fails the test
-// when none arrives.
 func readEvent(t *testing.T, watch *Watch, isWanted func(Event) bool) Event {
 	t.Helper()
 	timeout := time.After(5 * time.Second)
@@ -28,7 +25,6 @@ func readEvent(t *testing.T, watch *Watch, isWanted func(Event) bool) Event {
 	}
 }
 
-// readOutcome returns the result of a move, and fails the test when there is none yet.
 func readOutcome(t *testing.T, result <-chan MoveError) MoveError {
 	t.Helper()
 	select {
@@ -322,13 +318,11 @@ func TestClosingTheLastWatchRemovesTheWindow(t *testing.T) {
 	}
 }
 
-// readDetachID reads the pending detach of a tab as a window and returns its move id.
 func readDetachID(r *Registry, windowID, tabID string) string {
 	_, moveID, _ := r.ReadDetached(windowID, tabID)
 	return moveID
 }
 
-// getMoveID returns the id of the pending move of a tab, or "" when none is pending.
 func getMoveID(r *Registry, tabID string) string {
 	r.mu.Lock()
 	defer r.mu.Unlock()

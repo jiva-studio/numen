@@ -90,7 +90,6 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	return runCtx, cancel
 }
 
-// getTaskID returns the id of the transcription of one recording in the list of tasks.
 func getTaskID(path string) string { return "transcription:" + path }
 
 var (
@@ -142,7 +141,6 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	return true, nil
 }
 
-// claimOrFail claims the recording, or returns the error that states why it cannot be claimed.
 func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
@@ -159,7 +157,6 @@ func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, pat
 	}
 }
 
-// runTranscription transcribes a claimed recording, reported as a task, and releases the claim.
 func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.clearRunning(key)
 	ctx, cancel := t.withClosing(ctx)
@@ -175,8 +172,6 @@ func (t *Transcriber) runTranscription(ctx context.Context, key string, vault do
 	return t.transcribe(ctx, vault, path, read)
 }
 
-// claim marks the recording as being transcribed and counts the run for Close, and returns false
-// when a run already has it or the transcriber is closed. clearRunning releases the claim.
 func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	key := getRunKey(vault, path)
 	t.mu.Lock()
@@ -189,20 +184,14 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	return key, true
 }
 
-// getRunKey returns the key a run claims the recording of a vault with.
 func getRunKey(vault domain.VaultID, path string) string { return string(vault) + "\x00" + path }
 
-// isRunning reports whether a run has claimed the recording of the vault.
 func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.running[getRunKey(vault, path)]
 }
 
-// findLiveVersionOfWholeTranscript returns the live version of the recording of the vault when its
-// source chain contains the plugin's whole transcript: the transcript itself, or a version made from
-// it. A chain through a partial transcript only is not returned: a run resumes it. The host keeps
-// live only a version whose chain matches the recording as it is now.
 func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
 	listing, err := t.texts.With(vault).ListVersions(ctx, path)
 	if err != nil {
@@ -223,8 +212,6 @@ func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vaul
 	return domain.TextVersion{}, false, nil
 }
 
-// getClaimVault returns the vault a run claims the recording in. An empty vault ID means the vault
-// the host shows, returned by its id when the files can return it.
 func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
 	resolver, isResolver := t.files.(activeVaultProvider)
 	if vault != "" || !isResolver {
@@ -250,8 +237,6 @@ func (t *Transcriber) isClosing() bool {
 	return t.isClosed
 }
 
-// transcribe is one recording heard and reported. A failure stays in the list of tasks under the
-// recording until the next run of it.
 func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording) error {
 	err := t.run(ctx, vault, path, read)
 	switch {
@@ -335,8 +320,6 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	return t.putVersion(ctx, j, getFileName(j.key))
 }
 
-// putWholeVersion puts the version of a transcript a run before this one finished, where the host
-// has no record of it or records it on the partial file.
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 	listing, err := j.texts.ListVersions(ctx, j.path)
 	if err != nil {
@@ -350,7 +333,6 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 	return t.putVersion(ctx, j, getFileName(j.key))
 }
 
-// putVersion records the transcript in the file of the plugin's folder named.
 func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
 	_, err := j.texts.PutVersion(ctx, host.TextPut{
 		Path: j.path, Key: j.key, Source: "", Kind: textKind, InputHash: j.fileHash, File: file,
@@ -358,7 +340,6 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 	return err
 }
 
-// takeTurn waits for the recording's turn in the queue.
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
@@ -375,9 +356,6 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	return nil
 }
 
-// hearSegments transcribes the recording from where a previous run stopped until no segments
-// remain, writing and publishing each batch. Work waiting for the queue takes its turn between two
-// batches.
 func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.TranscriberPort, recording engine.Recording) error {
 	from, err := j.store.readReached(ctx, j.key)
 	if err != nil {
@@ -406,7 +384,6 @@ func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.Tra
 	}
 }
 
-// yieldTurn lets work waiting for the queue run, and waits for the recording's turn again.
 func (t *Transcriber) yieldTurn(ctx context.Context, j *job) error {
 	select {
 	case <-j.turn.WatchWaiting():
@@ -419,8 +396,6 @@ func (t *Transcriber) yieldTurn(ctx context.Context, j *job) error {
 	return t.takeTurn(ctx, j)
 }
 
-// hearBatch transcribes the next speech segments after from, and returns their cues with the
-// furthest end time they reach. A recording with nothing after from returns no cues and from itself.
 func hearBatch(
 	ctx context.Context, model engine.TranscriberPort, recording engine.Recording, path string, from int,
 ) ([]transcript.Cue, int, error) {
@@ -448,7 +423,6 @@ func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, le
 	})
 }
 
-// reportTask publishes the task. A task the host could not be notified of is published by the next report.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
@@ -456,8 +430,6 @@ func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	}
 }
 
-// finishTask removes the recording's task from the list. If the host could not be notified, the
-// task is removed when the plugin stops.
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path)); err != nil {

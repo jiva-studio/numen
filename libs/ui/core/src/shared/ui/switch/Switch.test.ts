@@ -10,7 +10,6 @@ type SwitchProps = InstanceType<typeof Switch>['$props']
 const mountSwitch = (props: Partial<SwitchProps> = {}) =>
   mount(Switch, { props: { modelValue: false, ...props } })
 
-/** Every answer the switch has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 

@@ -56,7 +56,6 @@ const registerNoteElement = (one: Neighbour, element: unknown): void => {
 /** How much of the panel one press of space moves it. */
 const STEP = 0.85
 
-/** The panel scrolled by a key, because the caret is nowhere in it. */
 function scrollPage(back = false) {
   const col = column.value
   if (!col) return

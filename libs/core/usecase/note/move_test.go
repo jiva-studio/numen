@@ -21,8 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// isolate points everything a test could reach by way of the user's home at
-// a folder of its own.
 func isolate(t *testing.T) {
 	t.Helper()
 	home := t.TempDir()

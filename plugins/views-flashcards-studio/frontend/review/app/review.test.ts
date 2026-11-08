@@ -184,7 +184,6 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 /** What ends each review a test opened, and the counting under it. */
 const closers: (() => void)[] = []
 
-/** The review opened on the vault, with the counts in, as the window opens it. */
 const openReview = async ({ isPageDrawn = true } = {}) => {
   notices = createMockNoticeHost()
   goToVaults = vi.fn()
@@ -203,17 +202,12 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
   return { review, close }
 }
 
-/** The review taken into the session over the vault's one deck. */
 const openSession = async () => {
   const result = await openReview()
   await result.review.decks.start('decks/Suffixes.md')
   return result.review
 }
 
-/**
- * Everything the review exposes, as plain values: a ref becomes the value it
- * contains, and functions, which cannot be compared, become null.
- */
 const shot = (value: unknown): unknown => {
   if (isRef(value)) return shot(value.value)
   if (typeof value === 'function') return null
@@ -225,7 +219,6 @@ const shot = (value: unknown): unknown => {
   return value
 }
 
-/** A key pressed while the review is focused, as the host delivers it. */
 const press = async (review: Review, key: string) => {
   const event = new KeyboardEvent('keydown', { key, cancelable: true })
   const isKept = review.onKeyDown(event)
@@ -234,7 +227,6 @@ const press = async (review: Review, key: string) => {
   return { event, isKept }
 }
 
-/** The screen and the page drawn at the given widths, in layout pixels. */
 const setWidths = (screen: number, page: number) => {
   Object.defineProperty(window.screen, 'width', { configurable: true, value: screen })
   Object.defineProperty(document.documentElement, 'clientWidth', {

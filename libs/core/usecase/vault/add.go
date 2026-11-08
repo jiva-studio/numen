@@ -96,9 +96,6 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	return v, nil
 }
 
-// checkNotCopy reports ErrCopy where the old location of a registered identity still carries it.
-// A missing old location, or one holding a different vault, means the folder moved, and the
-// registry must be updated.
 func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 	stillThere, carriesIt, err := u.identity.GetVaultID(oldPath)
 	if err != nil {

@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// getRiverPages is three segments of invented Russian text. Their whole text is 53 bytes: the second
-// segment begins at byte 20 and the third at byte 33; every letter is two bytes.
 func getRiverPages() []domain.TextSegment {
 	return []domain.TextSegment{
 		{Text: "Река течёт ", Heading: "Река", Selector: `{"page":1}`},
@@ -19,7 +17,6 @@ func getRiverPages() []domain.TextSegment {
 
 const riverSize = 53
 
-// newRiverScene is the scene whose reader gives the scan the text of getRiverPages.
 func newRiverScene(t *testing.T) *scene {
 	t.Helper()
 	s := newScene(t)

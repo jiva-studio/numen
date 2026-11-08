@@ -31,7 +31,6 @@ const mountRows = (props: Record<string, unknown> = {}) =>
 const createRect = (top: number, bottom: number): DOMRect =>
   ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top }) as DOMRect
 
-/** The frame is `view` tall of `content`, and the active row is at `row`. */
 function arrange(list: HTMLElement, frame: [number, number], row: [number, number], tall = true) {
   Object.defineProperty(list, 'scrollHeight', { value: tall ? 300 : 100, configurable: true })
   Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })

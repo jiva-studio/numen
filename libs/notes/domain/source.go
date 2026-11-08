@@ -11,11 +11,6 @@ type Source struct {
 	ContentHash string
 	Recipe      string
 
-	// Producer is what made the text this source's chunks are places in. Empty
-	// where the source's own bytes are the text, which is the ordinary case.
-	//
-	// It is cleared by a write that records a file stat alone, because a file
-	// that changed is a file whose reading was of other bytes.
 	Producer string
 }
 
@@ -32,11 +27,8 @@ type Chunk struct {
 	Length   int
 	Location string
 	Text     string
-	// Opens are the parts of the source that begin exactly where this chunk
-	// does: what a section starting here is called. Empty for a chunk that
-	// opens none, which is most of them.
-	Opens []string
-	Small []Chunk
+	Opens    []string
+	Small    []Chunk
 }
 
 // NoteChunks is one note as the index keeps it: the headings it is found by,
@@ -45,8 +37,7 @@ type NoteChunks struct {
 	Note     Note
 	Headings []Heading
 	Chunks   []Chunk
-	// Recipe is how the chunks were cut; the index keeps it on the note's source.
-	Recipe string
+	Recipe   string
 }
 
 // SourceChunks is one source as reading it left it: the file, the recipe that

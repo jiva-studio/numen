@@ -12,14 +12,10 @@ import type { TabId } from '../../lib/node'
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
-    /** Its identity, carried on the element for a drag to find it by. */
     tab: TabId
     title: string
-    /** What the tab is carrying besides its title, in a word. */
     mark?: string | undefined
-    /** The one its pane is showing. */
     isShowing?: boolean
-    /** Showing, in the pane a tab would open into. */
     isFocused?: boolean
   }>(),
   { mark: undefined, isShowing: false, isFocused: false },
@@ -44,10 +40,6 @@ defineSlots<{
 const root = useTemplateRef<HTMLElement>('root')
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * A tab is lifted with the primary button only. The press does not select text
- * while the tab moves, and the tab takes keyboard focus.
- */
 const onPointerDown = (event: PointerEvent) => {
   if (event.button !== 0) return
   event.preventDefault()

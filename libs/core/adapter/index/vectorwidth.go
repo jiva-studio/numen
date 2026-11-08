@@ -66,8 +66,6 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	})
 }
 
-// coarseRecipe is the recipe that filled the coarse index, and whether any is
-// recorded.
 func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
 	var recipe string
 	err := db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&recipe)
@@ -80,9 +78,6 @@ func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
 	return recipe, true, nil
 }
 
-// fillCoarse writes a coarse row for every vector the recipe holds of the width
-// given. A vector of another width belongs to another model and is left where
-// it is.
 func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe string) (err error) {
 	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.vault_id, v.embedding
@@ -123,8 +118,6 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 	return nil
 }
 
-// getVectorWidth is the width the vector index holds, or nothing when it holds no
-// vector index at all.
 func getVectorWidth(ctx context.Context, db *sql.DB) (int, error) {
 	var created string
 	err := db.QueryRowContext(ctx,

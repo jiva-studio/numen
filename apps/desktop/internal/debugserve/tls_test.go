@@ -27,8 +27,6 @@ func newTestClock() fixedClock {
 	return fixedClock{now: time.Date(2026, 3, 14, 9, 30, 0, 0, time.UTC)}
 }
 
-// writeKeyPair writes a new certificate and its key in PEM to dir and gives back the paths and the
-// certificate in DER.
 func writeKeyPair(t *testing.T, dir string) (certFile, keyFile string, der []byte) {
 	t.Helper()
 	cert, err := generateSelfSignedCert(newTestClock())
@@ -52,8 +50,6 @@ func writeKeyPair(t *testing.T, dir string) (certFile, keyFile string, der []byt
 	return certFile, keyFile, cert.Certificate[0]
 }
 
-// startServe runs Serve on a free loopback port until the test ends and gives back the address it
-// prints.
 func startServe(t *testing.T) string {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -86,8 +82,6 @@ func startServe(t *testing.T) string {
 	return strings.TrimPrefix(strings.TrimSpace(line), "numen debug server listening on https://")
 }
 
-// readServedCertificate connects with TLS, trusting only trusted, and gives back the certificate the
-// server presents.
 func readServedCertificate(t *testing.T, addr string, trusted []byte) []byte {
 	t.Helper()
 	parsed, err := x509.ParseCertificate(trusted)

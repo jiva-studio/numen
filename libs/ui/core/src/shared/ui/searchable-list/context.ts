@@ -7,7 +7,6 @@ import type { SearchableListSlots } from './SearchableList.types'
 
 export interface ListContext {
   readonly slots: SearchableListSlots
-  /** The query without the space around it. */
   readonly getQuery: () => string
 }
 
