@@ -602,9 +602,10 @@ check_knip: ## check dead code and unused dependencies of every TS package and p
 lint_narrative: ## reject narrative identifiers, test names, comments, documents and the strings a person reads across the repository
 	node --test $(NARRATIVE)/scan.test.mjs
 	node $(NARRATIVE)/scan.mjs . --check
+	node $(NARRATIVE)/scan.mjs . --check --changed-since $(NARRATIVE_BASE)
 
-# The phrase rules (category 24) fail only on lines added since the merge base of NARRATIVE_BASE and HEAD;
-# a full scan reports them as advisory. CI passes the pull request base as HEAD^1.
+# One check, two scopes: the whole repository, then the lines added since the merge base of NARRATIVE_BASE
+# and HEAD, where the phrase rules (category 24) also fail. CI passes the pull request base as HEAD^1.
 NARRATIVE_BASE ?= origin/main
 
 .PHONY: lint_comments
@@ -612,9 +613,6 @@ lint_comments: ## reject comments on fields and properties and doc comments on u
 	cd $(COMMENTS) && npm test
 	node $(COMMENTS)/check.mjs
 
-.PHONY: lint_narrative_changed
-lint_narrative_changed: ## reject narrative phrases in test titles and comments on the lines added since NARRATIVE_BASE
-	node $(NARRATIVE)/scan.mjs . --check --changed-since $(NARRATIVE_BASE)
 
 .PHONY: check_typecheck
 check_typecheck: lib_ui_build ## typecheck every frontend package and plugin with vue-tsc
