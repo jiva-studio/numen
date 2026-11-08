@@ -25,9 +25,9 @@ await test('a change to a spec folder selects that folder', () => {
   assert.equal(
     getScope([
       'tests/e2e/desktop/tests/plugins/system/settings.spec.ts',
-      'plugins/engines-embeddings/backend/main.go',
+      'plugins/readers-pdf/backend/main.go',
     ]),
-    'engines.embeddings system',
+    'readers.pdf system',
   )
 })
 
