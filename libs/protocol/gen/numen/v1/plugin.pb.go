@@ -719,7 +719,10 @@ type PluginSettingOption struct {
 	// What a person reads for the value. Empty shows the value.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// What a person reads under the setting while the value is in force.
-	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	// The condition the option is offered under, as in the manifest. The window evaluates it; an
+	// option whose condition does not hold is shown and cannot be chosen. Empty offers it always.
+	When          string `protobuf:"bytes,4,opt,name=when,proto3" json:"when,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -771,6 +774,13 @@ func (x *PluginSettingOption) GetTitle() string {
 func (x *PluginSettingOption) GetDetail() string {
 	if x != nil {
 		return x.Detail
+	}
+	return ""
+}
+
+func (x *PluginSettingOption) GetWhen() string {
+	if x != nil {
+		return x.When
 	}
 	return ""
 }
@@ -1575,11 +1585,12 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"value_json\x18\x15 \x01(\tR\tvalueJsonB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"Y\n" +
+	"\x05_step\"m\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"O\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\x12\x12\n" +
+	"\x04when\x18\x04 \x01(\tR\x04when\"O\n" +
 	"\x14PluginSettingOptions\x127\n" +
 	"\aoptions\x18\x01 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\aoptions\"\xd7\x01\n" +
 	"\x16PluginSettingOptionsBy\x12\x18\n" +

@@ -47,7 +47,6 @@ export interface SlotCommandFinderDeps {
   readonly whenReader: WhenReader
 }
 
-/** The icon an application command is drawn with: the one it names, or the one the window keeps for it. */
 function getEditorIcon(iconName: string | undefined, command: string): { icon?: Component } {
   if (iconName) return { icon: getNamedIcon(iconName) }
   const icon = findIcon(command)

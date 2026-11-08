@@ -228,7 +228,7 @@ func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOpti
 }
 
 func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
-	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail}
+	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
 }
 
 func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {

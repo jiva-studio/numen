@@ -463,6 +463,7 @@ function initWindowServices(
     onSizeChanged: () => editing.noted.measureAll(),
     catalog: pluginCatalog,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
+    getPlatform: () => base.frame.platform.value,
   })
   settingsHolder.current = settings
 

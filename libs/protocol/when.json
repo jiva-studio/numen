@@ -72,6 +72,11 @@
       "about": "a tab is in front"
     },
     {
+      "name": "app.platform",
+      "type": "string",
+      "about": "the operating system of the window: darwin, windows or linux, as context.app.platform"
+    },
+    {
       "name": "config",
       "type": "map",
       "about": "every setting by its dotted key, as config.editor.lineNumbers"
@@ -222,6 +227,14 @@
           },
           "value": false
         }
+      ]
+    },
+    {
+      "when": "app.platform != 'darwin'",
+      "values": [
+        { "context": { "app.platform": "darwin" }, "value": false },
+        { "context": { "app.platform": "windows" }, "value": true },
+        { "context": { "app.platform": "linux" }, "value": true }
       ]
     },
     {

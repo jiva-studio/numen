@@ -19,6 +19,7 @@ func listVariables() []variable {
 		{name: "window.isVaultOpen", kind: kindBool},
 		{name: "window.isVaultReady", kind: kindBool},
 		{name: "window.isTabOpen", kind: kindBool},
+		{name: "app.platform", kind: kindString},
 		{name: "config", kind: kindMap},
 	}
 }

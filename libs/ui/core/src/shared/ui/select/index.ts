@@ -7,4 +7,5 @@ export interface SelectChoice {
   readonly text: string
   readonly detail?: string
   readonly group?: string
+  readonly isDisabled?: boolean
 }

@@ -317,3 +317,31 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		}
 	}
 }
+
+func readOptionWhenManifest(option string) error {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":["x",` + option + `]}]}`))
+	return err
+}
+
+func TestAnOptionMayCarryACondition(t *testing.T) {
+	if err := readOptionWhenManifest(`{"value":"y","when":"app.platform != 'darwin'"}`); err != nil {
+		t.Fatal(err)
+	}
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":[{"value":"y","when":"app.platform == 'linux'"}]}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	setting, _ := m.GetSetting("a")
+	if got := setting.Options[0].When; got != "app.platform == 'linux'" {
+		t.Errorf("When = %q", got)
+	}
+}
+
+func TestAnOptionConditionThatIsNotValidIsRejected(t *testing.T) {
+	for _, text := range []string{"app.os == 'linux'", "app.platform =="} {
+		err := readOptionWhenManifest(`{"value":"y","when":"` + text + `"}`)
+		if !errors.Is(err, ErrInvalidSetting) || !strings.Contains(err.Error(), "when") {
+			t.Errorf("%q: err = %v, want an invalid setting naming when", text, err)
+		}
+	}
+}

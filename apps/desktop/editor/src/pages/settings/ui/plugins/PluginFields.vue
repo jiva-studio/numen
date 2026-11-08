@@ -32,7 +32,12 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = createEnumFields(() => props.plugin, readSetting, isKeyRequested)
+} = createEnumFields(
+  () => props.plugin,
+  readSetting,
+  isKeyRequested,
+  () => props.state.installation.getPlatform?.() ?? '',
+)
 
 function isKeyRequested(key: string): boolean {
   return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false

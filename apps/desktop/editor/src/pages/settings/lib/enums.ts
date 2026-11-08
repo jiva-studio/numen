@@ -4,6 +4,7 @@
  * the placement of secrets alongside the settings they belong to.
  */
 import type { SelectChoice } from '@numen/ui'
+import { createWhenReader } from '@numen/plugin-host'
 import type {
   PluginInfo,
   PluginSecret,
@@ -23,12 +24,19 @@ export interface EnumFields {
   getSecretsAfter(settingKey: string): readonly PluginSecret[]
 }
 
-/** Converts plugin setting options into select choices, preserving option detail. */
-export function toSelectChoices(options: readonly PluginSettingOption[]): readonly SelectChoice[] {
+/**
+ * Converts plugin setting options into select choices, preserving option detail. An option that
+ * is not offered is a disabled choice.
+ */
+export function toSelectChoices(
+  options: readonly PluginSettingOption[],
+  isOffered: (option: PluginSettingOption) => boolean = () => true,
+): readonly SelectChoice[] {
   return options.map((one) => ({
     id: one.value,
     text: one.title || one.value,
     ...(one.detail ? { detail: one.detail } : {}),
+    ...(isOffered(one) ? {} : { isDisabled: true }),
   }))
 }
 
@@ -81,10 +89,15 @@ export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,
   isRequested: (key: string) => boolean = () => false,
+  getPlatform: () => string = () => '',
 ): EnumFields {
+  const whenReader = createWhenReader()
+  /** An option with no condition, or one that cannot be read, is offered. */
+  const isOffered = (option: PluginSettingOption): boolean =>
+    whenReader.getCondition(option.when)?.evaluate({ 'app.platform': getPlatform() }) ?? true
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
-  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting))
+  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting), isOffered)
   const getEnumValue = (setting: PluginSettingInfo) =>
     toText(getValueInForce(setting, read, isRequested))
 

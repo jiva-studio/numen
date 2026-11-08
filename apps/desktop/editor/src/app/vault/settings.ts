@@ -12,10 +12,11 @@ import type {
 } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
-const readOption = (one: { value: string; title: string; detail: string }) => ({
+const readOption = (one: { value: string; title: string; detail: string; when: string }) => ({
   value: one.value,
   title: one.title,
   detail: one.detail,
+  when: one.when,
 })
 
 const readCondition = (
