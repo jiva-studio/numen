@@ -43,8 +43,7 @@ const OPTIONAL_HOOKS = [
 export function pickDeclaredHooks(registration: TabKindRegistration): Partial<AnyTabKind> {
   const hooks: Record<string, unknown> = {}
   for (const name of OPTIONAL_HOOKS) {
-    const hook: unknown = Reflect.get(registration, name)
-    if (hook !== undefined) hooks[name] = hook
+    if (registration[name] !== undefined) hooks[name] = registration[name]
   }
   return hooks
 }
@@ -90,13 +89,13 @@ export function createDeclaredTabKind(
   pluginId: string,
   registration: DeclaredTabKindRegistration,
 ): AnyTabKind {
-  const { kind, title } = registration
+  const { kind, title, getTitle } = registration
   return {
     ...pickDeclaredHooks(registration),
     kind,
     pluginId,
     open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
-    getTitle: (state) => registration.getTitle?.(state) ?? title ?? kind,
+    getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
   }
 }

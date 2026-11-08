@@ -7,10 +7,10 @@ import type { EligibleLinkTab, LinkableTab, TabId, TabLinkGroup } from '../types
 export interface EligibilityInput {
   readonly from: TabId
   readonly tabs: readonly { readonly id: TabId; readonly title: string }[]
-  getKind: (tab: TabId) => string | undefined
+  getKind(tab: TabId): string | undefined
   /** Whether the tab's selection can follow another's. */
-  isLinkable: (tab: TabId) => boolean
-  getGroupOf: (tab: TabId) => TabLinkGroup | null
+  isLinkable(tab: TabId): boolean
+  getGroupOf(tab: TabId): TabLinkGroup | null
 }
 
 /** The tabs a link from one tab may end at: linkable, not itself, not in its group already. */

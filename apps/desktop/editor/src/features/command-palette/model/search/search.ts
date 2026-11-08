@@ -72,10 +72,10 @@ export interface Words extends EmptyWords {
 /** What the window hands the palette, beside the vault and its own words. */
 export interface SearchOptions {
   wait?: Wait
-  coverage?: () => IndexCoverage
+  coverage?(this: void): IndexCoverage
   menu?: SearchMenuDeps
   /** The target of the window, for the row that creates a note. */
-  getTarget?: () => CommandTarget
+  getTarget?(this: void): CommandTarget
 }
 
 interface FillOptions<T> {

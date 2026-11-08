@@ -16,12 +16,12 @@ import type {
 export type ReadPluginSetting = (key: string) => unknown
 
 export interface EnumFields {
-  getEnumOptions: (setting: PluginSettingInfo) => readonly PluginSettingOption[]
-  getEnumChoices: (setting: PluginSettingInfo) => readonly SelectChoice[]
-  getEnumValue: (setting: PluginSettingInfo) => string
-  getShownSettings: () => readonly PluginSettingInfo[]
-  getTopSecrets: () => readonly PluginSecret[]
-  getSecretsAfter: (settingKey: string) => readonly PluginSecret[]
+  getEnumOptions(this: void, setting: PluginSettingInfo): readonly PluginSettingOption[]
+  getEnumChoices(this: void, setting: PluginSettingInfo): readonly SelectChoice[]
+  getEnumValue(this: void, setting: PluginSettingInfo): string
+  getShownSettings(this: void): readonly PluginSettingInfo[]
+  getTopSecrets(this: void): readonly PluginSecret[]
+  getSecretsAfter(this: void, settingKey: string): readonly PluginSecret[]
 }
 
 /**

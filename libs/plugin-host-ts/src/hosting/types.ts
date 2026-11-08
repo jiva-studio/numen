@@ -208,13 +208,9 @@ export interface NoteBuffer {
 export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
-  registerSlotView: (
-    pluginId: string,
-    slot: string,
-    registration: SlotViewRegistration,
-  ) => Disposable
+  registerSlotView(this: void, pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
   readonly app: AppInfo
-  openExternal: (url: string) => Promise<void>
+  openExternal(this: void, url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
@@ -222,12 +218,13 @@ export interface PluginContextHost {
   mountView(capability: string, element: HTMLElement, context: unknown): MountedView
   registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
   readonly drops: DropHost
-  getSetting: <T = unknown>(pluginId: string, key: string) => T | undefined
-  onSettingChange: <T = unknown>(
+  getSetting<T = unknown>(this: void, pluginId: string, key: string): T | undefined
+  onSettingChange<T = unknown>(
+    this: void,
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
-  ) => Disposable
+  ): Disposable
   onVaultChange(
     pluginId: string,
     handler: (event: VaultChangeEvent) => void | Promise<void>,
