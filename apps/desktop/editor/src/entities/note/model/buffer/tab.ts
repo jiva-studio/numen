@@ -60,30 +60,22 @@ const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
 
 const keepTab = (tab: Tab): Transition => ({ tab, effects: [] })
 
-/**
- * A body equal to what is shown replaces nothing.
- */
 const applyBody = (tab: Tab, body: string, filePath: string | null): Transition => ({
   tab: { ...tab, savedText: body, filePath, editorText: body, since: null },
   effects: body === tab.editorText ? [] : [{ kind: 'replace', body }],
 })
 
-/** What the tab last saw, for a write to present. */
 const getBaseline = (tab: Tab): NoteBaseline | null =>
   // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
   tab.savedText === null || tab.filePath === null
     ? null
     : { prose: tab.savedText, stat: tab.filePath }
 
-/** A write of what is on screen now, presenting what it is given. */
 const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
   tab: { ...tab, pendingWrite: tab.editorText, hasPendingWrite: false, isStale: false },
   effects: [{ kind: 'write', path: tab.path, body: tab.editorText, baseline }],
 })
 
-/**
- * A read is applied to a tab with nothing unsaved, and only for the generation requested last.
- */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const loading = getState(tab) === 'loading'
   const isStale = generation !== tab.reading
@@ -99,7 +91,6 @@ const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition
   return applyReadBody(tab, answer, isStale)
 }
 
-/** The text the file holds, taken where the tab holds nothing unsaved of its own. */
 const applyReadBody = (
   tab: Tab,
   answer: { body: string; at: string },
@@ -115,15 +106,9 @@ const applyReadBody = (
   return applyBody(tab, body, revision)
 }
 
-/**
- * When the write happens: once still for the quiet interval, and within bound of first unwritten change.
- */
 const getWriteDelay = (since: number, now: number, limits: WriteLimits): number =>
   Math.max(0, Math.min(limits.quiet, since + limits.bound - now))
 
-/**
- * An error about the body is cleared by typing when there is a written baseline.
- */
 const isRetryable = (tab: Tab): boolean =>
   // Stryker disable next-line ConditionalExpression: RETRYABLE_ERRORS.includes(null) evaluates to false.
   tab.savedText !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
@@ -194,9 +179,6 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
   }
 }
 
-/**
- * A save requested now writes the unsaved content, and schedules another if a write is in progress.
- */
 const applySave = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
@@ -204,9 +186,6 @@ const applySave = (tab: Tab): Transition => {
   return keepTab(tab)
 }
 
-/**
- * Flushing disarms the timer and writes unsaved text immediately.
- */
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state === 'unsaved') {
@@ -219,14 +198,12 @@ const applyFlush = (tab: Tab): Transition => {
   return { tab, effects: [{ kind: 'cancelTimer' }] }
 }
 
-/** Keep: what is on screen goes to the file. */
 const applyKeep = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state !== 'stale' && state !== 'gone') return keepTab(tab)
   return beginWrite(tab, null)
 }
 
-/** Take: the file is read again, replacing the buffer. */
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state !== 'stale') return keepTab(tab)
@@ -237,9 +214,6 @@ const applyTake = (tab: Tab): Transition => {
   }
 }
 
-/**
- * Closes the tab, saving unsaved changes or holding if writes or conflicts are pending.
- */
 const applyClose = (tab: Tab): Transition => {
   const state = getState(tab)
   // Stryker disable next-line LogicalOperator,ConditionalExpression: Stuck state implies truthy tab.error and vice versa.

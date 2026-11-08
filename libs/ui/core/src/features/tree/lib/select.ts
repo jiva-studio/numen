@@ -40,7 +40,6 @@ export function getRowsBetween(
   return visibleRows.slice(Math.min(first, last), Math.max(first, last) + 1).map((row) => row.id)
 }
 
-/** The rows of a set, in the order they are drawn. */
 const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): readonly RowId[] =>
   visibleRows.filter((row) => ids.has(row.id)).map((row) => row.id)
 

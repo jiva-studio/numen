@@ -10,7 +10,6 @@ import { WORDS as words } from './words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   stats: Stats
-  /** The locale numbers and times are written in; the locale of the window when empty. */
   locale?: string | undefined
 }>()
 

@@ -7,9 +7,7 @@ import type { AppInfo } from '@numen/plugin-sdk'
 export const DEV_VERSION = '0.0.0-dev'
 
 export interface AppInfoSource {
-  /** The version injected while the page is built. */
   readonly version?: string | undefined
-  /** The build number injected while the page is built, as text. */
   readonly build?: string | undefined
   readonly userAgent: string
 }

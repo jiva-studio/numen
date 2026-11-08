@@ -30,7 +30,6 @@ const FIVE = 'one two three four five'
 interface Drawn {
   readonly from: number
   readonly to: number
-  /** What the stretch is marked as, and nothing where it is covered over. */
   readonly mark: string | null
 }
 
@@ -42,13 +41,11 @@ const getDrawn = (state: EditorState): Drawn[] => {
   return found
 }
 
-/** A state with the parser the editor runs, and a change put in over it. */
 const createMarkedState = (doc: string, change: EditorChange | null): EditorState =>
   createState(doc).update({
     effects: StateEffect.appendConfig.of([changeMarks, pendingChange.of(change)]),
   }).state
 
-/** The showing, moved on to `part` of the way through. */
 const getStateAt = (state: EditorState, change: EditorChange, part: number): EditorState =>
   state.update({ effects: setReveal.of(createReveal(change.text, part)) }).state
 
@@ -191,7 +188,6 @@ describe('a change whose text has arrived', () => {
   })
 })
 
-/** A clock the test advances manually. */
 const createClock = () => {
   let pending: ((now: number) => void) | null = null
   const clock: Clock = {
@@ -278,7 +274,6 @@ describe('the showing, setReveal by the clock', () => {
   })
 })
 
-/** A clock that records every requested frame and every cancelled handle. */
 const createLedgerClock = () => {
   const pendingState = new Map<number, (now: number) => void>()
   const request: ((now: number) => void)[] = []

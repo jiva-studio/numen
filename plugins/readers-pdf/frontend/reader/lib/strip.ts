@@ -17,14 +17,10 @@ export interface Rect {
 
 /** The words a document is read with, declared once. */
 export interface ReaderWords {
-  /** What turning back a page is called, and turning on. */
   readonly back: string
   readonly next: string
-  /** What the field the page is typed in is called. */
   readonly page: string
-  /** What the row of pages is called, which the keyboard scrolls. */
   readonly pages: string
-  /** What drawing the page larger is called, and smaller. */
   readonly zoomIn: string
   readonly zoomOut: string
 }
@@ -67,13 +63,9 @@ const BEYOND = 1.5
  * pages are shaped, and a flick sideways is a page.
  */
 export interface Row {
-  /** How tall every page is drawn, in CSS pixels. */
   readonly height: number
-  /** Where each page begins along the row, in CSS pixels. */
   readonly starts: readonly number[]
-  /** How wide each page is drawn, in CSS pixels. */
   readonly widths: readonly number[]
-  /** What the whole row evaluates to, in CSS pixels. */
   readonly length: number
 }
 
@@ -104,7 +96,6 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   return { height, starts, widths, length: axisOffset }
 }
 
-/** The size of one page, and the nearest thing to it that is known. */
 function getSize(pages: readonly Page[], page: number): Page {
   const targetPage = pages[page]
   if (targetPage && targetPage.width > 0 && targetPage.height > 0) return targetPage

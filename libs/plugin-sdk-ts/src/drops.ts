@@ -7,7 +7,6 @@ export type DroppedData = Readonly<Record<string, string>>
 // DropRegistration declares the dropped data a plugin takes, by the types a drag names it under,
 // wherever it is dropped: a view takes a drop without knowing which plugin takes it.
 export interface DropRegistration {
-  // The types of dropped data the plugin takes, such as `text/uri-list`.
   readonly types: readonly string[]
   // Takes what was dropped into a folder of the vault, the root being empty. Answers the paths of
   // what it made.

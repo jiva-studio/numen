@@ -3,7 +3,6 @@ import { nextTick, reactive, ref } from 'vue'
 import type { TextRange } from '../types'
 import { useBookRanges, type RangeTab } from './useBookRanges'
 
-/** A reader that records every call that highlights ranges. */
 const createReader = (isLoading = false) => {
   const focusCalls: (readonly TextRange[])[] = []
   const reader = {

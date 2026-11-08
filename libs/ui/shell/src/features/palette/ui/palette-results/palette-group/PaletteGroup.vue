@@ -12,11 +12,8 @@ import { PaletteRow } from '../palette-row'
 import { optionId, type PlacedGroup } from '../../../lib/place'
 
 const props = defineProps<{
-  /** The group as it is drawn, its rows numbered over the whole list. */
   placed: PlacedGroup
-  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
-  /** What the list and its rows are addressed by. */
   uid: string
 }>()
 
@@ -41,7 +38,6 @@ const hold = (item: string, row: Element | ComponentPublicInstance | null): void
   else itemElements.delete(item)
 }
 
-/** One item brought into sight, where this group is the one holding it. */
 const reveal = (item: string): void => {
   itemElements.get(item)?.scrollIntoView?.({ block: 'nearest' })
 }

@@ -10,7 +10,6 @@ import { createCfiSelector, getSelectorCfi } from '../lib/place'
 export interface PlacedReader {
   readonly offset: Ref<number>
   readonly isLoading: Ref<boolean>
-  /** The table-of-contents title at the offset, empty when the book has none. */
   readonly chapter: Ref<string>
   getCfi(offset: number): Promise<string | null>
   goToCfi(cfi: string): Promise<boolean>
@@ -26,7 +25,6 @@ export interface PlacedTab {
   reportPlace?(place: TabPlace): void
 }
 
-/** Returns the selector saved for a CFI: the CFI and the chapter title, omitted when empty. */
 const createPlace = (cfi: string, chapter: string): Selector =>
   chapter === '' ? createCfiSelector(cfi) : { ...createCfiSelector(cfi), chapter }
 

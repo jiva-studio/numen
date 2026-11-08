@@ -12,11 +12,8 @@ import type { TextRange } from '@numen/ui'
 
 /** One run of a document. */
 export interface Run {
-  /** The element the run is set in. */
   readonly tag: string
-  /** The run's own text, whose bytes are what the offsets count. */
   readonly text?: string
-  /** Markup standing in the run that the text stream carries nothing of. */
   readonly inside?: string
 }
 

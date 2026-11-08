@@ -8,7 +8,6 @@ import { createReviewKeys } from './reviewKeys'
 import type { ReviewKeysDeps, ReviewScreen } from './reviewKeys'
 import type { VaultCardsDue } from '../entities/vault'
 
-/** One keystroke, as the window meets it. */
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({
     key,
@@ -21,7 +20,6 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
     ...more,
   }) as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 
-/** A vault as the counting hands one over. */
 const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: 'garden',
   name: 'Garden',

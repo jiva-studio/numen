@@ -3,7 +3,6 @@ import path from 'node:path'
 import { test, expect, type APIRequestContext } from '../../support/test.js'
 import { getVaultPath, readNote } from '../../support/vault.js'
 
-/** Calls an RPC and gives back its status and its answer, refused or not. */
 const askRPC = async (request: APIRequestContext, method: string, data: object) => {
   const answer = await request.post(`/numen.v1.${method}`, {
     data,
@@ -16,7 +15,6 @@ const askRPC = async (request: APIRequestContext, method: string, data: object) 
   }
 }
 
-/** Whether an answer refused the call: an error status, or an error code in the reply. */
 const isRefused = (answer: { status: number; body: Record<string, unknown> }): boolean =>
   answer.status !== 200 || answer.body['error'] !== undefined
 

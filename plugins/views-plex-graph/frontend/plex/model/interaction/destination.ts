@@ -14,7 +14,6 @@ import { onScopeDispose, ref } from 'vue'
  * destination and the caller's behavior are derived from this table.
  */
 export interface DestinationDescriptor {
-  /** Whether the modifier is held while asking for this one. */
   readonly hasModifier: boolean
 }
 
@@ -48,16 +47,12 @@ export const APART = 24
 
 /** The node a strategy is watching, in the only two terms it needs. */
 export interface ShowSite {
-  /** Whether this node can currently be opened. */
   readonly ready: () => boolean
-  /** Opens the node. The modifier selects the destination. */
   readonly show: (hasModifier: boolean) => void
 }
 
 export interface ShowStrategy {
-  /** Whether the node answers the browser's own second click. */
   readonly isDoubleClick: boolean
-  /** Additional listeners for the node. Called once, inside the node's scope. */
   readonly listeners: (site: ShowSite) => Record<string, (event: PointerEvent) => void>
 }
 

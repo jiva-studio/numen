@@ -9,13 +9,9 @@ import { byDoubleClick, type ShowStrategy } from './interaction/destination'
 import { browserClock, type Clock } from '@numen/ui'
 
 export interface PlexBehaviour {
-  /** How long the attention rests on a box before it widens. Milliseconds. */
   readonly expansionDelay: number
-  /** How a node offers to be reached out of. */
   readonly reaching: ReachStrategy
-  /** How a node is requested on its own. */
   readonly showing: ShowStrategy
-  /** The clock a box opens on. */
   readonly clock: Clock
 }
 

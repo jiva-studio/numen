@@ -18,7 +18,6 @@ const links: LinkClient = {
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** The agent service, answering the state given and keeping every request. */
 const createClient = (state: (signal: AbortSignal) => Promise<{ unreachable: string }>) => {
   const requests: unknown[] = []
   const finished: unknown[] = []

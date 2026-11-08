@@ -17,20 +17,11 @@ import type { Rect } from '../../lib/strip'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** Which page of the document this is, counted from the first. */
     at: number
-    /**
-     * Image URL of the page. A retry appends an `again` parameter, joined with `&`
-     * when the URL already has a query string, and with `?` when it has none.
-     */
     picture?: string
-    /** What is highlighted on it, in fractions of it. */
     highlights?: readonly Rect[]
-    /** The other places named on it, apart from the one opened at. */
     otherHighlights?: readonly Rect[]
-    /** Accessible name of the page. */
     page?: string
-    /** Error message displayed when a page fails to load. */
     undrawn?: string
   }>(),
   {
@@ -82,7 +73,6 @@ watch(
 onBeforeUnmount(() => incoming.value?.removeAttribute('src'))
 
 /* --------------------------------- Helpers -------------------------------- */
-/** One rectangle, as a share of the page it is drawn over. */
 const getBoxStyle = (one: Rect) => ({
   insetInlineStart: `${one.minX * 100}%`,
   insetBlockStart: `${one.minY * 100}%`,

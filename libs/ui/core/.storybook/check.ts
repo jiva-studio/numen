@@ -9,9 +9,7 @@ import { faults } from './reach'
  * about this one.
  */
 export interface Proof {
-  /** The story's id, as Storybook addresses it. */
   readonly story: string
-  /** The fewest stops the keyboard finds there. */
   readonly stops: number
 }
 

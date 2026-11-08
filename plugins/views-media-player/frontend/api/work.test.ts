@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest'
 import { createWorkWatcher, type TaskSource, type WatchedTask } from './work'
 
-/** A task source a test pushes lists through, and how many times it was opened and closed. */
 function createSource() {
   let handler: ((tasks: readonly WatchedTask[]) => void) | null = null
   const counts = { opened: 0, disposed: 0 }

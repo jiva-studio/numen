@@ -11,19 +11,16 @@ import { getStandInsOrigin, writePluginSetting } from '../../support/media.js'
 
 const UPDATER = 'md.numen.tools.updater'
 
-/** Has the stand-in release feed name a release newer than any build. */
 const publishNewRelease = async (request: APIRequestContext, origin: string): Promise<void> => {
   const answer = await request.put(`${origin}/stand-in/release`, { data: NEW_RELEASE })
   expect(answer.ok()).toBe(true)
 }
 
-/** Has the stand-in release feed name the old release again. */
 const withdrawNewRelease = async (request: APIRequestContext, origin: string): Promise<void> => {
   const answer = await request.delete(`${origin}/stand-in/release`)
   expect(answer.ok()).toBe(true)
 }
 
-/** How many times the updater asked the stand-in for the release manifest. */
 const countManifestRequests = async (
   request: APIRequestContext,
   origin: string,
@@ -42,33 +39,27 @@ interface Box {
   height: number
 }
 
-/** The box of an element on the page; the test fails where it is not drawn. */
 const getBox = async (element: Locator): Promise<Box> => {
   const box = await element.boundingBox()
   if (!box) throw new Error('the element has no box')
   return box
 }
 
-/** The size of the window the page is drawn in. */
 const getViewport = (page: Page): { width: number; height: number } => {
   const viewport = page.viewportSize()
   if (!viewport) throw new Error('the page has no viewport')
   return viewport
 }
 
-/** Whether the boxes do not overlap: one is under the other, or beside it. */
 const isApart = (first: Box, second: Box): boolean =>
   second.y >= first.y + first.height || second.x >= first.x + first.width
 
-/** The space between each box and the next one of a row, from left to right. */
 const getGaps = (row: readonly Box[]): number[] =>
   row.slice(1).map((one, index) => one.x - ((row[index]?.x ?? 0) + (row[index]?.width ?? 0)))
 
-/** One computed style of an element. */
 const getStyle = (element: Locator, property: string): Promise<string> =>
   element.evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property)
 
-/** The settings page of the updater plugin, opened from the palette. */
 const openUpdaterSettings = async (page: Page): Promise<void> => {
   await runPaletteCommand(page, 'Open settings', 'Open settings')
   await page

@@ -10,11 +10,8 @@ import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** Whether the contents stand over the page. */
   isOpen: boolean
-  /** The places in the book worth jumping to. */
   entries: readonly ContentsEntry[]
-  /** Where in the book the page being read begins. */
   offset: number
 }>()
 

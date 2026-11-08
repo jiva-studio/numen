@@ -30,37 +30,23 @@ interface Drag {
 }
 
 export interface TabDragOptions {
-  /** The workspace the drag reads and writes. */
   readonly workspace: Ref<Workspace>
-  /** The element the whole workspace is drawn in. */
   readonly frame: Readonly<ShallowRef<HTMLElement | null>>
-  /** What a tab is, for the name drawn at the pointer. */
   readonly getTab: (id: TabId) => Tab | undefined
-  /** Where identities for what a gesture makes come from. */
   readonly getIdFactory: () => NodeIdFactory
-  /** How close to the outer edge divides the whole workspace. */
   readonly getEdge: () => number
-  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
-  /** Returns the viewport size. A pointerup outside the viewport tears off the tab. */
   readonly getViewport?: () => Size
-  /** Called on pointerup outside the viewport after a tab drag. */
   readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
 }
 
 export interface TabDragState {
-  /** Whether the press being made has travelled far enough to be a drag. */
   readonly hasMoved: ComputedRef<boolean>
-  /** The area a drop would take, in the coordinates of the frame. */
   readonly overlay: ComputedRef<Rect | null>
-  /** The name drawn at the pointer, and nothing until a press has become a drag. */
   readonly label: ComputedRef<string | null>
-  /** Where the pointer is. */
   readonly position: Readonly<Ref<Position | null>>
-  /** Where the tab would land. */
   readonly dropTarget: Readonly<Ref<TabDropTarget | null>>
-  /** A press on a tab, which a move turns into a drag. */
   readonly press: (tab: TabId, pointer: PointerEvent) => void
 }
 
@@ -141,7 +127,6 @@ const isInsideViewport = (point: Position, viewport: Size): boolean =>
 const getClosest = (targetElement: Element | null, selector: string): Element | null =>
   targetElement?.closest(selector) ?? null
 
-/** A tab put in order among the tabs already drawn on a strip. */
 function getStripDropTarget(target: StripTarget, local: ToLocal): TabDropTarget {
   const { x, strip, pane } = target
   const tabs = [...strip.children].map((tab) => getRect(tab))
@@ -154,7 +139,6 @@ function getStripDropTarget(target: StripTarget, local: ToLocal): TabDropTarget 
   }
 }
 
-/** A pane divided along the side the pointer is nearest. */
 function getPaneDropTarget(
   point: Position,
   pane: { readonly element: Element; readonly id: NodeId },
@@ -188,13 +172,6 @@ function landTab(workspace: Workspace, action: LandAction): Workspace {
   return moveTabWithin(joined, drag.tab, target.slot)
 }
 
-/**
- * The drop target under the pointer, looked up in the document.
- *
- * A strip is checked first, to allow reordering a tab among its neighbours;
- * then the outer edge, which splits the whole workspace; then the pane, which
- * splits itself.
- */
 function resolveDropTarget(
   point: Position,
   frame: Element | null,
@@ -224,7 +201,6 @@ function resolveDropTarget(
   return getPaneDropTarget(point, { element: pane, id }, local)
 }
 
-/** Converts a viewport point to screen coordinates. */
 const getScreenPosition = (point: Position): Position => {
   const origin = getWindowOrigin()
   return { x: origin.x + point.x, y: origin.y + point.y }

@@ -15,7 +15,6 @@ vi.mock('./marks', async (importOriginal) => {
 const TABLE = '| a | b |\n|---|---|\n| 1 | 2 |'
 const OTHER = '| c | d |\n|---|---|\n| 3 | 4 |'
 
-/** A document written into a state in one transaction, as a file opened is. */
 const create = (doc: string, caret = doc.length) => {
   const empty = EditorState.create({
     extensions: [markdown({ extensions: GFM, codeLanguages: LANGUAGES }), wholeLines],
@@ -28,7 +27,6 @@ const create = (doc: string, caret = doc.length) => {
   return state
 }
 
-/** The decorations as plain data: where they stand and what they stand for. */
 const describeMarks = (state: EditorState, source: 'field' | 'full') => {
   const activeSet = source === 'field' ? state.field(wholeLines).marks : blockMarks(state)
   const found: unknown[] = []

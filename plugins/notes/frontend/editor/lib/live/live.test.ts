@@ -35,11 +35,9 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
   return collectDrawn(createState(text, caret ?? text.length))
 }
 
-/** Whether the range is replaced by another rendering, wherever the selection is. */
 const isHidden = (rendered: readonly Drawn[], from: number, to: number) =>
   rendered.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
 
-/** A state whose selection is a caret at each of `carets`, and which is read-only if requested. */
 const createCaretState = (doc: string, carets: number[], isReadOnly = false): EditorState => {
   const extra = [EditorState.allowMultipleSelections.of(true), EditorState.readOnly.of(isReadOnly)]
   return createState(doc)
@@ -49,7 +47,6 @@ const createCaretState = (doc: string, carets: number[], isReadOnly = false): Ed
     }).state
 }
 
-/** Whether the stretch of text is drawn as something else. */
 const applyReplace = (doc: string, text: string, caret?: number) => {
   const pos = doc.indexOf(text)
   return getDrawn(doc, caret).some(
@@ -278,7 +275,6 @@ describe('whole lines', () => {
   })
 })
 
-/** A state with a parser that can be swapped, and the table and rule widgets held in it. */
 const createLinesState = (doc: string, caret = doc.length) => {
   const language = new Compartment()
   const state = EditorState.create({
@@ -380,7 +376,6 @@ describe('the marks of whole lines retained in the state', () => {
   })
 })
 
-/** A parser that reads the consecutive lines starting with `lead` as one rule, inset at either end. */
 const readRulesAt = (lead: string, insetFrom = 0, insetTo = 0): MarkdownConfig => ({
   parseBlock: [
     {

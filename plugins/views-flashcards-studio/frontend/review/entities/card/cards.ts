@@ -5,15 +5,12 @@ import type { Grade } from './grades'
 export interface ReviewCard {
   readonly deck: string
   readonly section: string
-  /** What the card is known by. */
   readonly cardId: string
   readonly template: string
-  /** What the card's heading shows, which is the first line of its first field. */
   readonly heading: string
   readonly front: string
   readonly back: string
   readonly isNew: boolean
-  /** Where each of the four would leave it. */
   readonly ahead: Intervals | null
 }
 

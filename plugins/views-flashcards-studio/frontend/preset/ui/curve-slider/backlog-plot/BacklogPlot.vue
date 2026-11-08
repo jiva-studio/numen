@@ -27,7 +27,6 @@ import '../curve-slider.css'
 const props = defineProps<{
   curve: Curve
   place: number
-  /** Whether the curve on screen is an answer, and not the waiting for one. */
   isHonest: boolean
 }>()
 

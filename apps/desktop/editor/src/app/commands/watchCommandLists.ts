@@ -17,7 +17,6 @@ interface CommandListSources {
   readonly plugins?: Ref<readonly { readonly id: string; readonly isActive: boolean }[]> | undefined
   readonly rest?:
     | {
-        /** A setting as the core last confirmed it. A plugin with no backend is never active, so its switch is read here. */
         readonly getCommittedSetting?: ((path: readonly string[]) => unknown) | undefined
       }
     | undefined
@@ -62,7 +61,6 @@ export function watchCommandLists(
   }
 }
 
-/** Whether the setting of the plugin that switches it on reads true; absent counts as on. */
 const isSwitchedOn = (
   pluginId: string,
   getCommittedSetting: ((path: readonly string[]) => unknown) | undefined,

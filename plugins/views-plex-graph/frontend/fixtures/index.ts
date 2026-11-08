@@ -17,15 +17,10 @@ export type Types = Record<string, NoteType>
 export interface RelatedNeighbourSpec {
   path: string
   relation?: PlexRelation
-  /** The parent a sibling hangs off. */
   through?: string
-  /** The words the note named first writes on the line: the focus, or `through` for a sibling. */
   label?: string
-  /** The words the neighbour writes on the line. */
   reverseLabel?: string
-  /** What the note named first draws at the neighbour. */
   marker?: LinkMarker
-  /** What the neighbour draws at the note named first. */
   reverseMarker?: LinkMarker
   title?: string
   type?: NoteType
@@ -58,7 +53,6 @@ export const createLine = (focus: string, spec: RelatedNeighbourSpec): Connectio
   }
 }
 
-/** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const createNeighbourhood = (
   focus: string,
   neighbours: readonly NeighbourSpec[] = [],

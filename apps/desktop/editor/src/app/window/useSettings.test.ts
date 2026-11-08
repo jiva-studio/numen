@@ -11,7 +11,6 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 
-/** The settings over a vault containing `{}`, and every writer they requested from the log. */
 const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = {}) => {
   const writers: string[] = []
   const writerFns: Record<string, ReturnType<typeof vi.fn>> = {}
@@ -53,7 +52,6 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
   return { settings, writers, writerFns, handle, core, onSizeChanged }
 }
 
-/** One model the settings offer, at the setting that names the indexing model. */
 const model = (overrides: Partial<Model> = {}): Model => ({
   namedAt: ['indexing', 'embedding', 'model', 'name'],
   name: 'e5-small-int8',

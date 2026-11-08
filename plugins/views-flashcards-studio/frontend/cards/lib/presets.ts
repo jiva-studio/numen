@@ -95,7 +95,6 @@ export interface Preset {
 
 /** A preset as a read found it, and how far each of its settings goes. */
 export interface ReadPreset {
-  /** Null where nothing names a preset, which a read answers as readily. */
   readonly preset: Preset | null
   readonly at: string
   readonly bounds: SettingsBounds
@@ -117,7 +116,6 @@ export interface Point {
   readonly retained: number
   readonly due: number
   readonly through: number
-  /** Whether the pace this place sets learns every review card it can. */
   readonly canLearnEveryCard: boolean
   readonly closed: readonly BudgetName[]
   readonly clears: number

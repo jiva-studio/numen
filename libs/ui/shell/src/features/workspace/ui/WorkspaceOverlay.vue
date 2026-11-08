@@ -5,7 +5,6 @@ import type { Rect } from '../lib/rect'
 
 const props = defineProps<{
   box: Rect
-  /** Drawn as a line between two tabs, for a place in a strip. */
   hasCaret?: boolean
 }>()
 

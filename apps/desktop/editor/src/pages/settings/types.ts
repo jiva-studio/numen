@@ -56,14 +56,8 @@ export interface Installation {
    */
   getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
-  /**
-   * The settings of the owner `app`, as the core declares them with the options, the visibility and
-   * the value in force it resolved. The settings page draws them with the renderer of the plugins.
-   */
   readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
-  /** The plugins the catalog lists, the ones that are not installed among them. */
   readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
-  /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
 }
 

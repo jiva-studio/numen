@@ -7,7 +7,6 @@ import type { CommandTarget } from '../../types'
 import type { CommandDeps } from './deps'
 import { runInvocation } from './handlers'
 
-/** A document chosen as a search result. */
 const createTarget = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: '',
   kind: null,

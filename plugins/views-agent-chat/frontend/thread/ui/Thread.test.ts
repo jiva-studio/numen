@@ -108,10 +108,6 @@ describe('what the caller decides', () => {
 /** How tall the area that scrolls is, and how tall one turn in it is. */
 const SCREEN = 100
 
-/**
- * A thread over an area that scrolls, since the document a test runs in lays
- * nothing out. One turn is one screenful.
- */
 const createScrollingThread = (turns: readonly Turn[]) => {
   const wrapper = thread(turns)
   const area = wrapper.element as HTMLElement

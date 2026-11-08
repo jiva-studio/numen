@@ -11,7 +11,6 @@ import { createPlexKind } from './kind'
 import { createHost } from './fixtures/host'
 import { createLine, viewOn, type NeighbourSpec } from './fixtures'
 
-/** A plex tab opened by the kind on a note and the notes joined to it. */
 const createTab = (
   focus: string,
   neighbours: readonly NeighbourSpec[],

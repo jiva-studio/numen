@@ -11,7 +11,6 @@ import '../curve-slider.css'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   state: CurveSliderState
-  /** What the curve is scheduled by, which names the axis. */
   goal: Goal
 }>()
 

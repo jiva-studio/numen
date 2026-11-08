@@ -184,10 +184,6 @@ const QUOTES = [
   'an ordinary title',
 ]
 
-/**
- * A number generator a run can be repeated from: the same seed gives the same
- * corpus, so a failure names an arrangement that can be looked at again.
- */
 const numbers = (from: number): (() => number) => {
   let target = from >>> 0
   return () => {
@@ -199,7 +195,6 @@ const numbers = (from: number): (() => number) => {
   }
 }
 
-/** One arrangement: the known ones first, then pieces put together at random. */
 const createArrangement = (next: () => number, pos: number): string => {
   if (pos < KNOWN.length) return KNOWN[pos]!
 
@@ -223,13 +218,11 @@ const createArrangement = (next: () => number, pos: number): string => {
   return out
 }
 
-/** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
 const stripControls = (url: string): string =>
   Array.from(url)
     .filter((character) => character.charCodeAt(0) > 0x20)
     .join('')
 
-/** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {
   let target = 0
   for (const child of root.childNodes) {
@@ -239,7 +232,6 @@ const comments = (root: Node): number => {
   return target
 }
 
-/** What is wrong with what one element came to, and nothing where it is drawable. */
 const wrong = (element: Element): string | null => {
   const tag = element.tagName.toLowerCase()
   if (RUNS.includes(tag)) return `<${tag}> survived`
@@ -283,7 +275,6 @@ const wrong = (element: Element): string | null => {
 /** What a run measured, as the story draws it. */
 interface Tally {
   arrangements: number
-  /** How many came to markup a browser reads as elements. */
   renderedCount: number
   elements: number
 }

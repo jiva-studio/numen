@@ -13,9 +13,7 @@ import MountedView from './MountedView.vue'
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
   vaults: readonly VaultRow[]
-  /** Whether the list is still being read. */
   isListing: boolean
-  /** How the window draws a view a plugin declares. */
   mountView: (capability: string, element: HTMLElement, context: unknown) => Mounted
 }>()
 

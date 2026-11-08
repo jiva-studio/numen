@@ -13,7 +13,6 @@ const props = withDefaults(
   defineProps<{
     levels?: readonly ReasoningLevelOption[]
     selectedId?: string
-    /** What the control is called: its label while no level is chosen, and its menu's name. */
     name?: string
     isDisabled?: boolean
   }>(),

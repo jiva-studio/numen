@@ -11,7 +11,6 @@ const OPEN_SETTINGS = 'app:settings.open'
 export interface AgentChatHost {
   readonly workspace: WorkspaceHost
   readonly agent: AgentHost
-  /** The depth of reasoning the plugin setting `reasoning` keeps. */
   readonly getReasoning: () => string
 }
 

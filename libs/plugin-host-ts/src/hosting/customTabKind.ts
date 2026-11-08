@@ -96,15 +96,10 @@ export function createPluginPaneWrapper(
   })
 }
 
-/** Whether a saved value is a selector: a JSON object. */
 const isSelector = (value: unknown): value is Selector =>
   // Stryker disable next-line ConditionalExpression: null saved value maps to null place in both branches
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/**
- * The state of a reader tab: the place it saves for a restart, and apart from it the place its
- * reader last reported to the window.
- */
 const createReaderState = (pluginId: string, targetPath: string, saved: unknown) => {
   const place = isSelector(saved) ? saved : null
   const state = reactive({
@@ -126,7 +121,6 @@ const createReaderState = (pluginId: string, targetPath: string, saved: unknown)
   return state
 }
 
-/** Returns the file a reader tab shows, and the place its reader last reported, left out while none was. */
 const getReaderOpenTab = (state: unknown): OpenTab => {
   const s = state as { path?: string; reported?: TabPlace | null } | undefined
   const path = s?.path ?? ''

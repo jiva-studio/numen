@@ -17,7 +17,6 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
 interface Knobs {
   isOn: boolean
   isDisabled: boolean
-  /** What the switch is called, shown beside it. */
   label: string
 }
 

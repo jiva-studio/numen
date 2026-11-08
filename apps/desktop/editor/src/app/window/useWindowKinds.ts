@@ -26,10 +26,6 @@ function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-/**
- * Text sent to the most recently active tab of the kind that accepts text, which
- * is brought to the front.
- */
 function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
     askQuestion: (text: string): void => {

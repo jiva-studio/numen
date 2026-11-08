@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
 
-/** One card as the application returns it. */
 const createCard = (cardId: string) => ({
   deck: 'decks/Words.md',
   section: '',
@@ -16,7 +15,6 @@ const createCard = (cardId: string) => ({
   intervals: undefined,
 })
 
-/** opening is what starting a session comes back with. */
 const opening = (...cards: string[]): SessionStart => ({
   run: 'flashcards/01A.jsonl',
   cards: cards.map(createCard),
@@ -24,11 +22,6 @@ const opening = (...cards: string[]): SessionStart => ({
   skipped: 0,
 })
 
-/**
- * createSession is the application as a test models it: the requests it
- * received and the answers it returns. An answer that never resolves simulates
- * a slow disk, so a second press arrives while the first is still being written.
- */
 function createSession(how?: { answering?: Promise<{ answer: string }>; failure?: unknown }) {
   const asks: { what: string; request: unknown }[] = []
   let content = 0

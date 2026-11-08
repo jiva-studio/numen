@@ -46,7 +46,6 @@ export interface FileMenuCommandsDeps {
   readonly get?: typeof getFileMenu
   readonly run?: typeof runFileMenuEntry
   readonly onRun?: (file: string) => void
-  /** Receives the failure of a menu read that is not awaited. */
   readonly onError?: (error: unknown) => void
 }
 

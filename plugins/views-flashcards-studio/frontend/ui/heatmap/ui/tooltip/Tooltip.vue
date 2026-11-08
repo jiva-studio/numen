@@ -16,13 +16,9 @@ import { browserViewport, useFreeSpace, type Viewport } from '@numen/ui'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The thing it is about, in pixels from the top left of the window. */
     at: Box
-    /** What measures the area it is placed in. The browser by default. */
     viewport?: Viewport
-    /** Kept clear of that area's edges. */
     margin?: number
-    /** Left between it and the thing it is about. */
     gap?: number
   }>(),
   { viewport: () => browserViewport, margin: 8, gap: 8 },

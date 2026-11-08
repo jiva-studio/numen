@@ -6,7 +6,6 @@ import type { Row, RowId, ShownRow } from './row'
  */
 export type RowDropTarget = { readonly into: RowId | null } | { readonly before: RowId }
 
-/** The row a drop target names, and nothing for the top level. */
 const getTargetRow = (target: RowDropTarget): RowId | null =>
   'into' in target ? target.into : target.before
 
@@ -36,7 +35,6 @@ export function getRowDropTarget(
   return dragIds.some((id) => id === on) ? null : found
 }
 
-/** The band a height falls in, as a drop target. */
 function findBand(
   visibleRows: readonly ShownRow[],
   y: number,

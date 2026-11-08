@@ -14,11 +14,8 @@ import { COMMAND } from '@/shared/commandIds'
 
 /** One command bound to a keystroke. */
 export interface Chord {
-  /** The command identifier. */
   readonly command: string
-  /** The letter pressed with the modifier. */
   readonly letter: string
-  /** Whether Shift is pressed. */
   readonly hasShift: boolean
 }
 

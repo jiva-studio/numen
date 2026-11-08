@@ -92,7 +92,6 @@ const flushFrames = () => {
   for (const run of fake.frames.splice(0)) run()
 }
 
-/** Runs frames until nothing asks for another one. */
 const flushAllFrames = () => {
   for (let frame = 0; frame < 100 && fake.frames.length > 0; frame += 1) flushFrames()
   expect(fake.frames).toHaveLength(0)

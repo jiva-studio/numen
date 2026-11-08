@@ -12,11 +12,9 @@ import type { Preview } from '@storybook/vue3-vite'
 const INTERFACE = [0.8, 1, 1.25, 1.5, 2]
 const READING = [0.8, 1, 1.25, 1.5, 1.75]
 
-/** A multiplier as a toolbar item. */
 const sizes = (among: readonly number[]) =>
   among.map((size) => ({ value: String(size), title: `${size}×` }))
 
-/** The multiplier a toolbar is standing on. Anything else is as designed. */
 const selected = (target: unknown, among: readonly number[]) =>
   among.includes(Number(target)) ? String(Number(target)) : '1'
 

@@ -32,10 +32,6 @@ export const getParts = (
   return out
 }
 
-/**
- * The spans as runs of this text: inside it, in order, none of them empty, and
- * no two of them touching.
- */
 const mergeRanges = (text: string, at: readonly TextRange[]): TextRange[] => {
   const retainedAt = at
     .map((span) => ({
@@ -60,11 +56,6 @@ const mergeRanges = (text: string, at: readonly TextRange[]): TextRange[] => {
 const clampToText = (text: string, pos: number): number =>
   Math.max(0, Math.min(Math.trunc(pos) || 0, text.length))
 
-/**
- * The nearest boundary that does not fall inside a character, from `at` in the
- * direction given. A character outside the basic plane is two code units, and a
- * span that names one of them names half a character.
- */
 const whole = (text: string, pos: number, delta: 1 | -1): number => {
   let here = pos
   while (isInsideCharacter(text, here)) here += delta

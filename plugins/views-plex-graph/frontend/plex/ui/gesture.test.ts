@@ -15,10 +15,6 @@ import type { PlexRelation } from '../lib/relation'
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
 
-/**
- * One plex unit to the pixel, origin in the middle, as the browser draws it.
- * Written out explicitly because jsdom lays nothing out and has no matrices.
- */
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
     a: 1,
@@ -52,7 +48,6 @@ const mountPlex = (props: Partial<PlexProps> = {}) => {
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
 
-/** Offer the handle, then take hold of it. */
 async function takeHold(plex: ReturnType<typeof mountPlex>['plex'], title: string) {
   const node = plex.get(`[aria-label^="${title}"]`)
   await node.trigger('pointerenter')

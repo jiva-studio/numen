@@ -16,7 +16,6 @@ import type { TranscriptState } from './model/transcript'
 const props = withDefaults(
   defineProps<{
     state: TranscriptState
-    /** What the menu at the end of the strip offers, and nothing where it offers none. */
     menuItems?: readonly MenuItem[] | undefined
     isPlaying?: boolean | undefined
   }>(),

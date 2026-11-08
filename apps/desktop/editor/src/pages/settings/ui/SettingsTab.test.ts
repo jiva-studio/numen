@@ -105,10 +105,6 @@ const SHELL: readonly PluginSettingInfo[] = [
   },
 ]
 
-/**
- * A tab for an installation with the given configuration, and every change it
- * receives.
- */
 const createTab = (
   file: Record<string, unknown> = {},
   plugins: readonly PluginInfo[] = [],
@@ -152,7 +148,6 @@ afterEach(() => {
 
 type Tab = ReturnType<typeof createTab>['tab']
 
-/** The select a row of that title draws. */
 const findSelect = (tab: Tab, title: string) => {
   const found = tab.findAllComponents(Select).find((one) => one.props('name') === title)
   if (!found) throw new Error(`no select is drawn for ${title}`)
@@ -169,7 +164,6 @@ const getMenuGroups = (): readonly string[] =>
     (one) => one.textContent?.trim() ?? '',
   )
 
-/** One choice taken off the open list, by what is written on it. */
 const chooseItem = async (words: string) => {
   const rows = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
   rows.find((one) => one.querySelector('.menu__text')?.textContent?.trim() === words)?.click()

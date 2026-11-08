@@ -20,7 +20,6 @@ const request = {
 
 const { themes } = await import('./theme')
 
-/** What the application answers about a window drawn as designed. */
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
   applied: 'preset/Numen.css',

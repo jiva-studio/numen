@@ -43,9 +43,7 @@ export function getCalibrationNote(state: FloorState, isTooFew: boolean): string
 }
 
 export interface HistogramBar {
-  /** Height as a share of the tallest bin, from 0 to 100. */
   heightPercent: number
-  /** Whether the bin is at or above the threshold. */
   isAbove: boolean
 }
 

@@ -24,7 +24,6 @@ const TABS: readonly Tab[] = [
   { id: AGENT, title: 'Agent' },
 ]
 
-/** The view in the main area and the agent at the trailing edge. */
 const opening = (): State => ({
   root: branch('root', [pane('main', [VIEW]), pane('aside', [AGENT])], [0.72, 0.28]),
   axis: 'horizontal',

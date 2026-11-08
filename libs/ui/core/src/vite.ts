@@ -22,7 +22,6 @@ export const UI_STYLES = fileURLToPath(new URL('../dist/numen-ui.css', import.me
  */
 export const LIGHTNING_CSS = { exclude: Features.LightDark } as const
 
-/** A browser version in the form Lightning CSS takes: the major in the third byte, the minor in the second. */
 const getBrowserVersion = (major: number, minor = 0): number => (major << 16) | (minor << 8)
 
 const TARGETS = {
@@ -45,7 +44,6 @@ export function getNormalCss(css: string): string {
   }).code.toString()
 }
 
-/** The at-rules and the selector a node is nested in, from the outside in. */
 function getContext(node: ChildNode): string {
   // Stryker disable next-line ArrayDeclaration: constant key suffix on both sides of Set lookup is invariant
   const path: string[] = []
@@ -65,7 +63,6 @@ function getContext(node: ChildNode): string {
   return path.join('\n')
 }
 
-/** The key a declaration, or an at-rule without a block, is compared by. */
 function getKey(node: ChildNode): string | null {
   if (node.type === 'decl') return `${getContext(node)}\n${node.prop}:${node.value}`
   // Stryker disable next-line ConditionalExpression: getNormalCss strips comments and rules carry nodes
@@ -85,7 +82,6 @@ function getKeys(root: Root): Set<string> {
   return keys
 }
 
-/** Removes the rules and at-rules left without a declaration. */
 function removeEmpty(container: Container): void {
   // Stryker disable next-line ArrayDeclaration: Rule and AtRule containers with nodes always define container.nodes
   for (const node of [...(container.nodes ?? [])]) {

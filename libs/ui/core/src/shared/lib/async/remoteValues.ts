@@ -64,7 +64,6 @@ export function createWriteOrder() {
 interface Requested<V> {
   readonly token: number
   readonly value: V
-  /** The settled writes once this value was written; `null` while it is in flight. */
   readonly settledAt: number | null
 }
 

@@ -32,10 +32,6 @@ export const roundToPlaces = (value: number, places: number): number => {
   return Math.round(value * scale) / scale
 }
 
-/**
- * The number of whole steps a value is above the floor. A value short of a
- * whole step by no more than a rounding error counts as that whole step.
- */
 const getStepsAbove = (value: number, bounds: Bounds): number => {
   const steps = (value - bounds.min) / bounds.step
   const whole = Math.round(steps)

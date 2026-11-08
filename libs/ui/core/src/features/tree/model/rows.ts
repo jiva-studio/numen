@@ -8,17 +8,10 @@ import { computed, nextTick, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
 
 export interface DrawnRowsState {
-  /** The row the keyboard was last on. */
   readonly here: Ref<RowId | null>
-  /**
-   * The single row that receives focus from the tab key: the last keyboard row, else the
-   * first selected row, else the first row.
-   */
   readonly tabbed: ComputedRef<RowId | null>
-  /** Registers the element rendered for a row. */
   readonly setRowElement: (row: RowId, element: unknown) => void
   readonly getRowElement: (row: RowId) => HTMLElement | null
-  /** The keyboard onto a row, once the rows it moved among are drawn. */
   readonly focusRow: (row: RowId | null, scrollTo?: (index: number) => void) => Promise<void>
 }
 

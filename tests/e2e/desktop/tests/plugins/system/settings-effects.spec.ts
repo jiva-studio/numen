@@ -7,7 +7,6 @@ const NOTES_ID = 'md.numen.notes'
 const PDF_ID = 'md.numen.readers.pdf'
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 
-/** The names of the secrets that have a key stored for the plugin. The key itself is never answered. */
 const readStoredSecrets = async (page: Page, pluginId: string): Promise<string[]> => {
   const answer = await callRPC(page.request, 'SettingsService/GetSettings', {})
   const plugins = (answer['plugins'] ?? []) as { id?: string; storedSecrets?: string[] }[]

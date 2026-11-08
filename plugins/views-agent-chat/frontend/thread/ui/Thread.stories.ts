@@ -156,7 +156,6 @@ interface Position {
   readonly y: number
 }
 
-/** The middle of a word, in the coordinates of the page it is drawn on. */
 const getWordPosition = (root: Element, word: string): Position => {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let node = walk.nextNode(); node; node = walk.nextNode()) {
@@ -172,7 +171,6 @@ const getWordPosition = (root: Element, word: string): Position => {
   throw new Error(`“${word}” is nowhere in the thread`)
 }
 
-/** The same position in the coordinates of the window the story is framed in. */
 const mapToFrame = (point: Position): Position => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) return point
@@ -184,11 +182,6 @@ const mapToFrame = (point: Position): Position => {
   }
 }
 
-/**
- * A drag performed by the browser itself, so the selection it leaves is the browser's
- * own. The positions are in the coordinates of the window the story is framed in,
- * where the pointer is driven.
- */
 const dragAcross = async (from: Position, to: Position): Promise<string | null> => {
   const context = await import('vitest/browser').catch(() => null)
   if (!context) return null

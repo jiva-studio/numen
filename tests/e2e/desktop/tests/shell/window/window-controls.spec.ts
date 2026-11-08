@@ -12,11 +12,9 @@ import { readOwner, writeSetting } from '../../support/vault.js'
 
 const PLEX_ID = 'md.numen.views.plex.graph'
 
-/** The editor of the open note of that title. */
 const getEditor = (page: Page, title: string) =>
   page.getByRole('tabpanel', { name: new RegExp(title) }).locator('.cm-editor')
 
-/** Picks a value in the list a palette command opens on, by the start of its name. */
 const chooseValue = async (page: Page, value: string): Promise<void> => {
   await page.getByRole('option', { name: new RegExp(`^${value}`) }).click()
   await expect(page.getByRole('dialog', { name: 'Search the vault' })).toHaveCount(0)

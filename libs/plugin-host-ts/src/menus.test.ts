@@ -12,7 +12,6 @@ const BOOKS = 'org.example.books'
 
 const look = (title: string, icon = 'star'): CommandLook => ({ title, icon })
 
-/** Placements and the commands the window lists, both replaceable between reads. */
 function setup(
   placements: readonly MenuPlacement[] | undefined,
   commands: Record<string, CommandLook> = {},

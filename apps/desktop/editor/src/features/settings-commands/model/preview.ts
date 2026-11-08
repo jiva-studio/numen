@@ -20,7 +20,6 @@ export interface PreviewDeps {
   readonly applied: Ref<string>
   readonly mode: Ref<Mode>
   readonly settings: Ref<Sizes>
-  /** The theme and the half named, applied at once. */
   readonly applyTheme: (theme: string, half: Mode) => Promise<void>
 }
 

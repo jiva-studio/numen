@@ -37,7 +37,6 @@ vi.mock('../window/useWindowFrame', async () => {
 const TIDE = 'org.example.tide'
 const REEF = 'org.example.reef'
 
-/** A plugin that declares a command with an icon and places it in the title bar. */
 const placeTideChart = () => {
   declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
   declared.menus = [

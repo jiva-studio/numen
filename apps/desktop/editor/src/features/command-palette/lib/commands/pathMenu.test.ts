@@ -3,11 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
 import { createPathCommands } from './pathMenu'
 
-/** What a row of that kind offers, by the identity of each item. */
 const getItemIds = (isNote: boolean, isFolder = false): readonly string[] =>
   createPathCommands({ isNote, isFolder }, false).map((one) => one.id)
 
-/** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (isNote: boolean): readonly string[] =>
   groupItems(createPathCommands({ isNote, isFolder: false }, false)).map(
     (one) => `${one.isRule ? '— ' : ''}${one.id}`,

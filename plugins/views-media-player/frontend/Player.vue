@@ -12,12 +12,9 @@ import { clock } from '@numen/ui'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The current playback position, in milliseconds. */
     at: number
-    /** How long it runs, in milliseconds. */
     length: number
     isPlaying: boolean
-    /** The accessible name of the controls. */
     label?: string
     play?: string
     pause?: string

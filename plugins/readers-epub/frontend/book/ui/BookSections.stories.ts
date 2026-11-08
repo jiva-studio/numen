@@ -48,16 +48,9 @@ const LONG_SECOND = createChapter(PROSE, SHORT_FIRST.span.end)
 const LONG_FIRST = createChapter(PROSE)
 const SHORT_SECOND = createChapter(VERSES, LONG_FIRST.span.end)
 
-/** Returns the offsets of the runs of a section in document order. */
 const getRunOffsets = (chapter: Chapter): number[] =>
   [...chapter.markup.matchAll(/data-offset="(\d+)"/g)].map((match) => Number(match[1]))
 
-/**
- * Renders two sections and loads each one after `READ_DELAY`, as the reader
- * does. `startIn` is the index of the section loaded first; the button
- * "Jump to the second" sets the offset to the second section without a page
- * turn.
- */
 const renderTwoSections =
   (sections: readonly [Chapter, Chapter], startIn: 0 | 1): Render =>
   () => ({
@@ -129,12 +122,6 @@ const getFrontOffset = (canvasElement: HTMLElement) =>
 
 const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 
-/**
- * Waits until the columns are laid out, the fonts are loaded, and the position
- * of the columns and the size of the paper are unchanged for
- * `SETTLED_FRAME_COUNT` frames, so a relayout after font loading does not
- * overlap the next page turn.
- */
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await waitFor(
     async () => {
@@ -162,10 +149,6 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await expect(stableFrameCount).toBe(SETTLED_FRAME_COUNT)
 }
 
-/**
- * Records the left edge of the run at `offset` on every frame where the run is
- * visible: of its first fragment, or of its last with `fragment: 'last'`.
- */
 const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
   const edges: number[] = []
   const read = () => {
@@ -180,24 +163,18 @@ const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' 
   return { edges, stop: () => cancelAnimationFrame(frame) }
 }
 
-/** Returns the current left edge of a run. */
 const readRunLeft = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
   const run = canvasElement.querySelector<HTMLElement>(`[data-offset="${offset}"]`)!
   const rects = run.getClientRects()
   return (fragment === 'first' ? rects[0] : rects[rects.length - 1])!.left
 }
 
-/** Asserts that a left edge lies inside the area. */
 const expectInArea = async (canvasElement: HTMLElement, edge: number) => {
   const box = getArea(canvasElement).getBoundingClientRect()
   await expect(edge).toBeGreaterThanOrEqual(box.left - 1)
   await expect(edge).toBeLessThan(box.right)
 }
 
-/**
- * Presses a key until `isTarget` accepts the front offset, and waits for the
- * offset to change after each key press.
- */
 const turnUntil = async (
   canvasElement: HTMLElement,
   key: '{ArrowRight}' | '{ArrowLeft}',
@@ -213,10 +190,6 @@ const turnUntil = async (
   await expect(isTarget(getFrontOffset(canvasElement))).toBe(true)
 }
 
-/**
- * Returns the edges strictly between the final edge and one spread away from it
- * on the side `from`: the frames of the slide animation.
- */
 const getSlideEdges = (
   edges: readonly number[],
   finalEdge: number,

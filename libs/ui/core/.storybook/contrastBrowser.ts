@@ -24,7 +24,6 @@ import {
 /** The one canvas colours are read on, made when the first is. */
 let paint: CanvasRenderingContext2D | null = null
 
-/** The colour of a pixel painted over a ground, as red, green and blue. */
 function paintOver(colour: string, ground: string): readonly [number, number, number] {
   paint ??= document.createElement('canvas').getContext('2d', { willReadFrequently: true })
   if (!paint) throw new Error('no canvas to read a colour on')
@@ -130,7 +129,6 @@ export async function expectFill(
   return ratio
 }
 
-/** Whether an element, or one around it, is not drawn: invisible, or at no opacity. */
 function isHidden(element: Element): boolean {
   for (let node: Element | null = element; node; node = node.parentElement) {
     const style = getComputedStyle(node)
@@ -139,7 +137,6 @@ function isHidden(element: Element): boolean {
   return false
 }
 
-/** The colour a custom property resolves to where an element is drawn. */
 function getToken(root: Element, token: string): Rgba {
   const probe = document.createElement('div')
   probe.style.backgroundColor = `var(${token})`

@@ -29,7 +29,6 @@ const card = (
   values: readonly { field: string; text: string }[],
 ) => ({ id, section, cardModel: cardModelLink, filled: values })
 
-/** A card of the Root model, named by its root, with its class, present and meaning. */
 const root = (
   id: string,
   section: string,

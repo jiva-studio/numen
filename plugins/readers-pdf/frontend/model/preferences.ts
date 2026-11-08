@@ -6,7 +6,6 @@ import type { PluginContext } from '@numen/plugin-sdk'
 import type { Fit } from '../reader/lib/strip'
 
 export interface PDFReaderPreferences {
-  /** How a document is drawn when it opens. */
   defaultZoom: Fit
 }
 

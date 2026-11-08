@@ -9,7 +9,6 @@ import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@numen/ui'
 
 const props = defineProps<{
-  /** What a `<label for>` names the field by. Without one the field makes up its own. */
   id?: string
   class?: HTMLAttributes['class']
 }>()

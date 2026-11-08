@@ -19,26 +19,17 @@ import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 /** What the panel requires from the host window. */
 export interface NotesPanelDeps {
   readonly open: () => boolean
-  /**
-   * Opens or closes the panel. The window shows one panel at a time, so the
-   * window holds which panel is open, and every panel changes that one state.
-   */
   readonly showPanel: (open: boolean) => void
-  /** The vault the session is on. */
   readonly vault: () => string
   readonly deck: () => string
-  /** What the deck is joined to. */
   readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>
-  /** Shows a message to the user. */
   readonly showNotice: (message: string) => void
-  /** The wikilinks of a text, as the core reads them. */
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
 }
 
 /** The links of one note's body, as the panel draws them. */
 export interface NoteLinks {
   readonly links: readonly LinkPiece[]
-  /** The addresses that reach no note. */
   readonly unresolved: readonly string[]
 }
 

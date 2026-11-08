@@ -30,32 +30,24 @@ const ARROW_DIRECTION = { above: -1, below: 1 } as const
 
 /** One heading at a moment of the opening. */
 export interface DrawnHeading extends HungHeading {
-  /** at its current position now, from the top of what is hung. */
   readonly y: number
   readonly opacity: number
 }
 
 /** What a node hangs, partway open. */
 export interface OpenHeadings {
-  /** Height of the panel behind the headings. */
   readonly height: number
-  /** Opacity of that panel. */
   readonly opacity: number
-  /** The headings standing in the window, in the order they stand. */
   readonly headings: readonly DrawnHeading[]
-  /** Which heading the window relies on, counted from the first. */
   readonly first: number
-  /** Whether the window has headings above it, and headings below it. */
   readonly isAbove: boolean
   readonly isBelow: boolean
-  /** The arrows at either edge, one per direction there is more to scroll to. */
   readonly arrows: readonly Arrow[]
 }
 
 /** An arrow at an edge of the panel, indicating the direction with more headings. */
 export interface Arrow {
   readonly at: 'above' | 'below'
-  /** The three corners it is drawn through, from the middle of the node. */
   readonly points: readonly Position[]
 }
 
@@ -77,7 +69,6 @@ export function scrollBy(
   return { by: lineCount, left: pixels - lineCount * suspended.headingHeight }
 }
 
-/** What one of a wheel's own units evaluates to in pixels: a line, or a window. */
 function getStride(suspended: NodeHeadings, mode: number): number {
   if (mode === LINES) return suspended.headingHeight
   if (mode === WINDOWS) return suspended.visibleCount * suspended.headingHeight
@@ -147,10 +138,6 @@ export function getOpenHeadings(
   }
 }
 
-/**
- * An arrow at one edge of the panel, pointing in the direction with more to
- * scroll to. It is drawn near the middle of the node's headings.
- */
 function createArrow(suspended: NodeHeadings, down: number, edge: Arrow['at']): Arrow {
   const direction = ARROW_DIRECTION[edge]
   const middle = suspended.offset

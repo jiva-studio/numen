@@ -30,7 +30,6 @@ interface Mount {
   instance?: ViewInstance | undefined
 }
 
-/** The element a view is mounted in, laid out to fill the element the mounting plugin passed. */
 function createRoot(): HTMLElement {
   const root = document.createElement('div')
   root.className = 'plugin-view'
@@ -44,7 +43,6 @@ function createRoot(): HTMLElement {
   return root
 }
 
-/** The stylesheet of the declaring plugin as a link, for a plugin whose sheet the root did not adopt. */
 function createStyle(pluginId: string): HTMLElement[] {
   const href = getPluginStyle(pluginId)
   if (!href) return []

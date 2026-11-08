@@ -21,7 +21,6 @@ interface Run {
   readonly text: string
 }
 
-/** The runs the corpus carries, in the order it writes them. */
 const getRuns = (): readonly Run[] => {
   const target = new DOMParser().parseFromString(spine, 'text/html')
   const raw = [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
@@ -47,7 +46,6 @@ const span = () => {
   return { start: first.at, end: last.at + countBytes(last.text) }
 }
 
-/** A reader rendering the corpus, in a jsdom environment that performs no layout. */
 const readSpine = async () => {
   const wrapper = mount(Book, {
     props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().start },
@@ -58,14 +56,12 @@ const readSpine = async () => {
   return wrapper
 }
 
-/** One link of the document pressed, and the press as the page left it. */
 const press = async (wrapper: Awaited<ReturnType<typeof readSpine>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   link.element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   await wrapper.vm.$nextTick()
 }
 
-/** The offsets the reader requested navigation to, in request order. */
 const getMoves = (wrapper: Awaited<ReturnType<typeof readSpine>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 

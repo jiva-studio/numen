@@ -10,7 +10,6 @@ import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 /** An image standing in the text itself. */
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 
-/** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
 const stripControls = (url: string): string =>
   Array.from(url)
     .filter((character) => character.charCodeAt(0) > 0x20)
@@ -25,13 +24,6 @@ const canLinkTo = (url: string): boolean => {
   return named === null || SCHEMES.has(named)
 }
 
-/**
- * A picture a card may display: its own bytes, or a file this window serves.
- *
- * An address off the machine is a network request as soon as the card is
- * rendered, which reveals to the deck's author that the deck was read, and from
- * where.
- */
 const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
@@ -40,7 +32,6 @@ const canShow = (url: string): boolean => {
   return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 
-/** A style with every declaration that is not drawn with dropped. */
 const filterStyles = (value: string): string =>
   value
     .split(';')
@@ -59,7 +50,6 @@ const filterStyles = (value: string): string =>
     })
     .join('; ')
 
-/** Comments go: what a parser makes of one is not what the next parser makes. */
 const stripComments = (root: ParentNode & Node): void => {
   const walk = (node: Node): void => {
     for (const child of [...node.childNodes]) {
@@ -70,12 +60,10 @@ const stripComments = (root: ParentNode & Node): void => {
   walk(root)
 }
 
-/** Whether a tag may carry an attribute of that name. */
 const canCarry = (tag: string, name: string): boolean =>
   // Stryker disable next-line ArrayDeclaration: the mutated value is ["Stryker was here"], a name with spaces that no parsed attribute has.
   ANY.has(name) || (OWN[tag] ?? []).includes(name)
 
-/** Whether an address an attribute names is one a card may reach. */
 const canPointAt = (name: string, value: string): boolean => {
   if (name === 'href') return canLinkTo(value)
   if (name === 'src') return canShow(value)
@@ -100,7 +88,6 @@ const strip = (element: Element): void => {
   }
 }
 
-/** One reading of the text, with everything not drawn with taken out of it. */
 const pass = (html: string): string => {
   const readItem = new DOMParser().parseFromString(html, 'text/html')
   stripComments(readItem.body)

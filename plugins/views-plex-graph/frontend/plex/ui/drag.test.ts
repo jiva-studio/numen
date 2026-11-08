@@ -20,10 +20,6 @@ const DRAGGED = ['physics/Entropy.md']
 /** Several at once, which the plex draws one line and one shape for. */
 const SEVERAL = ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md']
 
-/**
- * One plex unit to the pixel, origin in the middle, as the browser draws it.
- * Defined explicitly because jsdom performs no layout and has no matrices.
- */
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
     a: 1,
@@ -54,14 +50,12 @@ const mountPlex = (props: Partial<PlexProps> = {}) => {
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
 
-/** The pointer dragged to a place on the page, and let go there. */
 async function letGo(plex: ReturnType<typeof mountPlex>, x: number, y: number) {
   window.dispatchEvent(pointer('pointermove', x, y))
   window.dispatchEvent(pointer('pointerup', x, y))
   await plex.vm.$nextTick()
 }
 
-/** Where a node of this relation is drawn, in the page's own coordinates. */
 const getNode = (plex: ReturnType<typeof mountPlex>, relation: string) => {
   const coord = plex
     .get(`[aria-label$=", ${relation}"]`)

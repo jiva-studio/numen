@@ -11,7 +11,6 @@ export interface CardFieldTarget {
 }
 
 export interface DeckContext {
-  /** Writes one value of a card; `target` identifies which of a field's values. */
   readonly write: (card: string, target: CardFieldTarget, text: string) => void
 }
 

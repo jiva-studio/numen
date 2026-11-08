@@ -27,7 +27,6 @@ type Story = StoryObj<typeof meta>
 /** Every key that can be held, in the order the table declares them. */
 const EVERY = Object.keys(ICONS) as readonly PaletteIcon[]
 
-/** A row of caps, so a page of them can be looked at side by side. */
 const row = (caps: readonly PaletteKeys[]) => ({
   components: { KeyCap },
   setup: () => ({ caps }),

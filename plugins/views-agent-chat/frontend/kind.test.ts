@@ -10,7 +10,6 @@ import { AGENT, createAgentKind } from './kind'
 import { createHost, type HostOptions } from './fixtures'
 import { useAgentConversation, type AgentTabState } from './model/useAgentConversation'
 
-/** The conversations an agent tab was created over, and what each received. */
 const window = (options: HostOptions = {}) => {
   const fixture = createHost(options)
   const conversations: { said: ReturnType<typeof ref<Turn[]>>; stopped: string[] }[] = []
@@ -36,7 +35,6 @@ const window = (options: HostOptions = {}) => {
   return { ...fixture, ...chats, open, conversations }
 }
 
-/** A line of the conversation. */
 const turn = (id: string, voice: 'prompt' | 'response', text: string): Turn => ({
   id,
   voice,

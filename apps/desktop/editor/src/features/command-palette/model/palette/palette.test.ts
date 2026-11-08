@@ -23,23 +23,16 @@ import type { NameMatch, SearchState } from '../search/search'
 import { WORDS as words } from '@/shared/words'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
 
-/**
- * Chooses a drawn row of the step by the id and the action the row itself carries: the
- * row at `which` among the drawn rows, or the row with that id. A row that is not drawn
- * is chosen by its id alone.
- */
 function chooseRow(commands: Commands, which: number | string = 0) {
   const items = commands.groups.value.flatMap((group) => group.items)
   const row = typeof which === 'number' ? items[which] : items.find((one) => one.id === which)
   return commands.chooseItem(row?.id ?? String(which), row?.actions?.[0]?.id ?? '')
 }
 
-/** What is in front, which a test moves under the commands. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'note',
@@ -51,7 +44,6 @@ const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   ...override,
 })
 
-/** One name as the vault answers one. */
 const name = (
   path: string,
   title: string,
@@ -66,7 +58,6 @@ const name = (
   type,
 })
 
-/** One vault as the list answers one. */
 const vault = (id: string, name: string, isMissing = false): Vault => ({
   id,
   name,
@@ -74,16 +65,11 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   isMissing: isMissing,
 })
 
-/** The vaults the installation holds, with the one in front named. */
 const installation = (...vaults: readonly Vault[]): VaultList => ({
   vaults,
   showing: 'physics',
 })
 
-/**
- * What the window calls the notes it holds, and which of them a tab holds. A
- * test moves a note under an open step by writing here.
- */
 const createLookup = () => {
   const titles = ref<Record<string, string>>({ 'physics/Ontology.md': 'Ontology' })
   const tabs = ref<Record<string, string>>({})
@@ -118,7 +104,6 @@ const SETTING_COMMANDS: readonly Command[] = [
   { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
 ]
 
-/** The step lists of the window and every row previewed by a step. */
 const createLists = (commandLists: Record<string, readonly StepGroup[]>) => {
   const lists = ref(commandLists)
   const displayedItems: string[] = []
@@ -131,7 +116,6 @@ const createLists = (commandLists: Record<string, readonly StepGroup[]>) => {
   return { paletteLists, lists, displayedLists: displayedItems }
 }
 
-/** The commands over the test's current state, without a pending action. */
 const createPalette = (
   override: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
@@ -171,13 +155,11 @@ const createPalette = (
   }
 }
 
-/** A moment for the list of vaults to come back. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const getItemIds = (groups: ReturnType<typeof createPalette>['commands']['groups']) =>
   Object.fromEntries(groups.value.map((group) => [group.id, group.items.map((item) => item.id)]))
 
-/** The message one group shows while it has no items. */
 const getEmptyMessage = (
   groups: ReturnType<typeof createPalette>['commands']['groups'],
   id: string,
@@ -1032,10 +1014,6 @@ describe('a vault taken off the list', () => {
   })
 })
 
-/**
- * The commands over a vault that responds when the test resolves it, and a
- * pending action that ends when the test resolves it. Nothing is opened.
- */
 const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = {}) => {
   const names: Deferred<readonly NameMatch[]>[] = []
   const lists: Deferred<VaultList>[] = []
@@ -1073,7 +1051,6 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
   return { commands, names, lists, holds, hold, requests: request }
 }
 
-/** The state of the one group a step renders. */
 const describeGroup = (groups: ReturnType<typeof createPalette>['commands']['groups']) => {
   const group = groups.value[0]
   return {

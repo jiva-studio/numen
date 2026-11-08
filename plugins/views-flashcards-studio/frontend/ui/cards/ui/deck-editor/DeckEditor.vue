@@ -30,17 +30,11 @@ import type { CardModel } from '../../lib/card'
 // --- Props & Emits ---
 const props = withDefaults(
   defineProps<{
-    /** The cards, in the order they are drawn. */
     cards: readonly DeckCard[]
-    /** The card models a card may be cut by. */
     cardModels: readonly CardModel[]
-    /** The sections, in the order they stand in the deck. */
     sections?: readonly DeckSection[]
-    /** What the grid is announced as. */
     name?: string
-    /** What the caller found wrong with the cards it handed in. */
     wrong?: DeckProblems
-    /** The words it is drawn with. */
     words?: DeckWords
   }>(),
   { sections: () => [], name: 'Deck', wrong: () => NO_DECK_PROBLEMS, words: () => DECK_WORDS },
@@ -87,7 +81,6 @@ provide(DECK_CONTEXT, {
   write: (card, target, text) => emit('write', card, target.field, target.index, text),
 })
 
-// --- Handlers ---
 function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
   hover(targetAt, event)
 }

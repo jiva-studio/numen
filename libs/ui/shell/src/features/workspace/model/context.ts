@@ -6,11 +6,8 @@ import type { InjectionKey, Ref } from 'vue'
 import type { NodeId, Tab, TabId } from '../lib/node'
 
 export interface WorkspaceContext {
-  /** The tab an identity refers to, or undefined for an identity absent from the workspace. */
   readonly findTab: (id: TabId) => Tab | undefined
-  /** The pane a tab opens into. */
   readonly focus: NodeId
-  /** The minimum size at which a pane is worth drawing. */
   readonly minimum: number
   readonly choose: (tab: TabId) => void
   readonly close: (tab: TabId) => void

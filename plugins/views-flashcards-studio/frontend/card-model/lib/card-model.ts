@@ -17,10 +17,8 @@ import {
 
 /** One template as the window holds it: the file's content, under its own identity. */
 export interface BufferTemplate {
-  /** The identity the window addresses it by, minted at every reading. */
   readonly id: string
   readonly name: string
-  /** The prose between the template's heading and its first side. */
   readonly preamble: string
   readonly front: string
   readonly back: string

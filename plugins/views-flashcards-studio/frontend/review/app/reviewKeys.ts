@@ -17,36 +17,21 @@ export type ReviewScreen = 'decks' | 'session'
 
 /** What the keys ask of the review: what it is showing, and what it can do. */
 export interface ReviewKeysDeps {
-  /** Which screen is on. */
   readonly getScreen: () => ReviewScreen
-  /** The vault whose decks are open, and nothing before it is counted. */
   readonly getChosenVault: () => VaultCardsDue | null
-  /** The preset each deck is scheduled by, by the path the deck is filed under. */
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
-  /** Whether the answer is already showing. */
   readonly isShown: () => boolean
   readonly getShowing: () => 'reading' | 'here' | 'asking'
-  /** Sit down to one deck, or to the whole vault under an empty path. */
   readonly start: (deck: string) => void
-  /** Turn the card over. */
   readonly show: () => void
-  /** Answers the current card. */
   readonly answer: (how: Grade) => void
-  /** Take the last answer back. */
   readonly takeBack: () => void
-  /** Out of the session and back to the decks. */
   readonly leave: () => void
-  /** Out of the vault, back to the window's list of vaults. */
   readonly goToVaults: () => void
-  /** Opens or closes the panel for questions about a card. */
   readonly toggleAgent: () => void
-  /** The panel the deck's notes are read in, brought in or taken away. */
   readonly toggleNotes: () => void
-  /** The reading moved a page, forward or back. */
   readonly scrollPage: (back: boolean) => void
-  /** Closes the panel for questions about a card. */
   readonly closeAgent: () => void
-  /** The panel the deck's notes are read in, put away. */
   readonly closeNotes: () => void
 }
 

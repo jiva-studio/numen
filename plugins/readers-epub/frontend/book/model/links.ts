@@ -11,9 +11,7 @@ import type { SettledBookProps } from '../lib/props'
 
 /** What the reader reports when a link is followed. */
 export interface BookLinkReporter {
-  /** A link to another document of the book, named as the archive names it. */
   readonly reportMove: (pos: number) => void
-  /** A link targetLink to another document of the book, named as the archive names it. */
   readonly reportFollow: (path: string) => void
 }
 

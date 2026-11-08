@@ -27,11 +27,8 @@ import { fieldRows, CARD_MODEL_WORDS, type CardModelWords } from '../../../lib/c
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The card model's fields, each named once, in order. */
     fields: readonly string[]
-    /** What the caller found wrong with each field, under the name it is declared by. */
     wrong?: Problems | null
-    /** The words they are drawn with. */
     words?: CardModelWords
   }>(),
   { wrong: null, words: () => CARD_MODEL_WORDS },
@@ -89,11 +86,9 @@ const onAdd = (): void => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** Identifier of the element that lists the problems of a name. */
 const objectionsId = (targetId: string): string =>
   `${uid}-${encodeURIComponent(targetId)}-objections`
 
-/** What is wrong with one field, and nothing where nothing is. */
 const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
 </script>
 

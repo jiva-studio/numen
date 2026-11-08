@@ -37,7 +37,6 @@ const managed = computed(
   () => createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])[0],
 )
 
-/** The switch shows what the vault answered; it moves when the answer to its write arrives. */
 const readEnabled = (): unknown =>
   (installation.value.getConfirmedSetting ?? installation.value.getSetting)([
     props.plugin.id,

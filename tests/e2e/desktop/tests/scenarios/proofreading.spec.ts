@@ -11,7 +11,6 @@ const MOCK_TRANSCRIPT = /Mock transcribed text/
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'
 
-/** Waits until the palette offers deleting the version a proofreading made of the open file. */
 const expectProofreadVersion = async (page: Page): Promise<void> => {
   await expect(async () => {
     await page.keyboard.press('Escape')

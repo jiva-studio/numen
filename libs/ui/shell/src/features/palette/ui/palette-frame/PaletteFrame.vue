@@ -10,9 +10,7 @@
 defineOptions({ inheritAttrs: false })
 
 defineProps<{
-  /** What the panel is announced as. */
   name: string
-  /** Where it is drawn. */
   to: string | HTMLElement
 }>()
 

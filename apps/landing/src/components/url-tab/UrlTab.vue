@@ -29,7 +29,6 @@ const props = defineProps<{
   readonly path?: string
   readonly file?: string
   readonly state?: Partial<ReaderTabState> & { file?: string; [key: string]: unknown }
-  /** What the tab reads the media through. The window's own by default. */
   readonly recordings?: Recordings
   readonly how?: TranscriptOptions
 }>()

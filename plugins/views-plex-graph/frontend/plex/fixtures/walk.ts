@@ -12,7 +12,6 @@ import type { PlexNode } from '../lib/node'
 interface GraphNode {
   readonly title: string
   readonly parents?: readonly string[]
-  /** Untyped by relation: an association, not a place in the hierarchy. */
   readonly jumps?: readonly string[]
 }
 
@@ -47,7 +46,6 @@ const getParents = (id: string): readonly string[] => GRAPH[id]?.parents ?? []
 const getChildren = (id: string): string[] =>
   Object.keys(GRAPH).filter((other) => getParents(other).includes(id))
 
-/** The other children of my parents. Worked out here, never by the plex. */
 const getSiblings = (id: string): string[] => {
   const observed = new Set<string>()
   for (const parent of getParents(id)) {
@@ -58,7 +56,6 @@ const getSiblings = (id: string): string[] => {
   return [...observed]
 }
 
-/** Everything that points at me by association, and everything I point at. */
 const getJumps = (id: string): string[] => {
   const mine = GRAPH[id]?.jumps ?? []
   const theirs = Object.keys(GRAPH).filter((other) => (GRAPH[other]?.jumps ?? []).includes(id))

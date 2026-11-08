@@ -34,9 +34,7 @@ export type { DeckTabState }
 /** What the deck tabs of a window are made from. */
 export interface DeckTabsOptions {
   readonly buffers: BufferHost
-  /** The window lets go of a tab that took its own close. */
   readonly closeTab: (id: string) => void
-  /** Where the failure of a background operation is shown. Without one the failure is not shown. */
   readonly writeMessage?: MessageWriter | undefined
 }
 

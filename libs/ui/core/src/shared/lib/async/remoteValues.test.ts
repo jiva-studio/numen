@@ -3,7 +3,6 @@ import { shallowRef, watch } from 'vue'
 
 import { createRemoteValues, createWriteOrder } from './remoteValues'
 
-/** A promise settled from outside, and the values it was sent with. */
 const createDeferred = () => {
   let resolve: () => void = () => undefined
   let reject: (error: unknown) => void = () => undefined
@@ -14,7 +13,6 @@ const createDeferred = () => {
   return { promise, resolve, reject }
 }
 
-/** A remote store of one switch: its confirmed value, the batches sent, and every value shown. */
 const createSwitch = (confirmed: boolean) => {
   const remote = shallowRef(confirmed)
   const batches: {

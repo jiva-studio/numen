@@ -16,7 +16,6 @@ import type { CardModel } from '../../../lib/card'
 interface Corpus {
   readonly card: DeckCard
   readonly cut: CardModel | null
-  /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
@@ -156,7 +155,6 @@ const CORPORA = {
 
 type Corpora = keyof typeof CORPORA
 
-/** The one card of a corpus, laid out against the card model that cuts it. */
 const createTile = (corpus: Corpus): Tile => {
   const cardGrid = getGrid(
     { cards: [corpus.card], sections: [], cardModels: corpus.cut ? [corpus.cut] : [] },
@@ -168,9 +166,7 @@ const createTile = (corpus: Corpus): Tile => {
 
 interface Knobs {
   corpus: Corpora
-  /** How wide the window drawing the card is. */
   width: string
-  /** Given by the story, and nothing a reader turns. */
   tile?: never
   wrong?: never
   wrongUnder?: never

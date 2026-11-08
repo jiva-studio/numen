@@ -19,7 +19,6 @@ import * as create from './create'
 
 export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
 
-/** Reports a failed background operation of the tab through the window's error display. */
 const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
   deps.showError(formatErrorMessage(error))
 }
@@ -79,7 +78,6 @@ interface FileMenuDeps {
   isNoteAt: (path: string) => boolean
 }
 
-/** The entry for a path requested from a menu, and a non-note file where the tree has none. */
 const getMenuEntry = (list: FileTree, path: string): Entry =>
   list.getEntryAt(path) ?? {
     path,

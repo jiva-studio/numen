@@ -17,12 +17,9 @@ import { DARK, expectDark } from '../../../../fixtures/theme'
 
 interface Corpus {
   readonly template: CardModelTemplate
-  /** The fields the card model declares, which are what may be written into a half. */
   readonly fields: readonly string[]
   readonly sample?: readonly FieldValue[]
-  /** The names the other templates carry. */
   readonly taken?: readonly string[]
-  /** What the vault reading the file found wrong with this template. */
   readonly wrong?: readonly string[]
 }
 
@@ -98,9 +95,7 @@ type Corpora = keyof typeof CORPORA
 
 interface Knobs {
   corpus: Corpora
-  /** How wide the window drawing the template is. */
   width: string
-  /** Given by the story, and nothing a reader turns. */
   template?: never
   fields?: never
   taken?: never

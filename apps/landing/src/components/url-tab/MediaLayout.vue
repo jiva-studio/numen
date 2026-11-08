@@ -20,9 +20,7 @@ function measureRect(el: HTMLElement): DOMRect {
 const props = withDefaults(
   defineProps<{
     state: TranscriptState
-    /** Whether the media is the whole of the strip and carries no controls beside it. */
     isFramed?: boolean
-    /** What the menu at the end of the strip offers, and nothing where it offers none. */
     menuItems?: readonly MenuItem[]
     isPlaying?: boolean | undefined
   }>(),

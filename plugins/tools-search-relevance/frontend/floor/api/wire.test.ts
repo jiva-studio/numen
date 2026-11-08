@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { createState } from '../model/fixtures'
 import { createFloorClient } from './wire'
 
-/** An API whose every method answers the value, or the failure given. */
 function createFakeApi(answer: { value: unknown } | { error: { code: string; message: string } }) {
   const call = vi.fn(async () =>
     'value' in answer

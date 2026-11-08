@@ -7,7 +7,6 @@ interface Stage {
   readonly scrollTo: ReturnType<typeof vi.fn<(options: ScrollToOptions) => void>>
 }
 
-/** A row element whose scroll offset is set by the test. */
 const createStage = (scrollLeft: number): Stage => {
   const element = document.createElement('div')
   Object.defineProperty(element, 'scrollLeft', { value: scrollLeft, writable: true })
@@ -155,7 +154,6 @@ interface Captured {
   readonly release: ReturnType<typeof vi.fn<(id: number) => void>>
 }
 
-/** Pointer capture on the element, which jsdom does not have. */
 const createCapture = (element: HTMLElement, holds = false): Captured => {
   const has = vi.fn<(id: number) => boolean>(() => holds)
   const activeSet = vi.fn<(id: number) => void>()

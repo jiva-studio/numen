@@ -5,11 +5,8 @@ import type { PaletteShortcut } from '../lib/keys'
 import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
-  /** The actions with a key binding, in display order. */
   hinted: readonly PaletteShortcut[]
-  /** The keystroke that opens the action panel, as this machine reports it. */
   actionKey: PaletteKeys
-  /** What the action panel is called. */
   name: string
 }>()
 </script>

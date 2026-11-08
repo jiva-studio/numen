@@ -49,7 +49,6 @@ const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 const leaving = useTemplateRef<HTMLElement>('leaving')
 
-/** The near edge of a box, which every place across the columns is read from. */
 const getEdge = (of: HTMLElement) => measureRect(of).left
 
 const links = createBookLinks(props, {
@@ -76,15 +75,10 @@ const hand = createBookPointer({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-/** A picture arrives after the columns were read, which sets the text again. */
 const onArrival = () => layout.settleKept()
 
 const onFollow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
-/**
- * A key the tab caught. Turning belongs to whatever holds the book, so the
- * page it turns is answered for and the key is not listened for here.
- */
 const onKey = (event: KeyboardEvent): boolean => {
   const way = getPageNavigationAction(event.key)
   if (!way) return false

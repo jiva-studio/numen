@@ -12,14 +12,12 @@ const SHOW_IN_PLEX = 'Show note in plex'
 /** A note of the vault the scenarios share, which the plex does not have in focus when the window opens. */
 const NOTE = 'Entropy'
 
-/** Opens the window without waiting for the plex, which a disabled plugin does not draw. */
 const openWindow = async (page: Page): Promise<void> => {
   await forgetOpenTabs(page.request)
   await page.goto('/')
   await waitForWindow(page)
 }
 
-/** Searches for the note by its name and puts the highlight on its row. */
 const searchForNote = async (page: Page) => {
   await page.keyboard.press('Control+k')
   const field = getPaletteField(page)
@@ -36,7 +34,6 @@ const searchForNote = async (page: Page) => {
   await expect(row).toHaveAttribute('aria-selected', 'true')
 }
 
-/** Opens the panel of actions over the row in front and gives the rows of it. */
 const openActions = async (page: Page) => {
   await page.keyboard.press('Control+k')
   const rows = page.locator('[data-actions="list"] [role="option"]')
@@ -44,7 +41,6 @@ const openActions = async (page: Page) => {
   return rows
 }
 
-/** Turns the plugin on or off on its page of the settings. */
 const setPlexEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })

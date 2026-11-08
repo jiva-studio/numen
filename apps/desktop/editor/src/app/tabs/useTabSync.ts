@@ -13,13 +13,10 @@ import type { TabPathSync } from '../ports/vault'
 export interface TabSyncDeps {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab'>
   tabLinks: Pick<TabLinksState, 'getGroupOf' | 'groups'>
-  /** Sends a path sync from a tab of this window to the other windows. */
   sendSync: (sync: { sourceTabId: string; path: string; title: string }) => Promise<void>
-  /** Receives navigate failures and rejected syncs. */
   onError: (error: unknown) => void
 }
 
-/** Moves single tabs of this window and keeps the path each one shows. */
 function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' | 'onError'>) {
   /**
    * Path each tab was moved to by a sync. A report of that path from the tab

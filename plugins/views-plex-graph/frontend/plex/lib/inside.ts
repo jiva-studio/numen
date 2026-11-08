@@ -21,7 +21,6 @@ const PAD = 0.25
 export interface PlexHeading {
   readonly id: string
   readonly text: string
-  /** Depth of the heading. Only the order of the levels present is read. */
   readonly level: number
 }
 
@@ -29,47 +28,29 @@ export interface PlexHeading {
 export interface HungHeading {
   readonly id: string
   readonly text: string
-  /** How far its words are set in from the edge. */
   readonly indent: number
-  /** Where it rests, from the top of what is hung. */
   readonly at: number
 }
 
 /** What a node hangs, settled. */
 export interface NodeHeadings {
-  /** The edge they come out from, from the middle of the node. */
   readonly top: number
   readonly headingHeight: number
-  /** Clearance around them, so none touches an edge. */
   readonly pad: number
-  /** How many stand in the window at once. The rest are scrolled to. */
   readonly visibleCount: number
-  /** As wide as the longest heading requires, clamped inside the window. */
   readonly width: number
-  /** Distance from their midpoint to where the node is placed. */
   readonly offset: number
   readonly headings: readonly HungHeading[]
-  /** How deep they stand once they are all the way open. */
   readonly height: number
 }
 
 /** What settling where and how wide the headings are drawn needs to know. */
 export interface HeadingsDeps {
-  /**
-   * The width one heading's box needs for its words, padding included. Where
-   * there is nothing to measure text with, the headings take the node's own box.
-   */
   readonly measure?: ((text: string) => number) | undefined
   readonly viewport: Size
-  /** Clearance from the window edge, so nothing touches it. */
   readonly margin: number
 }
 
-/**
- * How far in each level present is set, by at its current position among the others: a
- * note whose headings begin at the second level is set in from the edge as one
- * beginning at the first.
- */
 function getIndents(headings: readonly PlexHeading[], step: number): Map<number, number> {
   const levels = [...new Set(headings.map((heading) => heading.level))].sort((a, b) => a - b)
   return new Map(levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * step]))
@@ -131,12 +112,6 @@ interface HeadingsWidthContext {
   readonly deps: HeadingsDeps
 }
 
-/**
- * The width of the headings and its position: the width the longest heading
- * requires, never narrower than the node's own box and never exceeding the
- * window. It grows about the node's midpoint and shifts back inside the window
- * where the midpoint leaves no space to grow.
- */
 function getHeadingsWidth(
   node: PlacedNode,
   suspended: readonly HungHeading[],

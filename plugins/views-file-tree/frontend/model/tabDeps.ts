@@ -15,7 +15,6 @@ import type { FilesTabDeps } from '../types'
 export interface FileTreeHost {
   readonly workspace: WorkspaceHost
   readonly files: VaultFiles
-  /** What hands data dragged in from outside the window to the plugin that takes it, where the host offers it. */
   readonly drops?: DropHost
 }
 

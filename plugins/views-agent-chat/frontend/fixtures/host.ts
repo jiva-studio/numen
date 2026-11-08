@@ -15,17 +15,11 @@ import type { AgentChatHost } from '../model/tabDeps'
 import { createLinkResolver } from './links'
 
 export interface HostOptions {
-  /** The note the window relies on. */
   readonly focus?: NoteRef
-  /** The vault path for each written name. */
   readonly notes?: Readonly<Record<string, string>>
-  /** The models the settings list, by the path they are listed at. */
   readonly models?: Readonly<Record<string, readonly AgentModel[]>>
-  /** The settings kept, by their path. */
   readonly settings?: Readonly<Record<string, unknown>>
-  /** The depth of reasoning the plugin setting keeps. */
   readonly reasoning?: string
-  /** Why the agent cannot be reached. */
   readonly unreachable?: string
 }
 

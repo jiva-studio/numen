@@ -9,7 +9,6 @@
 import { Icon } from '../icon'
 
 defineProps<{
-  /** What it is called, read aloud and shown on hovering. */
   label: string
 }>()
 

@@ -21,7 +21,6 @@ const WORDS: UnsavedChangesWords = {
 
 const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '.repeat(8)}.md`
 
-/** One note standing, with the three answers written down as they are given. */
 const conflict = (path: string): ConflictPrompt => ({
   note: path,
   keep: fn(() => Promise.resolve()),
@@ -41,10 +40,8 @@ type Story = StoryObj<typeof meta>
 
 const notice = (canvas: HTMLElement) => within(canvas).queryByRole('alertdialog')
 
-/** The rows, one per note still unwritten. */
 const notes = (canvas: HTMLElement) => within(canvas).getAllByRole('listitem')
 
-/** Every way out of every note standing. */
 const getAnswers = (canvas: HTMLElement) => within(canvas).getAllByRole('button')
 
 /** Two notes, each with the three ways out of it. */

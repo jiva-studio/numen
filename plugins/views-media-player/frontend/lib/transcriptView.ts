@@ -14,7 +14,6 @@ export interface TranscriptViewOptions {
   readonly isEditable: boolean
   readonly label: string
   readonly extensions: Extension
-  /** Called with the whole text after each edit by the user. */
   readonly onChange: (text: string) => void
   readonly onSave: () => void
 }

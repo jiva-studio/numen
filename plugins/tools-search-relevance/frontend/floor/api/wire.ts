@@ -4,7 +4,6 @@
 import { createApi, type Api, type ApiError } from '@numen/plugin-sdk'
 import { SERVICE, type FloorClient, type Methods } from './relevance'
 
-/** The error the panel shows for a failed method: the code and the text the backend gave. */
 function createFailure(error: ApiError): Error {
   return new Error(`[${error.code}] ${error.message}`)
 }

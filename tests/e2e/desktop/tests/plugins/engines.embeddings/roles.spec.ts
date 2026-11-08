@@ -13,7 +13,6 @@ const INDEXED_WITHIN_MS = 45_000
 const NOTE_TEXT = 'A measure of uncertainty'
 const QUERY = 'uncertainty'
 
-/** Reads every text the mock model was given, in the order of its calls. */
 const readTexts = (log: string): string[] => {
   if (!fs.existsSync(log)) return []
   return fs

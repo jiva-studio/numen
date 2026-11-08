@@ -31,7 +31,6 @@ import { getWikilinkMarks } from './wikilinks'
  */
 const margin = 2000
 
-/** The lines the viewport shows, whole. */
 const onScreen = (view: EditorView) => {
   const ranges = view.visibleRanges
   const first = ranges[0]
@@ -41,7 +40,6 @@ const onScreen = (view: EditorView) => {
   return { from: doc.lineAt(first.from).from, to: doc.lineAt(last.to).to }
 }
 
-/** Those lines with a margin of them either side, which is what is drawn for. */
 const getDrawnRange = (view: EditorView) => {
   const observed = onScreen(view)
   if (!observed) return null
@@ -66,7 +64,6 @@ const createBlocks = (state: EditorState): Blocks => ({
 const isSelected = (selection: EditorSelection, node: BlockNode) =>
   selection.ranges.some((range) => range.from <= node.to && range.to >= node.from)
 
-/** Whether a changed range overlaps the node. `start` is the offset in `ranges` where the range bounds begin. */
 const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
   // Stryker disable next-line EqualityOperator: a read past the last range is undefined, and no comparison with it holds
   for (let i = 0; i < ranges.length; i += 4) {
@@ -77,11 +74,6 @@ const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => 
   return false
 }
 
-/**
- * Whether the marks of `was` are still valid after the transaction: the same
- * tables and rules are written in the same places, no change overlaps any of
- * them, and the selection is in the same ones.
- */
 const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) => {
   if (was.nodes.length !== nodes.length) return false
 
@@ -104,7 +96,6 @@ const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) 
   })
 }
 
-/** The marks of `was`, standing where the changes have carried them. */
 const mapBlocks = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction): Blocks => {
   if (tr.changes.empty) return nodes === was.nodes ? was : { marks: was.marks, nodes }
 
@@ -141,7 +132,6 @@ export const wholeLines = StateField.define<Blocks>({
 export const live = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet
-    /** The span the current marks were drawn for. */
     span: { from: number; to: number } | null
 
     constructor(view: EditorView) {

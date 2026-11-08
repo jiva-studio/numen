@@ -30,7 +30,6 @@ afterEach(() => {
   mounted = null
 })
 
-/** The sheet the theme lays into the page once a view is painted with it. */
 function getSheet(): string {
   mounted = new EditorView({ state: EditorState.create({ extensions: [theme] }) })
   const sheets = [...document.head.querySelectorAll('style')]
@@ -39,7 +38,6 @@ function getSheet(): string {
   return sheets.join('\n')
 }
 
-/** Everything standing before a block of declarations. */
 const selectors = (css: string): readonly string[] =>
   [...css.matchAll(/(?:^|[}\n])\s*([^{}@\n][^{}]*?)\s*\{/g)].map((found) =>
     (found[1] as string).replace(/\s+/g, ' ').trim(),

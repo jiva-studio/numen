@@ -10,7 +10,6 @@ import { getTabs, mountWindow } from '@/testing/window'
 
 const editorSrcDir = resolve(import.meta.dirname, '../..')
 
-/** Lists all files under dir recursively, skipping tests, stories, and testing mocks. */
 function listHostSources(dir: string): string[] {
   const sources: string[] = []
   for (const entry of readdirSync(dir)) {

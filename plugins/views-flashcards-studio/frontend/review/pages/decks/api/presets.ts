@@ -21,7 +21,6 @@ export interface PresetsClient {
           title: string
           settings?: SettingsMessage | undefined
           problems: readonly string[]
-          /** Why it schedules nothing on the day it was read in. */
           stopsOn: StopReason
         }
       | undefined

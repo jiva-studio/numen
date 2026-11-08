@@ -22,11 +22,8 @@ interface Knobs {
   relation: PlexNodeRelation
   width: number
   height: number
-  /** Below one, a node is on its way in or out and cannot be chosen. */
   opacity: number
-  /** What the node is to a gesture. One setting, because it is one of these. */
   gestureRole: GestureRole
-  /** Fill the icon slot. What goes in it is the application's, not the plex's. */
   hasIcon: boolean
 
   onActivate: () => void

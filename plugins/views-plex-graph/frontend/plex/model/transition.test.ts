@@ -20,7 +20,6 @@ const usePlexTransition = (
     clock !== undefined ? { duration, clock } : { duration },
   )
 
-/** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {
   const scope = effectScope()
   const value = scope.run(build)

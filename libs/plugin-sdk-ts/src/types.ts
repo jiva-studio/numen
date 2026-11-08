@@ -29,7 +29,6 @@ export interface ReaderRegistration {
   id: string
   component: unknown
   title?: string
-  // The icon its tabs carry before their title, and the files it opens carry in the tree.
   icon?: unknown
   capabilities?: readonly string[]
   metadata?: Record<string, unknown>
@@ -46,7 +45,6 @@ export interface SettingsViewRegistration {
 // component emits `update:setting` with a key and a value; the host writes it to that setting.
 export interface SettingsViewProps {
   readonly pluginId: string
-  /** The current value of every declared setting of the plugin, by key. */
   readonly values: Readonly<Record<string, unknown>>
 }
 
@@ -64,9 +62,7 @@ export interface StatusViewProps {
 
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {
-  // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
   readonly version: string
-  // The build number; 0 where the build has none.
   readonly build: number
   readonly platform: 'darwin' | 'windows' | 'linux'
 }
@@ -74,12 +70,9 @@ export interface AppInfo {
 // TabPlace is the place a reader tab shows, as its reader reports it. A field the reader does not
 // have is left out.
 export interface TabPlace {
-  // PDF: the page shown, from 1, and the number of pages.
   readonly page?: number
   readonly pageCount?: number
-  // Recording: seconds from the start.
   readonly positionSeconds?: number
-  // EPUB: the CFI of the place shown, and the table-of-contents title there.
   readonly cfi?: string
   readonly chapter?: string
 }
@@ -88,11 +81,7 @@ export interface TabPlace {
 export interface ReaderTabState {
   readonly path: string
   readonly title: string
-  // The location to show: the selector of a search hit, or the location saved before a restart. The
-  // window sets a new object each time it requests a location; null shows the file from its start.
   readonly selector: Selector | null
-  // Byte ranges of the text version to highlight; the reader scrolls to the first. The window sets a
-  // new array each time it requests them; null when none is requested.
   readonly ranges: readonly TextRange[] | null
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
@@ -119,9 +108,7 @@ export interface TabTarget {
 
 // TabPlacement is where a tab of a kind opens in a window that starts with nothing to restore.
 export interface TabPlacement {
-  // The main pane, or the pane along the trailing edge.
   readonly pane: 'main' | 'aside'
-  // The tab's place among the tabs of that pane, lowest first. The first one is in front.
   readonly order: number
 }
 
@@ -155,7 +142,6 @@ export interface TabKindRegistration<State = unknown> {
   onDestroy?(state: State, id: string): void
   // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.
   navigate?(state: State, path: string, title: string): void | Promise<void>
-  // Its tabs stand beside files, and a file opened on a path never closes one of them.
   isTool?: boolean
   // The one word its tabs carry beside their title, and nothing where a tab carries none.
   getMark?(state: State): string | undefined
@@ -164,7 +150,6 @@ export interface TabKindRegistration<State = unknown> {
   flushPending?(state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
-  // The icon its tabs carry before their title.
   icon?: unknown
   placement?: TabPlacement
 }
@@ -184,8 +169,6 @@ export const NOTE_TARGET = 'note' as const
 // The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
 // manifest does not declare is never listed.
 export interface CommandRegistration {
-  // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
-  // the command under `<plugin id>:<id>`; registering the same full id twice throws.
   id: string
   handler: (note: CommandNote) => void | Promise<void>
 }
@@ -232,12 +215,10 @@ export interface ContextMenuRegistration {
   readonly text: string
   readonly detail?: string
   readonly group?: string
-  /** Submenu parent identifier (e.g. 'new' or 'relation'). */
   readonly parentId?: string
-  /** Which target kinds this item applies to. */
   readonly target?: 'all' | 'file' | 'folder' | 'root' | 'note' | readonly string[]
   readonly order?: number
-  readonly isDisabled?: boolean // The icon the item is drawn with.
+  readonly isDisabled?: boolean
   readonly icon?: unknown | ((target: ContextMenuTarget) => boolean)
   readonly handler: (target: ContextMenuTarget) => void | Promise<void>
 }
@@ -245,10 +226,8 @@ export interface ContextMenuRegistration {
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
-  // The window the plugin is activated in, named as a manifest's targets name it.
   readonly target: string
   readonly subscriptions: Disposable[]
-  // The application build the plugin runs in.
   readonly app: AppInfo
   // Opens an http or https address in the system browser. Any other address fails.
   openExternal(url: string): Promise<Result<null>>
@@ -277,26 +256,16 @@ export interface PluginContext {
   navigateTab?(kind: string, path: string): Promise<string> | void
   closeTab?(id: string): void
   hasPermission?(permission: string): boolean
-  // The window the plugin's tabs are drawn in, where the host offers one.
   readonly workspace?: WorkspaceHost
-  // The notes of the vault, where the host offers them.
   readonly notes?: VaultNotes
-  // The relationships between the notes of the vault, where the host offers them.
   readonly relations?: VaultRelations
-  // The folders and files of the vault, where the host offers them.
   readonly files?: VaultFiles
-  // The agent the window talks to, when the host provides one.
   readonly agent?: AgentHost
-  // The open files of the window, where the host offers them.
   readonly buffers?: BufferHost
-  // The text versions of the vault the window shows, where the host offers them.
   readonly texts?: VaultTexts
-  // The notices of the window, where the host offers them.
   readonly notices?: NoticeHost
-  // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
   // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
   registerDropHandler?(registration: DropRegistration): Disposable
-  // Hands a drop to the plugin that takes it, where the host offers drops.
   readonly drops?: DropHost
 }

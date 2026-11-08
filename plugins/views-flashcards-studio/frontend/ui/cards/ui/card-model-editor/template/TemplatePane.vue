@@ -10,11 +10,8 @@ import { CARD_MODEL_WORDS, type Pane, type CardModelWords } from '../../../lib/c
 
 withDefaults(
   defineProps<{
-    /** The part, as the template lays it out. */
     pane: Pane
-    /** A field pressed in the strip would be written here. */
     isFocused?: boolean
-    /** The words it is drawn with. */
     words?: CardModelWords
   }>(),
   { isFocused: false, words: () => CARD_MODEL_WORDS },

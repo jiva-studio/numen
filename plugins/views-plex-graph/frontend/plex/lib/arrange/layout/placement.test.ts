@@ -20,7 +20,6 @@ const FOCUS: PlacedNode = {
   opacity: 1,
 }
 
-/** Nodes of one relation, named after it. */
 const createNodes = (relation: PlexRelation, count: number): readonly PlexNode[] =>
   Array.from({ length: count }, (_, index) => ({
     id: `${relation}-${index}`,
@@ -31,7 +30,6 @@ const createNodes = (relation: PlexRelation, count: number): readonly PlexNode[]
 const limits = (each: RoleLimits): Limits =>
   Object.fromEntries(RELATION_NAMES.map((relation) => [relation, each])) as Limits
 
-/** Every box the width its relation is drawn at. */
 const sameWidth: Widths = () => nodeSize.width
 
 const place = (

@@ -20,15 +20,7 @@ export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
   readonly getAxis: (node: { relation: PlexNodeRelation }) => Axis
-  /**
-   * How wide a title is set. Text is measured where the plex is drawn; here it
-   * arrives as a number, and without a measurer the whole label is drawn.
-   */
   readonly labelWidth?: ((label: string) => number) | undefined
-  /**
-   * The ink of a title's font, measured where the plex is drawn; zero when nothing
-   * measured it.
-   */
   readonly labelType: LabelType
 }
 
@@ -156,9 +148,7 @@ export function createTitle(
 
 /** What a title keeps wherever it is moved to along its line. */
 export interface TitleSetting {
-  /** Where the title was asked to be set; the position it is created at when omitted. */
   readonly anchor?: number
-  /** The way the words are read where the record fixes it; the way the line runs, readable, when omitted. */
   readonly heading?: EdgeHeading
   readonly side: EdgeSide
   readonly shift: number
@@ -186,7 +176,6 @@ export function cutToFit(label: string, room: number, width: (label: string) => 
   return truncateTo(fits)
 }
 
-/** A fixed place on a border, so a row of edges reads as a fan. */
 function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
   switch (side) {
     case 'top':
@@ -200,14 +189,12 @@ function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'righ
   }
 }
 
-/** Whether there is clear space between two boxes along the given axis. */
 function isSeparated(a: PlacedNode, b: PlacedNode, isVertical: boolean): boolean {
   return isVertical
     ? Math.abs(b.y - a.y) > (a.height + b.height) / 2
     : Math.abs(b.x - a.x) > (a.width + b.width) / 2
 }
 
-/** Whether an edge runs vertically or horizontally. */
 function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): boolean {
   const declared = [routing.getAxis(from), routing.getAxis(to)].find((axis) => axis !== 'auto')
   const wanted =
@@ -219,12 +206,10 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
   return isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
 }
 
-/** The control point standing out from a getEdgeAnchor along the run. */
 function getControl(point: Position, vertical: boolean, reach: number): Position {
   return vertical ? { x: point.x, y: point.y + reach } : { x: point.x + reach, y: point.y }
 }
 
-/** The same curve read from its other end. */
 function reverse(curve: EdgeCurve): EdgeCurve {
   return {
     fromPoint: curve.toPoint,
@@ -234,14 +219,12 @@ function reverse(curve: EdgeCurve): EdgeCurve {
   }
 }
 
-/** The clear space between two boxes along an axis; negative where they overlap on it. */
 function getRun(a: PlacedNode, b: PlacedNode, isVertical: boolean): number {
   return isVertical
     ? Math.abs(b.y - a.y) - (a.height + b.height) / 2
     : Math.abs(b.x - a.x) - (a.width + b.width) / 2
 }
 
-/** A cubic leaving both boxes square-on along the axis, read from the first box. */
 function straightBetween(
   first: PlacedNode,
   second: PlacedNode,
@@ -262,11 +245,6 @@ function straightBetween(
   }
 }
 
-/**
- * A line from one side of both boxes that bows out by `minRun`, for boxes with
- * no room between them for an arrowhead and a word. A row bows towards the focus,
- * into the space between the rows, and a column bows away from it.
- */
 function bowBetween(
   first: PlacedNode,
   second: PlacedNode,
@@ -292,13 +270,6 @@ function bowBetween(
   }
 }
 
-/**
- * A cubic leaving both boxes square-on, read from the caller's end.
- *
- * Two boxes side by side in a row or one above the other in a column, with
- * less than `minRun` between them and no room along the other axis, are joined
- * by a bow out of their sides. Edges at the focus keep the space the focus is given.
- */
 function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
   const isVertical = isVerticalRun(from, to, routing)
   const run = getRun(from, to, isVertical)
@@ -320,10 +291,6 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
   return fromFirst ? axisEdge : reverse(axisEdge)
 }
 
-/**
- * The titles a curve carries. The labels of one line share its length, less the
- * room kept for the arrowheads.
- */
 function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
   const labels = (edge.labels ?? []).filter((label) => label.text)
   const room =

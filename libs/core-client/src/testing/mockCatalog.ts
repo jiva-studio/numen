@@ -23,11 +23,9 @@ export interface MockCatalogEntryOptions {
   readonly state?: CatalogStateValue
   readonly incompatibility?: CatalogIncompatibilityValue
   readonly incompatibilityDetail?: string
-  /** The kinds of tab the plugin provides. */
   readonly tabKinds?: readonly (string | { readonly kind: string; readonly title: string })[]
 }
 
-/** What an entry contributes to the application: its feature, category and kinds of tab. */
 function createMockContributes(options: MockCatalogEntryOptions) {
   return create(ManifestContributesSchema, {
     feature: options.feature ?? '',
@@ -38,7 +36,6 @@ function createMockContributes(options: MockCatalogEntryOptions) {
   })
 }
 
-/** The fields of an entry that is not compatible with the application, and none for one that is. */
 function createMockIncompatibility(options: MockCatalogEntryOptions) {
   if (options.incompatibility === undefined) return {}
   return {

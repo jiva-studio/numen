@@ -104,15 +104,12 @@ const CORPORA = {
 
 type Corpora = keyof typeof CORPORA
 
-/** One corpus, read as the card model is handed it. */
 const getCorpus = (key: Corpora): Corpus => CORPORA[key]
 
 interface Knobs {
   corpus: Corpora
   name: string
-  /** How wide the window drawing the card model is. */
   width: string
-  /** Given by the story, and nothing a reader turns. */
   fields?: never
   templates?: never
   words?: never

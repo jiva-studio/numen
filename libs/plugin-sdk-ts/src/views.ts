@@ -4,9 +4,7 @@ import type { Disposable } from './types'
 // ViewRegistration declares a view another plugin mounts by its capability, without knowing which
 // plugin draws it.
 export interface ViewRegistration {
-  // What the view does, as the plugin mounting one names it, such as CONVERSATION.
   readonly capability: string
-  // The component drawn. Its `context` prop is the context the mounting plugin passes.
   readonly component: unknown
 }
 
@@ -22,14 +20,9 @@ export const CONVERSATION = 'conversation'
 
 // ConversationContext is what a plugin passes the conversation view it mounts.
 export interface ConversationContext {
-  // Handles the queries made in the view. A plugin passes a port that sends the subject of each query
-  // with it, such as the current card.
   readonly agent: AgentPort
-  // The vault path the questions are about, sent as their focus.
   readonly focus: string
-  // Placeholder text of the empty field; it names the field.
   readonly placeholder?: string
-  // Why no query can be made; empty while one can. The view shows it in place of the answers.
   readonly getUnreachable?: () => string
 }
 
@@ -39,7 +32,6 @@ export const VAULT_SUMMARY = 'vault-summary'
 
 // VaultSummaryContext is what a window passes the vault summary view it mounts.
 export interface VaultSummaryContext {
-  // The identity of the vault the row represents.
   readonly vault: string
 }
 
@@ -48,6 +40,5 @@ export const NOTE_EDITOR = 'note-editor'
 
 // NoteEditorContext is what a plugin or a window passes the note editor view it mounts.
 export interface NoteEditorContext {
-  // The vault path of the note.
   readonly path: string
 }

@@ -32,14 +32,6 @@ export const getRelationWithoutDirection = (
   relations: readonly PlexRelation[],
 ): PlexRelation | null => (relations.includes('child') ? 'child' : (relations[0] ?? null))
 
-/**
- * The direction from one point to another.
- *
- * The axis with the larger distance does not decide it: rows are wide and
- * columns are narrow, so the outermost child of a wide row is further sideways
- * than it is down, and a drag towards the children would give a sideways
- * direction. `bias` weights the vertical distance.
- */
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
   if (Math.abs(dy) * bias >= Math.abs(dx)) {
@@ -86,11 +78,8 @@ export function findNode(point: Position, frame: PlexFrame): PlacedNode | null {
 export interface DropInput {
   readonly frame: PlexFrame
   readonly options: PlexOptions
-  /** The node the gesture started from. */
   readonly from: string
-  /** Where it was let go, in the plex's own coordinates. */
   readonly point: Position
-  /** Relations a gesture is allowed to produce. */
   readonly relations: readonly PlexRelation[]
 }
 
@@ -117,13 +106,9 @@ export function resolveDrop({ frame, options, from, point, relations }: DropInpu
 export interface DroppedInput {
   readonly frame: PlexFrame
   readonly options: PlexOptions
-  /** The window the plex is drawn in, centred on the focus. */
   readonly viewport: Size
-  /** Where the pointer is, in the plex's own coordinates. */
   readonly point: Position
-  /** Relations a gesture is allowed to produce. */
   readonly relations: readonly PlexRelation[]
-  /** Distance from the focus the pointer must exceed to name a direction. */
   readonly threshold: number
 }
 

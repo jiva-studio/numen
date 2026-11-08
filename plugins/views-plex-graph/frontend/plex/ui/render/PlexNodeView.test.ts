@@ -31,7 +31,6 @@ const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
 const mountNode = (overrides: Partial<PlacedNode> = {}) =>
   mount(PlexNodeView, { props: { node: createNode(overrides) } })
 
-/** A pointer arrives, which is the only thing that offers a handle. */
 const hover = async (node: ReturnType<typeof mountNode>) => {
   await node.trigger('pointerenter')
   return node

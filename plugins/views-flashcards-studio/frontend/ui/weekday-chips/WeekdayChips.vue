@@ -18,7 +18,6 @@ defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
     days: readonly Day[]
-    /** The levels offered, in the order they are offered. */
     levels: readonly number[]
     isDisabled?: boolean
     class?: HTMLAttributes['class']
@@ -28,7 +27,6 @@ const props = withDefaults(
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A day put at a level, which is the day as it was given and the level chosen. */
   choose: [day: string, level: number]
 }>()
 
@@ -79,11 +77,6 @@ const onChoose = (id: string) => {
  */
 const MOST_TINT = 45
 
-/**
- * How strongly a day is filled: the whole of the accent, under the accent's
- * ink, at a day standing at the whole of it; no colour at all at a day standing
- * at nothing; and a tint of the accent, under the ink, between the two.
- */
 const getFillStyle = (level: number) => {
   const fill = getFill(level)
   const weight = fill >= 1 ? 100 : Math.round(fill * MOST_TINT)

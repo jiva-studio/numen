@@ -10,26 +10,19 @@ import { cards } from '../../../shared/clients'
 
 /** One note the deck is joined to. */
 export interface Neighbour {
-  /** The link as it is written, which is all a name answering to nothing has. */
   readonly written: string
-  /** Empty where the name answers to no note. */
   readonly path: string
   readonly title: string
   readonly body: string
-  /** The label the user gave the relationship, if any. */
   readonly label: string
-  /** True when the deck links to the note; false when the note links to the deck. */
   readonly hasPoints: boolean
-  /** Several notes answer to the name, and this is the nearest. */
   readonly isAmbiguous: boolean
-  /** Why there is no text, empty where the text is here. */
   readonly error: string
 }
 
 /** The notes linked to one deck. */
 export interface DeckNeighbourhood {
   readonly notes: readonly Neighbour[]
-  /** How many at the end came named and not read. */
   readonly unread: number
 }
 

@@ -49,7 +49,6 @@ const cardModelMessage = {
   problems: [],
 }
 
-/** The service answers once with this, whatever the type of the call. */
 const answer = <Name extends keyof typeof cardsService>(name: Name, reply: unknown) =>
   vi.mocked(cardsService[name] as (request: unknown) => Promise<unknown>).mockResolvedValue(reply)
 

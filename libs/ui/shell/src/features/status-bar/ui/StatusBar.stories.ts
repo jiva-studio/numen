@@ -189,7 +189,6 @@ export const NoRingOnFocus: Story = {
   },
 }
 
-/** The position, size and display of the row and of each part of its slot. */
 const readRowGeometry = (row: Element): string =>
   [row, ...row.querySelectorAll('.task-item__slot, .task-item__indicator, .task-item__btn')]
     .map((part) => {
@@ -211,7 +210,6 @@ const LAYOUT_PROPERTIES = [
   'padding',
 ]
 
-/** Reports whether the selector, read without its `:hover`, matches one of the parts. */
 function isMatchedWithoutHover(selector: string, parts: readonly Element[]): boolean {
   if (!selector.includes(':hover')) return false
   const selectorWithoutHover = selector.replaceAll(':hover', '')
@@ -223,7 +221,6 @@ function isMatchedWithoutHover(selector: string, parts: readonly Element[]): boo
   }
 }
 
-/** The `:hover` rules of the page that change the layout of one of the parts. */
 function findHoverLayoutRules(rules: CSSRuleList, parts: readonly Element[]): string[] {
   const found: string[] = []
   for (const rule of rules) {

@@ -20,7 +20,6 @@ const NODE: PlacedNode = {
   opacity: 1,
 }
 
-/** A press on a node, and the site its reaching strategy was handed. */
 function createPress(gestureRole: GestureRole = 'open', middle: Position | null = { x: 5, y: 7 }) {
   const response = {
     activate: vi.fn<NodePressReport['activate']>(),

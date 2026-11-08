@@ -19,20 +19,15 @@ export interface PaletteFieldHandle {
 
 export interface PaletteKeysOptions {
   readonly field: Readonly<ShallowRef<PaletteFieldHandle | null>>
-  /** What is lit brought into sight. Only a key does this. */
   readonly reveal: () => void
   readonly places: PalettePlacesState
   readonly isPanelOpen: Ref<boolean>
   readonly getActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
-  /** Whether the palette is drawn at all, and which step it is on. */
   readonly isOpen: () => boolean
   readonly getStep: () => string
-  /** The item the keyboard relies on as a step opens. */
   readonly getOpensOn: () => string
-  /** Where the keyboard goes back to once the palette closes. */
   readonly getOpenedFrom: () => HTMLElement | null
-  /** Backspace in an empty field, and Escape. */
   readonly goBack: () => void
   readonly dismiss: () => void
 }

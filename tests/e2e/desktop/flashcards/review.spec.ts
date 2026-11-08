@@ -19,7 +19,6 @@ interface ReviewLine {
 /** The ratings the review log writes for the four answers. */
 const RATING = { Again: 1, Hard: 2, Good: 3, Easy: 4 } as const
 
-/** The lines of review answers the plugin wrote into its own folder of the vault, oldest first. */
 function readReviewLog(): ReviewLine[] {
   if (!fs.existsSync(answers)) return []
   return fs
@@ -31,20 +30,17 @@ function readReviewLog(): ReviewLine[] {
     .map((line) => JSON.parse(line) as ReviewLine)
 }
 
-/** Waits until the review log holds one line more than `count`, and returns that line. */
 async function waitForReviewLine(count: number): Promise<ReviewLine> {
   await expect.poll(() => readReviewLog().length).toBe(count + 1)
   return readReviewLog().at(-1) as ReviewLine
 }
 
-/** Opens the decks of the run's vault. */
 async function openDecks(page: Page): Promise<void> {
   await page.goto('/')
   await page.getByRole('button', { name: new RegExp(path.basename(vault)) }).click()
   await expect(page.getByRole('heading', { name: path.basename(vault) })).toBeVisible()
 }
 
-/** Starts reviewing every deck of the vault. */
 async function startReview(page: Page): Promise<void> {
   await openDecks(page)
   const review = page.getByRole('button', { name: /Review/ })
@@ -138,7 +134,6 @@ test('Undo writes a line taking the last answer back, and shows its card again',
   await expect(page.getByRole('button', { name: /Again/ })).toBeVisible()
 })
 
-/** The JSON message of the one frame a Connect streaming request carries. */
 function readFrame(body: Buffer): Record<string, unknown> {
   return JSON.parse(body.subarray(5, 5 + body.readUInt32BE(1)).toString('utf8'))
 }

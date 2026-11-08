@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { useWindowFrame, type FrameRuntime } from './useWindowFrame'
 
-/** The Wails runtime of a window on a platform, with the calls it receives recorded. */
 function createRuntime(platform: 'windows' | 'mac' | 'linux', maximised = false) {
   const state = { maximised }
   const calls = {

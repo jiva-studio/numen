@@ -12,7 +12,6 @@ import { startCore, type Core } from '../core'
 
 vi.mock('../core', () => ({ startCore: vi.fn() }))
 
-/** The toast the page puts its error on, after the core has answered. */
 async function toastAfter(why: unknown) {
   vi.mocked(startCore).mockRejectedValueOnce(why)
   const page = mount(VaultPage)

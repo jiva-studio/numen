@@ -6,7 +6,6 @@ import { useBookPlace, type PlacedTab } from './useBookPlace'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A reader that scrolls to a CFI when `canReach` is true, and is then in the chapter given. */
 const createReader = (chapterThere: string, canReach = true) => {
   const chapter = ref('')
   const reader = {

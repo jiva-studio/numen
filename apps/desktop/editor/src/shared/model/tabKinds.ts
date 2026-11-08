@@ -18,9 +18,7 @@ export interface KindTab<TabState> {
 /** The focused tab, of whichever kind. */
 export interface ActiveTab {
   readonly id: string
-  /** The word its kind is filed under, and nothing where the window holds no such tab. */
   readonly kind: string | null
-  /** What its kind gave it to hold, and nothing where the window holds no such tab. */
   readonly state: unknown
 }
 

@@ -58,7 +58,6 @@ const TRANSCRIBED: MenuEntry = {
   isLive: true,
 }
 
-/** A recording that answers with these words and this menu. */
 const createRecordings = (cues: readonly Cue[], menu: readonly MenuEntry[]): Recordings => ({
   getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg' }),
   readTranscript: async () => cues,
@@ -73,7 +72,6 @@ const createRecordings = (cues: readonly Cue[], menu: readonly MenuEntry[]): Rec
   },
 })
 
-/** The window's one player, standing at a moment of the recording and making no sound. */
 const createPlayer = (isPlaying: boolean): Player => ({
   url: ref(MEDIA),
   position: ref(NOW),
@@ -95,7 +93,6 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** The tab filling the pane a window gives it. */
 const render = (cues: readonly Cue[], menu: readonly MenuEntry[], isPlaying: boolean) => () => ({
   components: { RecordingTab },
   setup: () => ({

@@ -18,11 +18,6 @@ const MOCK_RECOGNISED_WORDS = 'recovers kinetic energy'
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = '[proofread]'
 
-/**
- * Waits until the search for the words lists a passage of `present` and none of `gone`. The
- * passage of `present` shows the list is drawn for the words, so the missing one is missing from
- * an answer and not from a list still loading.
- */
 const expectPassageGone = async (
   page: Page,
   query: string,
@@ -38,12 +33,6 @@ const expectPassageGone = async (
   await page.keyboard.press('Escape')
 }
 
-/**
- * Waits until no task recognises the file. The plugin recognises a scan on its own when it opens,
- * and the Recognise command starts a second run: the words of the first run are found while the
- * second still runs. Deleting the recognition then takes away the file the second run is about to
- * report, and that run ends as a failed task that stays in the status bar.
- */
 const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
   await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
   await page.locator('.status-bar__trigger').click()
@@ -51,7 +40,6 @@ const expectNoRecognitionRunning = async (page: Page, name: string): Promise<voi
   await page.keyboard.press('Escape')
 }
 
-/** Opens a recording of the vault and has it transcribed through the palette. */
 const transcribe = async (page: Page, name: string): Promise<Locator> => {
   await openWorkspace(page)
   const tab = await openVaultFile(page, 'assets', name)
@@ -60,7 +48,6 @@ const transcribe = async (page: Page, name: string): Promise<Locator> => {
   return tab
 }
 
-/** Types words after the transcript of the open recording and saves them as an edit of it. */
 const appendToTranscript = async (page: Page, tab: Locator, words: string): Promise<void> => {
   await tab.getByRole('textbox', { name: 'Transcript' }).click()
   await page.keyboard.press('Control+End')

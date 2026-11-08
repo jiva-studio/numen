@@ -54,7 +54,6 @@ export const removeCard = (deck: BufferDeck, id: string): BufferDeck => ({
   cards: deck.cards.filter((card) => card.id !== id),
 })
 
-/** The section the cards at the end of the deck stand under. */
 const getLastSection = (deck: BufferDeck): string | null => deck.sections.at(-1)?.id ?? null
 
 /**
@@ -91,10 +90,6 @@ interface DropOnSectionParams {
   target: string
 }
 
-/**
- * A card let go on a section: after the last card standing under it, and where
- * the section begins while it holds none.
- */
 const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDeck => {
   const { card, left, target } = params
   const rank = (section: string | null): number =>

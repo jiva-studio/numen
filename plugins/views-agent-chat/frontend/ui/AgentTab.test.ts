@@ -23,13 +23,8 @@ const ANSWER: readonly AgentStep[] = [
 
 const waitTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 
-/** Long enough for every transition of the disc to finish in the test document. */
 const waitTransitions = () => new Promise<void>((resolve) => setTimeout(resolve, 200))
 
-/**
- * An agent that yields each step one task after the previous one and calls `onStep` with the
- * index of the step before yielding it. After the last step it waits until it is stopped.
- */
 const createPort = (
   steps: readonly AgentStep[],
   onStep: (index: number) => void,
@@ -48,7 +43,6 @@ const createPort = (
   finish: async () => undefined,
 })
 
-/** What the disc shows: `<action>:<pressable|barred>`, or every button joined while there is not exactly one. */
 const readDisc = (root: Element): string => {
   const buttons = [...root.querySelectorAll('.disc button')]
   return buttons
@@ -65,7 +59,6 @@ afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
 })
 
-/** An agent tab over the port, and every value its disc takes from the moment `record` is called. */
 const mountTab = (createAgent: (sample: () => void) => AgentPort) => {
   const values: string[] = []
   let element: Element | null = null

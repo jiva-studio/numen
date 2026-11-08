@@ -73,10 +73,6 @@ defineExpose({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * The line opens the choices under itself, along its own leading edge and no
- * narrower than itself.
- */
 const onOpenChoices = () => {
   const line = element.value
   if (!line || props.isDisabled) return
@@ -94,7 +90,6 @@ const onChoose = (id: string) => {
   onCloseChoices()
 }
 
-/** The arrows open the choices standing on the one in force. */
 const onKey = (event: KeyboardEvent) => {
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
   event.preventDefault()

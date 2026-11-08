@@ -13,9 +13,7 @@ const SLOT = /\{\{([^{}]*)\}\}/g
 
 /** One slot at its current position in a template. */
 export interface Slot {
-  /** The name between the braces, which is a field's name written exactly. */
   readonly field: string
-  /** Where the braces begin and end, in UTF-16 code units. */
   readonly from: number
   readonly to: number
 }
@@ -36,7 +34,6 @@ export function getSlots(template: string): readonly Slot[] {
 /** The braces a field is written as. */
 export const braceField = (field: string): string => `{{${field}}}`
 
-/** Text standing as text where the marks around it are read as marks. */
 const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 

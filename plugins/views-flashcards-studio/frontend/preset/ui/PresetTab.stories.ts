@@ -36,10 +36,6 @@ const point = (overrides: Partial<Point> = {}): Point => ({
   ...overrides,
 })
 
-/**
- * A curve of four places, the backlog running down over a fortnight. The grid
- * is what the knob walks, and the run under each place is what the backlog draws.
- */
 const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
@@ -63,13 +59,9 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
 const MATERIAL: PresetCounts = { decks: 3, cards: 400, overdue: 120, unbegun: 40 }
 
 interface Knobs {
-  /** Where the knob starts, as a place of the grid. */
   place: number
-  /** The goal the tab is steered by. */
   goal: Settings['goal']
-  /** A curve response is pending, so the plot area is empty. */
   isWaiting: boolean
-  /** Whether the curve on screen is the application's answer. */
   isHonest: boolean
 }
 
@@ -83,7 +75,6 @@ const BOUNDS: SettingsBounds = {
   interval: { min: 1, max: 365 },
 }
 
-/** A tab standing at those settings, holding the place the knob was moved to. */
 const createPresetTab = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
   const picture = curve({ goal: args.goal, isHonest: args.isHonest })
@@ -110,10 +101,6 @@ const createPresetTab = (args: Knobs): PresetTabState => {
   }
 }
 
-/**
- * The same tab twice at one width, once with a curve response and once still
- * waiting for one, so the rendering of each can be compared.
- */
 const bothWays = (args: Knobs) => ({
   components: { PresetTab },
   setup: () => ({
@@ -128,15 +115,12 @@ const bothWays = (args: Knobs) => ({
   `,
 })
 
-/** The two tabs of that pair, in the order they are drawn. */
 const getTabs = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-tab]'))
 
-/** The containers a tab holds its two plots in: the curve plot, then the backlog plot. */
 const getRooms = (tab: HTMLElement): readonly HTMLElement[] =>
   Array.from(tab.querySelectorAll<HTMLElement>('[data-control="room"]'))
 
-/** The tab in the container provided by the story. */
 const room = (args: Knobs) => ({
   components: { PresetTab },
   setup: () => ({ state: createPresetTab(args) }),
@@ -167,11 +151,9 @@ type Story = StoryObj<Knobs>
 /** The tab with a curve response already rendered. */
 export const APreset: Story = {}
 
-/** The curve plot, which is the element the knob moves along. */
 const getImage = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
 
-/** The first line of the bubble over the knob, which is the value being held. */
 const getBubbleLine = (value: number): string =>
   words.buys('minutes', {
     value,

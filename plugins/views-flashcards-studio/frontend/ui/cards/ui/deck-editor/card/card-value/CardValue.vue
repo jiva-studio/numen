@@ -13,15 +13,10 @@ import type { PlacedFieldValue } from '../../../../lib/grid'
 
 const props = withDefaults(
   defineProps<{
-    /** The card the value belongs to, by its identifier. */
     card: string
-    /** The value, laid out against the card model that cuts the card. */
     value: PlacedFieldValue
-    /** What the box is named by, which its label points at. */
     boxId: string
-    /** What is wrong with this value. */
     wrong?: readonly string[]
-    /** The words it is drawn with. */
     words?: CardWords
   }>(),
   { wrong: () => [], words: () => DECK_WORDS },
@@ -30,7 +25,6 @@ const props = withDefaults(
 const deck = inject(DECK_CONTEXT)
 if (!deck) throw new Error('A card value is drawn outside a deck')
 
-/** Reports the value's new text to the deck, with the card and the place the value is in. */
 const onWrite = (text: string): void =>
   deck.write(props.card, { field: props.value.field, index: props.value.index }, text)
 </script>

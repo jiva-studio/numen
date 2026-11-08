@@ -94,7 +94,6 @@ const getValueAt = (tree: unknown, key: string): unknown =>
     .split('.')
     .reduce<unknown>((one, step) => (one as Record<string, unknown> | undefined)?.[step], tree)
 
-/** The declaration of the shell as the core answers it: each setting with the value in force. */
 const declare = (): readonly PluginSettingInfo[] =>
   DECLARED.map((one) => {
     const choices = 'c' in one ? one.c : undefined
@@ -130,17 +129,11 @@ const createFeed = () => {
 
 /** How the core and the stream answer one write, in milliseconds after the write was sent. */
 interface Timing {
-  /** The core has saved the file. */
   readonly saveAfter: number
-  /** The answer of the write arrives this long after the file was saved. */
   readonly answerAfter: number
-  /** The event of the write arrives this long after the file was saved. */
   readonly eventAfter: number
-  /** The first reads answer the file as it was before the last write. */
   readonly oldReads: number
-  /** A read takes this long to answer. */
   readonly readTakes: number
-  /** The core rejects the write with this reason and saves nothing. */
   readonly rejectedWith?: string
 }
 
@@ -229,7 +222,6 @@ const getRow = (page: VueWrapper, title: string) => {
 const getControlValue = (page: VueWrapper, title: string, control: typeof Select | typeof Slider) =>
   getRow(page, title).findComponent(control).props('modelValue') as unknown
 
-/** The values the control has at every step of 10 ms for the time given, with the one it has right away first. */
 const sampleControl = async (read: () => unknown, ms: number): Promise<unknown[]> => {
   await nextTick()
   const samples = [read()]

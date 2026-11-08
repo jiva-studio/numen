@@ -8,7 +8,6 @@
 
 /** One request in flight, measured against everything requested after it. */
 export interface InFlightRequest {
-  /** Whether the response to this one is still the response to process. */
   readonly isCurrent: boolean
   /**
    * Whether this response may be applied over what is already applied. A response

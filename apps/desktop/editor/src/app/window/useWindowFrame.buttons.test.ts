@@ -89,7 +89,6 @@ describe('the window buttons on the other platforms', () => {
   })
 })
 
-/** A feed the test pushes the changes of settings into, as the core would. */
 const createFeed = () => {
   const pending: ((batch: readonly SettingEdit[]) => void)[] = []
   return {

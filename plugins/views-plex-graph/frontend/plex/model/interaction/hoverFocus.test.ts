@@ -2,7 +2,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useHoverFocus } from './hoverFocus'
 
-/** A real element wired to the handlers, answering `:focus-visible` as configured. */
 function createFocusTarget(matches: (selector: string) => boolean) {
   const hoverFocus = useHoverFocus()
   const element = document.createElement('button')

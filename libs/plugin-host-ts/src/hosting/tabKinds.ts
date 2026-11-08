@@ -34,9 +34,7 @@ export interface OpenTab {
 
 /** A tab kind: what it holds, its title, and how it releases its state. */
 export interface TabKind<TabState, K extends string = string> {
-  /** The word the identities of its tabs are filed under. */
   readonly kind: K
-  /** The plugin that registered the kind, and nothing for a kind the window declares. */
   readonly pluginId?: string
   /**
    * What one of its tabs holds, made as the tab opens on what it was given.
@@ -53,7 +51,6 @@ export interface TabKind<TabState, K extends string = string> {
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
   getMark?(state: TabState): string | undefined
-  /** What is drawn in the pane, given what the tab holds. */
   readonly pane: Component
   /**
    * The identity a tab of this kind takes from what it opens on. A kind that
@@ -89,16 +86,13 @@ export interface TabKind<TabState, K extends string = string> {
    * it can be linked.
    */
   navigate?(state: TabState, path: string, title: string): void | Promise<void>
-  /** Its tabs stand beside files: a file opened on a path never closes one of them. */
   readonly isTool?: boolean
   isAsking?(state: TabState): boolean
   /** Writes what the tab holds out to its file; answers once nothing is on its way. */
   flushPending?(state: TabState): Promise<void>
   /** A file made in a folder under a name, as the file this kind edits. */
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
-  /** The icon its tabs carry before their title. */
   readonly icon?: Component
-  /** Where a tab of it opens in a window that starts with nothing to restore. */
   readonly placement?: TabPlacement
 }
 

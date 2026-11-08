@@ -39,20 +39,17 @@ vi.mock('../shared/clients', () => ({
   },
 }))
 
-/** A stream that ends in a fault the moment its call is ended. */
 async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
   await new Promise<never>((_, fail) => {
     signal?.addEventListener('abort', () => fail(new Error('the call was ended')))
   })
 }
 
-/** A stream that yields the items it is given, and then stays open. */
 async function* sends(...items: unknown[]): AsyncGenerator<unknown> {
   yield* items
   await new Promise<never>(() => undefined)
 }
 
-/** A stream that ends in a fault as it opens. */
 async function* fails(): AsyncGenerator<never> {
   await Promise.resolve()
   throw new Error('the connection went')

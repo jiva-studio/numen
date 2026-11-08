@@ -12,7 +12,6 @@ import { getStandInsOrigin, hasVaultFile } from '../../support/media.js'
 import { expectSearchableList } from '../../support/searchable-list.js'
 import { callRPC, readVaultFile } from '../../support/vault.js'
 
-/** Opens the agent panel in a freshly loaded window, and gives back its composer. */
 const openAgentPanel = async (page: Page) => {
   await openWorkspace(page)
   await page.getByText('Agent').first().click()

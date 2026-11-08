@@ -6,23 +6,11 @@ import type { ReviewCard } from '../../../entities/card'
 
 /** What the panel requires from the host window. */
 export interface AgentPanelDeps {
-  /**
-   * Returns the agent for a card. The card is attached to every question of
-   * that conversation and is never part of the question text, so the agent
-   * reads its name as a tool result.
-   */
   readonly agent: (card: ReviewCard) => AgentPort
-  /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** The reason no question can be sent, empty while a question can be sent. */
   readonly unreachable: () => string
   readonly open: () => boolean
-  /**
-   * Opens or closes the panel. The window shows one panel at a time, so the
-   * window holds which panel is open, and every panel changes that one state.
-   */
   readonly showPanel: (open: boolean) => void
-  /** Shows a message to the user. */
   readonly showNotice: (message: string) => void
 }
 

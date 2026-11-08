@@ -10,9 +10,7 @@ export interface BuyInput {
   reviews: number
   minutes: number
   horizon: number
-  /** Null is nothing overdue, and -1 a pile the days projected do not clear. */
   clears: number | null
-  /** The number of review cards that no pace completes by the day, out of the total. */
   short: number
   cards: number
 }

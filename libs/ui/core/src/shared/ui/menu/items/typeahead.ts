@@ -21,7 +21,6 @@ export const NOTHING_TYPED: Typeahead = { word: '', struck: 0 }
 
 export interface Jump {
   readonly typed: Typeahead
-  /** The item to focus, or null when no item begins with the word. */
   readonly at: number | null
 }
 

@@ -13,11 +13,8 @@ import { CARD_MODEL_WORDS, type TemplateRow, type CardModelWords } from '../../.
 
 const props = withDefaults(
   defineProps<{
-    /** The template, laid out against the fields the card model declares. */
     template: TemplateRow
-    /** Problems the caller found with this template, shown beside its name. */
     wrong?: readonly string[]
-    /** The words it is drawn with. */
     words?: CardModelWords
   }>(),
   { wrong: () => [], words: () => CARD_MODEL_WORDS },

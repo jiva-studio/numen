@@ -6,14 +6,12 @@ import { fetched } from './words'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
-/** One option of an enum setting as the window holds it. */
 const readOption = (one: { value: string; title: string; detail: string }) => ({
   value: one.value,
   title: one.title,
   detail: one.detail,
 })
 
-/** The condition of a setting or a secret as the window holds it. */
 const readCondition = (
   when: { setting: string; is: readonly string[] } | undefined,
 ): PluginSettingCondition | undefined =>
@@ -23,7 +21,6 @@ type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
 
-/** The value a JSON text holds, and nothing where the text is empty or is not JSON. */
 const readJson = (text: string): unknown => {
   // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
   if (!text) return undefined
@@ -36,7 +33,6 @@ const readJson = (text: string): unknown => {
   /* Stryker restore BlockStatement */
 }
 
-/** One setting as the window holds it, with what the core resolved for it. */
 const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   const defaultValue = readJson(s.defaultJson)
   return {

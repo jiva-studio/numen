@@ -11,12 +11,10 @@ import type { PlexNode } from '../../lib/node'
 
 const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
 
-/** The measurers read once, where nothing on the platform watches a box. */
 const widths = (icon = 0) => useTitleWidths(() => icon).value
 
 const PER_CHARACTER = 7
 
-/** A canvas that measures by character count and records the strings it measured. */
 function stubCanvas() {
   const request: string[] = []
   const context = {
@@ -49,7 +47,6 @@ function setTheme(tokens: Record<string, string> = {}): void {
   }
 }
 
-/** A root of 16px, which is what a browser resolves a rem against. */
 const inPixels = (value: string): string =>
   value.endsWith('rem') ? `${Number.parseFloat(value) * 16}px` : value
 
@@ -60,10 +57,6 @@ const resolveValue = (declaration: string): string => {
   return content ? inPixels(content) : ''
 }
 
-/**
- * The document, resolving the declarations an element carries. Anything that
- * carries none of them is answered by jsdom as before.
- */
 function stubStyles() {
   const engine = window.getComputedStyle.bind(window)
 
@@ -84,7 +77,6 @@ function stubStyles() {
   }) as typeof window.getComputedStyle)
 }
 
-/** A stub that reports when the box of the plex type changes size. */
 function stubObserver(): (() => void)[] {
   const observers: (() => void)[] = []
 

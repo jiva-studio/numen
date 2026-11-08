@@ -14,11 +14,6 @@ export type Side = 'left' | 'right' | 'top' | 'bottom' | 'center'
 export interface Tab {
   readonly id: TabId
   readonly title: string
-  /**
-   * A short label for the tab's state: unsaved work, or the reason it is stuck.
-   * The strip shows it next to the title and announces it to assistive
-   * technology.
-   */
   readonly mark?: string
 }
 
@@ -27,7 +22,6 @@ export interface Pane {
   readonly kind: 'pane'
   readonly id: NodeId
   readonly tabs: readonly TabId[]
-  /** Null while the pane holds nothing. */
   readonly active: TabId | null
 }
 
@@ -57,7 +51,6 @@ export type WorkspaceNode = Branch | Pane
 export interface Workspace {
   readonly root: WorkspaceNode
   readonly axis: Orientation
-  /** The pane a tab opens into. */
   readonly focus: NodeId
 }
 

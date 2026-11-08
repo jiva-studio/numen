@@ -33,7 +33,6 @@ const isSameEntry = (one: Entry, other: Entry): boolean =>
   one.isNote === other.isNote &&
   one.type === other.type
 
-/** Whether two listings hold the same entries in the same order. */
 const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[]): boolean =>
   one !== undefined &&
   one.length === other.length &&

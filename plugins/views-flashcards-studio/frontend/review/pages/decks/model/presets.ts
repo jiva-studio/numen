@@ -91,23 +91,15 @@ interface PresetTally {
   decks: string[]
   due: number
   fresh: number
-  /** Problems found in the file, each listed once however many decks name it. */
   problems: Set<string>
 }
 
-/** What the day holds under a preset the application counted nothing for. */
 const createBudget = (settings: Settings): Budget => ({
   new: settings.newADay,
   reviews: settings.reviewsADay,
   minutes: settings.minutesADay,
 })
 
-/**
- * The presets of a vault, each carrying the decks that name it.
- *
- * Every preset the vault holds gets a row. The ones whose decks hold cards are
- * gathered from what each deck answered, and the rest stand on the count alone.
- */
 const groupDecksIntoPresets = (
   vault: VaultCardsDue,
   reads: readonly DeckRead[],
@@ -129,7 +121,6 @@ const groupDecksIntoPresets = (
   return out
 }
 
-/** The decks each preset schedules, counted into it, by the path it is filed under. */
 const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTally> => {
   const tallies = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
@@ -148,7 +139,6 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
   return tallies
 }
 
-/** One preset currently before a deck has been counted into it. */
 const createTally = (preset: DeckPreset['settings']): PresetTally => ({
   path: preset.path,
   name: preset.name || 'Defaults',
@@ -160,7 +150,6 @@ const createTally = (preset: DeckPreset['settings']): PresetTally => ({
   problems: new Set(),
 })
 
-/** A preset the decks answered for, standing on the day the count gave it. */
 const getPresetFromDecks = (
   one: PresetTally,
   day: PresetCardsDue | undefined,
@@ -180,7 +169,6 @@ const getPresetFromDecks = (
   }
 }
 
-/** What is waiting under a preset today, and what is due in its decks where the count answered nothing. */
 const getDayPending = (one: PresetTally, day: PresetCardsDue | undefined) => ({
   named: day?.decks ?? one.decks.length,
   reviewCards: day?.cards ?? 0,
@@ -190,7 +178,6 @@ const getDayPending = (one: PresetTally, day: PresetCardsDue | undefined) => ({
   closes: day?.closes ?? CLOSES_NOTHING,
 })
 
-/** What has been answered under a preset since the day opened, and nothing where the count answered nothing. */
 const getDayReviewed = (day: PresetCardsDue | undefined) => ({
   reviewed: day?.reviewed ?? 0,
   reviewedNew: day?.reviewedNew ?? 0,
@@ -198,7 +185,6 @@ const getDayReviewed = (day: PresetCardsDue | undefined) => ({
   took: day?.took ?? 0,
 })
 
-/** A preset no deck answered for, standing on the count alone. */
 const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Preset => ({
   path: one.preset,
   name: one.title || getDeckName(one.preset),
@@ -220,11 +206,6 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
   wrong: one.decks > 0 ? why : '',
 })
 
-/**
- * What stopped the presets no deck answered for. Every deck of one preset fails
- * alike, so an error all of them gave is the error of each preset none could
- * read; where they gave several, none of them is that preset's.
- */
 const getCommonError = (results: readonly DeckPresetResult[]): string => {
   const errors = new Set<string>()
   for (const one of results) if (!one.ok) errors.add(one.error)

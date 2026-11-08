@@ -24,12 +24,6 @@ import {
 } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 
-/**
- * How tall one line of the text is set, taken off a run of the text itself. The
- * lines the column has to end between are the ones the prose is set in, and the
- * box holding it is set in another. A line height the browser will put no
- * number to leaves the column at the height of the area.
- */
 const getLine = (text: HTMLElement): number => {
   const run = text.querySelector<HTMLElement>('p') ?? text
   const parsedHeight = Number.parseFloat(getComputedStyle(run).lineHeight)
@@ -57,7 +51,6 @@ export interface BookFlowState {
   readonly textSize: import('vue').ComputedRef<number>
   readonly viewport: ShallowRef<{ width: number; height: number }>
   readonly isMeasured: import('vue').ComputedRef<boolean>
-  /** The flow the column CSS is set at, which follows the viewport. */
   readonly viewportFlow: import('vue').ComputedRef<Flow>
   readonly setting: import('vue').ComputedRef<Record<string, string>>
   readonly measure: () => void

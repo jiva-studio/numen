@@ -40,7 +40,6 @@ const WIDE: Decorator = (story) => ({
   `,
 })
 
-/** Adds a link to the last paragraph of a section. */
 const addLink = (chapter: Chapter): Chapter => ({
   ...chapter,
   markup: chapter.markup.replace(/<\/p>(?![\s\S]*<\/p>)/, ' <a href="#note">note</a></p>'),
@@ -51,12 +50,7 @@ const SHORT_SECOND = createChapter(VERSES, LONG_FIRST.span.end)
 const LONG_SECOND = createChapter(PROSE, LONG_FIRST.span.end)
 
 interface SectionOptions {
-  /**
-   * Highlights the whole first section. A highlight is drawn only where both of its ends fall in
-   * the drawn section.
-   */
   readonly isHighlighted?: boolean
-  /** The index of the section loaded first. */
   readonly startIn?: 0 | 1
 }
 
@@ -125,7 +119,6 @@ const getArea = (canvasElement: HTMLElement) =>
 const getPaper = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__area > .book__paper') as HTMLElement
 
-/** The box that holds the copy of the old page during a turn across a section boundary. */
 const getCopyHolder = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__leaving') as HTMLElement
 
@@ -134,13 +127,8 @@ const getFrontOffset = (canvasElement: HTMLElement) =>
 
 const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 
-/** Dispatches a keydown on the window without waiting, so two presses fall into one turn. */
 const pressKey = (key: string) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))
 
-/**
- * Waits until the columns are laid out, the fonts are loaded, and the position of the columns,
- * the size of the paper and the copy holder are unchanged for `SETTLED_FRAME_COUNT` frames.
- */
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await waitFor(
     async () => {
@@ -176,7 +164,6 @@ const waitForFrontOffset = async (
     timeout: BROWSER_TIMEOUT,
   })
 
-/** Returns the line boxes of the text of an element that lie inside the area box. */
 const getLinesInArea = (element: Element, box: DOMRect) => {
   const range = document.createRange()
   range.selectNodeContents(element)
@@ -189,13 +176,10 @@ const isOverlapping = (a: DOMRect, b: DOMRect) =>
   a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
 
 interface CopyFrame {
-  /** Whether a line of the copy overlaps a line of the new page inside the area. */
   readonly isOverlapping: boolean
-  /** The widest part of a line of the copy inside the area, in pixels. */
   readonly visibleWidth: number
 }
 
-/** Records one `CopyFrame` on every frame on which the holder has a copy. */
 const recordCopyFrames = (canvasElement: HTMLElement) => {
   const frames: CopyFrame[] = []
   const read = () => {

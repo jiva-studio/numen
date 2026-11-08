@@ -20,9 +20,7 @@ export interface PlacedNode extends PlexNode {
   readonly y: number
   readonly width: number
   readonly height: number
-  /** Rank within the node's own relation, outward from the focus. */
   readonly order: number
-  /** Always 1 except partway through a movement. */
   readonly opacity: number
 }
 

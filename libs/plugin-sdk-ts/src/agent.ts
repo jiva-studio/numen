@@ -13,7 +13,6 @@ export type AgentStep =
       readonly kind: 'toolCall'
       readonly tool: string
       readonly subject: string
-      // How much of the call has been written. It arrives more than once.
       readonly written: number
       readonly place?: SourceLocation
     }
@@ -29,13 +28,8 @@ export interface AgentQuery {
   readonly signal: AbortSignal
   readonly agentId?: string | undefined
   readonly modelId?: string | undefined
-  // The depth of reasoning, by the name of one of the levels the model offers.
   readonly reasoning?: string | undefined
-  // What the asking view shows, handed to every tool the agent calls. Each key starts with the id of
-  // the plugin that wrote it and a slash: "org.example.plugin/key".
   readonly context?: Readonly<Record<string, string>> | undefined
-  // The vault the question is about, by identity, which every tool the agent calls works. Empty is
-  // the vault the window shows.
   readonly vault?: string | undefined
 }
 
@@ -51,22 +45,15 @@ export interface AgentModel {
   readonly title: string
   readonly isDefault: boolean
   readonly presence: 'present' | 'not fetched' | 'nothing to fetch'
-  // The reasoning levels the model supports, from lowest to highest. Absent
-  // when the model offers no choice.
   readonly reasoningLevels?: readonly ReasoningLevel[] | undefined
-  // The level the model works at unasked, empty where it names none.
   readonly defaultReasoning?: string | undefined
 }
 
 // TextLink is one wikilink of a text.
 export interface TextLink {
-  // The wikilink as the text holds it, brackets included.
   readonly raw: string
-  // Where it points, as `scheme://value`.
   readonly address: string
-  // The text it reads as: the alias where one is written.
   readonly text: string
-  // The vault path it resolves to, empty when it resolves to none.
   readonly path: string
 }
 

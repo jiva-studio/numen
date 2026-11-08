@@ -48,10 +48,6 @@ export const dayAfter = (from: string, days: number): string => {
   return date.toISOString().slice(0, 10)
 }
 
-/**
- * A written day as a number of days, counted on a calendar no clock change
- * touches. It is not an instant and nothing is shown from it.
- */
 const getDayNumber = (day: string): number => {
   const [year, month, dayNum] = day.split('-').map(Number)
   return Date.UTC(year ?? 2000, (month ?? 1) - 1, dayNum ?? 1)

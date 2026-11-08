@@ -13,7 +13,6 @@ const LARGE = '/assets/book/pages/0?wide=800'
 const sheet = (picture = SMALL) =>
   mount(Sheet, { props: { at: 0, picture, highlights: HIGHLIGHTS } })
 
-/** The image being loaded, which is hidden, and the one shown. */
 const incoming = (page: VueWrapper) => page.find('.reader__incoming')
 const getPicture = (page: VueWrapper) => page.find('.reader__picture')
 

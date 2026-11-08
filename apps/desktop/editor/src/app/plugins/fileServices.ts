@@ -127,15 +127,10 @@ export interface PathCommandDeps {
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
-  /** Receives the failure of a context menu item that runs after the menu closed. */
   readonly reportError: (error: unknown) => void
-  /** The entries of the menu a file's text versions make, for the file at the path. */
   readonly getFileMenuItems?: (path: string) => readonly PathContribution[]
-  /** The icon a plugin draws its menu item with, and nothing for an item it draws none for. */
   readonly getContextMenuIcon?: (id: string) => unknown
-  /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   readonly getPluginCommandIcon?: (id: string) => unknown
-  /** The icon of the reader that opens a file that is no note. */
   readonly findFileIcon?: ((path: string) => Component | undefined) | undefined
 }
 

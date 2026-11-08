@@ -33,7 +33,6 @@ type Play = NonNullable<Story['play']>
  */
 const ITS_OWN_PACE = 10_000
 
-/** A container of fixed width, so a story renders at the measure it is judged at. */
 const room =
   (width: number): Decorator =>
   (story) => ({
@@ -130,10 +129,6 @@ const activeReading =
     `,
   })
 
-/**
- * The reader rendered as a hidden tab is rendered: no space to lay out content,
- * and the document arrives after the container is measured.
- */
 const outOfSight =
   (chapter: Chapter): Render =>
   () => ({
@@ -182,19 +177,13 @@ const getArea = (canvasElement: HTMLElement) =>
 const getPaper = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__paper') as HTMLElement
 
-/** Every run of the text, in the order the document sets them. */
 const getRunsOf = (canvasElement: HTMLElement) => [
   ...getPaper(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
 ]
 
-/** The offset the reader reports as current. */
 const getFrontOffset = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
-/**
- * The text set in columns, once the browser has laid it out. The count is
- * derived from the spread count of the laid-out text and shown once known.
- */
 const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
@@ -204,7 +193,6 @@ const waitForLayout = async (canvasElement: HTMLElement) =>
     { timeout: ITS_OWN_PACE },
   )
 
-/** How wide one column is, taken off the first run of the text. */
 const getColumnWidth = (canvasElement: HTMLElement) =>
   getRunsOf(canvasElement)[0]!.getClientRects()[0]!.width
 
@@ -512,7 +500,6 @@ export const SetLarger: Story = {
   },
 }
 
-/** Resolves on the next frame the browser draws. */
 const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 
 /**
@@ -570,11 +557,9 @@ export const Resized: Story = {
 
 const LONG_CHAPTER = createChapter([...VERSES, ...PROSE, ...PROSE, ...PROSE])
 
-/** The element whose width the stories set, as a split border sets the width of a pane. */
 const getHolder = (canvasElement: HTMLElement) =>
   getArea(canvasElement).closest<HTMLElement>('.mx-auto')!
 
-/** Turns two spreads on, each turn waited for. */
 const turnTwice = async (canvasElement: HTMLElement) => {
   for (let turn = 0; turn < 2; turn += 1) {
     const was = getFrontOffset(canvasElement)
@@ -585,7 +570,6 @@ const turnTwice = async (canvasElement: HTMLElement) => {
   }
 }
 
-/** Whether the run at `offset` starts inside the area. */
 const expectRunInArea = async (canvasElement: HTMLElement, offset: number) => {
   const run = getRunsOf(canvasElement).find((one) => Number(one.dataset['offset']) === offset)!
   const rect = run.getClientRects()[0]!
@@ -594,10 +578,6 @@ const expectRunInArea = async (canvasElement: HTMLElement, offset: number) => {
   await expect(rect.left).toBeLessThan(box.right)
 }
 
-/**
- * The columns stand at a spread of the area's width with the run at `offset` inside the area, and
- * still do twenty frames later, with `offset` reported in front.
- */
 const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) => {
   await waitFor(
     async () => {
@@ -614,11 +594,6 @@ const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) 
   await expect(getFrontOffset(canvasElement)).toBe(offset)
 }
 
-/**
- * A drag from the width the area was laid out at to 560 px narrower, in steps of 40 px, which stops
- * for `pause` frames after every third step and goes on. A pause of four frames or more is long
- * enough for the columns to be read again, so the drag goes on while they are read.
- */
 const draggedWithPauses =
   (pause: number): Play =>
   async ({ canvasElement }) => {
@@ -662,16 +637,8 @@ export const DraggedWithPausesOfSixFrames: Story = {
   play: draggedWithPauses(6),
 }
 
-/** Resolves in a task of its own, after the frame being drawn. */
 const waitForTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 
-/**
- * The area set to each of `widths`, the first right after a page turn, in the frames between which
- * the columns are set again. A face that arrives after a turn sets the columns again: the area is
- * measured on one frame and the columns are read on the next. The first width arrives between the
- * two, from a task, as a pointer event or a window resize does; the next ones on frames of their
- * own. The face is announced by the story, so the width arrives in that gap on every run.
- */
 const resizedRightAfterATurn =
   (widths: readonly number[]): Play =>
   async ({ canvasElement }) => {

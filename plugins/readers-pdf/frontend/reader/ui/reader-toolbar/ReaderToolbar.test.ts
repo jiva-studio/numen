@@ -10,7 +10,6 @@ import { describe, expect, it, vi } from 'vitest'
 import ReaderToolbar from './ReaderToolbar.vue'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
-/** The controls over a document of that many pages, open at the first. */
 const mountToolbar = (pages = 200, pageIndex = 0) =>
   mount(ReaderToolbar, {
     props: {
@@ -20,10 +19,6 @@ const mountToolbar = (pages = 200, pageIndex = 0) =>
     },
   })
 
-/**
- * The same, with a caller standing behind how close the page is drawn: it puts
- * back whatever it is handed, which is what walking the zoom from a press is.
- */
 const createToolbar = (zoom = FURTHEST) => {
   const controls = mount(ReaderToolbar, { props: { pages: 200, at: 0, zoom } })
   const button = (label: string) => controls.get(`button[aria-label="${label}"]`)

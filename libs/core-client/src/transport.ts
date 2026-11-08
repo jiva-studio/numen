@@ -6,7 +6,6 @@
  */
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-/** The origin the page was served from, or empty where there is no window to ask. */
 const getOrigin = (): string =>
   typeof window === 'undefined' || !window.location ? '' : window.location.origin
 

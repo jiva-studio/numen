@@ -17,7 +17,6 @@ const setUp = () => {
   return { links, reportMove, reportFollow, findFragmentOffset }
 }
 
-/** A press landing on the text inside a link, or on a bare paragraph. */
 const pressOn = (markup: string, selector: string) => {
   const root = document.createElement('div')
   root.innerHTML = markup

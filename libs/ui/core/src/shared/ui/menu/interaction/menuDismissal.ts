@@ -12,9 +12,7 @@ import { isInside } from './outside'
 import { MENU_INPUT_EVENTS, createScrollGate } from './scroll'
 
 export interface MenuDismissalState {
-  /** The window listened to, and listened to once however often this is called. */
   readonly listen: () => void
-  /** The window release. */
   readonly release: () => void
 }
 

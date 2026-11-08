@@ -6,7 +6,6 @@ import { Button } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  /** How many answers this session wrote. */
   done: number
 }>()
 

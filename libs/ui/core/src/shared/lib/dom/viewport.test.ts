@@ -40,11 +40,9 @@ const stubResizeObserver = (): Watcher[] => {
   return watchers
 }
 
-/** Delivers the content box size of an element to a watcher. */
 const tellContent = (watcher: Watcher, width: number, height: number): void =>
   watcher.tell([{ contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver)
 
-/** Delivers the border box size of an element to a watcher. */
 const tellBorder = (watcher: Watcher, inlineSize: number, blockSize: number): void =>
   watcher.tell(
     [{ borderBoxSize: [{ inlineSize, blockSize }] } as unknown as ResizeObserverEntry],
@@ -53,7 +51,6 @@ const tellBorder = (watcher: Watcher, inlineSize: number, blockSize: number): vo
 
 const createSizes = () => vi.fn<(size: Size) => void>()
 
-/** An element that is drawn at the size given. */
 const viewElement = (clientWidth: number, clientHeight: number): HTMLElement => {
   const element = document.createElement('div')
   Object.defineProperty(element, 'clientWidth', { value: clientWidth, configurable: true })
@@ -205,7 +202,6 @@ describe('the room of the window', () => {
   })
 })
 
-/** A component that tracks the size of the given element, for the test to read. */
 const mountViewport = (area: HTMLElement | null) => {
   const errors: unknown[] = []
   const target: { viewport?: ReturnType<typeof useViewport> } = {}

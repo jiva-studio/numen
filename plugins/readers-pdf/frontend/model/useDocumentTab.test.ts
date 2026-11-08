@@ -8,7 +8,6 @@ import type { DocumentReaderState } from './useDocumentReader'
 const readItem = (path: string, close = vi.fn()) =>
   ({ path, close }) as unknown as DocumentReaderState
 
-/** The pages rendered in a tab, which record what was requested of them. */
 const createPages = (): PageHandle => ({
   measure: vi.fn(),
   handleKey: vi.fn(() => false),

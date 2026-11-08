@@ -22,7 +22,6 @@ const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   ...overrides,
 })
 
-/** Where a widened box begins and ends, in the plex's own coordinates. */
 const getSpan = (node: PlacedNode, expanded: { width: number; offset: number }) => ({
   from: node.x + expanded.offset - expanded.width / 2,
   to: node.x + expanded.offset + expanded.width / 2,

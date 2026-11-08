@@ -13,7 +13,6 @@ import { DECK } from '../kind'
 import { useDeckTabs as useDeckTabsOriginal, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '../../cards'
 
-/** The deck tabs of a window that holds them in memory, and the buffers they are written out through. */
 const useDeckTabs = (cards: Cards, presets: Presets) => {
   const windowTabs = createMockTabWindow()
   const buffers = createMockBufferHost()
@@ -28,7 +27,6 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
   'stops' | 'stopsOn'
 >
 
-/** Waits for the tab's pending vault requests to resolve. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // The two cards reference one card model in two ways: by a path from the root,
@@ -57,37 +55,24 @@ const CARDS: readonly VaultCard[] = [
   },
 ]
 
-/** What a card is called on a screen: the first line of its first field. */
 const getCardName = (card: { values: readonly { field: string; text: string }[] }): string =>
   card.values[0]?.text || '—'
 
-/** A vault holding one deck, recording every write it receives. */
 const vault = (
   answers: {
     error?: ErrorCode | 'changed'
     problems?: readonly DeckProblem[]
     bound?: number
-    /** The write answers that the file moved past what the tab read. */
     isChanged?: boolean
-    /** The cards the file holds, when a test needs different ones. */
     cards?: readonly VaultCard[]
-    /** The sections the file holds, when a test needs some. */
     sections?: readonly { name: string; preamble: string }[]
-    /** The vault is unreachable, and reading the deck fails. */
     isUnreachable?: boolean
-    /** What a write of the deck fails for. */
     wrote?: ErrorCode
-    /** How many listings of the card models go unanswered before one answers. */
     unlisted?: number
-    /** The presets the vault holds, when a test needs different ones. */
     presets?: readonly PresetChoice[]
-    /** The preset the deck names, and nothing for a deck naming none. */
     by?: string
-    /** The problem reported against the preset the deck names. */
     saying?: string
-    /** What putting the deck on a preset fails for. */
     notScheduled?: ErrorCode
-    /** Putting the deck on a preset answers that the file moved past it. */
     hasSchedulingChanged?: boolean
   } = {},
 ) => {
@@ -214,7 +199,6 @@ const vault = (
   }
 }
 
-/** A window with one deck open on a file, and what that tab holds. */
 const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animals.md') => {
   const one = vault(answers)
   const { windowTabs, buffers, decks } = useDeckTabs(one.core, one.presets)

@@ -19,7 +19,6 @@ export interface GetLinkRequest {
 export interface GetLinkResponse {
   readonly url: string
   readonly isCopyable: boolean
-  /** The byte count of the stored copy, zero where none is kept. */
   readonly copySize: number
   readonly isTextDeleted: boolean
   readonly embedPage: string

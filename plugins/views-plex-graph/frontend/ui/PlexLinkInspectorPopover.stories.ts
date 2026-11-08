@@ -41,7 +41,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The direction buttons, by the direction each one shows. */
 const getDirections = (canvasElement: HTMLElement) =>
   [...canvasElement.querySelectorAll('.plex-link-row__dir-btn')].map((button) =>
     button.getAttribute('data-direction'),

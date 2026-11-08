@@ -3,12 +3,9 @@ import type { Component } from 'vue'
 /** One button of the bar, as the bar draws it. The window decides what it runs. */
 export interface TitleBarAction {
   readonly id: string
-  /** What the button is called in its tooltip and in the menu of the actions that do not fit. */
   readonly title: string
   readonly icon: Component
-  /** Actions that share a group are drawn together, with a separator between groups. */
   readonly group?: string
-  /** The shortcut as it is shown to the person, such as `Ctrl+Shift+E`. */
   readonly shortcut?: string
 }
 
@@ -18,9 +15,7 @@ export interface TitleBarAction {
  */
 export interface TitleChoice {
   readonly id: string
-  /** What the entry is called in the list. */
   readonly label: string
-  /** Whether the entry stands for what the title names now. Choosing it only closes the list. */
   readonly isCurrent?: boolean
 }
 

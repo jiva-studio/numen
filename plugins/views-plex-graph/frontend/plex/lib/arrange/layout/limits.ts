@@ -10,7 +10,6 @@ export interface RoleLimits {
 
 export type Limits = Readonly<Record<PlexRelation, RoleLimits>>
 
-/** How many boxes of `size` fit end to end in the available length. */
 const countAxis = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 
@@ -104,7 +103,6 @@ function getViewportLimits(
   )
 }
 
-/** The widest line that fits, or one when none of them do. */
 function getWidestRow(most: number, fits: (perLine: number) => boolean): number {
   for (let perLine = most; perLine > 0; perLine--) {
     if (fits(perLine)) return perLine

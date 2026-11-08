@@ -5,9 +5,6 @@ import type { Command, CommandGroup } from '../../types'
 
 export { createCommands } from './table'
 
-/**
- * The commands offered on the row of another command. They are drawn only there.
- */
 const getNestedCommandIds = (commands: readonly Command[]): ReadonlySet<string | undefined> =>
   new Set(commands.map((one) => one.also))
 

@@ -27,10 +27,8 @@ import {
   type UnavailableState,
 } from './unavailable'
 
-/** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
 
-/** The file path a tab relies on. */
 const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
@@ -45,7 +43,6 @@ export interface SavedTab {
   readonly kind: string
   readonly path: string
   readonly title?: string | undefined
-  /** What the kind saved, parsed from its JSON; absent where it saved nothing. */
   readonly saved?: unknown
 }
 
@@ -119,7 +116,6 @@ export function useWindowTabs(unavailable: UnavailableServices = {}) {
   return api
 }
 
-/** Registry of tab kinds supported by the window. */
 function createTabRegistry() {
   const byKind = new Map<string, AnyTabKind>()
   const registerKinds = (kinds: readonly AnyTabKind[]) => {
@@ -132,10 +128,6 @@ function createTabRegistry() {
   return { byKind, registerKinds, hasKind, findKind }
 }
 
-/**
- * The tabs of a plugin turned into placeholders while it is disabled, and back into tabs of their
- * kind once the kind is registered again. The tab keeps its id, its place and the saved state.
- */
 function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
   /** One tab replaced by a tab of another kind opened on the same path with the same state. */
   const replaceTab = (id: string, kind: AnyTabKind, path: string, saved: unknown) => {
@@ -176,7 +168,6 @@ function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
   return { closeTabsOfPlugin, reopenTabsOf }
 }
 
-/** Queries the window makes of its kinds about a file. */
 function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
   /** Creates a file with the named kind, which edits it; undefined when no kind has that name. */
   const createFileOfKind = (
@@ -189,7 +180,6 @@ function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
   return { createFileOfKind }
 }
 
-/** The pane a placed kind opens in, the main one first, and its place there. */
 const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
   // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.placement.
   const rank = (kind: AnyTabKind) => (kind.placement?.pane === 'main' ? 0 : 1)
@@ -200,7 +190,6 @@ const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
 /** The error callback for a placed kind whose tab failed to open. */
 type PlacementError = (kind: string, error: unknown) => void
 
-/** A tab of every kind that declares a placement, laid out as each declares. */
 async function createPlacedWorkspace(
   kinds: readonly AnyTabKind[],
   createTab: (kind: string) => Promise<string>,
@@ -221,7 +210,6 @@ async function createPlacedWorkspace(
   return createWorkspace(main, aside)
 }
 
-/** What a tab holds, made in its scope; a tab that fails to open lets go of whatever it started. */
 const openInScope = <T>(scope: EffectScope, open: () => T): T | undefined => {
   try {
     return scope.run(open)
@@ -231,7 +219,6 @@ const openInScope = <T>(scope: EffectScope, open: () => T): T | undefined => {
   }
 }
 
-/** Effect scope manager for active tabs. */
 function createTabScopes() {
   const scopes = new Map<string, EffectScope>()
   const drop = (id: string) => {
@@ -254,7 +241,6 @@ interface TabOpenerContext extends TabStoreContext {
   unavailable: UnavailableServices
 }
 
-/** The tabs laid out as their kinds place them, and the tabs the core kept laid out again. */
 function createTabPlacement(
   ctx: Pick<TabOpenerContext, 'open' | 'layout' | 'byKind'>,
   openers: ReturnType<typeof createTabOpeners>,
@@ -289,7 +275,6 @@ function createTabPlacement(
   return { openPlacedTabs, restoreTabs }
 }
 
-/** Queries for inspecting tabs in the window. */
 function createTabQueries(
   open: ShallowRef<ReadonlyMap<string, WindowTab>>,
   layout: Ref<Workspace>,
@@ -316,7 +301,6 @@ function createTabQueries(
   return { getTab, getTabStateIn, front, each }
 }
 
-/** A saved tab opened by its kind, or by a placeholder when its kind fails, so one bad tab never stops the others. */
 const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
   const scope = effectScope(true)
   try {
@@ -337,7 +321,6 @@ const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
   }
 }
 
-/** Opens a saved tab with its id and state unless it is open, and activates it. */
 function openSavedTabAsActive(
   open: ShallowRef<ReadonlyMap<string, WindowTab>>,
   openers: Pick<ReturnType<typeof createTabOpeners>, 'openSavedTab' | 'show'>,
@@ -347,7 +330,6 @@ function openSavedTabAsActive(
   openers.show(saved.id)
 }
 
-/** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
   const openSavedTab = (saved: SavedTab) => {
@@ -437,7 +419,6 @@ function createTabOpeners(ctx: TabOpenerContext) {
   }
 }
 
-/** Operations for releasing and closing tabs. */
 function createTabClosers(ctx: TabStoreContext) {
   const releaseTab = (id: string): boolean => {
     const one = ctx.open.value.get(id)
@@ -471,7 +452,6 @@ function createTabClosers(ctx: TabStoreContext) {
   return { releaseTab, requestClose, reconcileTab, close }
 }
 
-/** Moving the tabs of a kind that navigates to another path. */
 function createTabNavigation(
   open: ShallowRef<ReadonlyMap<string, WindowTab>>,
   openers: Pick<ReturnType<typeof createTabOpeners>, 'openTabOfKind' | 'show'>,
@@ -553,7 +533,6 @@ function createWindowHandle(deps: WindowHandleDeps): WindowHandle {
   }
 }
 
-/** Dispatches a key press to the active or most recently used tab. */
 function dispatchTabKeyPress(
   layout: Workspace,
   open: ReadonlyMap<string, WindowTab>,
@@ -571,7 +550,6 @@ function dispatchTabKeyPress(
   return false
 }
 
-/** One tab release, and the rest kept. */
 const omitEntry = <T>(target: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
   const rest = new Map(target)
   rest.delete(id)

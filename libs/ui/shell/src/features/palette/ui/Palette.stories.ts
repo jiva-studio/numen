@@ -57,10 +57,6 @@ const EVERYTHING = [
   { id: 'remove', text: 'Move to trash' },
 ]
 
-/**
- * Builds highlight ranges for each occurrence of `word` in `text`. The palette
- * receives the ranges as given and does no matching of its own.
- */
 const marks = (text: string, word: string): TextRange[] => {
   if (!word) return []
   const out: TextRange[] = []
@@ -139,7 +135,6 @@ const NAMED: PaletteGroup = {
   items: NAMES.items.map((one) => ({ ...one, actions: EVERYTHING.slice(0, 5) })),
 }
 
-/** A window with something in it, and a palette standing over the lot. */
 const renderOverWindow = (args: Knobs) => ({
   components: { Palette },
   setup() {
@@ -232,11 +227,9 @@ const searchInput = () => document.body.querySelector<HTMLInputElement>('[data-a
 const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
-/** The text of a line, with its highlighted runs concatenated. */
 const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
-/** The keystroke announced for a key cap, which is the text a screen reader receives. */
 const getSpokenKey = (cap: Element | null | undefined): string =>
   getText(cap?.querySelector('.sr-only'))
 
@@ -587,7 +580,6 @@ const ICONS: Record<string, Component> = {
   recording: AudioLines,
 }
 
-/** A palette whose rows carry an icon, which is the caller filling the icon slot. */
 const renderWithIcons = (args: Knobs) => ({
   components: { Palette },
   setup() {

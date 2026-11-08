@@ -2,19 +2,9 @@ import type { DeckProblem } from '../types'
 
 /** Where each problem is drawn. */
 export interface Marks {
-  /**
-   * What is wrong with each card and each template, under the identity this window
-   * gave it.
-   */
   readonly at: ReadonlyMap<string, readonly string[]>
-  /**
-   * What is wrong with one field of one card, under that card's identity and
-   * then the name the file spells the field.
-   */
   readonly bySection: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
-  /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
-  /** Problems that belong to no card, no template and no field. */
   readonly whole: readonly string[]
 }
 
@@ -70,11 +60,9 @@ export const createMarks = (
   return { at: marksAt, bySection: underMap, fields, whole }
 }
 
-/** Whether two lists of words read the same, in the same order. */
 const areWordsEqual = (one: readonly string[], other: readonly string[]): boolean =>
   one.length === other.length && one.every((text, index) => text === other[index])
 
-/** Whether two of those maps stand against the same things, saying the same. */
 const areMarkMapsEqual = (
   one: ReadonlyMap<string, readonly string[]>,
   other: ReadonlyMap<string, readonly string[]>,
@@ -87,7 +75,6 @@ const areMarkMapsEqual = (
   return true
 }
 
-/** Whether two of those hold the same fields of the same cards, saying the same. */
 const areUnderMapsEqual = (
   one: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>,
   other: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>,

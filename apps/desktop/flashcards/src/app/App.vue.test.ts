@@ -65,7 +65,6 @@ const VAULTS: readonly VaultRow[] = [
   { id: 'words', name: 'Words', path: '/vaults/Words' },
 ]
 
-/** A tab kind that draws the vault it was mounted on, and a summary that draws the vault it is beside. */
 const activateCards = (context: {
   registerTabKind: (one: unknown) => void
   registerView: (one: unknown) => void
@@ -103,7 +102,6 @@ const MANIFEST = {
   frontend: {},
 }
 
-/** What the shell is given: one plugin that draws the review, and how the vaults are listed. */
 const createDeps = (listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS) => ({
   listPlugins: async () => ['md.numen.cards'],
   listVaults,

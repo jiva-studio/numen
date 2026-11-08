@@ -12,16 +12,13 @@ export type EdgeArrow = 'from' | 'to'
  */
 export interface EdgeLabel {
   readonly text: string
-  /** The end of the line the record points at, where it has a head. */
   readonly end?: EdgeArrow
 }
 
 export interface PlexEdge {
   readonly from: string
   readonly to: string
-  /** Drawn along the line when present; the plex never invents one. */
   readonly labels?: readonly EdgeLabel[]
-  /** The ends an arrowhead is drawn at. A line given none carries none. */
   readonly arrows?: readonly EdgeArrow[]
 }
 
@@ -52,7 +49,6 @@ export type EdgeHeading = 'along' | 'against'
  * in degrees clockwise from the positive x axis.
  */
 export interface PlacedArrow {
-  /** The end of the line the arrowhead is drawn at. */
   readonly end: EdgeArrow
   readonly at: Position
   readonly angle: number
@@ -70,44 +66,19 @@ export interface LabelType {
 
 /** One label of an edge as it is drawn. */
 export interface EdgeTitle {
-  /** Where the label asks to be set, as a fraction of the line from its `from` end. */
   readonly anchor: number
-  /** Which way round the curve the words are read. */
   readonly heading: EdgeHeading
-  /**
-   * The side of the line the words are set on, looking along it from its `from`
-   * end: -1 on the left, 1 on the right, 0 on the line. A title of a pair is
-   * read in the direction of its record, on the left of its own reading: the
-   * left side reads from `from` to `to`, the right side the other way.
-   */
   readonly side: EdgeSide
-  /**
-   * How far the centre of the words is from the line, in plex units, signed as `side`: the
-   * middle of the lowercase letters for a title on the line, the middle of the whole ink
-   * for a title beside it.
-   */
   readonly shift: number
-  /** How far the baseline is below that centre, across the line, in plex units. */
   readonly rise: number
-  /**
-   * The label as it is drawn: cut to the length of the curve and ended in an
-   * ellipsis. The whole of it where nothing measured the words.
-   */
   readonly words: string
-  /**
-   * Position of the label's midpoint as a fraction of the line's length, along
-   * the curve as it is read: the position of its end, unless the title was
-   * shifted along it to find space.
-   */
   readonly wordsAt: number
 }
 
 /** An edge routed between two placed nodes. */
 export interface PlacedEdge extends PlexEdge, EdgeCurve {
   readonly opacity: number
-  /** The labels that are drawn, each at its position. A label with no room is left out. */
   readonly titles: readonly EdgeTitle[]
-  /** Where each arrowhead goes and which way it is aimed, for an edge with any. */
   readonly arrowheads?: readonly PlacedArrow[] | undefined
 }
 
@@ -123,7 +94,6 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
 export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
-/** Where the curve has got to at `t`. */
 const getPoint = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = back * back * back
@@ -147,11 +117,6 @@ const getPoint = (edge: EdgeCurve, t: number): Position => {
 /** How finely the curve is cut up to be measured. */
 const LENGTH_SAMPLES = 24
 
-/**
- * Cumulative curve length at each of 24 sample points, the full length last.
- * Each step is a chord, shorter than the arc it spans, so the result slightly
- * underestimates.
- */
 function measureAxis(edge: EdgeCurve): number[] {
   const axisOffset = [0]
   let previous = edge.fromPoint
@@ -166,11 +131,6 @@ function measureAxis(edge: EdgeCurve): number[] {
 /** How long the curve is, as an estimate. */
 export const getLength = (edge: EdgeCurve): number => measureAxis(edge)[LENGTH_SAMPLES]!
 
-/**
- * The parameter `t` at the given fraction of the measured length. The steps are
- * chords of even parameter spacing, so the function walks them and interpolates
- * within the step the fraction falls in.
- */
 function getParameter(offsets: readonly number[], fraction: number): number {
   const total = offsets[LENGTH_SAMPLES]!
   if (total <= 0) return 0
@@ -195,7 +155,6 @@ export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Posit
   return (fraction) => getPoint(edge, getParameter(axisEdge, fraction))
 }
 
-/** Which way the curve is travelling at `t`, as a direction of any length. */
 const getTangent = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = 3 * back * back

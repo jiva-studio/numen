@@ -20,16 +20,9 @@ interface PaletteGroupHandle {
 }
 
 defineProps<{
-  /** The groups, with their rows numbered across the whole list. */
   groups: readonly PlacedGroup[]
-  /** The number of the row with keyboard focus, or -1 for none. */
   here: number
-  /**
-   * The identifier prefix of the list and its rows. The search field refers to
-   * the highlighted row, so both derive their identifiers from one prefix.
-   */
   uid: string
-  /** The accessible name of the list. */
   name: string
 }>()
 
@@ -52,7 +45,6 @@ defineSlots<{
 /** The rendered groups, each with its rows. */
 const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
-/** Scrolls one item into view after the pending render. */
 const reveal = async (item: string): Promise<void> => {
   await nextTick()
   for (const group of groupRefs.value ?? []) group.reveal(item)

@@ -12,9 +12,7 @@ import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The headings and the space available to them. */
   hung: NodeHeadings
-  /** How far the box they hang from has opened, from nothing to the whole way. */
   open: number
 }>()
 
@@ -50,11 +48,6 @@ watch(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * Scrolls the headings list on wheel input. A wheel event that cannot scroll is
- * left to other handlers, and a wheel delta that amounts to less than a whole
- * heading is carried into the next event.
- */
 const onWheel = (event: WheelEvent) => {
   const visibleHeadings = openHeadings.value
   if (!visibleHeadings) return
@@ -79,7 +72,6 @@ const onWheel = (event: WheelEvent) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The line an arrow at an edge is drawn along. */
 const arrowLine = (arrow: Arrow) =>
   arrow.points.map((pt, index) => `${index === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ')
 </script>

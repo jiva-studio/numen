@@ -18,7 +18,6 @@ import { WORDS as words } from '../../cards'
 import { ERRORS } from '../../cards/wire/errors'
 import { createCardModelWire, NOTHING } from './wire'
 
-/** One card model as the vault reads it, with the overrides a test needs. */
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',
   title: 'Word',
@@ -39,7 +38,6 @@ const problem: DeckProblem = {
   text: 'Front',
 }
 
-/** A vault returning whatever a test configures, and nothing else. */
 const vault = () => ({
   cardModels: vi.fn(),
   createDeck: vi.fn(),
@@ -51,7 +49,6 @@ const vault = () => ({
   writeCardModel: vi.fn(),
 })
 
-/** The wire over that vault, and the messages it wrote. */
 const createWire = (cards: ReturnType<typeof vault>) => {
   const messages: { text: string; how: string | undefined }[] = []
   const wire = createCardModelWire(cards as unknown as Cards, (text, how) => {

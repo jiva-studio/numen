@@ -10,7 +10,6 @@ import type { AgentStep } from '@numen/plugin-sdk'
 import { createAgentPort } from './agentPort'
 import type { AgentClient } from './agentPort'
 
-/** A tool call as the service sends one, working on a place or on none. */
 const call = (place?: { path: string; range: { start: number; end: number } }): AskAgentResponse =>
   create(AskAgentResponseSchema, {
     step: {
@@ -24,7 +23,6 @@ const call = (place?: { path: string; range: { start: number; end: number } }): 
     },
   })
 
-/** The service, replaying the configured responses and recording the requests it receives. */
 const service = (says: AskAgentResponse[]) => {
   const requests: { request: unknown; signal: AbortSignal }[] = []
   const finished: string[] = []
@@ -41,7 +39,6 @@ const service = (says: AskAgentResponse[]) => {
   return { agent, requests, finished }
 }
 
-/** Everything the port yields for the service's responses. */
 const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
   const { agent } = service(says)
   const read: AgentStep[] = []

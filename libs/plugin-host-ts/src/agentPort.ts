@@ -34,7 +34,6 @@ interface WireAgentResponse {
     | { readonly case: undefined; readonly value?: undefined }
 }
 
-/** The range a call named, and an empty one for a call naming no place inside the source. */
 const normalizeRange = (range: WireRange | undefined) => ({
   start: range?.start ?? 0,
   end: range?.end ?? 0,
@@ -63,7 +62,6 @@ export interface AgentClient {
 
 type AgentRequest = Parameters<AgentClient['askAgent']>[0]
 
-/** The request built from a query. An empty agent, model, reasoning, context or vault is omitted. */
 const createAgentRequest = (query: AgentQuery): AgentRequest => {
   const {
     question: prompt,
@@ -87,7 +85,6 @@ const createAgentRequest = (query: AgentQuery): AgentRequest => {
   }
 }
 
-/** The step of the port a step on the wire is, or undefined for one that carries none. */
 const getAgentStep = (step: WireAgentResponse): AgentStep | undefined => {
   switch (step.step.case) {
     case 'text':

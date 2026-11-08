@@ -25,20 +25,15 @@ import { browserClock, type Clock } from '@numen/ui'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
-  /** Whatever the caller addresses this change by. Nothing here reads it. */
   readonly id: string
-  /** The stretch about to be replaced, as offsets into the text. */
   readonly from: number
   readonly to: number
-  /** The text inserted in place of that range. */
   readonly text: string
 }
 
 /** How much of a change's text is shown, and which part arrived most recently. */
 export interface Reveal {
-  /** Characters from the start of the text that are shown. */
   readonly visibleLength: number
-  /** Where the words shown for the first time begin; `visibleLength` when none are. */
   readonly fading: number
 }
 
@@ -48,7 +43,6 @@ export interface Reveal {
  */
 const PACE = 220
 
-/** The end of each word, taking in the space after it. */
 const boundaries = (text: string): number[] => {
   const words = /\S+\s*/g
   const ends: number[] = []
@@ -76,7 +70,6 @@ export const createReveal = (text: string, part: number): Reveal => {
   }
 }
 
-/** How long the whole of `text` takes to be shown. */
 const getDuration = (text: string) => (boundaries(text).length + 1) * PACE
 
 /** The change the editor is drawing over, and nothing when there is none. */
@@ -96,7 +89,6 @@ interface Mark {
   readonly change: EditorChange | null
   readonly from: number
   readonly to: number
-  /** How much of the text is shown; nothing until the text is there. */
   readonly reveal: Reveal | null
   readonly decorations: DecorationSet
 }
@@ -133,10 +125,6 @@ const getDecorations = (
   return Decoration.set(found, true)
 }
 
-/**
- * Whether the text is in the document at the position the change specified. A
- * change that inserts nothing has no text to wait for.
- */
 const hasArrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 && state.doc.sliceString(from, from + change.text.length) === change.text
 
@@ -153,14 +141,12 @@ const start = (state: EditorState): Mark => {
   return { change, from, to, reveal, decorations: getDecorations(change, { from, to }, reveal) }
 }
 
-/** The reveal progress a transaction reports, or null when it reports none. */
 const getStepped = (transaction: Transaction): Reveal | null => {
   let stepping: Reveal | null = null
   for (const effect of transaction.effects) if (effect.is(setReveal)) stepping = effect.value
   return stepping
 }
 
-/** How much of the text is shown once the document has moved under it. */
 const getReveal = (state: EditorState, was: Mark, from: number): Reveal | null => {
   if (!was.change) return null
   return hasArrived(state, was.change, from)
@@ -232,7 +218,6 @@ class Pace {
     this.started = null
   }
 
-  // Elapsed time comes from the timestamp each callback is handed.
   private readonly step = (now: number) => {
     this.handle = null
     const marks = this.view.state.field(changeMarks)

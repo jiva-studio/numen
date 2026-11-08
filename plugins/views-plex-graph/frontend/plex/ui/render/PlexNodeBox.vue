@@ -11,9 +11,7 @@ import type { PlacedNode } from '../../lib/node'
 
 const props = defineProps<{
   node: PlacedNode
-  /** The box as it is drawn: its width, and how far its middle has slid. */
   box: WideBox
-  /** Not a node yet, so its title is the relation it would take. */
   isGhost: boolean
 }>()
 
@@ -35,7 +33,6 @@ const startsAt = computed(() => props.box.offset - props.box.width / 2)
 /** Where the box begins down, which is half its height above the middle. */
 const startsDown = computed(() => -props.node.height / 2)
 
-/** Whether anything was drawn at all, which a placeholder and a blank are not. */
 function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   return (
     !!vnodes &&

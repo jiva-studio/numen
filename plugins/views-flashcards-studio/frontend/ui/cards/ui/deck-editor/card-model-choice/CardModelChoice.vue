@@ -9,9 +9,7 @@ import type { CardModel } from '../../../lib/card'
 
 withDefaults(
   defineProps<{
-    /** The card models a card may be cut by. */
     cardModels: readonly CardModel[]
-    /** The words it is drawn with. */
     words?: DeckWords
   }>(),
   { words: () => DECK_WORDS },

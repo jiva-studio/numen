@@ -15,7 +15,6 @@ const sleep: Wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export interface DebouncedSearchOptions {
   wait?: Wait
-  /** The guard the requests are measured against. A caller asking other things too hands in its own. */
   guard?: RequestGuard
 }
 

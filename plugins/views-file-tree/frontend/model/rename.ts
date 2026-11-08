@@ -4,17 +4,11 @@
 import { getFolderPath, ROOT } from './useFileTree'
 import { getFileName } from '@numen/plugin-sdk'
 
-/**
- * Where a name's ending begins, and nowhere for a name carrying none.
- */
 const findExtensionStart = (name: string): number => {
   const dotIndex = name.lastIndexOf('.')
   return !/\s/u.test(name.slice(dotIndex)) ? dotIndex : -1
 }
 
-/**
- * The ending a name carries, the dot with it, and nothing where it carries none.
- */
 const getExtension = (name: string): string => {
   const extStart = findExtensionStart(name)
   return extStart > 0 ? name.slice(extStart) : ''

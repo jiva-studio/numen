@@ -59,7 +59,6 @@ defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => composer.va
 watch(room, () => thread.value?.toFoot(), { flush: 'post' })
 
 /* -------------------------------- Handlers -------------------------------- */
-/** Sent. The conversation takes up following its foot, where the question is. */
 function onSubmit(text: string) {
   emit('submit', text)
   thread.value?.toFoot(true)

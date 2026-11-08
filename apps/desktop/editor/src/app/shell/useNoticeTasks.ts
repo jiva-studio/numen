@@ -14,13 +14,11 @@ import type { useSettings } from '../window/useSettings'
 
 export interface NoticeTasksDeps {
   log: MessageLog
-  /** Plugin notices, listed after the window's own. */
   plugins: NoticeQueue
   window: ReturnType<typeof useWindowDisplay>
   settings: ReturnType<typeof useSettings>
 }
 
-/** One notice as a failed task whose title and error are its text. */
 const createFailedTask = (id: string, text: string, about = ''): Task => ({
   id,
   label: text,

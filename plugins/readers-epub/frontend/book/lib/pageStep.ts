@@ -45,12 +45,7 @@ export function pressPage(x: number, width: number): PageNavigationAction | unde
 
 /** Where a turn lands: on a spread of this document, or past either end of it. */
 export interface Destination {
-  /** The spread the turn lands on, absent past the ends of the document. */
   readonly spread?: number
-  /**
-   * The offset requested past an end of the document, which the owner of the
-   * book resolves by opening the adjacent document.
-   */
   readonly offset?: number
 }
 

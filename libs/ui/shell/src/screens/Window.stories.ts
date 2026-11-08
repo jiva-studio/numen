@@ -87,7 +87,6 @@ const ROWS: readonly Row[] = [
 
 const OPEN = ['physics', 'computation', 'reading']
 
-/** What is rendered next to a row: for a folder, whether its contents are shown. */
 const getIcon = (id: string, open: boolean) => {
   const row =
     ROWS.find((one) => one.id === id) ??
@@ -218,7 +217,6 @@ const renderPage = (page: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-/** The position of a title run, the same each time it is placed. */
 const marks = (title: string, word: string): TextRange[] => {
   const spans: TextRange[] = []
   const lower = title.toLowerCase()
@@ -233,7 +231,6 @@ const READ = { id: 'read', text: 'Open note' }
 const READ_AT = { id: 'readAt', text: 'Open at this heading' }
 const READ_DOCUMENT = { id: 'readDocument', text: 'Open the document here' }
 
-/** A note whose name carries the words: the name, and nothing under it. */
 const createItem = (id: string, title: string): PaletteItem => ({
   id,
   title,
@@ -249,7 +246,6 @@ const heading = (id: string, title: string, note: string): PaletteItem => ({
   actions: [READ_AT, TRAVEL],
 })
 
-/** A passage: what it came out of, and the words around the hit under it. */
 const passage = (
   id: string,
   source: string,
@@ -388,16 +384,12 @@ const FILE_COMMANDS: readonly PaletteGroup[] = [
 ]
 
 interface Screen {
-  /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
   readonly panel?: 'search' | 'commands' | null
-  /** What the commands panel offers, where it is the panel drawn. */
   readonly commands?: readonly PaletteGroup[]
-  /** The rows of the vault the selection relies on. */
   readonly selected?: readonly string[]
 }
 
-/** One arrangement of the window, drawn from the pieces above. */
 const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }: Screen) => ({
   components: { WorkspaceLayout, Palette, Tree },
   setup() {
@@ -482,14 +474,12 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** One pane of the window, by the name it was divided under. */
 const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   const element = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
   if (!element) throw new Error(`no pane ${id}`)
   return element
 }
 
-/** Whether one pane is entirely beyond another's trailing edge. */
 const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 

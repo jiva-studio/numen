@@ -15,7 +15,6 @@ const answer = (path: string): Neighbourhood => ({
   connections: [],
 })
 
-/** A neighbourhood of a note the index does not hold: a focus with no path. */
 const createEmptyNeighbourhood = (): Neighbourhood => ({
   focus: { path: '', title: '' },
   focusType: 'note',
@@ -23,7 +22,6 @@ const createEmptyNeighbourhood = (): Neighbourhood => ({
   connections: [],
 })
 
-/** A vault whose neighbourhood response is supplied by the test. */
 const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neighbourhood })
 
 describe('a plex still being read', () => {

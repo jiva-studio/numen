@@ -3,7 +3,6 @@ import { openVaultFile, openWorkspace, runPaletteCommand } from '../../support/w
 import { deleteVaultFiles } from '../../support/media.js'
 import { createUniqueTitle, readNote, readVaultFile } from '../../support/vault.js'
 
-/** Runs `Create card model` from the palette under the name given on its step. */
 const createCardModel = async (page: Page, title: string): Promise<void> => {
   await runPaletteCommand(page, 'Create card model', 'Create card model')
   const field = page.locator('input[data-palette="field"]').first()
@@ -13,7 +12,6 @@ const createCardModel = async (page: Page, title: string): Promise<void> => {
   await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
 }
 
-/** The names under `fields:` in the frontmatter of a card model file. */
 const readFields = (text: string): string[] =>
   [...(/^fields:\n((?: {2}- .*\n)*)/m.exec(text)?.[1]?.matchAll(/^ {2}- (.*)$/gm) ?? [])].map(
     (one) => one[1] ?? '',

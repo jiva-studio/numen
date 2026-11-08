@@ -71,7 +71,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
  */
 export const getNamedIcon = (name: string): Component => createNamedIcon(name)
 
-/** Whether the id is a command of a plugin, whose owner is the dotted id of the plugin. */
 const isPluginCommandId = (id: string): boolean => getCommandOwner(id).includes('.')
 
 /** The icon for a command, and nothing where it has none. */

@@ -66,7 +66,6 @@ function getIconFor(id: string): Component | null {
   return props.getTabIcon(id) ?? props.getKindIcon?.(tab.kind) ?? null
 }
 
-/** Returns the kind icon of the active tab of a window. */
 function getWindowIcon(windowId: string): Component | null {
   const kind = props.windows.find((one) => one.id === windowId)?.activeKind
   return kind ? (props.getKindIcon?.(kind) ?? null) : null

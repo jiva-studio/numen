@@ -8,7 +8,6 @@ import { computed } from 'vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** Unique key of the row; the title id is derived from it. */
   at: string
   name: string
   detail: string

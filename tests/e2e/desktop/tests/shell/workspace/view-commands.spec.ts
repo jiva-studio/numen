@@ -22,9 +22,6 @@ const VIEWS = [
   { command: 'Record audio', query: 'record', tab: /^Record Audio/, keys: undefined },
 ] as const
 
-/**
- * Closes every tab of the view, runs the opening, and checks it drew one.
- */
 const expectOpened = async (page: Page, name: RegExp, open: () => Promise<void>): Promise<void> => {
   const tabs = page.getByRole('tab', { name })
   while ((await tabs.count()) > 0) {

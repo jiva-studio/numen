@@ -65,7 +65,6 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
   ...overrides,
 })
 
-/** An answer the test gives when it chooses. */
 const createGate = () => {
   let open: (answer: Curve) => void = () => undefined
   let fail: (error: Error) => void = () => undefined
@@ -76,7 +75,6 @@ const createGate = () => {
   return { promise: reply, open, fail }
 }
 
-/** An application that answers each question for a curve in turn. */
 const createCore = (...answers: Promise<Curve>[]) => {
   const request: Settings[] = []
   const core = {

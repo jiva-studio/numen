@@ -48,7 +48,6 @@ export type PresetPlace =
 export interface PresetTabDeps {
   core: Presets
   buffers: BufferHost
-  /** The window lets go of a tab that took its own close. */
   closeTab: (id: string) => void
   writeMessage: MessageWriter
   today: () => string
@@ -79,7 +78,6 @@ interface KindDeps {
   bounds: Ref<SettingsBounds>
   core: Presets
   today: () => string
-  /** The preset each tab state was made for, which stays the one it was made for wherever its file goes. */
   states: WeakMap<PresetTabState, OpenPreset>
   flush: (state: PresetTabState) => Promise<void>
 }

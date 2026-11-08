@@ -94,7 +94,6 @@ describe('a flush reported', () => {
   })
 })
 
-/** Everything a stream gave, read to its end. */
 const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
   const readItem: T[] = []
   for await (const one of stream) readItem.push(one)

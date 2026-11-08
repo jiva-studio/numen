@@ -14,24 +14,18 @@ import type { PlexRelation } from '../../lib/relation'
 const CAPTURE = { capture: true } as const
 
 export interface PlexDragState {
-  /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Position | null>
-  /** The relation letting go here evaluates to, so it can be shown before it does. */
   readonly relation: Ref<PlexRelation | null>
 }
 
 /** The dependencies of a drag: the drawing surface, the layout, and the rules. */
 export interface PlexDragDeps {
-  /** The drawing, which turns screen pixels into the plex's own coordinates. */
   readonly getSurface: () => SVGSVGElement | null
-  /** What is being dragged, each of them opaque. Empty while nothing is. */
   readonly getDragged: () => readonly string[]
   readonly getFrame: () => PlexFrame
   readonly getOptions: () => PlexOptions
   readonly getViewport: () => Size
-  /** Relations a gesture is allowed to produce. */
   readonly getAllowedRelations: () => readonly PlexRelation[]
-  /** The distance from the focus at which the pointer selects a direction. */
   readonly getThreshold: () => number
   readonly commit: (dragged: readonly string[], relation: PlexRelation) => void
 }

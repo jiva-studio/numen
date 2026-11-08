@@ -54,7 +54,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-/** What each row of the receipt is called, in the order they are drawn. */
 const rows = (tab: ReturnType<typeof mount>): readonly string[] =>
   tab.findAll('[data-preset-row] [data-preset="name"]').map((one) => one.text())
 
@@ -99,7 +98,6 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
   ...overrides,
 })
 
-/** What an answer counted the material at, and nothing where none has landed. */
 const getCounts = (one: Curve): PresetCounts | null =>
   one.isHonest
     ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
@@ -110,7 +108,6 @@ export interface TabFixtureOptions {
   counts?: PresetCounts | null
 }
 
-/** A tab with those settings, and a record of every action it requested. */
 const createTab = (
   overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},

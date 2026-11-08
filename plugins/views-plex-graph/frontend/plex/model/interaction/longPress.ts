@@ -15,7 +15,6 @@ export const LONG_PRESS_DELAY = 400
 export const LONG_PRESS_TOLERANCE = 12
 
 export interface LongPressState {
-  /** True while a rest has been requested and has neither completed nor been cancelled. */
   readonly isResting: () => boolean
   readonly onPointerDown: (event: PointerEvent) => void
   readonly onPointerMove: (event: PointerEvent) => void

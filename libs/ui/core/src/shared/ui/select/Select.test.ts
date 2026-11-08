@@ -34,7 +34,6 @@ afterEach(() => {
   mounted = null
 })
 
-/** Twice: the choices measure and take the keyboard a tick after they open. */
 const settle = async () => {
   await nextTick()
   await nextTick()
@@ -48,7 +47,6 @@ const groups = () =>
     one.textContent?.trim(),
   )
 
-/** Every choice the control has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 

@@ -16,14 +16,12 @@ import {
   openNote,
 } from '../../support/vault.js'
 
-/** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
 const getPlexNode = (page: Page, title: string, relation: string) =>
   getGraph(page).getByRole(relation === 'focus' ? 'img' : 'button', {
     name: `${title}, ${relation}`,
     exact: true,
   })
 
-/** Names the note a command makes, in the palette's naming step. */
 const nameNote = async (page: Page, title: string) => {
   const field = getPaletteField(page)
   await expect(field).toBeVisible()
@@ -32,7 +30,6 @@ const nameNote = async (page: Page, title: string) => {
   await page.keyboard.press('Enter')
 }
 
-/** Waits until the note the window made is the tab in front, and gives back its path. */
 const waitForMadeNote = async (page: Page, title: string): Promise<string> => {
   await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${title}\\.md$`))
   const made = await readActivePath(page.request)
@@ -41,7 +38,6 @@ const waitForMadeNote = async (page: Page, title: string): Promise<string> => {
   return made
 }
 
-/** Puts the note in front into the focus of the plex. */
 const showInPlex = async (page: Page, title: string) => {
   await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
   await expect(getPlexNode(page, title, 'focus')).toBeAttached()

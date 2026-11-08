@@ -13,15 +13,10 @@ import type { AnyTabKind, WindowHandle } from './kinds'
 import { fileOpeners } from './openers'
 import { useWindowTabs } from './windowTabs'
 
-/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
 }
 
-/**
- * A kind that records the calls it receives and the names it opened with. A
- * kind that retains its tabs has pending work and never releases one.
- */
 const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
   const openedTab: string[] = []
   const closedPaths: string[] = []
@@ -46,17 +41,12 @@ const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: b
   return { declared: () => one, one, opened: openedTab, closedPaths, inspected: observed }
 }
 
-/**
- * A window with the declared kinds registered, each created from the handle it
- * receives.
- */
 const notifiedCalls = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
   const window = useWindowTabs()
   window.registerKinds(declared.map((one) => one(window.handle)))
   return window
 }
 
-/** Every tab on the screen, whichever pane it is in. */
 const onScreen = (layout: Workspace) => getPanes(layout.root).flatMap((pane) => pane.tabs)
 
 describe('a tab of a kind', () => {
@@ -1218,7 +1208,6 @@ describe('a file made as the kind that edits it', () => {
   })
 })
 
-/** A plugin kind that keeps a page in each tab and saves it. */
 const pagedKind = (pluginId = 'viewer.plugin'): AnyTabKind => ({
   kind: 'paged',
   pluginId,

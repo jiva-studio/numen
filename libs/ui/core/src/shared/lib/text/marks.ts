@@ -9,10 +9,8 @@ import type { MarkdownIt, StateInline } from 'markdown-it'
 
 /** A piece of a text drawn as a link. */
 export interface LinkPiece {
-  /** The piece as the text holds it. */
   readonly raw: string
   readonly href: string
-  /** The text the link reads as. */
   readonly text: string
 }
 
@@ -62,7 +60,6 @@ const TERMINATORS = new Set([
   0x5d, 0x5e, 0x5f, 0x60, 0x7b, 0x7d, 0x7e,
 ])
 
-/** markdown-it's text rule, which also stops where a piece may begin. */
 const text = (state: StateInline, silent: boolean): boolean => {
   const pieces = getPieces(state)
   let pos = state.pos

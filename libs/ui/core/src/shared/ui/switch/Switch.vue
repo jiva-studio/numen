@@ -18,7 +18,6 @@ const props = withDefaults(
   defineProps<{
     modelValue: boolean
     isDisabled?: boolean
-    /** A change is being written: presses are ignored, and the look does not change. */
     isBusy?: boolean
     class?: HTMLAttributes['class']
   }>(),

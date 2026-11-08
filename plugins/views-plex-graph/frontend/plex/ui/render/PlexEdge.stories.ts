@@ -25,12 +25,9 @@ import { DARK, expectDark } from '../../../fixtures/theme'
 type Direction = 'none' | 'forward' | 'backward' | 'both'
 
 interface Knobs {
-  /** The words of the record that points at the `to` end, or of the only record. */
   words: string
-  /** The words of the record that points at the `from` end, drawn where both are. */
   reverseWords: string
   direction: Direction
-  /** Below one, the edge is on its way in or out. */
   opacity: number
 }
 
@@ -41,7 +38,6 @@ const CURVE: EdgeCurve = {
   control2: { x: 60, y: 40 },
 }
 
-/** Each record the edge draws: its words and the end it points at, none for no marker. */
 const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
   switch (args.direction) {
     case 'none':
@@ -61,10 +57,6 @@ const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
 /** The ink of the label font, as the arrangement measures it. */
 const LABEL_TYPE = { ascent: 9, descent: 3, xHeight: 6 }
 
-/**
- * The edge as the arrangement places it: one title centred along the line, two at
- * opposite ends and on opposite sides of it.
- */
 const createEdge = (args: Knobs): PlacedEdge => {
   const records = getRecords(args)
   const ends = records.flatMap((record) => (record.end ? [record.end] : []))
@@ -94,10 +86,6 @@ const createEdge = (args: Knobs): PlacedEdge => {
   }
 }
 
-/**
- * The pair drawn twice over one window: at rest, and lifted. Each is wrapped in
- * a group of the story's own, because neither drawing carries a name.
- */
 const createBoth = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
   setup: () => ({ line: getLines([createEdge(args)], 'edge')[0]! }),
@@ -151,7 +139,6 @@ type Story = StoryObj<Knobs>
 /** The pair at rest above, and lifted below. */
 export const Playground: Story = {}
 
-/** The resting drawing: the arrowheads by where they are put, and the titles by their place on the path. */
 const getResting = (canvas: HTMLElement) => {
   const group = canvas.querySelector('[data-edge="resting"]')!
   const heads = [...group.querySelectorAll('.plex__edge-arrow')].map((head) =>
@@ -252,7 +239,6 @@ export const PartWayThere: Story = {
   },
 }
 
-/** The parts of one edge, in the order they are drawn under a group. */
 const getParts = (canvas: HTMLElement, edge: string) => {
   const group = canvas.querySelector(`[data-edge="${edge}"]`)
   if (!group) throw new Error(`no ${edge} edge`)

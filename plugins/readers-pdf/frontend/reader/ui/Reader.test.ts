@@ -5,10 +5,6 @@ import { READER_WORDS } from '../lib/strip'
 
 const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
 
-/**
- * A reader in a container of a given size. Tests have no layout, so the
- * container size is set explicitly and the reader is triggered to measure again.
- */
 const reader = async (width: number, high: number) => {
   const wrapper = mount(Reader, {
     props: { pages: PAGES, picture: (page: number) => `/p/${page}` },
@@ -28,7 +24,6 @@ const room = async (wrapper: ReturnType<typeof mount>, width: number, height: nu
   await wrapper.vm.$nextTick()
 }
 
-/** The widths the reader has emitted in `measure` events, in emission order. */
 const getWidths = (wrapper: ReturnType<typeof mount>) =>
   (wrapper.emitted('measure') ?? []).map((one) => (one as [number])[0])
 
@@ -198,11 +193,9 @@ describe('the page it says it relies on', () => {
   })
 })
 
-/** The handle the reader exposes to the host of the page it depends on. */
 const getReaderHandle = (wrapper: ReturnType<typeof mount>) =>
   wrapper.vm as unknown as { handleKey: (event: KeyboardEvent) => boolean }
 
-/** The pages the reader has requested through `go` events, in emission order. */
 const getTurns = (wrapper: ReturnType<typeof mount>) =>
   (wrapper.emitted('go') ?? []).map((one) => (one as [number])[0])
 

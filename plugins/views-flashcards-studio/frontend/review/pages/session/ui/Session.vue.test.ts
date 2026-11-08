@@ -21,7 +21,6 @@ const card: ReviewCard = {
   ahead: null,
 }
 
-/** The session on the screen, with something of its own standing in the panel. */
 const session = (more: { at?: PanelPlace; isShown?: boolean } = {}) =>
   mount(Session, {
     props: {
@@ -34,11 +33,9 @@ const session = (more: { at?: PanelPlace; isShown?: boolean } = {}) =>
     slots: { panel: '<p>the panel</p>', reading: '<p>the reading</p>' },
   })
 
-/** The controls that open the panel, wherever they are rendered. */
 const getAskButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Ask'))
 
-/** The controls that open the reading panel, wherever they are rendered. */
 const getReadingButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Read'))
 

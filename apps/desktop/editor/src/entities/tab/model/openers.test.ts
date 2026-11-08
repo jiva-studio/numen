@@ -8,7 +8,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
-/** A vault that returns the configured kinds and records the queries. */
 const vault = (stands: Record<string, FileKind> = {}) => {
   const request: (readonly string[])[] = []
   const core: FileOpenerDeps = {
@@ -36,7 +35,6 @@ const unreachable: FileOpenerDeps = {
   },
 }
 
-/** The editors of three note types and a reader of `.bin`, each writing down what it was given. */
 const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
   for (const type of ['note', 'sample', 'form'] as const) {

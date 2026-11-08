@@ -84,7 +84,6 @@ const REDRAWN = [`![a picture](${PICTURE})`]
 const EVERY = [...CONCEALED, ...REDRAWN]
 const STEADY = `${EVERY.join('\n\n')}\n\nSomething well away from all of it.\n`
 
-/** Which line a construct is written on, and the line nothing is drawn on. */
 const getLineOf = (text: string) => EVERY.indexOf(text) * 2 + 1
 const PARKED = EVERY.length * 2 + 1
 
@@ -100,7 +99,6 @@ const TALL = { name: 'numen-tall', size: '150%' }
 const LOW = { name: 'numen-low', size: '60%' }
 const FACES = [TALL, LOW]
 
-/** The two faces, handed to the page. */
 const loadFaces = () => {
   const sheet = document.createElement('style')
   sheet.textContent = FACES.map(
@@ -110,7 +108,6 @@ const loadFaces = () => {
   return Promise.all(FACES.map(({ name }) => document.fonts.load(`100px '${name}'`)))
 }
 
-/** How tall a line of a face is when nothing but the face decides. */
 const reach = (name: string) => {
   const probe = document.createElement('span')
   probe.textContent = 'x'
@@ -233,7 +230,6 @@ export const Steady: Story = {
  */
 export const Table: Story = { render: renderEditor(TABLE) }
 
-/** The editor with what it holds beside it, so a change to the text is read back. */
 const renderWithSource =
   (text: string): Render =>
   () => ({
@@ -250,11 +246,9 @@ const renderWithSource =
 /** The key CodeMirror reads as Mod: Command on a Mac, Control elsewhere. */
 const MOD = /Mac/.test(navigator.platform) ? 'Meta' : 'Control'
 
-/** What the note now holds. */
 const source = (canvas: HTMLElement) =>
   canvas.querySelector<HTMLElement>('[data-source]')?.textContent ?? ''
 
-/** The cells of the one table drawn, head row first. */
 const cells = (canvas: HTMLElement) => [
   ...canvas.querySelectorAll<HTMLElement>('.cm-table .cm-cell'),
 ]
@@ -262,10 +256,6 @@ const cells = (canvas: HTMLElement) => [
 /** A table with somewhere to put the caret that is not in it. */
 const TABLED = `${TABLE}\nSomething well away from the table.\n`
 
-/**
- * The table as a table. It is shown as it is written while the caret is in it,
- * so the caret is taken to the end of the note first.
- */
 const asATable = async (canvas: HTMLElement) => {
   canvas.querySelector<HTMLElement>('.cm-content')?.focus()
   await userEvent.keyboard(`{${MOD}>}{End}{/${MOD}}`)
@@ -350,13 +340,11 @@ const FENCED = [
   '',
 ].join('\n')
 
-/** The line of a fenced block holding a run of text. */
 const codeLine = (canvas: HTMLElement, text: string) =>
   [...canvas.querySelectorAll<HTMLElement>('.cm-line')].find((line) =>
     line.textContent?.includes(text),
   )
 
-/** Every span on the line painted in a colour other than the line's own. */
 const getColouredSpans = (line: HTMLElement) => {
   const ink = getComputedStyle(line).color
   return [...line.querySelectorAll('span')].filter((span) => getComputedStyle(span).color !== ink)
@@ -441,7 +429,6 @@ const getView = (canvas: HTMLElement): EditorView => {
 
 const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
-/** The line at the top of what can be seen. */
 const topmost = (view: EditorView): number => {
   const box = view.scrollDOM.getBoundingClientRect()
   const pos = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
@@ -667,13 +654,11 @@ const NOTE =
   'A note is an ordinary file in an ordinary folder. Not a database and not ' +
   'an export: the files are the notes.\n'
 
-/** The range of a run of text, as a change addresses it. */
 const findSpan = (text: string, run: string) => {
   const from = text.indexOf(run)
   return { from, to: from + run.length }
 }
 
-/** The text currently once the change has been made. */
 const applyChange = (text: string, change: EditorChange) =>
   text.slice(0, change.from) + change.text + text.slice(change.to)
 
@@ -833,7 +818,6 @@ export const ALanguageNothingAnswersTo: Story = {
 const WIKILINKS =
   '[[Entropy]]\n\n[[Entropy|disorder]]\n\n[[Entropy#Heat]]\n\nA [[Carnot]] and [[Kelvin]] side by side.\n\n[[unfinished\n\nelsewhere\n'
 
-/** Whether the computed value of `property` on the node is what the token paints. */
 const expectPaintedFrom = async (
   node: Element,
   property: 'color' | 'backgroundColor',

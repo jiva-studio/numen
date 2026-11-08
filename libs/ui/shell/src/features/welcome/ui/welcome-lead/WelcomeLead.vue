@@ -11,9 +11,7 @@ import type { WelcomeAction } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
-    /** The name shown under the mark, identifying the window. */
     name?: string
-    /** The ways in, above the list. */
     ways?: readonly WelcomeAction[]
   }>(),
   { name: 'numen', ways: () => [] },

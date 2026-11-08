@@ -6,11 +6,8 @@
 
 /** What the foot is worked out from, in pixels. */
 export interface ScrollMetrics {
-  /** The scroll offset of the area from its head. */
   readonly scrollTop: number
-  /** How tall everything in the area is. */
   readonly scrollHeight: number
-  /** How tall the part of it that shows is. */
   readonly clientHeight: number
 }
 

@@ -74,7 +74,6 @@ export const getIdleReason = (curve: Curve): GoalIdleReason => {
   return ''
 }
 
-/** Whether no place of the range schedules a card. An empty range returns false. */
 const hasNoReviews = (curve: Curve): boolean =>
   curve.at.length > 0 && curve.at.every((one) => one.reviews === 0)
 

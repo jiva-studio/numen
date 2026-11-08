@@ -13,11 +13,6 @@ interface Piece {
   readonly share: number
 }
 
-/**
- * A branch left with one child hands that child's own children up to its
- * parent: two levels turn a half, so they already divide their length the way
- * the parent does. A single child that is a pane goes up as it is.
- */
 function reduce(node: WorkspaceNode): readonly Piece[] {
   if (isPane(node)) return node.tabs.length > 0 ? [{ node, share: 1 }] : []
 
@@ -47,7 +42,6 @@ function reduce(node: WorkspaceNode): readonly Piece[] {
   ]
 }
 
-/** An empty pane that gives a workspace a root. */
 const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
   const first = getPanes(root)[0]
   return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }

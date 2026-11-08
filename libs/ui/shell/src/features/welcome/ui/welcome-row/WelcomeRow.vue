@@ -10,17 +10,11 @@ import { KeyCap } from '@numen/ui'
 import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
-  /** The icon before the name. A row without one has no icon. */
   icon?: Component | undefined
-  /** The name of the row. */
   text: string
-  /** The secondary line under the name. */
   aside?: string | undefined
-  /** The full text of the secondary line, for when it is truncated. */
   whole?: string | undefined
-  /** The keyboard shortcut of the row, if it has one. */
   keys?: PaletteKeys | undefined
-  /** A pending row, which does not respond to interaction. */
   isDisabled?: boolean | undefined
 }>()
 

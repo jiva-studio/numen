@@ -113,10 +113,6 @@ const rowStyle = computed(() => ({
  */
 let pendingPuts = 0
 
-/**
- * Puts the row back with the next frame. A row the browser moved takes no scroll event as the
- * person's until then.
- */
 function putRowBack(): void {
   if (!isMoved()) {
     props.paint(restore)
@@ -129,12 +125,6 @@ function putRowBack(): void {
   })
 }
 
-/**
- * Re-measures the viewport and puts the row back where it was. A reader
- * rendered while hidden has no viewport, and a row that was hidden or moved
- * in the document is scrolled to its start by the browser, so the caller
- * invokes this when the reader becomes visible.
- */
 const measure = (): void => {
   measureViewport()
   putRowBack()
@@ -191,20 +181,11 @@ watch(pageLayout, (now, was) => {
 watch(viewport, putRowBack)
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * The row scrolled, so the current page is the one under the viewport. While the
- * row is still animating to a target it emits nothing: pages passed on the way
- * are not navigation targets.
- */
 const onScroll = () => {
   if (pendingPuts > 0 || !isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
-/**
- * A key handled by the tab: returns true when it turned the page. The target
- * page is emitted, so the owner of `at` performs the move.
- */
 const onKey = (event: KeyboardEvent): boolean => {
   const to = getTurnTarget(event.key, props.at, props.pages.length)
   if (to === undefined) return false
@@ -213,17 +194,14 @@ const onKey = (event: KeyboardEvent): boolean => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** Where one page is drawn, once a width has been settled on. A page past the margin has none. */
 const getImageUrl = (page: number) =>
   drawnWidth.value > 0 && sharpPages.value.has(page) ? props.picture(page) : ''
 
-/** Scrolls the row to show the page, so that it becomes the current page. */
 const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
   const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)
 }
 
-/** One page's box in the row. */
 const getBoxStyle = (page: number) => ({
   insetInlineStart: `${pageLayout.value.starts[page] ?? 0}px`,
   insetBlockStart: `${GAP}px`,

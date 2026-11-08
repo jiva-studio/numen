@@ -5,13 +5,9 @@
 /** One link: the address its note holds and the copy stored of its video. */
 export interface LinkFacts {
   readonly url: string
-  /** Whether a video is published at the address, so a copy of it can be made. */
   readonly isCopyable: boolean
-  /** How many bytes the copy holds, and zero where none is kept. */
   readonly copySize: number
-  /** Whether the text was fetched once and its version deleted since. */
   readonly isTextDeleted: boolean
-  /** The page below the plugin route that frames the player of the video, and empty where none is known. */
   readonly embedPage: string
 }
 

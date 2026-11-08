@@ -18,7 +18,6 @@ const LONG_NAME = 'Maximum number of recognition sessions kept open at the same 
 const LONG_DETAIL =
   'Parallel ONNX recognition sessions used for every scanned page of every document in the vault queue'
 
-/** One row per control type, inside a column of the given width. */
 const rows = (width: string) => () => ({
   components: { SettingRow, SecretField, Select, Switch, NumberField, Slider },
   setup: () => ({ choices: CHOICES, longName: LONG_NAME, longDetail: LONG_DETAIL, words }),
@@ -59,14 +58,12 @@ const meta: Meta<typeof SettingRow> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Whether two boxes share any area. */
 const isOverlapping = (a: DOMRect, b: DOMRect): boolean =>
   a.left < b.right - 0.5 &&
   b.left < a.right - 0.5 &&
   a.top < b.bottom - 0.5 &&
   b.top < a.bottom - 0.5
 
-/** The label and control boxes of every row. */
 const getRowBoxes = (root: HTMLElement) =>
   [...root.querySelectorAll<HTMLElement>('.settings__row')].map((row) => ({
     row: row.getBoundingClientRect(),

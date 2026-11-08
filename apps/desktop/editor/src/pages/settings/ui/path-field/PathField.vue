@@ -11,7 +11,6 @@ import { Button } from '@numen/ui'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   path: string
-  /** Why the setting did not take the path last chosen; empty where it did. */
   problem: string
   labelledBy: string
   isMulti?: boolean

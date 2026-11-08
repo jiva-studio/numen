@@ -15,13 +15,9 @@ import {
 } from '../lib/select'
 
 export interface RowSelectionState {
-  /** The rows selected, for asking one row at a time. */
   readonly picked: ComputedRef<ReadonlySet<RowId>>
-  /** Whether the current press has already applied the selection. */
   readonly hasApplied: Ref<boolean>
-  /** Updates the selection for a pressed row and returns the new selection. */
   readonly selectRow: (row: RowId, how: Press) => readonly RowId[]
-  /** Every drawn row selected. */
   readonly selectEveryRow: () => readonly RowId[]
 }
 
