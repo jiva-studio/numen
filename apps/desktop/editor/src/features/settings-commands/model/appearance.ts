@@ -157,7 +157,7 @@ function initAppearanceState() {
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const { core, words, write, sheet = document, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
-  const served = styleElements.theme.textContent ?? ''
+  const served = styleElements.theme.textContent
   const state = initAppearanceState()
   const { files, applyTheme } = createThemeApplier({
     core,

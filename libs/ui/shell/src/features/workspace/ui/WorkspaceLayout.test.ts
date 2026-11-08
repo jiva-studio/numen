@@ -5,7 +5,7 @@
  * mount: the arrangement is the model's affair and is tested there.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, onMounted, onUnmounted, watchEffect } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
@@ -260,6 +260,14 @@ describe('the strip under a keyboard', () => {
 })
 
 describe('a tab dragged out of the workspace', () => {
+  beforeEach(() => {
+    document.elementFromPoint = () => null
+  })
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'elementFromPoint')
+  })
+
   it('emits tear-off on pointerup outside the viewport', async () => {
     const target = mountWorkspace()
     const tab = target.find('[data-workspace-tab="plex"]')

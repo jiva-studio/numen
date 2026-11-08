@@ -31,6 +31,11 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   models: [],
+  plugins: [],
+  app: [],
+  secretSections: [],
+  secretMenus: [],
+  credentialsPath: '',
   ...overrides,
 })
 
@@ -109,6 +114,7 @@ describe('every setting', () => {
                   palette: true,
                   icon: 'sparkles',
                   multiple: true,
+                  activeOptions: [],
                   options: [
                     { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
                   ],
@@ -120,6 +126,7 @@ describe('every setting', () => {
                   description: '',
                   defaultJson: '{bad',
                   palette: false,
+                  activeOptions: [],
                   options: [],
                   optionsBy: {
                     setting: 'model',
@@ -400,6 +407,8 @@ describe('a plugin whose last start failed', () => {
               name: 'Sample',
               capabilities: [],
               secrets: [],
+              readers: [],
+              settingsViews: [],
               settings: [],
               failure: {
                 reason: 'Timed out while starting',
@@ -475,6 +484,8 @@ describe('what the core resolved and declared', () => {
               secrets: [],
               hasFrontend: false,
               hasBackend: false,
+              readers: [],
+              settingsViews: [],
               settings: [
                 {
                   key: 'model',

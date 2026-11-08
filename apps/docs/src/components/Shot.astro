@@ -19,7 +19,9 @@ interface Props {
 
 const { name, alt, caption } = Astro.props
 
-const taken = import.meta.glob<{ default: ImageMetadata }>('../assets/*.webp', { eager: true })
+const taken: Partial<Record<string, { default: ImageMetadata }>> = import.meta.glob<{
+  default: ImageMetadata
+}>('../assets/*.webp', { eager: true })
 
 const half = (theme: string): ImageMetadata => {
   const found = taken[`../assets/${name}-${theme}.webp`]

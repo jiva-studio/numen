@@ -12,7 +12,6 @@ import {
   type FlushResultCode,
   type ModelPresenceCode,
   type SearchModeCode,
-  type TaskUnitCode,
   type VaultsErrorCodeValue,
   asFailure,
   asValue,
@@ -32,7 +31,7 @@ interface VaultWire {
  * What a piece of work counts, in the words the window uses. One it has no word
  * for is counted one by one.
  */
-export const counted: Record<TaskUnitCode, TallyUnit> = {
+export const counted: Partial<Record<number, TallyUnit>> = {
   [TASK_UNIT.UNSPECIFIED]: 'items',
   [TASK_UNIT.THINGS]: 'items',
   [TASK_UNIT.BYTES]: 'bytes',

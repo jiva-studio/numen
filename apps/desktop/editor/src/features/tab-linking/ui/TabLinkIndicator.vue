@@ -15,14 +15,14 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const LINK_COLORS: Readonly<Record<number, string>> = {
+const LINK_COLORS: Readonly<Partial<Record<number, string>>> = {
   1: 'var(--numen-blue, #3b82f6)',
   2: 'var(--numen-leaf, #22c55e)',
   3: 'var(--numen-amber, #f59e0b)',
   4: 'var(--numen-purple, #a855f7)',
 }
 
-const linkColor = computed(() => LINK_COLORS[props.colorIndex ?? 1] ?? 'var(--numen-blue, #3b82f6)')
+const linkColor = computed(() => LINK_COLORS[props.colorIndex] ?? 'var(--numen-blue, #3b82f6)')
 
 const iconStyle = computed(() => ({
   color: linkColor.value,
