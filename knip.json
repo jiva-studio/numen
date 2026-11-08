@@ -162,6 +162,9 @@
       ]
     },
     "tests/acceptance/desktop": {
+      "ignoreDependencies": [
+        "gplint"
+      ],
       "entry": [
         "playwright.config.ts",
         "eslint.config.js",
