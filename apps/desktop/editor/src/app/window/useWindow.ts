@@ -751,7 +751,7 @@ function createWindowFrameServices(
   const { frame } = base
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => getAppCommandList(ctx)
-  const { items, runCommandToEnd } = getCommands(ctx)
+  const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
   const windowCommands = createWindowCommands({
     getAppIds: () => [
       ...(tableIds ??= createCommands(words).map((one) => one.id)),

@@ -37,8 +37,7 @@ export function createWhenAvailability(context: WindowWhenContext) {
 export const hasNoteVariable = (condition: WhenCondition | undefined): boolean =>
   condition?.names.includes('target.isNote') ?? false
 
-/** Whether the condition reads its target, so a run of its command names the path it is over. */
-export const hasTargetVariable = (condition: WhenCondition | undefined): boolean =>
+const hasTargetVariable = (condition: WhenCondition | undefined): boolean =>
   condition?.names.some((name) => name.startsWith('target.')) ?? false
 
 /** The palette group of a command by its condition: over the note, over a file, or over the window. */

@@ -13,7 +13,12 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-host'
-import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
+import {
+  registerCommand,
+  type Command,
+  type CommandInvocation,
+  type CommandTarget,
+} from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
   listDeclaredItemLists,
@@ -117,6 +122,13 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
 })
 
+const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({
+  path: invocation.file,
+  values: invocation.values ?? {},
+  ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
+  ...(one.hasItems ? { itemId: invocation.name } : {}),
+})
+
 /**
  * The declared commands, reloaded by `load`, each registered with a handler that runs
  * it, writes the plugin message and opens the returned path.
@@ -156,16 +168,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       for (const unregister of unregisterAll) unregister()
       unregisterAll = commands.map((one) =>
         registerCommand(getPaletteId(one), async (invocation, on) => {
-          const outcome = await run(
-            one,
-            {
-              path: invocation.file,
-              values: invocation.values ?? {},
-              ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
-              ...(one.hasItems ? { itemId: invocation.name } : {}),
-            },
-            whenContext.whenReader,
-          )
+          const outcome = await run(one, toDeclaredRun(one, invocation), whenContext.whenReader)
           if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
           const { message, openedPath } = outcome.value
           if (message) on.writeMessage(message, 'info')

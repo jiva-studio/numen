@@ -248,11 +248,13 @@ beforeEach(() => {
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
-      runCommandToEnd: vi.fn(async () => undefined),
-      items: {
-        hasCommandItems: () => false,
-        listCommandItems: async () => [],
-        runWithItem: async () => undefined,
+      pluginRuns: {
+        runCommandToEnd: vi.fn(async () => undefined),
+        items: {
+          hasCommandItems: () => false,
+          listCommandItems: async () => [],
+          runWithItem: async () => undefined,
+        },
       },
       commandDeps: { name: 'commandDeps' },
       palette: {},

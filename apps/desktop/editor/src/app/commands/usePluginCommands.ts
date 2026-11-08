@@ -49,11 +49,10 @@ export const createCommandNoteReader =
   }
 
 export function usePluginCommands(
-  core: VaultCore,
+  getCommandNote: ReturnType<typeof createCommandNoteReader>,
   pluginHost: PluginHost | undefined,
   context: WindowWhenContext = createEmptyWhenContext(),
   getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
-  getCommandNote: ReturnType<typeof createCommandNoteReader> = createCommandNoteReader(core),
 ) {
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []

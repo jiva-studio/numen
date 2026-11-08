@@ -11,10 +11,7 @@ import { createCommandItemLists } from './commandItemLists'
 const DELETE_TEXT = { pluginId: '', id: 'app:version.delete' }
 const PROOFREAD = { pluginId: 'org.example.ink', id: 'ink.proofread' }
 const SCAN = 'scans/page.png'
-const TALK = 'talks/a.mp3'
 const ITEMS = [{ id: 'org.example.ears/ears', title: 'transcript (live)' }]
-
-const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const setUp = (kind: () => Promise<FileKind | undefined> = async () => undefined) => {
   const requests: { path: string; commands: readonly ItemListRequest[] }[] = []

@@ -220,11 +220,10 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
-    core,
+    options.readCommandNote ?? createCommandNoteReader(core),
     pluginHost,
     declaredCommands?.whenContext,
     () => declaredCommands?.handlers.value,
-    options.readCommandNote ?? createCommandNoteReader(core),
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
@@ -282,9 +281,8 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     commandDeps,
-    items,
+    pluginRuns: { items, runCommandToEnd },
     runCommand,
-    runCommandToEnd,
     runChoice,
     onKeyDown,
     pluginWays,

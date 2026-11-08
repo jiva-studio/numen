@@ -428,7 +428,7 @@ describe('a plugin command over a note', () => {
     const target = { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget
 
     one.runCommand('summary', target)
-    await one.runCommandToEnd('summary', target)
+    await one.pluginRuns.runCommandToEnd('summary', target)
 
     expect(readCommandNote).toHaveBeenCalledTimes(2)
     expect(one.executeCommand.mock.calls.map((call) => (call as unknown[])[1])).toStrictEqual([
