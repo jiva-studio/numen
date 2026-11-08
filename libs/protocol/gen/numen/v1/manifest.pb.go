@@ -665,8 +665,8 @@ func (x *ManifestHandler) GetWhen() string {
 // ManifestTrigger runs the plugin's own handler of a shared command over the file of an event.
 type ManifestTrigger struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// on is the event of events.json, such as file.added.
-	On string `protobuf:"bytes,1,opt,name=on,proto3" json:"on,omitempty"`
+	// event is the event of events.json, such as file.added.
+	Event string `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	// command is the full id of the shared command whose handler of this plugin runs.
 	Command string `protobuf:"bytes,2,opt,name=command,proto3" json:"command,omitempty"`
 	// when is the CEL condition over the file and the settings under which the trigger runs. Empty is
@@ -706,9 +706,9 @@ func (*ManifestTrigger) Descriptor() ([]byte, []int) {
 	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ManifestTrigger) GetOn() string {
+func (x *ManifestTrigger) GetEvent() string {
 	if x != nil {
-		return x.On
+		return x.Event
 	}
 	return ""
 }
@@ -1888,9 +1888,9 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x0fManifestHandler\x12\x18\n" +
 	"\acommand\x18\x01 \x01(\tR\acommand\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
-	"\x04when\x18\x03 \x01(\tR\x04when\"O\n" +
-	"\x0fManifestTrigger\x12\x0e\n" +
-	"\x02on\x18\x01 \x01(\tR\x02on\x12\x18\n" +
+	"\x04when\x18\x03 \x01(\tR\x04when\"U\n" +
+	"\x0fManifestTrigger\x12\x14\n" +
+	"\x05event\x18\x01 \x01(\tR\x05event\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12\x12\n" +
 	"\x04when\x18\x03 \x01(\tR\x04when\"g\n" +
 	"\rManifestTheme\x12\x0e\n" +

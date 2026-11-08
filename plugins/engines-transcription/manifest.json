@@ -14,12 +14,6 @@
         "command": "app:file.createText",
         "group": "3-text",
         "order": 10
-      },
-      {
-        "slot": "fileTree.context",
-        "command": "app:version.delete",
-        "group": "3-text",
-        "order": 90
       }
     ],
     "handlers": [
@@ -27,16 +21,11 @@
         "command": "app:file.createText",
         "title": "Transcribe",
         "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
-      },
-      {
-        "command": "app:version.delete",
-        "title": "Delete transcript",
-        "when": "version.pluginId == 'md.numen.engines.transcription' && version.kind == 'transcript'"
       }
     ],
     "triggers": [
       {
-        "on": "file.added",
+        "event": "file.added",
         "command": "app:file.createText",
         "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
       }

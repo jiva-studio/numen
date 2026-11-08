@@ -6,7 +6,7 @@ package manifest
 // contributes.handlers.
 func IsSharedCommand(id string) bool {
 	switch id {
-	case "app:file.createText", "app:version.delete", "app:link.import", "app:link.downloadMedia", "app:link.deleteMedia":
+	case "app:file.createText", "app:link.import", "app:link.downloadMedia", "app:link.deleteMedia":
 		return true
 	}
 	return false

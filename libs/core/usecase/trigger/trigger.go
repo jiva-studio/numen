@@ -190,12 +190,12 @@ func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
 		if !p.isTrue(ctx, current, one.condition) || !p.isTrue(ctx, current, one.handler) {
 			continue
 		}
-		if isDue(one.entry.Trigger.On, hasRun, current.isNew) {
+		if isDue(one.entry.Trigger.Event, hasRun, current.isNew) {
 			_, err := p.triggers.plugins.RunCommand(ctx, pluginport.PluginCommandCall{
 				PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: stat.Path,
 			})
 			if err != nil {
-				failures = append(failures, fmt.Errorf("%s on %s over %s: %w", one.entry.Trigger.Command, one.entry.Trigger.On, stat.Path, err))
+				failures = append(failures, fmt.Errorf("%s on %s over %s: %w", one.entry.Trigger.Command, one.entry.Trigger.Event, stat.Path, err))
 				continue
 			}
 		}
@@ -288,7 +288,7 @@ func (p *pass) forgetUnseen() {
 const runKeySeparator = "\x00"
 
 func getRunKey(entry pluginport.PluginTriggerEntry, path string) string {
-	return strings.Join([]string{entry.PluginID, entry.Trigger.On, entry.Trigger.Command, path}, runKeySeparator)
+	return strings.Join([]string{entry.PluginID, entry.Trigger.Event, entry.Trigger.Command, path}, runKeySeparator)
 }
 
 func getRunPath(key string) string {

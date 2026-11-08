@@ -36,7 +36,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 func BenchmarkListCommandItems_OfASharedCommandOverTheRepositoryPlugins(b *testing.B) {
 	handler := newRepositoryHandler(b)
 	request := connect.NewRequest(&v1.ListCommandItemsRequest{
-		Path: "scans/page.png", Commands: []*v1.PluginCommandId{{PluginId: "md.numen.engines.ocr", Command: "app:version.delete"}},
+		Path: "scans/page.png", Commands: []*v1.PluginCommandId{{PluginId: "md.numen.engines.ocr", Command: "app:file.createText"}},
 	})
 	for b.Loop() {
 		res, err := handler.ListCommandItems(b.Context(), request)

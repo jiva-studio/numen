@@ -52,6 +52,9 @@ type Request struct {
 	// declares no file extensions.
 	Path      string
 	Arguments Arguments
+	// ItemID is the id of the item a person picked, for a command that offers its own items. Empty for
+	// a run without a pick, such as one from numen-cli or a trigger.
+	ItemID string
 }
 
 // Result is what a command that ran answers.
@@ -140,6 +143,7 @@ func readRequest(msg *v1.RunCommandRequest) Request {
 		Command:   msg.GetCommand(),
 		Path:      msg.GetPath(),
 		Arguments: Arguments(msg.GetArguments()),
+		ItemID:    msg.GetItemId(),
 	}
 }
 

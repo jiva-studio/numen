@@ -69,6 +69,10 @@ message Entry {
   // The `type` key of the note's frontmatter, which says what the note is. Empty for an
   // ordinary note. It says nothing about an entry that is not a note.
   string type = 5;
+
+  // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+  // where none holds, and for an entry that is not a note.
+  string tab_kind = 7;
 }
 
 message ListFileKindsRequest {

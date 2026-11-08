@@ -38,7 +38,7 @@ func TestManifestHandlesTheSharedCommandsOfLinks(t *testing.T) {
 	for _, one := range manifest.Contributes.Handlers {
 		got = append(got, one.Command)
 	}
-	want := []string{"app:link.import", "app:file.createText", "app:link.downloadMedia", "app:link.deleteMedia", "app:version.delete"}
+	want := []string{"app:link.import", "app:file.createText", "app:link.downloadMedia", "app:link.deleteMedia"}
 	if !slices.Equal(got, want) || len(manifest.Contributes.Commands) != 0 {
 		t.Errorf("handlers %v and %d commands, want %v and none", got, len(manifest.Contributes.Commands), want)
 	}

@@ -16,7 +16,7 @@ const handlerManifestHead = `{"id":"org.example.scans","name":"Scans","version":
 func TestReadManifest_ReadsTheHandlersAndTriggersOfAPlugin(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{
 		"handlers":[{"command":"app:file.createText","title":"Read the scan","when":"target.contentType == 'image/png'"}],
-		"triggers":[{"on":"file.added","command":"app:file.createText","when":"config.org.example.scans.isAutomatic == true"}]}}`))
+		"triggers":[{"event":"file.added","command":"app:file.createText","when":"config.org.example.scans.isAutomatic == true"}]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,10 +26,10 @@ func TestReadManifest_ReadsTheHandlersAndTriggersOfAPlugin(t *testing.T) {
 	if !ok || handler != want {
 		t.Errorf("handler = %+v, %v; want %+v", handler, ok, want)
 	}
-	if _, ok := m.GetHandler("app:version.delete"); ok {
+	if _, ok := m.GetHandler("app:link.import"); ok {
 		t.Error("a command the plugin does not handle has a handler")
 	}
-	wantTriggers := []manifest.Trigger{{On: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
+	wantTriggers := []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
 	if !reflect.DeepEqual(m.Contributes.Triggers, wantTriggers) {
 		t.Errorf("triggers = %+v; want %+v", m.Contributes.Triggers, wantTriggers)
 	}
@@ -60,9 +60,9 @@ func TestReadManifest_RejectsAHandlerOfAPluginWithNothingToRunIt(t *testing.T) {
 func TestReadManifest_RejectsAnInvalidTrigger(t *testing.T) {
 	const handlers = `"handlers":[{"command":"app:file.createText","title":"Read"}]`
 	for name, triggers := range map[string]string{
-		"an event that is not declared": `[{"on":"file.opened","command":"app:file.createText"}]`,
-		"a command it does not handle":  `[{"on":"file.added","command":"app:version.delete"}]`,
-		"a when that does not parse":    `[{"on":"file.added","command":"app:file.createText","when":"target.isScan"}]`,
+		"an event that is not declared": `[{"event":"file.opened","command":"app:file.createText"}]`,
+		"a command it does not handle":  `[{"event":"file.added","command":"app:link.import"}]`,
+		"a when that does not parse":    `[{"event":"file.added","command":"app:file.createText","when":"target.isScan"}]`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{` + handlers + `,"triggers":` + triggers + `}}`))
 		if !errors.Is(err, manifest.ErrInvalidTrigger) {
@@ -74,7 +74,7 @@ func TestReadManifest_RejectsAnInvalidTrigger(t *testing.T) {
 func TestReadManifest_RejectsATriggerOfAPluginWithoutABackend(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"org.example.scans","name":"Scans","version":"1.0.0","frontend":{},
 		"contributes":{"handlers":[{"command":"app:file.createText","title":"Read"}],
-		"triggers":[{"on":"file.added","command":"app:file.createText"}]}}`))
+		"triggers":[{"event":"file.added","command":"app:file.createText"}]}}`))
 	if !errors.Is(err, manifest.ErrNoBackend) {
 		t.Errorf("got %v, want ErrNoBackend", err)
 	}

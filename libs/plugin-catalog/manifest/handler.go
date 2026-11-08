@@ -25,7 +25,7 @@ type Handler struct {
 
 // Trigger runs the plugin's own handler of a shared command over the file of an event.
 type Trigger struct {
-	On      string
+	Event   string
 	Command string
 	When    string
 }
@@ -67,14 +67,14 @@ func (m Manifest) listHandlerIssues() []error {
 func (m Manifest) listTriggerIssues() []error {
 	var issues []error
 	for _, declared := range m.Contributes.Triggers {
-		if !IsEvent(declared.On) {
-			issues = append(issues, fmt.Errorf("%w: %q is no event", ErrInvalidTrigger, declared.On))
+		if !IsEvent(declared.Event) {
+			issues = append(issues, fmt.Errorf("%w: %q is no event", ErrInvalidTrigger, declared.Event))
 		}
 		if _, isHandled := m.GetHandler(declared.Command); !isHandled {
-			issues = append(issues, fmt.Errorf("%w: on %q runs %q, which the plugin does not handle", ErrInvalidTrigger, declared.On, declared.Command))
+			issues = append(issues, fmt.Errorf("%w: on %q runs %q, which the plugin does not handle", ErrInvalidTrigger, declared.Event, declared.Command))
 		}
 		if _, err := when.Parse(declared.When); err != nil {
-			issues = append(issues, fmt.Errorf("%w: on %q: when: %w", ErrInvalidTrigger, declared.On, err))
+			issues = append(issues, fmt.Errorf("%w: on %q: when: %w", ErrInvalidTrigger, declared.Event, err))
 		}
 	}
 	return issues

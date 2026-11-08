@@ -229,25 +229,25 @@ func (s *scene) scan(t *testing.T) []string {
 
 func getExtractOnAdd() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
+		Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
 	}}
 }
 
 func getRecognizeWhenOn() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		On: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
+		Event: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
 	}}
 }
 
 func getRecheckOnChange() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
-		On: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
+		Event: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
 	}}
 }
 
 func getCaptionsOnLink() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
-		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",
+		Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",
 	}}
 }
 

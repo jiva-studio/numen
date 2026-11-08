@@ -228,8 +228,8 @@ protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
-	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts libs/plugin-catalog/manifest/shared_commands.go libs/plugin-sdk-ts/src/commands/sharedCommands.ts libs/plugin-catalog/manifest/events.go
-	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts libs/plugin-catalog/manifest/shared_commands.go libs/plugin-sdk-ts/src/commands/sharedCommands.ts libs/plugin-catalog/manifest/events.go
+	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts libs/plugin-catalog/manifest/shared_commands.go libs/plugin-sdk-go/command/shared_commands.go libs/plugin-sdk-ts/src/commands/sharedCommands.ts libs/plugin-catalog/manifest/events.go
+	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts libs/plugin-catalog/manifest/shared_commands.go libs/plugin-sdk-go/command/shared_commands.go libs/plugin-sdk-ts/src/commands/sharedCommands.ts libs/plugin-catalog/manifest/events.go
 
 .PHONY: lib_protocol_compile
 lib_protocol_compile: ## compile protocol Go packages

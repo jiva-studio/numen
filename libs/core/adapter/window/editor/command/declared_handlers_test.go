@@ -18,7 +18,7 @@ type handlingPlugins struct{ declaredByTwoPlugins }
 func (handlingPlugins) ListHandlers() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:file.createText", Title: "Read the scan", When: "target.isFile"}},
-		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:version.delete", Title: "Delete the reading", When: "version.kind == 'reading'"}},
+		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:link.downloadMedia", Title: "Download the reading", When: "version.kind == 'reading'"}},
 		{PluginID: "org.example.crash", Command: plugincommand.Command{ID: "app:file.createText", Title: "Crash"}},
 	}
 }
@@ -67,7 +67,7 @@ func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, nil, nil)
 	handler := command.NewHandler(shownVault{}, commands, &versionItems{})
 
-	list := listItemsOfOne(t, handler, "org.example.scans", "app:version.delete", "scans/page.png")
+	list := listItemsOfOne(t, handler, "org.example.scans", "app:link.downloadMedia", "scans/page.png")
 
 	if len(list.GetItems()) != 2 {
 		t.Errorf("got %v, want the two versions", list)

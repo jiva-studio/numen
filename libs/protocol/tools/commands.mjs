@@ -1,5 +1,5 @@
-// Writes the list of the shared commands, from commands.json, as Go for the manifest reader and as
-// TypeScript for the plugin SDK. Run by `make lib_protocol_generate`; the generated files are committed.
+// Writes the list of the shared commands, from commands.json, as Go for the manifest reader, as Go
+// for the plugin SDK and as TypeScript for the plugin SDK. Run by `make lib_protocol_generate`; the generated files are committed.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -81,5 +81,48 @@ const ts = [
   '',
 ].join('\n')
 
+/** The Go name of a shared command, from its title: CreateText for Create text. */
+const getGoName = (one) =>
+  one.title
+    .split(' ')
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join('')
+
+const sdk = [
+  `// ${HEADER}`,
+  '',
+  'package command',
+  '',
+  '// The full ids of the shared commands of the application. A plugin handles one with an entry of',
+  '// contributes.handlers and adds the run of its handler to its Registry under the id.',
+  'const (',
+  ...commands.flatMap((one) => [
+    `\t// ${getGoName(one)} ${one.about}.`,
+    `\t${getGoName(one)} = ${JSON.stringify(one.id)}`,
+  ]),
+  ')',
+  '',
+  '// ListSharedCommands lists the shared commands of the application in the order commands.json',
+  '// declares them, each with the arguments the palette asks for and the host checks for every handler.',
+  'func ListSharedCommands() []SharedCommand {',
+  '\treturn []SharedCommand{',
+  ...commands.flatMap((one) =>
+    (one.arguments ?? []).length === 0
+      ? [`\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}},`]
+      : [
+          `\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}, Arguments: []SharedCommandArgument{`,
+          ...one.arguments.map(
+            (argument) =>
+              `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, IsRequired: ${argument.required === true}},`,
+          ),
+          '\t\t}},',
+        ],
+  ),
+  '\t}',
+  '}',
+  '',
+].join('\n')
+
 write('../../plugin-catalog/manifest/shared_commands.go', go)
+write('../../plugin-sdk-go/command/shared_commands.go', sdk)
 write('../../plugin-sdk-ts/src/commands/sharedCommands.ts', ts)

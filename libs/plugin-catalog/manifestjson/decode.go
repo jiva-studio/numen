@@ -405,7 +405,7 @@ func newHandlers(wire []*v1.ManifestHandler) []manifest.Handler {
 func newTriggers(wire []*v1.ManifestTrigger) []manifest.Trigger {
 	var out []manifest.Trigger
 	for _, one := range wire {
-		out = append(out, manifest.Trigger{On: one.GetOn(), Command: one.GetCommand(), When: one.GetWhen()})
+		out = append(out, manifest.Trigger{Event: one.GetEvent(), Command: one.GetCommand(), When: one.GetWhen()})
 	}
 	return out
 }
