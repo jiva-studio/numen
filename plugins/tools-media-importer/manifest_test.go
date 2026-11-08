@@ -50,7 +50,7 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 	var manifest struct {
 		Contributes struct {
 			Triggers []struct {
-				On      string `json:"on"`
+				Event   string `json:"event"`
 				Command string `json:"command"`
 				When    string `json:"when"`
 			} `json:"triggers"`
@@ -64,7 +64,8 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 		t.Fatal(err)
 	}
 	triggers := manifest.Contributes.Triggers
-	if len(triggers) != 1 || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") {
+	if len(triggers) != 1 || triggers[0].Event != "file.added" || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") ||
+		!strings.Contains(triggers[0].When, "!target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isLive)") {
 		t.Errorf("the triggers are %+v", triggers)
 	}
 	found := slices.IndexFunc(manifest.Settings, func(one struct {

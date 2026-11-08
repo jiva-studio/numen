@@ -324,7 +324,6 @@ func (l *Links) claim(work string, link Link, key string) bool {
 	return true
 }
 
-// waitClaim claims the work once the run that holds it releases it, or returns the error of ctx.
 func (l *Links) waitClaim(ctx context.Context, work string, link Link, key string) error {
 	name := getWorkName(work, link, key)
 	for {
@@ -607,8 +606,6 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	return into.byteCount, l.publishCopy(ctx, link, name)
 }
 
-// publishCopy writes the address of the copy into the note under media and deletes the copies of
-// the address that no link note refers to any more, such as the other media the note held before.
 func (l *Links) publishCopy(ctx context.Context, link Link, name string) error {
 	if err := l.setAddress(ctx, link, mediaKey, l.getAddress(name)); err != nil {
 		return err
@@ -629,8 +626,6 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 	return l.deleteUnreferencedCopies(ctx, link)
 }
 
-// deleteUnreferencedCopies deletes the copies of the address of a link that no link note of its
-// vault holds under media. The caller holds the copy claim of the address.
 func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 	store := l.getStore(link)
 	names, err := folder{store: store}.listCopies(ctx, link.Key)
@@ -650,8 +645,6 @@ func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 	return errors.Join(errs...)
 }
 
-// listMediaAddresses reads the media property of every link note of the vault of a link, and of the
-// link itself, which the index may not hold yet.
 func (l *Links) listMediaAddresses(ctx context.Context, link Link) (map[string]bool, error) {
 	vault := l.getVault(link)
 	paths, err := vault.GetPathsOfType(ctx, NoteType)

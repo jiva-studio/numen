@@ -42,8 +42,8 @@ func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 
 func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *link.Links) {
 	t.Helper()
-	links, store, hosted := newMockLinks(t)
-	commands, err := newCommands(links, hosted)
+	links, store, _ := newMockLinks(t)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,13 +110,14 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 	return false
 }
 
-func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
+// Delete text is the core's command: the core deletes the version, and the plugin handles none.
+func TestTheImporterHandlesNoDeleteText(t *testing.T) {
 	commands, _ := newMockCommands(t)
 
-	_, err := commands.RunCommand(t.Context(), command.Request{Command: commandDeleteText, Path: "Mills.md"})
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: "app:version.delete", Path: "Mills.md"})
 
-	if !errors.Is(err, command.ErrBadArguments) {
-		t.Fatalf("a deletion with no version: got %v, want ErrBadArguments", err)
+	if !errors.Is(err, command.ErrUnknownCommand) {
+		t.Fatalf("app:version.delete answered %v, want ErrUnknownCommand", err)
 	}
 }
 
@@ -201,7 +202,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +274,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	commands, err := newCommands(links, hosted)
+	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}

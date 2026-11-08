@@ -60,7 +60,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
+        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isLive)"
       }
     ]
   },

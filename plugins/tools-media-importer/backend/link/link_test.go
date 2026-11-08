@@ -31,10 +31,10 @@ const (
 // sites publishes an article at one address, a captioned video at another, and nothing at a third.
 // With started and gate set, a download signals started once it begins and waits for gate to close.
 type sites struct {
-	texts  atomic.Int32
-	failAt int
-	clip   []byte
-	media  []download.Media
+	texts   atomic.Int32
+	failAt  int
+	clip    []byte
+	media   []download.Media
 	started chan struct{}
 	gate    chan struct{}
 }

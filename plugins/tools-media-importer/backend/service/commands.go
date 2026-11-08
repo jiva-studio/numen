@@ -15,24 +15,22 @@ const trueValue = "true"
 
 // The shared commands the plugin handles.
 const (
-	commandImport        = "app:link.import"
-	commandCreateText    = "app:file.createText"
-	commandDownloadMedia = "app:link.downloadMedia"
-	commandDeleteMedia   = "app:link.deleteMedia"
-	commandDeleteText    = "app:version.delete"
+	commandImport        = command.ImportLink
+	commandCreateText    = command.CreateText
+	commandDownloadMedia = command.DownloadMedia
+	commandDeleteMedia   = command.DeleteMedia
 )
 
 // argumentAddress is the argument of app:link.import that holds the web address.
 const argumentAddress = "address"
 
-func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
+func newCommands(links *link.Links) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
 		commandImport:        newImportCommand(links),
 		commandCreateText:    newDownloadTextCommand(links),
 		commandDownloadMedia: newDownloadCopyCommand(links),
 		commandDeleteMedia:   newDeleteCopyCommand(links),
-		commandDeleteText:    command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {
