@@ -224,3 +224,23 @@ func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing
 		t.Errorf("a version of another plugin: got %v, ran %+v", err, recorder.ran)
 	}
 }
+
+func TestACommandOverTheLiveVersionListsTheLiveVersionAlone(t *testing.T) {
+	s := newScene(t)
+	overLive := pluginport.PluginCommandEntry{PluginID: proofreader, Command: pluginport.PluginCommand{
+		ID: "proofreading.create", Title: "Proofread", When: "version.isLive",
+	}}
+	items, _ := newMenu(t, s, overLive)
+	s.requestText(t)
+	s.runEntry(t, ocr)
+	live, _ := s.getLive(t)
+
+	got, err := items.ListVersionItems(t.Context(), s.vault, scanPath, overLive)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || got[0].Version != live || !got[0].IsLive {
+		t.Errorf("items %+v, want the live version %s alone", got, live)
+	}
+}

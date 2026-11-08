@@ -218,3 +218,47 @@ func (conditionalCommands) ListCommands() []plugincommand.Entry {
 		{PluginID: "md.numen.tools.updater", Command: plugincommand.Command{ID: "updater.check", Title: "Check for updates"}},
 	}
 }
+
+// comparingCommands declares two commands with items and one without.
+type comparingCommands struct{ pluginCommands }
+
+func (comparingCommands) ListCommands() []plugincommand.Entry {
+	return []plugincommand.Entry{
+		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.create", Title: "Proofread text", When: "version.isLive"}},
+		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.compare", Title: "Compare text", When: "version.isLive"}},
+		{PluginID: "md.numen.tools.updater", Command: plugincommand.Command{ID: "updater.check", Title: "Check for updates"}},
+	}
+}
+
+// brokenComparison lists the versions of versionItems, and fails for proofreading.compare.
+type brokenComparison struct{ versionItems }
+
+func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]textversion.VersionItem, error) {
+	if entry.Command.ID == "proofreading.compare" {
+		return nil, errors.New("the comparison cannot read the versions")
+	}
+	return b.versionItems.ListVersionItems(ctx, v, path, entry)
+}
+
+func TestListCommandItems_AnswersTheOtherListsWhereOneCommandFails(t *testing.T) {
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(comparingCommands{}, fileTypes{}, nil, nil), &brokenComparison{})
+
+	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
+		Path: "talks/a.mp3",
+		Commands: []*v1.PluginCommandId{
+			{PluginId: "md.numen.tools.proofreading", Command: "proofreading.create"},
+			{PluginId: "md.numen.tools.proofreading", Command: "proofreading.compare"},
+			{PluginId: "md.numen.tools.updater", Command: "updater.check"},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lists := res.Msg.GetLists()
+	if len(lists) != 3 || len(lists[0].GetItems()) != 2 || lists[0].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED ||
+		lists[1].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED || lists[1].GetMessage() == "" ||
+		lists[2].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+		t.Errorf("lists %v, want the failure of the comparison alone", lists)
+	}
+}
