@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,12 +32,14 @@ const (
 // sites publishes an article at one address, a captioned video at another, and nothing at a third.
 // With started and gate set, a download signals started once it begins and waits for gate to close.
 type sites struct {
-	texts   atomic.Int32
-	failAt  int
-	clip    []byte
-	media   []download.Media
-	started chan struct{}
-	gate    chan struct{}
+	texts       atomic.Int32
+	failAt      int
+	beforeGate  int
+	clip        []byte
+	media       []download.Media
+	started     chan struct{}
+	startedOnce sync.Once
+	gate        chan struct{}
 }
 
 func (s *sites) CanCopy(address string) bool { return address == videoAddress }
@@ -65,8 +68,15 @@ func (s *sites) GetText(_ context.Context, address string, _ download.PreferredC
 
 func (s *sites) Download(_ context.Context, _ string, media download.Media, into io.Writer) (download.Copy, error) {
 	s.media = append(s.media, media)
+	rest := s.clip
+	if s.beforeGate > 0 {
+		if _, err := into.Write(s.clip[:s.beforeGate]); err != nil {
+			return download.Copy{}, err
+		}
+		rest = s.clip[s.beforeGate:]
+	}
 	if s.gate != nil {
-		close(s.started)
+		s.startedOnce.Do(func() { close(s.started) })
 		<-s.gate
 	}
 	if s.failAt > 0 {
@@ -75,7 +85,7 @@ func (s *sites) Download(_ context.Context, _ string, media download.Media, into
 		}
 		return download.Copy{}, errors.New("the site hung up")
 	}
-	_, err := into.Write(s.clip)
+	_, err := into.Write(rest)
 	if media == download.MediaAudio {
 		return download.Copy{MediaType: "audio/mp4", Extension: ".m4a"}, err
 	}
@@ -566,5 +576,64 @@ func TestCopyOfAStoredVideoSetsTheMediaOfANewNote(t *testing.T) {
 
 	if want, got := "plugin://"+pluginID+"/"+again.Key+".video.mp4", w.readProperty(t, again.Path, "media"); got != want {
 		t.Errorf("the note made again holds media %q, want %q", got, want)
+	}
+}
+
+func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
+	w := newWorld(t)
+	chemistry := hosttest.New("Chemistry")
+	w.vault.Beside(chemistry)
+	chemTexts, isTexts := w.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of Chemistry are not hosttest texts")
+	}
+	chemTexts.SetStore(pluginID, chemistry.Store())
+
+	const chunk = 1 << 20
+	w.sites.clip = bytes.Repeat([]byte("a"), 2*chunk)
+	w.sites.beforeGate = chunk
+	w.sites.started = make(chan struct{})
+	w.sites.gate = make(chan struct{})
+
+	inMills := w.create(t, videoAddress)
+	inChemistry, err := w.links.Create(t.Context(), "Chemistry", "links", videoAddress)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inMills.Path != inChemistry.Path {
+		t.Fatalf("paths %q and %q, want the same path", inMills.Path, inChemistry.Path)
+	}
+
+	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); err != nil || !isStarted {
+		t.Fatalf("StartMediaCopy in Mills: started=%v, err=%v", isStarted, err)
+	}
+	<-w.sites.started
+
+	if _, _, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); !errors.Is(err, link.ErrBeingFetched) {
+		t.Fatalf("second StartMediaCopy in Mills returned %v, want %v", err, link.ErrBeingFetched)
+	}
+	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, download.MediaVideo); err != nil || !isStarted {
+		t.Fatalf("StartMediaCopy in Chemistry: started=%v, err=%v", isStarted, err)
+	}
+
+	millsID := link.GetCopyTaskID("Mills", inMills.Path)
+	chemID := link.GetCopyTaskID("Chemistry", inChemistry.Path)
+	byID := map[string]host.Task{}
+	for _, task := range w.queue.ListTasks() {
+		byID[task.ID] = task
+	}
+	mTask, okM := byID[millsID]
+	cTask, okC := byID[chemID]
+	if !okM || !okC {
+		t.Fatalf("tasks %+v, want both %s and %s", w.queue.ListTasks(), millsID, chemID)
+	}
+	if mTask.CompletedCount != chunk || mTask.TotalCount != 2*chunk || cTask.CompletedCount != 0 || cTask.TotalCount != 0 {
+		t.Errorf("tasks %+v and %+v, want %d/%d in Mills and 0/0 in Chemistry", mTask, cTask, chunk, 2*chunk)
+	}
+
+	close(w.sites.gate)
+	w.links.Wait()
+	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("tasks %+v after both copies ended", tasks)
 	}
 }

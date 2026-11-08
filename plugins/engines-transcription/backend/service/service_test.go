@@ -325,7 +325,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskTranscribes(t *testing.T) {
 	}
 	s.waitStarted(t)
 	close(s.blocking.release)
-	s.waitFinished(t, getTaskID(lecture))
+	s.waitFinished(t, getTaskID("Lectures", lecture))
 	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
 		t.Errorf("the version reads %q once the task ended", text)
 	}
@@ -343,7 +343,7 @@ func TestCreateTextFailsTheTaskOfAnUnopenableRecording(t *testing.T) {
 	}
 	select {
 	case failed := <-s.finishing.failCh:
-		if failed.ID != getTaskID(lecture) || !strings.Contains(failed.FailureReason, "cannot be opened") {
+		if failed.ID != getTaskID("Lectures", lecture) || !strings.Contains(failed.FailureReason, "cannot be opened") {
 			t.Errorf("the failed task is %+v", failed)
 		}
 	case <-time.After(workDeadline):
@@ -364,7 +364,7 @@ func TestTheHandlerOfCreateTextFailsForARecordingBeingTranscribed(t *testing.T) 
 		t.Errorf("a second run while the first transcribes answered %v, want errAlreadyTranscribing", err)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, getTaskID(lecture))
+	s.waitFinished(t, getTaskID("Lectures", lecture))
 }
 
 func TestThePluginRunsNeitherDeleteTextNorTheCommandOfBefore(t *testing.T) {
@@ -757,7 +757,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	}
 
 	ftPutErr := &faultyTexts{Texts: s2.texts, putErr: errBoom}
-	trPutErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Tmp2").Store(), ftPutErr, s2.queue,
+	trPutErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Lectures").Store(), ftPutErr, s2.queue,
 		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
 	if err := trPutErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected putVersion error, got %v", err)
@@ -766,7 +766,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	waitingCh := make(chan struct{})
 	close(waitingCh)
 	fqYieldErr := &faultyQueue{Queue: s2.queue, turn: &faultyTurn{waiting: waitingCh, releaseErr: errBoom}}
-	trYieldErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Tmp3").Store(), s2.texts, fqYieldErr,
+	trYieldErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Lectures").Store(), s2.texts, fqYieldErr,
 		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
 	if err := trYieldErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected yieldTurn releaseErr, got %v", err)
@@ -776,8 +776,8 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	fqProgress := &faultyQueue{Queue: s2.queue}
 	trProgress := NewTranscriber(vaultFiles{vault: s2.vault}, s2.store, s2.texts, fqProgress,
 		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
-	trProgress.reportProgress(ctx, lecture, 999, 1998)
-	trProgress.reportProgress(ctx, lecture, 1000, 2000)
+	trProgress.reportProgress(ctx, "Lectures", lecture, 999, 1998)
+	trProgress.reportProgress(ctx, "Lectures", lecture, 1000, 2000)
 	if len(fqProgress.tasks) != 2 {
 		t.Fatalf("expected 2 progress tasks, got %d", len(fqProgress.tasks))
 	}

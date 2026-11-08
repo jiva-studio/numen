@@ -115,7 +115,7 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 		}
 		return RecognitionCreateOutput{}, fmt.Errorf("find %s: %w", in.Path, err)
 	}
-	out := RecognitionCreateOutput{TaskID: recognition.GetTaskID(in.Path), Path: in.Path, State: stateRunning, Version: ""}
+	out := RecognitionCreateOutput{TaskID: recognition.GetTaskID(vault, in.Path), Path: in.Path, State: stateRunning, Version: ""}
 	isRunning, err := t.recognitions.IsRunning(ctx, vault, in.Path)
 	if err != nil {
 		return RecognitionCreateOutput{}, err

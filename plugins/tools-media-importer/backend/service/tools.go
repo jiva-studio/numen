@@ -120,5 +120,5 @@ func (t *Tools) startDownload(ctx context.Context, made link.Link, out *URLImpor
 		return
 	}
 	t.links.StartCopy(ctx, made, download.MediaVideo)
-	out.DownloadTaskID = link.GetCopyTaskID(made.Path)
+	out.DownloadTaskID = link.GetCopyTaskID(made.Vault, made.Path)
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -25,8 +26,7 @@ const pluginID = "md.numen.engines.ocr"
 // cacheEnv names the folder the tests of this package compile PDFium into once.
 const cacheEnv = "NUMEN_TEST_WASM_CACHE"
 
-// TestMain gives every reader of the tests one folder to cache the compiled PDFium in, because each
-// reader compiles it again otherwise and a run under the race detector takes minutes for each.
+// TestMain sets one shared folder to cache the compiled PDFium module across tests.
 func TestMain(m *testing.M) {
 	dir := os.Getenv(cacheEnv)
 	isOwned := false
@@ -95,7 +95,7 @@ func (p *pages) getPageCount() int {
 	return p.pageCount
 }
 
-// textsOfVault are texts that refuse a version of a file the vault no longer holds, as the host does.
+// textsOfVault are texts that reject a version of a missing file, as the host does.
 type textsOfVault struct {
 	*hosttest.Texts
 	vault *hosttest.Vault
@@ -432,5 +432,84 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
+	}
+}
+
+func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
+	s := newScene(t)
+	chemistry := hosttest.New("Chemistry")
+	s.vault.Beside(chemistry)
+	raw := readFixture(t, "scan.pdf")
+	chemistry.File("books/scan.pdf", raw)
+	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of Chemistry are not hosttest texts")
+	}
+	other.SetStore(pluginID, chemistry.Store())
+	other.File("books/scan.pdf", []byte(raw))
+
+	sum := sha256.Sum256([]byte("books/scan.pdf"))
+	progress := `{"path":"books/scan.pdf","inputHash":"` + domain.HashContent([]byte(raw)) +
+		`","recipe":"a test|layout|lines|72","pageCount":2,"pages":[[{"text":"kept\n\n"}]]}`
+	if err := chemistry.Store().Write(t.Context(), hex.EncodeToString(sum[:])+".progress.json", []byte(progress)); err != nil {
+		t.Fatal(err)
+	}
+
+	firstPage := make(chan struct{})
+	release := make(chan struct{})
+	var once sync.Once
+	s.recogniser.onRecognise = func() {
+		once.Do(func() {
+			close(firstPage)
+			<-release
+		})
+	}
+
+	physicsErr := make(chan error, 1)
+	go func() {
+		_, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf"})
+		physicsErr <- err
+	}()
+	<-firstPage
+
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf"}); !errors.Is(err, recognition.ErrAlreadyRecognising) {
+		t.Fatalf("second run in Physics returned %v, want %v", err, recognition.ErrAlreadyRecognising)
+	}
+
+	chemErr := make(chan error, 1)
+	go func() {
+		_, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"})
+		chemErr <- err
+	}()
+
+	physicsID := recognition.GetTaskID("Physics", "books/scan.pdf")
+	chemID := recognition.GetTaskID("Chemistry", "books/scan.pdf")
+	deadline := time.After(30 * time.Second)
+	for {
+		byID := map[string]host.Task{}
+		for _, task := range s.queue.ListTasks() {
+			byID[task.ID] = task
+		}
+		if p, okP := byID[physicsID]; okP {
+			if c, okC := byID[chemID]; okC {
+				if p.CompletedCount != 0 || p.TotalCount != 2 || c.CompletedCount != 1 || c.TotalCount != 2 {
+					t.Errorf("tasks %+v and %+v, want 0/2 in Physics and 1/2 in Chemistry", p, c)
+				}
+				break
+			}
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("tasks %+v, want both %s and %s", s.queue.ListTasks(), physicsID, chemID)
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	close(release)
+	if err := <-physicsErr; err != nil {
+		t.Fatalf("Physics failed: %v", err)
+	}
+	if err := <-chemErr; err != nil {
+		t.Fatalf("Chemistry failed: %v", err)
 	}
 }

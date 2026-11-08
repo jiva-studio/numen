@@ -122,7 +122,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
 	}
 	s.waitStarted(t)
 	close(s.recogniser.release)
-	s.waitFinished(t, recognition.GetTaskID(scanPath))
+	s.waitFinished(t, recognition.GetTaskID("Physics", scanPath))
 	if !hasRecognition(t, s.texts, scanPath) {
 		t.Error("the scan has no recognition once its task ended")
 	}
@@ -139,7 +139,7 @@ func TestCreateTextFailsTheTaskOfAFailedRecognition(t *testing.T) {
 		t.Errorf("a failed recognition was answered %v, want the failure on its task alone", err)
 	}
 	deadline := time.After(workDeadline)
-	for !hasFailedTask(s.queue.Queue, recognition.GetTaskID(scanPath), "the page cannot be decoded") {
+	for !hasFailedTask(s.queue.Queue, recognition.GetTaskID("Physics", scanPath), "the page cannot be decoded") {
 		select {
 		case <-deadline:
 			t.Fatalf("no task failed within %v; tasks %+v", workDeadline, s.queue.ListTasks())

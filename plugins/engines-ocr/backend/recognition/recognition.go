@@ -113,9 +113,8 @@ type Result struct {
 }
 
 // Recognize reads the file and stores its text version. A failure is shown as a task until
-// the file is recognized again, and so is a file from which nothing is read. A failure of a file
-// that is no longer in the vault ends the task instead, because nothing can recognize that file
-// again. For a file another run has locked, it returns ErrAlreadyRecognising.
+// the file is recognized again, and so is a file from which nothing is read. A failure of a missing
+// file ends the task. For a file another run has locked, it returns ErrAlreadyRecognising.
 func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error) {
 	req, key, err := r.claim(ctx, req)
 	if err != nil {
@@ -234,7 +233,7 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: GetTaskID(req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
+		ID: GetTaskID(req.Vault, req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	res, err := r.recognize(ctx, on, req, &task)
@@ -255,8 +254,10 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 	return res, err
 }
 
-// GetTaskID returns the id of the recognition of a file in the list of tasks.
-func GetTaskID(filePath string) string { return "recognize:" + filePath }
+// GetTaskID returns the id of the recognition of a file of a vault in the list of tasks.
+func GetTaskID(vault domain.VaultID, filePath string) string {
+	return "recognize:" + string(vault) + ":" + filePath
+}
 
 // StatFile returns the metadata of a file of a vault. An empty vault ID means the vault the host shows.
 func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
@@ -289,17 +290,26 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
+	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
+		queuedTask := *task
+		if rec != nil {
+			queuedTask.CompletedCount, queuedTask.TotalCount = int64(len(rec.Pages)), int64(rec.PageCount)
+		}
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of waiting task failure does not affect recognition state."
+		if err := r.host.Queue.ReportTask(ctx, queuedTask); err != nil {
+			fmt.Fprintf(os.Stderr, "engines-ocr: show the task %s: %v\n", queuedTask.ID, err)
+		}
+	}})
+	if err != nil {
+		return Result{}, fmt.Errorf("wait for a turn to recognize %s: %w", req.Path, err)
+	}
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	doc, err := r.documents.Open(req.Path, raw)
 	if err != nil {
 		return Result{}, err
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Document implementations opened by Reader return nil on Close."
 	defer func() { err = errors.Join(err, doc.Close()) }()
-	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
-	if err != nil {
-		return Result{}, fmt.Errorf("wait for a turn to recognize %s: %w", req.Path, err)
-	}
-	defer func() { err = errors.Join(err, turn.Release()) }()
 	recogniser, err := r.open(ctx)
 	if err != nil {
 		return Result{}, fmt.Errorf("open the recogniser: %w", err)
