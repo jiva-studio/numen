@@ -16,14 +16,14 @@ func makeBenchmarkVault(b *testing.B, depth, filesPerDir int) (string, *vaultrea
 	root := b.TempDir()
 	var populate func(dir string, currentDepth int)
 	populate = func(dir string, currentDepth int) {
-		for i := 0; i < filesPerDir; i++ {
+		for i := range filesPerDir {
 			name := filepath.Join(dir, fmt.Sprintf("note_%d_%d.md", currentDepth, i))
 			if err := os.WriteFile(name, []byte("# Benchmark Note\nSome note content for testing.\n"), 0o644); err != nil {
 				b.Fatal(err)
 			}
 		}
 		if currentDepth < depth {
-			for d := 0; d < 3; d++ {
+			for d := range 3 {
 				sub := filepath.Join(dir, fmt.Sprintf("folder_%d_%d", currentDepth, d))
 				if err := os.Mkdir(sub, 0o755); err != nil {
 					b.Fatal(err)

@@ -152,7 +152,7 @@ func (l *Layout) getPlanes(page image.Image) []float32 {
 	plane := layoutSide * layoutSide
 	pix := l.small.Pix
 	flat := l.flat
-	for pos := 0; pos < plane; pos++ {
+	for pos := range plane {
 		i := pos * 4
 		flat[pos] = float32(pix[i]) / 255
 		flat[plane+pos] = float32(pix[i+1]) / 255

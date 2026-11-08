@@ -77,8 +77,8 @@ func TestParseTopologyID_ReadsOneInteger(t *testing.T) {
 func TestCountCores_JoinsThreadsOfOneCoreAndSeparatesPackages(t *testing.T) {
 	// Eight cores with two threads each on package 0, and a second package that reuses core number 0.
 	var cpus []cpuCore
-	for thread := 0; thread < 2; thread++ {
-		for core := 0; core < 8; core++ {
+	for range 2 {
+		for core := range 8 {
 			cpus = append(cpus, cpuCore{Package: 0, Core: core})
 		}
 	}

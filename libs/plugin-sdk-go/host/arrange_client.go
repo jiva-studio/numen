@@ -79,7 +79,7 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
 		Move:        nil,
 	}
-	if res.Msg.Move != nil {
+	if res.Msg.GetMove() != nil {
 		move := readMove(res.Msg.GetMove())
 		out.Move = &move
 	}

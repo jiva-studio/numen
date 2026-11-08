@@ -24,7 +24,7 @@ import (
 func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	record := s.run(t, vaulttest.GetEpoch())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -57,7 +57,7 @@ func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	for _, item := range []time.Time{
 		vaulttest.GetEpoch().AddDate(0, 0, -2),
 		vaulttest.GetEpoch().AddDate(0, 0, -1),
@@ -96,14 +96,14 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 	// Both review cards of one card, so the order turns on the review card and not the card.
-	recognise := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	recognize := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	name := review.CardID{Card: "k7m2xq9fzp", Template: "Name it"}
 
 	record := s.run(t, vaulttest.GetEpoch())
 	if _, err := record.Answer(t.Context(), name, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := record.Answer(t.Context(), recognise, review.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), recognize, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
@@ -122,7 +122,7 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	if len(was.ReviewCards) != 2 {
 		t.Fatalf("the cache holds %d review cards, want the two answered", len(was.ReviewCards))
 	}
-	if was.ReviewCards[0].Template != "Name it" || was.ReviewCards[1].Template != "Recognise" {
+	if was.ReviewCards[0].Template != "Name it" || was.ReviewCards[1].Template != "Recognize" {
 		t.Errorf("the cache holds %s then %s", was.ReviewCards[0].Template, was.ReviewCards[1].Template)
 	}
 }
@@ -132,7 +132,7 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -312,7 +312,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, getSaturday()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1025,6 +1025,6 @@ func TestACurveAnswersTheCallersCancellation(t *testing.T) {
 	stop()
 	_, err := s.curves(getNoon()).Execute(ctx, s.vault, "Sanskrit.md", p)
 	if !errors.Is(err, context.Canceled) {
-		t.Errorf("a cancelled curve said %v", err)
+		t.Errorf("a canceled curve said %v", err)
 	}
 }

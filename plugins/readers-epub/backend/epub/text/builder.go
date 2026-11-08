@@ -106,9 +106,9 @@ func (b *builder) finish(text string, end int) []markup.Node {
 	// The line a block ends removes the space before it, and an element on that space
 	// moves to where the line ends.
 	pos := end
-	for i := len(found) - 1; i >= 0; i-- {
-		found[i].Offset = min(found[i].Offset, pos)
-		pos = found[i].Offset
+	for _, f := range slices.Backward(found) {
+		f.Offset = min(f.Offset, pos)
+		pos = f.Offset
 	}
 
 	var last *markup.Node
@@ -208,7 +208,7 @@ func removeSpacesAndControls(url string) string {
 }
 
 func parseScheme(url string) string {
-	for i := 0; i < len(url); i++ {
+	for i := range len(url) {
 		c := url[i]
 		if c == ':' {
 			return url[:i]

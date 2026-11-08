@@ -28,7 +28,7 @@ func TestEventBusDebounceTyping(t *testing.T) {
 	})
 	defer unsub()
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		bus.Publish("onTyping")
 		time.Sleep(5 * time.Millisecond)
 	}
@@ -78,7 +78,7 @@ func TestEventBusNonBlocking(t *testing.T) {
 	}()
 
 	start := getRealClock().Now()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		bus.Publish("onTyping")
 	}
 	elapsed := getRealClock().Now().Sub(start)
@@ -232,7 +232,7 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 	})
 	defer unsub()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		bus.Publish("onTyping")
 		sched.advance(5 * time.Millisecond)
 	}

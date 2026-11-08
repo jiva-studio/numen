@@ -95,8 +95,7 @@ func listPackages(t *testing.T, dir, goos, goarch string) []listed {
 	listing.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch)
 	out, err := listing.Output()
 	if err != nil {
-		var ran *exec.ExitError
-		if errors.As(err, &ran) {
+		if ran, ok := errors.AsType[*exec.ExitError](err); ok {
 			t.Fatalf("go list: %v: %s", err, ran.Stderr)
 		}
 		t.Fatalf("go list: %v", err)

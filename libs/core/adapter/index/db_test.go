@@ -41,9 +41,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	release := make(chan struct{})
 
 	for i := range conns {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			conn, err := db.read.Conn(ctx)
 			if err != nil {
 				t.Error(err)
@@ -65,7 +63,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 			// Hold the connection so the next goroutine is forced to open a new
 			// one and not reusing this one.
 			<-release
-		}()
+		})
 	}
 	// Give every goroutine time to take a distinct connection.
 	for range conns {

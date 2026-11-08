@@ -82,8 +82,8 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 	// Backwards, because a splice moves every byte after it.
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Any negative count returns all regex matches."
 	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
-	for i := len(found) - 1; i >= 0; i-- {
-		pos := found[i]
+	for _, pos := range slices.Backward(found) {
+
 		if body[pos[2]:pos[3]] != from {
 			continue
 		}

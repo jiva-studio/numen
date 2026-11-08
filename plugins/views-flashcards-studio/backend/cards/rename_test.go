@@ -78,7 +78,7 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "cards/Bird.md",
 		"---\ntype: card-model\nfields:\n  - Species\n  - Height\n---\n\n"+
-			"## Recognise\n\n### Front\n\n{{Species}}\n\n### Back\n\n{{Height}}\n")
+			"## Recognize\n\n### Front\n\n{{Species}}\n\n### Back\n\n{{Height}}\n")
 	write(t, vs.first, "decks/Wrens.md",
 		"---\ntype: deck\n---\n\n## Wren\n\n[[cards/Bird]]\n\n### Height\n\nabout 4\"\n")
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
@@ -515,7 +515,7 @@ func TestARenameOfACardModelOutOfReachWritesNothing(t *testing.T) {
 // A card model whose frontmatter is not YAML fails, and no deck is written.
 func TestARenameOfACardModelThatWillNotOpenWritesNothing(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Animal.md", "---\nfields: [Name\n---\n\n## Recognise\n")
+	write(t, vs.first, "Animal.md", "---\nfields: [Name\n---\n\n## Recognize\n")
 	birds := read(t, vs.first, "decks/Birds.md")
 
 	_, err := newRenameField(t, vs).Execute(t.Context(), vs.first, cards.Rename{

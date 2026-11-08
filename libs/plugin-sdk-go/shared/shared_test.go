@@ -73,11 +73,9 @@ func TestTheHolderOfALockIsAloneInTheDirectory(t *testing.T) {
 	var group sync.WaitGroup
 	errs := make(chan error, 4)
 	for i := range 4 {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			errs <- hold(dir, log, fmt.Sprint("goroutine-", i))
-		}()
+		})
 	}
 	group.Wait()
 	close(errs)

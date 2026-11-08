@@ -22,7 +22,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 	out := s.recognise(t, "Physics", scanPath)
 
 	if out.State != stateRunning {
-		t.Errorf("recognition_create while the command recognises the scan returned %+v, want the state running", out)
+		t.Errorf("recognition_create while the command recognizes the scan returned %+v, want the state running", out)
 	}
 	close(s.recogniser.release)
 	if err := <-result; err != nil {
@@ -32,7 +32,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 }
 
 // The palette command run while the tool's recognition has the scan is rejected as already being
-// recognised.
+// recognized.
 func TestRecogniseCommandDuringToolRecognitionFails(t *testing.T) {
 	s := newToolFixture(t)
 	out := s.recognise(t, "Physics", scanPath)
@@ -41,7 +41,7 @@ func TestRecogniseCommandDuringToolRecognitionFails(t *testing.T) {
 	_, err := newRecogniseCommand(s.tools)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
 
 	if !errors.Is(err, recognition.ErrAlreadyRecognising) {
-		t.Errorf("the command while the tool recognises the scan returned %v, want it already being recognised", err)
+		t.Errorf("the command while the tool recognizes the scan returned %v, want it already being recognized", err)
 	}
 	close(s.recogniser.release)
 	s.waitFinished(t, out.TaskID)

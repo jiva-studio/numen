@@ -17,7 +17,7 @@ import (
 const lockSuffix = ".lock"
 
 // lockPollInterval is the time between two attempts to take the lock of another handle. The system
-// call that waits for a file lock cannot be cancelled, so the lock is polled.
+// call that waits for a file lock cannot be canceled, so the lock is polled.
 const lockPollInterval = 20 * time.Millisecond
 
 // errLocked is returned by tryLockFile while another handle has the lock.

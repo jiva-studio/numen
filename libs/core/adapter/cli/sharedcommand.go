@@ -92,8 +92,7 @@ func runSharedCommand(
 	defer closeInto(&err, closeRun)
 
 	handler, err := run.FindHandler(ctx, v, handlers, picked, path)
-	var several *plugincommand.SeveralHandlersError
-	if errors.As(err, &several) {
+	if _, ok := errors.AsType[*plugincommand.SeveralHandlersError](err); ok {
 		return fmt.Errorf("%w; pick one with --%s", err, pluginFlag)
 	}
 	if err != nil {

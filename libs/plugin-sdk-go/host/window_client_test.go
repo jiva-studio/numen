@@ -169,7 +169,7 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 			if err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
 				t.Errorf("FocusPassages got %v, want %v", err, tc.want)
 			}
-			if tc.want == host.ErrNotExist {
+			if errors.Is(tc.want, host.ErrNotExist) {
 				return
 			}
 			if _, _, err := c.ReadOpenTabs(ctx); !errors.Is(err, tc.want) {

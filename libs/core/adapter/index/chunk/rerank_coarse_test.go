@@ -82,7 +82,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 			t.Fatal(err)
 		}
 		coarse := make([]byte, dimensions/8)
-		for b := 0; b < rank; b++ {
+		for b := range rank {
 			coarse[b] = 1
 		}
 		value := preciseBytes(unrelated)

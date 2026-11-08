@@ -35,7 +35,7 @@ import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
-import { WORDS } from '@/shared/words'
+import type { WORDS } from '@/shared/words'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
 

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -258,12 +259,8 @@ func (t *Profiles) put(p Profile) {
 
 func (t *Profiles) clone() *Profiles {
 	out := &Profiles{order: slices.Clone(t.order), byID: map[string]Profile{}, byName: map[string]string{}, userHome: t.userHome}
-	for k, v := range t.byID {
-		out.byID[k] = v
-	}
-	for k, v := range t.byName {
-		out.byName[k] = v
-	}
+	maps.Copy(out.byID, t.byID)
+	maps.Copy(out.byName, t.byName)
 	return out
 }
 
@@ -360,9 +357,7 @@ func cloneProfile(p Profile) Profile {
 	p.ExtraInputs = slices.Clone(p.ExtraInputs)
 	if p.SHA256 != nil {
 		sums := make(map[string]string, len(p.SHA256))
-		for k, v := range p.SHA256 {
-			sums[k] = v
-		}
+		maps.Copy(sums, p.SHA256)
 		p.SHA256 = sums
 	}
 	return p

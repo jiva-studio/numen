@@ -11,7 +11,7 @@ import (
 
 func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", About: "book.pdf"})
+	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", About: "book.pdf"})
 	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
 
 	list := tasks.List()
@@ -31,8 +31,8 @@ func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: 1, Total: 9})
-	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: 4, Total: 9})
+	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: 1, Total: 9})
+	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
@@ -53,7 +53,7 @@ func TestRemove_MissingTaskIsNoOp(t *testing.T) {
 
 func TestClearConsumesAllTasksOut(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan"})
 	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
 
 	if len(tasks.List()) != 2 {
@@ -68,7 +68,7 @@ func TestClearConsumesAllTasksOut(t *testing.T) {
 
 func TestWatchingReturnsWhatIsBeingCompletedAndThenWhatChanges(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan"})
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -100,7 +100,7 @@ func TestAListenerPriorIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: i, Total: 5})
+		tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: i, Total: 5})
 	}
 	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
@@ -153,14 +153,12 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 
 	var reporting sync.WaitGroup
 	for which := range 8 {
-		reporting.Add(1)
-		go func() {
-			defer reporting.Done()
+		reporting.Go(func() {
 			id := fmt.Sprintf("recognition-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(Task{ID: id, Title: "Recognising a scan", Count: page, Total: 200})
+				tasks.Set(Task{ID: id, Title: "Recognizing a scan", Count: page, Total: 200})
 			}
-		}()
+		})
 	}
 	reporting.Wait()
 
@@ -200,7 +198,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(Task{Title: "Recognising a scan"})
+	tasks.Set(Task{Title: "Recognizing a scan"})
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -304,18 +302,18 @@ func TestCancelCancelsTheTaskAndKeepsItListed(t *testing.T) {
 	tasks.Set(Task{ID: "walk", Title: "Indexing the vault"})
 
 	if !tasks.Cancel("indexing") {
-		t.Fatal("a cancellable task was not cancelled")
+		t.Fatal("a cancellable task was not canceled")
 	}
 	if work.Err() == nil {
-		t.Error("the task's context is not cancelled")
+		t.Error("the task's context is not canceled")
 	}
 	if list := tasks.List(); len(list) != 2 {
 		t.Errorf("got %d tasks, want both listed until the work removes them", len(list))
 	}
 	if tasks.Cancel("walk") {
-		t.Error("a task without a cancel function reported it was cancelled")
+		t.Error("a task without a cancel function reported it was canceled")
 	}
 	if tasks.Cancel("missing") {
-		t.Error("a task that is not listed reported it was cancelled")
+		t.Error("a task that is not listed reported it was canceled")
 	}
 }

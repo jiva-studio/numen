@@ -11,7 +11,7 @@ import (
 // A background worker uses it to bring a place into view. Only an application
 // with a window can implement it; without one, no caller requests it.
 type Window interface {
-	// FocusPlace shows this place: a note becomes the focus of the neighbourhood
+	// FocusPlace shows this place: a note becomes the focus of the neighborhood
 	// view, and a document is opened at the position the place specifies. A place
 	// already in focus is focused again.
 	FocusPlace(ctx context.Context, pos domain.Place) error

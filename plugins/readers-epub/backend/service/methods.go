@@ -32,8 +32,7 @@ func withVault[Req, Res any](fn func(ctx context.Context, req Req) (Res, error))
 }
 
 func toAPIError(err error) *server.APIError {
-	var failure *server.APIError
-	if errors.As(err, &failure) {
+	if failure, ok := errors.AsType[*server.APIError](err); ok {
 		return failure
 	}
 	if errors.Is(err, errChanged) {

@@ -19,7 +19,7 @@ type ShowNeighbourhood struct {
 	notes RefQueries
 }
 
-// RefQueries is the single query a neighbourhood makes about the notes it found:
+// RefQueries is the single query a neighborhood makes about the notes it found:
 // what is needed to display each of them.
 type RefQueries interface {
 	// GetNotes returns what is needed to display a note, for the given paths. Paths
@@ -28,7 +28,7 @@ type RefQueries interface {
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
-// NewShowNeighbourhood builds the neighbourhood of one note: where its links lead,
+// NewShowNeighbourhood builds the neighborhood of one note: where its links lead,
 // and what is needed to display each linked note.
 //
 // The notes are queried once, after every link has been followed.
@@ -36,36 +36,36 @@ func NewShowNeighbourhood(links noteport.LinkQueries, notes RefQueries) ShowNeig
 	return ShowNeighbourhood{links: links, notes: notes}
 }
 
-func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
+func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighborhood, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getNeighbours(ctx, cache, path)
 	if err != nil {
-		return domain.Neighbourhood{}, err
+		return domain.Neighborhood{}, err
 	}
 
 	if err := u.addSiblings(ctx, cache, center); err != nil {
-		return domain.Neighbourhood{}, err
+		return domain.Neighborhood{}, err
 	}
 	center.remove(path)
 
-	neighbour := center.getAll()
-	paths := make([]string, 0, len(neighbour)+1)
+	neighbor := center.getAll()
+	paths := make([]string, 0, len(neighbor)+1)
 	paths = append(paths, path)
-	for _, s := range neighbour {
+	for _, s := range neighbor {
 		paths = append(paths, s.Path)
 	}
 	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
-		return domain.Neighbourhood{}, err
+		return domain.Neighborhood{}, err
 	}
 
 	focus, recognized := notes[path]
 	if !recognized {
-		return domain.Neighbourhood{}, nil
+		return domain.Neighborhood{}, nil
 	}
-	out := domain.Neighbourhood{Focus: focus}
+	out := domain.Neighborhood{Focus: focus}
 	visible := []string{path}
-	for _, s := range neighbour {
+	for _, s := range neighbor {
 		if note, recognizedVal := notes[s.Path]; recognizedVal {
 			out.AddNeighbour(note, s)
 			visible = append(visible, s.Path)
@@ -73,7 +73,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	}
 	out.Connections, err = getConnections(ctx, cache, visible)
 	if err != nil {
-		return domain.Neighbourhood{}, err
+		return domain.Neighborhood{}, err
 	}
 	return out, nil
 }
@@ -91,7 +91,7 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, cache *linkCache, ta
 			if sibling.Relation != domain.RelationChild {
 				continue
 			}
-			targetSet.add(domain.Neighbour{
+			targetSet.add(domain.Neighbor{
 				NoteRef:  domain.NoteRef{Path: sibling.Path},
 				Relation: domain.RelationSibling,
 			})
@@ -115,7 +115,7 @@ func (u ShowNeighbourhood) getNeighbours(ctx context.Context, cache *linkCache, 
 			continue
 		}
 		if relation, navigable := getRelation(l.Role); navigable {
-			found.add(domain.Neighbour{
+			found.add(domain.Neighbor{
 				NoteRef:  domain.NoteRef{Path: l.To},
 				Relation: relation,
 			})
@@ -133,7 +133,7 @@ func (u ShowNeighbourhood) getNeighbours(ctx context.Context, cache *linkCache, 
 		if !navigable {
 			continue
 		}
-		found.add(domain.Neighbour{
+		found.add(domain.Neighbor{
 			NoteRef:  domain.NoteRef{Path: l.From},
 			Relation: relation,
 		})
@@ -172,27 +172,27 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 // siblings of each parent. The order is part of the result, because it is the
 // drawing order, and it is total, so the same vault always gives the same layout.
 type neighbourSet struct {
-	order      []domain.Neighbour
+	order      []domain.Neighbor
 	targetPath map[string]int
 }
 
-func (s *neighbourSet) add(neighbour domain.Neighbour) {
+func (s *neighbourSet) add(neighbor domain.Neighbor) {
 	if s.targetPath == nil {
 		s.targetPath = map[string]int{}
 	}
-	i, exists := s.targetPath[neighbour.Path]
+	i, exists := s.targetPath[neighbor.Path]
 	if !exists {
-		s.targetPath[neighbour.Path] = len(s.order)
-		s.order = append(s.order, neighbour)
+		s.targetPath[neighbor.Path] = len(s.order)
+		s.order = append(s.order, neighbor)
 		return
 	}
-	if domain.GetRelationRank(neighbour.Relation) < domain.GetRelationRank(s.order[i].Relation) {
-		s.order[i] = neighbour
+	if domain.GetRelationRank(neighbor.Relation) < domain.GetRelationRank(s.order[i].Relation) {
+		s.order[i] = neighbor
 	}
 }
 
 func (s *neighbourSet) remove(path string) {
-	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
+	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbor) bool { return n.Path == path })
 }
 
-func (s *neighbourSet) getAll() []domain.Neighbour { return s.order }
+func (s *neighbourSet) getAll() []domain.Neighbor { return s.order }

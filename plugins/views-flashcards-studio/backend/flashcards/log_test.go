@@ -49,8 +49,8 @@ func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognize"}
 
 	if _, err := s.run(t, vaulttest.GetEpoch().AddDate(0, 0, -1)).Answer(
 		t.Context(), on, review.Good, 0,
@@ -116,7 +116,7 @@ func (l listing) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func (s *reorderedStores) Open(v domain.Vault) (ports.LogStore, error) {
 func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	for _, item := range []time.Time{
 		vaulttest.GetEpoch().AddDate(0, 0, -2),
 		vaulttest.GetEpoch().AddDate(0, 0, -1),
@@ -242,7 +242,7 @@ func (closed) ReadLog(context.Context, string) ([]byte, error) {
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	writing := s.run(t, vaulttest.GetEpoch())
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -327,7 +327,7 @@ func (f *filling) AppendLog(ctx context.Context, name string, content []byte) er
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	full := &brimming{LogStores: s.logs}
 	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, vaulttest.GetEpoch())
@@ -367,7 +367,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	yesterday := vaulttest.GetEpoch().AddDate(0, 0, -1)
 	yesterdayRun, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, yesterday)
@@ -449,7 +449,7 @@ func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 	record := s.run(t, vaulttest.GetEpoch())
 
 	for _, on := range []review.CardID{
-		{Card: "", Template: "Recognise"},
+		{Card: "", Template: "Recognize"},
 		{Card: "k7m2xq9fzp", Template: ""},
 		{},
 	} {
@@ -470,7 +470,7 @@ func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 // A Record built with no clock returns an error for an answer and does not panic.
 func TestRecord_ErrorsWithoutClock(t *testing.T) {
 	t.Parallel()
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	if _, err := (flashcards.Record{}).Answer(t.Context(), nil, on, review.Good, 0); err == nil {
 		t.Error("an answer stamped by no clock was written")
@@ -496,7 +496,7 @@ func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
-	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	now := vaulttest.GetEpoch()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, now)

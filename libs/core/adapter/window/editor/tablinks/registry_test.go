@@ -343,11 +343,11 @@ func TestCancelEndsEveryWatchOfTheWindow(t *testing.T) {
 	select {
 	case <-mine.Stop:
 	default:
-		t.Error("the cancelled watch is still open")
+		t.Error("the canceled watch is still open")
 	}
 	select {
 	case <-other.Stop:
-		t.Error("the watch of another window was cancelled")
+		t.Error("the watch of another window was canceled")
 	default:
 	}
 }

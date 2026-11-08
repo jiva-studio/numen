@@ -69,7 +69,7 @@ func writeNote(t *testing.T, root, name, body string) {
 	}
 }
 
-// A cancelled note gets no vectors on the next pass while the other notes do,
+// A canceled note gets no vectors on the next pass while the other notes do,
 // and gets them again once it is edited.
 func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 	events := newRecorder()
@@ -105,10 +105,10 @@ func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 	select {
 	case <-ended:
 	case <-time.After(10 * time.Second):
-		t.Fatal("the pass did not return after its task was cancelled")
+		t.Fatal("the pass did not return after its task was canceled")
 	}
 
-	// The next wake embeds the other note and leaves the cancelled one alone.
+	// The next wake embeds the other note and leaves the canceled one alone.
 	model.setBlocking(false)
 	writeNote(t, v.Path, "Other.md", noteWith(getBefore(), 200))
 	cut(t, made, db, v)
@@ -119,10 +119,10 @@ func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	if calls := model.getHeldCalls(); calls != 0 {
-		t.Errorf("the cancelled note was sent to the model %d times", calls)
+		t.Errorf("the canceled note was sent to the model %d times", calls)
 	}
 	if target-embedded != heldChunks {
-		t.Errorf("%d of %d chunks lack a vector, want the %d of the cancelled note", target-embedded, target, heldChunks)
+		t.Errorf("%d of %d chunks lack a vector, want the %d of the canceled note", target-embedded, target, heldChunks)
 	}
 
 	// An edit of the note, reported as the vault watch reports it, indexes it again.
@@ -150,16 +150,16 @@ func TestCancelledSourceIsClearedByAnotherHash(t *testing.T) {
 	skips.addVectors("Book.pdf")
 
 	if !skips.isVectorSkipped("Book.pdf", "aa") {
-		t.Fatal("a cancelled source was embedded on the next pass")
+		t.Fatal("a canceled source was embedded on the next pass")
 	}
 	if !skips.isVectorSkipped("Book.pdf", "aa") {
-		t.Error("a cancelled source with the same hash was embedded")
+		t.Error("a canceled source with the same hash was embedded")
 	}
 	if skips.isVectorSkipped("Other.pdf", "aa") {
-		t.Error("a source nobody cancelled was skipped")
+		t.Error("a source nobody canceled was skipped")
 	}
 	if skips.isVectorSkipped("Book.pdf", "bb") {
-		t.Error("a cancelled source whose content changed was skipped")
+		t.Error("a canceled source whose content changed was skipped")
 	}
 	if skips.isVectorSkipped("Book.pdf", "aa") {
 		t.Error("a cancel outlived the change of its source")
@@ -169,6 +169,6 @@ func TestCancelledSourceIsClearedByAnotherHash(t *testing.T) {
 	skips.addVectors("Scan.pdf")
 	skips.clear([]string{"Scan.pdf"})
 	if skips.isTextSkipped("Scan.pdf") || skips.isVectorSkipped("Scan.pdf", "aa") {
-		t.Error("a reported change left the source cancelled")
+		t.Error("a reported change left the source canceled")
 	}
 }

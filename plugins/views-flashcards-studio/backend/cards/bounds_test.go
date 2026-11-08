@@ -94,13 +94,13 @@ func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 
 	made, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name", "Call"},
-		Templates: []format.CardTemplate{{Name: "Recognise", Front: "{{Name}}", Back: "{{Call}}"}},
+		Templates: []format.CardTemplate{{Name: "Recognize", Front: "{{Name}}", Back: "{{Call}}"}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	body := read(t, v, made.Path)
-	if !strings.Contains(body, "## Recognise") || !strings.Contains(body, "{{Call}}") {
+	if !strings.Contains(body, "## Recognize") || !strings.Contains(body, "{{Call}}") {
 		t.Errorf("the templates are not in the card model:\n%s", body)
 	}
 }

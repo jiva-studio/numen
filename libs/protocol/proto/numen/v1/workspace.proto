@@ -370,9 +370,9 @@ enum TabMoveErrorCode {
   // another window reported it first.
   TAB_MOVE_ERROR_CODE_NOT_OWNER = 3;
 
-  // TAB_MOVE_ERROR_CODE_CANCELLED is a move that a newer move or detach of the
+  // TAB_MOVE_ERROR_CODE_CANCELED is a move that a newer move or detach of the
   // tab, a cancelled request, or another window that took the tab ended.
-  TAB_MOVE_ERROR_CODE_CANCELLED = 4;
+  TAB_MOVE_ERROR_CODE_CANCELED = 4;
 }
 
 message HighlightWindowRequest {

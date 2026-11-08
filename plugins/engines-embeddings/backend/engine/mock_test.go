@@ -50,7 +50,7 @@ func TestMockEmbedderBlocksABatchWithTheHoldWordUntilCancel(t *testing.T) {
 
 func TestEmbedMock_ParaphraseQuestionNearPassage(t *testing.T) {
 	question := embedMock("boat")
-	passage := embedMock("The ferry leaves the harbour at dawn with the morning post.")
+	passage := embedMock("The ferry leaves the harbor at dawn with the morning post.")
 	if got := cosine(question, passage); got < floor {
 		t.Errorf("a passage about a ferry stands %.3f from a question about a boat, want at least %.2f", got, floor)
 	}
@@ -73,7 +73,7 @@ func TestMockQuestionIsNearPassageWithItsWord(t *testing.T) {
 }
 
 func TestAMockVectorIsUnitLengthAndTheSameEveryTime(t *testing.T) {
-	text := "The ferry leaves the harbour at dawn."
+	text := "The ferry leaves the harbor at dawn."
 	first, second := embedMock(text), embedMock(text)
 	if !slices.Equal(first, second) {
 		t.Error("one text gave two vectors")

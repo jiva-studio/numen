@@ -19,7 +19,7 @@ import (
 // cover those operations.
 
 const animalCardModel = "---\ntype: card-model\nfields:\n  - Name\n  - Height\n  - Life span\n---\n\n" +
-	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+	"## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 
 const toolsDeck = "---\ntype: deck\n---\n\n" +
 	"# Camelids\n\n" +
@@ -662,7 +662,7 @@ func TestADeckIsMadeThroughTheTools(t *testing.T) {
 
 // titled is a card model whose title is not what its file is called.
 const titled = "---\ntype: card-model\ntitle: Beast\nfields:\n  - Name\n  - Height\n---\n\n" +
-	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+	"## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 
 // The name a card model is listed under is the name a card's wikilink resolves by.
 //
@@ -850,12 +850,8 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 
 func mergeArgs(args, every map[string]any) map[string]any {
 	out := make(map[string]any, len(args)+len(every))
-	for k, v := range args {
-		out[k] = v
-	}
-	for k, v := range every {
-		out[k] = v
-	}
+	maps.Copy(out, args)
+	maps.Copy(out, every)
 	return out
 }
 
@@ -938,7 +934,7 @@ func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 	if len(s.Fields) != 3 || s.Fields[0] != "Name" || s.Fields[1] != "Height" || s.Fields[2] != "Life span" {
 		t.Fatalf("card model fields = %+v", s.Fields)
 	}
-	if len(s.Templates) != 1 || s.Templates[0].Name != "Recognise" || s.Templates[0].Front != "{{Name}}" || s.Templates[0].Back != "{{Height}}" {
+	if len(s.Templates) != 1 || s.Templates[0].Name != "Recognize" || s.Templates[0].Front != "{{Name}}" || s.Templates[0].Back != "{{Height}}" {
 		t.Fatalf("card model templates = %+v", s.Templates)
 	}
 	if s.Fingerprint == "" {
@@ -952,7 +948,7 @@ func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 	}](t, session, "card_model_edit", map[string]any{
 		"path":        "Animal.md",
 		"fields":      []string{"Name", "Weight"},
-		"templates":   []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": "{{Weight}}"}},
+		"templates":   []map[string]string{{"name": "Recognize", "front": "{{Name}}", "back": "{{Weight}}"}},
 		"fingerprint": s.Fingerprint,
 	})
 	if outcome.Path != "Animal.md" || outcome.Fingerprint == "" || outcome.Fingerprint == s.Fingerprint || outcome.Cards != 0 {
@@ -978,7 +974,7 @@ func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 	response := getToolError(t, session, "card_model_edit", map[string]any{
 		"path":        "Animal.md",
 		"fields":      []string{"Name"},
-		"templates":   []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": ""}},
+		"templates":   []map[string]string{{"name": "Recognize", "front": "{{Name}}", "back": ""}},
 		"fingerprint": s.Fingerprint,
 	})
 	if response == "" {

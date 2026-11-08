@@ -32,13 +32,7 @@ func TestFillCollectionsFillsMaps(t *testing.T) {
 func TestFillCollectionsIgnoresUnsettableValues(t *testing.T) {
 	var m map[string]int32
 	api.FillCollections(m)
-	if m != nil {
-		t.Fatal("expected nil map when passed by value")
-	}
 
 	var s []string
 	api.FillCollections(s)
-	if s != nil {
-		t.Fatal("expected nil slice when passed by value")
-	}
 }

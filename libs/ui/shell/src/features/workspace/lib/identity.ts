@@ -22,5 +22,5 @@ export const browserRandomness: Randomness = {
  */
 export function createNodeIdFactory(random: Randomness = browserRandomness): NodeIdFactory {
   let createdItem = 0
-  return () => (random.uuid() ?? `node-${++createdItem}`) as NodeId
+  return () => (random.uuid() ?? `node-${++createdItem}`)
 }

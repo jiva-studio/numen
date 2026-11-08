@@ -110,7 +110,7 @@ func (s *Services) newRoutes(named []string) []served {
 		routes = append(routes, mount(numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)))
 	}
 	// The themes belong to the installation and arrive here from whatever put
-	// the window together, so a build put together without a catalogue serves
+	// the window together, so a build put together without a catalog serves
 	// none.
 	if s.Themes != nil && isServed(named, numenv1connect.ThemeServiceName) {
 		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(s.Themes, counted)))

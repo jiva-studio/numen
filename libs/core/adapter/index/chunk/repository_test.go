@@ -41,7 +41,7 @@ func TestFullTextRowsAreAddressedByTheChunkNumber(t *testing.T) {
 }
 
 func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
-	// A nearest-neighbour search returns the best k of the whole table. A vault
+	// A nearest-neighbor search returns the best k of the whole table. A vault
 	// filter applied to the result instead returns fewer than k passages, or
 	// none, and a query plan shows neither case: it shows only that the virtual
 	// table was read.

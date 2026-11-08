@@ -5,14 +5,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
-// Config holds settings for recognising scanned pages.
+// Config holds settings for recognizing scanned pages.
 type Config struct {
 	Runtime        string                               `json:"runtime"`
 	Dir            string                               `json:"dir"`
 	ShouldDownload bool                                 `json:"download"`
 	Layout         LayoutModel                          `json:"layout"`
 	Detect         DetectModel                          `json:"detect"`
-	Recognise      RecogniserModel                      `json:"recognise"`
+	Recognize      RecogniserModel                      `json:"recognize"`
 	Regions        RegionKinds                          `json:"regions"`
 	Compute        Compute                              `json:"-"`
 	Progress       func(what string, done, total int64) `json:"-"`
@@ -74,7 +74,7 @@ func Defaults() Config {
 		Detect: DetectModel{
 			Name: detectDefault, Path: "", MaxSide: 0, Expand: 0, Minimum: 0,
 		},
-		Recognise: RecogniserModel{
+		Recognize: RecogniserModel{
 			Name: recogDefault, Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
 		},
 		Regions:  RegionKinds{Body: nil, Head: nil},
@@ -183,8 +183,8 @@ const (
 
 func (c Config) jobs() int {
 	switch {
-	case c.Recognise.Jobs > 0:
-		return c.Recognise.Jobs
+	case c.Recognize.Jobs > 0:
+		return c.Recognize.Jobs
 	case c.Compute.Jobs > 0:
 		return c.Compute.Jobs
 	}
@@ -193,8 +193,8 @@ func (c Config) jobs() int {
 
 func (c Config) threads() int {
 	switch {
-	case c.Recognise.Threads > 0:
-		return c.Recognise.Threads
+	case c.Recognize.Threads > 0:
+		return c.Recognize.Threads
 	case c.Compute.Threads > 0:
 		return c.Compute.Threads
 	}

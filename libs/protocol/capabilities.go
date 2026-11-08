@@ -11,7 +11,7 @@ const vectorsReadyPrefix = "onVectorsReady:"
 
 // GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
 // given identity carries a vector under the model in use, but the chunks of a source whose indexing a
-// person cancelled, which stay without one until the source changes. The host emits it after each
+// person canceled, which stay without one until the source changes. The host emits it after each
 // indexing pass that leaves no other vector pending, so it repeats; the state it reports is GetEmbeddingState of
 // HostSearchService, which a plugin that starts later reads as well.
 func GetVectorsReadyEvent(vaultID string) string {

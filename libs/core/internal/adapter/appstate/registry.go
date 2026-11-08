@@ -121,7 +121,7 @@ func (r *VaultRegistry) List() ([]domain.Vault, error) {
 }
 
 // Save records a vault. Saving the same identity again updates its path, which
-// recognises a moved vault: the identity stays with the folder, and the registry
+// recognizes a moved vault: the identity stays with the folder, and the registry
 // records the last known path.
 func (r *VaultRegistry) Save(v domain.Vault) error {
 	r.mu.Lock()

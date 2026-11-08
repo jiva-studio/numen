@@ -76,7 +76,7 @@ func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *ho
 	select {
 	case <-ended:
 	case <-time.After(10 * time.Second):
-		t.Fatal("the pass did not return after its task was cancelled")
+		t.Fatal("the pass did not return after its task was canceled")
 	}
 	model.setBlocking(false)
 
@@ -86,7 +86,7 @@ func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *ho
 }
 
 // The pass after a cancel counts its progress against the chunks it embeds, and the passes after it
-// find nothing pending while only the cancelled note lacks vectors.
+// find nothing pending while only the canceled note lacks vectors.
 func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	events := &progressLog{recorder: newRecorder()}
 	p, _, _ := cancelledPass(t, events, &readyLog{})
@@ -108,21 +108,21 @@ func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	reports := len(events.getReports())
 	p.embed(t.Context())
 	if later := events.getReports(); len(later) != reports {
-		t.Errorf("a pass with only the cancelled note left reported %+v", later[reports:])
+		t.Errorf("a pass with only the canceled note left reported %+v", later[reports:])
 	}
 	if pos := findTask(t, events.recorder, MakingVectors); pos != nil {
-		t.Errorf("a pass with only the cancelled note left is listed: %+v", *pos)
+		t.Errorf("a pass with only the canceled note left is listed: %+v", *pos)
 	}
 }
 
-// The vectors-ready listener is told once the notes nobody cancelled carry vectors, and the
-// cancelled note still has none: the event covers the vault without it.
+// The vectors-ready listener is told once the notes nobody canceled carry vectors, and the
+// canceled note still has none: the event covers the vault without it.
 func TestVectorsReadyExcludesTheCancelledNote(t *testing.T) {
 	events := &progressLog{recorder: newRecorder()}
 	log := &readyLog{}
 	p, model, heldChunks := cancelledPass(t, events, log)
 	if len(log.vaults) != 0 {
-		t.Fatalf("told %v after the cancelled pass", log.vaults)
+		t.Fatalf("told %v after the canceled pass", log.vaults)
 	}
 
 	p.embed(t.Context())
@@ -132,14 +132,14 @@ func TestVectorsReadyExcludesTheCancelledNote(t *testing.T) {
 		t.Errorf("told %d times, want once for each pass after the cancel", len(log.vaults))
 	}
 	if calls := model.getHeldCalls(); calls != 0 {
-		t.Errorf("the cancelled note was sent to the model %d times", calls)
+		t.Errorf("the canceled note was sent to the model %d times", calls)
 	}
 	target, embedded, err := p.worker.vectorCounts(t.Context(), p.v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if target-embedded != heldChunks {
-		t.Errorf("%d of %d chunks lack a vector, want the %d of the cancelled note", target-embedded, target, heldChunks)
+		t.Errorf("%d of %d chunks lack a vector, want the %d of the canceled note", target-embedded, target, heldChunks)
 	}
 
 	p.worker.ClearSkips([]string{"Held.md"})

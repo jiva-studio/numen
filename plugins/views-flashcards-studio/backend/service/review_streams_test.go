@@ -81,7 +81,7 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 // A stream whose page cannot be written to ends with the write's error, at
 // whichever message the failure was detected.
 func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
-	cancelled, cancel := context.WithCancel(t.Context())
+	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	for name, one := range map[string]struct {
@@ -89,7 +89,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		fails      func(n int, msg any) bool
 		moved      bool
 	}{
-		"opening": {func() context.Context { return cancelled }, func(n int, _ any) bool { return n == 1 }, false},
+		"opening": {func() context.Context { return canceled }, func(n int, _ any) bool { return n == 1 }, false},
 		// Nothing changed, and the stream repeats the message until the page is
 		// found gone.
 		"repeating": {t.Context, func(n int, _ any) bool { return n > 1 }, false},
@@ -370,7 +370,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		t.Fatal("the stream never sent its opening message")
 	}
 
-	// The page is gone, and nothing cancelled the context the handler holds.
+	// The page is gone, and nothing canceled the context the handler holds.
 	if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 		t.Errorf("the stream ended with %v, want the write's error", err)
 	}

@@ -123,13 +123,11 @@ func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, pat
 	var running sync.WaitGroup
 	queue := make(chan int)
 	for range places {
-		running.Add(1)
-		go func() {
-			defer running.Done()
+		running.Go(func() {
 			for entry := range queue {
 				found[entry] = u.parseDeck(ctx, v, paths[entry], epoch, cardModels)
 			}
-		}()
+		})
 	}
 	for _, elem := range misses {
 		queue <- elem

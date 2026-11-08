@@ -80,51 +80,51 @@ type Theme struct {
 	Appearance string
 }
 
-// Catalogue is every theme this installation offers: the one inside the
+// Catalog is every theme this installation offers: the one inside the
 // binary, the ones enabled plugins contribute, and the ones in the user's folder.
 // A folder that could not be created or read still leaves the default theme,
 // so the window opens with a theme regardless of disk state.
-type Catalogue struct {
+type Catalog struct {
 	dir     string
 	plugins themecontract.PluginThemes
 	hub     *watchhub.Hub
 }
 
-// Open returns the catalogue at the folder where this desktop keeps its
+// Open returns the catalog at the folder where this desktop keeps its
 // configuration. The themes folder is created empty if it does not exist.
-func Open(hub *watchhub.Hub) (Catalogue, error) {
+func Open(hub *watchhub.Hub) (Catalog, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
-		return Catalogue{}, err
+		return Catalog{}, err
 	}
 	return OpenAt(filepath.Join(dir, "numen", "themes"), hub)
 }
 
 // OpenAt is Open with an explicit path. Watch places its watch through the hub.
-func OpenAt(dir string, hub *watchhub.Hub) (Catalogue, error) {
+func OpenAt(dir string, hub *watchhub.Hub) (Catalog, error) {
 	made := os.MkdirAll(dir, 0o755)
 	// The folder is where the links lead. The paths the operating system
 	// reports changes at are resolved, and they are named against this.
 	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
 		dir = resolved
 	}
-	return Catalogue{dir: dir, hub: hub}, made
+	return Catalog{dir: dir, hub: hub}, made
 }
 
-// WithPlugins returns the catalogue that also offers the themes of the plugins
+// WithPlugins returns the catalog that also offers the themes of the plugins
 // the source lists. A nil source offers none.
-func (c Catalogue) WithPlugins(source themecontract.PluginThemes) Catalogue {
+func (c Catalog) WithPlugins(source themecontract.PluginThemes) Catalog {
 	c.plugins = source
 	return c
 }
 
 // Dir is the folder the user's themes are read from.
-func (c Catalogue) Dir() string { return c.dir }
+func (c Catalog) Dir() string { return c.dir }
 
 // Themes is every theme: the shipped one first, then the plugin themes in the
 // order of their plugin ids, then the user's themes ordered by name. A file that cannot be read is excluded: every name in this list is a
 // theme that can be applied.
-func (c Catalogue) Themes() []Theme {
+func (c Catalog) Themes() []Theme {
 	var themes []Theme
 	entries, err := fs.ReadDir(shipped, shippedIn)
 	if err == nil {
@@ -140,7 +140,7 @@ func (c Catalogue) Themes() []Theme {
 	return append(themes, c.getOwnThemes()...)
 }
 
-func (c Catalogue) getPluginThemes() []Theme {
+func (c Catalog) getPluginThemes() []Theme {
 	if c.plugins == nil {
 		return nil
 	}
@@ -161,7 +161,7 @@ func (c Catalogue) getPluginThemes() []Theme {
 
 // ListPluginThemeNames returns the names of the plugin themes, in the order
 // the plugins list them.
-func (c Catalogue) ListPluginThemeNames() []string {
+func (c Catalog) ListPluginThemeNames() []string {
 	themes := c.getPluginThemes()
 	names := make([]string, 0, len(themes))
 	for _, one := range themes {
@@ -170,10 +170,10 @@ func (c Catalogue) ListPluginThemeNames() []string {
 	return names
 }
 
-// HasPlugins reports whether the catalogue reads plugin themes from a source.
-func (c Catalogue) HasPlugins() bool { return c.plugins != nil }
+// HasPlugins reports whether the catalog reads plugin themes from a source.
+func (c Catalog) HasPlugins() bool { return c.plugins != nil }
 
-func (c Catalogue) getOwnThemes() []Theme {
+func (c Catalog) getOwnThemes() []Theme {
 	if c.dir == "" {
 		return nil
 	}
@@ -210,7 +210,7 @@ func describeTheme(origin Origin, filename, text string) Theme {
 
 // Text returns the stylesheet a name selects, or an error wrapping ErrNoTheme
 // where no theme answers for the name.
-func (c Catalogue) Text(name string) (string, error) {
+func (c Catalog) Text(name string) (string, error) {
 	if strings.HasPrefix(name, pluginPrefix) {
 		return c.readPluginTheme(name)
 	}
@@ -238,7 +238,7 @@ func (c Catalogue) Text(name string) (string, error) {
 	return text, nil
 }
 
-func (c Catalogue) readPluginTheme(name string) (string, error) {
+func (c Catalog) readPluginTheme(name string) (string, error) {
 	pluginID, themeID, found := strings.Cut(strings.TrimPrefix(name, pluginPrefix), "/")
 	if !found || pluginID == "" || themeID == "" || c.plugins == nil {
 		return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
@@ -255,7 +255,7 @@ func (c Catalogue) readPluginTheme(name string) (string, error) {
 
 // GetApplied is the theme a name selects. A name matching nothing yields this
 // product's own palette, and the name that was not found is returned.
-func (c Catalogue) GetApplied(name string) (applied, missing string) {
+func (c Catalog) GetApplied(name string) (applied, missing string) {
 	if name == "" {
 		return Default, ""
 	}

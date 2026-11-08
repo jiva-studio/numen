@@ -136,13 +136,13 @@ func TestATypeKeepsOnlyItsDeclaredHeadingLevels(t *testing.T) {
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Summary"},
 		domain.Heading{Level: 3, Text: "Source"},
-		domain.Heading{Level: 2, Text: "Leaf mould, how long ^0123456789"},
+		domain.Heading{Level: 2, Text: "Leaf mold, how long ^0123456789"},
 		domain.Heading{Level: 3, Text: "Summary"},
 		domain.Heading{Level: 3, Text: "Source"},
 	)
 
 	got := headingTexts(t, db, getFirst(), "samples/mammals.md")
-	want := []string{"Roots", "Compost, what is it made of", "Leaf mould, how long"}
+	want := []string{"Roots", "Compost, what is it made of", "Leaf mold, how long"}
 	if len(got) != len(want) {
 		t.Fatalf("the sample holds %v, want %v", got, want)
 	}
@@ -220,11 +220,11 @@ func TestAHeadingOfOnlyABlockIDContributesNoHeading(t *testing.T) {
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Summary"},
-		domain.Heading{Level: 2, Text: "Leaf mould, how long ^0123456789"},
+		domain.Heading{Level: 2, Text: "Leaf mold, how long ^0123456789"},
 	)
 
 	got := headingTexts(t, db, getFirst(), "samples/mammals.md")
-	want := []string{"Roots", "Leaf mould, how long"}
+	want := []string{"Roots", "Leaf mold, how long"}
 	if len(got) != len(want) {
 		t.Fatalf("the sample holds %v, want %v", got, want)
 	}

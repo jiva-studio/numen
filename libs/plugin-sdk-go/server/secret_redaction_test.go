@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const redactedValue = "invented-harbour-key"
+const redactedValue = "invented-harbor-key"
 
 func TestASecretPrintedWithAnyVerbShowsNoValue(t *testing.T) {
 	one := Secret{ID: "s0000000a", Name: "Work", Group: "openrouter", Value: redactedValue}

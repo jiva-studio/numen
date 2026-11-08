@@ -88,10 +88,7 @@ const (
 
 func (hw Specs) getPerformanceThreads() int {
 	threadsPerCore := (hw.LogicalCPUs + hw.PhysicalCPUs - 1) / hw.PhysicalCPUs
-	threads := hw.PerformanceCPUs * threadsPerCore
-	if threads > hw.LogicalCPUs {
-		threads = hw.LogicalCPUs
-	}
+	threads := min(hw.PerformanceCPUs*threadsPerCore, hw.LogicalCPUs)
 	return threads
 }
 

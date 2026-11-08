@@ -1051,7 +1051,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
 }
 
 // TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name resolves as
-// an exact path from the root before it resolves as a neighbour, so a note
+// an exact path from the root before it resolves as a neighbor, so a note
 // created from one of two notes sharing a name carries the path of its origin.
 // Resolving by name alone attaches the note to the other one, and the graph
 // omits it.
@@ -1432,7 +1432,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":  "# Entropy\n",
-		"Animal.md":   "---\ntype: form\ncolour: brown\n---\n\n## Layout\n",
+		"Animal.md":   "---\ntype: form\ncolor: brown\n---\n\n## Layout\n",
 		"Animals.md":  "---\ntype: sample\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Sanskrit.md": "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Notes.txt":   "a list\n",
@@ -1495,7 +1495,7 @@ func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.File
 func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":   "# Entropy\n",
-		"Animal.md":    "---\ntype: form\ncolour: brown\n---\n\n## Layout\n",
+		"Animal.md":    "---\ntype: form\ncolor: brown\n---\n\n## Layout\n",
 		"Animals.md":   "---\ntype: sample\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Sanskrit.md":  "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Physics.epub": "an epub\n",

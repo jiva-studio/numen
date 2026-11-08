@@ -136,7 +136,7 @@ func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing",
-		CardID: "k7m2xq9fzp", Template: "Recognise", Rating: api.RatingGood,
+		CardID: "k7m2xq9fzp", Template: "Recognize", Rating: api.RatingGood,
 	})
 	if codeOf(err) != server.CodeNotFound {
 		t.Errorf("failed with %v", codeOf(err))
@@ -234,7 +234,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	edited := strings.Replace(getDeck()["decks/Words.md"], "### Word\n\nLeaf mould", "### Word\n\nMould leaf", 1)
+	edited := strings.Replace(getDeck()["decks/Words.md"], "### Word\n\nLeaf mold", "### Word\n\nMold leaf", 1)
 	if err := os.WriteFile(pos, []byte(edited), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	}
 
 	stale, err := reviewCards.Execute(t.Context(), v)
-	if err != nil || !isFront(stale[0], "Leaf mould") {
+	if err != nil || !isFront(stale[0], "Leaf mold") {
 		t.Fatalf("the review cards were parsed again without a report: %+v %v", stale, err)
 	}
 
@@ -260,7 +260,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 		t.Fatalf("did not receive refresh signal: %v", stream.Err())
 	}
 	fresh, err := reviewCards.Execute(t.Context(), v)
-	if err != nil || !isFront(fresh[0], "Mould leaf") {
+	if err != nil || !isFront(fresh[0], "Mold leaf") {
 		t.Errorf("the review cards stand as they were after a report: %+v %v", fresh, err)
 	}
 }

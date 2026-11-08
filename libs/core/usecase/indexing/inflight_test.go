@@ -131,7 +131,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 			select {
 			case <-ended:
 			case <-time.After(10 * time.Second):
-				t.Fatal("the pass did not return after its task was cancelled")
+				t.Fatal("the pass did not return after its task was canceled")
 			}
 
 			script.blockOn = ""

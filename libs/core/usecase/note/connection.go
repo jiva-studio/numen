@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
@@ -179,9 +180,9 @@ func (e connectionEditor) restore(
 		return err
 	}
 	var failures []error
-	for i := len(landed) - 1; i >= 0; i-- {
-		if _, err := writer.Write(ctx, landed[i].path, originals[i], stats[i]); err != nil {
-			failures = append(failures, fmt.Errorf("restore %s: %w", landed[i].path, err))
+	for i, l := range slices.Backward(landed) {
+		if _, err := writer.Write(ctx, l.path, originals[i], stats[i]); err != nil {
+			failures = append(failures, fmt.Errorf("restore %s: %w", l.path, err))
 		}
 	}
 	if err := e.updateIndex(ctx, v, landed); err != nil {

@@ -28,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// mine is a user theme with a colour no other theme has, pinning the dark
+// mine is a user theme with a color no other theme has, pinning the dark
 // scheme.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
@@ -70,7 +70,8 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 	}
 }
 
-func size(response float64) *float64 { return &response }
+//go:fix inline
+func size(response float64) *float64 { return new(response) }
 
 func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
@@ -205,8 +206,8 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	writeAppearance(t, themes, &v1.WriteAppearanceRequest{
 		Name:           "mine:sea",
 		Mode:           v1.Mode_MODE_DARK,
-		InterfaceScale: size(1.25),
-		TextScale:      size(1.5),
+		InterfaceScale: new(1.25),
+		TextScale:      new(1.5),
 	})
 
 	head, _, found := strings.Cut(getResponse(t, handler, "/").Body.String(), appearance.HeadEnd)
@@ -267,14 +268,14 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 			t.Fatal(err)
 		}
 		if strings.Contains(string(text), ":root{color-scheme") {
-			t.Errorf("%s declares the colour scheme at the root", name)
+			t.Errorf("%s declares the color scheme at the root", name)
 		}
 		if regexp.MustCompile(`:where\(:root\)\s*\{[^}]*color-scheme`).Match(text) {
 			declaresScheme = true
 		}
 	}
 	if !declaresScheme {
-		t.Error("the built stylesheets declare no colour scheme at all")
+		t.Error("the built stylesheets declare no color scheme at all")
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// NoteMover settles each note that travelled in a vault move.
+// NoteMover settles each note that traveled in a vault move.
 type NoteMover interface {
 	WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path string) error
 	RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (domain.MoveResult, error)
@@ -21,7 +21,7 @@ type NoteMover interface {
 
 // Move files anything the vault holds somewhere else inside it: one file of any
 // kind, or a folder with everything under it. Renaming is a move within one folder.
-// Every note that travelled is filed where it now is, and a link that stopped
+// Every note that traveled is filed where it now is, and a link that stopped
 // reaching one is written again by its name. A note given a different name
 // inside its own folder is called by that name, where a title and a filename are one name.
 type Move struct {
@@ -33,9 +33,9 @@ type Move struct {
 }
 
 // NewMove is what files anything the vault holds somewhere else: the vault it
-// is moved within, the links that pointed at what travelled, what the index
+// is moved within, the links that pointed at what traveled, what the index
 // holds about the files under the path and where it files them, and the one
-// NoteMover every note that travelled settles through.
+// NoteMover every note that traveled settles through.
 func NewMove(
 	writers vaultport.VaultWriters,
 	links noteport.LinkQueries,
@@ -68,13 +68,13 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		return res, nil
 	}
 
-	travelling, err := u.queries.GetSourcesUnder(ctx, v.ID, from)
+	traveling, err := u.queries.GetSourcesUnder(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
 
 	// Queried before the move, because afterwards nothing points at the old paths.
-	pointing, err := u.getBacklinksByPath(ctx, v, travelling)
+	pointing, err := u.getBacklinksByPath(ctx, v, traveling)
 	if err != nil {
 		return res, err
 	}
@@ -101,11 +101,11 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	// sent, and every view of the note must be notified wherever the note's own name
 	// ended up.
 	var called error
-	if isRename(travelling, from, to) {
+	if isRename(traveling, from, to) {
 		called = u.notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
-	rewritten, err := u.rewriteNoteLinks(ctx, v, from, to, travelling, pointing)
+	rewritten, err := u.rewriteNoteLinks(ctx, v, from, to, traveling, pointing)
 	res.Repaired = append(res.Repaired, rewritten.Repaired...)
 	res.Dangling = append(res.Dangling, rewritten.Dangling...)
 	if err != nil {
@@ -153,12 +153,12 @@ func (u Move) rewriteNoteLinks(
 	return res, nil
 }
 
-func isRename(travelling []domain.FileStat, from, to string) bool {
+func isRename(traveling []domain.FileStat, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}
-	return len(travelling) == 1 &&
-		travelling[0].Path == from && travelling[0].Kind == domain.KindNote
+	return len(traveling) == 1 &&
+		traveling[0].Path == from && traveling[0].Kind == domain.KindNote
 }
 
 func getMovedPath(from, to, path string) string {

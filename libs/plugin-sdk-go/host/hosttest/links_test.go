@@ -86,7 +86,7 @@ func TestAddLinksWritesTheLinksIntoTheFrontmatterAndKeepsTheBody(t *testing.T) {
 	}
 	link, ok := findRockLink(linksOf(t, v, basaltPath), "Granite", domain.RoleJump)
 	if !ok || link.Type != "relative" || link.Label != "cousin" || link.Why != "both are igneous" {
-		t.Errorf("the links of %s are %+v, want a jump to Granite of type relative labelled cousin with its note", basaltPath, linksOf(t, v, basaltPath))
+		t.Errorf("the links of %s are %+v, want a jump to Granite of type relative labeled cousin with its note", basaltPath, linksOf(t, v, basaltPath))
 	}
 	if content, _ := v.Content(basaltPath); !strings.HasSuffix(content, basaltBody) || !strings.Contains(content, "title: Basalt") {
 		t.Errorf("%s contains %q, want the title and the body kept", basaltPath, content)
@@ -195,7 +195,7 @@ func TestUpdateLinksChangesTheRoleLabelAndNoteKeepingTheTarget(t *testing.T) {
 	links := linksOf(t, v, basaltPath)
 	link, ok := findRockLink(links, "Granite", domain.RoleRef)
 	if !ok || link.Label != "kin" || link.Why != "cooled from magma" || link.Type != "relative" {
-		t.Errorf("the links of %s are %+v, want a ref to Granite labelled kin with the new note and the type kept", basaltPath, links)
+		t.Errorf("the links of %s are %+v, want a ref to Granite labeled kin with the new note and the type kept", basaltPath, links)
 	}
 	if _, ok := findRockLink(links, "Granite", domain.RoleJump); ok {
 		t.Errorf("the links of %s are %+v, want no jump to Granite left", basaltPath, links)

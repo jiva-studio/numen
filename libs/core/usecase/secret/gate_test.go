@@ -33,13 +33,11 @@ func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 
 	var group sync.WaitGroup
 	for _, id := range []string{"s00000001", "s00000002"} {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			if err := f.secrets.Write.Execute(t.Context(), id, "value"); err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	<-store.entered
 	select {
@@ -120,7 +118,7 @@ func TestAnOperationWhoseContextEndedWhileItWaitsForTheGateChangesNothing(t *tes
 		t.Error(err)
 	}
 	if f.ledger.list[0].Name != "One" {
-		t.Errorf("name = %s, the cancelled operation changed the list", f.ledger.list[0].Name)
+		t.Errorf("name = %s, the canceled operation changed the list", f.ledger.list[0].Name)
 	}
 }
 
@@ -137,8 +135,8 @@ func TestCreateRemovesTheValueAlthoughTheContextEndedBeforeTheListFailed(t *test
 	ctx, cancel := context.WithCancel(t.Context())
 	store := keys{}
 	failing := &failingLedger{}
-	cancelling := cancelOnSet{keys: store, cancel: cancel}
-	use := secret.NewSecrets(failing, cancelling, &plugins{}, func() (string, error) { return "s00000001", nil }, nil, nil)
+	canceling := cancelOnSet{keys: store, cancel: cancel}
+	use := secret.NewSecrets(failing, canceling, &plugins{}, func() (string, error) { return "s00000001", nil }, nil, nil)
 
 	if _, err := use.Create.Execute(ctx, "g", "N", "value"); !errors.Is(err, errDisk) {
 		t.Fatalf("error = %v", err)

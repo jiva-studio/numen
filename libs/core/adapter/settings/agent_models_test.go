@@ -198,7 +198,7 @@ func TestAgentModels_UninstalledProgramYieldsConfiguredOnly(t *testing.T) {
 	}
 
 	named := settings.Agent{}
-	named.Use = settings.UseProgram("gamma")
+	named.Use = new("gamma")
 	target := modelsAt(t, named, listedPrograms(), []string{"agent", "gamma", "model"})
 	if len(target) != 1 || target[0].Name != "g1" {
 		t.Errorf("the named program offers %+v", target)

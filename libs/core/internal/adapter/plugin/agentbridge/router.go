@@ -73,11 +73,9 @@ func (r *Router) GetPrograms(
 
 	var group sync.WaitGroup
 	for item, id := range ids {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			items[item], failed[item] = r.listPrograms(ctx, id, commands)
-		}()
+		})
 	}
 	group.Wait()
 

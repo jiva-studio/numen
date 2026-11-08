@@ -46,7 +46,7 @@ func onDisk(t *testing.T, root, path string) string {
 }
 
 const animal = "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n\n" +
-	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+	"## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 
 // cardRun is the cards of a deck as written by the user. The middle card has
 // no wikilink, so it names no card model and the problem is reported against it.
@@ -844,8 +844,7 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 }
 
 func codeOf(err error) server.ErrorCode {
-	var failure *server.APIError
-	if errors.As(err, &failure) {
+	if failure, ok := errors.AsType[*server.APIError](err); ok {
 		return failure.Code
 	}
 	return ""

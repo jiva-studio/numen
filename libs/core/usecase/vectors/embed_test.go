@@ -53,7 +53,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(stopCtx, indexfake.GetFirst()); err == nil {
-		t.Fatal("a cancelled context did not stop the run")
+		t.Fatal("a canceled context did not stop the run")
 	}
 
 	part := len(index.Vectors)
@@ -528,7 +528,7 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 		pathB = "library/b.epub"
 		pathC = "library/c.epub"
 	)
-	third := []string{"harbour", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
+	third := []string{"harbor", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(pathA, domain.KindFile, indexfake.CreateBook(t, "A", indexfake.GetWords(indexfake.GetLatin(), 300)), 300)
 	shelf.Put(pathB, domain.KindFile, indexfake.CreateBook(t, "B", indexfake.GetWords(indexfake.GetSanskrit(), 300)), 200)
@@ -617,7 +617,7 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 	}
 }
 
-// A batch whose send is cancelled leaves the reports: they name only a source still in flight,
+// A batch whose send is canceled leaves the reports: they name only a source still in flight,
 // and none when an earlier batch finished while the send waited.
 func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	const (

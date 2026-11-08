@@ -10,7 +10,7 @@ import (
 )
 
 // The features the encoder is given are NeMo's: a log-mel spectrogram of
-// pre-emphasised audio, each band brought to zero mean and unit deviation over
+// pre-emphasized audio, each band brought to zero mean and unit deviation over
 // the whole stretch. Every number here is part of the model's identity, and a
 // model fed a spectrogram made differently writes other words.
 const (
@@ -57,7 +57,7 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 			for band := start; band < end; band++ {
 				filter := bank[band]
 				row := out[band*frames : (band+1)*frames]
-				for t := 0; t < frames; t++ {
+				for t := range frames {
 					var sum float64
 					offset := t*bins + filter.firstBin
 					for bin, w := range filter.weights {
@@ -128,12 +128,12 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 			buf := make([]complex128, fftSize)
 			for t := start; t < end; t++ {
 				pos := t * hopSize
-				for i := 0; i < fftSize; i++ {
+				for i := range fftSize {
 					buf[i] = complex(padded[pos+i]*window[i], 0)
 				}
 				fft(buf, twiddles)
 				offset := t * bins
-				for i := 0; i < bins; i++ {
+				for i := range bins {
 					re, im := real(buf[i]), imag(buf[i])
 					out[offset+i] = re*re + im*im
 				}
@@ -174,7 +174,7 @@ func getHannWindow() []float64 {
 	out := make([]float64, fftSize)
 	offset := (fftSize - windowSize) / 2
 	// gomutants:disable-next-line INTEGER_INCREMENT,CONDITIONALS_BOUNDARY reason="the Hann window is zero at both endpoints and out is zero-initialized"
-	for i := 0; i < windowSize; i++ {
+	for i := range windowSize {
 		out[offset+i] = 0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/float64(windowSize))
 	}
 	return out
@@ -204,14 +204,14 @@ func getMelBank() []melFilter {
 	}
 
 	out := make([]melFilter, MelBands)
-	for band := 0; band < MelBands; band++ {
-		lower, centre, upper := edges[band], edges[band+1], edges[band+2]
+	for band := range MelBands {
+		lower, center, upper := edges[band], edges[band+1], edges[band+2]
 		scale := 2.0 / (upper - lower)
 		first := -1
 		var weights []float64
 		for i, f := range freq {
-			rising := (f - lower) / (centre - lower)
-			falling := (upper - f) / (upper - centre)
+			rising := (f - lower) / (center - lower)
+			falling := (upper - f) / (upper - center)
 			w := math.Min(rising, falling)
 			if w > 0 {
 				if first == -1 {

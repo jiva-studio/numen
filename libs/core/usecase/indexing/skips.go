@@ -2,7 +2,7 @@ package indexing
 
 import "sync"
 
-// skipSet is the sources whose indexing a person cancelled. It is
+// skipSet is the sources whose indexing a person canceled. It is
 // held in memory only, so a restart indexes them again.
 //
 // A source is skipped by the vector pass while its content hash is the one the

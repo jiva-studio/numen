@@ -46,7 +46,7 @@ func parseCPUList(content string) ([]int, error) {
 		return nil, nil
 	}
 	var cpus []int
-	for _, part := range strings.Split(text, ",") {
+	for part := range strings.SplitSeq(text, ",") {
 		first, last, isRange := strings.Cut(strings.TrimSpace(part), "-")
 		from, err := strconv.Atoi(first)
 		if err != nil {

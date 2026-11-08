@@ -42,7 +42,7 @@ func numbers(batches []Batch) [][]int {
 
 func makeTranscript(count int) []Line {
 	var cues []Line
-	for i := 0; i < count; i++ {
+	for i := range count {
 		cues = append(cues, Line{Number: i, Text: strconv.Itoa(i)})
 	}
 	return cues
@@ -54,7 +54,7 @@ func TestSharingNothingSplitsSpeechAsItAlwaysWas(t *testing.T) {
 	for _, overlap := range []int{0, -1, -8} {
 		for size := 1; size <= 4; size++ {
 			var want [][]int
-			for pos := 0; pos < len(cues); pos++ {
+			for pos := range cues {
 				if pos%size == 0 {
 					want = append(want, nil)
 				}
@@ -185,7 +185,7 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 			t.Errorf("the speech instruction mentions %q", word)
 		}
 	}
-	for _, word := range []string{"heard in a recording", "sounds like it", "capitalisation", "hesitation", "summarise"} {
+	for _, word := range []string{"heard in a recording", "sounds like it", "capitalisation", "hesitation", "summarize"} {
 		if !strings.Contains(speechInstruction, word) {
 			t.Errorf("the speech instruction does not mention %q", word)
 		}
@@ -293,12 +293,12 @@ func hasLines(batch Batch, first, last int) bool {
 func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {
-			for overlap := 0; overlap < size; overlap++ {
+			for overlap := range size {
 				cues := makeTranscript(count)
 				batches := speechBatches(cues, size, overlap)
 				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(batches)))
 
-				for pos := 0; pos < count; pos++ {
+				for pos := range count {
 					for throughIdx := pos; throughIdx <= min(pos+size/2-1, count-1); throughIdx++ {
 						if slices.ContainsFunc(batches, func(b Batch) bool {
 							return hasLines(b, pos, throughIdx)
@@ -323,7 +323,7 @@ func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 func TestEachSeamReachesFurtherThanTheOneBefore(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {
-			for overlap := 0; overlap < size; overlap++ {
+			for overlap := range size {
 				cues := makeTranscript(count)
 				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(speechBatches(cues, size, overlap))))
 				for i, atCut := range batchesAcrossCuts {

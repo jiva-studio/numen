@@ -429,7 +429,7 @@ const cardModel = "---\n" +
 	"  - Life span\n" +
 	"---\n" +
 	"\n" +
-	"## Recognise\n" +
+	"## Recognize\n" +
 	"\n" +
 	"### Front\n" +
 	"\n" +
@@ -810,7 +810,7 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 
 func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
-	for _, line := range strings.Split(markdown.Normalise(body), "\n") {
+	for line := range strings.SplitSeq(markdown.Normalise(body), "\n") {
 		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {
 			return strings.TrimPrefix(line, "## ")
 		}
@@ -1330,7 +1330,7 @@ const proseCardModel = "---\n" +
 	"---\n" +
 	"How I show these.\n" +
 	"\n" +
-	"## Recognise\n" +
+	"## Recognize\n" +
 	"\n" +
 	"The one to start with.\n" +
 	"\n" +
@@ -1348,20 +1348,20 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
 		"the card model": proseCardModel,
 		"crlf":           strings.ReplaceAll(proseCardModel, "\n", "\r\n"),
-		"no frontmatter": "Above them all.\n\n## Recognise\n\nThe one to start with.\n\n" +
+		"no frontmatter": "Above them all.\n\n## Recognize\n\nThe one to start with.\n\n" +
 			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-		"no trailing break": "---\ntype: card-model\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
+		"no trailing break": "---\ntype: card-model\n---\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
 		"no trailing break under a template's heading": "---\ntype: card-model\n---\n" +
-			"## Recognise",
+			"## Recognize",
 		"no templates": "---\ntype: card-model\n---\n",
-		"bom":          "\xef\xbb\xbf---\ntype: card-model\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"bom":          "\xef\xbb\xbf---\ntype: card-model\n---\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: card-model\n---\n" +
-			"## Recognise\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
+			"## Recognize\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
 		"a heading of another name": "---\ntype: card-model\n---\n" +
-			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Notes\n\nThe one to start with.\n\n" +
+			"## Recognize\n\n### Front\n\n{{Name}}\n\n### Notes\n\nThe one to start with.\n\n" +
 			"### Back\n\n{{Height}}\n\n### Afterwards\n\nAnd this.\n",
 		"a side written twice": "---\ntype: card-model\n---\n" +
-			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Front\n\nthe second one\n\n### Back\n\n{{Height}}\n",
+			"## Recognize\n\n### Front\n\n{{Name}}\n\n### Front\n\nthe second one\n\n### Back\n\n{{Height}}\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			doc, err := markdown.Open([]byte(raw))
@@ -1429,7 +1429,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 	raw := "---\ntype: card-model\n---\n" +
 		"How I show these.\n\n" +
-		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
+		"## Recognize\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
 	read := format.ReadCardModel(markdown.Parse(domain.FileStat{Path: "Animal.md"}, []byte(raw)))
@@ -1457,8 +1457,8 @@ func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 // each holds is in the file.
 func TestACardModelKeepsEveryTemplateItIsGiven(t *testing.T) {
 	body, err := format.CardModelBody("", []format.CardTemplate{
-		{Name: "Recognise", Front: "{{Name}}", Back: "{{Height}}"},
-		{Name: "Recognise", Front: "{{Height}}", Back: "{{Name}}"},
+		{Name: "Recognize", Front: "{{Name}}", Back: "{{Height}}"},
+		{Name: "Recognize", Front: "{{Height}}", Back: "{{Name}}"},
 	}, "")
 	if err != nil {
 		t.Fatalf("card model body: %v", err)

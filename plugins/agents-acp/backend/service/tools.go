@@ -35,7 +35,7 @@ func (s *acpSession) listServers() ([]any, error) {
 }
 
 func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
-	denial := map[string]any{keyOutcome: map[string]any{keyOutcome: "cancelled"}}
+	denial := map[string]any{keyOutcome: map[string]any{keyOutcome: "canceled"}}
 	var request struct {
 		SessionID string `json:"sessionId"`
 		ToolCall  struct {

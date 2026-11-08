@@ -110,7 +110,7 @@ func corpusOf(t *testing.T) table {
 
 func TestLayFillsATemplateWithACard(t *testing.T) {
 	template := format.CardTemplate{
-		Name:  "Recognise",
+		Name:  "Recognize",
 		Front: `<img src="llama.jpg" alt="a llama">`,
 		Back:  "<b>{{Name}}</b> is {{Height}} and lives {{Life span}}.",
 	}
@@ -245,7 +245,7 @@ func TestACardModelOfNoFieldsLaysNothingOut(t *testing.T) {
 // A template holding a front and no back lays out nothing at all.
 func TestATemplateWithNoBackLaysNothingOut(t *testing.T) {
 	card := format.Card{Values: []format.Value{{Field: "Name", Text: "Llama"}}}
-	front, back := format.Lay(format.CardTemplate{Name: "Recognise", Front: "{{Name}}"}, card)
+	front, back := format.Lay(format.CardTemplate{Name: "Recognize", Front: "{{Name}}"}, card)
 	if front != "" || back != "" {
 		t.Errorf("laid out %q and %q, want nothing", front, back)
 	}

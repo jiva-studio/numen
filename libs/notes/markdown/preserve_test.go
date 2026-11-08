@@ -1,6 +1,7 @@
 package markdown_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -73,12 +74,7 @@ func drawNote(t *rapid.T) (raw string, foreign []string) {
 }
 
 func contains(all []string, one string) bool {
-	for _, target := range all {
-		if target == one {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(all, one)
 }
 
 // A note that is read and not written is returned as the bytes it was read as.
@@ -156,7 +152,7 @@ func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote strin
 
 	idx := 0
 	for _, one := range foreign {
-		for _, line := range strings.Split(strings.TrimSuffix(one, "\n"), "\n") {
+		for line := range strings.SplitSeq(strings.TrimSuffix(one, "\n"), "\n") {
 			for idx < len(lines) && lines[idx] != line {
 				idx++
 			}

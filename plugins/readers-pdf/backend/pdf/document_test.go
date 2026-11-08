@@ -91,7 +91,7 @@ func TestOpenReaderClosesFileOnSeekError(t *testing.T) {
 			if !errors.Is(err, tc.expectedErr) {
 				t.Errorf("error %v does not wrap %v", err, tc.expectedErr)
 			}
-			if unwrapped := errors.Unwrap(err); unwrapped != tc.expectedErr {
+			if unwrapped := errors.Unwrap(err); !errors.Is(unwrapped, tc.expectedErr) {
 				t.Errorf("errors.Unwrap(err) = %v, want %v", unwrapped, tc.expectedErr)
 			}
 		})

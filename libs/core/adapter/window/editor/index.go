@@ -112,28 +112,22 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
 	}
-	running.Add(1)
-	go func() {
-		defer running.Done()
+	running.Go(func() {
 		watchVault(ctx, state, run, unwatched)
-	}()
+	})
 
-	running.Add(1)
-	go func() {
-		defer running.Done()
+	running.Go(func() {
 		session.Run(ctx, v, rebuild, read)
-	}()
+	})
 
 	if triggers := made.OpenTriggers(); triggers != nil {
-		running.Add(1)
-		go func() {
-			defer running.Done()
+		running.Go(func() {
 			changes, stop := made.WatchPluginChanges()
 			defer stop()
 			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
 				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
 			})
-		}()
+		})
 	}
 
 	return refresh, running.Wait

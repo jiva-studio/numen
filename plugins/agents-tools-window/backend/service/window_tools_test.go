@@ -153,7 +153,7 @@ func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
 func TestNoteFocusDescriptionExplainsWhenToMoveTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	description := w.getToolInfo(t, "note_focus").GetDescription()
-	for _, want := range []string{"neighbourhood", "asked to be taken to a note", "Talking about one is not asking", "read the note for its content"} {
+	for _, want := range []string{"neighborhood", "asked to be taken to a note", "Talking about one is not asking", "read the note for its content"} {
 		if !strings.Contains(description, want) {
 			t.Errorf("the description of note_focus does not contain %q: %s", want, description)
 		}
@@ -275,7 +275,6 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	requirePlace(t, "the PDF tab", second.Place, `{"page":4,"pageCount":120}`)
 }
 
-func seconds(n float64) *float64 { return &n }
 
 func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 	for name, tc := range map[string]struct {
@@ -289,13 +288,13 @@ func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4}}, `{"page":4}`,
 		},
 		"a recording at a time": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(66.5)}}, `{"positionSeconds":66.5}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(66.5)}}, `{"positionSeconds":66.5}`,
 		},
 		"a recording at its beginning": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(0)}}, `{"positionSeconds":0}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(float64(0))}}, `{"positionSeconds":0}`,
 		},
 		"a recording past an hour": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(3723.9)}}, `{"positionSeconds":3723.9}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(3723.9)}}, `{"positionSeconds":3723.9}`,
 		},
 		"a place of an EPUB and its chapter": {
 			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},

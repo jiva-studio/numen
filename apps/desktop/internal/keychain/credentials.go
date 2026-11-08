@@ -38,8 +38,7 @@ func (s *Store) readEntries() (map[string]string, error) {
 }
 
 func describeJSONSyntax(err error) string {
-	var syntax *json.SyntaxError
-	if errors.As(err, &syntax) {
+	if syntax, ok := errors.AsType[*json.SyntaxError](err); ok {
 		return fmt.Sprintf("invalid JSON at byte %d", syntax.Offset)
 	}
 	return "a value has the wrong type"

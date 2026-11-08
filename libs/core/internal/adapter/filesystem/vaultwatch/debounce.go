@@ -134,11 +134,9 @@ func debounce(
 
 	going := make(chan struct{})
 	var walking sync.WaitGroup
-	walking.Add(1)
-	go func() {
-		defer walking.Done()
+	walking.Go(func() {
 		walkFolders(ctx, shape, going, request, walked)
-	}()
+	})
 	defer walking.Wait()
 	defer close(going)
 

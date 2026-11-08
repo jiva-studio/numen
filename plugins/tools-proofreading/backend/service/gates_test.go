@@ -5,8 +5,8 @@ import "testing"
 func batch() Batch {
 	return Batch{Number: 7, Lines: []Line{
 		{Number: 10, Text: "the Sodërby gardin hcdge. "},
-		{Number: 11, Text: "Sodërby Tradgard's Handbok "},
-		{Number: 12, Text: "TRADGARD HANDBOK "},
+		{Number: 11, Text: "Sodërby Tradgard's Handbook "},
+		{Number: 12, Text: "TRADGARD HANDBOOK "},
 		{Number: 13, Text: "The hedge will very soon need cutting back "},
 		{Number: 20, Text: "blessings."},
 	}}
@@ -68,9 +68,9 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		// A misread word, and diacritics the page prints.
 		{"the Sodërby gardin hcdge.", "the Södërby garden hedge.", 0.05, 0.15, true},
 		// Diacritics alone: folded, the two say the same letters.
-		{"Sodërby Tradgard's Handbok", "Södërby Trädgård's Handbök", 0, 0, true},
+		{"Sodërby Tradgard's Handbook", "Södërby Trädgård's Handbök", 0, 0, true},
 		// A heading answered with the paragraph under it.
-		{"TRADGARD HANDBOK", "TRÄDGÅRD HANDBÖK At the request of the Sodërby committee", 0.60, 0.75, false},
+		{"TRADGARD HANDBOOK", "TRÄDGÅRD HANDBÖK At the request of the Sodërby committee", 0.60, 0.75, false},
 		// A line answered with one word of it.
 		{"The hedge will very soon need cutting back", "hedge", 0.80, 0.95, false},
 	} {

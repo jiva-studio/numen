@@ -85,8 +85,7 @@ func TestRunWrapsExecutionError(t *testing.T) {
 	if err == nil {
 		t.Fatal("run did not fail")
 	}
-	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
+	if _, ok := errors.AsType[*exec.ExitError](err); !ok {
 		t.Errorf("error %v does not wrap *exec.ExitError", err)
 	}
 }

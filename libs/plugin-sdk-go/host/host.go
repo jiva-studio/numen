@@ -43,8 +43,8 @@ var (
 	ErrUnknownVault = errors.New("the vault is not on the list")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
-	// ErrNotAttempted is returned for a note of a batch when the call was cancelled before it was changed.
-	ErrNotAttempted = errors.New("the call was cancelled before this note was changed")
+	// ErrNotAttempted is returned for a note of a batch when the call was canceled before it was changed.
+	ErrNotAttempted = errors.New("the call was canceled before this note was changed")
 	// ErrNotText is returned by a ranged read for bytes that are not UTF-8.
 	ErrNotText = errors.New("the file is not text")
 )

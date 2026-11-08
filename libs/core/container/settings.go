@@ -96,7 +96,7 @@ func (c Config) settingsFile() (string, error) {
 	return c.settings().SettingsFile()
 }
 
-// Themes provides the themes the window can use: the catalogue of themes, and
+// Themes provides the themes the window can use: the catalog of themes, and
 // the settings file that stores the selection.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return c.settings().Themes(say)

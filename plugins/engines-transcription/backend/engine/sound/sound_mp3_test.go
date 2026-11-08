@@ -207,7 +207,7 @@ func peakHeap(run func()) int {
 }
 
 // A recording is segmented from an mp3 as it is from any other container, and
-// the context is honoured on the way.
+// the context is honored on the way.
 func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -216,7 +216,7 @@ func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := resample.Convert(ctx, sound, rate, signal.SampleRate, 0); err != context.Canceled {
-		t.Errorf("resampling under a cancelled context returned %v", err)
+	if _, err := resample.Convert(ctx, sound, rate, signal.SampleRate, 0); !errors.Is(err, context.Canceled) {
+		t.Errorf("resampling under a canceled context returned %v", err)
 	}
 }

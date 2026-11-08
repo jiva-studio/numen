@@ -119,7 +119,7 @@ func TestMoveSources_RetainsMovedRowOverExistingTarget(t *testing.T) {
 		t.Errorf("the vault holds %v", got)
 	}
 	if got := s.rowsOf(repoVaultA, "New.epub"); !slices.Equal(got, target) {
-		t.Errorf("the file at the landing holds %v, want the travelling %v", got, target)
+		t.Errorf("the file at the landing holds %v, want the traveling %v", got, target)
 	}
 	if n := s.count(`SELECT count(*) FROM chunks_fts WHERE rowid = ?`, activeRows[0]); n != 0 {
 		t.Error("the words of the displaced file are still indexed")

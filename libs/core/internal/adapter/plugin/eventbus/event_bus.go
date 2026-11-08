@@ -220,10 +220,7 @@ func (b *Bus) Publish(event string) {
 	}
 
 	remainingThrottle := b.throttleInterval - elapsed
-	nextDelay := b.debounceDelay
-	if nextDelay > remainingThrottle {
-		nextDelay = remainingThrottle
-	}
+	nextDelay := min(b.debounceDelay, remainingThrottle)
 
 	if state.cancel != nil {
 		state.cancel()

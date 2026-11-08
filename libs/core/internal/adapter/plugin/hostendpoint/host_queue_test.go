@@ -99,14 +99,14 @@ func TestReportTaskUsesCallerPluginID(t *testing.T) {
 	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, tasks, nil), "token-a")
 
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
-		Id: "scan.pdf", Title: "Recognising", About: "scan.pdf", Done: 2, Total: 9, Unit: v1.Unit_UNIT_BYTES,
+		Id: "scan.pdf", Title: "Recognizing", About: "scan.pdf", Done: 2, Total: 9, Unit: v1.Unit_UNIT_BYTES,
 		IsUserStarted: true, PluginId: "md.numen.other",
 	}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := run.Task{
-		ID: "plugin:md.numen.a:scan.pdf", Title: "Recognising", About: "scan.pdf", Count: 2, Total: 9,
+		ID: "plugin:md.numen.a:scan.pdf", Title: "Recognizing", About: "scan.pdf", Count: 2, Total: 9,
 		Unit: run.Bytes, IsUserStarted: true, PluginID: "md.numen.a",
 	}
 	if got := tasks.List(); len(got) != 1 || !reflect.DeepEqual(got[0], want) {

@@ -90,7 +90,7 @@ func splitReference(marked string) (string, []domain.UnitRange) {
 func TestSplitReadsEveryMarkedNameAsTheReferenceDoes(t *testing.T) {
 	alphabet := []rune{'a', 'Z', ' ', 'é', 'э', '熵', '👋', '😀', '\U0010FFFF', '\x02', '\x03', '\x02', '\x03'}
 	rng := rand.New(rand.NewPCG(367, 1))
-	for i := 0; i < 20000; i++ {
+	for range 20000 {
 		runes := make([]rune, rng.IntN(40))
 		for j := range runes {
 			runes[j] = alphabet[rng.IntN(len(alphabet))]

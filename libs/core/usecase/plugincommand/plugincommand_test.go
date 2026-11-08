@@ -107,7 +107,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 		"a required argument left out": {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
 		"an argument it does not take": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.pdf",
-			Arguments: map[string]string{"pages": "1", "colour": "red"},
+			Arguments: map[string]string{"pages": "1", "color": "red"},
 		},
 		"a number that is none": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.pdf", Arguments: map[string]string{"pages": "twelve"},

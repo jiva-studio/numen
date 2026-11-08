@@ -67,7 +67,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 			}
 			c.assertNothingSent(t, calls+1)
 			if err := applyChange(c.host, t.Context(), c.source.renameBy("Later")); err != nil {
-				t.Fatalf("the lock cannot be taken after the cancelled call: %v", err)
+				t.Fatalf("the lock cannot be taken after the canceled call: %v", err)
 			}
 			if got := deliveredName(t, c.probe); got != "Later" {
 				t.Errorf("the plugin holds the list %q, want the one of the call after", got)

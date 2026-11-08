@@ -114,7 +114,7 @@ func newRangeTexts(t *testing.T, segments []domain.TextSegment) (*hosttest.Texts
 
 func getStrataSegments() []domain.TextSegment {
 	return []domain.TextSegment{
-		{Text: "teh ", Selector: `{"page":1}`},
+		{Text: "the ", Selector: `{"page":1}`},
 		{Text: "end of ", Selector: `{"page":2}`},
 		{Text: "ice", Selector: `{"page":3}`},
 	}

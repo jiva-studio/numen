@@ -32,7 +32,7 @@ func TestAWindowDrawingItsOwnPicturesReturnsSoAndNoMore(t *testing.T) {
 		t.Errorf("the policy reads %q", with)
 	}
 	// Everything the two have in common is every directive but that one.
-	for _, directive := range strings.Split(own, "; ") {
+	for directive := range strings.SplitSeq(own, "; ") {
 		if strings.HasPrefix(directive, "img-src") {
 			continue
 		}

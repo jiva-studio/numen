@@ -11,8 +11,7 @@ import (
 )
 
 func codeOf(err error) server.ErrorCode {
-	var failure *server.APIError
-	if errors.As(err, &failure) {
+	if failure, ok := errors.AsType[*server.APIError](err); ok {
 		return failure.Code
 	}
 	return ""

@@ -269,7 +269,7 @@ func TestAProjectionAnswersTheCallersCancellation(t *testing.T) {
 	run := projection.Simulation{By: review.NewFSRS(), Day: getAhead(), Cost: review.GetDefaultCost()}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	if _, err := run.Run(ctx, getTestEpoch(), p, nil, 30); !errors.Is(err, context.Canceled) {
-		t.Errorf("a cancelled projection said %v", err)
+		t.Errorf("a canceled projection said %v", err)
 	}
 }
 
@@ -310,7 +310,7 @@ func makeLearnedCards(
 			c = delta.Next(c, when, review.Good)
 			when = c.Due
 		}
-		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
+		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognize"}] = c
 	}
 	return out
 }
@@ -681,7 +681,7 @@ func makeSentAway(
 	name string, pos time.Time, since, away int, stability float64,
 ) (review.CardID, review.Schedule) {
 	last := pos.AddDate(0, 0, -since)
-	return review.CardID{Card: name, Template: "Recognise"}, review.Schedule{
+	return review.CardID{Card: name, Template: "Recognize"}, review.Schedule{
 		Due: last.AddDate(0, 0, away), Last: last, Reps: 3,
 		Stability: stability, Difficulty: 5, Phase: 2,
 	}
@@ -1108,7 +1108,7 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 // The recall assumption of a projection is an input to the run.
 //
 // A run with full recall leaves a review card where the scheduler leaves one
-// answered well, and a run with the modelled recall leaves it at the expected
+// answered well, and a run with the modeled recall leaves it at the expected
 // value, which is between the two.
 func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	delta := review.NewFSRS()
@@ -1126,21 +1126,21 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 
 	fullRecallRun := run
 	fullRecallRun.Recalls = review.GetFullRecall
-	modelled := runProjection(t, run, now, p, pos, 0)
+	modeled := runProjection(t, run, now, p, pos, 0)
 	nothing := runProjection(t, fullRecallRun, now, p, pos, 0)
 
 	// The two runs answer the same cards, and leave them in different places.
-	if modelled.Answered != nothing.Answered || modelled.Answered == 0 {
-		t.Fatalf("the two runs answered %d and %d", modelled.Answered, nothing.Answered)
+	if modeled.Answered != nothing.Answered || modeled.Answered == 0 {
+		t.Fatalf("the two runs answered %d and %d", modeled.Answered, nothing.Answered)
 	}
 	forgot, _ := nothing.Retained.GetShare(0)
-	middle, _ := modelled.Retained.GetShare(0)
+	middle, _ := modeled.Retained.GetShare(0)
 	if forgot <= middle {
 		t.Errorf("assuming nothing is forgotten leaves %v of the material in the head, "+
 			"and following the middle of what a card may do leaves %v", forgot, middle)
 	}
 
-	// A run given the modelled recall explicitly equals a run with the default recall.
+	// A run given the modeled recall explicitly equals a run with the default recall.
 	response := run
 	response.Recalls = review.GetModelledRecall
 	if got, _ := runProjection(t, response, now, p, pos, 0).Retained.GetShare(0); got != middle {
@@ -1154,7 +1154,7 @@ func makeOverdueCards(
 ) map[review.CardID]review.Schedule {
 	out := make(map[review.CardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
-		out[review.CardID{Card: fmt.Sprintf("due%06d", i), Template: "Recognise"}] =
+		out[review.CardID{Card: fmt.Sprintf("due%06d", i), Template: "Recognize"}] =
 			delta.Next(review.Schedule{}, pos.AddDate(0, 0, -60), review.Good)
 	}
 	return out
@@ -1467,7 +1467,7 @@ func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	}
 }
 
-// An even load moves reviews to the lighter neighbouring days, so the busiest
+// An even load moves reviews to the lighter neighboring days, so the busiest
 // day of a week is closer to its lightest.
 func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	delta := review.NewFSRS()

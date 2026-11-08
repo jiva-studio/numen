@@ -44,12 +44,12 @@ import (
 
 func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
-	neighbourhood := note.NewShowNeighbourhood(links, queries)
+	neighborhood := note.NewShowNeighbourhood(links, queries)
 	services.Note.getOpeningNote = note.NewGetOpeningNote(queries)
 	services.Note.getTypes = note.NewGetTypes(queries)
 	services.Note.getHeadings = note.NewGetHeadings(queries)
 	services.Note.resolveLinks = note.NewResolveLinks(links)
-	services.Note.showNeighbourhood = &neighbourhood
+	services.Note.showNeighbourhood = &neighborhood
 	services.Note.getLinkAddress = note.NewGetLinkAddress(queries)
 	services.Search.GetNameMatches = search.NewGetNameMatches(queries)
 	services.Search.GetTitles = note.NewGetTitles(queries)
@@ -470,7 +470,7 @@ func (s *saying) getBooks(t *testing.T) []int {
 	defer s.mu.Unlock()
 
 	var out []int
-	for _, line := range strings.Split(s.outMsg.String(), "\n") {
+	for line := range strings.SplitSeq(s.outMsg.String(), "\n") {
 		_, response, found := strings.Cut(line, ": ")
 		if !found {
 			continue
@@ -630,7 +630,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 				t.Fatal("the stream never reached the handler")
 			}
 
-			// The page is gone: the editor reloaded, and nothing cancelled the
+			// The page is gone: the editor reloaded, and nothing canceled the
 			// context the handler holds.
 			server.CloseClientConnections()
 
@@ -891,7 +891,7 @@ func TestListThemes_LaunchScaleAppliesUntilUserSetsScale(t *testing.T) {
 	}
 }
 
-// A build put together without a catalogue answers that it has none, and the
+// A build put together without a catalog answers that it has none, and the
 // rest of the window is as it was.
 func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
 	server := httptest.NewServer(newBareServices().NewHandler(http.NotFoundHandler()))
@@ -899,7 +899,7 @@ func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 	if _, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
-		t.Error("a build with no catalogue listed themes")
+		t.Error("a build with no catalog listed themes")
 	}
 }
 

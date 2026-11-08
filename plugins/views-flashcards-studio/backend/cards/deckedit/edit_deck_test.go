@@ -30,7 +30,7 @@ func getAnimals() map[string]string {
 			"  - Height\n" +
 			"  - Life span\n" +
 			"---\n" +
-			"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+			"\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
 		"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +

@@ -280,7 +280,7 @@ func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes S
 				t.Errorf("small chunk of %d characters, limit %d", n, s.Limit)
 			}
 			if middle := small.Start + small.Length/2; middle < large.Start || middle >= large.Start+large.Length {
-				t.Errorf("small chunk at %d is centred outside its large chunk at %d", small.Start, large.Start)
+				t.Errorf("small chunk at %d is centered outside its large chunk at %d", small.Start, large.Start)
 			}
 		}
 	}

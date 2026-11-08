@@ -37,7 +37,7 @@ func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
 	exit := make(chan struct{})
 	go func() {
 		if _, err := group.do(first, "k", nil, run); !errors.Is(err, context.Canceled) {
-			t.Errorf("a run whose context was cancelled gave %v, want context.Canceled", err)
+			t.Errorf("a run whose context was canceled gave %v, want context.Canceled", err)
 		}
 		close(exit)
 	}()

@@ -508,7 +508,7 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	tableWeighted.Add(due4d) // dueDay now has 1 card (weight 0.5)
 	gotShifted := Defaults().GetDueDay(tableWeighted, now, due4d)
 	if gotShifted.Equal(due4d) {
-		t.Fatal("expected card shifted away from day that already has 1 card when neighbouring days have 0")
+		t.Fatal("expected card shifted away from day that already has 1 card when neighboring days have 0")
 	}
 
 	// Test getSlacks and window boundaries: days < 2.5, days == 2.5, days == 7, days == 20, days == 90, days > 90.

@@ -55,7 +55,7 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
 // VectorsReady is told that all the vectors of a vault exist, but those of the sources whose indexing
-// a person cancelled: those stay without vectors until they change. It is told after every pass that
+// a person canceled: those stay without vectors until they change. It is told after every pass that
 // leaves no other vector pending, so it is told more than once for a vault.
 type VectorsReady func(ctx context.Context, v domain.Vault)
 
@@ -115,7 +115,7 @@ func (w *Worker) WakeSources() { signal(w.sources) }
 func (w *Worker) WakeNotes() { signal(w.notes) }
 
 // ClearSkips indexes again the sources at the paths given whose indexing a
-// person cancelled. The vault calls it for every path it reports changed.
+// person canceled. The vault calls it for every path it reports changed.
 func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
 
 func (w *Worker) openReading(
@@ -343,7 +343,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		events.FinishTask(IndexingTexts)
 	case errors.Is(read, context.Canceled):
 		// Stopped on request. The cut data is correct up to that point, and a
-		// source a person cancelled is left uncut until it changes.
+		// source a person canceled is left uncut until it changes.
 		if cancel.isRequested.Load() {
 			for _, path := range current.get() {
 				p.worker.skips.addTexts(path)
@@ -448,16 +448,14 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 	underCtx, end := context.WithCancel(ctx)
 	var watchers sync.WaitGroup
 	for _, wake := range wakes {
-		watchers.Add(1)
-		go func() {
-			defer watchers.Done()
+		watchers.Go(func() {
 			select {
 			case <-underCtx.Done():
 			case <-wake:
 				signal(wake)
 				end()
 			}
-		}()
+		})
 	}
 	return underCtx, func() {
 		end()
@@ -497,7 +495,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 		events.FinishTask(MakingVectors)
 		return true
 	case errors.Is(err, context.Canceled):
-		// The source a person cancelled gets no vectors until it changes; the
+		// The source a person canceled gets no vectors until it changes; the
 		// next pass embeds the others.
 		if cancel.isRequested.Load() {
 			for _, path := range current.get() {

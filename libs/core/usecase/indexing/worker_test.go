@@ -22,7 +22,7 @@ import (
 )
 
 func getBefore() []string {
-	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+	return []string{"river", "mountain", "forest", "meadow", "harbor", "valley", "island", "desert"}
 }
 
 func noteWith(vocabulary []string, n int) string {
@@ -583,7 +583,7 @@ func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
 
 func (*blocking) Concurrency() int { return 1 }
 
-// Cancelling the vector pass by its task id cancels the context of the embed
+// Canceling the vector pass by its task id cancels the context of the embed
 // call in flight, the call returns, and the pass takes its task out of the list.
 func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
 	events := newRecorder()
@@ -619,14 +619,14 @@ func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
 			t.Errorf("the embed call ended with %v, want context.Canceled", err)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("the embed call in flight was not cancelled")
+		t.Fatal("the embed call in flight was not canceled")
 	}
 	select {
 	case <-ended:
 	case <-time.After(10 * time.Second):
-		t.Fatal("the pass did not return after its task was cancelled")
+		t.Fatal("the pass did not return after its task was canceled")
 	}
 	if pos := findTask(t, events, MakingVectors); pos != nil {
-		t.Errorf("the cancelled pass is still listed: %+v", *pos)
+		t.Errorf("the canceled pass is still listed: %+v", *pos)
 	}
 }

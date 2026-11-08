@@ -55,7 +55,7 @@ func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 		t.Fatalf("expected 0 tasks, got %d", len(first))
 	}
 
-	tasks.Set(run.Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(run.Task{ID: "recognition", Title: "Recognizing a scan"})
 	for telling := range 2 {
 		list := receiveTasks(t, stream)
 		if len(list) != 1 || list[0].GetId() != "recognition" {
@@ -145,13 +145,13 @@ func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 		t.Fatal(err)
 	}
 	if work.Err() == nil {
-		t.Fatal("the task's context is not cancelled")
+		t.Fatal("the task's context is not canceled")
 	}
 
 	for _, id := range []string{"plugin:md.example.engine:one", "missing"} {
 		_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: Editor, Id: id}))
 		if connect.CodeOf(err) != connect.CodeNotFound {
-			t.Errorf("cancelling %q answered %v, want not found", id, err)
+			t.Errorf("canceling %q answered %v, want not found", id, err)
 		}
 	}
 	_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: "another", Id: "indexing"}))

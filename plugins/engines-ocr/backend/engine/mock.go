@@ -9,7 +9,7 @@ import (
 const mockName = "mock"
 
 // MockText is what the mock recogniser reads on every page.
-const MockText = "Mock recognised text. Regenerative braking recovers kinetic energy, " +
+const MockText = "Mock recognized text. Regenerative braking recovers kinetic energy, " +
 	"a flywheel keeps it in a rotor spinning in a vacuum, " +
 	"and pumped storage lifts water to an upper reservoir."
 
@@ -22,8 +22,8 @@ func (MockRecogniser) GetRecognitionModel() Model {
 	return Model{Layout: mockName, Recogniser: mockName, DPI: 72, From: mockName}
 }
 
-// Recognise reads MockText in a box across the top tenth of the page.
-func (MockRecogniser) Recognise(ctx context.Context, page image.Image) ([]Block, error) {
+// Recognize reads MockText in a box across the top tenth of the page.
+func (MockRecogniser) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

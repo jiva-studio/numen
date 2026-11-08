@@ -19,7 +19,7 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	}
 	s.requestText(t)
 	live, ok, err := text.ReadLiveText(t.Context(), s.vault, scanPath)
-	if err != nil || !ok || live.Text != "layer teh " {
+	if err != nil || !ok || live.Text != "layer the " {
 		t.Fatalf("live text %q (%v, %v)", live.Text, ok, err)
 	}
 

@@ -313,7 +313,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 }
 
 func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
-	// A search whose caller cancelled returns the cancellation error, not a
+	// A search whose caller canceled returns the cancellation error, not a
 	// words-only result.
 	ctx := t.Context()
 	c := newCorpus(t)

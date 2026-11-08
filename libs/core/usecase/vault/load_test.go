@@ -101,25 +101,21 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 	defer cancel()
 
 	var writing sync.WaitGroup
-	writing.Add(1)
-	go func() {
-		defer writing.Done()
+	writing.Go(func() {
 		for ctx.Err() == nil {
 			if err := touchEverything(v.Path); err != nil {
 				return
 			}
 			if _, err := scan.Execute(ctx, v); err != nil {
-				return // cancelled
+				return // canceled
 			}
 		}
-	}()
+	})
 
 	var readWg sync.WaitGroup
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
-		readWg.Add(1)
-		go func() {
-			defer readWg.Done()
+		readWg.Go(func() {
 			queries := db.Passages()
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
@@ -129,7 +125,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 				}
 				latencies[i] = append(latencies[i], testsupport.GetMachine().Now().Sub(started))
 			}
-		}()
+		})
 	}
 	readWg.Wait()
 	cancel()

@@ -291,10 +291,10 @@ func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T)
 	cancelledCtx, cancel := context.WithCancel(ctx)
 	cancel()
 	if err := f.app.HandleEvent(cancelledCtx, event); !errors.Is(err, context.Canceled) {
-		t.Errorf("cancelled event gave %v, want context.Canceled", err)
+		t.Errorf("canceled event gave %v, want context.Canceled", err)
 	}
 	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
-		t.Errorf("cancelled event listed tasks %v, want none", tasks)
+		t.Errorf("canceled event listed tasks %v, want none", tasks)
 	}
 }
 

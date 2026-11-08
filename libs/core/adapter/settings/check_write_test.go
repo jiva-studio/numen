@@ -10,7 +10,8 @@ import (
 
 const pluginID = "md.numen.sample.speech"
 
-func number(v float64) *float64 { return &v }
+//go:fix inline
+func number(v float64) *float64 { return new(v) }
 
 func declaredSettings(owner string) ([]pluginport.PluginManifestSetting, bool) {
 	switch owner {

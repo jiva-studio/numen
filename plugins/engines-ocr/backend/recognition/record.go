@@ -18,7 +18,7 @@ import (
 // record is the progress of a recognition that has not ended, kept in the plugin's folder of the
 // vault's store between batches: the content it reads, what reads it, and the text of each page read
 // so far. A recognition stopped part way takes it up again where it stopped. The record is deleted
-// once the version is put, so the folder holds only the version file of a recognised path.
+// once the version is put, so the folder holds only the version file of a recognized path.
 type record struct {
 	Path      string   `json:"path"`
 	InputHash string   `json:"inputHash"`

@@ -1,6 +1,7 @@
 package markdown_test
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -21,7 +22,7 @@ const block = "---\n" +
 	"zebra: 1\n" +
 	"---\n" +
 	"\n" +
-	"## Recognise\n"
+	"## Recognize\n"
 
 func openDocument(t *testing.T, raw string) *markdown.Document {
 	t.Helper()
@@ -52,7 +53,7 @@ func TestWritingOneKeyPreservesTheRestOfTheBlockAsItWas(t *testing.T) {
 		"zebra: 1\n" +
 		"---\n" +
 		"\n" +
-		"## Recognise\n"
+		"## Recognize\n"
 	if got != want {
 		t.Errorf("wrote\n%q\nwant\n%q", got, want)
 	}
@@ -147,10 +148,10 @@ func TestAKeyConsumesTheFilesOwnLineEnding(t *testing.T) {
 // of all of them, so nothing in it is changed.
 func TestAnInlineBlockIsRefused(t *testing.T) {
 	doc := openDocument(t, "---\n{type: form, fields: [Height]}\n---\n")
-	if err := doc.SetList("fields", []string{"Height", "Weight"}); err != markdown.ErrInline {
+	if err := doc.SetList("fields", []string{"Height", "Weight"}); !errors.Is(err, markdown.ErrInline) {
 		t.Errorf("set = %v, want it rejected", err)
 	}
-	if err := doc.SetScalar("type", "sample"); err != markdown.ErrInline {
+	if err := doc.SetScalar("type", "sample"); !errors.Is(err, markdown.ErrInline) {
 		t.Errorf("set = %v, want it rejected", err)
 	}
 }

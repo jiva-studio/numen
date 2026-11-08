@@ -91,8 +91,7 @@ func TestAnUnparsableRegistryIsReportedAndLeftAlone(t *testing.T) {
 			}
 
 			found, err := call(appstate.OpenAt(path))
-			var syntax *json.SyntaxError
-			if !errors.As(err, &syntax) {
+			if _, ok := errors.AsType[*json.SyntaxError](err); !ok {
 				t.Fatalf("err = %v, want the parse failure", err)
 			}
 			if found {
@@ -120,8 +119,7 @@ func TestARegistryThatCannotBeReadIsReported(t *testing.T) {
 			}
 
 			found, err := call(appstate.OpenAt(path))
-			var unreadable *fs.PathError
-			if !errors.As(err, &unreadable) {
+			if _, ok := errors.AsType[*fs.PathError](err); !ok {
 				t.Fatalf("err = %v, want the read failure", err)
 			}
 			if found {

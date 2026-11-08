@@ -218,8 +218,7 @@ func isTransient(err error) bool {
 	if errors.Is(err, ErrChecksum) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false
 	}
-	var status *statusError
-	if errors.As(err, &status) {
+	if status, ok := errors.AsType[*statusError](err); ok {
 		return status.code >= 500 || status.code == http.StatusTooManyRequests
 	}
 

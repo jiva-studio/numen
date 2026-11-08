@@ -160,13 +160,11 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range 8 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := host.Discover(); err != nil {
 				t.Errorf("Discover failed: %v", err)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 

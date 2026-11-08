@@ -11,17 +11,20 @@ func SourceErrors(err error) []*SourceError {
 }
 
 func collectSourceErrors(err error, found *[]*SourceError) {
-	switch wrapped := err.(type) {
-	// gomutants:disable-next-line BRANCH_CASE reason="errors.Unwrap(nil) returns nil in default branch"
-	case nil:
-		return
-	case *SourceError:
-		*found = append(*found, wrapped)
-	case interface{ Unwrap() []error }:
-		for _, inner := range wrapped.Unwrap() {
-			collectSourceErrors(inner, found)
+	{
+		var wrapped *SourceError
+		var wrapped1 interface{ Unwrap() []error }
+		switch {
+		case err == nil:
+			return
+		case errors.As(err, &wrapped):
+			*found = append(*found, wrapped)
+		case errors.As(err, &wrapped1):
+			for _, inner := range wrapped1.Unwrap() {
+				collectSourceErrors(inner, found)
+			}
+		default:
+			collectSourceErrors(errors.Unwrap(err), found)
 		}
-	default:
-		collectSourceErrors(errors.Unwrap(err), found)
 	}
 }
