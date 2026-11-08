@@ -15,9 +15,10 @@ import {
   type WhenReader,
   type WhenValues,
 } from '@numen/plugin-host'
+import type { Component } from 'vue'
 import type { Command } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
-import { getNamedIcon } from '@/shared/icons'
+import { findIcon, getNamedIcon } from '@/shared/icons'
 import { getPaletteId } from './declaredCommands'
 import { APP_SLOT_ENTRIES } from './appPlacements'
 
@@ -46,6 +47,13 @@ export interface SlotCommandFinderDeps {
   readonly whenReader: WhenReader
 }
 
+/** The icon an application command is drawn with: the one it names, or the one the window keeps for it. */
+function getEditorIcon(iconName: string | undefined, command: string): { icon?: Component } {
+  if (iconName) return { icon: getNamedIcon(iconName) }
+  const icon = findIcon(command)
+  return icon ? { icon } : {}
+}
+
 const isOverFile = (target: CommandTarget | undefined): boolean =>
   target !== undefined && !target.isFolder && target.path !== ''
 
@@ -61,7 +69,7 @@ export function createSlotCommandFinder(
     if (!found || !isAvailableOver(found.when, target)) return undefined
     return {
       title: found.text,
-      ...(found.iconName ? { icon: getNamedIcon(found.iconName) } : {}),
+      ...getEditorIcon(found.iconName, command),
       shortcut: '',
       hasItems: found.listItems !== undefined,
     }
@@ -110,7 +118,10 @@ export function createSlotCommandFinder(
           one.command === command &&
           deps.whenReader.getCondition(one.when)?.evaluatePartial(partialValues) !== 'false',
       )
-    return isPossible ? { title: shared.title, shortcut: '', hasItems: true } : undefined
+    const icon = findIcon(command)
+    return isPossible
+      ? { title: shared.title, ...(icon ? { icon } : {}), shortcut: '', hasItems: true }
+      : undefined
   }
 
   return (command, target) => {
