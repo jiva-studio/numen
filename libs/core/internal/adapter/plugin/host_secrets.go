@@ -120,7 +120,7 @@ func (h *Host) getSecretsSignatureOf(ctx context.Context, pluginID string) strin
 	if !isRunning || err != nil || h.isAwaitingFirstConfigure(pluginID) {
 		return ""
 	}
-	secrets, _ := h.listConfigureSecrets(ctx, snapshot)
+	secrets, _ := h.listConfigureSecrets(ctx, snapshot, false)
 	return "list:" + getSecretsSignature(secrets)
 }
 
@@ -155,7 +155,7 @@ func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (read
 	if !isRunning || err != nil {
 		return err, nil
 	}
-	secrets, failures := h.listConfigureSecrets(ctx, snapshot)
+	secrets, failures := h.listConfigureSecrets(ctx, snapshot, true)
 	secretsErr := h.getSecretsError(failures)
 
 	httpClient := transport.EndpointClient(snapshot.endpoint)
@@ -170,12 +170,14 @@ func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (read
 		Values:            snapshot.values,
 		Secrets:           secrets,
 	})
+	listed, _ := h.listConfigureSecrets(ctx, snapshot, false)
+	signature := getSecretsSignature(listed)
 	configCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
 	defer cancel()
 	_, err = client.Configure(configCtx, req)
 	// A list that failed to arrive is remembered too, so a plain refresh does not send it again.
 	h.mu.Lock()
-	h.delivered[pluginID] = getSecretsSignature(secrets)
+	h.delivered[pluginID] = signature
 	h.mu.Unlock()
 	if err != nil {
 		var connectErr *connect.Error
@@ -195,7 +197,7 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	if !isRunning || err != nil {
 		return false
 	}
-	secrets, _ := h.listConfigureSecrets(ctx, snapshot)
+	secrets, _ := h.listConfigureSecrets(ctx, snapshot, false)
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	if h.awaitingFirstConfigure[pluginID] {
@@ -223,9 +225,11 @@ func (h *Host) pruneSecretPermissions() {
 }
 
 // listConfigureSecrets returns, for each active declaration of the plugin, the secrets it may read
-// with their values, in the order it receives them. A secret with no value on this machine is left
-// out. A declaration whose value cannot be read is not carried, so the plugin keeps what it has.
-func (h *Host) listConfigureSecrets(ctx context.Context, snapshot configSnapshot) ([]*v1.ConfigureSecrets, []error) {
+// in the order it receives them. With withValues, each carries its value, a secret with no value on
+// this machine is left out, and a declaration whose value cannot be read is not carried, so the
+// plugin keeps what it has. Without it the key store is not asked and every allowed secret is
+// listed, which is what the signature of the list is made of.
+func (h *Host) listConfigureSecrets(ctx context.Context, snapshot configSnapshot, withValues bool) ([]*v1.ConfigureSecrets, []error) {
 	if len(snapshot.declared) == 0 {
 		return nil, nil
 	}
@@ -243,6 +247,10 @@ func (h *Host) listConfigureSecrets(ctx context.Context, snapshot configSnapshot
 		allowed := secret.ListAllowed(page, secret.Permission{
 			Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
 		})
+		if !withValues {
+			entries = append(entries, &v1.ConfigureSecrets{Name: declaration.Name, Group: declaration.Group, Values: describeSecretValues(allowed)})
+			continue
+		}
 		values, err := readSecretValues(ctx, snapshot.store, allowed)
 		if err != nil {
 			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", declaration.Name, snapshot.pluginID, err))
@@ -273,6 +281,15 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 		}
 	}
 	return values, nil
+}
+
+// describeSecretValues lists the secrets without any value.
+func describeSecretValues(secrets []secret.Secret) []*v1.SecretValue {
+	values := make([]*v1.SecretValue, 0, len(secrets))
+	for _, one := range secrets {
+		values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group})
+	}
+	return values
 }
 
 // getSecretsSignature describes the list of secrets of a Configure call without any value: the
