@@ -106,8 +106,8 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	close(fetched.gate)
 	links.Wait()
 
-	if files, _ := harbour.Store().List(t.Context()); len(files) != 0 {
-		t.Errorf("the vault shown after the switch holds %+v in the store", files)
+	if files, err := harbour.Store().List(t.Context()); err != nil || len(files) != 0 {
+		t.Errorf("the vault shown after the switch holds %+v in the store (%v)", files, err)
 	}
 	if content, _ := harbour.Content(made.Path); bytes.Contains([]byte(content), []byte("media:")) {
 		t.Errorf("the note of the vault shown after the switch reads %q", content)
