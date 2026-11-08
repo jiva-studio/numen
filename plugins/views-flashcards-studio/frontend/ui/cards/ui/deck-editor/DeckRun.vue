@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/**
- * One run of a deck: the heading of the section it is placed under, the cards
- * under it as tiles, and the plus that ends it.
- */
 import { SectionHeading } from './section-heading'
 import { Card } from './card'
 import { CutChoice } from './card-model-choice'
@@ -19,22 +15,19 @@ const props = withDefaults(defineProps<DeckRunProps>(), { words: () => DECK_WORD
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A card is dragged over a place that would take it. */
   (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void
   (event: 'remove', card: string): void
-  (event: 'lift', card: string, press: DragEvent): void
+  (event: 'drag-start', card: string, press: DragEvent): void
   (event: 'release'): void
   (event: 'step', card: string, direction: StepDirection, press: KeyboardEvent): void
-  /** The plus was pressed. */
   (event: 'ask'): void
   (event: 'add', cardModel: CardModel): void
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/** A card nothing is wrong with any value of. */
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -53,7 +46,6 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 </script>
 
 <template>
-  <!-- A card let go on a section's heading lands at the head of that section. -->
   <div
     v-if="run.section"
     class="deck__section-head caret-below"
@@ -70,8 +62,6 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
     />
   </div>
 
-  <!-- The place before the first section, where a card is let go to stand
-       under no section at all. -->
   <div
     v-else-if="run.isDropTarget"
     class="deck__head caret-below"
@@ -96,13 +86,12 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
         :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
         :words="words"
         @remove="emit('remove', tile.id)"
-        @lift="emit('lift', tile.id, $event)"
+        @drag-start="emit('drag-start', tile.id, $event)"
         @release="emit('release')"
         @step="(direction, press) => emit('step', tile.id, direction, press)"
       />
     </div>
 
-    <!-- Every section carries a plus of its own. -->
     <article
       v-if="run.plusAt !== null"
       class="deck__tile deck__plus caret-beside rounded-node"
@@ -139,31 +128,19 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 <style scoped>
 @import '../caret.css';
 
-/* A section's heading runs the width of the grid under it, and takes the caret
-   that says a card would land at its head. */
 .deck__section-head {
   position: relative;
 }
 
-/* The place before the first section is a strip the width of the grid, standing
-   where a card let go there would go and taking the caret a heading takes. */
 .deck__head {
   position: relative;
   block-size: var(--gap);
 }
 
-/* A run that renders neither a card nor a plus takes no space of its own, which is
-   the place before the first section of a deck holding nothing there. */
 .deck__grid:empty {
   display: none;
 }
 
-/*
- * Tiles stand in as many columns as fit at the narrowest one is drawn, and one
- * column where there is not the width for two. Every row is one flexible track,
- * so all of them come to the height of the fullest tile and no tile is drawn to
- * a size of its own.
- */
 .deck__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(var(--tile), 100%), 1fr));
@@ -171,7 +148,6 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
   gap: var(--gap);
 }
 
-/* A tile is the space one card is rendered in, and the card fills it. */
 .deck__tile {
   position: relative;
   display: grid;
@@ -187,8 +163,6 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
   border: var(--numen-stroke) dashed var(--numen-rule);
 }
 
-/* A mark is drawn at the height of the text around it, so the plus is as large
-   as the type the button is set in. */
 .deck__ask {
   block-size: auto;
   inline-size: auto;

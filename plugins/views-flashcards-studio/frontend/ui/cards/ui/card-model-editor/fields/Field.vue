@@ -32,7 +32,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
-  (event: 'lift', press: DragEvent): void
+  (event: 'drag-start', press: DragEvent): void
   (event: 'release'): void
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
   (event: 'remove'): void
@@ -75,7 +75,7 @@ function onGripKey(event: KeyboardEvent): void {
         :aria-label="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
         :aria-keyshortcuts="row.hasNames ? undefined : STEP_KEYS"
         :title="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
-        @dragstart="emit('lift', $event)"
+        @dragstart="emit('drag-start', $event)"
         @dragend="emit('release')"
         @keydown="onGripKey"
       >
@@ -124,7 +124,6 @@ function onGripKey(event: KeyboardEvent): void {
 <style scoped>
 @import '../../caret.css';
 
-/* Field layout container. */
 .card-model__field {
   position: relative;
   display: flex;
@@ -142,13 +141,11 @@ function onGripKey(event: KeyboardEvent): void {
   -webkit-user-select: none;
 }
 
-/* Disabled grip styling. */
 .card-model__grip[data-disabled] {
   opacity: 0.4;
   cursor: default;
 }
 
-/* Controls are muted until hovered or focused. */
 .card-model__grip,
 .card-model__away {
   opacity: 0.45;
@@ -169,7 +166,6 @@ function onGripKey(event: KeyboardEvent): void {
   }
 }
 
-/* Validation objection indicator. */
 .card-model__row[data-objections] {
   border-color: var(--numen-alarm);
 }

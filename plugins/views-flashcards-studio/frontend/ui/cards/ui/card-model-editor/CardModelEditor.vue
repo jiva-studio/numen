@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * A card model editor: the fields it names at the top and the templates that
- * display them below, the first field naming the cards this card model cuts.
- *
- * The caller owns the card model and its problems: a template's problems are
- * shown next to that template's name, and a field's problems under that field's
- * row.
- */
 import { computed } from 'vue'
 import { CardTemplate } from './template'
 import { Fields } from './fields'
@@ -23,11 +15,6 @@ import {
 } from '../../lib/card-model'
 import { sampleValues } from '../../lib/fill'
 
-/**
- * The problems the caller found with the card model. A template's problems are
- * shown next to that template's name and a field's problems under that field's
- * row, so every problem appears next to the element it refers to.
- */
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
@@ -49,35 +36,21 @@ const emit = defineEmits<{
   (event: 'add-field', name: string): void
   (event: 'rename-field', field: string, name: string): void
   (event: 'remove-field', field: string): void
-  /** A field let go somewhere in the order: before another, or at the end. */
   (event: 'move-field', field: string, target: InsertionPoint): void
   (event: 'add-template', name: string): void
   (event: 'rename-template', id: string, name: string): void
   (event: 'remove-template', id: string): void
-  /**
-   * A template let go somewhere in the order: before another, or at the end. The
-   * order of the templates is the order a card's repetitions are taken from it, so
-   * nothing among them is fixed.
-   */
   (event: 'move-template', id: string, target: InsertionPoint): void
-  /** One half of one template, with its current text. */
   (event: 'write', id: string, half: Half, text: string): void
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/** The fields a card requires; a name declared twice counts as one field. */
 const declaredFields = computed(() => getDeclaredFields(props.fields))
 
-/**
- * The template being dragged, and the position where releasing it would place it.
- * The order of the templates is the order in which a card's repetitions are
- * taken, so no template has a fixed position and any template can be dropped at
- * any position other than its current one.
- */
 const {
   dragged: template,
   at: templateAt,
-  lift: liftTemplate,
+  startDrag: startTemplateDrag,
   hover: hoverTemplate,
   release: releaseTemplate,
   drop: dropTemplate,
@@ -91,7 +64,6 @@ const {
 
 const sample = computed(() => sampleValues(declaredFields.value))
 
-/** The templates as they are drawn. */
 const renderedTemplates = computed(() =>
   templateRows(props.templates, declaredFields.value, sample.value),
 )
@@ -157,7 +129,7 @@ const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(
         @drop.stop="dropTemplate"
         @rename="(name: string) => emit('rename-template', one.id, name)"
         @remove="emit('remove-template', one.id)"
-        @lift="liftTemplate(one.id, $event)"
+        @drag-start="startTemplateDrag(one.id, $event)"
         @release="releaseTemplate"
         @step="(direction, press) => stepTemplate(one.id, direction, press)"
         @write="(half, text) => emit('write', one.id, half, text)"
@@ -172,7 +144,6 @@ const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(
 @import '../caret.css';
 
 .card-model {
-  /* The space between one part and the next, and between the rows of a part. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
   --caret-out: calc(-1 * var(--row-gap) / 2);

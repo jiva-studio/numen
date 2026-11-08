@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * The list of tabs a pane is chosen from. It carries the pane's identity on the
- * element, so a drag can identify the pane under the pointer by querying the
- * document.
- *
- * The strip is walked with the arrows, and what is reached is shown.
- */
 import { computed, inject } from 'vue'
 import { WorkspaceTab } from '../../tab'
 import { stepTo } from '../keys'
@@ -26,7 +19,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, pointer: PointerEvent): void
+  (event: 'press', tab: TabId, pointer: PointerEvent): void
   (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
 }>()
 
@@ -38,7 +31,6 @@ defineSlots<{
 /* ---------------------------------- State --------------------------------- */
 const workspace = inject(WORKSPACE_CONTEXT)
 
-/** What the strip takes from the top of the window; the tabs themselves never move it. */
 const edge = computed(() => workspace?.value.getStripEdge(props.pane.id) ?? NO_STRIP_EDGE)
 
 const edgeStyle = computed(() =>
@@ -51,7 +43,6 @@ const edgeStyle = computed(() =>
     : {},
 )
 
-/** The tabs as rendered, each paired with its tab. */
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -104,7 +95,7 @@ defineExpose({ reach })
       :mark="getMarkOf(tab)"
       :is-showing="tab === pane.active"
       :is-focused="tab === pane.active && isFocused"
-      @lift="emit('lift', tab, $event)"
+      @press="emit('press', tab, $event)"
       @close="emit('close', tab)"
       @menu="emit('menu', tab, $event)"
       @click="emit('choose', tab)"
@@ -126,7 +117,6 @@ defineExpose({ reach })
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
-/* A strip at the top of the window is as high as a title bar, so it holds the macOS buttons. */
 .pane__strip[data-window-drag] {
   box-sizing: border-box;
   min-block-size: var(--numen-title-bar-height);

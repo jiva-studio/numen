@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * Tabs, and the ways of dividing the screen between them.
- *
- * The workspace it is given is the whole of what it draws, and a gesture gives
- * back another one. What a tab holds is the caller's: this takes titles and
- * hands identities back.
- */
 import { computed, provide, useTemplateRef } from 'vue'
 import { browserClock } from '@numen/ui'
 import { DragPreview, Menu } from '@numen/ui'
@@ -33,44 +26,25 @@ const workspace = defineModel<Workspace>({ required: true })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /**
-   * A close request, emitted before anything is applied. A caller that calls
-   * `hold` while handling the event takes over the close, and the tab stays
-   * until the caller closes it.
-   */
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
-  /** A context menu requested on a tab, with its screen position. */
   (event: 'tab-context-menu', tab: TabId, pos: { x: number; y: number }): void
-  /**
-   * The tab a pane now shows, once it is visible. Every tab of a pane is
-   * rendered and the inactive ones are hidden, so this event signals the tab's
-   * content that it can measure itself.
-   */
   (event: 'show', tab: TabId): void
-  /** A tab dragged out of the workspace into empty space or a new window. */
   (event: 'tear-off', tab: TabId, pos: { x: number; y: number }): void
-  /** A row of the menu of a tab chosen, by the caller's id of the row. */
   (event: 'tab-menu-choose', tab: TabId, id: string): void
-  /** The menu of a tab asks to be put away. */
   (event: 'tab-menu-dismiss'): void
-  /** The row of the menu of a tab under the pointer, and null once the pointer leaves it. */
   (event: 'tab-menu-highlight', id: string | null): void
 }>()
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
-  /** Rendered before a tab's name; identifies the type of tab. */
   icon(props: { id: TabId }): unknown
-  /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
-  /** Rendered before the text of a row of the menu of a tab. */
   'tab-menu-icon'(props: { id: string }): unknown
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** Every slot the caller gave for the panes, handed down under the name it was given. */
 const passed = computed(
   () =>
     Object.keys(slots).filter((name) => name !== 'tab-menu-icon') as Exclude<
@@ -83,14 +57,11 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 
-/** The panes at the top of the workspace, found again on every change of the layout. */
 const topPanes = computed(() => findTopPanes(workspace.value))
 
-/** Where each tab is drawn: the host element of the pane that holds it. */
 const hosts = createTabHosts()
 provide(TAB_HOSTS, hosts)
 
-/** The ids this layout creates when the caller supplies no factory. */
 const createNodeId = createNodeIdFactory()
 
 const frame = useTemplateRef<HTMLElement>('frame')
@@ -144,7 +115,7 @@ provide(
     minimum: props.minimum,
     choose: onChooseTab,
     close: onCloseTab,
-    lift: press,
+    startTabPress: press,
     menu: onMenuTab,
     claim: onClaimPane,
     resize: onResizeBranch,
@@ -172,7 +143,7 @@ provide(
       :is-focused="workspace.root.id === workspace.focus"
       @choose="onChooseTab"
       @close="onCloseTab"
-      @lift="press"
+      @press="press"
       @menu="onMenuTab"
       @show="emit('show', $event)"
       @claim="onClaimPane(workspace.root.id)"
@@ -182,8 +153,6 @@ provide(
       </template>
     </WorkspacePane>
 
-    <!-- Tab content is rendered here once per tab and placed into the pane that
-         holds it; a tab with no pane stays here, hidden. -->
     <div class="workspace__stage" hidden>
       <Teleport
         v-for="tab in tabs"

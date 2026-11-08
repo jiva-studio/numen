@@ -1,10 +1,3 @@
-/**
- * What one template of a card model draws from what it was handed, and what it emits.
- *
- * The negatives are here: a preview draws no braces, a part of the window
- * being empty, one row of fields serves both halves, a name that objects
- * does not rename, and a name abandoned does not rename.
- */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CardTemplate from './CardTemplate.vue'
@@ -32,7 +25,7 @@ const createTemplate = (
     fields,
     sample ?? sampleValues(getDeclaredFields(fields)),
   )[0]
-  if (!arrangedRow) throw new Error('a corpus holding no template')
+  if (!arrangedRow) throw new Error('missing template row')
   return arrangedRow
 }
 
@@ -62,8 +55,8 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('Template, the window', () => {
-  it('divides its window into four parts', () => {
+describe('CardTemplate layout', () => {
+  it('renders four panes', () => {
     const target = mountTemplate()
     expect(target.findAll('[data-pane]').map((pane) => pane.attributes('data-pane'))).toEqual([
       'front-written',
@@ -73,7 +66,7 @@ describe('Template, the window', () => {
     ])
   })
 
-  it('draws the parts with nothing cut into an outline of their own', () => {
+  it('renders panes without headings or fieldsets', () => {
     const target = mountTemplate()
     expect(target.findAll('h3')).toHaveLength(0)
     expect(target.findAll('.template__body fieldset')).toHaveLength(0)
@@ -81,7 +74,7 @@ describe('Template, the window', () => {
     expect(target.findAll('.template__body label')).toHaveLength(0)
   })
 
-  it('names each box it is written in, and names it to a reader alone', () => {
+  it('sets aria-label on front and back textareas', () => {
     const target = mountTemplate()
     for (const half of ['front', 'back']) {
       expect(getBox(target, half).attributes('aria-label')).toBe(
@@ -90,16 +83,15 @@ describe('Template, the window', () => {
     }
   })
 
-  it('names the preview by the template and the half it is of, taking no box’s name', () => {
+  it('sets aria-label and group role on the preview pane', () => {
     const target = mountTemplate()
     const preview = target.get('[data-preview="front"]')
     expect(preview.attributes('aria-label')).toBe('Preview: Recognise Front')
-    // The preview is no control, so what names it names no box.
     expect(preview.attributes('role')).toBe('group')
     expect(preview.attributes('for')).toBeUndefined()
   })
 
-  it('remains what an empty part is called in the part, and says it to nobody twice', () => {
+  it('shows ghost labels in empty panes', () => {
     const target = mountTemplate(createTemplate({ id: 'one', name: 'One', front: '', back: '' }))
     const ghosts = target.findAll('.template__ghost')
     expect(ghosts.map((each) => each.text())).toEqual(['Front', 'Preview', 'Back', 'Preview'])
@@ -107,14 +99,14 @@ describe('Template, the window', () => {
     expect(target.findAll('[data-pane][data-blank]')).toHaveLength(4)
   })
 
-  it('says nothing in a part something remains in', () => {
+  it('hides ghost labels in non-empty panes', () => {
     const target = mountTemplate()
     expect(target.find('[data-pane="front-written"] .template__ghost').exists()).toBe(false)
     expect(target.find('[data-pane="front-preview"] .template__ghost').exists()).toBe(false)
     expect(target.get('[data-pane="front-written"]').attributes('data-blank')).toBeUndefined()
   })
 
-  it('says a part is empty where what is written in it fills out to nothing', () => {
+  it('marks preview pane as blank when rendered field value is empty', () => {
     const template = createTemplate(
       { id: 'one', name: 'One', front: '{{Height}}', back: 'said' },
       FIELDS,
@@ -127,11 +119,11 @@ describe('Template, the window', () => {
     expect(target.get('[data-pane="front-preview"] .template__ghost').text()).toBe('Preview')
   })
 
-  it('shows the braces in the box it is written in', () => {
+  it('shows field braces in the editor textarea', () => {
     expect(getBox(mountTemplate(), 'back').element.value).toContain('{{Height}}')
   })
 
-  it('draws no braces in the preview, and the tags around them as tags', () => {
+  it('renders field values and HTML tags in the preview', () => {
     const target = mountTemplate(
       createTemplate(TEMPLATE, FIELDS, [{ field: 'Height', text: 'about 45"' }]),
     )
@@ -142,9 +134,7 @@ describe('Template, the window', () => {
     expect(preview.get('b').text()).toBe('Height:')
   })
 
-  /* A template is HTML, so the marks of another format are characters the user
-     typed and are drawn as themselves. */
-  it('draws the marks a template carries as the text they are', () => {
+  it('renders markdown characters literally in the preview', () => {
     const target = mountTemplate(
       createTemplate({ id: 'one', name: 'One', front: '**Name**: {{Name}}', back: '' }),
     )
@@ -153,13 +143,13 @@ describe('Template, the window', () => {
     expect(preview.find('strong').exists()).toBe(false)
   })
 
-  it('emits a half as it now reads when it is typed into', async () => {
+  it('emits write when textarea content changes', async () => {
     const target = mountTemplate()
     await getBox(target, 'back').setValue('nothing but words')
     expect(target.emitted('write')).toEqual([['back', 'nothing but words']])
   })
 
-  it('follows no link a preview draws: the window stays where it is', () => {
+  it('prevents navigation when clicking links in the preview', () => {
     const target = mountTemplate(
       createTemplate({
         id: 'one',
@@ -173,7 +163,7 @@ describe('Template, the window', () => {
     expect(press.defaultPrevented).toBe(true)
   })
 
-  it('draws no script it was written with', () => {
+  it('strips script tags from the preview', () => {
     const target = mountTemplate(
       createTemplate({ id: 'one', name: 'One', front: '<script>alert(1)</script>after', back: '' }),
     )
@@ -184,19 +174,19 @@ describe('Template, the window', () => {
   })
 })
 
-describe('Template, the fields it is written with', () => {
-  it('offers one row of fields for the whole template, and not one to each half', () => {
+describe('CardTemplate field insertion', () => {
+  it('renders a single row of field buttons in the header', () => {
     const target = mountTemplate()
     expect(target.findAll('.template__slots')).toHaveLength(1)
     expect(target.findAll('[data-pane] .template__slots')).toHaveLength(0)
   })
 
-  it('offers a button per field, and none for a name of its own', () => {
+  it('renders one button for each field', () => {
     const target = mountTemplate()
     expect(target.findAll('.template__slots button').map((each) => each.text())).toEqual(FIELDS)
   })
 
-  it('remains the name and the fields on one strip, and no row of their own', () => {
+  it('places the name input and field buttons inside the draggable header', () => {
     const target = mountTemplate()
     const header = target.get('.card-header')
     expect(header.attributes('data-grip')).toBeDefined()
@@ -206,7 +196,7 @@ describe('Template, the fields it is written with', () => {
     expect(target.findAll('.template__slots')).toHaveLength(1)
   })
 
-  it('aims the row of fields at the part last typed in, and at one part only', async () => {
+  it('tracks the focused editor pane', async () => {
     const target = mountTemplate()
     expect(target.findAll('[data-focused]').map((each) => each.attributes('data-pane'))).toEqual([
       'front-written',
@@ -218,15 +208,13 @@ describe('Template, the fields it is written with', () => {
     ])
   })
 
-  it('writes a field into the front while no half has been typed in', async () => {
+  it('inserts a field into the front pane by default', async () => {
     const target = mountTemplate()
     await target.get('[data-insert="Weight"]').trigger('click')
     expect(target.emitted('write')).toEqual([['front', '{{Name}}{{Weight}}']])
   })
 
-  /* A box nothing has been typed in reads a caret of zero, which is not a
-     caret standing at the head of it. */
-  it('writes a field after what a box nothing has been typed in holds', async () => {
+  it('appends a field to the end when the textarea has not been focused', async () => {
     const target = mountTemplate()
     getBox(target, 'front').element.setSelectionRange(0, 0)
 
@@ -235,7 +223,7 @@ describe('Template, the fields it is written with', () => {
     expect(target.emitted('write')).toEqual([['front', '{{Name}}{{Weight}}']])
   })
 
-  it('writes a field where the caret remains in a box that has been typed in', async () => {
+  it('inserts a field at the caret position when the textarea was focused', async () => {
     const target = mountTemplate()
     const content = getBox(target, 'front')
     await content.trigger('focus')
@@ -246,7 +234,7 @@ describe('Template, the fields it is written with', () => {
     expect(target.emitted('write')).toEqual([['front', '{{Weight}}{{Name}}']])
   })
 
-  it('writes a field into the half last typed in', async () => {
+  it('inserts a field into the last focused pane', async () => {
     const target = mountTemplate()
     const back = getBox(target, 'back')
     await back.trigger('focus')
@@ -258,8 +246,8 @@ describe('Template, the fields it is written with', () => {
   })
 })
 
-describe('Template, what is wrong with it', () => {
-  it('says a stray slot over the markup naming it, and nowhere else', () => {
+describe('CardTemplate validation', () => {
+  it('displays an unknown field warning in the editor pane', () => {
     const target = mountTemplate(
       createTemplate({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }),
     )
@@ -272,7 +260,7 @@ describe('Template, what is wrong with it', () => {
     expect(target.find('header .template__objections').exists()).toBe(false)
   })
 
-  it('marks a stray slot in the preview where the slot itself remains', () => {
+  it('highlights an unknown field in the preview', () => {
     const target = mountTemplate(
       createTemplate({ id: 'one', name: 'One', front: 'before {{Colour}} after', back: '' }),
     )
@@ -282,18 +270,18 @@ describe('Template, what is wrong with it', () => {
     expect(preview.text()).toContain('after')
   })
 
-  it('says nothing stray of a template naming only fields that are declared', () => {
+  it('shows no warning when all fields are declared', () => {
     expect(mountTemplate().find('.template__objections').exists()).toBe(false)
   })
 
-  it('says what the caller found wrong alongside the name it is wrong about', () => {
+  it('displays validation errors in the header', () => {
     const target = mountTemplate(undefined, { wrong: ['this template has no back'] })
     const response = target.get('header [data-wrong]')
     expect(response.text()).toBe('this template has no back')
     expect(response.attributes('aria-label')).toBe('What is wrong')
   })
 
-  it('remains what is wrong outside the rows it is wrong about', () => {
+  it('renders header and pane warnings in their own containers', () => {
     const target = mountTemplate(
       createTemplate({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }),
       {
@@ -307,53 +295,53 @@ describe('Template, what is wrong with it', () => {
     expect(stray.findAll('.template__objections')).toHaveLength(1)
   })
 
-  it('says a line for each of them', () => {
+  it('renders a list item for each validation error', () => {
     const target = mountTemplate(undefined, { wrong: ['no back', 'and nothing fills it'] })
     expect(target.get('[data-wrong]').findAll('li')).toHaveLength(2)
   })
 
-  it('says nothing where the caller found nothing wrong', () => {
+  it('omits the error list when there are no validation errors', () => {
     expect(mountTemplate().findAll('[data-wrong]')).toHaveLength(0)
   })
 })
 
-describe('Template, its name', () => {
-  it('emits a name typed and committed', async () => {
+describe('CardTemplate rename', () => {
+  it('emits rename when a new name is committed', async () => {
     const target = mountTemplate()
     await type(target, 'Name it')
     await getName(target).trigger('change')
     expect(target.emitted('rename')).toEqual([['Name it']])
   })
 
-  it('drops the space around a name it commits', async () => {
+  it('trims whitespace from the committed name', async () => {
     const target = mountTemplate()
     await type(target, '  Recall  ')
     await getName(target).trigger('change')
     expect(target.emitted('rename')).toEqual([['Recall']])
   })
 
-  it('does not rename where the name typed is another template’s', async () => {
+  it('does not emit rename when the name is already taken', async () => {
     const target = mountTemplate({ ...createTemplate(TEMPLATE), taken: ['Recall'] })
     await type(target, 'Recall')
     await getName(target).trigger('change')
     expect(target.emitted('rename')).toBeUndefined()
   })
 
-  it('does not rename where the name typed has nothing in it', async () => {
+  it('does not emit rename when the name is blank', async () => {
     const target = mountTemplate()
     await type(target, '   ')
     await getName(target).trigger('change')
     expect(target.emitted('rename')).toBeUndefined()
   })
 
-  it('does not rename where the name typed is the one it already carries', async () => {
+  it('does not emit rename when the name is unchanged', async () => {
     const target = mountTemplate()
     await type(target, 'Recognise')
     await getName(target).trigger('change')
     expect(target.emitted('rename')).toBeUndefined()
   })
 
-  it('does not rename where a name is abandoned', async () => {
+  it('reverts the name on Escape without emitting rename', async () => {
     const target = mountTemplate()
     await type(target, 'Recall')
     await getName(target).trigger('keydown', { key: 'Escape' })
@@ -362,7 +350,7 @@ describe('Template, its name', () => {
     expect(getName(target).element.value).toBe('Recognise')
   })
 
-  it('says why a name typed cannot be used, and says it to the box', async () => {
+  it('shows an error message when the typed name is already taken', async () => {
     const target = mountTemplate({ ...createTemplate(TEMPLATE), taken: ['Recall'] })
     await type(target, 'Recall')
 
@@ -372,21 +360,21 @@ describe('Template, its name', () => {
     expect(getName(target).attributes('aria-describedby')).toBe(response.attributes('id'))
   })
 
-  it('says nothing about a name nothing is being typed over', () => {
+  it('shows no name error initially', () => {
     const target = mountTemplate()
     expect(target.find('header .template__objections').exists()).toBe(false)
     expect(getName(target).attributes('aria-invalid')).toBeUndefined()
   })
 
-  describe('a name holding a brace', () => {
-    it('is a name like any other, a template standing in no brace', async () => {
+  describe('name with braces', () => {
+    it('allows braces in the template name', async () => {
       const target = mountTemplate()
       await type(target, 'What {{Name}} is')
       await getName(target).trigger('change')
       expect(target.emitted('rename')).toEqual([['What {{Name}} is']])
     })
 
-    it('is returned nothing about while it is being typed', async () => {
+    it('shows no validation error when typing braces in the name', async () => {
       const target = mountTemplate()
       await type(target, 'What {{Name}} is')
       expect(target.find('header .template__objections').exists()).toBe(false)
@@ -395,22 +383,22 @@ describe('Template, its name', () => {
   })
 })
 
-describe('Template, what it is requested', () => {
-  it('emits when it is requested to go', async () => {
+describe('CardTemplate actions', () => {
+  it('emits remove when the remove button is clicked', async () => {
     const target = mountTemplate()
     await target.get('.card-header__actions button').trigger('click')
     expect(target.emitted('remove')).toEqual([[]])
   })
 
-  it('emits the drag its strip is taken up by, and the drag let go', async () => {
+  it('emits drag-start and release from the header', async () => {
     const target = mountTemplate()
     await target.get('.card-header').trigger('dragstart')
-    expect(target.emitted('lift')).toHaveLength(1)
+    expect(target.emitted('drag-start')).toHaveLength(1)
     await target.get('.card-header').trigger('dragend')
     expect(target.emitted('release')).toEqual([[]])
   })
 
-  it('emits the way it is requested to go along the order', async () => {
+  it('emits step on ArrowDown from the grip', async () => {
     const target = mountTemplate()
     await target.get('.card-header__grip').trigger('keydown', { key: 'ArrowDown' })
     expect(target.emitted('step')?.[0]?.[0]).toBe('down')

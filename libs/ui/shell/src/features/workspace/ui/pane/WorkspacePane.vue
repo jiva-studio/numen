@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * A stack of tabs and the one of them that is showing.
- *
- * The strip and the pane carry their ids on the element, so a drag can find
- * what is under the pointer by querying the document.
- */
 import { onMounted, useTemplateRef, watch } from 'vue'
 import { PaneBody } from './body'
 import { PaneStrip } from './strip'
@@ -23,12 +17,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, pointer: PointerEvent): void
-  /** A context menu requested on a tab, with its screen position. */
+  (event: 'press', tab: TabId, pointer: PointerEvent): void
   (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
-  /** This pane requests to become the target for newly opened tabs. */
   (event: 'claim'): void
-  /** The tab that is now the one showing, once it is on screen. */
   (event: 'show', tab: TabId): void
 }>()
 
@@ -43,11 +34,6 @@ defineSlots<{
 const strip = useTemplateRef<InstanceType<typeof PaneStrip>>('strip')
 
 /* ---------------------------------- Hooks --------------------------------- */
-/**
- * A hidden tab is rendered with no size, so `show` is emitted once it is
- * visible and can be measured. It is also emitted for the tab this pane opens
- * with.
- */
 onMounted(() => {
   if (props.pane.active !== null) emit('show', props.pane.active)
 })
@@ -77,7 +63,6 @@ function onLeave(tab: TabId): void {
     :data-focused="isFocused || undefined"
     @pointerdown="onClaim"
   >
-    <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
     <PaneStrip
       v-if="pane.tabs.length > 0"
       ref="strip"
@@ -85,7 +70,7 @@ function onLeave(tab: TabId): void {
       :is-focused="isFocused"
       @choose="emit('choose', $event)"
       @close="emit('close', $event)"
-      @lift="(tab, at) => emit('lift', tab, at)"
+      @press="(tab, at) => emit('press', tab, at)"
       @menu="(tab, at) => emit('menu', tab, at)"
     >
       <template v-if="$slots.icon" #icon="bound">

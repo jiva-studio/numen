@@ -1,11 +1,8 @@
-/**
- * Keyboard behavior for a row whose screen position is not known.
- */
 import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { flatten, type Row } from '../lib/row'
 import type { RowDragState } from './drag'
-import { createTreeGestures, type TreeGesturesTell } from './gestures'
+import { createTreeGestures, type TreeGesturesEmit } from './gestures'
 import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -17,7 +14,7 @@ const create = (
   getMenuAt: (row: string) => Position | null = () => null,
 ) => {
   const notifiedCalls: unknown[][] = []
-  const tell: TreeGesturesTell = (...args: unknown[]) => {
+  const emit: TreeGesturesEmit = (...args: unknown[]) => {
     notifiedCalls.push(args)
   }
   const visibleRows = flatten(ROWS, new Set())
@@ -33,11 +30,11 @@ const create = (
   const drag: RowDragState = {
     into: computed(() => null),
     before: computed(() => null),
-    lifted: computed(() => new Set<string>()),
+    draggedIds: computed(() => new Set<string>()),
     label: computed(() => null),
     hasMoved: computed(() => false),
     at: computed(() => null),
-    lift: vi.fn(),
+    startPress: vi.fn(),
   }
   const gestures = createTreeGestures({
     getShownRows: () => visibleRows,
@@ -47,13 +44,13 @@ const create = (
     selection,
     drag,
     getMenuAt,
-    tell,
+    emit,
   })
   return { gestures, notified: notifiedCalls, rows, selection }
 }
 
-describe('the menu key on a row with no place on screen', () => {
-  it('is taken, and asks for no menu', () => {
+describe('ContextMenu key when getMenuAt returns null', () => {
+  it('prevents default and does not emit menu', () => {
     const { gestures, notified } = create()
     const event = new KeyboardEvent('keydown', { key: 'ContextMenu', cancelable: true })
 
@@ -64,10 +61,10 @@ describe('the menu key on a row with no place on screen', () => {
   })
 })
 
-describe('the menu keys on a row with a place on screen', () => {
+describe('menu keys when getMenuAt returns a position', () => {
   const pos: Position = { x: 12, y: 34 }
 
-  it('opens the menu on shift and F10', () => {
+  it('emits menu on Shift+F10', () => {
     const { gestures, notified } = create(ref<string | null>(null), () => pos)
 
     gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true }))
@@ -75,7 +72,7 @@ describe('the menu keys on a row with a place on screen', () => {
     expect(notified).toStrictEqual([['menu', 'notes', pos]])
   })
 
-  it('leaves F10 alone without shift', () => {
+  it('ignores F10 without Shift', () => {
     const { gestures, notified } = create(ref<string | null>(null), () => pos)
     const event = new KeyboardEvent('keydown', { key: 'F10', cancelable: true })
 
@@ -85,7 +82,7 @@ describe('the menu keys on a row with a place on screen', () => {
     expect(event.defaultPrevented).toBe(false)
   })
 
-  it('leaves another key alone when shift is retained', () => {
+  it('ignores other keys with Shift', () => {
     const { gestures, notified } = create(ref<string | null>(null), () => pos)
     const event = new KeyboardEvent('keydown', { key: 'x', shiftKey: true, cancelable: true })
 
@@ -96,8 +93,8 @@ describe('the menu keys on a row with a place on screen', () => {
   })
 })
 
-describe('a name field losing the keyboard', () => {
-  it('stops the renaming, and renaming or abandoning returns focus to the row', async () => {
+describe('renaming handlers', () => {
+  it('clears renamingPath on blur, rename, or abandon and restores row focus', async () => {
     const renamingPath = ref<string | null>('notes')
     const { gestures, notified, rows } = create(renamingPath)
     const focusSpy = vi.spyOn(rows, 'focusRow')

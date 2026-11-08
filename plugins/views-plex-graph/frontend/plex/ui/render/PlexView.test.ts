@@ -1,4 +1,3 @@
-/** The renderer, given a frame directly — including one mid-movement. */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
@@ -31,7 +30,6 @@ const after: PlexNeighbourhood = {
   ],
 }
 
-/** One title down the page and one across it, the second longer than its gap. */
 const titled: PlexNeighbourhood = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
@@ -44,7 +42,6 @@ const titled: PlexNeighbourhood = {
   ],
 }
 
-/** A third of the way across: one node leaving, one arriving, one travelling. */
 const midMove = interpolatePlex(arrangePlex(before), arrangePlex(after), 0.3)
 
 const VIEWPORT = { width: 1200, height: 800 }
@@ -58,21 +55,15 @@ const mountView = () =>
     },
   })
 
-/**
- * Node-local behavior is tested next to the node. This suite covers the
- * translation: a node reports only that it was chosen, and the view resolves
- * which node it was.
- */
-describe('what a node says, and who it was', () => {
-  it('names the node that was chosen', async () => {
-    // Also that only what is fading is out of bounds, not everything mid-move.
+describe('node activation', () => {
+  it('emits activate with the clicked node id', async () => {
     const view = mountView()
     await view.get('[aria-label^="Start"]').trigger('click')
     expect(view.emitted('activate')).toStrictEqual([['focus']])
   })
 })
 
-describe('what each node is to a gesture', () => {
+describe('gesture roles and ghost', () => {
   const mountDuring = (props: Record<string, unknown>) =>
     mount(PlexView, {
       props: {
@@ -83,16 +74,14 @@ describe('what each node is to a gesture', () => {
       },
     })
 
-  it('offers a handle from the node it left from, and from no other', async () => {
+  it('shows the handle only on the source node during a gesture', async () => {
     const view = mountDuring({ gestureFrom: 'staying' })
-    // A pointer that moved to another node is not offered a second gesture while
-    // the first is in progress.
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
     expect(view.findAll('.plex__handle')).toHaveLength(1)
     expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
   })
 
-  it('marks the node a link would be made to, and only that one', () => {
+  it('marks only the link target node', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 0, y: 200 },
@@ -102,7 +91,7 @@ describe('what each node is to a gesture', () => {
     expect(view.get('[aria-label^="Going"]').classes()).toContain('plex__node--target')
   })
 
-  it('draws the node it would make where the pointer is, saying which relation', () => {
+  it('renders the ghost node at the pointer position with the relation name', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 40, y: -200 },
@@ -115,7 +104,7 @@ describe('what each node is to a gesture', () => {
   })
 })
 
-describe('the window onto the drawing', () => {
+describe('viewport viewBox', () => {
   const getBox = (frame = arrangePlex(before)) => {
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
@@ -124,15 +113,13 @@ describe('the window onto the drawing', () => {
     return { x: x!, y: y!, w: w!, h: h! }
   }
 
-  it('is centred on the origin, which is where the focus is', () => {
+  it('centers the viewBox on the origin', () => {
     const box = getBox()
     expect(box.x).toBe(-box.w / 2)
     expect(box.y).toBe(-box.h / 2)
   })
 
-  it('is the same window whatever the neighbourhood holds', () => {
-    // Fitting the window to the drawing would shrink every box and letter as
-    // neighbours are added.
+  it('keeps the same viewBox size regardless of node count', () => {
     const small = getBox(arrangePlex(before))
     const large = getBox(arrangePlex({ ...before, nodes: [...before.nodes] }))
     const crowded = getBox(
@@ -152,7 +139,7 @@ describe('the window onto the drawing', () => {
     expect(crowded).toStrictEqual(small)
   })
 
-  it('draws a box at the size the arrangement requested for, in pixels', () => {
+  it('renders node rects with the arranged pixel dimensions', () => {
     const frame = arrangePlex(before)
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
@@ -164,8 +151,8 @@ describe('the window onto the drawing', () => {
   })
 })
 
-describe('what the drawing does with an opacity', () => {
-  it('draws a departing node fainter than one that is staying', () => {
+describe('element opacity', () => {
+  it('renders a departing node with reduced opacity', () => {
     const view = mountView()
     const going = Number(view.get('[aria-label^="Going"]').attributes('opacity'))
     const staying = Number(view.get('[aria-label^="Staying"]').attributes('opacity'))
@@ -174,18 +161,14 @@ describe('what the drawing does with an opacity', () => {
     expect(staying).toBe(1)
   })
 
-  it('fades the line along with the node it belongs to', () => {
+  it('renders a departing edge with reduced opacity', () => {
     const view = mountView()
     const faded = view.findAll('path.plex__edge').map((path) => Number(path.attributes('opacity')))
     expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
   })
 })
 
-/**
- * A title overflows into the adjacent box, and boxes are painted after titles.
- * The line under the pointer is drawn again after the boxes to stay visible.
- */
-describe('the line under the hand', () => {
+describe('hovered edge line', () => {
   const titledFrame = arrangePlex(titled)
   const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
   const acrossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
@@ -199,96 +182,83 @@ describe('the line under the hand', () => {
       },
     })
 
-  /** The band drawn over one line, in the order the frame gave the edges. */
   const reach = (view: ReturnType<typeof mountTitled>, pos: number) =>
     view.findAll('.plex__edge-hit')[pos]!
 
-  /** The two layers one resting title is painted in, in the same order. */
   const title = (view: ReturnType<typeof mountTitled>, pos: number) =>
     view.findAll('.plex__edge-label').slice(2 * pos, 2 * pos + 2)
 
-  it('lifts the line the hand evaluates to rest on, and puts it back after', async () => {
+  it('raises the hovered line on pointerenter and lowers it on pointerleave', async () => {
     const view = mountTitled()
-    expect(view.find('.plex__lift').exists()).toBe(false)
+    expect(view.find('.plex__raised').exists()).toBe(false)
 
     await reach(view, acrossIndex).trigger('pointerenter')
-    expect(view.find('.plex__lift').exists()).toBe(true)
+    expect(view.find('.plex__raised').exists()).toBe(true)
 
     await reach(view, acrossIndex).trigger('pointerleave')
-    expect(view.find('.plex__lift').exists()).toBe(false)
+    expect(view.find('.plex__raised').exists()).toBe(false)
   })
 
-  it('puts the lifted line down again as soon as the picture moves', async () => {
+  it('lowers the raised line when the frame changes', async () => {
     const view = mountTitled()
     await reach(view, acrossIndex).trigger('pointerenter')
-    expect(view.find('.plex__lift').exists()).toBe(true)
+    expect(view.find('.plex__raised').exists()).toBe(true)
 
-    // A move delivers one frame at a time; the pointer position stays where the
-    // line was before the move.
     await view.setProps({ frame: arrangePlex(titled) })
 
-    expect(view.find('.plex__lift').exists()).toBe(false)
+    expect(view.find('.plex__raised').exists()).toBe(false)
   })
 
-  it('draws the lifted line after every box, so it remains over them', async () => {
+  it('renders the raised line after all node elements', async () => {
     const view = mountTitled()
     await reach(view, acrossIndex).trigger('pointerenter')
-    const lift = view.get('.plex__lift').element
+    const raised = view.get('.plex__raised').element
 
     for (const node of view.findAll('.plex__node')) {
-      const where = node.element.compareDocumentPosition(lift)
+      const where = node.element.compareDocumentPosition(raised)
       expect(where & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
   })
 
-  it('draws the lifted line once, and not also where it was resting', async () => {
+  it('moves the hovered line and its title from the resting layer to the raised layer', async () => {
     const view = mountTitled()
     const lines = titledFrame.edges.length
 
-    // Every title is painted twice over, resting or lifted.
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
     expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
 
     await reach(view, acrossIndex).trigger('pointerenter')
 
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
-    expect(view.get('.plex__lift .plex__edge').attributes('d')).toBe(
+    expect(view.get('.plex__raised .plex__edge').attributes('d')).toBe(
       reach(view, acrossIndex).attributes('d'),
     )
 
-    // Its title leaves the resting layer for the lift.
-    expect(view.get('.plex__lift').findAll('.plex__edge-label')).toHaveLength(2)
+    expect(view.get('.plex__raised').findAll('.plex__edge-label')).toHaveLength(2)
     expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
   })
 
-  it('paints a resting title as a halo under its letters, as the lift does', () => {
+  it('renders a resting title with halo and letter layers on the same path', () => {
     const view = mountTitled()
     const [halo, letters] = title(view, acrossIndex)
 
     expect(halo!.classes()).toContain('plex__edge-label--halo')
     expect(letters!.classes()).toContain('plex__edge-label--letters')
 
-    // One lands on the other: the same words, on the same line, at the same
-    // place along it.
     expect(halo!.text()).toBe(letters!.text())
     expect(halo!.get('textPath').attributes('href')).toBe(
       letters!.get('textPath').attributes('href'),
     )
   })
 
-  it('paints the lifted title as a halo under its letters, on one line', async () => {
+  it('renders a raised title with halo and letter layers on the same path', async () => {
     const view = mountTitled()
     await reach(view, acrossIndex).trigger('pointerenter')
-    const [halo, letters] = view.get('.plex__lift').findAll('.plex__edge-label')
+    const [halo, letters] = view.get('.plex__raised').findAll('.plex__edge-label')
 
-    // A glyph set along a path is painted as its own run, so a halo drawn with the
-    // letters overlaps the adjacent one. The layer of each element is a class and
-    // is verified in a browser.
     expect(halo!.classes()).toContain('plex__edge-label--halo')
     expect(letters!.classes()).toContain('plex__edge-label--letters')
 
-    // One lands on the other: the same words, on the same line, at the same
-    // place along it.
     expect(halo!.text()).toBe(letters!.text())
     for (const named of ['href', 'startOffset']) {
       expect(halo!.get('textPath').attributes(named)).toBe(
@@ -298,17 +268,16 @@ describe('the line under the hand', () => {
     }
   })
 
-  it('sets every title along the line it belongs to', () => {
+  it('renders every edge title inside a textPath element', () => {
     const view = mountTitled()
 
-    // One line down the page and one across it, and both carry their words.
     for (const targetIndex of [down, acrossIndex]) {
       expect(title(view, targetIndex)[0]!.find('textPath').exists()).toBe(true)
       expect(title(view, targetIndex)[0]!.attributes('x')).toBeUndefined()
     }
   })
 
-  it('draws the words the arrangement cut, and not the label as written', () => {
+  it('renders the truncated title text from the arrangement', () => {
     const arrangedPlex = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
     const view = mount(PlexView, {
       props: { frame: arrangedPlex, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
@@ -320,7 +289,7 @@ describe('the line under the hand', () => {
     expect(title(view, acrossIndex)[0]!.text()).toBe(edge.titles[0]?.words)
   })
 
-  it('sets a title on a line running the way the words are read', () => {
+  it('reverses the reading path when the title heading is against', () => {
     const view = mountTitled()
     const edge = titledFrame.edges[acrossIndex]!
     expect(edge.titles[0]!.heading).toBe('against')
@@ -332,17 +301,12 @@ describe('the line under the hand', () => {
       .match(/-?\d+(?:\.\d+)?/g)!
       .map(Number)
 
-    // Taken the other way round, so the words are not upside down.
     expect(numbers[0]).toBe(edge.toPoint.x)
     expect(numbers.at(-2)).toBe(edge.fromPoint.x)
   })
 })
 
-/**
- * A pair connected in both directions: one relationship out and one back. The
- * pointer is on the pair, and the drawing has one line per direction.
- */
-describe('two lines between one pair', () => {
+describe('bidirectional edge pair', () => {
   const paired = arrangePlex({
     nodes: [
       { id: 'focus', title: 'Start', relation: 'focus' },
@@ -354,7 +318,7 @@ describe('two lines between one pair', () => {
     ],
   })
 
-  it('draws both, and leaves neither behind when the hand evaluates to rest', async () => {
+  it('raises both edges of a pair on pointerenter', async () => {
     const view = mount(PlexView, {
       props: { frame: paired, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
@@ -365,16 +329,12 @@ describe('two lines between one pair', () => {
 
     expect(view.findAll('.plex__edge')).toHaveLength(2)
     expect(view.findAll('.plex__edge-label')).toHaveLength(4)
-    expect(view.get('.plex__lift').findAll('.plex__edge')).toHaveLength(2)
+    expect(view.get('.plex__raised').findAll('.plex__edge')).toHaveLength(2)
   })
 })
 
-describe('a node keeps its own drawing across a change', () => {
-  it('is the same element after the ones around it move', async () => {
-    // A node holds its own state (pointer hover, keyboard focus) and the browser
-    // holds focus on an element. If nodes are keyed by position and not by name,
-    // one node inherits another's element and both follow whatever occupies that
-    // position.
+describe('node element identity across frames', () => {
+  it('preserves the DOM element of a node when other nodes move', async () => {
     const view = mount(PlexView, {
       props: {
         frame: arrangePlex(before),
@@ -384,18 +344,13 @@ describe('a node keeps its own drawing across a change', () => {
     })
     const was = view.get('[aria-label^="Going"]').element
 
-    // Departing nodes are appended after arriving ones, so positions shift.
     await view.setProps({ frame: midMove })
 
     expect(view.get('[aria-label^="Going"]').element).toBe(was)
   })
 })
 
-/**
- * A box widens under a resting pointer, and a widened box covers its neighbor.
- * The settling time belongs to the box; the draw order belongs to the view.
- */
-describe('the box the attention has settled on', () => {
+describe('settled node draw order', () => {
   const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
     view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
 
@@ -411,7 +366,7 @@ describe('the box the attention has settled on', () => {
       },
     })
 
-  it('is drawn last of all, so its widened box remains over its neighbours', async () => {
+  it('renders the settled node last so it covers neighbors', async () => {
     const view = mountResting()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
@@ -420,7 +375,7 @@ describe('the box the attention has settled on', () => {
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
   })
 
-  it('is the same element there as it was where it stood', async () => {
+  it('preserves the DOM element when the node moves to the end', async () => {
     const view = mountResting()
     const was = view.get('[aria-label^="Staying"]').element
 
@@ -430,7 +385,7 @@ describe('the box the attention has settled on', () => {
     expect(view.get('[aria-label^="Staying"]').element).toBe(was)
   })
 
-  it('goes back to where it was drawn once the hand has left it', async () => {
+  it('restores the original draw order when the node unsettles', async () => {
     const view = mountResting()
     getBox(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
@@ -440,7 +395,7 @@ describe('the box the attention has settled on', () => {
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
   })
 
-  it('is handed the box the widening worked out for it', () => {
+  it('passes the widened box to each node', () => {
     const wideBox = { width: 400, offset: -12 }
     const view = mount(PlexView, {
       props: {
@@ -456,11 +411,7 @@ describe('the box the attention has settled on', () => {
   })
 })
 
-/**
- * An arrowhead is drawn on a line at each end the edge specifies. A line with
- * no specified end has none.
- */
-describe('the arrow on a line', () => {
+describe('edge arrowheads', () => {
   const named: PlexNeighbourhood = {
     nodes: [
       { id: 'focus', title: 'Start', relation: 'focus' },
@@ -482,17 +433,16 @@ describe('the arrow on a line', () => {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
 
-  /** Where an arrowhead was put, and the turn it was given. */
   const parseTransform = (transform: string) => {
     const [x, y, angle] = transform.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
     return { x: x!, y: y!, angle: angle! }
   }
 
-  it('draws one arrowhead for each line that requested for one', () => {
+  it('renders an arrowhead for each edge with arrows', () => {
     expect(mountNamed().findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 
-  it('puts each one on its own end of its own line, turned along it', () => {
+  it('positions and rotates each arrowhead at its edge endpoint', () => {
     const view = mountNamed()
     const renderedArrows = view.findAll('.plex__edge-arrow')
 
@@ -503,13 +453,11 @@ describe('the arrow on a line', () => {
       expect(head.angle).toBeCloseTo(edge.arrowheads![0]!.angle)
     }
 
-    // The two ends of one picture: one arrow points down out of the focus and
-    // the other back up out of it.
     expect(parseTransform(renderedArrows[0]!.attributes('transform')!).angle).toBeCloseTo(90)
     expect(parseTransform(renderedArrows[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
   })
 
-  it('fades an arrow with the line it is drawn on', () => {
+  it('applies the edge opacity to its arrowhead', () => {
     const view = mount(PlexView, {
       props: {
         frame: { ...frame, edges: frame.edges.map((edge) => ({ ...edge, opacity: 0.4 })) },
@@ -522,7 +470,7 @@ describe('the arrow on a line', () => {
     }
   })
 
-  it('draws an arrow before every title, which remains over it', () => {
+  it('renders arrowheads before edge titles', () => {
     const view = mountNamed()
     const arrow = view.findAll('.plex__edge-arrow')[0]!.element
     for (const title of view.findAll('.plex__edge-label')) {
@@ -531,11 +479,11 @@ describe('the arrow on a line', () => {
     }
   })
 
-  it('lifts the arrow with the line the hand evaluates to rest on', async () => {
+  it('raises the arrowhead with its hovered edge line', async () => {
     const view = mountNamed()
     await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
 
-    expect(view.get('.plex__lift').findAll('.plex__edge-arrow')).toHaveLength(1)
+    expect(view.get('.plex__raised').findAll('.plex__edge-arrow')).toHaveLength(1)
     expect(view.findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 })

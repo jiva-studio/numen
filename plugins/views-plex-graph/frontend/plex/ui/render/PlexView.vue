@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * The drawing layer. Every number here is computed in `arrange/`.
- *
- * It draws the viewport, the edges between nodes, and the gesture across them.
- * Each node draws itself and receives the two values that only the whole
- * drawing can determine.
- */
 import { computed, ref, useId, useTemplateRef } from 'vue'
 import { createRefRegistry } from '@numen/ui'
 import PlexEdgeLine from './PlexEdgeLine.vue'
@@ -42,7 +35,6 @@ defineSlots<PlexDrawnSlots>()
 /* --------------------------------- State ---------------------------------- */
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
-/** The boxes as they are drawn, so the keyboard can be put back on one. */
 const views = new Map<string, { focus: () => void }>()
 const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
   if (view) views.set(id, view as { focus: () => void })
@@ -51,40 +43,25 @@ const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
 
 defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
 
-/**
- * One plex unit is one pixel, origin at the middle of the window.
- *
- * The viewBox is a fixed window on the drawing, centred on the focus, so a box
- * and a letter are one size however many neighbours arrive. A neighbourhood
- * too wide is clipped, and the per-relation limits and the overflow count say how
- * much.
- */
 const viewBox = computed(() => {
   const { width, height } = props.viewport
   return `${-width / 2} ${-height / 2} ${width} ${height}`
 })
 
-/** Two plexes on one page each name their own paths. */
 const uid = useId()
 
-const { lines, lifted, resting, setOver } = useEdgeLines(() => props.frame, uid)
+const { lines, raisedLines, resting, setOver } = useEdgeLines(() => props.frame, uid)
 
-/** The node the attention has settled on, as that node reports it. */
 const restedOn = ref<string | null>(null)
 
-/**
- * The boxes in the order they are drawn, the one being rested on last. It is
- */
 const renderedNodes = computed(() => {
   const node = props.frame.nodes.find((each) => each.id === restedOn.value)
   if (!node) return props.frame.nodes
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-/** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => getReachThread(props.frame, props.gestureFrom, props.gestureAt))
 
-/** The line from a node to a point awaiting a node of its own. */
 const pendingThread = computed(() =>
   getPendingThread(props.frame, {
     from: props.pending?.from ?? null,
@@ -93,7 +70,6 @@ const pendingThread = computed(() =>
   }),
 )
 
-/** The node a gesture would make, drawn where it would appear. */
 const ghost = computed(() =>
   getReachGhost(props.gestureOutcome, props.gestureAt, {
     relationName: props.relationName,
@@ -101,7 +77,6 @@ const ghost = computed(() =>
   }),
 )
 
-/** What is dragged in from outside, and the shape letting go would leave. */
 const dragging = computed(() =>
   getDraggedShape(
     props.frame,
@@ -144,8 +119,6 @@ const getRole = (node: PlacedNode): GestureRole => {
       <PlexEdgeLine v-for="line in resting" :key="line.key" :line="line" />
     </g>
 
-    <!-- The band a line is found by. It paints nothing, and the nodes come
-         after it, so a box under the hand is what the hand is on. -->
     <g>
       <path
         v-for="line in lines"
@@ -185,21 +158,17 @@ const getRole = (node: PlacedNode): GestureRole => {
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
 
-    <!-- The line under the hand, drawn after the boxes so it is over
-         them, and with it the title it carries. -->
-    <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
-      <template v-for="line in lifted" :key="line.key">
+    <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">
+      <template v-for="line in raisedLines" :key="line.key">
         <PlexEdgeLine :line="line" is-raised />
         <PlexEdgeTitle v-if="showEdgeLabels" :line="line" is-raised />
       </template>
     </g>
 
-    <!-- The gesture itself, drawn over everything it may land on. -->
     <PlexThread v-if="thread" class="plex__reach" :d="thread" :ghost="ghost" />
 
     <PlexThread v-if="pendingThread" class="plex__pending" :d="pendingThread" />
 
-    <!-- Something dragged in from outside, drawn over everything it crosses. -->
     <PlexThread
       v-if="dragging"
       class="plex__dragged"
@@ -218,13 +187,10 @@ const getRole = (node: PlacedNode): GestureRole => {
   font-family: var(--numen-font-sans);
   user-select: none;
   -webkit-user-select: none;
-  /* Every touch on the drawing is handled by the drawing, and a finger that
-     travels is dragging something across it. */
   touch-action: none;
   -webkit-touch-callout: none;
 }
 
-/* Wide enough to be a pointer target, and unpainted. */
 .plex__edge-hit {
   fill: none;
   stroke: transparent;
@@ -232,12 +198,11 @@ const getRole = (node: PlacedNode): GestureRole => {
   pointer-events: stroke;
 }
 
-/* While the plex animates, edges do not receive pointer events. */
 [data-moving] .plex__edge-hit {
   pointer-events: none;
 }
 
-.plex__lift {
+.plex__raised {
   pointer-events: none;
 }
 
@@ -246,7 +211,6 @@ const getRole = (node: PlacedNode): GestureRole => {
   pointer-events: none;
 }
 
-/* The dragged element does not receive pointer events. */
 .plex__dragged {
   pointer-events: none;
 }
