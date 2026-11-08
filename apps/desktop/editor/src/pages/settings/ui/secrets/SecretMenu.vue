@@ -1,24 +1,26 @@
 <script setup lang="ts">
 /**
- * The menu button of a group the person made. Its menu renames and deletes the group. It opens
- * aligned to the right edge of the button and extends to the left.
+ * An ellipsis button that opens a menu of items. The menu opens aligned to the right edge of the
+ * button and extends to the left. A chosen item is emitted with its id and the button, so the
+ * caller can return the focus to it.
  */
 import { ref } from 'vue'
 import { Ellipsis } from '@lucide/vue'
-import { Button, Menu, measureRect, measureWindow, type MenuItem } from '@numen/ui'
-import { WORDS as words } from '../../words'
+import { Menu, measureRect, measureWindow, type MenuItem } from '@numen/ui'
+import SecretActionButton from './SecretActionButton.vue'
+
+/* ----------------------------- Props & Emits ------------------------------ */
+defineProps<{
+  label: string
+  items: readonly MenuItem[]
+}>()
 
 const emit = defineEmits<{
-  (e: 'rename'): void
-  (e: 'delete', opener: HTMLElement): void
+  (e: 'choose', id: string, opener: HTMLElement): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const MARGIN = 8
-const items: readonly MenuItem[] = [
-  { id: 'rename', text: words.secretGroupRename },
-  { id: 'delete', text: words.secretGroupDelete },
-]
 const anchor = ref<{ x: number; y: number; height: number } | null>(null)
 const opener = ref<HTMLElement | null>(null)
 
@@ -37,24 +39,20 @@ function onClose(): void {
 function onChoose(id: string): void {
   const from = opener.value
   onClose()
-  if (id === 'rename') emit('rename')
-  else if (id === 'delete' && from) emit('delete', from)
+  if (from) emit('choose', id, from)
 }
 </script>
 
 <template>
-  <Button
-    variant="outline"
-    class="secret-group-action"
-    size="icon"
+  <SecretActionButton
     aria-haspopup="menu"
     :aria-expanded="anchor !== null"
-    :aria-label="words.secretGroupActions"
-    :title="words.secretGroupActions"
+    :aria-label="label"
+    :title="label"
     @click="onOpen"
   >
     <Ellipsis :size="14" aria-hidden="true" />
-  </Button>
+  </SecretActionButton>
   <Menu
     v-if="anchor"
     :items="items"
@@ -62,16 +60,10 @@ function onChoose(id: string): void {
     :viewport="{ width: anchor.x + MARGIN, height: anchor.height }"
     :margin="MARGIN"
     :from="opener"
-    :name="words.secretGroupActions"
+    :name="label"
     trigger="keyboard"
     is-open
     @choose="onChoose"
     @dismiss="onClose"
   />
 </template>
-
-<style scoped>
-.secret-group-action {
-  border-radius: var(--numen-radius);
-}
-</style>

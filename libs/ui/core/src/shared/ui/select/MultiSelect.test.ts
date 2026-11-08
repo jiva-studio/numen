@@ -71,7 +71,7 @@ describe('the line at rest', () => {
     expect(line(control).text()).toContain('Large and 1')
   })
 
-  it('is not opened while nobody may turn it', async () => {
+  it('stays closed while it is disabled', async () => {
     const control = mountMultiple([], { isDisabled: true })
     await openSelect(control)
     expect(getOptions()).toHaveLength(0)

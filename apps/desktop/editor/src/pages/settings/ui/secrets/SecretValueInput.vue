@@ -2,15 +2,19 @@
 /**
  * A masked field a value is entered into. The value is sent once, on Enter, on leaving the field
  * or on a change, and the field is cleared as it is sent: nothing here keeps a value or shows one.
+ * Whether a value is stored shows in the placeholder and in a description a screen reader reads.
  * With submit, the field keeps the value until submit resolves true, sends no second value while
- * one is in flight, and sends a value that failed again only on Enter.
+ * one is in flight, and sends a value that failed again only on Enter; a failed value is marked
+ * invalid with a line saying so.
  */
-import { ref } from 'vue'
+import { computed, ref, useId, useTemplateRef } from 'vue'
+import { WORDS as words } from '../../words'
+import SecretInput from './SecretInput.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   label: string
-  placeholder: string
+  hasValue: boolean
   submit?: ((value: string) => Promise<boolean>) | undefined
 }>()
 
@@ -21,8 +25,14 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const entry = ref('')
 const isSending = ref(false)
-/** The value whose last submit failed, until the field changes. */
-let failedValue: string | null = null
+const failedValue = ref<string | null>(null)
+const input = useTemplateRef<InstanceType<typeof SecretInput>>('input')
+const stateId = useId()
+const failureId = useId()
+const hasFailed = computed(() => failedValue.value !== null)
+const describedBy = computed(() => (hasFailed.value ? `${stateId} ${failureId}` : stateId))
+
+defineExpose({ focus: () => input.value?.focus() })
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onCommit(): Promise<void> {
@@ -37,12 +47,12 @@ async function onCommit(): Promise<void> {
 }
 
 function onCommitAgain(): Promise<void> {
-  failedValue = null
+  failedValue.value = null
   return onCommit()
 }
 
 function onInput(): void {
-  failedValue = null
+  failedValue.value = null
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -50,11 +60,11 @@ async function submitValue(
   submit: (value: string) => Promise<boolean>,
   value: string,
 ): Promise<void> {
-  if (isSending.value || value === failedValue) return
+  if (isSending.value || value === failedValue.value) return
   isSending.value = true
   try {
     if (await submit(value)) entry.value = ''
-    else failedValue = value
+    else failedValue.value = value
   } finally {
     isSending.value = false
   }
@@ -62,37 +72,39 @@ async function submitValue(
 </script>
 
 <template>
-  <input
-    v-model="entry"
-    type="password"
-    autocomplete="off"
-    spellcheck="false"
-    :aria-label="label"
-    :placeholder="placeholder"
-    class="secret-value"
-    @blur="onCommit"
-    @change="onCommit"
-    @input="onInput"
-    @keydown.enter="onCommitAgain"
-  />
+  <div class="secret-value">
+    <SecretInput
+      ref="input"
+      v-model="entry"
+      type="password"
+      autocomplete="off"
+      spellcheck="false"
+      :aria-label="label"
+      :aria-describedby="describedBy"
+      :aria-invalid="hasFailed"
+      :placeholder="hasValue ? words.secretMasked : words.keyPlaceholder"
+      @blur="onCommit"
+      @change="onCommit"
+      @input="onInput"
+      @keydown.enter="onCommitAgain"
+    />
+    <span :id="stateId" class="sr-only">
+      {{ hasValue ? words.secretValueSet : words.secretValueEmpty }}
+    </span>
+    <p v-if="hasFailed" :id="failureId" role="alert" class="secret-value__failure">
+      {{ words.secretNotSaved }}
+    </p>
+  </div>
 </template>
 
 <style scoped>
 .secret-value {
-  box-sizing: border-box;
-  inline-size: 100%;
   min-inline-size: 0;
-  block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font-family: inherit;
-  font-size: var(--numen-text-2);
 }
 
-.secret-value:focus {
-  outline: var(--numen-stroke) solid var(--numen-accent);
+.secret-value__failure {
+  margin: 0.25rem 0 0;
+  color: var(--numen-alarm);
+  font-size: var(--numen-text-1);
 }
 </style>

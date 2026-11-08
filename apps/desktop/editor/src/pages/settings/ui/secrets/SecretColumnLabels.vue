@@ -12,7 +12,7 @@ defineProps<{ hasName: boolean }>()
 <template>
   <SecretRowFrame :has-name="hasName" class="secret-labels" aria-hidden="true">
     <template #name>
-      <span class="secret-labels__text">{{ words.columnKey }}</span>
+      <span class="secret-labels__text">{{ words.columnName }}</span>
     </template>
     <template #value>
       <span class="secret-labels__text">{{ words.columnValue }}</span>
@@ -24,7 +24,7 @@ defineProps<{ hasName: boolean }>()
 </template>
 
 <style scoped>
-.secret-labels {
+.secret-labels :deep(.secret-row) {
   padding-block: 0;
 }
 

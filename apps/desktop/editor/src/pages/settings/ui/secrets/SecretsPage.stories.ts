@@ -114,8 +114,8 @@ export const DeletionAsksFirst: Story = {
 export const NewSecretLooksLikeSaved: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getAllByRole('button', { name: 'Add key' })[0]!)
-    const rows = Array.from(canvasElement.querySelectorAll('li'))
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Add secret' })[0]!)
+    const rows = Array.from(canvasElement.querySelectorAll('[role="group"]'))
     const draft = rows.find((one) => one.querySelector('button[title="Save a value first"]'))!
     const saved = rows.find((one) => one !== draft && one.querySelector('input[type="text"]'))!
     await expect(getComputedStyle(draft).gridTemplateColumns).toBe(

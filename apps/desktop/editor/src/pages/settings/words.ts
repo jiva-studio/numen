@@ -1,5 +1,9 @@
 import { PLUGIN_WORDS } from '@numen/plugin-manager'
 
+function countOf(count: number, noun: string): string {
+  return count === 1 ? `1 ${noun}` : `${count} ${noun}s`
+}
+
 /** UI copy of the settings tab: group headings, setting titles and descriptions. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
@@ -15,32 +19,33 @@ export const WORDS = {
   secretsFile: (path: string) => `Values are kept in ${path}`,
   secretMasked: '••••••••',
   secretNoReaders: 'No plugins',
-  secretNewGroupName: 'New group',
-  secretDefault: 'Default',
   secretValue: (name: string) => `Value of ${name}`,
   secretMoveUp: 'Move up',
   secretMoveDown: 'Move down',
   secretActions: 'Secret actions',
   secretDeleteItem: 'Delete',
-  secretRename: 'Rename secret',
   secretRenameName: 'Name of the secret',
   secretDelete: 'Delete secret',
   secretDiscard: 'Discard',
   secretSaveFirst: 'Save a value first',
-  secretAdd: 'Add key',
-  columnKey: 'Key',
+  secretAdd: 'Add secret',
+  columnName: 'Name',
   columnValue: 'Value',
   columnUsedBy: 'Used by',
   secretAddGroup: 'Add group',
-  secretAllowedTo: 'Allowed to',
   secretSearchPlugins: 'Search plugins',
+  secretMore: (count: number) => `+${count}`,
+  secretValueSet: 'Value is set',
+  secretValueEmpty: 'No value yet',
+  secretNotSaved: 'Not saved. Press Enter to try again.',
+  secretGroupTaken: (name: string) => `A group named ${name} already exists.`,
   secretGroupActions: 'Group actions',
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',
   secretGroupDelete: 'Delete group',
   secretGroupTooLong: (limit: number) => `Use at most ${limit} characters.`,
   secretGroupDeleteAsking: (group: string, count: number, readers: readonly string[]) =>
-    `Delete the group ${group} with its ${count === 1 ? '1 secret' : `${count} secrets`}? Their values are removed from this machine${
+    `Delete the group ${group} with its ${countOf(count, 'secret')}? Their values are removed from this machine${
       readers.length === 0 ? '.' : `, and ${readers.join(', ')} can no longer read them.`
     }`,
   secretDeleteAsking: (name: string, readers: readonly string[]) =>

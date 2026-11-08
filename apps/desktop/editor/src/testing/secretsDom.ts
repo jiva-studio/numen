@@ -87,16 +87,6 @@ export function dispose(wrapper: VueWrapper): void {
   document.body.innerHTML = ''
 }
 
-const ancestorWhere = (
-  element: Element,
-  test: (candidate: HTMLElement) => boolean,
-): HTMLElement => {
-  for (let one = element.parentElement; one !== null; one = one.parentElement) {
-    if (test(one)) return one
-  }
-  throw new Error(`no ancestor of <${element.tagName}> ${nameOf(element)} satisfies the test`)
-}
-
 /** The text inputs in a scope. */
 export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="text"]'))
@@ -105,18 +95,29 @@ export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
 export const findNameInput = (name: string, scope: ParentNode = root()): HTMLInputElement | null =>
   textInputs(scope).find((one) => one.value === name) ?? null
 
-/** The row of the secret with that name: the smallest element around its value field, which carries the name in its label. */
+const regionNameOf = (region: Element): string =>
+  document.getElementById(region.getAttribute('aria-labelledby') ?? '')?.textContent?.trim() ?? ''
+
+/** The row of the secret with that name: the group of controls the row is labelled as. */
 export const rowOf = (name: string): HTMLElement => {
-  const input = maskedInputs().find((one) => one.getAttribute('aria-label') === `Value of ${name}`)
-  if (input === undefined) throw new Error(`no value field of ${name} on the page`)
-  return ancestorWhere(input, (one) => one.tagName === 'LI')
+  const rows = Array.from(root().querySelectorAll<HTMLElement>('[role="group"][aria-label]'))
+  const found = rows.find((one) => one.getAttribute('aria-label') === name)
+  if (found === undefined) {
+    throw new Error(`no row named ${name}; the rows are: ${rows.map(nameOf).join(' | ')}`)
+  }
+  return found
 }
 
-/** The section of the group with that name: the smallest element around the name that holds the Add key button. */
+/** The section of the group with that name: the region labelled by the heading with that text. */
 export const sectionOf = (group: string): HTMLElement => {
-  const text = findText(group)
-  if (text === null) throw new Error(`no text ${group} on the page`)
-  return ancestorWhere(text, (one) => findButtons(/^add key$/i, one).length > 0)
+  const regions = Array.from(root().querySelectorAll<HTMLElement>('section[aria-labelledby]'))
+  const found = regions.find((one) => regionNameOf(one) === group)
+  if (found === undefined) {
+    throw new Error(
+      `no section named ${group}; the sections are: ${regions.map(regionNameOf).join(' | ')}`,
+    )
+  }
+  return found
 }
 
 /** The menu item whose text matches, in the menu drawn into the document. */
@@ -131,9 +132,9 @@ export const findMenuItem = (pattern: RegExp): HTMLElement => {
   return found[0] as HTMLElement
 }
 
-/** Clicks the Add key button of a card, or of the only card on the page. */
-export async function addKey(scope: ParentNode = root()): Promise<void> {
-  await click(findButton(/^add key$/i, scope))
+/** Clicks the Add secret button of a card, or of the only card on the page. */
+export async function addSecret(scope: ParentNode = root()): Promise<void> {
+  await click(findButton(/^add secret$/i, scope))
 }
 
 /** Opens the group actions menu in a scope and chooses the item whose text matches. */

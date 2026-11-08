@@ -5,9 +5,9 @@
  * read the secret, or stops it.
  */
 import { computed } from 'vue'
-import { Select, type SelectChoice } from '@numen/ui'
-import type { Secret } from '@/entities/settings'
-import { isAllowed, type Declaration } from '../../lib/secretSections'
+import { MultiSelect, type SelectChoice } from '@numen/ui'
+import { isAllowed, type Secret } from '@/entities/settings'
+import type { Declaration } from '../../lib/secretSections'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -32,24 +32,22 @@ const allowedIds = computed(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onSelect(next: readonly string[]): void {
-  const added = next.find((id) => !allowedIds.value.includes(id))
-  const key = added ?? allowedIds.value.find((one) => !next.includes(one))
-  const declaration = props.declarations.find((one) => keyOf(one) === key)
-  if (declaration) emit('toggle', declaration, added !== undefined)
+function onToggle(id: string, isOn: boolean): void {
+  const declaration = props.declarations.find((one) => keyOf(one) === id)
+  if (declaration) emit('toggle', declaration, isOn)
 }
 </script>
 
 <template>
-  <Select
-    is-multiple
+  <MultiSelect
     :selected="allowedIds"
     :choices="choices"
     :placeholder="words.secretNoReaders"
-    :name="words.secretAllowedTo"
+    :name="words.columnUsedBy"
     :search-name="words.secretSearchPlugins"
+    :get-more-text="words.secretMore"
     :is-disabled="!secret || declarations.length === 0"
     :title="secret ? undefined : words.secretSaveFirst"
-    @update:selected="onSelect"
+    @toggle="onToggle"
   />
 </template>

@@ -156,9 +156,7 @@ const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']
 }
 
 const rowOf = (scope: Locator, name: string): Locator =>
-  scope
-    .getByRole('listitem')
-    .filter({ has: scope.page().getByLabel(`Value of ${name}`, { exact: true }) })
+  scope.getByRole('group', { name, exact: true })
 
 const choose = async (page: Page, select: Locator, names: RegExp[]): Promise<void> => {
   await select.click()

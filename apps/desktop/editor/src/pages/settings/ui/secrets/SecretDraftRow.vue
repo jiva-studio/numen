@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
  * A secret that does not exist yet, drawn as a saved one: a name to type, a masked field and a
- * discard button, or the disabled actions button where it cannot be discarded. The secret is created, under the name typed, when a value is entered. Its
- * plugin list stays disabled until the secret exists. The empty secret of a group a plugin asks
- * for has no way to be discarded.
+ * discard button, or the disabled actions button where it cannot be discarded. The secret is
+ * created, under the name typed, when a value is entered. Its plugin list stays disabled until the
+ * secret exists. The empty secret of a group a plugin asks for has no way to be discarded. A row
+ * with autofocus takes the focus into its name when mounted, else into its value.
  */
-import { ref } from 'vue'
+import { onMounted, ref, useTemplateRef } from 'vue'
 import { Ellipsis, Trash2 } from '@lucide/vue'
-import { Button } from '@numen/ui'
-import { trimGroupName } from '../../lib/trimGroupName'
+import { trimName } from '@/entities/settings'
 import { WORDS as words } from '../../words'
+import SecretActionButton from './SecretActionButton.vue'
 import SecretNameInput from './SecretNameInput.vue'
 import SecretPermissions from './SecretPermissions.vue'
 import SecretRowFrame from './SecretRowFrame.vue'
@@ -20,37 +21,45 @@ const props = defineProps<{
   name: string
   canDiscard: boolean
   hasName: boolean
-  submit?: ((name: string, value: string) => Promise<boolean>) | undefined
+  hasAutofocus?: boolean
+  submit: (name: string, value: string) => Promise<boolean>
 }>()
 
 const emit = defineEmits<{
-  (e: 'create', name: string, value: string): void
   (e: 'discard'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const typedName = ref(props.name)
+const nameInput = useTemplateRef<InstanceType<typeof SecretNameInput>>('nameInput')
+const valueInput = useTemplateRef<InstanceType<typeof SecretValueInput>>('valueInput')
+
+onMounted(() => {
+  if (!props.hasAutofocus) return
+  if (props.hasName) nameInput.value?.focus()
+  else valueInput.value?.focus()
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onSubmit(value: string): Promise<boolean> {
-  const name = trimGroupName(typedName.value)
-  if (name === '' || !props.submit) return false
+  const name = trimName(typedName.value)
+  if (name === '') return false
   return props.submit(name, value)
 }
 </script>
 
 <template>
-  <SecretRowFrame :has-name="hasName">
+  <SecretRowFrame :has-name="hasName" :label="typedName">
     <template #name>
-      <SecretNameInput v-model="typedName" @cancel="typedName = name" />
+      <SecretNameInput ref="nameInput" v-model="typedName" @cancel="typedName = name" />
     </template>
 
     <template #value>
       <SecretValueInput
+        ref="valueInput"
         :label="words.secretValue(typedName)"
-        :placeholder="words.keyPlaceholder"
-        :submit="submit ? onSubmit : undefined"
-        @commit="(value) => emit('create', trimGroupName(typedName), value)"
+        :has-value="false"
+        :submit="onSubmit"
       />
     </template>
 
@@ -59,28 +68,22 @@ async function onSubmit(value: string): Promise<boolean> {
     </template>
 
     <template #actions>
-      <Button
+      <SecretActionButton
         v-if="canDiscard"
-        variant="outline"
-        class="secret-action"
-        size="icon"
         :aria-label="words.secretDiscard"
         :title="words.secretDiscard"
         @click="emit('discard')"
       >
         <Trash2 :size="14" aria-hidden="true" />
-      </Button>
-      <Button
+      </SecretActionButton>
+      <SecretActionButton
         v-else
-        variant="outline"
-        class="secret-action"
-        size="icon"
         disabled
         :aria-label="words.secretActions"
         :title="words.secretSaveFirst"
       >
         <Ellipsis :size="14" aria-hidden="true" />
-      </Button>
+      </SecretActionButton>
     </template>
   </SecretRowFrame>
 </template>

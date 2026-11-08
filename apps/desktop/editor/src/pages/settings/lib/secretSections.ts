@@ -2,7 +2,6 @@
  * The page of secrets and the menu of a secret field, as plain data: the sections of the secrets
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
-import { findServiceInfo } from '@numen/core-client'
 import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
 import { WORDS } from '../words'
 
@@ -95,49 +94,10 @@ export function getSectionDeclarations(
   )
 }
 
-/** The name of a new group: New group, else the first number after it that no group has. */
-export function getNewGroupName(groups: readonly string[]): string {
-  if (!groups.includes(WORDS.secretNewGroupName)) return WORDS.secretNewGroupName
-  let number = 2
-  while (groups.includes(`${WORDS.secretNewGroupName} ${number}`)) number++
-  return `${WORDS.secretNewGroupName} ${number}`
-}
-
-/** Whether the declaration may read the secret. */
-export function isAllowed(secret: Secret, declaration: Declaration): boolean {
-  return secret.allowed.some(
-    (one) =>
-      one.pluginId === declaration.pluginId &&
-      one.name === declaration.name &&
-      one.group === declaration.group,
-  )
-}
-
 /** The names of the plugins that may read the secret, each once, in the order of the permissions. */
 export function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): readonly string[] {
   const ids = [...new Set(secret.allowed.map((one) => one.pluginId))]
   return ids.map((id) => plugins.find((one) => one.id === id)?.name ?? id)
-}
-
-/**
- * The name the first secret of a group gets: the name of its service, or Default for a group no
- * service is known by.
- */
-export function getFirstSecretName(group: string): string {
-  const title = findServiceInfo(group)?.title ?? ''
-  return title === '' ? WORDS.secretDefault : title
-}
-
-/**
- * The name a new secret of a group gets: the name of the service in a group with no secret, else
- * the name with V1, V2 and on, the first one not in use.
- */
-export function getNextSecretName(group: string, namesInGroup: readonly string[]): string {
-  const first = getFirstSecretName(group)
-  if (namesInGroup.length === 0) return first
-  let number = 1
-  while (namesInGroup.includes(`${first} V${number}`)) number++
-  return `${first} V${number}`
 }
 
 /**

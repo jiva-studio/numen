@@ -3,21 +3,24 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, ConfirmDialog } from '@numen/ui'
-import type { Secret } from '@/entities/settings'
+import {
+  getFirstSecretName,
+  getNewGroupName,
+  getNextSecretName,
+  type Secret,
+} from '@/entities/settings'
 import {
   createSecretSections,
   getDeclarations,
-  getNewGroupName,
-  getFirstSecretName,
-  getNextSecretName,
   type Declaration,
   type SecretSection as SectionData,
 } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
 import { useSecretDeletion } from '../../model/secretDeletion'
+import { useSecretDrafts } from '../../model/secretDrafts'
 import { WORDS as words } from '../../words'
 import SecretSection from './SecretSection.vue'
 
@@ -28,25 +31,23 @@ const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
-/** A secret the person added and has not given a value yet. */
-interface Draft {
-  readonly group: string
-  readonly name: string
-}
-
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const plugins = computed(() => installation.value.plugins?.value ?? [])
 const credentialsPath = computed(() => installation.value.credentialsPath?.value ?? '')
-/** The groups the person made that hold no secret yet; a group exists on the core through its secrets. */
-const emptyGroups = ref<readonly string[]>([])
+const drafts = useSecretDrafts()
 /** The group whose name is edited as it appears. */
 const newGroup = ref('')
+const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
 const sections = computed(() =>
-  createSecretSections(plugins.value, installation.value.secrets?.value ?? [], emptyGroups.value),
+  createSecretSections(
+    plugins.value,
+    installation.value.secrets?.value ?? [],
+    drafts.emptyGroups.value,
+  ),
 )
+const groups = computed(() => sections.value.map((one) => one.group))
 const declarations = computed(() => getDeclarations(plugins.value))
-const drafts = ref<readonly Draft[]>([])
 const deletion = useSecretDeletion(
   (id) => installation.value.deleteSecret(id),
   () => plugins.value,
@@ -54,34 +55,31 @@ const deletion = useSecretDeletion(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
-  drafts.value = [
-    ...drafts.value,
-    { group, name: getNextSecretName(group, getNamesInGroup(group)) },
-  ]
+  drafts.addDraft(group, getNextSecretName(group, getNamesInGroup(group)))
 }
 
 function onAddGroup(): void {
-  newGroup.value = getNewGroupName(sections.value.map((one) => one.group))
-  emptyGroups.value = [...emptyGroups.value, newGroup.value]
+  newGroup.value = getNewGroupName(groups.value)
+  drafts.addEmptyGroup(newGroup.value)
 }
 
 function onRenameGroup(section: SectionData, name: string): void {
   newGroup.value = ''
   if (section.secrets.length > 0) installation.value.renameSecretGroup(section.group, name)
-  else emptyGroups.value = emptyGroups.value.map((one) => (one === section.group ? name : one))
+  else drafts.renameEmptyGroup(section.group, name)
 }
 
-function onDiscard(group: string, name: string): void {
-  drafts.value = drafts.value.filter((one) => one.group !== group || one.name !== name)
-}
-
-async function onCreate(group: string, name: string, value: string): Promise<boolean> {
+async function onCreate(
+  group: string,
+  name: string,
+  value: string,
+  draftId?: number,
+): Promise<boolean> {
   const id = await installation.value.createSecret(group, name, value)
-  if (id !== '') {
-    onDiscard(group, name)
-    emptyGroups.value = emptyGroups.value.filter((one) => one !== group)
-  }
-  return id !== ''
+  if (id === '') return false
+  if (draftId !== undefined) drafts.discardDraft(draftId)
+  drafts.removeEmptyGroup(group)
+  return true
 }
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
@@ -94,25 +92,23 @@ function onAskDelete(secret: Secret, opener: HTMLElement): void {
   deletion.ask({ kind: 'secret', secret }, opener)
 }
 
-function onAskDeleteGroup(section: SectionData, opener: HTMLElement): void {
-  if (section.secrets.length === 0) {
-    emptyGroups.value = emptyGroups.value.filter((one) => one !== section.group)
+async function onAskDeleteGroup(section: SectionData, opener: HTMLElement): Promise<void> {
+  if (section.secrets.length > 0) {
+    deletion.ask({ kind: 'group', section }, opener)
     return
   }
-  deletion.ask({ kind: 'group', section }, opener)
+  drafts.removeEmptyGroup(section.group)
+  await nextTick()
+  ;(addGroupButton.value?.$el as HTMLElement | undefined)?.focus()
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getDraftNames(group: string): readonly string[] {
-  return drafts.value.filter((one) => one.group === group).map((one) => one.name)
-}
-
 function getNamesInGroup(group: string): readonly string[] {
   const section = sections.value.find((one) => one.group === group)
   return [
     ...(section?.secrets.map((one) => one.name) ?? []),
     ...(section?.secrets.length === 0 ? [getFirstSecretName(group)] : []),
-    ...getDraftNames(group),
+    ...drafts.getDrafts(group).map((one) => one.name),
   ]
 }
 </script>
@@ -131,13 +127,14 @@ function getNamesInGroup(group: string): readonly string[] {
       v-for="section in sections"
       :key="section.group"
       :section="section"
-      :drafts="getDraftNames(section.group)"
+      :groups="groups"
+      :drafts="drafts.getDrafts(section.group)"
       :declarations="declarations"
       :is-new="section.group === newGroup"
+      :create="(name, value, draftId) => onCreate(section.group, name, value, draftId)"
       @add="onAdd(section.group)"
       @rename-group="(name) => onRenameGroup(section, name)"
-      :create="(name, value) => onCreate(section.group, name, value)"
-      @discard="(name) => onDiscard(section.group, name)"
+      @discard="drafts.discardDraft"
       @move="(id, beforeId) => installation.moveSecret(id, beforeId)"
       @rename="(id, name) => installation.renameSecret(id, name)"
       @write="(id, value) => installation.writeSecret(id, value)"
@@ -146,7 +143,13 @@ function getNamesInGroup(group: string): readonly string[] {
       @toggle="onToggle"
     />
 
-    <Button variant="ghost" size="small" class="secrets-page__add" @click="onAddGroup">
+    <Button
+      ref="addGroupButton"
+      variant="ghost"
+      size="small"
+      class="secrets-page__add"
+      @click="onAddGroup"
+    >
       <Plus :size="14" aria-hidden="true" />
       {{ words.secretAddGroup }}
     </Button>

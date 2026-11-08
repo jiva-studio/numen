@@ -1,23 +1,40 @@
 /**
- * The section of one group as a landmark: its accessible name is the heading with the group name.
+ * The section of one group as a landmark: its accessible name is the heading with the group name,
+ * and its rows, columns and focus follow the secrets and drafts it is given.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import SecretSection from './SecretSection.vue'
 import {
   chooseGroupAction,
+  chooseRowAction,
   click,
   findButton,
   findButtons,
-  findMenuItem,
+  findText,
+  rowOf,
+  textInputs,
 } from '@/testing/secretsDom'
 
-const section = { group: 'harbour', isAsked: false, secrets: [] }
+const secret = (id: string, name: string, group = 'harbour') => ({
+  id,
+  name,
+  group,
+  allowed: [],
+  hasValue: true,
+})
 
-const mountSection = (create = vi.fn(async () => true)) =>
+const mountSection = (props: Record<string, unknown> = {}) =>
   mount(SecretSection, {
     attachTo: document.body,
-    props: { section, drafts: [], declarations: [], create },
+    props: {
+      section: { group: 'harbour', isAsked: false, secrets: [] },
+      groups: ['harbour'],
+      drafts: [],
+      declarations: [],
+      create: vi.fn(async () => true),
+      ...props,
+    },
   })
 
 afterEach(() => {
@@ -27,14 +44,9 @@ afterEach(() => {
 describe('the section of a group', () => {
   it('creates the secret of a group a plugin asks for through create', async () => {
     const create = vi.fn(async () => true)
-    const wrapper = mount(SecretSection, {
-      attachTo: document.body,
-      props: {
-        section: { group: 'harbour', isAsked: true, secrets: [] },
-        drafts: [],
-        declarations: [],
-        create,
-      },
+    const wrapper = mountSection({
+      section: { group: 'harbour', isAsked: true, secrets: [] },
+      create,
     })
     const input = wrapper.get<HTMLInputElement>('input[type="password"]')
     await input.setValue('a-made-up-key')
@@ -44,23 +56,18 @@ describe('the section of a group', () => {
     wrapper.unmount()
   })
 
-  it('shows one empty draft row named Default in an empty group the person made', () => {
+  it('shows one empty row named Default in an empty group the person made, with no way to discard it', () => {
     const wrapper = mountSection()
     expect(document.querySelectorAll('input[type="password"]')).toHaveLength(1)
-    expect(document.querySelector('button[title="Discard"]')).toBeNull()
+    expect(findButtons(/^discard$/i)).toHaveLength(0)
     wrapper.unmount()
   })
 
-  it('names the empty draft row after the service of a made group', async () => {
+  it('names the empty row after the service of a made group', async () => {
     const create = vi.fn(async () => true)
-    const wrapper = mount(SecretSection, {
-      attachTo: document.body,
-      props: {
-        section: { group: 'openai', isAsked: false, secrets: [] },
-        drafts: [],
-        declarations: [],
-        create,
-      },
+    const wrapper = mountSection({
+      section: { group: 'openai', isAsked: false, secrets: [] },
+      create,
     })
     const input = wrapper.get<HTMLInputElement>('input[type="password"]')
     await input.setValue('a-made-up-key')
@@ -70,77 +77,43 @@ describe('the section of a group', () => {
     wrapper.unmount()
   })
 
-  it('is named by its heading', () => {
+  it('is named by its heading, also while the group is renamed', async () => {
     const wrapper = mountSection()
-    const region = document.querySelector('section')
-    const id = region?.getAttribute('aria-labelledby') ?? ''
-    expect(id).not.toBe('')
+    await chooseGroupAction(/rename group/i)
+    const id = document.querySelector('section')?.getAttribute('aria-labelledby') ?? ''
     expect(document.getElementById(id)?.textContent).toBe('harbour')
     expect(document.getElementById(id)?.tagName).toBe('H2')
     wrapper.unmount()
   })
 
-  it('keeps its name while the group is being renamed', async () => {
-    const wrapper = mountSection()
-    await chooseGroupAction(/rename group/i)
-    const id = document.querySelector('section')?.getAttribute('aria-labelledby') ?? ''
-    expect(document.getElementById(id)?.textContent).toBe('harbour')
-    wrapper.unmount()
-  })
-
-  it('is renamed to the name without U+0085 at its ends, as the core trims it', async () => {
-    const wrapper = mountSection()
-    await chooseGroupAction(/rename group/i)
-    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
-    await input.setValue('\u0085quay')
-    await input.trigger('keydown', { key: 'Enter' })
-    await flushPromises()
-    expect(wrapper.emitted('rename-group')).toEqual([['quay']])
-    wrapper.unmount()
-  })
-
-  it('is renamed with U+FEFF kept at its ends, as the core keeps it', async () => {
-    const wrapper = mountSection()
-    await chooseGroupAction(/rename group/i)
-    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
-    await input.setValue('\uFEFFquay')
-    await input.trigger('keydown', { key: 'Enter' })
-    await flushPromises()
-    expect(wrapper.emitted('rename-group')).toEqual([['\uFEFFquay']])
+  it('emits add from the Add secret button', async () => {
+    const wrapper = mountSection({
+      section: { group: 'harbour', isAsked: false, secrets: [secret('s1', 'Work')] },
+    })
+    await click(findButton(/^add secret$/i))
+    expect(wrapper.emitted('add')).toHaveLength(1)
     wrapper.unmount()
   })
 })
 
-describe('the deletion of a group', () => {
-  const secret = { id: 's1', name: 'Work', group: 'harbour', allowed: [], hasValue: true }
-  const mountWith = (isAsked: boolean, secrets: readonly (typeof secret)[]) =>
-    mount(SecretSection, {
-      attachTo: document.body,
-      props: {
-        section: { group: 'harbour', isAsked, secrets },
-        drafts: [],
-        declarations: [],
-        create: vi.fn(async () => true),
-      },
-    })
+describe('the menu of a group', () => {
+  const work = secret('s1', 'Work')
 
-  it('emits delete-group from the button of a group the person made', async () => {
-    const wrapper = mountWith(false, [secret])
+  it('emits delete-group with the button that opened the menu', async () => {
+    const wrapper = mountSection({ section: { group: 'harbour', isAsked: false, secrets: [work] } })
     await chooseGroupAction(/delete group/i)
-    expect(wrapper.emitted('delete-group')).toHaveLength(1)
     expect(wrapper.emitted('delete-group')?.[0]?.[0]).toBe(findButton(/group actions/i))
     wrapper.unmount()
   })
 
-  it('offers only adding a key in a group a plugin asks for', () => {
-    const wrapper = mountWith(true, [secret])
-    expect(findButton(/^add key$/i)).toBeTruthy()
+  it('is absent in a group a plugin asks for', () => {
+    const wrapper = mountSection({ section: { group: 'harbour', isAsked: true, secrets: [work] } })
     expect(findButtons(/group actions/i)).toHaveLength(0)
     wrapper.unmount()
   })
 
-  it('offers renaming and deleting in the group menu, and nothing else', async () => {
-    const wrapper = mountWith(false, [secret])
+  it('offers renaming and deleting, and nothing else', async () => {
+    const wrapper = mountSection({ section: { group: 'harbour', isAsked: false, secrets: [work] } })
     await click(findButton(/group actions/i))
     expect(
       Array.from(document.querySelectorAll('[role="menuitem"]')).map((one) =>
@@ -149,154 +122,121 @@ describe('the deletion of a group', () => {
     ).toEqual(['Rename group', 'Delete group'])
     wrapper.unmount()
   })
-
-  it('offers deleting a group the person made with no secret', async () => {
-    const wrapper = mountWith(false, [])
-    await click(findButton(/group actions/i))
-    expect(findMenuItem(/delete group/i)).toBeTruthy()
-    wrapper.unmount()
-  })
-})
-
-describe('the name of a group', () => {
-  it('selects the name of a new group for typing', async () => {
-    const wrapper = mount(SecretSection, {
-      attachTo: document.body,
-      props: { section, drafts: [], declarations: [], isNew: true, create: vi.fn() },
-    })
-    await flushPromises()
-    const input = document.querySelector<HTMLInputElement>('input[aria-label="Name of the group"]')
-    expect(input?.value).toBe('harbour')
-    expect(document.activeElement).toBe(input)
-    wrapper.unmount()
-  })
-
-  const renameTo = async (name: string) => {
-    const wrapper = mountSection()
-    await chooseGroupAction(/rename group/i)
-    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
-    await input.setValue(name)
-    await input.trigger('keydown', { key: 'Enter' })
-    await flushPromises()
-    return wrapper
-  }
-
-  it('refuses a group name of more than 64 characters and says so', async () => {
-    const wrapper = await renameTo('g'.repeat(65))
-    expect(wrapper.emitted('rename-group')).toBeUndefined()
-    expect(wrapper.get('[role="alert"]').text()).toBe('Use at most 64 characters.')
-    wrapper.unmount()
-  })
-
-  it('keeps the field open after a name that is too long', async () => {
-    const wrapper = await renameTo('g'.repeat(65))
-    expect(wrapper.find('input[type="text"]').exists()).toBe(true)
-    wrapper.unmount()
-  })
-
-  it('drops the alert when the rename is cancelled', async () => {
-    const wrapper = await renameTo('g'.repeat(65))
-    await wrapper.get('input[type="text"]').trigger('keydown', { key: 'Escape' })
-    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    wrapper.unmount()
-  })
-
-  it('accepts a group name of 64 characters', async () => {
-    const wrapper = await renameTo('g'.repeat(64))
-    expect(wrapper.emitted('rename-group')).toEqual([['g'.repeat(64)]])
-    wrapper.unmount()
-  })
 })
 
 describe('the card of a well-known service', () => {
-  const mountGroup = (group: string) =>
-    mount(SecretSection, {
-      attachTo: document.body,
-      props: {
-        section: { group, isAsked: false, secrets: [] },
-        drafts: [],
-        declarations: [],
-        create: vi.fn(),
-      },
-    })
-
   it('shows the title and the description of the service', () => {
-    const wrapper = mountGroup('openai')
+    const wrapper = mountSection({ section: { group: 'openai', isAsked: false, secrets: [] } })
     expect(wrapper.get('h2').text()).toBe('OpenAI')
-    expect(wrapper.get('.secret-section__about').text()).toBe(
-      'The maker of ChatGPT and the GPT models.',
-    )
+    expect(findText('The maker of ChatGPT and the GPT models.')).not.toBeNull()
     wrapper.unmount()
   })
 
   it('shows only the name of an unknown group', () => {
-    const wrapper = mountGroup('harbour')
+    const wrapper = mountSection()
     expect(wrapper.get('h2').text()).toBe('harbour')
-    expect(wrapper.find('.secret-section__about').exists()).toBe(false)
-    wrapper.unmount()
-  })
-
-  it('renames the key of the group, not its title', async () => {
-    const wrapper = mountGroup('openai')
-    await chooseGroupAction(/rename group/i)
-    expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('openai')
+    expect(wrapper.findAll('p')).toHaveLength(0)
     wrapper.unmount()
   })
 })
 
 describe('the columns of a card', () => {
-  const key = (id: string, name: string) => ({
-    id,
-    name,
-    group: 'harbour',
-    allowed: [],
-    hasValue: true,
+  const mountKeys = (
+    names: readonly string[],
+    drafts: readonly { id: number; name: string }[] = [],
+  ) =>
+    mountSection({
+      section: {
+        group: 'harbour',
+        isAsked: false,
+        secrets: names.map((one, index) => secret(`s${index}`, one)),
+      },
+      drafts: drafts.map((one) => ({ ...one, group: 'harbour' })),
+    })
+
+  it('labels Value and Used by, without Name or a name input, over one secret', () => {
+    const wrapper = mountKeys(['Work'])
+    expect(findText('Value')).not.toBeNull()
+    expect(findText('Used by')).not.toBeNull()
+    expect(findText('Name')).toBeNull()
+    expect(textInputs()).toHaveLength(0)
+    wrapper.unmount()
   })
-  const mountKeys = (names: readonly string[], drafts: readonly string[] = []) =>
-    mount(SecretSection, {
-      attachTo: document.body,
-      props: {
-        section: {
-          group: 'harbour',
-          isAsked: false,
-          secrets: names.map((one, index) => key(`s${index}`, one)),
-        },
-        drafts,
-        declarations: [],
-        create: vi.fn(),
+
+  it('labels Name and shows the names over several secrets, once', () => {
+    const wrapper = mountKeys(['Work', 'Home'])
+    expect(findText('Name')).not.toBeNull()
+    expect(textInputs()).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it('shows the names once a draft joins one saved secret', () => {
+    const wrapper = mountKeys(['Work'], [{ id: 1, name: 'harbour V1' }])
+    expect(textInputs()).toHaveLength(2)
+    wrapper.unmount()
+  })
+})
+
+describe('moving a secret', () => {
+  const mountThree = () =>
+    mountSection({
+      section: {
+        group: 'harbour',
+        isAsked: false,
+        secrets: [secret('s1', 'Work'), secret('s2', 'Home'), secret('s3', 'Boat')],
       },
     })
 
-  it('labels Value and Used by, without Key or a name input, over one key', () => {
-    const wrapper = mountKeys(['Work'])
-    const labels = Array.from(document.querySelectorAll('.secret-labels__text')).map(
-      (one) => one.textContent,
-    )
-    expect(labels).toEqual(['Value', 'Used by'])
-    expect(document.querySelector('input[type="text"]')).toBeNull()
+  it('moves one before the secret above it', async () => {
+    const wrapper = mountThree()
+    await chooseRowAction(rowOf('Home'), /move up/i)
+    expect(wrapper.emitted('move')).toEqual([['s2', 's1']])
     wrapper.unmount()
   })
 
-  it('labels Key and shows the names over several keys, once', () => {
-    const wrapper = mountKeys(['Work', 'Home'])
-    const labels = Array.from(document.querySelectorAll('.secret-labels__text')).map(
-      (one) => one.textContent,
-    )
-    expect(labels).toEqual(['Key', 'Value', 'Used by'])
-    expect(document.querySelectorAll('input[type="text"]')).toHaveLength(2)
+  it('moves one before the secret two places below it', async () => {
+    const wrapper = mountThree()
+    await chooseRowAction(rowOf('Work'), /move down/i)
+    expect(wrapper.emitted('move')).toEqual([['s1', 's3']])
     wrapper.unmount()
   })
 
-  it('shows the names once a draft joins one saved key', () => {
-    const wrapper = mountKeys(['Work'], ['harbour V1'])
-    expect(document.querySelectorAll('input[type="text"]')).toHaveLength(2)
+  it('moves the last but one to the end', async () => {
+    const wrapper = mountThree()
+    await chooseRowAction(rowOf('Home'), /move down/i)
+    expect(wrapper.emitted('move')).toEqual([['s2', '']])
+    wrapper.unmount()
+  })
+})
+
+describe('the focus in a card', () => {
+  const draft = { id: 1, group: 'harbour', name: 'harbour V1' }
+  const secrets = [secret('s1', 'Work')]
+
+  it('moves to the name of a draft that is added', async () => {
+    const wrapper = mountSection({ section: { group: 'harbour', isAsked: false, secrets } })
+    await wrapper.setProps({ drafts: [draft] })
+    await flushPromises()
+    expect(document.activeElement).toBe(textInputs().find((one) => one.value === 'harbour V1'))
     wrapper.unmount()
   })
 
-  it('emits add from the Add key button', async () => {
-    const wrapper = mountKeys(['Work'])
-    await click(findButton(/^add key$/i))
-    expect(wrapper.emitted('add')).toHaveLength(1)
+  it('does not move to the empty secret of a group on its first draw', () => {
+    const wrapper = mountSection()
+    expect(document.activeElement).toBe(document.body)
+    wrapper.unmount()
+  })
+
+  it('returns to the Add secret button when a draft is discarded', async () => {
+    const wrapper = mountSection({
+      section: { group: 'harbour', isAsked: false, secrets },
+      drafts: [draft],
+    })
+    await click(findButton(/^discard$/i))
+    await wrapper.setProps({ drafts: [] })
+    await flushPromises()
+    expect(wrapper.emitted('discard')).toEqual([[1]])
+    expect(document.activeElement).toBe(findButton(/^add secret$/i))
     wrapper.unmount()
   })
 })

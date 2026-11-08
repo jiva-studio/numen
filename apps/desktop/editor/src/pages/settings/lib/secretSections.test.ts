@@ -3,14 +3,10 @@ import { createPluginInfo } from '@/testing/installation'
 import {
   createSecretSections,
   getMenuSecrets,
-  getNewGroupName,
   getSectionDeclarations,
   getDeclarations,
-  getFirstSecretName,
-  getNextSecretName,
   getReaderNames,
   hasGroupSecrets,
-  isAllowed,
   type Declaration,
 } from './secretSections'
 
@@ -53,39 +49,6 @@ describe('the sections of the secrets', () => {
   })
 })
 
-describe('the name of the first secret of a group', () => {
-  it('is the title of the service of the group', () => {
-    expect(getFirstSecretName('openrouter')).toBe('OpenRouter')
-  })
-
-  it('is Default for a group no service is known by', () => {
-    expect(getFirstSecretName('Local Llama')).toBe('Default')
-  })
-
-  it('is Default for the empty group', () => {
-    expect(getFirstSecretName('')).toBe('Default')
-  })
-})
-
-describe('the next name of a secret', () => {
-  it('is the name of the service in a group with no secret', () => {
-    expect(getNextSecretName('openrouter', [])).toBe('OpenRouter')
-    expect(getNextSecretName('Local Llama', [])).toBe('Default')
-    expect(getNextSecretName('', [])).toBe('Default')
-  })
-
-  it('is the name of the service with V1 after the first secret', () => {
-    expect(getNextSecretName('openrouter', ['OpenRouter'])).toBe('OpenRouter V1')
-    expect(getNextSecretName('openrouter', ['Work', 'Home'])).toBe('OpenRouter V1')
-  })
-
-  it('is the first V number not in use', () => {
-    expect(getNextSecretName('openrouter', ['OpenRouter', 'OpenRouter V1'])).toBe('OpenRouter V2')
-    expect(getNextSecretName('openrouter', ['OpenRouter V1'])).toBe('OpenRouter V2')
-    expect(getNextSecretName('openrouter', ['OpenRouter V2'])).toBe('OpenRouter V1')
-  })
-})
-
 describe('the menu of a declaration', () => {
   const sections = createSecretSections(
     [plugin],
@@ -121,22 +84,12 @@ describe('the menu of a declaration', () => {
   })
 })
 
-describe('a permission', () => {
-  it('belongs to one declaration by plugin, name and group', () => {
+describe('the readers of a secret', () => {
+  it('are the plugins allowed on it, each by name, else by id', () => {
     const allowed = {
       ...secret('s1', 'Work', 'openrouter'),
       allowed: [{ pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter' }],
     }
-    const declaration = (group: string): Declaration => ({
-      pluginId: 'md.numen.sample',
-      pluginName: 'Sample',
-      name: 'apiKey',
-      group,
-      title: '',
-      description: '',
-    })
-    expect(isAllowed(allowed, declaration('openrouter'))).toBe(true)
-    expect(isAllowed(allowed, declaration('openai'))).toBe(false)
     expect(getReaderNames(allowed, [plugin])).toStrictEqual(['Sample'])
     expect(getReaderNames(allowed, [])).toStrictEqual(['md.numen.sample'])
   })
@@ -181,15 +134,6 @@ describe('the declarations of a section', () => {
     expect(
       getSectionDeclarations([...all].reverse(), 'openai').map((one) => one.description),
     ).toStrictEqual(['A token', 'Another key'])
-  })
-})
-
-describe('the name of a new group', () => {
-  it('is New group, then the first number after it that is not taken', () => {
-    expect(getNewGroupName(['a'])).toBe('New group')
-    expect(getNewGroupName(['New group'])).toBe('New group 2')
-    expect(getNewGroupName(['New group', 'New group 3'])).toBe('New group 2')
-    expect(getNewGroupName(['New group', 'New group 2'])).toBe('New group 3')
   })
 })
 

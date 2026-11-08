@@ -8,12 +8,11 @@
 import { computed } from 'vue'
 import { KeyRound } from '@lucide/vue'
 import { getServiceInfo } from '@numen/core-client'
-import { Button, Select, type SelectChoice } from '@numen/ui'
-import type { Secret } from '@/entities/settings'
+import { Button, MultiSelect, type SelectChoice } from '@numen/ui'
+import { isAllowed, type Secret } from '@/entities/settings'
 import {
   getMenuSecrets,
   hasGroupSecrets,
-  isAllowed,
   type Declaration,
   type SecretSection,
 } from '../../lib/secretSections'
@@ -51,11 +50,9 @@ const labelledBy = computed(() => `settings-${props.at}`)
 const hasOwnSecrets = computed(() => hasGroupSecrets(props.sections, props.declaration))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onSelect(next: readonly string[]): void {
-  const added = next.find((id) => !allowedIds.value.includes(id))
-  const id = added ?? allowedIds.value.find((one) => !next.includes(one))
+function onToggle(id: string, isOn: boolean): void {
   const secret = secrets.value.find((one) => one.id === id)
-  if (secret) emit('toggle', secret, added !== undefined)
+  if (secret) emit('toggle', secret, isOn)
 }
 </script>
 
@@ -73,16 +70,16 @@ function onSelect(next: readonly string[]): void {
       </Button>
     </template>
 
-    <Select
+    <MultiSelect
       class="settings__secret"
-      is-multiple
       :selected="allowedIds"
       :choices="choices"
       :placeholder="words.secretFieldNone"
       :name="words.secretChoose"
       :search-name="words.secretSearch"
+      :get-more-text="words.secretMore"
       :aria-labelledby="labelledBy"
-      @update:selected="onSelect"
+      @toggle="onToggle"
     />
   </SettingRow>
 </template>
