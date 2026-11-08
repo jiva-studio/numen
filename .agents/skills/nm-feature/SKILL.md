@@ -11,17 +11,19 @@ The `/nm-feature` skill turns the owner's idea into scenarios in `features/<area
 flowchart TD
     Idea["Owner dictates an idea"] --> Restate["1. Restate the idea
     (owner corrects it)"]
-    Restate --> Prior["2. Look up prior art
+    Restate --> Words["2. Learn the words of the product
+    (glossary, existing behaviour)"]
+    Words --> Prior["3. Look up prior art
     (2-3 real variants with sources)"]
     Prior --> Choose{"Owner chooses a variant"}
-    Choose --> Interview["3. Interview
+    Choose --> Interview["4. Interview
     (user flow, limits, out of scope, failures, rules)"]
-    Interview --> Draft["4. Draft scenarios
+    Interview --> Draft["5. Draft scenarios
     features/area/name.feature"]
-    Draft --> Gate{"5. Human Gate
+    Draft --> Gate{"6. Human Gate
     (owner edits and approves)"}
     Gate -->|"Changes"| Draft
-    Gate -->|"Approved"| Next["6. Handover: Suggest `/nm-specify`"]
+    Gate -->|"Approved"| Next["7. Handover: Suggest `/nm-specify`"]
 ```
 
 ---
@@ -36,11 +38,19 @@ The feature file and the interview talk about what the person sees and does, in 
 
 Write the idea back in a few sentences: who, what, why. Ask the owner to correct it. Resolve a slug (`feat-deck-export`) for the local task folder `.agents/tasks/<slug>/` (not committed), and the area and file name for the feature file. Look in `features/` first: extend an existing file when the behaviour belongs to it.
 
-## Step 2: Look Up Prior Art
+## Step 2: Learn the Words of the Product
+
+The scenarios use the words of the product and nothing else. Read [`features/GLOSSARY.md`](../../../features/GLOSSARY.md) first: it names the things that exist, the exact texts a person reads, and the similar words that are wrong. Then:
+
+- When the idea changes behaviour that exists, read the implementation of that behaviour (the states, the events and the texts in the code and in `words.ts`) and show the owner a short list of what the product does today, with the file of each fact. Scenarios describe that behaviour with those states and texts.
+- When the idea is new, there is no implementation to read. Read the glossary and the feature files of the neighbouring areas, and use their words. A word that the glossary does not have is proposed to the owner before a scenario uses it, and the owner decides.
+- A text that a person reads (a message, a label) is copied exactly from the product, never reworded.
+
+## Step 3: Look Up Prior Art
 
 Before proposing any scenario, search the web and the products people know (Obsidian, Notion, VS Code, JetBrains, Apple and Google apps, whatever fits) for how the same behaviour is done. Show 2 or 3 real variants, each with its source link and what it means for the person using it. Let the owner choose or combine. Ask how the behaviour looks from the person's side, step by step.
 
-## Step 3: Interview
+## Step 4: Interview
 
 Ask in batches of a few focused questions. The five lenses help:
 
@@ -52,17 +62,17 @@ Ask in batches of a few focused questions. The five lenses help:
 | What can fail             | What goes wrong, and how does the person find out and recover?               |
 | Rules that never break    | Data, permission and security rules the feature must keep.                   |
 
-## Step 4: Draft the Scenarios
+## Step 5: Draft the Scenarios
 
 Write the scenarios in plain English of level A1 to A2 and with neutral, short data, as `.agents/rules/gherkin.md` section 4 says: no stories, no scenery, no adverbs of time or manner in titles, steps of at most 8 words outside the quoted values.
 
 Write `features/<area>/<part-of-the-feature>.feature` following [`gherkin.md`](../../rules/gherkin.md). A limit, a failure and a rule that must hold each become a scenario. Out-of-scope items and limits that no scenario can show go to `.agents/tasks/<slug>/scope.md`, a short local list that `/nm-specify` and the reviewer read.
 
-## Step 5: Human Gate
+## Step 6: Human Gate
 
 Show the file and ask the owner to edit it. Revise until the owner approves.
 
-## Step 6: Handover
+## Step 7: Handover
 
 > **Feature saved in `features/<area>/<name>.feature`.**
 > _Next step:_ Run `/nm-specify` to map the scenarios to contracts, layers and tests.
