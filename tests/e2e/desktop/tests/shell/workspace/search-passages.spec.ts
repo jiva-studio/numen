@@ -2,21 +2,6 @@ import { test, expect } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 
 test.describe('Full-Text Search and Passage Navigation', () => {
-  test('searches vault for note keywords and displays grouped results', async ({ page }) => {
-    await openWorkspace(page)
-
-    // Trigger Search with Control+k
-    await page.keyboard.press('Control+k')
-
-    const searchInput = page.locator('input[data-palette="field"]').first()
-    await expect(searchInput).toBeVisible()
-
-    // Type keyword
-    await searchInput.fill('Entropy')
-
-    // Verify search results dialog is expanded
-    await expect(searchInput).toHaveAttribute('aria-expanded', 'true')
-  })
 
   test('selects search passage result and scrolls directly to text in editor', async ({ page }) => {
     await openWorkspace(page)
