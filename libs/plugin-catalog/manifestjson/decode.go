@@ -159,24 +159,29 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 	for _, one := range wire.GetThemes() {
 		themes = append(themes, manifest.Theme{ID: one.GetId(), Name: one.GetName(), Appearance: one.GetAppearance(), File: one.GetFile()})
 	}
+	connectionTypes, err := newConnectionTypes(wire.GetConnectionTypes())
+	if err != nil {
+		return manifest.Contributes{}, err
+	}
 	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
 	if err != nil {
 		return manifest.Contributes{}, err
 	}
 	return manifest.Contributes{
-		TabKinds:     kinds,
-		Feature:      wire.GetFeature(),
-		Category:     wire.GetCategory(),
-		Themes:       themes,
-		Readers:      newReaders(wire.GetReaders()),
-		NoteTypes:    noteTypes,
-		FrameOrigins: wire.GetFrameOrigins(),
-		Commands:     newCommands(wire.GetCommands()),
-		Slots:        newSlots(wire.GetSlots()),
-		Handlers:     newHandlers(wire.GetHandlers()),
-		Triggers:     newTriggers(wire.GetTriggers()),
-		TextKinds:    newTextKinds(wire.GetTextKinds()),
-		Listeners:    newListeners(wire.GetListeners()),
+		TabKinds:        kinds,
+		Feature:         wire.GetFeature(),
+		Category:        wire.GetCategory(),
+		Themes:          themes,
+		Readers:         newReaders(wire.GetReaders()),
+		NoteTypes:       noteTypes,
+		FrameOrigins:    wire.GetFrameOrigins(),
+		Commands:        newCommands(wire.GetCommands()),
+		Slots:           newSlots(wire.GetSlots()),
+		Handlers:        newHandlers(wire.GetHandlers()),
+		Triggers:        newTriggers(wire.GetTriggers()),
+		TextKinds:       newTextKinds(wire.GetTextKinds()),
+		Listeners:       newListeners(wire.GetListeners()),
+		ConnectionTypes: connectionTypes,
 	}, nil
 }
 

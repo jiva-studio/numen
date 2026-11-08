@@ -72,6 +72,45 @@ message ManifestContributes {
   repeated ManifestTextKind text_kinds = 18;
   // listeners are the ports the host binds for the plugin.
   repeated ManifestListener listeners = 14;
+  // connection_types are the kinds of connection the plugin provides.
+  repeated ManifestConnectionType connection_types = 19;
+}
+
+// ManifestConnectionType is a kind of connection a plugin provides: a service or a program the core
+// sends requests to for the plugin. The id of the type everywhere else is the plugin id, a slash and
+// this id.
+message ManifestConnectionType {
+  // id is the local part of the type id; lowercase words joined by hyphens.
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  // operations are the calls the type supports, such as "complete" and "embed". Lowercase words.
+  repeated string operations = 4;
+  // fields are the values a connection of the type holds, in the order the form shows them.
+  repeated ManifestConnectionField fields = 5;
+}
+
+// ManifestConnectionField is one value a connection of a type holds.
+message ManifestConnectionField {
+  // key is the name the value is stored and sent under; letters and digits, starting with a letter.
+  // The key parallelRequests is read by the core as the limit of calls running at once.
+  string key = 1;
+  // type is string, number, boolean, enum, file or secret. A secret is kept in the key store.
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  google.protobuf.Value default = 5;
+  // fixed_value is a value every connection of the type has. It is not stored and not edited.
+  optional string fixed_value = 6;
+  bool is_required = 7 [json_name = "required"];
+  // is_address marks the one string field that holds the address of the service. A change of it
+  // clears the secret fields of the connection.
+  bool is_address = 8;
+  // options are the values of an enum field.
+  google.protobuf.ListValue options = 9;
+  optional double min = 10;
+  optional double max = 11;
+  optional double step = 12;
 }
 
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application

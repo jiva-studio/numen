@@ -30,19 +30,20 @@ type TabKind struct {
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
 type Contributes struct {
-	TabKinds     []TabKind
-	Feature      string
-	Category     string
-	Themes       []Theme
-	Readers      []Reader
-	NoteTypes    []NoteType
-	FrameOrigins []string
-	Commands     []Command
-	Slots        []SlotEntry
-	Handlers     []Handler
-	Triggers     []Trigger
-	TextKinds    []TextKind
-	Listeners    []Listener
+	TabKinds        []TabKind
+	Feature         string
+	Category        string
+	Themes          []Theme
+	Readers         []Reader
+	NoteTypes       []NoteType
+	FrameOrigins    []string
+	Commands        []Command
+	Slots           []SlotEntry
+	Handlers        []Handler
+	Triggers        []Trigger
+	TextKinds       []TextKind
+	Listeners       []Listener
+	ConnectionTypes []ConnectionType
 }
 
 // TextKind is the readable name of one kind of text version the plugin makes.
@@ -105,6 +106,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listTriggerIssues()...)
 	issues = append(issues, listTextKindIssues(c.TextKinds)...)
 	issues = append(issues, m.listListenerIssues()...)
+	issues = append(issues, m.listConnectionTypeIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

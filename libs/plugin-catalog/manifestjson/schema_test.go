@@ -53,7 +53,12 @@ const everyFieldManifest = `{
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}],
-		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}]}
+		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}],
+		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["complete"], "fields": [
+			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},
+			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
+			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
+			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {
