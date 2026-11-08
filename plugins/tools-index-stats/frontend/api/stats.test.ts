@@ -26,7 +26,6 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
         { kind: 'epub', sources: 5, chunks: 2000 },
       ],
       model: 'bge-m3',
-      recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
       dimensions: 1024,
       profile: 'balanced',
       threads: 4,

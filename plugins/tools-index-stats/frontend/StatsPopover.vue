@@ -51,9 +51,7 @@ function onClose() {
         :title="row.hint || undefined"
       >
         <dt class="index-popover__label">{{ row.label }}</dt>
-        <dd class="index-popover__value" :title="row.id === 'recipe' ? row.value : undefined">
-          {{ row.value }}
-        </dd>
+        <dd class="index-popover__value">{{ row.value }}</dd>
       </div>
     </dl>
   </div>
