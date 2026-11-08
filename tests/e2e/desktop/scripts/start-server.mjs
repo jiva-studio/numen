@@ -204,7 +204,7 @@ function cleanup() {
 // host and answers every other host 404, so a page a test imports is never fetched from the network.
 // A test can give one address a text of its own: the file below maps the address to the text, and
 // the proxy puts that text in the first paragraph of the page of the host.
-const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
+const PAGES = new Map([['numen.dev', path.join(fixturesDir, 'article.html')]])
 const pageTextsFile = path.join(os.tmpdir(), `numen-e2e-page-texts-${port}.json`)
 fs.rmSync(pageTextsFile, { force: true })
 const readPageText = (address) => {

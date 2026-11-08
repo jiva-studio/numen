@@ -8,7 +8,7 @@ defineParameterType({
 
 defineParameterType({
   name: 'reference',
-  regexp: /at|titled/,
+  regexp: /at|titled|for the web address/,
   transformer: (reference: string) => reference,
 })
 

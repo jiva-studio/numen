@@ -1,7 +1,7 @@
 /** The person at a tab, whatever it holds: closing it, finding the one in front, its position, what it shows. */
 import { expect, type Locator } from 'playwright/test'
 import { getNoteTab, getTabName, revealTreeRow } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertSingleTab, getEscaped, getStem, getTitlePattern, parseReference } from './rules.js'
+import { assertSingleTab, getAddressTitle, getEscaped, getStem, getTitlePattern, parseReference } from './rules.js'
 import type { Scenario } from './scenario.js'
 import { expectTabAt, openTabAt } from './tab-position.js'
 
@@ -14,14 +14,16 @@ export class TabDriver {
       if (name.endsWith('.md')) return getNoteTab(page, name)
       return page.getByRole('tab', { name: new RegExp(`^${getEscaped(getStem(name))}`, 'i') })
     }
-    const tabs = page.getByRole('tab', { name: getTitlePattern(name) })
+    const tabs = page.getByRole('tab', { name: getTitlePattern(this.getTitle(reference, name)) })
     await expect(tabs.first()).toBeVisible()
     assertSingleTab(name, await tabs.count())
     return tabs
   }
 
   private getTitle(reference: string, name: string): string {
-    if (parseReference(reference, name).reference === 'titled') return name
+    const kind = parseReference(reference, name).reference
+    if (kind === 'titled') return name
+    if (kind === 'for the web address') return getAddressTitle(name)
     return name.endsWith('.md') ? getTabName(name) : getStem(name)
   }
 

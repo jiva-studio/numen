@@ -4,7 +4,7 @@ import path from 'node:path'
 export type TabKind = 'PDF Reader' | 'EPUB Reader' | 'Audio Player'
 
 export interface Reference {
-  reference: 'at' | 'titled'
+  reference: 'at' | 'titled' | 'for the web address'
   name: string
 }
 
@@ -18,12 +18,14 @@ export const getStem = (file: string): string => path.basename(file).replace(/\.
 
 export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** A title names a tab by its end: the tab of a link is titled by its whole address, and a person names its last words. */
-export const getTitlePattern = (title: string): RegExp => new RegExp(`${getEscaped(title)}( Close |$)`)
+export const getTitlePattern = (title: string): RegExp => new RegExp(`^${getEscaped(title)}( Close |$)`)
+
+/** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
+export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 
 export const parseReference = (reference: string, name: string): Reference => {
-  if (reference !== 'at' && reference !== 'titled') {
-    throw new Error(`"${reference}" does not name a tab or a note: use "at" or "titled"`)
+  if (reference !== 'at' && reference !== 'titled' && reference !== 'for the web address') {
+    throw new Error(`"${reference}" does not name a tab or a note: use "at", "titled" or "for the web address"`)
   }
   return { reference, name }
 }

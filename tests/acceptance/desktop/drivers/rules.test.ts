@@ -3,6 +3,7 @@ import {
   assertApplication,
   assertPosition,
   assertSingleTab,
+  getAddressTitle,
   getStem,
   getTitlePattern,
   getPaletteField,
@@ -14,27 +15,37 @@ import {
 } from './rules.js'
 
 describe('parseReference', () => {
-  it('takes at and titled', () => {
+  it('takes at, titled and for the web address', () => {
     expect(parseReference('at', 'notes/A.md')).toEqual({ reference: 'at', name: 'notes/A.md' })
     expect(parseReference('titled', 'A')).toEqual({ reference: 'titled', name: 'A' })
+    expect(parseReference('for the web address', 'http://a.test/')).toEqual({
+      reference: 'for the web address',
+      name: 'http://a.test/',
+    })
   })
 
   it('throws for any other word', () => {
     expect(() => parseReference('named', 'A')).toThrow(
-      '"named" does not name a tab or a note: use "at" or "titled"',
+      '"named" does not name a tab or a note: use "at", "titled" or "for the web address"',
     )
   })
 })
 
+describe('getAddressTitle', () => {
+  it('replaces the characters a file name cannot have', () => {
+    expect(getAddressTitle('http://numen.dev/one')).toBe('http---numen.dev-one')
+    expect(getAddressTitle('https://www.youtube.com/watch?v=tidalmill01')).toBe('https---www.youtube.com-watch-v=tidalmill01')
+  })
+})
+
 describe('getTitlePattern', () => {
-  it('matches a title and the end of a longer title, and the name of a tab with its close button', () => {
+  it('matches a title, and the name of a tab with its close button', () => {
     expect(getTitlePattern('rance').test('rance')).toBe(true)
-    expect(getTitlePattern('rance').test('http---a.test-history-rance')).toBe(true)
     expect(getTitlePattern('rance').test('rance Close rance')).toBe(true)
   })
 
-  it('does not match a title that goes on after the words', () => {
-    expect(getTitlePattern('rance').test('http---a.test-history-rance-part=2')).toBe(false)
+  it('does not match a title that starts or goes on beyond the words', () => {
+    expect(getTitlePattern('rance').test('http---a.test-history-rance')).toBe(false)
     expect(getTitlePattern('rance').test('rances')).toBe(false)
   })
 

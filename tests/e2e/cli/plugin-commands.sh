@@ -30,7 +30,7 @@ export HTTP_PROXY="http://127.0.0.1:$pages_port" NO_PROXY=127.0.0.1
 node -e '
 const http = require("node:http"), fs = require("node:fs")
 http.createServer((req, res) => {
-  if (new URL(req.url, "http://" + req.headers.host).hostname !== "tidal-mills.numen.test") return res.writeHead(404).end()
+  if (new URL(req.url, "http://" + req.headers.host).hostname !== "numen.dev") return res.writeHead(404).end()
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(fs.readFileSync(process.argv[1]))
 }).listen(Number(process.argv[2]), "127.0.0.1")
 ' "$repo/tests/e2e/desktop/fixtures/article.html" "$pages_port" &
@@ -56,7 +56,7 @@ cli vault add "$work/vault" --name talks >/dev/null
 expect "numen-cli transcribe <vault> <file>" help
 expect "transcribed talks/lecture.wav" transcribe talks talks/lecture.wav
 expect "recognised 1 pages of books/flywheel.pdf" recognise talks books/flywheel.pdf
-expect "its text fetched" import talks --address http://tidal-mills.numen.test/
+expect "its text fetched" import talks --address http://numen.dev/
 expect "proofread 1 lines of talks/lecture.wav" proofread talks talks/lecture.wav
 expect "3 sources: 3 read" scan talks
 expect "Mock transcribed text for automated test." search talks "transcribed text"
