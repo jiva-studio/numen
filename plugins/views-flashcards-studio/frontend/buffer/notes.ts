@@ -164,7 +164,8 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
   /** Replaces the text of a tab, and writes it once the edits pause. */
   function setBody(id: string, body: string): void {
     const tab = tabs.get(id)
-    if (!tab) return
+    // An edit before the first read is refused: the read would replace it.
+    if (!tab || tab.state === 'loading') return
     tab.body = body
     if (tab.state === 'clean' || tab.state === 'saving') {
       tab.state = 'unsaved'
