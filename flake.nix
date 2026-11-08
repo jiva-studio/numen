@@ -6,8 +6,13 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+  # Node comes from a newer package set than the rest: the tools below are pinned to the
+  # versions CI runs, and the nixpkgs that has them has Node 22.23.2, while .node-version
+  # asks for 22.23.4. Move this revision with .node-version; the other tools stay on nixpkgs.
+  inputs.nixpkgs-node.url = "github:NixOS/nixpkgs/f9a75f41be3a74eab55d3a7679d34ad6cc0da977";
+
   outputs =
-    { self, nixpkgs }:
+    { self, nixpkgs, nixpkgs-node }:
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" ];
@@ -103,7 +108,7 @@
         in
         lib.mapAttrsToList requireVersion {
           inherit go golangci-lint protoc-gen-connect-go;
-          node = pkgs.nodejs_22;
+          node = nixpkgs-node.legacyPackages.${pkgs.stdenv.hostPlatform.system}.nodejs_22;
           inherit (pkgs) buf protoc-gen-go;
         };
     in
