@@ -55,26 +55,10 @@ func TestGetExecutableProgramNameHandlesEmptyStem(t *testing.T) {
 func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 	s := &agentServer{
 		commands: map[string][]string{
-			"acp:gemini": {"/custom/gemini"},
+			"acp:gemini":  {"/custom/gemini"},
 			"acp:aliased": {"/opt/bin/codex-acp"},
 		},
-		discover: func() []acpAgent {
-			discovered := discoverACPAgentsWithLookup(func(binary string) (string, bool) {
-				switch binary {
-				case "gemini":
-					return "/usr/local/bin/gemini", true
-				case "codex-acp":
-					return "/opt/bin/codex-acp", true
-				case "qwen":
-					return "/usr/local/bin/qwen", true
-				}
-				return "", false
-			})
-			return append([]acpAgent{
-				{Program: "empty-a", Title: "Empty A", Command: nil},
-				{Program: "empty-b", Title: "Empty B", Command: nil},
-			}, discovered...)
-		},
+		lookPath: fakePath{"gemini": "/usr/local/bin/gemini", "codex-acp": "/opt/bin/codex-acp", "qwen": "/usr/local/bin/qwen"}.lookPath,
 	}
 	s.applyConfig(map[string]string{
 		"executablePath": "/opt/bin/codex-acp\n/usr/bin/unknown-acp",
@@ -84,18 +68,18 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 	for _, a := range agents {
 		names = append(names, a.Program)
 	}
-	wantNames := []string{"aliased", "empty-a", "empty-b", "gemini", "qwen", "unknown-acp"}
+	wantNames := []string{"aliased", "gemini", "qwen", "unknown-acp"}
 	if !slices.Equal(names, wantNames) {
 		t.Fatalf("got programs %v, want %v (agents: %+v)", names, wantNames, agents)
 	}
-	if !slices.Equal(agents[3].Command, []string{"/custom/gemini"}) {
-		t.Errorf("gemini command = %v, want [/custom/gemini]", agents[3].Command)
+	if !slices.Equal(agents[1].Command, []string{"/custom/gemini"}) {
+		t.Errorf("gemini command = %v, want [/custom/gemini]", agents[1].Command)
 	}
-	if !slices.Equal(agents[4].Command, []string{"/usr/local/bin/qwen", "--acp"}) {
-		t.Errorf("qwen command = %v, want [/usr/local/bin/qwen --acp]", agents[4].Command)
+	if !slices.Equal(agents[2].Command, []string{"/usr/local/bin/qwen", "--acp"}) {
+		t.Errorf("qwen command = %v, want [/usr/local/bin/qwen --acp]", agents[2].Command)
 	}
-	if agents[5].Title != "unknown-acp" || !slices.Equal(agents[5].Command, []string{"/usr/bin/unknown-acp"}) {
-		t.Errorf("unknown-acp = %+v", agents[5])
+	if agents[3].Title != "unknown-acp" || !slices.Equal(agents[3].Command, []string{"/usr/bin/unknown-acp"}) {
+		t.Errorf("unknown-acp = %+v", agents[3])
 	}
 
 	s2 := &agentServer{}
@@ -107,23 +91,4 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 		agents2[1].Program != "gemini" || !slices.Equal(agents2[1].Command, []string{"/usr/bin/gemini", "--acp"}) {
 		t.Errorf("got %+v", agents2)
 	}
-}
-
-func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []acpAgent {
-	var agents []acpAgent
-	for _, candidate := range getKnownACPAgents() {
-		binaryPath, ok := lookup(candidate.binary)
-		if !ok || binaryPath == "" {
-			continue
-		}
-		command := make([]string, 0, 1+len(candidate.args))
-		command = append(command, binaryPath)
-		command = append(command, candidate.args...)
-		agents = append(agents, acpAgent{
-			Program: candidate.program,
-			Title:   candidate.title,
-			Command: command,
-		})
-	}
-	return agents
 }

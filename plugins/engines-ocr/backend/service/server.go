@@ -153,7 +153,7 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 		return err
 	}
 	agentTools := NewTools(recognitions)
-	commands, err := newCommands(agentTools, h)
+	commands, err := newCommands(agentTools)
 	if err != nil {
 		return err
 	}
@@ -171,12 +171,9 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	return nil
 }
 
-func newCommands(agentTools *Tools, h recognition.Host) (*command.Registry, error) {
+func newCommands(agentTools *Tools) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("app:file.createText", newRecogniseCommand(agentTools)); err != nil {
-		return nil, err
-	}
-	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
 		return nil, err
 	}
 	return commands, nil

@@ -90,7 +90,7 @@ func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
-	commands, err := newCommands(s.tools, recognition.Host{Vault: s.vault, Store: s.vault.Store(), Texts: s.texts, Queue: s.queue})
+	commands, err := newCommands(s.tools)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,8 +166,8 @@ func TestTheHandlerOfCreateTextFailsBeforeAnyTask(t *testing.T) {
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("the tasks %+v are shown for a file that is not there", tasks)
 	}
-	if _, err := s.runHandlerWithin(t, command.Request{Command: "app:version.delete", Path: scanPath}); !errors.Is(err, command.ErrBadArguments) {
-		t.Errorf("a deletion naming no version answered %v, want ErrBadArguments", err)
+	if _, err := s.runHandlerWithin(t, command.Request{Command: "app:version.delete", Path: scanPath}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("Delete text, which the core runs, answered %v, want ErrUnknownCommand", err)
 	}
 	if _, err := s.runHandlerWithin(t, command.Request{Command: "recognition.create", Path: scanPath}); !errors.Is(err, command.ErrUnknownCommand) {
 		t.Errorf("the command of before answered %v, want ErrUnknownCommand", err)

@@ -148,13 +148,14 @@ func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	}
 
 	result, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{
-		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"},
+		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"}, ItemID: "audio",
 	})
 	if err != nil || result.Message != "made it" || result.OpenedPath != "Made.md" {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 	request := plugin.received[0]
-	if request.GetCommand() != "make" || request.GetPath() != "a.pdf" || request.GetArguments()["title"] != "T" {
+	if request.GetCommand() != "make" || request.GetPath() != "a.pdf" || request.GetArguments()["title"] != "T" ||
+		request.GetItemId() != "audio" {
 		t.Errorf("the plugin received %v", request)
 	}
 	if host.acquired != 1 || host.released != 1 {

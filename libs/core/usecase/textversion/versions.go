@@ -172,6 +172,37 @@ func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, 
 	return nil
 }
 
+// DeleteVersion deletes the version of the file at the path, whichever plugin made it: its record and
+// its file in the folder of that plugin. The listener is notified that the file's versions changed. A version
+// the file does not have is ErrInvalidVersion.
+func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID) error {
+	versions, err := u.getVersions(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	index := indexOf(versions, id)
+	if index < 0 {
+		return fmt.Errorf("%w: %s has no version %s", textport.ErrInvalidVersion, path, id)
+	}
+	version := versions[index]
+	repo, err := u.repos.Open(v)
+	if err != nil {
+		return err
+	}
+	if err := repo.RemoveVersion(ctx, path, id); err != nil {
+		return fmt.Errorf("remove version %s of %s: %w", id, path, err)
+	}
+	files, err := u.files.Open(v)
+	if err != nil {
+		return err
+	}
+	if err := files.DeleteTextFile(ctx, version.PluginID, version.File); err != nil {
+		return fmt.Errorf("delete the file %s of %s: %w", version.File, version.PluginID, err)
+	}
+	u.reportChanged(ctx, v, path)
+	return nil
+}
+
 // Listing is the versions of a file and the one that is live. Live is empty
 // where none is.
 type Listing struct {

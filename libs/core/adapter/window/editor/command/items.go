@@ -16,10 +16,12 @@ import (
 )
 
 // VersionItems lists the text versions of a file a command with items offers, and runs the command
-// over one of them.
+// over one of them; it lists every version of a file and deletes one for Delete text.
 type VersionItems interface {
 	ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry) ([]textversion.VersionItem, error)
 	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry, version domain.TextVersionID) (plugincommand.Result, error)
+	ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]textversion.VersionItem, error)
+	DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error
 }
 
 // errNoVersions is a command with items run where the window has no text versions.
@@ -45,6 +47,9 @@ func (h *Handler) ListCommandItems(
 }
 
 func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID string) *v1.CommandItemList {
+	if isDeleteText(pluginID, commandID) {
+		return h.listEveryVersion(ctx, path)
+	}
 	entry, found := h.findEntry(pluginID, commandID)
 	if !found {
 		return newItemsFailure(fmt.Errorf("%w: %s of %s", plugincommand.ErrUnknownCommand, commandID, pluginID))
@@ -59,6 +64,21 @@ func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID strin
 	if err != nil {
 		return newItemsFailure(err)
 	}
+	return newVersionList(versions)
+}
+
+func (h *Handler) listEveryVersion(ctx context.Context, path string) *v1.CommandItemList {
+	if h.versions == nil {
+		return newItemsFailure(errNoVersions)
+	}
+	versions, err := h.versions.ListEveryVersion(ctx, h.vaults.GetCurrentVault(), path)
+	if err != nil {
+		return newItemsFailure(err)
+	}
+	return newVersionList(versions)
+}
+
+func newVersionList(versions []textversion.VersionItem) *v1.CommandItemList {
 	items := make([]*v1.CommandItem, 0, len(versions))
 	for _, one := range versions {
 		items = append(items, &v1.CommandItem{Id: string(one.Version), Title: getVersionTitle(one)})
@@ -66,14 +86,34 @@ func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID strin
 	return &v1.CommandItemList{Items: items}
 }
 
+func isDeleteText(pluginID, command string) bool {
+	return pluginID == "" && command == textversion.DeleteCommand
+}
+
+func (h *Handler) deleteVersion(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, error) {
+	switch {
+	case msg.GetItemId() == "":
+		return plugincommand.Result{}, fmt.Errorf("%w: %s deletes the version its item names", plugincommand.ErrBadArguments, msg.GetCommand())
+	case h.versions == nil:
+		return plugincommand.Result{}, errNoVersions
+	}
+	err := h.versions.DeleteVersion(ctx, h.vaults.GetCurrentVault(), msg.GetPath(), domain.TextVersionID(msg.GetItemId()))
+	if errors.Is(err, textversion.ErrInvalidVersion) {
+		return plugincommand.Result{}, fmt.Errorf("%w: %w", plugincommand.ErrBadArguments, err)
+	}
+	return plugincommand.Result{}, err
+}
+
 func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, bool, error) {
+	if isDeleteText(msg.GetPluginId(), msg.GetCommand()) {
+		result, err := h.deleteVersion(ctx, msg)
+		return result, true, err
+	}
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
 	hasItems := found && plugincommand.HasItems(entry.Command)
 	switch {
-	case !hasItems && msg.GetItemId() == "":
-		return plugincommand.Result{}, false, nil
 	case !hasItems:
-		return plugincommand.Result{}, true, fmt.Errorf("%w: %s offers no item", plugincommand.ErrBadArguments, msg.GetCommand())
+		return plugincommand.Result{}, false, nil
 	case msg.GetItemId() == "":
 		return plugincommand.Result{}, true, fmt.Errorf("%w: %s runs over an item it offers", plugincommand.ErrBadArguments, msg.GetCommand())
 	case h.versions == nil:

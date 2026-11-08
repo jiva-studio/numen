@@ -148,7 +148,7 @@ func (c Commands) RunCommand(
 	defer func() { err = errors.Join(err, lease.Close()) }()
 
 	res, err := client.RunCommand(ctx, connect.NewRequest(&v1.RunCommandRequest{
-		Command: call.Command, Path: call.Path, Arguments: call.Arguments,
+		Command: call.Command, Path: call.Path, Arguments: call.Arguments, ItemId: call.ItemID,
 	}))
 	if err != nil {
 		return pluginport.PluginCommandResult{}, readCommandError(ctx, call.PluginID, err)

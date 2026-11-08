@@ -111,7 +111,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
 		OpenFileMenuFn:           cfg.openFileMenu,
 		OpenTriggersFn: func() *trigger.Triggers {
-			return cfg.openTriggers(settings.NewGet(cfg.ReadSettings(), nil, cfg.Plugins(), cfg.listAppSettings))
+			return cfg.openTriggers()
 		},
 		OpenPluginFileFn: func() *file.OpenPluginFile {
 			return file.NewOpenPluginFile(derivedfile.PluginStores{Options: cfg.vaultOptions()})

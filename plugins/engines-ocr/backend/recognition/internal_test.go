@@ -536,3 +536,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 		t.Fatalf("turn release + report error returned %+v, %v", res, err)
 	}
 }
+
+func (s *stubStore) With(domain.VaultID) host.Store { return s }
+
+func (t *stubTexts) With(domain.VaultID) host.Texts { return t }

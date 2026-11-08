@@ -114,10 +114,6 @@ type Host struct {
 	listeners              map[string]map[string]listenerBinding
 	listenerPorts          map[string]map[string]int
 	reportedTargetFailures map[string]struct{}
-	lookPath               func(string) (string, error)
-	acpMu                  sync.Mutex
-	acpOptions             []pluginport.PluginSettingOption
-	isACPDiscovered        bool
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -162,7 +158,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listeners:              make(map[string]map[string]listenerBinding),
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
-		lookPath:               exec.LookPath,
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -1081,7 +1076,6 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		}
 	}
 	h.mu.Unlock()
-	h.forgetDiscoveredACPOptions()
 	h.fillGeneratedSettings()
 	h.syncAllListeners(context.Background())
 }
@@ -1205,7 +1199,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		h.addDiscoveredExecutable(result, rawStored, p.Manifest)
 	}
 	if result == nil {
 		result = map[string]any{}
@@ -1217,19 +1210,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		}
 	}
 	return result
-}
-
-func (h *Host) addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
-	if _, hasStored := stored[keyExecutablePath]; hasStored || !hasACPPathsSetting(manifest) {
-		return
-	}
-	if paths := joinOptionValues(h.getDiscoveredACPOptions()); paths != "" {
-		result[keyExecutablePath] = paths
-	}
-}
-
-func hasACPPathsSetting(manifest pluginport.PluginManifest) bool {
-	return slices.ContainsFunc(manifest.Settings, isACPPathsSetting)
 }
 
 // GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
@@ -1285,7 +1265,6 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 	h.settings[pluginID][key] = value
 	isRequirementChanged := !slices.Equal(before, h.getRequirementIDsLocked(pluginID))
 	h.mu.Unlock()
-	h.forgetDiscoveredACPOptions()
 
 	if isRequirementChanged && key != settingEnabled {
 		if err := h.stopPlugin(ctx, pluginID); err != nil {
@@ -1444,7 +1423,7 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
 	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
-		defVal, options := resolveSettingDefaultAndOptions(s, h.getDiscoveredACPOptions)
+		defVal, options := s.Default, s.Options
 		defJSON := ""
 		if defVal != nil {
 			if b, err := json.Marshal(defVal); err == nil {
@@ -1506,96 +1485,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 		})
 	}
 	return result
-}
-
-func resolveSettingDefaultAndOptions(
-	s pluginport.PluginManifestSetting, discover func() []pluginport.PluginSettingOption,
-) (any, pluginport.PluginSettingOptions) {
-	if !isACPPathsSetting(s) {
-		return s.Default, s.Options
-	}
-	discovered := discover()
-	options := s.Options
-	if len(options) == 0 {
-		options = discovered
-	}
-	if paths := joinOptionValues(discovered); s.Default == "" && paths != "" {
-		return paths, options
-	}
-	return s.Default, options
-}
-
-type acpExecutableCandidate struct {
-	title  string
-	binary string
-	arg    string
-}
-
-const (
-	acpSubcommand     = "acp"
-	acpFlag           = "--acp"
-	keyExecutablePath = "executablePath"
-)
-
-func getAcpExecutableCandidates() []acpExecutableCandidate {
-	return []acpExecutableCandidate{
-		{title: "Claude Code (ACP)", binary: "claude-code-acp"},
-		{title: "Codex (ACP)", binary: "codex-acp"},
-		{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
-		{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
-		{title: "Goose", binary: "goose", arg: acpSubcommand},
-		{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
-		{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
-		{title: "Qwen Code", binary: "qwen", arg: acpFlag},
-	}
-}
-
-func isACPPathsSetting(s pluginport.PluginManifestSetting) bool {
-	return s.Key == keyExecutablePath && s.Multiple
-}
-
-func joinOptionValues(options []pluginport.PluginSettingOption) string {
-	paths := make([]string, 0, len(options))
-	for _, option := range options {
-		paths = append(paths, option.Value)
-	}
-	return strings.Join(paths, "\n")
-}
-
-func (h *Host) getDiscoveredACPOptions() []pluginport.PluginSettingOption {
-	h.acpMu.Lock()
-	defer h.acpMu.Unlock()
-	if !h.isACPDiscovered {
-		h.acpOptions = findACPOptions(h.lookPath)
-		h.isACPDiscovered = true
-	}
-	return slices.Clone(h.acpOptions)
-}
-
-func (h *Host) forgetDiscoveredACPOptions() {
-	h.acpMu.Lock()
-	h.isACPDiscovered = false
-	h.acpMu.Unlock()
-}
-
-func findACPOptions(lookPath func(string) (string, error)) []pluginport.PluginSettingOption {
-	var options []pluginport.PluginSettingOption
-	for _, candidate := range getAcpExecutableCandidates() {
-		binaryPath, err := lookPath(candidate.binary)
-		if err != nil || binaryPath == "" {
-			continue
-		}
-		detail := binaryPath
-		if candidate.arg != "" {
-			detail = binaryPath + " " + candidate.arg
-		}
-		options = append(options, pluginport.PluginSettingOption{
-			Value:  binaryPath,
-			Title:  candidate.title,
-			Detail: detail,
-		})
-	}
-	return options
 }
 
 func formatPluginSettings(rawSettings map[string]any) map[string]string {

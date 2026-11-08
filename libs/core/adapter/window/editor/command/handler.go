@@ -65,7 +65,8 @@ func (h *Handler) ListCommands(
 	}), nil
 }
 
-// RunPluginCommand runs one of them, a command with items over the item its argument names. A call
+// RunPluginCommand runs one of them: a command with version items over the version its item_id names,
+// and any other command with the item_id passed to its plugin. A call
 // that is not a command, matches none, fails, or is routed to no plugin is answered with an error
 // code and a user-readable message.
 func (h *Handler) RunPluginCommand(
@@ -78,6 +79,7 @@ func (h *Handler) RunPluginCommand(
 			Command:   r.Msg.GetCommand(),
 			Path:      r.Msg.GetPath(),
 			Arguments: r.Msg.GetArguments(),
+			ItemID:    r.Msg.GetItemId(),
 		})
 	}
 	if err != nil {

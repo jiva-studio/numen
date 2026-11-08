@@ -22,7 +22,7 @@ func (h *handlingPlugins) ListHandlers() []plugincommand.Entry {
 
 func TestRun_RunsTheHandlerOfASharedCommandInItsPlugin(t *testing.T) {
 	plugins := &handlingPlugins{}
-	commands := plugincommand.NewCommands(plugins, getTypes(), nil)
+	commands := plugincommand.NewCommands(plugins, getTypes(), nil, nil)
 
 	result, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugincommand.Call{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "decks/tides.pdf",
@@ -37,7 +37,7 @@ func TestRun_RunsTheHandlerOfASharedCommandInItsPlugin(t *testing.T) {
 
 func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 	plugins := &handlingPlugins{}
-	commands := plugincommand.NewCommands(plugins, getTypes(), nil)
+	commands := plugincommand.NewCommands(plugins, getTypes(), nil, nil)
 
 	_, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugincommand.Call{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "notes/tides.md",

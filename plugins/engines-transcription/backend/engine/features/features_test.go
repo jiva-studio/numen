@@ -2,13 +2,14 @@ package features
 
 import (
 	"bufio"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"math"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 func tone() []float32 {

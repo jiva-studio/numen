@@ -1,89 +1,38 @@
 package container
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 )
 
-func (c Config) openTriggers(get *settings.Get) *trigger.Triggers {
-	if c.PluginHost == nil || c.SafeMode || get == nil {
+func (c Config) openTriggers() *trigger.Triggers {
+	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
 	return trigger.NewTriggers(
 		commandbridge.Open(c.PluginHost), c.VaultReaders(), c.PluginHost,
 		derivedfile.TriggerRecords{Options: c.vaultOptions(), Folder: coreFolder},
-		func() (map[string]any, error) {
-			current, err := get.Execute()
-			if err != nil {
-				return nil, err
-			}
-			return createTriggerConfig(current.Written, current.App, current.Plugins)
-		},
+		c.getWhenConfig(),
 	)
 }
 
-// configAppOwner is the owner of the settings of the application in the settings file and in config.
-const configAppOwner = "app"
-
-func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
-	var file map[string]any
-	if err := json.Unmarshal([]byte(settingsFile), &file); err != nil {
-		return nil, fmt.Errorf("read the settings file: %w", err)
-	}
-	config := map[string]any{}
-	add := func(owner string, path []string, settings []pluginport.PluginSetting) {
-		for _, one := range settings {
-			value, isWritten := findSettingValue(file[owner], one.Key)
-			if !isWritten && json.Unmarshal([]byte(one.DefaultJSON), &value) != nil {
-				continue
-			}
-			setConfigAt(config, append(append([]string(nil), path...), strings.Split(one.Key, ".")...), value)
-		}
-	}
-	add(configAppOwner, []string{configAppOwner}, app)
-	for _, plugin := range plugins {
-		add(plugin.ID, strings.Split(plugin.ID, "."), plugin.Settings)
-	}
-	return config, nil
+// whenConfig is the settings of the application and of the plugins the host resolved, as when
+// conditions read them.
+type whenConfig struct {
+	config Config
 }
 
-func findSettingValue(owner any, key string) (any, bool) {
-	if values, isObject := owner.(map[string]any); isObject {
-		if value, found := values[key]; found {
-			return value, true
-		}
-	}
-	current := owner
-	for _, part := range strings.Split(key, ".") {
-		level, isObject := current.(map[string]any)
-		if !isObject {
-			return nil, false
-		}
-		next, found := level[part]
-		if !found {
-			return nil, false
-		}
-		current = next
-	}
-	return current, true
+func (c Config) getWhenConfig() whenConfig {
+	return whenConfig{config: c}
 }
 
-func setConfigAt(config map[string]any, path []string, value any) {
-	level := config
-	for _, part := range path[:len(path)-1] {
-		next, ok := level[part].(map[string]any)
-		if !ok {
-			next = map[string]any{}
-			level[part] = next
-		}
-		level = next
+// GetWhenConfig returns the config built from the settings the host resolved.
+func (w whenConfig) GetWhenConfig() map[string]any {
+	var plugins []pluginport.PluginInfo
+	if w.config.PluginHost != nil {
+		plugins = w.config.PluginHost.GetPluginInfos()
 	}
-	level[path[len(path)-1]] = value
+	return pluginport.NewWhenConfig(w.config.listAppSettings(), plugins)
 }

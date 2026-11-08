@@ -119,3 +119,18 @@ func TestAConditionOverAValueNotGivenIsUnknown(t *testing.T) {
 		t.Errorf("false whatever the window = %v, want false", got)
 	}
 }
+
+func TestAConditionIsCompiledOnceForItsText(t *testing.T) {
+	const text = "target.isNote && !target.versions.exists(v, v.kind == 'recognition' && v.isLive)"
+	parse(t, text)
+
+	allocations := testing.AllocsPerRun(20, func() {
+		if _, err := when.Parse(text); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	if allocations != 0 {
+		t.Errorf("reading a condition read before allocates %v times, want it taken as compiled", allocations)
+	}
+}

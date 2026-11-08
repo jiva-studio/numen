@@ -11,7 +11,8 @@ import (
 type agentServer struct {
 	agentrun.Unimplemented
 	acpAgents func() []acpAgent
-	discover  func() []acpAgent
+	lookPath  func(string) (string, error)
+	found     []acpAgent
 	acpModels *cache.Cache[acpListing]
 
 	mu              sync.RWMutex
@@ -32,4 +33,5 @@ func (s *agentServer) applyConfig(values map[string]string) {
 		}
 		s.executablePaths = paths
 	}
+	s.found = findACPAgents(s.lookPath)
 }

@@ -27,7 +27,7 @@ func TestARunOfAPassEndedPartWayIsNotRunAgain(t *testing.T) {
 	vault := newMemoryVault(map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b"})
 	ran := &plugins{triggers: []pluginport.PluginTriggerEntry{getExtractOnAdd()}, failing: map[string]bool{}}
 	record := &memoryRecord{}
-	config := func() (map[string]any, error) { return map[string]any{}, nil }
+	config := sceneConfig{s: &scene{config: map[string]any{}}}
 	ctx, cancel := context.WithCancel(t.Context())
 	first := trigger.NewTriggers(closingPlugins{plugins: ran, cancel: cancel}, readers{vault}, types{}, record, config)
 	if err := first.Execute(ctx, domain.Vault{ID: "v1"}); err == nil {

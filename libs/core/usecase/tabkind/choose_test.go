@@ -39,7 +39,7 @@ func getKinds() declared {
 }
 
 func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
-	choose := tabkind.NewChoose(getKinds(), notes{})
+	choose := tabkind.NewChoose(getKinds(), notes{}, nil)
 
 	cases := []struct {
 		name       string
@@ -61,7 +61,7 @@ func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
 }
 
 func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
-	choose := tabkind.NewChoose(declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, notes{})
+	choose := tabkind.NewChoose(declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, notes{}, nil)
 
 	if got := choose.Execute("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
@@ -69,7 +69,21 @@ func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
 }
 
 func TestChoose_ReturnsNoKindWithoutPlugins(t *testing.T) {
-	if got := tabkind.NewChoose(nil, nil).Execute("plain.md", domain.TypeNote, nil); got != "" {
+	if got := tabkind.NewChoose(nil, nil, nil).Execute("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
+	}
+}
+
+// settingsOf is the config of when conditions it holds.
+type settingsOf map[string]any
+
+func (s settingsOf) GetWhenConfig() map[string]any { return s }
+
+func TestChoose_ReadsTheSettingsAsConfig(t *testing.T) {
+	kinds := declared{entry("org.example.viewer", "media", "target.isNote && config.org.example.viewer.isOn == true", domain.RankDefault)}
+	on := settingsOf{"org": map[string]any{"example": map[string]any{"viewer": map[string]any{"isOn": true}}}}
+
+	if got := tabkind.NewChoose(kinds, notes{}, on).Execute("talk.md", domain.TypeNote, nil); got != "media" {
+		t.Errorf("kind = %q, want media while its setting holds", got)
 	}
 }
