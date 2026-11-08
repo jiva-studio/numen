@@ -49,7 +49,7 @@ export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpS
   const word = now - was.struck > TYPING ? letter : was.word + letter
   const nextTypeahead: Typeahead = { word, struck: now }
 
-  const first = word[0]!
+  const first = word.charAt(0)
   const drumming = [...word].every((each) => each === first)
   const prefix = (drumming ? first : word).toLowerCase()
   const start = from < 0 ? 0 : from + (drumming ? 1 : 0)

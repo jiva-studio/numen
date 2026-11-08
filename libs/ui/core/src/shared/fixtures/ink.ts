@@ -40,7 +40,7 @@ const readStroke = (
 ): { top: number; bottom: number; run: number } => {
   const data = ctx.getImageData(0, 0, GRAIN, GRAIN).data
   const isInked = (x: number, y: number): boolean =>
-    x >= 0 && y >= 0 && x < GRAIN && y < GRAIN && data[(y * GRAIN + x) * 4 + 3]! > 128
+    x >= 0 && y >= 0 && x < GRAIN && y < GRAIN && (data[(y * GRAIN + x) * 4 + 3] ?? 0) > 128
 
   const inked: [number, number][] = []
   let top = -1

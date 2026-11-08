@@ -42,7 +42,7 @@ export interface WhenCondition {
   evaluatePartial(values: WhenValues): WhenResult
 }
 
-const TYPES: Readonly<Record<string, CelType>> = {
+const TYPES: Readonly<Record<(typeof WHEN_VARIABLES)[number]['type'], CelType>> = {
   bool: CelScalar.BOOL,
   string: CelScalar.STRING,
   map: mapType(CelScalar.STRING, CelScalar.DYN),
@@ -50,7 +50,7 @@ const TYPES: Readonly<Record<string, CelType>> = {
 }
 
 const ENVIRONMENT = celEnv({
-  variables: Object.fromEntries(WHEN_VARIABLES.map((one) => [one.name, TYPES[one.type]!])),
+  variables: Object.fromEntries(WHEN_VARIABLES.map((one) => [one.name, TYPES[one.type]])),
 })
 
 const DECLARED = new Set<string>(WHEN_VARIABLES.map((one) => one.name))

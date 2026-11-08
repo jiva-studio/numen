@@ -32,7 +32,7 @@ export function createMockTabWindow(): MockTabWindow {
 
   return {
     register: <State>(registration: TabKindRegistration<State>) => {
-      kinds.set(registration.kind, registration as TabKindRegistration<unknown>)
+      kinds.set(registration.kind, registration)
     },
     openTab: async (kind, targetPath = '') => {
       const registration = kinds.get(kind)

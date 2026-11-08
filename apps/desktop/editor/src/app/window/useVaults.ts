@@ -6,7 +6,7 @@ import type { VaultList } from '@/entities/vault'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { VaultRef } from '@/features/command-palette'
-import { WORDS } from '@/shared/words'
+import type { WORDS } from '@/shared/words'
 import type { VaultCore } from '../vault'
 
 type Words = typeof WORDS

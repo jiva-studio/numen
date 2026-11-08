@@ -73,7 +73,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     dropTarget.value && 'before' in dropTarget.value ? dropTarget.value.before : null,
   )
 
-  const draggedIds = computed(() => new Set(position.value ? dragging.value!.item : []))
+  const draggedIds = computed(() => new Set(position.value ? (dragging.value?.item ?? []) : []))
 
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
