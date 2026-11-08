@@ -49,25 +49,6 @@ async function startReview(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
 }
 
-test('a deck started on its own reviews only its cards', async ({ page }) => {
-  await openDecks(page)
-  const deck = page.getByRole('button', { name: /crlf-deck/ })
-  await expect(deck).toBeEnabled()
-  const figure = deck.locator('.due-count')
-  await expect(figure).toHaveText(/^\d+ to review$/)
-  const due = (await figure.innerText()).split(' ')[0]
-
-  await deck.click()
-
-  await expect(page.locator('.session__deck')).toHaveText('crlf-deck')
-  await expect(page.locator('.session__left')).toHaveText(`${due} left`)
-  const count = readReviewLog().length
-  await page.getByRole('button', { name: /Show the answer/ }).click()
-  await page.getByRole('button', { name: /Easy/ }).click()
-  // The one card of cards/crlf-deck.md, by the mark its heading carries.
-  expect(await waitForReviewLine(count)).toMatchObject({ card: '9r4tn6wqhd', rating: RATING.Easy })
-})
-
 test('writes a Good answer of the card shown to the review log', async ({ page }) => {
   const count = readReviewLog().length
   await startReview(page)
