@@ -17,8 +17,8 @@ export interface WhenReader {
 export function createWhenReader(): WhenReader {
   const conditions = new Map<string, Result<WhenCondition, string>>()
   const read = (text: string): Result<WhenCondition, string> => {
-    const known = conditions.get(text)
-    if (known) return known
+    const cached = conditions.get(text)
+    if (cached) return cached
     const parsed = parseWhen(text)
     conditions.set(text, parsed)
     return parsed

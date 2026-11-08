@@ -32,8 +32,8 @@ export function createFilesTabDeps(
   id: string,
 ): FilesTabDeps {
   return {
-    openEntry: ({ path, name }) => {
-      if (isNotePath(path) && workspace.syncPath(id, path, getFileStem(name))) return
+    openEntry: ({ path, name, isNote }) => {
+      if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
       workspace.openFile(path, { title: name || path, placement: 'current' })
     },
     onSelectPath: (path, state) => {

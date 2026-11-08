@@ -54,7 +54,7 @@ describe('the icon of a note', () => {
     expect(getNoteIcon('sample')).toBe(getNoteIcon(undefined))
   })
 
-  it('is the icon a plugin registers for the tab kind that opens the note, until it lets go of it', () => {
+  it('is the icon a plugin registers for the tab kind that opens the note, until it unregisters it', () => {
     const icon = {}
     const unregister = registerTabKindIcon('sample', icon)
     expect(getNoteIcon('sample')).toBe(icon)

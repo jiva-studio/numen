@@ -80,10 +80,10 @@ export function useTabMenu(deps: TabMenuDeps) {
   let highlighted: string | null = null
 
   const menu = computed<TabMenu | null>(() => {
-    const shown = slotMenu.target.value
+    const visible = slotMenu.target.value
     const tree = slotMenu.menu.value
-    if (shown === null || tree === null) return null
-    return { tab: shown.tab, at: shown.at, items: tree.items }
+    if (visible === null || tree === null) return null
+    return { tab: visible.tab, at: visible.at, items: tree.items }
   })
 
   const highlight = (id: string | null): void => {
@@ -103,11 +103,11 @@ export function useTabMenu(deps: TabMenuDeps) {
    * Opens the menu on a tab, over the type and properties of its note where the menu reads one first; a tab the
    * slot holds no entry for has none.
    */
-  const open = (tab: string, at: { x: number; y: number }): void => {
+  const open = (tab: string, position: { x: number; y: number }): void => {
     const target = deps.getTabTarget(tab)
     highlight(null)
     const request = (typed: RunTarget) => ({
-      target: { tab, at, target: typed },
+      target: { tab, at: position, target: typed },
       entries: getEntries(typed),
     })
     if (!deps.readNoteKind || !isNotePath(target.path)) {

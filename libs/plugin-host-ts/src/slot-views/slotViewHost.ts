@@ -1,7 +1,7 @@
 /**
  * The view a plugin registered for a slot of the window itself (`titleBar`, `statusBar`), drawn with
  * the stylesheet of its plugin. Such a view is drawn in the window, not in a pane of its own, so the
- * host adds the plugin's stylesheet while the view is drawn and takes it out when the view goes.
+ * host adds the plugin's stylesheet while the view is drawn and removes it with the view.
  * Without a view it draws nothing.
  */
 import {

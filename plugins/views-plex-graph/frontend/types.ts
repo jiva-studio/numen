@@ -42,6 +42,7 @@ export type Neighbour = NoteNeighbour
 export interface Neighbourhood {
   readonly focus: Focus
   readonly focusType: NoteType
+  readonly focusTabKind?: string
   readonly related: readonly Neighbour[]
   readonly connections: readonly Connection[]
 }

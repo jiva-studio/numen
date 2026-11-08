@@ -25,20 +25,25 @@ function createPluginItems(deps: PluginItemsDeps) {
   let generation = 0
 
   /** Stores the items the plugin returned, unless the palette closed or opened since they were requested. */
-  const keep = (asked: number, command: string, items: readonly CommandItem[]): void => {
-    if (asked === generation) itemLists.value = new Map(itemLists.value).set(command, items)
+  const keep = (
+    requestGeneration: number,
+    command: string,
+    items: readonly CommandItem[],
+  ): void => {
+    if (requestGeneration === generation)
+      itemLists.value = new Map(itemLists.value).set(command, items)
   }
 
   /** Asks the plugin for the items of the command over the target of the palette, once. */
   const ask = (command: string): void => {
     if (requests.has(command) || !deps.pluginHost) return
     requests.add(command)
-    const asked = generation
+    const requestGeneration = generation
     const target = deps.getTarget()
     const request = deps.pluginHost.listCommandItems(command, toRunTarget(target))
     runInBackground(
-      request.then((items) => keep(asked, command, items)),
-      () => keep(asked, command, []),
+      request.then((items) => keep(requestGeneration, command, items)),
+      () => keep(requestGeneration, command, []),
     )
   }
 

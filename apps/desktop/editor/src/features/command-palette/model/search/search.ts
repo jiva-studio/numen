@@ -255,8 +255,8 @@ async function executeSearchQuery(
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
   /** The tab kind of the note a hit is in; null for a hit in a file that is no note, or no hit. */
   const findTabKind = (item: string): string | null => {
-    const hit = getHits().get(item)
-    return hit && hit.type !== null ? (hit.tabKind ?? '') : null
+    const searchHit = getHits().get(item)
+    return searchHit && searchHit.type !== null ? (searchHit.tabKind ?? '') : null
   }
 
   /** The path of a hit in a file that is no note, and null for a note. */

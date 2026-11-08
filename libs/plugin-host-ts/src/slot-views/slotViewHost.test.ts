@@ -29,7 +29,7 @@ describe('the host of a slot view', () => {
     expect(mount(SlotViewHost, { props: { view: null } }).element.nodeType).toBe(Node.COMMENT_NODE)
   })
 
-  it('draws the view with the stylesheet of its plugin, and takes the stylesheet out when the view goes', async () => {
+  it('draws the view with the stylesheet of its plugin, and removes the stylesheet when the view is removed', async () => {
     registerPluginStyle(PLUGIN, 'http://127.0.0.1:1/plugins/bar/style.css')
     const view = ref<DeclaredSlotView | null>(createView())
     const wrapper = mount(

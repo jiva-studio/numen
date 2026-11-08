@@ -172,11 +172,11 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
   }
 
   const pick = (id: string): SlotMenuChoice<T> | undefined => {
-    const shown = target.value
+    const openTarget = target.value
     const found = menu.value?.getPick(id)
     close()
-    if (shown === null || !found) return undefined
-    return { ...found, target: shown }
+    if (openTarget === null || !found) return undefined
+    return { ...found, target: openTarget }
   }
 
   watch(

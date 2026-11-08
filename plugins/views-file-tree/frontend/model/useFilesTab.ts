@@ -136,8 +136,8 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
 
   /** The rows of the open menu for its row; for another row, its rows before any list is read. */
   const getMenuItems = (path: string | null) => {
-    const shown = slotMenu.menu.value
-    if (shown && menu.value?.path === path) return shown.items
+    const openMenuTree = slotMenu.menu.value
+    if (openMenuTree && menu.value?.path === path) return openMenuTree.items
     return createSlotMenu(deps.getMenuEntries(getTarget(path)), new Map(), MENU_WORDS).items
   }
 
