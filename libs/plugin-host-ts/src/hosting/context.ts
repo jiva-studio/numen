@@ -23,7 +23,6 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
-import { createFrameServices } from './frameServices'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -328,5 +327,16 @@ export function createPluginContext(
     closeTab: (id: string) => {
       host.closeTab?.(id)
     },
+  }
+}
+
+function createFrameServices(host: PluginContextHost) {
+  const commands = host.getCommands?.()
+  const vaults = host.getVaults?.()
+  const window = host.getWindow?.()
+  return {
+    ...(commands ? { commands } : {}),
+    ...(vaults ? { vaults } : {}),
+    ...(window ? { window } : {}),
   }
 }
