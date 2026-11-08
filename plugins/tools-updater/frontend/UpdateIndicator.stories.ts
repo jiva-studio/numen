@@ -36,9 +36,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const getChip = (canvasElement: HTMLElement): HTMLElement =>
-  canvasElement.querySelector('.update-indicator__trigger') as HTMLElement
-
 const checkAvailable: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = within(canvasElement).getByRole('button')
   await expect(chip.textContent?.trim()).toBe('v2026.11.12')

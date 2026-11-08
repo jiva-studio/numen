@@ -74,7 +74,7 @@ func (c Config) OpenFileText() *textversion.FileText {
 	return text
 }
 
-// SetTextVersionListener sets the listener told of each change of the text versions.
+// SetTextVersionListener sets the listener notified of each change of the text versions.
 func (c Config) SetTextVersionListener(listener textport.VersionListener) {
 	if c.TextVersions != nil {
 		c.TextVersions.SetListener(listener)
