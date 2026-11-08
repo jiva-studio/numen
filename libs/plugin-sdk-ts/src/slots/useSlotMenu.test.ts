@@ -121,7 +121,7 @@ describe('useSlotMenu', () => {
     await vi.advanceTimersByTimeAsync(0)
     events.dispatchEvent(event)
     resolve([WINDOW_ONE])
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
 
     expect(state.menu.value).toBeNull()
   })
@@ -134,7 +134,7 @@ describe('useSlotMenu', () => {
     state.open(() => new Promise((resolve) => (answer = resolve)))
     events.dispatchEvent(createKeyEvent('Escape'))
     answer({ target: TARGET, entries: [MOVE] })
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
 
     expect(state.menu.value).toBeNull()
     expect(listItems).not.toHaveBeenCalled()
@@ -146,7 +146,7 @@ describe('useSlotMenu', () => {
 
     open([MOVE])
     events.dispatchEvent(createKeyEvent('ArrowDown'))
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
     events.dispatchEvent(createKeyEvent('Escape'))
     events.dispatchEvent(new Event('pointerdown'))
 

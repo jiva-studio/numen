@@ -5,7 +5,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import {
-  MENU_HOLD_MS,
   SLOT,
   type SlotCommand,
   type SlotHost,
@@ -330,7 +329,7 @@ describe('an entry of the menu of a tab that offers items', () => {
     commands.listItems.mockReturnValue(new Promise(() => undefined))
 
     menu.open('reef', { x: 4, y: 8 })
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
     vi.useRealTimers()
 
     expect(getItemRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])

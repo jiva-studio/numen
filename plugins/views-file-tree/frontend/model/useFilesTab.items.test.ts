@@ -3,12 +3,7 @@
  * opens, and a run of the command with the choice picked.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  MENU_HOLD_MS,
-  type CommandItem,
-  type CommandTarget,
-  type SlotCommand,
-} from '@numen/plugin-sdk'
+import { type CommandItem, type CommandTarget, type SlotCommand } from '@numen/plugin-sdk'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { createFileTree, ROOT } from './useFileTree'
@@ -173,7 +168,7 @@ describe('the menu of a row whose commands offer items', () => {
     vi.useFakeTimers()
     const { one } = await setUp(async () => CHOICES)
 
-    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await vi.advanceTimersByTimeAsync(150)
 
     expect(one.menu.value?.path).toBe('Scan.pdf')
     expect(getChildren(one)).toStrictEqual([{ text: WORDS.loadingItems, isDisabled: true }])

@@ -7,7 +7,6 @@ import { computed } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const ORCHARD = 'org.example.orchard'
 const LEDGER = 'org.example.ledger'
@@ -101,10 +100,10 @@ describe('the start of one plugin', () => {
 
   it('is over once the plugin did not start within the limit', async () => {
     vi.useFakeTimers()
-    const loader = createLoader({ [LEDGER]: PLUGIN_START_LIMIT_MS * 2 })
+    const loader = createLoader({ [LEDGER]: 30_000 * 2 })
 
     const started = startAll(loader)
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 1_000)
+    await vi.advanceTimersByTimeAsync(30_000 + 1_000)
 
     expect(loader.isPluginStarting(LEDGER)).toBe(false)
     await vi.runAllTimersAsync()

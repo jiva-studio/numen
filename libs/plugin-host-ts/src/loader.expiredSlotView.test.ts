@@ -1,11 +1,10 @@
-/** Review 1687: what a start cancelled at PLUGIN_START_LIMIT_MS registers after the cancel. */
+/** Review 1687: what a start cancelled at 30_000 registers after the cancel. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createPluginHost } from './hosting/host'
 import type { PluginHostDeps } from './hosting/types'
 import { createPluginLoader } from './loader'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const PLUGIN = 'org.example.ledger'
 const MANIFEST = {
@@ -33,17 +32,17 @@ function createWindow(activate: (context: PluginContext) => Promise<void>) {
 
 afterEach(() => vi.useRealTimers())
 
-describe('a start cancelled at PLUGIN_START_LIMIT_MS', () => {
+describe('a start cancelled at 30 s', () => {
   it('draws no title bar view it registers after the cancel', async () => {
     vi.useFakeTimers()
     const { host, loader } = createWindow(async (context) => {
-      await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+      await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
       context.registerSlotView({ id: 'bar', component: {} })
     })
     const bar = host.getSlotView('titleBar')
 
     const started = loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 2_000)
+    await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await started
 
     expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
@@ -57,13 +56,13 @@ describe('a start cancelled at PLUGIN_START_LIMIT_MS', () => {
     const { host, loader } = createWindow(async (context) => {
       starts += 1
       if (starts === 1) {
-        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 2_000))
+        await new Promise((resolve) => setTimeout(resolve, 30_000 + 2_000))
       }
       context.registerSlotView({ id: 'bar', component: {} })
     })
     const bar = host.getSlotView('titleBar')
     const started = loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+    await vi.advanceTimersByTimeAsync(30_000 + 100)
     await started
     expect(await loader.activatePlugin(PLUGIN)).toBe(true)
     await vi.advanceTimersByTimeAsync(2_000)
@@ -75,7 +74,7 @@ describe('a start cancelled at PLUGIN_START_LIMIT_MS', () => {
   })
 })
 
-describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends while a newer start runs', () => {
+describe('a start cancelled at 30 s that ends while a newer start runs', () => {
   it('reports no command of the newer start as missing', async () => {
     vi.useFakeTimers()
     const reportCommandIssue = vi.fn()
@@ -97,7 +96,7 @@ describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends while a newer sta
       activate: async (context: PluginContext) => {
         starts += 1
         if (starts === 1) {
-          await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+          await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
           return
         }
         context.registerCommand({ id: 'ledger.open', handler: () => undefined })
@@ -106,7 +105,7 @@ describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends while a newer sta
       },
     }))
     const started = loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+    await vi.advanceTimersByTimeAsync(30_000 + 100)
     await started
     const retry = loader.activatePlugin(PLUGIN)
 

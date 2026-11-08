@@ -16,7 +16,7 @@ import {
   getDeclaredSlots,
   readManifestSlotEntries,
   createViewRegistry,
-  TITLE_BAR_SLOT,
+  SLOT,
   openExternalUrl,
   type LoaderHost,
   type AgentHost,
@@ -257,7 +257,7 @@ export function createShellHost(
     closeTab,
     notices,
     /** The view a plugin draws in the title bar, or null while none does. */
-    titleBarView: slotViews.getSlotView(TITLE_BAR_SLOT),
+    titleBarView: slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */
     mountView: declaredViews.mountView,
   }

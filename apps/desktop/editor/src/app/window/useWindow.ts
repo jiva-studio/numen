@@ -4,7 +4,7 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { createWindowHost, SLOT, TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
+import { createWindowHost, SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -779,7 +779,7 @@ function createWindowFrameServices(
 }
 
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
-  titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
+  titleBarView: pluginHost.getSlotView(SLOT.titleBar),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })
 

@@ -4,7 +4,6 @@ import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
-import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { getLifecycleHooks, resolveModule } from './module'
 
 function registerModules(
@@ -483,7 +482,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const loader = registerModules(createPluginLoader({ host }), { slow, quick })
 
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
+      await vi.advanceTimersByTimeAsync(3_000)
       expect(log).toStrictEqual(['quick'])
       expect(loader.isPluginActive('slow')).toBe(false)
 
@@ -580,7 +579,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const spy = vi.fn()
 
       const wait = loader.settlePlugin('never').then(spy)
-      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(30_000 - 1)
       expect(spy).not.toHaveBeenCalled()
       await vi.advanceTimersByTimeAsync(1)
       await wait

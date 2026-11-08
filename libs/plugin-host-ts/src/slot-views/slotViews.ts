@@ -4,12 +4,8 @@
  * reported.
  */
 import { computed, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
-import {
-  WINDOW_SLOTS,
-  type Disposable,
-  type SlotName,
-  type SlotViewRegistration,
-} from '@numen/plugin-sdk'
+import { type Disposable, type SlotName, type SlotViewRegistration } from '@numen/plugin-sdk'
+import { WINDOW_SLOTS } from '../slots/windowSlots'
 import { createStyledView } from '../slots/styledView'
 
 /** A view of a slot with the plugin that registered it. */

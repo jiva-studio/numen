@@ -7,7 +7,6 @@ export {
   NOTE_TYPE,
   SHARED_COMMANDS,
   SLOT,
-  TITLE_BAR_SLOT,
   VAULT_SUMMARY,
   createMockAgentHost,
   createSlotMenu,

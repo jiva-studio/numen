@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const HARBOR = 'org.example.harbor'
 const MANIFEST = { id: HARBOR, name: 'Harbor', version: '1.0.0', frontend: {} }
@@ -29,14 +28,14 @@ describe('a plugin whose module is read after the start limit', () => {
           String(url).endsWith('.css') ? '' : JSON.stringify(MANIFEST),
         )) as unknown as typeof fetch,
       dynamicImport: async () => {
-        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+        await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
         return { activate }
       },
     })
 
     await loader.trackPlugins([HARBOR])
     const started = loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 2_000)
+    await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await vi.runAllTimersAsync()
     await started
 
@@ -72,7 +71,7 @@ describe('a plugin that started within the limit', () => {
 
     await loader.trackPlugins([HARBOR])
     await loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 1_000)
+    await vi.advanceTimersByTimeAsync(30_000 + 1_000)
     context?.registerCommand({ id: 'harbor.open', handler: () => undefined })
 
     expect(loader.isPluginActive(HARBOR)).toBe(true)

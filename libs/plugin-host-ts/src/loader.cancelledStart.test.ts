@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Disposable, PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const HARBOR = 'org.example.harbor'
 
@@ -44,7 +43,7 @@ describe('a start cancelled at the limit', () => {
       activate: async (context: PluginContext) => {
         context.commands?.watch(() => undefined)
         context.buffers?.track({} as never)
-        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+        await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
         context.vaults?.watch(() => undefined)
         context.window?.watch(() => undefined)
         context.buffers?.addFlushHandler(async () => undefined)
@@ -54,7 +53,7 @@ describe('a start cancelled at the limit', () => {
     }))
 
     const started = loader.start()
-    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 2_000)
+    await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await started
 
     expect(loader.getPluginFailure(HARBOR)).toBe('the plugin did not start within 30 s')

@@ -10,7 +10,6 @@ import {
 } from '@numen/plugin-sdk/testing'
 import {
   SLOT,
-  TITLE_BAR_SLOT,
   type AppInfo,
   type PluginContext,
   type SlotViewRegistration,
@@ -84,7 +83,7 @@ describe('the plugin', () => {
 
     expect(component).toBeDefined()
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: TITLE_BAR_SLOT, view: TITLE_BAR_VIEW },
+      { slot: SLOT.titleBar, view: TITLE_BAR_VIEW },
     ])
   })
 

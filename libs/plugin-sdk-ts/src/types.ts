@@ -52,22 +52,12 @@ export interface SettingsViewProps {
   readonly values: Readonly<Record<string, unknown>>
 }
 
-// StatusViewProps are the props the window passes the component of a view in a slot of a bar.
-export interface StatusViewProps {
-  readonly pluginId: string
-}
-
 // SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
 // `{ "slot", "view" }` of `contributes.slots` with the same id, in the slots it is drawn in.
 export interface SlotViewRegistration {
   readonly id: string
   readonly component: unknown
 }
-
-// TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the commands, the
-// title, the window buttons and the area that drags the window. The window passes it no props; it
-// reads its slots, the vaults and the window through `slots`, `vaults` and `window` of its context.
-export const TITLE_BAR_SLOT = 'titleBar'
 
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {

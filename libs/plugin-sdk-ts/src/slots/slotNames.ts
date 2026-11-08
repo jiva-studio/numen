@@ -26,6 +26,3 @@ export const SLOT = {
 
 // SlotName is a slot of a window.
 export type SlotName = (typeof SLOT)[keyof typeof SLOT]
-
-// WINDOW_SLOTS are the slots of the window itself; each draws one view, of the plugin first by id.
-export const WINDOW_SLOTS: readonly SlotName[] = [SLOT.titleBar, SLOT.statusBar]

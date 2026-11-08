@@ -1,4 +1,4 @@
-export { MAC_BUTTONS_INSET, TITLE_BAR_HEIGHT } from './lib/sizes'
+export { MAC_BUTTONS_INSET } from './lib/sizes'
 export {
   getWindowEdge,
   useWindowFrame,

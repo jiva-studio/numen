@@ -33,10 +33,10 @@ export { WelcomePage, getVaultForKey } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
 /**
- * The sizes a strip of tabs at the top of a window without a title bar takes: the height of a bar
- * and the room of the macOS buttons. The shell draws no bar and no window buttons.
+ * The room the macOS buttons take at the left of a strip of tabs at the top of a window without a
+ * title bar. The shell draws no bar and no window buttons.
  */
-export { MAC_BUTTONS_INSET, TITLE_BAR_HEIGHT } from './features/window-frame'
+export { MAC_BUTTONS_INSET } from './features/window-frame'
 
 /** The frame of the desktop window a page is drawn in, as both windows read it. */
 export { getWindowEdge, useWindowFrame } from './features/window-frame'

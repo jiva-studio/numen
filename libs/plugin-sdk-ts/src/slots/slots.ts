@@ -7,7 +7,7 @@ import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
 import type { CommandTarget } from '../commands/commands'
 
-export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
+export { SLOT, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'
 
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.

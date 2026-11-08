@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { INTERFACE_WAIT_MS, VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
+import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
@@ -812,7 +812,7 @@ describe('the title bar of the flashcards window', () => {
     expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
   })
 
-  it('draws the window at INTERFACE_WAIT_MS without a bar that has not started', async () => {
+  it('draws the window at 3 s without a bar that has not started', async () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
     const window = mount(App, {
@@ -829,7 +829,7 @@ describe('the title bar of the flashcards window', () => {
     })
     mounted.push(window)
 
-    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+    await vi.advanceTimersByTimeAsync(3_000 - 1)
     expect(window.find('main').exists()).toBe(false)
     await vi.advanceTimersByTimeAsync(1)
 
@@ -837,7 +837,7 @@ describe('the title bar of the flashcards window', () => {
     expect(window.find('[data-title-bar]').exists()).toBe(false)
   })
 
-  it('draws a bar that starts after INTERFACE_WAIT_MS once it has started', async () => {
+  it('draws a bar that starts after 3 s once it has started', async () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
     const window = mount(App, {
@@ -846,7 +846,7 @@ describe('the title bar of the flashcards window', () => {
           ...deps,
           dynamicImport: async (url: string) => {
             if (url.includes('/org.example.ledger/'))
-              await new Promise((resolve) => setTimeout(resolve, INTERFACE_WAIT_MS + 2_000))
+              await new Promise((resolve) => setTimeout(resolve, 3_000 + 2_000))
             return deps.dynamicImport(url)
           },
         },
@@ -855,7 +855,7 @@ describe('the title bar of the flashcards window', () => {
     })
     mounted.push(window)
 
-    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
+    await vi.advanceTimersByTimeAsync(3_000)
     expect(window.find('main').exists()).toBe(true)
     expect(window.find('[data-title-bar]').exists()).toBe(false)
     await vi.advanceTimersByTimeAsync(2_010)
