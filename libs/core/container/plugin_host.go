@@ -107,7 +107,7 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	_, work, err := c.openPluginWork(ctx, db, v)
+	_, work, err := c.openPluginWork(db, v)
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
@@ -124,11 +124,11 @@ func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func()
 // with no window, over the index given. The configuration it returns reads the text of a file
 // through the text versions, as a window does.
 func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
-	opened, _, err := c.openPluginWork(ctx, db, v)
+	opened, _, err := c.openPluginWork(db, v)
 	return opened, err
 }
 
-func (c Config) openPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
+func (c Config) openPluginWork(db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
 	c.SetPluginVaultPath(v.Path)
 	versions, err := c.NewTextVersions(db)
 	if err != nil {

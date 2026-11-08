@@ -90,24 +90,23 @@ func isDeleteText(pluginID, command string) bool {
 	return pluginID == "" && command == textversion.DeleteCommand
 }
 
-func (h *Handler) deleteVersion(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, error) {
+func (h *Handler) deleteVersion(ctx context.Context, msg *v1.RunPluginCommandRequest) error {
 	switch {
 	case msg.GetItemId() == "":
-		return plugincommand.Result{}, fmt.Errorf("%w: %s deletes the version its item names", plugincommand.ErrBadArguments, msg.GetCommand())
+		return fmt.Errorf("%w: %s deletes the version its item names", plugincommand.ErrBadArguments, msg.GetCommand())
 	case h.versions == nil:
-		return plugincommand.Result{}, errNoVersions
+		return errNoVersions
 	}
 	err := h.versions.DeleteVersion(ctx, h.vaults.GetCurrentVault(), msg.GetPath(), domain.TextVersionID(msg.GetItemId()))
 	if errors.Is(err, textversion.ErrInvalidVersion) {
-		return plugincommand.Result{}, fmt.Errorf("%w: %w", plugincommand.ErrBadArguments, err)
+		return fmt.Errorf("%w: %w", plugincommand.ErrBadArguments, err)
 	}
-	return plugincommand.Result{}, err
+	return err
 }
 
 func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, bool, error) {
 	if isDeleteText(msg.GetPluginId(), msg.GetCommand()) {
-		result, err := h.deleteVersion(ctx, msg)
-		return result, true, err
+		return plugincommand.Result{}, true, h.deleteVersion(ctx, msg)
 	}
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
 	hasItems := found && h.list.HasItems(entry.Command)
