@@ -419,7 +419,10 @@ func (c Config) UnsubscribeHost() {
 	if !isSubscribed {
 		return
 	}
-	one := found.(*hostSubscription)
+	one, isHostSubscription := found.(*hostSubscription)
+	if !isHostSubscription {
+		return
+	}
 	one.mu.Lock()
 	defer one.mu.Unlock()
 	one.unsubscribe()

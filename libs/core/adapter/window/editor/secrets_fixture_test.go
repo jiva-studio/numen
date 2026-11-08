@@ -447,8 +447,6 @@ func ids(secrets []*v1.Secret) []string {
 	return list
 }
 
-// applySettings configures the plugin host of cfg and stops its settings delivery in a cleanup, so
-// that nothing handles a settings change after the directories of the test are removed.
 func applySettings(t *testing.T, cfg container.Config, loaded container.Settings) container.Config {
 	t.Helper()
 	cfg = cfg.SetSettings(loaded)
