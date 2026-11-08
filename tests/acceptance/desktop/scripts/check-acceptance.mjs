@@ -21,6 +21,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const featuresDir = path.resolve(root, '../../../features')
 const stepsDir = path.join(root, 'steps')
 const MAX_STEPS = 5
+/** A step is a short sentence: the words outside the quoted values. */
+const MAX_STEP_WORDS = 8
 /** Two definitions whose words overlap this much, or more, are one step said twice. */
 const NEAR_DUPLICATE = 0.75
 /** From this overlap a pair is listed as a warning: the author reads both and says why there are two. */
@@ -78,6 +80,10 @@ const matchStep = (feature, scenario, step) => {
     report('ambiguous', where, `"${step.text}" matches ${matching.map((m) => `'${m.pattern}'`).join(' and ')}`)
   }
   for (const definition of matching) definition.uses.push({ feature: feature.file, scenario })
+  const words = step.text.replace(/"[^"]*"/g, '').split(/\s+/).filter(Boolean)
+  if (words.length > MAX_STEP_WORDS) {
+    report('long-step', where, `"${step.text}" has ${words.length} words; at most ${MAX_STEP_WORDS}`)
+  }
 }
 for (const feature of features) {
   for (const step of feature.background) matchStep(feature, 'background', step)

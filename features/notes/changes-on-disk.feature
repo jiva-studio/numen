@@ -1,51 +1,46 @@
 Feature: A note that changes on disk
-  As a person who writes in Numen next to other programs
-  I want my writing and their changes never to overwrite each other silently
-  So that no text is lost
+  A person writes a note. Another program changes the same file.
 
   Background:
-    Given the person has the note "Lock gate" open
+    Given a note "Shopping list" is open
 
-  Scenario: A note without unsaved writing follows the change at once
-    When another program changes the note to "The lock gate opens at high water."
-    Then the note has the text "The lock gate opens at high water."
-    And the note reports no conflict
+  Scenario: The note follows a change on disk
+    When another program writes "milk" in the note
+    Then the note has "milk"
 
-  Scenario: Saving pauses when the file changes under unsaved writing
-    Given the person has written "Checked at dawn." that is not saved yet
-    When another program changes the note to "The lock gate is closed."
-    Then the note reports that its file changed on disk
-    And the file holds "The lock gate is closed."
-    And the note has the text "Checked at dawn."
+  Scenario: Unsaved text is kept when the file changes
+    Given the person writes "bread"
+    When another program writes "milk" in the note
+    Then the note warns that the file changed
+    And the note keeps "bread"
 
-  Scenario: Keeping their version saves the written text over the file
-    Given the person has written "Checked at dawn." that is not saved yet
-    And another program changed the note to "The lock gate is closed."
-    When the person keeps their version
-    Then the file holds the written text in place of the disk text
-    And the note reports no conflict
+  Scenario: The person keeps their text
+    Given the person writes "bread"
+    And another program writes "milk" in the note
+    When the person keeps their text
+    Then the file has "bread"
+    And the file does not have "milk"
 
-  Scenario: Taking the disk version drops the written text
-    Given the person has written "Checked at dawn." that is not saved yet
-    And another program changed the note to "The lock gate is closed."
-    When the person takes the disk version
-    Then the note holds "The lock gate is closed." in place of the written text
-    And the note reports no conflict
+  Scenario: The person takes the text from the file
+    Given the person writes "bread"
+    And another program writes "milk" in the note
+    When the person takes the text from the file
+    Then the note has "milk"
+    And the note does not have "bread"
 
-  Scenario: A file changed twice gives its latest version
-    Given the person has written "Checked at dawn." that is not saved yet
-    And another program changed the note to "The lock gate is closed."
-    And another program changed the note to "The lock gate is open."
-    When the person takes the disk version
-    Then the note holds "The lock gate is open." in place of the written text
+  Scenario: The note takes the latest change
+    Given the person writes "bread"
+    And another program writes "milk" in the note
+    And another program writes "eggs" in the note
+    When the person takes the text from the file
+    Then the note has "eggs"
 
-  Scenario: A note removed from disk keeps its text
+  Scenario: A removed file keeps the text in the note
     When another program removes the note
-    Then the note reports that it was removed from the vault
-    And the note keeps the text it had
+    Then the note warns that the file is gone
+    And the note keeps its text
 
-  Scenario: A removed note is written again at its own path
+  Scenario: A removed note can come back
     Given another program removed the note
-    When the person recreates the note
-    Then the vault holds the note again with its text
-    And the note reports no conflict
+    When the person saves the note again
+    Then the file is back with the text

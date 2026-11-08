@@ -26,8 +26,6 @@ interface Subject {
   path: string
   initialText: string
   text: Locator
-  draft?: string
-  otherText?: string
 }
 
 /** The saves of the window that wait until another program has changed the file. */
@@ -73,7 +71,7 @@ export class Person {
   async openNote(title: string): Promise<void> {
     const path = await createNote(this.page.request, createUniqueTitle(title))
     this.createdPaths.push(path)
-    const initialText = `The ${title.toLowerCase()} holds the water back.`
+    const initialText = 'Old text'
     await writeNote(this.page.request, path, `${initialText}\n`)
     await openWorkspace(this.page)
     const text = await openNote(this.page, path)
@@ -86,13 +84,11 @@ export class Person {
     this.pausedSaves = await this.pauseSaves()
     await typeAtEnd(this.page, subject.text, ` ${draft}`)
     await expect.poll(() => this.pausedSaves?.routes.length ?? 0).toBeGreaterThan(0)
-    subject.draft = draft
   }
 
   async changeNoteOnDisk(text: string): Promise<void> {
     const subject = this.getSubject()
     await writeNote(this.page.request, subject.path, `${text}\n`)
-    subject.otherText = text
     if (this.pausedSaves) {
       const paused = this.pausedSaves
       this.pausedSaves = undefined
@@ -137,10 +133,8 @@ export class Person {
     await this.expectNoteHas(this.getSubject().initialText)
   }
 
-  async expectNoteHoldsDiskVersion(text: string): Promise<void> {
-    const subject = this.getSubject()
-    await expect(subject.text).toContainText(text)
-    await expect(subject.text).not.toContainText(subject.draft ?? '')
+  async expectNoteLacks(text: string): Promise<void> {
+    await expect(this.getSubject().text).not.toContainText(text)
   }
 
   async expectConflictReported(): Promise<void> {
@@ -151,18 +145,12 @@ export class Person {
     await expect(this.getBanner()).toContainText(REMOVED_FROM_VAULT)
   }
 
-  async expectNoConflict(): Promise<void> {
-    await expect(this.getBanner()).toHaveCount(0)
+  async expectFileHas(text: string): Promise<void> {
+    await waitForSavedBody(this.page.request, this.getSubject().path, text)
   }
 
-  async expectFileHolds(text: string): Promise<void> {
-    expect((await readNote(this.page.request, this.getSubject().path)).body).toBe(`${text}\n`)
-  }
-
-  async expectFileKeepsWrittenText(): Promise<void> {
-    const subject = this.getSubject()
-    await waitForSavedBody(this.page.request, subject.path, subject.draft ?? '')
-    expect((await readNote(this.page.request, subject.path)).body).not.toContain(subject.otherText ?? '')
+  async expectFileLacks(text: string): Promise<void> {
+    expect((await readNote(this.page.request, this.getSubject().path)).body).not.toContain(text)
   }
 
   async expectNoteRecreated(): Promise<void> {

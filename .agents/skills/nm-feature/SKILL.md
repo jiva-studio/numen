@@ -54,6 +54,8 @@ Ask in batches of a few focused questions. The five lenses help:
 
 ## Step 4: Draft the Scenarios
 
+Write the scenarios in plain English of level A1 to A2 and with neutral, short data, as `.agents/rules/gherkin.md` section 4 says: no stories, no scenery, no adverbs of time or manner in titles, steps of at most 8 words outside the quoted values.
+
 Write `features/<area>/<part-of-the-feature>.feature` following [`gherkin.md`](../../rules/gherkin.md). A limit, a failure and a rule that must hold each become a scenario. Out-of-scope items and limits that no scenario can show go to `.agents/tasks/<slug>/scope.md`, a short local list that `/nm-specify` and the reviewer read.
 
 ## Step 5: Human Gate

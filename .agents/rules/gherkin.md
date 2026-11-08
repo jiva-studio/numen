@@ -27,7 +27,14 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 - `Background` only for state shared by several scenarios.
 - Double quotes around values.
 
-## 4. Example
+## 4. Language and data
+
+- Plain English at level A1 to A2: short common words, present tense, no idioms, no figurative speech. The same word for the same thing in every feature (note, file, warns, keeps, takes).
+- A step is a short sentence of at most 8 words outside the quoted values. The step checker fails on a longer step.
+- The data is neutral and short, like the data of a real use: a note "Shopping list", the texts "milk", "bread", "eggs". No stories, no invented places, characters or scenery (no lock gates, harbours or dawns), and no sentences that read as prose.
+- A scenario title names the rule in a few plain words. No adverbs of time or manner ("at once", "quickly", "silently") unless the rule is that timing.
+
+## 5. Example
 
 ```gherkin
 Feature: Delete a note
@@ -42,6 +49,6 @@ Feature: Delete a note
     Then the vault does not hold a note "Groceries"
 ```
 
-## 5. Ownership
+## 6. Ownership
 
 The scenarios belong to the owner. An agent that finds a scenario wrong, or a feature that grew, proposes the change to the feature file in a commit of its own that says so.
