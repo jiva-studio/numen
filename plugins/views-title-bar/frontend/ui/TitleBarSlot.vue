@@ -18,7 +18,7 @@ const props = defineProps<{
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: (error: unknown) => void
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */

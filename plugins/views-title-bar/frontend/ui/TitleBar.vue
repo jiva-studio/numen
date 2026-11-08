@@ -44,7 +44,7 @@ const props = withDefaults(
     status?: readonly SlotItem[]
     canCreateVault?: boolean
     listItems?: (command: string) => Promise<readonly CommandItem[]>
-    reportError?: (error: unknown) => void
+    reportError?: ((error: unknown) => void) | undefined
   }>(),
   {
     platform: 'windows',

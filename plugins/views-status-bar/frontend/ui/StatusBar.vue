@@ -13,7 +13,7 @@ defineProps<{
   startEntries: readonly SlotItem[]
   endEntries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: (error: unknown) => void
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */

@@ -19,7 +19,7 @@ const props = withDefaults(
     tooltip?: string
     isItemList?: boolean
     listItems: (command: string) => Promise<readonly CommandItem[]>
-    reportError?: (error: unknown) => void
+    reportError?: ((error: unknown) => void) | undefined
   }>(),
   { isItemList: false },
 )
