@@ -95,41 +95,57 @@ func (c Config) GetTabKindChoice() *tabkind.Choose {
 
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
 // and the queue through the host with no window, and answers how to run a command of theirs and
-// how to close what it opened.
+// how to close what it opened. The close waits until the plugins' work started meanwhile has
+// finished, or ctx ends, and then closes the index.
 func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	if _, err := c.OpenPluginWork(ctx, db, v); err != nil {
+	_, work, err := c.openPluginWork(ctx, db, v)
+	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return c.GetPluginCommands().Run, db.Close, nil
+	return c.GetPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
+}
+
+func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func() error) func() error {
+	return func() error {
+		return errors.Join(work.WaitIdle(ctx), closeIndex())
+	}
 }
 
 // OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
 // with no window, over the index given. The configuration it returns reads the text of a file
 // through the text versions, as a window does.
 func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
+	opened, _, err := c.openPluginWork(ctx, db, v)
+	return opened, err
+}
+
+func (c Config) openPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
 	c.SetPluginVaultPath(v.Path)
 	versions, err := c.NewTextVersions(db)
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
 	c.TextVersions = versions
 	registry, err := c.Registry()
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
 	vault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
 	if err != nil {
-		return c, err
+		return c, nil, err
 	}
-	c.SetPluginWork(run.NewTasks(), &run.Lock{})
+	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), c.getPluginName)
+	if c.PluginHost != nil {
+		c.PluginHost.SetPluginWork(work)
+	}
 	c.SetPluginVault(vault)
 	c.SetPluginTexts()
-	return c, nil
+	return c, work, nil
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
