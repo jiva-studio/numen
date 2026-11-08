@@ -1,6 +1,3 @@
-/**
- * What a row says about itself, and where the keyboard goes when it is renamed.
- */
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -25,7 +22,7 @@ const mountRow = (props: Record<string, unknown> = {}) => {
       row: ROW,
       name: 'Plans',
       isSelected: false,
-      isLifted: false,
+      isDragged: false,
       isDropInside: false,
       isDropAbove: false,
       isTabStop: false,
@@ -44,8 +41,8 @@ afterEach(() => {
   mounted = null
 })
 
-describe('what a row says', () => {
-  it('is a tree item at its level, with its whole name on it', () => {
+describe('TreeRow attributes', () => {
+  it('renders a treeitem with level, title, and icon slot', () => {
     const row = mountRow()
     expect(row.attributes('role')).toBe('treeitem')
     expect(row.attributes('aria-level')).toBe('2')
@@ -53,21 +50,21 @@ describe('what a row says', () => {
     expect(row.find('.icon').exists()).toBe(true)
   })
 
-  it('is the one stop of the tree only where it is the tab stop', async () => {
+  it('sets tabindex to 0 only when isTabStop is true', async () => {
     const row = mountRow()
     expect(row.attributes('tabindex')).toBe('-1')
     await row.setProps({ isTabStop: true })
     expect(row.attributes('tabindex')).toBe('0')
   })
 
-  it('says whether it is open only where it has children', async () => {
+  it('sets aria-expanded only when row has children', async () => {
     const row = mountRow()
     expect(row.attributes('aria-expanded')).toBeUndefined()
     await row.setProps({ row: { ...ROW, hasChildren: true, isOpen: true } })
     expect(row.attributes('aria-expanded')).toBe('true')
   })
 
-  it('marks itself selected, and not while a name is being typed into it', async () => {
+  it('hides data-selected while isRenaming is true', async () => {
     const row = mountRow({ isSelected: true })
     expect(row.attributes('data-selected')).toBe('')
     await row.setProps({ isRenaming: true })
@@ -77,7 +74,7 @@ describe('what a row says', () => {
 })
 
 describe('renaming', () => {
-  it('draws a field in place of the name, and takes the keyboard into it', async () => {
+  it('renders an input and focuses it when isRenaming becomes true', async () => {
     const row = mountRow()
     await row.setProps({ isRenaming: true })
     await nextTick()
@@ -87,7 +84,7 @@ describe('renaming', () => {
     expect(document.activeElement).toBe(row.get('input').element)
   })
 
-  it('takes the field away and draws the name again once it is over', async () => {
+  it('renders the row name when isRenaming becomes false', async () => {
     const row = mountRow({ isRenaming: true })
     await row.setProps({ isRenaming: false })
     expect(row.find('input').exists()).toBe(false)

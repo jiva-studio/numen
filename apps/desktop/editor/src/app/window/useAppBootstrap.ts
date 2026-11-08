@@ -3,6 +3,7 @@
  */
 import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { INTERFACE_WAIT_MS } from '@numen/plugin-host'
 import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
@@ -11,7 +12,10 @@ export interface BootstrapDeps {
   startWindow(): Promise<void>
   startEditing(): void
   startLayout(): Promise<void>
+  /** Starts every plugin; settles once all have started or failed. */
   startPlugins?(): Promise<void>
+  /** Settles once the plugins of the window slots have started or failed. */
+  waitForInterfacePlugins?(): Promise<void>
   closeWindow(): void
   closeEditing(): void
   closeTabs(): void
@@ -21,9 +25,6 @@ export interface BootstrapDeps {
   reportError(error: unknown): void
 }
 
-/** How long the window waits for the plugins before it opens the tabs without the ones still starting. */
-export const PLUGINS_WAIT_MS = 2_000
-
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */
 export const STEP_LIMIT_MS = 10_000
 
@@ -31,7 +32,8 @@ async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   const starting = deps.startPlugins?.()
   if (!starting) return
   runInBackground(starting, deps.reportError)
-  await waitFor(starting, PLUGINS_WAIT_MS)
+  const interfaceStarted = deps.waitForInterfacePlugins?.() ?? starting
+  await waitFor(interfaceStarted, INTERFACE_WAIT_MS)
 }
 
 async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
@@ -52,9 +54,15 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
 }
 
 export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
+  /**
+   * True once the plugins of the window slots have started, INTERFACE_WAIT_MS has passed since the window
+   * mounted, or the start failed: the window is drawn from then on.
+   */
+  const isStarted = ref(false)
   /** Why the workspace did not load, shown with a retry; empty while it loads and once it has. */
   const failure = ref('')
   let attempt = 0
+  let drawTimer: ReturnType<typeof setTimeout> | undefined
 
   const run = async (): Promise<void> => {
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
@@ -64,8 +72,10 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
       await withinLimit('The vault list', deps.loadVaults(), stepLimitMs)
       await withinLimit('The settings request', deps.startSettings(), stepLimitMs)
       await startPluginsWithinLimit(deps)
+      isStarted.value = true
       await withinLimit('The tab restore', deps.startLayout(), stepLimitMs)
     } catch (error) {
+      isStarted.value = true
       if (mine === attempt) failure.value = error instanceof Error ? error.message : String(error)
       return
     }
@@ -74,9 +84,13 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
     deps.startEditing()
   }
 
-  onMounted(run)
+  onMounted(() => {
+    drawTimer = setTimeout(() => (isStarted.value = true), INTERFACE_WAIT_MS)
+    return run()
+  })
 
   onUnmounted(() => {
+    clearTimeout(drawTimer)
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
     attempt++
     runInBackground(Promise.resolve(deps.closePlugins?.()), deps.reportError)
@@ -86,5 +100,5 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
     deps.closeSettings()
   })
 
-  return { failure, retry: run }
+  return { failure, isStarted, retry: run }
 }

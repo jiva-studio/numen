@@ -1,16 +1,9 @@
 <script setup lang="ts">
-/**
- * The list of tabs a pane is chosen from. It carries the pane's identity on the
- * element, so a drag can identify the pane under the pointer by querying the
- * document.
- *
- * The strip is walked with the arrows, and what is reached is shown.
- */
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 import { WorkspaceTab } from '../../tab'
 import { stepTo } from '../keys'
 import { getPanelName, getTabName } from '../names'
-import { WORKSPACE_CONTEXT } from '../../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT } from '../../../model/context'
 import type { Pane, TabId } from '../../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -26,7 +19,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, pointer: PointerEvent): void
+  (event: 'press', tab: TabId, pointer: PointerEvent): void
   (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
 }>()
 
@@ -38,7 +31,18 @@ defineSlots<{
 /* ---------------------------------- State --------------------------------- */
 const workspace = inject(WORKSPACE_CONTEXT)
 
-/** The tabs as rendered, each paired with its tab. */
+const edge = computed(() => workspace?.value.getStripEdge(props.pane.id) ?? NO_STRIP_EDGE)
+
+const edgeStyle = computed(() =>
+  edge.value.isDraggable
+    ? {
+        '--wails-draggable': 'drag',
+        paddingInlineStart: `${edge.value.leftInset}px`,
+        paddingInlineEnd: `${edge.value.rightInset}px`,
+      }
+    : {},
+)
+
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -77,6 +81,8 @@ defineExpose({ reach })
     class="pane__strip flex min-w-0 shrink-0 items-stretch overflow-hidden"
     role="tablist"
     :data-workspace-strip="pane.id"
+    :data-window-drag="edge.isDraggable || undefined"
+    :style="edgeStyle"
   >
     <WorkspaceTab
       v-for="(tab, index) in pane.tabs"
@@ -89,7 +95,7 @@ defineExpose({ reach })
       :mark="getMarkOf(tab)"
       :is-showing="tab === pane.active"
       :is-focused="tab === pane.active && isFocused"
-      @lift="emit('lift', tab, $event)"
+      @press="emit('press', tab, $event)"
       @close="emit('close', tab)"
       @menu="emit('menu', tab, $event)"
       @click="emit('choose', tab)"
@@ -109,5 +115,11 @@ defineExpose({ reach })
 <style scoped>
 .pane__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.pane__strip[data-window-drag] {
+  box-sizing: border-box;
+  min-block-size: var(--numen-title-bar-height);
+  align-items: center;
 }
 </style>

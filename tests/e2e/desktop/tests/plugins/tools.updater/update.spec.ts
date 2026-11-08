@@ -49,11 +49,15 @@ test.describe('the update indicator', () => {
 
     await openWorkspace(page)
 
-    const indicator = page.getByRole('button', { name: 'Application update available' })
+    const indicator = page.getByRole('button', { name: /^Update available: v/ })
     await expect(indicator).toHaveText(`v${NEW_RELEASE.version}`)
     await indicator.click()
     await expect(page.getByText('Update available')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
+    await expect(
+      page
+        .getByRole('dialog', { name: 'Update available' })
+        .getByRole('button', { name: 'Download' }),
+    ).toBeVisible()
   })
 
   test('checks the feed again when the release feed address changes, and announces what it finds', async ({
@@ -62,7 +66,7 @@ test.describe('the update indicator', () => {
   }) => {
     await openWorkspace(page)
     await expect.poll(() => countManifestRequests(request, origin)).toBeGreaterThan(0)
-    const indicator = page.getByRole('button', { name: 'Application update available' })
+    const indicator = page.getByRole('button', { name: /^Update available: v/ })
     await expect(indicator).toHaveCount(0)
     const requestCount = await countManifestRequests(request, origin)
     await publishNewRelease(request, origin)

@@ -1,8 +1,8 @@
 /**
- * The status bar item that counts the vectors of the search index, with its popover open. Also the
+ * The title bar item that counts the vectors of the search index, with its popover open. Also the
  * test corpus: each story is run in a browser by `@storybook/addon-vitest`.
  *
- * The popover is drawn above the item and must not be clipped by the bar or the window, and its
+ * The popover is drawn below the item and must not be clipped by the bar or the window, and its
  * ground must be a colour of the theme and never see-through; only a browser lays that out.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -24,7 +24,6 @@ const EMBEDDING: Stats = {
     { kind: 'media', sources: 0, chunks: 0 },
   ],
   model: 'bge-m3',
-  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
@@ -48,10 +47,10 @@ const meta = {
     components: { StatsIndicator },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="display:flex;align-items:flex-end;justify-content:flex-end;block-size:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
-        <footer style="display:flex;align-items:center;justify-content:flex-end;position:relative;inline-size:100%;block-size:1.375rem;background:var(--numen-surface);border-top:1px solid var(--numen-rule);font-size:var(--numen-text-1)">
+      <div class="numen" style="display:flex;align-items:flex-start;justify-content:flex-end;block-size:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+        <header style="display:flex;align-items:center;justify-content:flex-end;position:relative;inline-size:100%;block-size:2.25rem;background:var(--numen-surface);border-bottom:1px solid var(--numen-rule);font-size:var(--numen-text-1)">
           <StatsIndicator v-bind="args" />
-        </footer>
+        </header>
       </div>
     `,
   }),
@@ -70,15 +69,15 @@ const openAndMeasure: NonNullable<Story['play']> = async ({ canvasElement }) => 
   const canvas = within(canvasElement)
   await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
   const popover = await canvas.findByRole('dialog', { name: 'Index stats' })
-  const bar = canvasElement.querySelector('footer') as HTMLElement
+  const bar = canvasElement.querySelector('header') as HTMLElement
 
   await waitFor(() => {
     const box = popover.getBoundingClientRect()
-    return expect(box.bottom).toBeLessThanOrEqual(bar.getBoundingClientRect().top)
+    return expect(box.top).toBeGreaterThanOrEqual(bar.getBoundingClientRect().bottom)
   })
   await expect(popover.getBoundingClientRect().width).toBeGreaterThan(200)
   const box = popover.getBoundingClientRect()
-  await expect(box.top).toBeGreaterThanOrEqual(0)
+  await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
   await expect(box.left).toBeGreaterThanOrEqual(0)
   await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
   await expect(getShade(getComputedStyle(popover).backgroundColor).alpha).toBe(1)
@@ -118,47 +117,42 @@ export const Embedded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = await canvas.findByRole('button', { name: /13,100/ })
-    await expect(trigger.textContent?.trim()).toBe('⬡ 13,100')
+    await expect(trigger.textContent?.trim()).toBe('⬡13,100')
     await userEvent.click(trigger)
     const popover = await canvas.findByRole('dialog')
     await expect(within(popover).queryByText('Embedding speed')).toBeNull()
   },
 }
 
-const getIcon = (canvasElement: HTMLElement): HTMLElement =>
-  canvasElement.querySelector('.index-stats__icon') as HTMLElement
+const getBox = (element: HTMLElement) => {
+  const { width, height } = element.getBoundingClientRect()
+  return { width, height }
+}
 
 const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
-  await expect(trigger.textContent?.trim()).toBe('⬡ 12,480')
+  await expect(trigger.textContent?.trim()).toBe('⬡12,480')
   await expect(trigger.textContent).not.toContain('/')
-  const icon = getIcon(canvasElement)
-  await expect(getComputedStyle(icon).animationName).not.toBe('none')
-  await expect(icon.getAnimations().some((one) => one.playState === 'running')).toBe(true)
-  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
-  await expect(getComputedStyle(icon).color).not.toBe(getComputedStyle(label).color)
-  await expect(getComputedStyle(label).animationName).toBe('none')
+  await expect(trigger.getAnimations()).toHaveLength(0)
+  await expect(getComputedStyle(trigger).borderTopWidth).toBe('0px')
 }
 
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '13,100 vectors' })
-  await expect(trigger.textContent?.trim()).toBe('⬡ 13,100')
-  const icon = getIcon(canvasElement)
-  await expect(getComputedStyle(icon).animationName).toBe('none')
-  await expect(icon.getAnimations()).toHaveLength(0)
-  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
-  await expect(getComputedStyle(icon).color).toBe(getComputedStyle(label).color)
+  await expect(trigger.textContent?.trim()).toBe('⬡13,100')
+  await expect(getComputedStyle(trigger).animationName).toBe('none')
+  await expect(trigger.getAnimations()).toHaveLength(0)
 }
 
-/** The mark pulses green on the light tokens while chunks wait. */
+/** The chip is still while chunks wait, on the light tokens. */
 export const IndexingLight: Story = { globals: { theme: 'light' }, play: checkIndexing }
 
 /** The same on the dark tokens. */
 export const IndexingDark: Story = { globals: { theme: 'dark' }, play: checkIndexing }
 
-/** The mark is still on the light tokens once the queue is empty. */
+/** The chip is still on the light tokens once the queue is empty. */
 export const IdleLight: Story = {
   args: { stats: DONE },
   globals: { theme: 'light' },
@@ -172,21 +166,24 @@ export const IdleDark: Story = {
   play: checkIdle,
 }
 
-/** With no motion in the theme the mark stays solid green and does not fade. */
-export const IndexingWithoutMotion: Story = {
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="--numen-motion: 0ms"><story /></div>',
-    }),
-  ],
+/** The chip is 20px high whether it is indexing, idle, loading or without an index. */
+export const KeepsItsSize: Story = {
+  render: () => ({
+    components: { StatsIndicator },
+    setup: () => ({ EMBEDDING, DONE }),
+    template: `
+      <div class="numen" data-chips style="display:flex;align-items:center;gap:8px;block-size:2rem;background:var(--numen-titlebar);color:var(--numen-ink);font-family:var(--numen-font-sans)">
+        <StatsIndicator :stats="EMBEDDING" phase="ready" locale="en-US" />
+        <StatsIndicator :stats="DONE" phase="ready" locale="en-US" />
+        <StatsIndicator :stats="null" phase="loading" locale="en-US" />
+        <StatsIndicator :stats="null" phase="unavailable" locale="en-US" />
+      </div>`,
+  }),
   play: async ({ canvasElement }) => {
-    const icon = getIcon(canvasElement)
-    await expect(icon).toBeVisible()
-    await expect(getComputedStyle(icon).animationDuration).toBe('0s')
-    await expect(getComputedStyle(icon).opacity).toBe('1')
-    await expect(getComputedStyle(icon).color).not.toBe(
-      getComputedStyle(canvasElement.querySelector('.index-stats__label') as HTMLElement).color,
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(
+      getBox,
     )
+    await expect(boxes).toHaveLength(4)
+    for (const box of boxes) await expect(box.height).toBe(20)
   },
 }

@@ -12,9 +12,14 @@ const manifest = JSON.parse(
   permissions: readonly string[]
   contributes: {
     commands: readonly { id: string; title: string; icon: string; shortcut?: string }[]
-    menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+    slots?: readonly Record<string, unknown>[]
   }
 }
+
+const getMenuEntries = () =>
+  (manifest.contributes.slots ?? []).filter((one) => String(one.slot).startsWith('fileTree.'))
+
+const getCommand = (id: string) => manifest.contributes.commands.find((one) => one.id === id)
 
 describe('the manifest', () => {
   it('declares vault:write, which the files the tree moves and makes need', () => {
@@ -22,8 +27,10 @@ describe('the manifest', () => {
   })
 
   it('places opening the file tree first among the navigation entries of the title bar', () => {
-    expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar', command: 'tree.open', group: 'navigate', order: 10 },
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'titleBar.commands'),
+    ).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
     ])
   })
 
@@ -35,11 +42,63 @@ describe('the manifest', () => {
   })
 })
 
+describe('the menu of a row', () => {
+  it('declares the New submenu over a folder and renaming over one row that is not the root', () => {
+    expect(getMenuEntries()).toStrictEqual([
+      {
+        slot: 'fileTree.context',
+        submenu: 'fileTree.new',
+        title: 'New',
+        icon: 'plus',
+        group: '1-new',
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.new',
+        command: 'tree.createNote',
+        group: '0-tree',
+        order: 10,
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.new',
+        command: 'tree.createFolder',
+        group: '0-tree',
+        order: 20,
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.context',
+        command: 'tree.renameFile',
+        group: '2-edit',
+        order: 10,
+        when: '!target.isRoot && !target.isMultiple',
+      },
+    ])
+  })
+
+  it('declares the commands the menu runs, over any row', () => {
+    expect(getCommand('tree.renameFile')).toStrictEqual({
+      id: 'tree.renameFile',
+      title: 'Rename file',
+      icon: 'pencil',
+    })
+    expect(getCommand('tree.createNote')).toStrictEqual({
+      id: 'tree.createNote',
+      title: 'Create note here',
+      icon: 'file-plus',
+    })
+    expect(getCommand('tree.createFolder')).toStrictEqual({
+      id: 'tree.createFolder',
+      title: 'Create folder',
+      icon: 'folder-plus',
+    })
+  })
+})
+
 describe('the shortcut', () => {
   it('opens the file tree on the window key with Shift and E', () => {
-    expect(manifest.contributes.commands.find((one) => one.id === 'tree.open')?.shortcut).toBe(
-      'mod+shift+e',
-    )
+    expect(getCommand('tree.open')?.shortcut).toBe('mod+shift+e')
   })
 })
 

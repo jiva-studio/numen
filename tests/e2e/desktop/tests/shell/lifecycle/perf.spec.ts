@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
+import { getGraph, openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
 const readCurrentProfile = async (page: Page): Promise<string> => {
@@ -45,6 +45,8 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
       .toMatchObject({ profile: other.toLowerCase() })
 
     await page.reload()
+    // The window draws once the plugins of its interface have started; a key pressed before is lost.
+    await expect(getGraph(page)).toBeVisible()
     expect(await readCurrentProfile(page)).toBe(other)
   })
 

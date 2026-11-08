@@ -7,8 +7,9 @@ import {
 } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
+import { waitForCurrentVectors } from '../../support/index-stats.js'
 
-const getItem = (page: Page): Locator => page.locator('.index-stats__label')
+const getItem = (page: Page): Locator => page.locator('.index-stats__trigger')
 
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''
@@ -17,7 +18,7 @@ const readVectors = async (item: Locator): Promise<number> => {
 
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
-  const isIndexing = await item.locator('.index-stats__icon--indexing').count()
+  const isIndexing = await item.locator('.index-stats__trigger--indexing').count()
   return /\d/.test(text) && isIndexing === 0
 }
 
@@ -42,18 +43,19 @@ test.describe('the index stats item', () => {
     for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
-  test('shows the number of vectors in the status bar', async ({ page }) => {
+  test('shows the number of vectors in the title bar', async ({ page }) => {
     await openWorkspace(page)
 
     const item = getItem(page)
     await expect(item).toBeVisible()
-    await expect(item).toHaveText(/^⬡\s+\d/)
+    await expect(item).toHaveText(/^⬡\s*\d/)
     expect(await readSettledVectors(item)).toBeGreaterThan(0)
   })
 
   test('follows a note that is created, edited and removed', async ({ page, request }) => {
     await openWorkspace(page)
     const item = getItem(page)
+    await waitForCurrentVectors(page)
     const before = await readSettledVectors(item)
 
     const title = createUniqueTitle('Estuary ferry log')

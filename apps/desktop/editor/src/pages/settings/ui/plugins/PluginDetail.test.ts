@@ -30,7 +30,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const createDetail = (plugin: PluginInfo, file: Record<string, unknown> = {}) => {
+const createDetail = (
+  plugin: PluginInfo,
+  file: Record<string, unknown> = {},
+  platform?: string,
+  attachTo?: HTMLElement,
+) => {
   const recordedWrites: SettingEdit[] = []
   const retryPlugin = vi.fn()
   const writeSecret = vi.fn()
@@ -44,10 +49,12 @@ const createDetail = (plugin: PluginInfo, file: Record<string, unknown> = {}) =>
     deleteSecret,
     retryPlugin,
     plugins: ref([plugin]),
+    ...(platform ? { getPlatform: () => platform } : {}),
   })
   const state: SettingsTabState = { installation }
   const wrapper = mount(PluginDetail, {
     props: { state, plugin },
+    ...(attachTo ? { attachTo } : {}),
   })
   return {
     wrapper,
@@ -755,5 +762,71 @@ describe('the data of a plugin', () => {
 
     expect(wrapper.find('.plugin-data__problem').text()).toBe('the vault is read-only')
     expect(findButton(wrapper, words.pluginDataDelete)).toBeDefined()
+  })
+})
+
+describe('an enum whose value is not offered on this platform', () => {
+  const buttons = createPluginInfo('test.plugin', 'Title bar', {
+    settings: [
+      {
+        key: 'buttons',
+        type: 'enum',
+        title: 'Window buttons',
+        description: '',
+        default: 'windows',
+        options: [
+          { value: 'mac', title: 'Left', detail: '' },
+          { value: 'windows', title: 'Right', detail: '', when: "app.platform != 'darwin'" },
+          { value: 'none', title: 'None', detail: '', when: "app.platform != 'darwin'" },
+        ],
+      },
+    ],
+  })
+
+  /** What the closed select shows and what the open list checks, with nothing chosen. */
+  const look = async (platform: string, file: Record<string, unknown> = {}) => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const { wrapper, recordedWrites } = createDetail(buttons, file, platform, host)
+    const select = wrapper.findComponent(Select)
+    const selectedText = wrapper.find('[data-testid="setting-buttons"]').text()
+    await select.find('button').trigger('click')
+    await flushPromises()
+    const checked = [
+      ...document.body.querySelectorAll('[role="menuitemradio"][aria-checked="true"]'),
+    ].map((one) => one.textContent?.trim())
+    wrapper.unmount()
+    host.remove()
+    return { selectedText, checked, recordedWrites, value: select.props('modelValue') }
+  }
+
+  it('shows Left, closed and open, on macOS where the default is Right', async () => {
+    const result = await look('darwin')
+
+    expect(result.selectedText).toBe('Left')
+    expect(result.checked).toStrictEqual(['Left'])
+    expect(result.recordedWrites).toStrictEqual([])
+  })
+
+  it('shows Left on macOS where the stored value is None', async () => {
+    const result = await look('darwin', { 'test.plugin': { buttons: 'none' } })
+
+    expect(result.selectedText).toBe('Left')
+    expect(result.checked).toStrictEqual(['Left'])
+    expect(result.recordedWrites).toStrictEqual([])
+  })
+
+  it.each(['linux', 'windows'])('shows Right on %s', async (platform) => {
+    const result = await look(platform)
+
+    expect(result.selectedText).toBe('Right')
+    expect(result.checked).toStrictEqual(['Right'])
+  })
+
+  it('shows a stored value that is offered as stored', async () => {
+    const result = await look('linux', { 'test.plugin': { buttons: 'none' } })
+
+    expect(result.selectedText).toBe('None')
+    expect(result.checked).toStrictEqual(['None'])
   })
 })

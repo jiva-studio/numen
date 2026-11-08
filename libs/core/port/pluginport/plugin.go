@@ -136,6 +136,8 @@ type PluginDiscoverer interface {
 	GetPluginInfos() []PluginInfo
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
+	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
+	IsPluginSuspended(pluginID string) bool
 }
 
 // PluginSettingDeclarer returns the settings a plugin declares.

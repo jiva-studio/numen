@@ -47,7 +47,7 @@ func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	}
 
 	parts, live := s.readLive(t, talkPath)
-	if live.Kind != "subtitle" || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
+	if live.Kind != proofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
 		t.Errorf("the live version %+v reads %+v", live, parts)
 	}
 	if instruction := s.model.questions[0].GetMessages()[0].GetText(); instruction != speechInstruction {

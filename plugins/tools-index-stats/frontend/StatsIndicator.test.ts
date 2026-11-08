@@ -13,7 +13,6 @@ const STATS: Stats = {
     { kind: 'pdf', sources: 0, chunks: 0 },
   ],
   model: 'bge-m3',
-  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
@@ -26,37 +25,46 @@ const draw = (stats: Stats | null, phase: 'loading' | 'ready' | 'unavailable' = 
   mount(StatsIndicator, { props: { stats, phase, locale: 'en-US' }, attachTo: document.body })
 
 describe('the index stats indicator', () => {
+  it('keeps the mark and the figure in their own cells in every state', () => {
+    for (const view of [draw(STATS), draw({ ...STATS, waiting: 0 }), draw(null, 'loading')]) {
+      expect(view.find('.index-stats__trigger > .index-stats__icon').exists()).toBe(true)
+      expect(view.find('.index-stats__trigger > .index-stats__figure').exists()).toBe(true)
+    }
+  })
+
+  it('is out of the tab order', () => {
+    expect(draw(STATS).find('.index-stats__trigger').attributes('tabindex')).toBe('-1')
+  })
+
   it('shows the vectors alone, with no end value, while chunks wait', () => {
     const wrapper = draw(STATS)
     const trigger = wrapper.find('.index-stats__trigger')
 
-    expect(trigger.text()).toBe('⬡ 12,480')
+    expect(trigger.text()).toBe('⬡12,480')
     expect(trigger.text()).not.toContain('/')
     expect(trigger.attributes('aria-label')).toBe('12,480 vectors, indexing')
     expect(trigger.attributes('title')).toBe('12,480 vectors, indexing')
-    expect(wrapper.find('.index-stats__icon').classes()).toContain('index-stats__icon--indexing')
+    expect(trigger.classes()).toStrictEqual(['index-stats__trigger'])
+    expect(wrapper.find('.index-stats__icon').classes()).toStrictEqual(['index-stats__icon'])
   })
 
   it('shows the vectors alone and a still mark once the queue is empty', () => {
     const wrapper = draw({ ...STATS, vectors: 13100, waiting: 0 })
 
-    expect(wrapper.find('.index-stats__label').text()).toBe('⬡ 13,100')
+    expect(wrapper.find('.index-stats__trigger').text()).toBe('⬡13,100')
     expect(wrapper.find('.index-stats__trigger').attributes('aria-label')).toBe('13,100 vectors')
-    expect(wrapper.find('.index-stats__icon').classes()).not.toContain(
-      'index-stats__icon--indexing',
-    )
   })
 
-  it('draws a placeholder before the first answer', () => {
+  it('draws the mark and a dash before the first answer', () => {
     const view = draw(null, 'loading')
     expect(view.find('.index-stats').exists()).toBe(true)
-    expect(view.text()).toContain('…')
+    expect(view.find('.index-stats__trigger').text()).toBe('⬡–')
   })
 
   it('shows a dash where the index has nothing to show', () => {
     const wrapper = draw(null, 'unavailable')
 
-    expect(wrapper.find('.index-stats__label').text()).toBe('⬡ –')
+    expect(wrapper.find('.index-stats__trigger').text()).toBe('⬡–')
   })
 
   it('opens the popover on a click, with the rows, and closes it on Escape', async () => {

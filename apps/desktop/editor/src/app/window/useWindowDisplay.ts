@@ -25,7 +25,11 @@ export interface DisplayOptions {
    * Receives vault change notifications, and is awaited. A change carrying no
    * paths is empty: everything showing the vault reads again.
    */
-  onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
+  onVaultChanged?(
+    paths: readonly string[],
+    renamed?: readonly PathRename[],
+    versionPaths?: readonly string[],
+  ): void | Promise<void>
   /** Receives notifications of a change to a note while it is being created. */
   reportChange?(response: NoteEdit): void
   /** Shows a note to the user, requested from outside the window. */

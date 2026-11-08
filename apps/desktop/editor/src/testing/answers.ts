@@ -96,11 +96,12 @@ interface DeclaredAnswer {
   arguments: []
 }
 
-/** One place a plugin puts a command in, as the list the core answers carries it. */
+/** One entry a plugin places in a slot, as the list the core answers carries it. */
 interface PlacementAnswer {
   pluginId: string
-  location: string
-  command: string
+  slot: string
+  command?: string
+  view?: string
   group?: string
   order?: number
 }
@@ -108,25 +109,8 @@ interface PlacementAnswer {
 /** What the plugins declare and place. */
 export const declared = {
   commands: [] as DeclaredAnswer[],
-  menus: [] as PlacementAnswer[],
+  slots: [] as PlacementAnswer[],
 }
-
-/** A command a plugin declares, with an icon and no input. */
-export const declareCommand = (
-  pluginId: string,
-  id: string,
-  title: string,
-  extras: Partial<DeclaredAnswer> = {},
-): DeclaredAnswer => ({
-  pluginId,
-  id,
-  title,
-  icon: 'waves',
-  contentTypes: [],
-  extensions: [],
-  arguments: [],
-  ...extras,
-})
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
@@ -223,6 +207,7 @@ export const nameAnswer = (path: string, title: string, type: string = 'note') =
   line: -1,
   at: [] as [],
   type,
+  ...(type === 'note' ? {} : { tabKind: type }),
 })
 
 /** One passage the search answers with, read out of a note of some kind. */
@@ -236,6 +221,7 @@ export const passageAnswer = (path: string, title: string, type: string = 'note'
   line: 3,
   at: [] as [],
   type,
+  ...(type === 'note' ? {} : { tabKind: type }),
   selector: null as Record<string, unknown> | null,
 })
 
@@ -264,7 +250,7 @@ export const forgetAnswers = () => {
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
   declared.commands = []
-  declared.menus = []
+  declared.slots = []
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [

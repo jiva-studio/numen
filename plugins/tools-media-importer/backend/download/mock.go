@@ -47,7 +47,7 @@ func (mockVideo) GetText(context.Context, string, PreferredCaptions) (Text, erro
 	}, nil
 }
 
-func (mockVideo) Download(_ context.Context, _ string, into io.Writer) (Copy, error) {
+func (mockVideo) Download(_ context.Context, _ string, _ Media, into io.Writer) (Copy, error) {
 	if _, err := into.Write(writeQuietWAV()); err != nil {
 		return Copy{}, err
 	}

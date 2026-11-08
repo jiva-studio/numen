@@ -1,78 +1,70 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
-    "tabKinds": [
-      {
-        "kind": "link",
-        "title": "Link",
-        "icon": "link"
-      }
+    "textKinds": [
+      { "kind": "article", "title": "Article" },
+      { "kind": "captions", "title": "Captions" }
     ],
     "feature": "media links",
     "category": "tools",
-    "handles": [
-      {
-        "purpose": "text-provider"
-      },
-      {
-        "purpose": "playback-copy",
-        "noteTypes": ["link"]
-      }
-    ],
     "noteTypes": [
       {
         "type": "link"
       }
     ],
     "frameOrigins": ["https://www.youtube-nocookie.com"],
-    "commands": [
+    "slots": [
       {
-        "id": "link.import",
-        "title": "Import from URL",
-        "icon": "link",
-        "arguments": [
-          {
-            "name": "address",
-            "title": "The address",
-            "type": "string",
-            "required": true
-          }
-        ]
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
       },
       {
-        "id": "link.downloadText",
-        "title": "Download text again",
-        "icon": "refresh-cw",
-        "noteTypes": ["link"]
+        "slot": "fileTree.context",
+        "command": "app:link.downloadMedia",
+        "group": "3-text",
+        "order": 30
       },
       {
-        "id": "link.downloadVideo",
-        "title": "Download video",
-        "icon": "download",
-        "noteTypes": ["link"]
+        "slot": "fileTree.context",
+        "command": "app:link.deleteMedia",
+        "group": "3-text",
+        "order": 40
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:link.import",
+        "title": "Import link"
       },
       {
-        "id": "link.deleteText",
-        "title": "Delete text",
-        "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.tools.media.importer"]
-          }
-        ]
+        "command": "app:file.createText",
+        "title": "Download captions",
+        "when": "target.noteType == 'link'"
       },
       {
-        "id": "link.deleteVideo",
-        "title": "Delete downloaded video",
-        "icon": "trash-2",
-        "noteTypes": ["link"]
+        "command": "app:link.downloadMedia",
+        "title": "Download media",
+        "when": "target.noteType == 'link'"
+      },
+      {
+        "command": "app:link.deleteMedia",
+        "title": "Delete media",
+        "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)"
       }
     ]
   },
@@ -110,6 +102,13 @@
       "title": "Automatic captions",
       "description": "Use auto-generated captions when a site has no others",
       "default": true
+    },
+    {
+      "key": "downloadCaptionsAutomatically",
+      "type": "boolean",
+      "title": "Download captions automatically",
+      "description": "Download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again",
+      "default": false
     },
     {
       "key": "copyMaxSizeMb",

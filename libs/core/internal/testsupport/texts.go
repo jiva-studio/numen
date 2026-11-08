@@ -101,8 +101,6 @@ func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.T
 	return doc, err
 }
 
-func (vaultTexts) RequestText(context.Context, string, string) error { return nil }
-
 // IsTextSource reports whether a file has text, where Texts reads a version of it.
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	_, err := t.read(ctx, path)

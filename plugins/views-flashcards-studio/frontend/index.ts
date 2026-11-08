@@ -1,4 +1,3 @@
-import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
@@ -27,7 +26,7 @@ export type { PresetTabState } from './preset/types'
 export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
-  const { workspace, buffers, files } = context
+  const { workspace, buffers } = context
   if (!workspace) {
     const { notices, closeTab, agent } = context
     if (!notices || !closeTab || !agent) {
@@ -79,45 +78,6 @@ export function activate(context: PluginContext): void {
       await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
     },
   })
-
-  if (files) {
-    const getFolder = (path: string, isFolder: boolean): string => {
-      if (isFolder) return path
-      const idx = path.lastIndexOf('/')
-      return idx < 0 ? '' : path.slice(0, idx)
-    }
-
-    context.registerContextMenu({
-      id: 'newDeck',
-      text: 'New deck',
-      icon: Layers,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await cards.createDeck('New deck', getFolder(target.path, target.isFolder))
-      },
-    })
-    context.registerContextMenu({
-      id: 'newCardModel',
-      text: 'New card model',
-      icon: LayoutTemplate,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await cards.createCardModel('New card model', getFolder(target.path, target.isFolder), [])
-      },
-    })
-    context.registerContextMenu({
-      id: 'newPreset',
-      text: 'New preset',
-      icon: Gauge,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await presets.createPreset('New preset', getFolder(target.path, target.isFolder))
-      },
-    })
-  }
 }
 
 export default definePlugin({

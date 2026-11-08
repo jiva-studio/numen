@@ -98,8 +98,11 @@ type DetachTabRequest struct {
 	// opens it with the same id, so the tab keeps its links.
 	Tab *Tab `protobuf:"bytes,1,opt,name=tab,proto3" json:"tab,omitempty"`
 	// The position on screen to open the new window at.
-	X             int32 `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32 `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	X int32 `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
+	Y int32 `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	// The size of the new window in CSS pixels. 0 keeps the default size.
+	Width         int32 `protobuf:"varint,4,opt,name=width,proto3" json:"width,omitempty"`
+	Height        int32 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -151,6 +154,20 @@ func (x *DetachTabRequest) GetX() int32 {
 func (x *DetachTabRequest) GetY() int32 {
 	if x != nil {
 		return x.Y
+	}
+	return 0
+}
+
+func (x *DetachTabRequest) GetWidth() int32 {
+	if x != nil {
+		return x.Width
+	}
+	return 0
+}
+
+func (x *DetachTabRequest) GetHeight() int32 {
+	if x != nil {
+		return x.Height
 	}
 	return 0
 }
@@ -2135,11 +2152,13 @@ var File_numen_v1_workspace_proto protoreflect.FileDescriptor
 
 const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"O\n" +
+	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"}\n" +
 	"\x10DetachTabRequest\x12\x1f\n" +
 	"\x03tab\x18\x01 \x01(\v2\r.numen.v1.TabR\x03tab\x12\f\n" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x03 \x01(\x05R\x01y\"E\n" +
+	"\x01y\x18\x03 \x01(\x05R\x01y\x12\x14\n" +
+	"\x05width\x18\x04 \x01(\x05R\x05width\x12\x16\n" +
+	"\x06height\x18\x05 \x01(\x05R\x06height\"E\n" +
 	"\x11DetachTabResponse\x120\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.TabMoveErrorCodeR\x05error\"\x13\n" +
 	"\x11WatchFocusRequest\"h\n" +

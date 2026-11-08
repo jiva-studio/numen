@@ -2,10 +2,11 @@ package pdf
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 
 	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"

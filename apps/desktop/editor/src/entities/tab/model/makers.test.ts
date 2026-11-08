@@ -11,6 +11,19 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 
+const createOpeners = (tabKinds: Readonly<Record<string, string>> = {}) =>
+  fileOpeners({
+    fileKinds: async (paths) =>
+      new Map(
+        paths.flatMap((path) => {
+          const tabKind = tabKinds[path]
+          return tabKind === undefined
+            ? []
+            : [[path, { isNote: true, type: 'note', tabKind }] as const]
+        }),
+      ),
+  })
+
 const maker = (
   error: ErrorCode | null = null,
   throws = false,
@@ -34,7 +47,7 @@ const MAKING = { errors: ERRORS }
 
 const createCreators = (
   vault: VaultCreator,
-  tabOpeners = fileOpeners({ fileKinds: async () => new Map() }),
+  tabOpeners = createOpeners(),
   write: MessageWriter = vi.fn(),
 ) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
 
@@ -60,8 +73,12 @@ describe('a file of a kind made', () => {
     expect(await createdItem.createFile('sample', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
 
-  it('is put in front of the person as what it was made as', async () => {
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+  it('opens in the tab kind the vault names for it', async () => {
+    const tabOpeners = createOpeners({
+      'zoology/Animals.md': 'sample',
+      'zoology/Words.md': 'form',
+      '/Slow.md': 'sheet',
+    })
     const openedTabs: string[] = []
     for (const what of ['sample', 'form', 'sheet'] as const) {
       tabOpeners.registerEditor(what, (path) => openedTabs.push(`${what} ${path}`))
@@ -80,7 +97,7 @@ describe('a file of a kind made', () => {
   })
 
   it('says what the vault rejected, and nothing opens', async () => {
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const tabOpeners = createOpeners()
     const mockWriter = writer()
     const createdItem = createCreators(maker('alreadyExists'), tabOpeners, mockWriter.write)
 
@@ -118,7 +135,7 @@ describe('a file of a kind made', () => {
 
 describe('a file nothing offers to make', () => {
   it('returns an empty path, opens no tab and writes no message when the creator fails', async () => {
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const tabOpeners = createOpeners()
     const openedTabs: string[] = []
     tabOpeners.registerEditor('sample', (path) => openedTabs.push(path))
     const mockWriter = writer()
@@ -136,7 +153,7 @@ describe('a file nothing offers to make', () => {
 
 describe('a file made and put in front of the person', () => {
   it('is opened with no title of its own', async () => {
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const tabOpeners = createOpeners({ 'zoology/Animals.md': 'sample' })
     const titles: string[] = []
     tabOpeners.registerEditor('sample', (_path, title) => titles.push(title))
     const createdItem = createCreators(maker(), tabOpeners)

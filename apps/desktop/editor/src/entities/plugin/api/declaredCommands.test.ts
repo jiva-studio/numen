@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { COMMAND_ERROR_CODE, asFailure, asValue, type PluginCatalog } from '@numen/core-client'
+import { createWhenReader } from '@numen/plugin-host'
 import { createMockCatalogEntry } from '@numen/core-client/testing'
 import type { PluginInfo } from '@numen/plugin-manager'
 import { useCatalogEntries } from '../model/catalogEntries'
@@ -15,18 +16,82 @@ vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
 const request = {
   listCommands: vi.fn(),
   runPluginCommand: vi.fn(),
+  listCommandItems: vi.fn(),
 }
 
-const { canRunOn, listDeclaredCommands, runDeclaredCommand } = await import('./declaredCommands')
+const {
+  isOverTarget,
+  listDeclaredCommands,
+  listDeclaredItemLists,
+  runDeclaredCommand,
+  runDeclaredHandler,
+} = await import('./declaredCommands')
+
+const proofread = {
+  pluginId: 'org.example.ink',
+  id: 'ink.proofread',
+  title: 'Proofread text',
+  when: 'version.isLive',
+  hasItems: true as const,
+  arguments: [],
+}
 
 const convert = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  contentTypes: ['application/pdf'],
-  extensions: ['pdf'],
+  when: "target.contentType == 'application/pdf'",
   arguments: [],
 }
+
+describe('the slot entries the plugins declare', () => {
+  it('are read with what each places, its look, its group, its order and its condition', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'fileTree.context',
+            placed: { case: 'submenu', value: 'ledger.new' },
+            title: 'New ledger',
+            icon: 'plus',
+            group: '0-new',
+            order: 0,
+            when: 'isFolder && !isMultiple',
+          },
+        },
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.status',
+            placed: { case: 'view', value: 'balance' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+          },
+        },
+      ],
+    })
+
+    const { slots } = await listDeclaredCommands()
+
+    expect(slots).toStrictEqual([
+      {
+        pluginId: 'org.example.ledger',
+        slot: 'fileTree.context',
+        submenu: 'ledger.new',
+        title: 'New ledger',
+        iconName: 'plus',
+        group: '0-new',
+        order: 0,
+        when: 'isFolder && !isMultiple',
+      },
+      { pluginId: 'org.example.ledger', slot: 'titleBar.status', view: 'balance' },
+    ])
+  })
+})
 
 describe('the commands the plugins declare', () => {
   it('are read with their arguments in order', async () => {
@@ -36,15 +101,13 @@ describe('the commands the plugins declare', () => {
           pluginId: 'org.example.sample',
           id: 'create-sample',
           title: 'Create a sample',
-          contentTypes: [],
-          extensions: [],
           arguments: [
             { name: 'title', title: 'Title', isRequired: true },
             { name: 'folder', title: 'Folder', isRequired: false },
           ],
         },
       ],
-      menus: [],
+      slots: [],
     })
 
     const {
@@ -58,7 +121,7 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
-  it('are read with their scope, shortcut, destination flag and the parts of their plugin', async () => {
+  it('are read with their condition, shortcut, destination flag and the parts of their plugin', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
@@ -66,14 +129,12 @@ describe('the commands the plugins declare', () => {
           id: 'tree.revealNote',
           title: 'Show note in file tree',
           icon: 'folder-open',
-          scope: 'note',
+          when: 'target.isNote',
           shortcut: 'mod+shift+e',
-          contentTypes: [],
-          extensions: [],
           arguments: [],
         },
       ],
-      menus: [],
+      slots: [],
     })
 
     const {
@@ -85,33 +146,31 @@ describe('the commands the plugins declare', () => {
       id: 'tree.revealNote',
       title: 'Show note in file tree',
       icon: 'folder-open',
-      scope: 'note',
+      when: 'target.isNote',
       shortcut: 'mod+shift+e',
-      contentTypes: [],
-      extensions: [],
       arguments: [],
     })
   })
 
-  it('run over a file of one of their extensions, by the name of the file alone', () => {
-    expect(canRunOn(convert, 'books/Bees.PDF')).toBe(true)
-    expect(canRunOn(convert, '.pdf')).toBe(true)
-    expect(canRunOn(convert, 'pdf')).toBe(false)
-    expect(canRunOn(convert, 'books/Bees.epub')).toBe(false)
-    expect(canRunOn(convert, 'books.pdf/Bees')).toBe(false)
-    expect(canRunOn(convert, '')).toBe(false)
+  it('are read as offering items where the core marks them', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [{ ...proofread, hasItems: true }],
+      slots: [],
+    })
+
+    const {
+      commands: [one],
+    } = await listDeclaredCommands()
+
+    expect(one).toStrictEqual(proofread)
   })
 
-  it('run over a file of any type where the core lists the extension *', () => {
-    const proofread = {
-      ...convert,
-      id: 'proofread',
-      contentTypes: ['*/*'],
-      extensions: ['*'],
-    }
-    expect(canRunOn(proofread, 'talks/storage.wav')).toBe(true)
-    expect(canRunOn(proofread, 'README')).toBe(true)
-    expect(canRunOn(proofread, 'books/')).toBe(false)
+  it('run over a target where their condition reads one', () => {
+    const reader = createWhenReader()
+
+    expect(isOverTarget(convert, reader)).toBe(true)
+    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
+    expect(isOverTarget({}, reader)).toBe(false)
   })
 })
 
@@ -145,11 +204,28 @@ describe('a run', () => {
     })
 
     await runDeclaredCommand(
-      { ...convert, contentTypes: [], extensions: [] },
+      { ...convert, when: 'window.isVaultReady' },
       { path: 'a.md', values: {} },
     )
 
     expect(request.runPluginCommand).toHaveBeenLastCalledWith(expect.objectContaining({ path: '' }))
+  })
+
+  it('of a command over no file is handed the file a place named', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+      openedPath: '',
+    })
+
+    await runDeclaredCommand(
+      { ...convert, when: 'window.isVaultReady' },
+      { path: 'Glaciers', values: {}, isTargetNamed: true },
+    )
+
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith(
+      expect.objectContaining({ path: 'Glaciers' }),
+    )
   })
 
   it('that did not succeed answers why', async () => {
@@ -161,6 +237,155 @@ describe('a run', () => {
     const outcome = await runDeclaredCommand(convert, { path: 'a.pdf', values: {} })
 
     expect(outcome).toStrictEqual({ ok: false, error: 'the disk is full' })
+  })
+})
+
+describe('the items of a command', () => {
+  it('are the items the core lists over the file for each command, in one request', async () => {
+    request.listCommandItems.mockResolvedValue({
+      lists: [
+        {
+          pluginId: 'org.example.ink',
+          command: 'ink.proofread',
+          items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
+          error: COMMAND_ERROR_CODE.UNSPECIFIED,
+          message: '',
+        },
+        {
+          pluginId: 'md.numen.pages',
+          command: 'convert',
+          items: [],
+          error: COMMAND_ERROR_CODE.FAILED,
+          message: 'talks/a.mp3 is not in the vault',
+        },
+      ],
+    })
+
+    expect(
+      await listDeclaredItemLists('talks/a.mp3', [
+        { pluginId: 'org.example.ink', command: 'ink.proofread' },
+        { pluginId: 'md.numen.pages', command: 'convert' },
+      ]),
+    ).toStrictEqual([
+      {
+        pluginId: 'org.example.ink',
+        command: 'ink.proofread',
+        result: { ok: true, value: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }] },
+      },
+      {
+        pluginId: 'md.numen.pages',
+        command: 'convert',
+        result: { ok: false, error: 'talks/a.mp3 is not in the vault' },
+      },
+    ])
+    expect(request.listCommandItems).toHaveBeenLastCalledWith({
+      path: 'talks/a.mp3',
+      commands: [
+        { pluginId: 'org.example.ink', command: 'ink.proofread' },
+        { pluginId: 'md.numen.pages', command: 'convert' },
+      ],
+    })
+  })
+
+  it('run the command over the file with the item picked as its itemId', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+      openedPath: '',
+    })
+
+    await runDeclaredCommand(proofread, {
+      path: 'talks/a.mp3',
+      values: {},
+      itemId: 'org.example.ears/ears',
+    })
+
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+      pluginId: 'org.example.ink',
+      command: 'ink.proofread',
+      path: 'talks/a.mp3',
+      arguments: {},
+      itemId: 'org.example.ears/ears',
+    })
+  })
+})
+
+describe('the handlers of shared commands', () => {
+  it('are read with their plugin, command, title, condition and whether the core lists their items', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [],
+      handlers: [
+        {
+          pluginId: 'org.example.ink',
+          handler: {
+            command: 'app:version.delete',
+            title: 'Delete proofread',
+            when: "version.kind == 'ink'",
+          },
+          hasItems: true,
+        },
+        {
+          pluginId: 'org.example.pages',
+          handler: { command: 'app:file.createText', title: 'Extract text layer', when: '' },
+          hasItems: false,
+        },
+      ],
+    })
+
+    const { handlers } = await listDeclaredCommands()
+
+    expect(handlers).toStrictEqual([
+      {
+        pluginId: 'org.example.ink',
+        command: 'app:version.delete',
+        title: 'Delete proofread',
+        when: "version.kind == 'ink'",
+        hasItems: true,
+      },
+      {
+        pluginId: 'org.example.pages',
+        command: 'app:file.createText',
+        title: 'Extract text layer',
+        hasItems: false,
+      },
+    ])
+  })
+
+  it('run in the backend under the full id of the command, with the item picked and the values', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: 'Deleted',
+      openedPath: '',
+    })
+
+    const outcome = await runDeclaredHandler(
+      { pluginId: 'org.example.ink', command: 'app:version.delete' },
+      { path: 'talks/a.mp3', values: { reason: 'stale' }, itemId: 'v1' },
+    )
+
+    expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+      pluginId: 'org.example.ink',
+      command: 'app:version.delete',
+      path: 'talks/a.mp3',
+      arguments: { reason: 'stale' },
+      itemId: 'v1',
+    })
+  })
+
+  it('that did not succeed answer why', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.FAILED,
+      message: 'no such version',
+    })
+
+    expect(
+      await runDeclaredHandler(
+        { pluginId: 'org.example.ink', command: 'app:version.delete' },
+        { path: 'a.mp3', values: {} },
+      ),
+    ).toStrictEqual({ ok: false, error: 'no such version' })
   })
 })
 

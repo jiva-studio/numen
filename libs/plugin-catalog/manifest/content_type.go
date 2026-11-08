@@ -3,7 +3,6 @@ package manifest
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -30,14 +29,14 @@ func (m Manifest) ListContentHandlers() []domain.ContentHandler {
 	return out
 }
 
-// IsHandling reports whether a reader of the plugin, or a handle of it, takes a file of the type.
+// IsHandling reports whether a reader of the plugin takes a file of the type.
 func (m Manifest) IsHandling(contentType domain.ContentType) bool {
 	for _, reader := range m.Contributes.Readers {
 		if isAnyMatching(reader.ContentTypes, contentType) {
 			return true
 		}
 	}
-	return slices.ContainsFunc(m.Contributes.Handles, func(h Handle) bool { return isAnyMatching(h.ContentTypes, contentType) })
+	return false
 }
 
 func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) bool {

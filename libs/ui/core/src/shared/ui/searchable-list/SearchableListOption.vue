@@ -13,6 +13,7 @@ defineProps<{
   row: ListRow
   id: string
   heading?: string | undefined
+  hasSeparator?: boolean
   isActive: boolean
   isCurrent: boolean
 }>()
@@ -28,6 +29,7 @@ const context = inject(LIST_CONTEXT)
 </script>
 
 <template>
+  <hr v-if="hasSeparator" class="searchable-list__separator" role="separator" />
   <p v-if="heading !== undefined" class="searchable-list__heading" role="presentation">
     {{ heading }}
   </p>
@@ -59,6 +61,17 @@ const context = inject(LIST_CONTEXT)
 </template>
 
 <style scoped>
+/* The line above an item that is set apart from the rows before it. */
+.searchable-list__separator {
+  /* The space the line keeps on each side, as a rule of a menu keeps. */
+  --parting: 0.25rem;
+
+  block-size: 0;
+  margin-block: var(--parting);
+  border: 0;
+  border-block-start: 1px solid var(--numen-panel-border);
+}
+
 /* The name of a group, set as this product sets a label over what it names. */
 .searchable-list__heading {
   margin: 0;

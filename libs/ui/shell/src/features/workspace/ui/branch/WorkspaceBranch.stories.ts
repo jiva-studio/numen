@@ -1,14 +1,8 @@
-/**
- * The splitter that composes panes, rendered on its own.
- *
- * A branch receives the workspace contents as a dependency, so these stories
- * provide them and keep the shares a handle settles on.
- */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import TabStub from '../../fixtures/TabStub.vue'
 import { split, stack } from '../../fixtures/build'
 import { type Branch, type NodeId, type Tab, type TabId } from '../../lib/node'
@@ -21,7 +15,6 @@ const TITLES: Readonly<Record<string, string>> = {
   four: 'Four',
 }
 
-/** The arrangements a reader can start from. */
 const ARRANGEMENTS = {
   'two panes': () =>
     split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch,
@@ -59,7 +52,7 @@ const meta: Meta<Knobs> = {
     arrangement: {
       control: 'select',
       options: Object.keys(ARRANGEMENTS),
-      description: 'What the branch starts as. Changing it starts afresh.',
+      description: 'Initial branch layout.',
     },
     minimum: { control: { type: 'range', min: 40, max: 400, step: 20 } },
     room: { control: 'text' },
@@ -73,7 +66,6 @@ const meta: Meta<Knobs> = {
     setup() {
       const target = ref<Branch>(ARRANGEMENTS[args.arrangement]())
 
-      /** The shares the last handle settled on, written where a story can read them. */
       const resize = (branch: NodeId, sizes: readonly number[]) => {
         target.value = resizeBranch(target.value, branch, sizes)
       }
@@ -85,9 +77,10 @@ const meta: Meta<Knobs> = {
             TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
           focus: 'left',
           minimum: args.minimum,
+          getStripEdge: () => NO_STRIP_EDGE,
           choose: fn(),
           close: fn(),
-          lift: fn(),
+          startTabPress: fn(),
           menu: fn(),
           claim: fn(),
           resize,
@@ -120,7 +113,7 @@ function resizeBranch(node: Branch, branch: NodeId, sizes: readonly number[]): B
 export default meta
 type Story = StoryObj<Knobs>
 
-/** Two panes side by side, the first given the larger share. */
+/** Renders two panes side by side with unequal default sizes. */
 export const TwoPanes: Story = {
   play: async ({ canvasElement }) => {
     const panes = canvasElement.querySelectorAll('[data-workspace-pane]')
@@ -131,7 +124,7 @@ export const TwoPanes: Story = {
   },
 }
 
-/** A branch inside a branch, each turning a quarter from the one above. */
+/** Renders a vertical branch nested inside a horizontal branch. */
 export const Nested: Story = {
   args: { arrangement: 'nested' },
   play: async ({ canvasElement }) => {
@@ -142,7 +135,6 @@ export const Nested: Story = {
       'lower',
     ])
 
-    // The outer branch divides across and the inner one down.
     const upper = panes[1]!.getBoundingClientRect()
     const lower = panes[2]!.getBoundingClientRect()
     await expect(lower.top).toBeGreaterThan(upper.top)
@@ -150,7 +142,7 @@ export const Nested: Story = {
   },
 }
 
-/** Three panes across, so a branch carries more than one handle. */
+/** Renders three panes horizontally with two resize handles. */
 export const ThreeAcross: Story = {
   args: { arrangement: 'three across' },
   play: async ({ canvasElement }) => {
@@ -159,11 +151,7 @@ export const ThreeAcross: Story = {
   },
 }
 
-/**
- * A pane given less space than its minimum: three panes in a box too narrow
- * to give any of them the minimum. The floor a handle leaves is then an equal
- * share, and dragging the first handle as far as it goes stops there.
- */
+/** Caps minimum pane size at an equal share when total width is below the sum of minimums. */
 export const CrowdedByTheLeastSpace: Story = {
   args: { arrangement: 'three across, unevenly', minimum: 400, room: '600px' },
   play: async ({ canvasElement }) => {
@@ -173,8 +161,6 @@ export const CrowdedByTheLeastSpace: Story = {
       )
     await expect(widths()).toHaveLength(3)
 
-    // The crowding the story is named for: three panes of 400 pixels each do not
-    // fit in the space the branch has.
     const room = widths().reduce((all, one) => all + one, 0)
     await expect(room).toBeLessThan(3 * 400)
 

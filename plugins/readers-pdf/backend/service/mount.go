@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
@@ -36,7 +37,11 @@ func mount(s *server.Server, files host.Vault, texts host.Texts, provider *TextS
 		return err
 	}
 	s.RegisterRoute(pagesPattern, NewPageServer(files, workers))
-	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
+	commands, err := newCommands(provider)
+	if err != nil {
+		return err
+	}
+	command.Mount(s, commands)
 	s.OnClose(func() error {
 		provider.Close()
 		return nil

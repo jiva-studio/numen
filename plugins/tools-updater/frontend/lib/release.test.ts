@@ -14,9 +14,11 @@ describe('formatReleaseDate', () => {
 })
 
 describe('getPlatformMessage', () => {
-  it('names the way to update on each platform', () => {
-    expect(getPlatformMessage('windows')).toContain('installer')
-    expect(getPlatformMessage('darwin')).toContain('disk image')
-    expect(getPlatformMessage('linux')).toContain('package manager')
+  it('says how to update in plain words on each platform', () => {
+    expect(getPlatformMessage('windows')).toBe('Download the new version to update Numen.')
+    expect(getPlatformMessage('darwin')).toBe('Download the new version to update Numen.')
+    expect(getPlatformMessage('linux')).toBe(
+      'Download the new version, or update through your package manager.',
+    )
   })
 })

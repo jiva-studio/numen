@@ -109,7 +109,9 @@ describe('every setting', () => {
                   palette: true,
                   icon: 'sparkles',
                   multiple: true,
-                  options: [{ value: 'on', title: 'On', detail: 'Always' }],
+                  options: [
+                    { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
+                  ],
                 },
                 {
                   key: 'language',
@@ -167,7 +169,9 @@ describe('every setting', () => {
             palette: true,
             icon: 'sparkles',
             multiple: true,
-            options: [{ value: 'on', title: 'On', detail: 'Always' }],
+            options: [
+              { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
+            ],
             optionsBy: undefined,
             when: undefined,
             accept: undefined,
@@ -188,7 +192,7 @@ describe('every setting', () => {
             options: undefined,
             optionsBy: {
               setting: 'model',
-              options: { small: [{ value: 'en', title: 'English', detail: '' }] },
+              options: { small: [{ value: 'en', title: 'English', detail: '', when: undefined }] },
             },
             when: { setting: 'provider', is: ['local'] },
             accept: [],
@@ -384,7 +388,7 @@ describe('an operation on a secret', () => {
   })
 })
 
-describe('a plugin the host suspends', () => {
+describe('a plugin whose last start failed', () => {
   it('arrives with the reason and the time it was given up', async () => {
     request.getSettings.mockResolvedValue(
       answer(

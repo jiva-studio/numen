@@ -9,9 +9,9 @@ describe('the window with no note to show', () => {
     vaultState.opening = null
     vaultState.error = 'the vault folder is not there'
 
-    const window = await mountWindow()
+    await mountWindow()
 
-    const corner = cards(window)
+    const corner = cards()
     expect(corner[0]).toContain('the vault folder is not there')
     expect(corner).toHaveLength(1)
   })
@@ -20,8 +20,8 @@ describe('the window with no note to show', () => {
     vaultState.opening = null
     vaultState.error = ''
 
-    const window = await mountWindow()
+    await mountWindow()
 
-    expect(cards(window)).toStrictEqual([])
+    expect(cards()).toStrictEqual([])
   })
 })

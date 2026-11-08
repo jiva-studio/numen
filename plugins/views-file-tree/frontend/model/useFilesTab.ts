@@ -1,10 +1,17 @@
 /**
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
-import { ref } from 'vue'
-import { formatErrorMessage, getFileName, NOTE_TYPE, type MenuEntry } from '@numen/plugin-sdk'
+import { computed, ref, type Component } from 'vue'
+import {
+  createSlotMenu,
+  formatErrorMessage,
+  getFileName,
+  NOTE_TYPE,
+  useSlotMenu,
+  type CommandTarget,
+} from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME, TRASH_NOTE } from '../lib/menu'
+import { TRASH_NOTE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -69,15 +76,6 @@ function createFileMoves(list: FileTree, deps: FilesTabDeps) {
   return { move }
 }
 
-interface FileMenuDeps {
-  list: FileTree
-  deps: FilesTabDeps
-  renamingPath: ReturnType<typeof ref<string | null>>
-  creators: ReturnType<typeof createFileCreation>
-  getNameOf: (path: string) => string
-  isNoteAt: (path: string) => boolean
-}
-
 const getMenuEntry = (list: FileTree, path: string): Entry =>
   list.getEntryAt(path) ?? {
     path,
@@ -87,75 +85,84 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
     type: NOTE_TYPE,
   }
 
-const hasMenuId = (items: readonly MenuEntry[], id: string): boolean =>
-  items.some((one) => one.id === id || (one.children && hasMenuId(one.children, id)))
+const getPathTarget = (list: FileTree, path: string, others: readonly string[]): CommandTarget => {
+  const entry = getMenuEntry(list, path)
+  const target = { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
+  return entry.isNote ? { ...target, noteType: entry.type } : target
+}
 
-const hasSubmenuChildren = (items: readonly MenuEntry[], id: string): boolean =>
-  items.some(
-    (one) =>
-      (one.id === id && Boolean(one.children?.length)) ||
-      (one.children !== undefined && hasSubmenuChildren(one.children, id)),
-  )
+const getMenuTarget = (
+  list: FileTree,
+  path: string | null,
+  overPaths: readonly string[],
+): CommandTarget =>
+  path === null
+    ? { path: ROOT, title: '', isFolder: true, others: [], tab: '' }
+    : getPathTarget(
+        list,
+        path,
+        overPaths.filter((one) => one !== path),
+      )
 
-function useFileMenu(options: FileMenuDeps) {
-  const { list, deps, renamingPath, creators, getNameOf, isNoteAt } = options
-  const menu = ref<MenuRequest | null>(null)
+/** The words of the rows the menu writes itself. */
+const MENU_WORDS = { loadingText: words.loadingItems }
 
-  const openMenu = (request: MenuRequest) => {
-    menu.value = request
-  }
+/** What the menu of the tree is over: where it was requested, and the target of its commands. */
+interface FileMenuTarget {
+  readonly request: MenuRequest
+  readonly target: CommandTarget
+}
 
-  const dismissMenu = () => {
-    menu.value = null
-  }
+function useFileMenu(list: FileTree, deps: FilesTabDeps) {
+  const reportFailure = createFailureReporter(deps)
+  const slotMenu = useSlotMenu<FileMenuTarget>({
+    listItems: (command, { target }) => deps.listItems(command, target),
+    words: MENU_WORDS,
+    onError: reportFailure,
+  })
+  const menu = computed(() => slotMenu.target.value?.request ?? null)
 
   const getOverPaths = (path: string): readonly string[] =>
     list.selectedPaths.value.includes(path) ? list.selectedPaths.value : [path]
 
-  const getMenuItems = (path: string | null): readonly MenuEntry[] => {
-    if (path === null) return createMenuItems(null, false)
-    const isSeveral = getOverPaths(path).length > 1
-    return createMenuItems(
-      deps.getPathCommands({ entry: getMenuEntry(list, path), isSeveral }),
-      isSeveral,
-    )
+  const getTarget = (path: string | null): CommandTarget =>
+    getMenuTarget(list, path, path === null ? [] : getOverPaths(path))
+
+  /** Opens the menu the request asks for, over the row it was opened on. */
+  const openMenu = (request: MenuRequest) => {
+    const target = getTarget(request.path)
+    slotMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
   }
+
+  /** The rows of the open menu for its row; for another row, its rows before any list is read. */
+  const getMenuItems = (path: string | null) => {
+    const openMenuTree = slotMenu.menu.value
+    if (openMenuTree && menu.value?.path === path) return openMenuTree.items
+    return createSlotMenu(deps.getMenuEntries(getTarget(path)), new Map(), MENU_WORDS).items
+  }
+
+  const getMenuIcon = (id: string): Component | null =>
+    (slotMenu.getIcon(id) as Component | undefined) ?? null
 
   const chooseMenuItem = (id: string) => {
-    const request = menu.value
-    menu.value = null
-    if (!request) return
-    const items = getMenuItems(request.path)
-    if (!OWN_IDS.has(id) && !hasMenuId(items, id)) return
-    if (hasSubmenuChildren(items, id)) return
-    if (id === NEW_NOTE) {
-      creators.createNote(request.path).catch(createFailureReporter(deps))
-      return
-    }
-    if (id === NEW_FOLDER) {
-      creators.createFolder(request.path).catch(createFailureReporter(deps))
-      return
-    }
-
-    const path = request.path
-    if (path === null) return
-    if (id === RENAME) {
-      renamingPath.value = path
-      return
-    }
-    deps.runCommand(id, getOverPaths(path), {
-      name: getNameOf(path),
-      isNote: isNoteAt(path),
-      isFolder: list.getEntryAt(path)?.isFolder ?? false,
-    })
+    const choice = slotMenu.pick(id)
+    if (!choice) return
+    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
   }
 
-  return { menu, openMenu, dismissMenu, chooseMenuItem, getOverPaths, getMenuItems }
+  return {
+    menu,
+    openMenu,
+    dismissMenu: slotMenu.close,
+    chooseMenuItem,
+    getOverPaths,
+    getMenuItems,
+    getMenuIcon,
+  }
 }
 
 function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
-  const isNoteAt = (path: string): boolean => list.getEntryAt(path)?.isNote ?? false
 
   const activate = (path: string) => {
     const entry = list.getEntryAt(path)
@@ -183,14 +190,12 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps.runCommand(TRASH_NOTE, paths, {
-      name: getNameOf(first),
-      isNote: isNoteAt(first),
-      isFolder: list.getEntryAt(first)?.isFolder ?? false,
-    })
+    deps
+      .runCommand(TRASH_NOTE, getPathTarget(list, first, paths.slice(1)))
+      .catch(createFailureReporter(deps))
   }
 
-  return { getNameOf, isNoteAt, activate, rename, drag, remove }
+  return { getNameOf, activate, rename, drag, remove }
 }
 
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
@@ -202,14 +207,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const actions = createFileActions(list, deps)
   const creators = createFileCreation(list, deps, renamingPath)
   const { move } = createFileMoves(list, deps)
-  const fileMenu = useFileMenu({
-    list,
-    deps,
-    renamingPath,
-    creators,
-    getNameOf: actions.getNameOf,
-    isNoteAt: actions.isNoteAt,
-  })
+  const fileMenu = useFileMenu(list, deps)
 
   const reportFailure = createFailureReporter(deps)
 
@@ -238,7 +236,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     dismissMenu: fileMenu.dismissMenu,
     chooseMenuItem: fileMenu.chooseMenuItem,
     getMenuItems: fileMenu.getMenuItems,
-    getCommandIcon: (id) => deps.getCommandIcon(id),
+    getMenuIcon: fileMenu.getMenuIcon,
     getEntryIcon: (entry, isOpen) => deps.getEntryIcon(entry, isOpen),
   }
 

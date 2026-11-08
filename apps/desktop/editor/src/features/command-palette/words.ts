@@ -87,7 +87,7 @@ export interface Words extends EmptyWords {
   readonly leavesOut: string
   readonly names: string
   readonly typeNote: string
-  readonly typeChoice: string
+  readonly typeItems: string
   readonly chooses: string
   readonly vaults: string
   readonly typeVault: string
@@ -112,10 +112,4 @@ export interface Words extends EmptyWords {
   readonly asChild: string
   readonly asParent: string
   readonly asJump: string
-}
-
-/** What the menu on a row of the files tree offers besides the commands over a note. */
-export const PATH_WORDS = {
-  remove: 'Remove',
-  relation: 'Relation',
 }

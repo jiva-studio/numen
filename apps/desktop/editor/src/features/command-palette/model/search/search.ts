@@ -3,10 +3,9 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
-import type { NoteType } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
@@ -109,10 +108,21 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly entries: readonly PlacedCommand[]
+  readonly getMenu: (target: RunTarget) => readonly SlotItem[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
+
+const getNoteTarget = (path: string, title: string): RunTarget => ({
+  path,
+  title,
+  isFolder: false,
+  others: [],
+  tab: '',
+})
+
+const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] =>
+  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
 
 function buildSearchGroups(deps: BuildGroupsDeps) {
   const hitsById = new Map<string, SearchHit>()
@@ -131,17 +141,23 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'names',
       deps.words.names,
-      deps.names.map((one) => createNameItem(one, deps.words, deps.entries)),
+      deps.names.map((one) =>
+        createNameItem(one, deps.words, deps.getMenu(getNoteTarget(one.path, one.title))),
+      ),
     ),
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.entries)),
+      deps.texts.map((one) =>
+        createPassageItem('text', one, deps.words, getPassageMenu(deps, one)),
+      ),
     ),
     group(
       'meaning',
       deps.words.meaning,
-      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.entries)),
+      deps.meanings.map((one) =>
+        createPassageItem('meaning', one, deps.words, getPassageMenu(deps, one)),
+      ),
     ),
   ]
 
@@ -237,7 +253,11 @@ async function executeSearchQuery(
 }
 
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
-  const findNoteType = (item: string): NoteType | null => getHits().get(item)?.type ?? null
+  /** The tab kind of the note a hit is in; null for a hit in a file that is no note, or no hit. */
+  const findTabKind = (item: string): string | null => {
+    const searchHit = getHits().get(item)
+    return searchHit && searchHit.type !== null ? (searchHit.tabKind ?? '') : null
+  }
 
   /** The path of a hit in a file that is no note, and null for a note. */
   const findHitFile = (item: string): string | null => {
@@ -245,7 +265,7 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
     return searchHit && searchHit.type === null ? searchHit.path : null
   }
 
-  return { findNoteType, findHitFile }
+  return { findTabKind, findHitFile }
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
@@ -298,7 +318,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       texts: texts.value,
       meanings: meanings.value,
       words,
-      entries: how.menu?.getEntries() ?? [],
+      getMenu: (target) => how.menu?.getEntries(target) ?? [],
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })

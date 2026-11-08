@@ -35,27 +35,20 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
   })
 
-  it('manages status view registrations', () => {
-    const ctx = createMockPluginContext({ pluginId: 'status-plugin' })
-    const d = ctx.registerStatusView({ id: 'update', component: {} })
+  it('lists a slot view until it is disposed', () => {
+    const ctx = createMockPluginContext({ pluginId: 'bar-plugin' })
+    const d = ctx.registerSlotView({ id: 'bar', component: {} })
 
-    expect(ctx.getRegisteredStatusViews()).toEqual([{ id: 'update', component: {} }])
+    expect(ctx.getRegisteredSlotViews()).toEqual([{ id: 'bar', component: {} }])
     d.dispose()
-    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
-  })
-
-  it('removes status views on dispose', () => {
-    const ctx = createMockPluginContext()
-    ctx.registerStatusView({ id: 'update', component: {} })
-    ctx.dispose()
-    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
+    expect(ctx.getRegisteredSlotViews()).toHaveLength(0)
   })
 
   it('describes the application build', () => {
     const ctx = createMockPluginContext({
-      app: { version: '2026.10.3', build: 42, platform: 'windows' },
+      app: { name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' },
     })
-    expect(ctx.app).toEqual({ version: '2026.10.3', build: 42, platform: 'windows' })
+    expect(ctx.app).toEqual({ name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' })
     expect(createMockPluginContext().app.platform).toBe('linux')
   })
 

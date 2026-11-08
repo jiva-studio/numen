@@ -1,0 +1,4 @@
+/* A frameless window on Windows and Linux is resized by its edges. */
+body {
+  --wails-resize: all;
+}

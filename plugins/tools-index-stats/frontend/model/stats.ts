@@ -1,5 +1,5 @@
 /**
- * What the status bar shows of the index: the last answer of the backend, kept fresh by asking every
+ * What the title bar shows of the index: the last answer of the backend, kept fresh by asking every
  * two seconds while the window is in use.
  *
  * The core emits no event when the index changes, so the model asks. It asks only while the window is

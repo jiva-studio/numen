@@ -41,7 +41,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 	chemistry.SetStore(pluginID, other.Store())
 	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
-	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
+	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
 	return twoVaults{current: current, other: other, texts: texts, server: server}
 }
 
@@ -132,10 +132,11 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	server := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
 	t.Cleanup(server.Close)
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+	if err := server.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatalf("CreateText: %v", err)
 	}
 	listing, err := texts.ListVersions(t.Context(), "tiny.pdf")

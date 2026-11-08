@@ -6,9 +6,8 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
-import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/steps'
@@ -30,12 +29,12 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 /**
  * The palette's current step: a prompt for one value, or the list of commands.
  * Each kind is a noun for what the person is asked: `name` is typed, `note` queries the
- * vault, `vault` queries the installation, `choice` offers an in-memory list,
+ * vault, `vault` queries the installation, `items` offers an in-memory list,
  * `confirmation` asks for a yes or a no, `retypedName` asks for the title typed again, and
  * `arguments` prompts for one of a command's `prompts`, one step per prompt.
  */
 export type Step =
-  'commands' | 'name' | 'note' | 'vault' | 'choice' | 'confirmation' | 'retypedName' | 'arguments'
+  'commands' | 'name' | 'note' | 'vault' | 'items' | 'confirmation' | 'retypedName' | 'arguments'
 
 /**
  * One value a command requires, entered in its own step. A step that is not
@@ -74,7 +73,9 @@ export interface CommandTarget {
   readonly file: string
   readonly line?: number
   readonly selector?: Selector
+  readonly isFolder?: boolean
   readonly others?: readonly string[]
+  readonly isTargetNamed?: boolean
   readonly vault: VaultRef
   readonly isReady: boolean
 }
@@ -91,12 +92,18 @@ export interface Command {
   readonly next?: PromptStep
   readonly prompts?: readonly CommandPrompt[]
   readonly group: CommandGroup
+  readonly when?: string
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string
   readonly answers?: ConfirmWords
   readonly warns?: RetypeWords
   readonly also?: string
+  /**
+   * The items it offers over the target, for a command whose step is a argument; the argument picked
+   * is the name of its invocation.
+   */
+  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */
@@ -109,11 +116,13 @@ export interface CommandInvocation {
   readonly file: string
   readonly line?: number
   readonly selector?: Selector
+  readonly isFolder?: boolean
   readonly others: readonly string[]
   readonly name: string
   readonly kind: string | null
   readonly tab: string
   readonly values?: Readonly<Record<string, string>>
+  readonly isTargetNamed?: boolean
 }
 
 /**
@@ -172,12 +181,6 @@ export interface Notes {
    * current one.
    */
   openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
-  /** Opens a file created by this command, as the type it was created as. */
-  openNewFile(
-    path: string,
-    title: string,
-    options: EditorKind | { type: EditorKind; where?: FilePlacement },
-  ): void
 }
 
 /**

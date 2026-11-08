@@ -73,12 +73,13 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue(), newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	server := NewTextServer(files, texts, files.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	return texts, server, raw
 }
 
-func createText(t *testing.T, server *TextServer, req host.TextCreation) {
+func createText(t *testing.T, server *TextServer, req TextRequest) {
 	t.Helper()
 	if err := server.CreateText(t.Context(), req); err != nil {
 		t.Fatalf("CreateText: %v", err)
@@ -108,7 +109,7 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 	texts, server, raw := newVault(t, "books/tiny.pdf", "tiny.pdf")
 
-	createText(t, server, host.TextCreation{Path: "books/tiny.pdf"})
+	createText(t, server, TextRequest{Path: "books/tiny.pdf"})
 
 	text := readLive(t, texts, "books/tiny.pdf")
 	if text.Version().Kind != textKind {
@@ -127,7 +128,7 @@ func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 
 func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	createText(t, server, host.TextCreation{Path: "tiny.pdf"})
+	createText(t, server, TextRequest{Path: "tiny.pdf"})
 	text := readLive(t, texts, "tiny.pdf")
 
 	from := strings.Index(text.Text, "Delta")
@@ -156,7 +157,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 
 func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 	texts, server, raw := newVault(t, "outline.pdf", "outline.pdf")
-	createText(t, server, host.TextCreation{Path: "outline.pdf"})
+	createText(t, server, TextRequest{Path: "outline.pdf"})
 	book, err := newTestWorkers(t).Read(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -233,7 +234,7 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 				texts, server, _ = newVaultOf(t, name, raw)
 			}
 
-			createText(t, server, host.TextCreation{Path: name})
+			createText(t, server, TextRequest{Path: name})
 
 			listing, err := texts.ListVersions(t.Context(), name)
 			if err != nil {
@@ -248,7 +249,7 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 
 func TestGetHighlightsPlacesRunsOfTheLiveVersion(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	createText(t, server, host.TextCreation{Path: "tiny.pdf"})
+	createText(t, server, TextRequest{Path: "tiny.pdf"})
 	documents := newDocumentServer(server, texts)
 	text := readLive(t, texts, "tiny.pdf")
 	beta, zeta := strings.Index(text.Text, "beta"), strings.Index(text.Text, "zeta")
@@ -319,7 +320,7 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 
-	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
+	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
 
 	if text := readLive(t, other, "tiny.pdf"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
@@ -356,13 +357,14 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
+	texts.SetStore(pluginID, files.Store())
+	srv := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
 
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 	// Duplicate call while running is a no-op
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 	// Close cancels running task and unlocks
@@ -372,7 +374,7 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 	}
 
 	// CreateText after Close is a no-op
-	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 }

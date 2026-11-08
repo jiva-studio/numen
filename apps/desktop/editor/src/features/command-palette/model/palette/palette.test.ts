@@ -56,6 +56,7 @@ const name = (
   line: heading ? 4 : -1,
   at: [{ start: 0, end: 1 }],
   type,
+  ...(type === 'note' ? {} : { tabKind: type }),
 })
 
 const vault = (id: string, name: string, isMissing = false): Vault => ({
@@ -100,8 +101,8 @@ const MODE_TEXT = 'Light or dark'
 
 /** The commands of two settings, as the adapter of the settings offers them beside the table. */
 const SETTING_COMMANDS: readonly Command[] = [
-  { id: THEME_ID, text: THEME_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
-  { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
+  { id: THEME_ID, text: THEME_TEXT, group: 'settings', input: 'items', isAvailable: () => true },
+  { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'items', isAvailable: () => true },
 ]
 
 const createLists = (commandLists: Record<string, readonly StepGroup[]>) => {
@@ -611,7 +612,7 @@ describe('a command that offers a list the window holds', () => {
     commands.startCommand(THEME_ID, front())
 
     expect(commands.crumb.value).toBe(THEME_TEXT)
-    expect(commands.placeholder.value).toBe(words.typeChoice)
+    expect(commands.placeholder.value).toBe(words.typeItems)
     expect(commands.groups.value.map((group) => group.title)).toStrictEqual([
       'Built-in',
       'Custom themes',
@@ -1275,7 +1276,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
     await settle()
 
-    expect(commands.findNoteType('physics/Entropy.md')).toBeNull()
+    expect(commands.findTabKind('physics/Entropy.md')).toBeNull()
   })
 
   it('asks the vault nothing at a step that does not pick a note', async () => {
@@ -1419,7 +1420,7 @@ describe('what a step draws', () => {
     ])
   })
 
-  it('says which of four each note found is, and nothing of a note it did not find', async () => {
+  it('says which tab kind opens each note found, and nothing of a note it did not find', async () => {
     const { commands } = createPalette({}, [
       name('physics/Entropy.md', 'Entropy', '', 'sample'),
       name('physics/Heat.md', 'Heat', '', 'form'),
@@ -1428,9 +1429,9 @@ describe('what a step draws', () => {
 
     await commands.setTyped('en')
 
-    expect(commands.findNoteType('physics/Heat.md')).toBe('form')
-    expect(commands.findNoteType('physics/Entropy.md')).toBe('sample')
-    expect(commands.findNoteType('Order.md')).toBeNull()
+    expect(commands.findTabKind('physics/Heat.md')).toBe('form')
+    expect(commands.findTabKind('physics/Entropy.md')).toBe('sample')
+    expect(commands.findTabKind('Order.md')).toBeNull()
   })
 
   it('asks for a note where only spaces are typed', async () => {

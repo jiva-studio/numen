@@ -1,4 +1,4 @@
-import { shallowRef, type Component, type Ref, type ShallowRef } from 'vue'
+import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CatalogEntry, PluginCatalog } from '@numen/core-client'
 import UnavailablePane from './UnavailablePane.vue'
@@ -14,7 +14,7 @@ export type UnavailableLookup =
 export interface UnavailableServices {
   readonly catalog?: PluginCatalog | undefined
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
-  readonly arePluginsStarting?: Readonly<Ref<boolean>> | undefined
+  readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
   readonly openPlugin?: ((pluginId: string | undefined) => void) | undefined
 }
 

@@ -1,10 +1,11 @@
 import type { ShownRow } from '../lib/row'
 
+/** Props for a single tree row component. */
 export interface TreeRowProps {
   row: ShownRow
   name: string
   isSelected: boolean
-  isLifted: boolean
+  isDragged: boolean
   isDropInside: boolean
   isDropAbove: boolean
   isTabStop: boolean

@@ -3,6 +3,8 @@ package service_test
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -38,6 +40,57 @@ func TestTheCreateCommandsMakeTheFileAndOpenIt(t *testing.T) {
 			}
 			if made := onDisk(t, root, "Rivers.md"); !strings.Contains(made, kind) {
 				t.Errorf("the file holds %q", made)
+			}
+		})
+	}
+}
+
+// A create command run over a row of the file tree makes the file in the folder of the row: the
+// row itself where it is a folder of the vault, and the folder holding it where it is a file.
+func TestTheCreateCommandsMakeTheFileInTheFolderOfTheRowTheyRunOver(t *testing.T) {
+	for _, id := range []string{"deck.create", "cardModel.create", "preset.create"} {
+		for _, row := range []string{"Glaciers", "Glaciers/Lakes.md"} {
+			t.Run(id+" over "+row, func(t *testing.T) {
+				env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
+				commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				result, err := commands.RunCommand(t.Context(), command.Request{
+					Command: id, Path: row, Arguments: command.Arguments{"title": "Rivers"},
+				})
+
+				if err != nil || result.OpenedPath != "Glaciers/Rivers.md" {
+					t.Fatalf("the command answered %+v, %v", result, err)
+				}
+				onDisk(t, env.Vault.Path, "Glaciers/Rivers.md")
+			})
+		}
+	}
+}
+
+// A create command run over a path the vault holds no file or folder at makes nothing.
+func TestTheCreateCommandsMakeNothingOverAMissingRow(t *testing.T) {
+	for _, row := range []string{"Gone", "Glaciers/Gone.md"} {
+		t.Run(row, func(t *testing.T) {
+			env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
+			commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := commands.RunCommand(t.Context(), command.Request{
+				Command: "deck.create", Path: row, Arguments: command.Arguments{"title": "Rivers"},
+			})
+
+			if err == nil || !strings.Contains(err.Error(), "no such file or folder") || result.OpenedPath != "" {
+				t.Fatalf("the command answered %+v, %v", result, err)
+			}
+			for _, made := range []string{"Rivers.md", "Gone/Rivers.md", "Glaciers/Rivers.md"} {
+				if _, statErr := os.Stat(filepath.Join(env.Vault.Path, made)); statErr == nil {
+					t.Errorf("the command made %s", made)
+				}
 			}
 		})
 	}

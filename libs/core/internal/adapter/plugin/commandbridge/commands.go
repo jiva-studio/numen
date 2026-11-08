@@ -1,4 +1,4 @@
-// Package commandbridge connects the commands the manifests declare to the backends that run them,
+// Package commandbridge runs the commands the manifests declare in the backends of their plugins,
 // over PluginCommandService.
 package commandbridge
 
@@ -29,7 +29,7 @@ type Host interface {
 	pluginport.PluginActivator
 }
 
-// Commands is the commands of the plugins the host runs.
+// Commands runs the commands of the plugins the host runs.
 type Commands struct {
 	host Host
 }
@@ -37,53 +37,6 @@ type Commands struct {
 // Open makes the bridge to the plugins the host runs. It starts none.
 func Open(host Host) Commands {
 	return Commands{host: host}
-}
-
-// ListCommands lists the commands the manifests of the enabled plugins declare. No plugin is started.
-func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
-	var found []pluginport.PluginCommandEntry
-	for _, info := range c.host.GetPluginInfos() {
-		plugin, isEnabled := c.host.GetPlugin(info.ID)
-		if !isEnabled {
-			continue
-		}
-		for _, command := range plugin.Manifest.Contributes.Commands {
-			found = append(found, pluginport.PluginCommandEntry{
-				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, Command: command,
-			})
-		}
-	}
-	return found
-}
-
-// ListMenus lists the menu entries the manifests of the enabled plugins declare. No plugin is started.
-func (c Commands) ListMenus() []pluginport.PluginMenuEntry {
-	var found []pluginport.PluginMenuEntry
-	for _, info := range c.host.GetPluginInfos() {
-		plugin, isEnabled := c.host.GetPlugin(info.ID)
-		if !isEnabled {
-			continue
-		}
-		for _, menu := range plugin.Manifest.Contributes.Menus {
-			found = append(found, pluginport.PluginMenuEntry{PluginID: plugin.Manifest.ID, Menu: menu})
-		}
-	}
-	return found
-}
-
-// GetParts says what the enabled plugin of the id has, and whether the host holds it suspended.
-func (c Commands) GetParts(pluginID string) pluginport.PluginParts {
-	plugin, isEnabled := c.host.GetPlugin(pluginID)
-	if !isEnabled {
-		return pluginport.PluginParts{}
-	}
-	parts := pluginport.PluginParts{HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend()}
-	for _, info := range c.host.GetPluginInfos() {
-		if info.ID == pluginID {
-			parts.IsSuspended = info.Failure != nil
-		}
-	}
-	return parts
 }
 
 // RunCommand starts the plugin where it is not running and runs the command in its backend, holding
@@ -98,7 +51,7 @@ func (c Commands) RunCommand(
 	defer func() { err = errors.Join(err, lease.Close()) }()
 
 	res, err := client.RunCommand(ctx, connect.NewRequest(&v1.RunCommandRequest{
-		Command: call.Command, Path: call.Path, Arguments: call.Arguments,
+		Command: call.Command, Path: call.Path, Arguments: call.Arguments, ItemId: call.ItemID,
 	}))
 	if err != nil {
 		return pluginport.PluginCommandResult{}, readCommandError(ctx, call.PluginID, err)
@@ -129,14 +82,8 @@ func readCommandError(ctx context.Context, pluginID string, err error) error {
 	return &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginFailed, Err: err}
 }
 
-// NoCommands is an installation with no plugin that declares a command.
+// NoCommands is an installation with no plugin to run a command.
 type NoCommands struct{}
-
-func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
-
-func (NoCommands) ListMenus() []pluginport.PluginMenuEntry { return nil }
-
-func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 
 func (NoCommands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
 	return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginNotInstalled}

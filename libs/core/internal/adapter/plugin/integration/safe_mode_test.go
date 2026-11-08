@@ -26,7 +26,7 @@ func TestHostSafeMode(t *testing.T) {
 			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
 		},
 		"permissions": ["vault:read"],
-		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"}
+		"backend": {"entrypoint": "bin/sample"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)

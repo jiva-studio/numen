@@ -2,14 +2,7 @@
 export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
-export type {
-  EditorKind,
-  FileOpener,
-  FilePlacement,
-  FileOpeners,
-  OpenPlacement,
-  SourceReader,
-} from './model/openers'
+export type { FileOpener, FileOpeners, OpenPlacement, SourceReader } from './model/openers'
 export type { OpenTabs, Tab } from './lib/tab'
 export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './model/kinds'
 export { useWindowTabs } from './model/windowTabs'

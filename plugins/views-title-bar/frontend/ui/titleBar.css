@@ -1,0 +1,141 @@
+.title-bar {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  height: 32px;
+  min-height: 32px;
+  background: var(--numen-titlebar);
+  border-bottom: 1px solid var(--numen-rule);
+  color: var(--numen-ink);
+  font-size: 13px;
+  user-select: none;
+}
+
+.title-bar__inset {
+  position: relative;
+  z-index: 1;
+  flex: none;
+}
+
+/* The bar is three columns: the buttons, the title and the status. The two outer columns are equal,
+   so the title sits in the middle of the bar whatever they hold; a column never gets less than its
+   content, and the title gives way first. The window buttons overlap the ends of the area and the
+   columns keep clear of them with padding. */
+.title-bar__start {
+  position: relative;
+  top: var(--numen-window-edge);
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  margin-inline: calc(-1 * var(--title-bar-lead)) calc(-1 * var(--title-bar-trail));
+}
+
+.title-bar__lead,
+.title-bar__trail {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.title-bar__lead {
+  padding-inline-start: var(--title-bar-lead);
+}
+
+.title-bar__trail {
+  justify-content: flex-end;
+  padding-inline-end: max(var(--title-bar-trail), var(--title-bar-corner-inset));
+}
+
+.title-bar__middle {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+
+.title-bar__slot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+}
+
+/* The gap between two groups of a slot. */
+.title-bar__gap {
+  flex: none;
+  width: 8px;
+  height: 100%;
+}
+
+.title-bar__view {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+}
+
+.title-bar__button {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* A command or a submenu without an icon is written with its title. */
+.title-bar__button--text {
+  width: auto;
+  padding-inline: 8px;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.title-bar__button:hover,
+.title-bar__button[aria-expanded='true'] {
+  background: var(--numen-surface);
+}
+
+.title-bar__button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--numen-accent);
+}
+
+.title-bar__title {
+  min-width: 0;
+  padding-inline: 12px;
+  line-height: 32px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The title as a button is as wide as its text, so the room beside it still drags the window. */
+.title-bar__title--trigger {
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.title-bar__title--trigger:focus-visible,
+.title-bar__title--trigger[aria-expanded='true'] {
+  background: var(--numen-surface);
+}
+
+.title-bar__title--trigger:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--numen-accent);
+}

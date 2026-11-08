@@ -11,9 +11,10 @@ type manifestShape struct {
 	Permissions []string `json:"permissions"`
 	Services    []string `json:"services"`
 	Contributes struct {
-		StatusViews []struct {
-			ID string `json:"id"`
-		} `json:"statusViews"`
+		Slots []struct {
+			Slot string `json:"slot"`
+			View string `json:"view"`
+		} `json:"slots"`
 	} `json:"contributes"`
 	Settings []json.RawMessage `json:"settings"`
 }
@@ -27,7 +28,7 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-// The plugin runs in the editor, reads the search index, and draws one view in the status bar.
+// The plugin runs in the editor, reads the search index, and draws one view in the title bar.
 func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T) {
 	shape := readManifest(t)
 
@@ -40,12 +41,12 @@ func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T)
 	if !slices.Equal(shape.Services, []string{"md.numen.tools.index.stats"}) {
 		t.Errorf("services = %v", shape.Services)
 	}
-	if len(shape.Contributes.StatusViews) != 1 || shape.Contributes.StatusViews[0].ID != "stats" {
-		t.Errorf("status views = %+v", shape.Contributes.StatusViews)
+	if len(shape.Contributes.Slots) != 1 || shape.Contributes.Slots[0].Slot != "titleBar.status" || shape.Contributes.Slots[0].View != "stats" {
+		t.Errorf("slots = %+v", shape.Contributes.Slots)
 	}
 }
 
-// The plugin has no settings: the status bar item is part of the editor and needs none.
+// The plugin has no settings: the title bar item is part of the editor and needs none.
 func TestTheManifestDeclaresNoSettings(t *testing.T) {
 	if got := readManifest(t).Settings; len(got) != 0 {
 		t.Errorf("settings = %s", got)

@@ -1,16 +1,10 @@
-/**
- * The splitter that composes panes, and what a handle reports.
- *
- * The shares a handle settles on are what the workspace receives; the
- * arithmetic on them is tested in `shares.test.ts`.
- */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WorkspacePane } from '../pane'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { split, stack } from '../../fixtures/build'
 import { type Branch, type Tab, type TabId } from '../../lib/node'
 
@@ -34,9 +28,10 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
     minimum: 220,
+    getStripEdge: () => NO_STRIP_EDGE,
     choose: vi.fn(),
     close: vi.fn(),
-    lift: vi.fn(),
+    startTabPress: vi.fn(),
     menu: vi.fn(),
     claim,
     resize,
@@ -84,19 +79,19 @@ const getHandles = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(Spl
 const layout = (one: BranchFixture, pos: number, sizes: number[]) =>
   groups(one)[pos]!.vm.$emit('layout', sizes)
 
-describe('what a branch draws', () => {
+describe('WorkspaceBranch layout', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('is a panel for each child, with a handle between them', () => {
+  it('renders a panel for each child and a resize handle between them', () => {
     const one = mountBranch(twoPanes())
 
     expect(panes(one)).toHaveLength(2)
     expect(getHandles(one)).toHaveLength(1)
   })
 
-  it('nests a branch inside a branch, and draws every pane of it', () => {
+  it('renders nested branches and all descendant panes', () => {
     const one = mountBranch(createNested())
 
     expect(one.wrapper.findAllComponents(WorkspaceBranch)).toHaveLength(1)
@@ -108,14 +103,14 @@ describe('what a branch draws', () => {
     ).toStrictEqual(['left', 'upper', 'lower'])
   })
 
-  it('turns a quarter at each level down', () => {
+  it('alternates splitter direction at each nesting depth', () => {
     const one = mountBranch(createNested())
 
     expect(groups(one)[0]?.props('direction')).toBe('horizontal')
     expect(groups(one)[1]?.props('direction')).toBe('vertical')
   })
 
-  it('gives each panel the share the model holds', () => {
+  it('passes defaultSize percentages and node ids to each panel', () => {
     const one = mountBranch(twoPanes())
     const panels = one.wrapper.findAllComponents(SplitterPanel)
 
@@ -123,14 +118,12 @@ describe('what a branch draws', () => {
     expect(panels.map((each) => each.props('id'))).toStrictEqual(['left', 'right'])
   })
 
-  it('leaves each panel a share of the branch worth drawing in', async () => {
+  it('updates panel minSize percentages from branch size and minimum pixel width', async () => {
     const stretch = stubResizeObserver()
     const one = mountBranch(twoPanes())
     const floors = () =>
       one.wrapper.findAllComponents(SplitterPanel).map((each) => each.props('minSize'))
 
-    // This workspace calls 220 pixels worth drawing in, which is a quarter of a
-    // branch 880 across and half of one 440 across.
     await one.wrapper.vm.$nextTick()
     stretch(880)
     await one.wrapper.vm.$nextTick()
@@ -140,20 +133,18 @@ describe('what a branch draws', () => {
     await one.wrapper.vm.$nextTick()
     expect(floors()).toStrictEqual([50, 50])
 
-    // An equal share is the ceiling: a branch too short to give both children
-    // that many pixels divides what it has evenly.
     stretch(200)
     await one.wrapper.vm.$nextTick()
     expect(floors()).toStrictEqual([50, 50])
   })
 
-  it('passes a slot down however deep the pane remains', () => {
+  it('forwards slots to nested panes', () => {
     const one = mountBranch(createNested())
 
     expect(one.wrapper.findAll('.tab-slot')).toHaveLength(3)
   })
 
-  it('marks the pane the workspace is focused on', () => {
+  it('marks only the focused pane with data-focused', () => {
     const one = mountBranch(twoPanes())
     const marked = one.wrapper
       .findAll('[data-workspace-pane]')
@@ -163,10 +154,10 @@ describe('what a branch draws', () => {
   })
 })
 
-describe('a handle taken up and put down', () => {
+describe('resize handle dragging', () => {
   const grab = (one: BranchFixture, now: boolean) => getHandles(one)[0]!.vm.$emit('dragging', now)
 
-  it('says nothing while it is still retained', async () => {
+  it('does not call resize while the handle is being dragged', async () => {
     const one = mountBranch(twoPanes())
 
     grab(one, true)
@@ -176,7 +167,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).not.toHaveBeenCalled()
   })
 
-  it('says where it came to rest, once', async () => {
+  it('calls resize once with the final ratios when dragging ends', async () => {
     const one = mountBranch(twoPanes())
 
     grab(one, true)
@@ -188,7 +179,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('root', [0.45, 0.55])
   })
 
-  it('says a change the splitter made on its own at once', async () => {
+  it('calls resize immediately when layout changes without an active drag', async () => {
     const one = mountBranch(twoPanes())
 
     layout(one, 0, [20, 80])
@@ -197,7 +188,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('root', [0.2, 0.8])
   })
 
-  it('says nothing for shares the model already holds', async () => {
+  it('does not call resize when layout sizes match the model', async () => {
     const one = mountBranch(twoPanes())
 
     layout(one, 0, [70, 30])
@@ -206,7 +197,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).not.toHaveBeenCalled()
   })
 
-  it('marks the branch for as long as the handle is retained', async () => {
+  it('sets data-resizing on the branch while dragging', async () => {
     const one = mountBranch(twoPanes())
     const branch = one.wrapper.find('.branch')
 
@@ -219,7 +210,7 @@ describe('a handle taken up and put down', () => {
     expect(branch.attributes('data-resizing')).toBeUndefined()
   })
 
-  it('names the branch it belongs to and no other', async () => {
+  it('passes the resized branch id for nested branches', async () => {
     const one = mountBranch(createNested())
 
     layout(one, 1, [30, 70])
@@ -228,7 +219,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('down', [0.3, 0.7])
   })
 
-  it('says nothing about a handle release after the branch has gone', () => {
+  it('does not call resize when unmounted during a drag', () => {
     const one = mountBranch(twoPanes())
 
     grab(one, true)

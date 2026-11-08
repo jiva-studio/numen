@@ -320,14 +320,24 @@ func makeSecondaryWindow(
 	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
 }
 
+// The size of a window of a torn-off tab that gives no size of its own.
+const (
+	secondaryWindowWidth  = 1280
+	secondaryWindowHeight = 860
+)
+
 func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
-		Width:          1280,
-		Height:         860,
+		Width:          secondaryWindowWidth,
+		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
 	})
+	if tab.Width > 0 && tab.Height > 0 {
+		opts.Width = tab.Width
+		opts.Height = tab.Height
+	}
 	if tab.X != 0 || tab.Y != 0 {
 		opts.InitialPosition = application.WindowXY
 		opts.X = tab.X

@@ -10,6 +10,7 @@ export interface ListItem {
   readonly text: string
   readonly detail?: string
   readonly group?: string
+  readonly hasSeparator?: boolean
 }
 
 /** The key of the row that stands first, whatever it is made of. */

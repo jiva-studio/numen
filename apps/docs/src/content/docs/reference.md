@@ -57,12 +57,6 @@ The agent and the model that handle the questions of a plugin whose own setting 
 | `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
 | `concurrency` | a number | how many questions one agent handles at once. |
 
-### `app.window`
-
-| | | |
-| --- | --- | --- |
-| `buttons` | text | where the window draws its minimise, maximise and close buttons on Linux: at the right like Windows, or at the left like macOS. One of `windows`, `mac`. |
-
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.
@@ -139,6 +133,7 @@ The settings of the plugin Document OCR.
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
 | `customDictPath` | text | UTF-8 text, one character per line. Empty for a model that includes its own. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |
+| `recognizeAutomatically` | yes or no | recognize the text of every PDF and image in the vault that has none. A text removed with Delete text is recognized again. |
 
 ### `md.numen.engines.transcription`
 
@@ -147,6 +142,7 @@ The settings of the plugin Audio/Video Transcription.
 | | | |
 | --- | --- | --- |
 | `model` | text | speech recognition model downloaded from Hugging Face. Parakeet v3 supports 25 European languages with automatic language detection; Parakeet v2 is English-only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
+| `transcribeAutomatically` | yes or no | transcribe every recording in the vault that has no transcript. A transcript removed with Delete text is made again. |
 
 ### `md.numen.notes`
 
@@ -175,6 +171,7 @@ The settings of the plugin Media Importer.
 | `ffmpeg` | text | path to the ffmpeg program. |
 | `captions` | text | caption languages in order of preference, comma-separated. |
 | `automaticCaptions` | yes or no | use auto-generated captions when a site has no others. |
+| `downloadCaptionsAutomatically` | yes or no | download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again. |
 | `copyMaxSizeMb` | a number | maximum video download size in megabytes; 0 for no limit. From 0 to 100000. |
 
 ### `md.numen.tools.proofreading`
@@ -225,4 +222,12 @@ The settings of the plugin Plex Graph.
 | --- | --- | --- |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
+
+### `md.numen.views.titleBar`
+
+The settings of the plugin Title bar.
+
+| | | |
+| --- | --- | --- |
+| `buttons` | text | where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu. One of `mac`, `windows`, `none`. |
 <!-- END AUTOGEN -->

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -18,44 +19,34 @@ import (
 // Versions is the text versions of vault files: what plugins report and what is
 // live.
 type Versions struct {
-	repos     textport.VersionRepositories
-	files     textport.TextFileStores
-	plugins   textport.TextPlugins
-	providers textport.TextProviders
-	readers   vaultport.VaultReaders
-	clock     machineport.Clock
+	repos   textport.VersionRepositories
+	files   textport.TextFileStores
+	plugins textport.TextPlugins
+	readers vaultport.VaultReaders
+	clock   machineport.Clock
 
-	mu        sync.Mutex
-	listener  textport.VersionListener
-	requested map[request]bool
-}
-
-// request identifies one automatic request to a plugin for text of one file content.
-type request struct {
-	vault       domain.VaultID
-	path        string
-	contentHash string
-	pluginID    string
+	mu       sync.Mutex
+	listener textport.VersionListener
+	lives    map[liveKey]domain.TextVersionID
 }
 
 // NewVersions returns the versions use case. It takes the version repositories,
-// the file stores, the plugins that create text and their providers, the vault
+// the file stores, the enabled plugins that may record versions, the vault
 // readers that read a note's type, and the clock that dates new versions. No
 // listener is notified of changes until SetListener is called.
 func NewVersions(
 	repos textport.VersionRepositories,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
-	providers textport.TextProviders,
 	readers vaultport.VaultReaders,
 	clock machineport.Clock,
 ) (*Versions, error) {
-	if repos == nil || files == nil || plugins == nil || providers == nil || readers == nil || clock == nil {
-		return nil, errors.New("text versions need a repository, files, plugins, providers, vault readers and a clock")
+	if repos == nil || files == nil || plugins == nil || readers == nil || clock == nil {
+		return nil, errors.New("text versions need a repository, files, plugins, vault readers and a clock")
 	}
 	return &Versions{
-		repos: repos, files: files, plugins: plugins, providers: providers, readers: readers, clock: clock,
-		listener: noListener{}, requested: map[request]bool{},
+		repos: repos, files: files, plugins: plugins, readers: readers, clock: clock,
+		listener: noListener{}, lives: map[liveKey]domain.TextVersionID{},
 	}, nil
 }
 
@@ -70,7 +61,16 @@ func (u *Versions) SetListener(listener textport.VersionListener) {
 	u.listener = listener
 }
 
-func (u *Versions) reportChanged(v domain.Vault, path string) {
+func (u *Versions) reportChanged(ctx context.Context, v domain.Vault, path string) {
+	if _, err := u.updateLive(ctx, v, path); err != nil {
+		u.mu.Lock()
+		delete(u.lives, liveKey{vault: v.ID, path: path})
+		u.mu.Unlock()
+	}
+	u.notifyListener(v, path)
+}
+
+func (u *Versions) notifyListener(v domain.Vault, path string) {
 	u.mu.Lock()
 	listener := u.listener
 	u.mu.Unlock()
@@ -84,24 +84,25 @@ func (noListener) ReportVersionsChanged(domain.Vault, string) {}
 // VersionPut is what a plugin reports of one of its versions. File is the name
 // of the version's file in the plugin's folder, written before the put.
 type VersionPut struct {
-	Path      string
-	Key       string
-	Source    domain.TextVersionID
-	Kind      domain.TextKind
-	InputHash string
-	File      string
+	Path           string
+	Key            string
+	Source         domain.TextVersionID
+	SourceProperty domain.TextSourceProperty
+	Kind           domain.TextKind
+	InputHash      string
+	File           string
 }
 
 // PutVersion records a version of the plugin, or replaces the record of the
 // one it has under the key. The core reads the version's file and records the
 // hash of its bytes. A replaced version keeps the time it was first made.
 func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params VersionPut) (domain.TextVersion, error) {
-	if !u.hasPlugin(pluginID) {
+	if !u.plugins.IsEnabled(pluginID) {
 		return domain.TextVersion{}, fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source,
-		Kind: params.Kind, File: params.File, InputHash: params.InputHash,
+		SourceProperty: params.SourceProperty, Kind: params.Kind, File: params.File, InputHash: params.InputHash,
 	})
 }
 
@@ -136,7 +137,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err := repo.SaveVersion(ctx, version); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), version.Path, err)
 	}
-	u.reportChanged(v, version.Path)
+	u.reportChanged(ctx, v, version.Path)
 	return version, nil
 }
 
@@ -149,6 +150,10 @@ func checkVersionFields(version domain.TextVersion) error {
 }
 
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
+	if version.IsFromProperty() && (version.Source != "" || version.InputHash != "") {
+		return fmt.Errorf("%w: a version made from the property %s of %s has another source",
+			textport.ErrInvalidVersion, version.SourceProperty.Key, version.Path)
+	}
 	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
 		return fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
 	}
@@ -164,7 +169,38 @@ func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, 
 	if err := repo.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
 		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
 	}
-	u.reportChanged(v, path)
+	u.reportChanged(ctx, v, path)
+	return nil
+}
+
+// DeleteVersion deletes the version of the file at the path, whichever plugin made it: its record and
+// its file in the folder of that plugin. The listener is notified that the file's versions changed. A version
+// the file does not have is ErrInvalidVersion.
+func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID) error {
+	versions, err := u.getVersions(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	index := indexOf(versions, id)
+	if index < 0 {
+		return fmt.Errorf("%w: %s has no version %s", textport.ErrInvalidVersion, path, id)
+	}
+	version := versions[index]
+	repo, err := u.repos.Open(v)
+	if err != nil {
+		return err
+	}
+	if err := repo.RemoveVersion(ctx, path, id); err != nil {
+		return fmt.Errorf("remove version %s of %s: %w", id, path, err)
+	}
+	files, err := u.files.Open(v)
+	if err != nil {
+		return err
+	}
+	if err := files.DeleteTextFile(ctx, version.PluginID, version.File); err != nil {
+		return fmt.Errorf("delete the file %s of %s: %w", version.File, version.PluginID, err)
+	}
+	u.reportChanged(ctx, v, path)
 	return nil
 }
 
@@ -183,7 +219,7 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, conte
 		return Listing{}, err
 	}
 	listing := Listing{Versions: versions}
-	live, ok, err := u.findLive(ctx, v, versions, contentHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
 		return Listing{}, err
 	}
@@ -193,19 +229,38 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, conte
 	return listing, nil
 }
 
-func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []domain.TextVersion, contentHash string) (domain.TextVersion, bool, error) {
+func (u *Versions) findLive(
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
+) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
+	}
+	properties, err := u.readSourceProperties(ctx, v, path, versions)
+	if err != nil {
+		return domain.TextVersion{}, false, err
 	}
 	files, err := u.files.Open(v)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
-	live, ok := domain.FindLiveVersion(versions, contentHash, func(version domain.TextVersion) bool {
+	live, ok := domain.FindLiveVersion(versions, contentHash, properties, func(version domain.TextVersion) bool {
 		file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
 		return err == nil && file.TextHash == version.TextHash
 	})
 	return live, ok, nil
+}
+
+func (u *Versions) readSourceProperties(
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion,
+) (map[string]any, error) {
+	if !slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
+		return nil, nil
+	}
+	_, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
+	if err != nil {
+		return nil, fmt.Errorf("read the properties of %s: %w", path, err)
+	}
+	return properties, nil
 }
 
 // DeletePluginVersions removes the records of every version a plugin made in a
@@ -223,7 +278,7 @@ func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, plu
 	for _, one := range removed {
 		if !slices.Contains(paths, one.Path) {
 			paths = append(paths, one.Path)
-			u.reportChanged(v, one.Path)
+			u.reportChanged(ctx, v, one.Path)
 		}
 	}
 	return nil
@@ -272,57 +327,38 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 // fileExtension ends the name of a version file the core writes.
 const fileExtension = ".jsonl"
 
-func (u *Versions) createText(ctx context.Context, req textport.TextCreation, pluginID string) error {
-	path := req.Path
-	if !u.hasPlugin(pluginID) {
-		return fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
-	}
-	provider, err := u.providers.OpenProvider(ctx, pluginID)
-	if err != nil {
-		return err
-	}
-	if err := provider.CreateText(ctx, req); err != nil {
-		return fmt.Errorf("create text of %s with %s: %w", path, pluginID, err)
-	}
-	return nil
-}
-
-// RequestText requests text of the file from each enabled plugin that runs
-// automatically and reads the file, once for each content of the file. A file
-// with a live version is not requested.
-func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, contentHash string) error {
+// ListTargetVersions lists the versions of the file at the path as the when variable target.versions
+// holds them, each marked valid where its source chain still matches the file, and the live one. The
+// file is read for its content hash only where it has versions.
+func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error) {
 	versions, err := u.getVersions(ctx, v, path)
+	if err != nil || len(versions) == 0 {
+		return []pluginport.TargetVersion{}, err
+	}
+	contentHash, err := u.GetContentHash(ctx, v, path)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	if _, ok, err := u.findLive(ctx, v, versions, contentHash); err != nil || ok {
-		return err
+	properties, err := u.readSourceProperties(ctx, v, path, versions)
+	if err != nil {
+		return nil, err
 	}
-	var failures []error
-	for _, plugin := range u.plugins.GetTextPlugins() {
-		if !plugin.Files.IsFileAccepted(path) {
-			continue
-		}
-		key := request{vault: v.ID, path: path, contentHash: contentHash, pluginID: plugin.ID}
-		if !u.markRequested(key) {
-			continue
-		}
-		if err := u.createText(ctx, textport.TextCreation{Vault: v.ID, Path: path}, plugin.ID); err != nil {
-			u.clearRequested(key)
-			failures = append(failures, err)
-		}
+	live, hasLive, err := u.findLive(ctx, v, path, versions, contentHash)
+	if err != nil {
+		return nil, err
 	}
-	return errors.Join(failures...)
+	out := make([]pluginport.TargetVersion, 0, len(versions))
+	for _, one := range versions {
+		out = append(out, pluginport.TargetVersion{
+			Kind: string(one.Kind), PluginID: one.PluginID, IsLive: hasLive && one.GetID() == live.GetID(),
+			IsValid: domain.IsChainValid(versions, one.GetID(), contentHash, properties),
+		})
+	}
+	return out, nil
 }
 
-// IsTextSource reports whether the index keeps the text of the file: it has text
-// versions, or an enabled plugin that runs on its own takes it.
+// IsTextSource reports whether the index keeps the text of the file: it has text versions.
 func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string) (bool, error) {
-	for _, plugin := range u.plugins.GetTextPlugins() {
-		if plugin.Files.IsFileAccepted(path) {
-			return true, nil
-		}
-	}
 	versions, err := u.getVersions(ctx, v, path)
 	return len(versions) > 0, err
 }
@@ -333,26 +369,6 @@ func (u *Versions) getVersions(ctx context.Context, v domain.Vault, path string)
 		return nil, err
 	}
 	return repo.GetVersions(ctx, path)
-}
-
-func (u *Versions) hasPlugin(pluginID string) bool {
-	return slices.ContainsFunc(u.plugins.GetTextPlugins(), func(plugin textport.TextPlugin) bool { return plugin.ID == pluginID })
-}
-
-func (u *Versions) markRequested(key request) bool {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	if u.requested[key] {
-		return false
-	}
-	u.requested[key] = true
-	return true
-}
-
-func (u *Versions) clearRequested(key request) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	delete(u.requested, key)
 }
 
 func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {

@@ -47,3 +47,16 @@ test.describe('Start-up while a plugin does not start', () => {
     expect(errors).toStrictEqual([])
   })
 })
+
+test.describe('Start-up with the updater and the index stats', () => {
+  test('draws the tab bar and the panes with the title bar items of both', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto('/')
+    await expectWorkspace(page)
+    const bar = page.locator('[data-title-bar]')
+    await expect(bar.locator('[data-tasks-status]')).toBeVisible()
+    await expect(bar.locator('.index-stats__trigger')).toBeVisible()
+    expect(errors).toStrictEqual([])
+  })
+})

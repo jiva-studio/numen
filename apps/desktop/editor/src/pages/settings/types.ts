@@ -32,6 +32,8 @@ export interface Installation {
    */
   isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
+  /** The operating system of the window: darwin, windows or linux; the `app.platform` of conditions. */
+  getPlatform?(): string
   write(content: readonly SettingEdit[]): void
   /**
    * The secrets, each a name in a group with the plugin declarations that may read it. A value
@@ -48,7 +50,7 @@ export interface Installation {
   /** Lets one declaration of a plugin read a secret. The group is empty for a declaration with none. */
   allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
   denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
-  /** A plugin the host suspends, started once more. */
+  /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
    * Opens the machine's native picker for a plugin's setting of type file or folder, and

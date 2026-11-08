@@ -22,7 +22,13 @@ const WORD = { name: 'Word', fields: ['Word', 'Reading', 'Meaning', 'In a senten
 
 const CARD_MODEL_STATE: CardModelTabState = {
   id: 'Sanskrit/Word.md',
-  note: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', error: null })),
+  note: computed(() => ({
+    path: 'Sanskrit/Word.md',
+    body: '',
+    state: 'clean',
+    error: null,
+    isRead: true,
+  })),
   cardModel: computed(() => ({
     fields: WORD.fields,
     preamble: '',

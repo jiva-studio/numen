@@ -2,7 +2,7 @@
 // @generated from file numen/v1/media.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// Where a player loads a file of the vault from.
+// Where a player or a frame loads a file from.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -12,42 +12,43 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/media.proto.
  */
 export const file_numen_v1_media: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9tZWRpYS5wcm90bxIIbnVtZW4udjEiJQoVR2V0TWVkaWFTb3VyY2VSZXF1ZXN0EgwKBHBhdGgYASABKAkiOQoWR2V0TWVkaWFTb3VyY2VSZXNwb25zZRILCgNzcmMYASABKAkSEgoKbWVkaWFfdHlwZRgCIAEoCSI3ChRHZXRQYWdlU291cmNlUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEcGF0aBgCIAEoCSIkChVHZXRQYWdlU291cmNlUmVzcG9uc2USCwoDc3JjGAEgASgJMrUBCgxNZWRpYVNlcnZpY2USUwoOR2V0TWVkaWFTb3VyY2USHy5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlcXVlc3QaIC5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlc3BvbnNlElAKDUdldFBhZ2VTb3VyY2USHi5udW1lbi52MS5HZXRQYWdlU291cmNlUmVxdWVzdBofLm51bWVuLnYxLkdldFBhZ2VTb3VyY2VSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS9tZWRpYS5wcm90bxIIbnVtZW4udjEiKAoVUmVzb2x2ZUFkZHJlc3NSZXF1ZXN0Eg8KB2FkZHJlc3MYASABKAkiOQoWUmVzb2x2ZUFkZHJlc3NSZXNwb25zZRILCgNzcmMYASABKAkSEgoKbWVkaWFfdHlwZRgCIAEoCTJjCgxNZWRpYVNlcnZpY2USUwoOUmVzb2x2ZUFkZHJlc3MSHy5udW1lbi52MS5SZXNvbHZlQWRkcmVzc1JlcXVlc3QaIC5udW1lbi52MS5SZXNvbHZlQWRkcmVzc1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
- * @generated from message numen.v1.GetMediaSourceRequest
+ * @generated from message numen.v1.ResolveAddressRequest
  */
-export type GetMediaSourceRequest = Message<"numen.v1.GetMediaSourceRequest"> & {
+export type ResolveAddressRequest = Message<"numen.v1.ResolveAddressRequest"> & {
   /**
-   * The file, as the vault holds it.
+   * A path of the vault, or plugin://<plugin id>/<path>.
    *
-   * @generated from field: string path = 1;
+   * @generated from field: string address = 1;
    */
-  path: string;
+  address: string;
 };
 
 /**
- * Describes the message numen.v1.GetMediaSourceRequest.
- * Use `create(GetMediaSourceRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ResolveAddressRequest.
+ * Use `create(ResolveAddressRequestSchema)` to create a new message.
  */
-export const GetMediaSourceRequestSchema: GenMessage<GetMediaSourceRequest> = /*@__PURE__*/
+export const ResolveAddressRequestSchema: GenMessage<ResolveAddressRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_media, 0);
 
 /**
- * @generated from message numen.v1.GetMediaSourceResponse
+ * @generated from message numen.v1.ResolveAddressResponse
  */
-export type GetMediaSourceResponse = Message<"numen.v1.GetMediaSourceResponse"> & {
+export type ResolveAddressResponse = Message<"numen.v1.ResolveAddressResponse"> & {
   /**
    * An http address on the loopback interface: a player in a window drawn from
-   * the toolkit's own scheme loads no media from that scheme. Empty where this
-   * build serves no files.
+   * the toolkit's own scheme loads no media from that scheme, and a page
+   * framed from that scheme sends no Referer. Empty where this build serves no
+   * files.
    *
    * @generated from field: string src = 1;
    */
   src: string;
 
   /**
-   * The media type (RFC 6838) of the bytes at src.
+   * The media type (RFC 6838) of the bytes at src. Empty where no type is known.
    *
    * @generated from field: string media_type = 2;
    */
@@ -55,60 +56,14 @@ export type GetMediaSourceResponse = Message<"numen.v1.GetMediaSourceResponse"> 
 };
 
 /**
- * Describes the message numen.v1.GetMediaSourceResponse.
- * Use `create(GetMediaSourceResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ResolveAddressResponse.
+ * Use `create(ResolveAddressResponseSchema)` to create a new message.
  */
-export const GetMediaSourceResponseSchema: GenMessage<GetMediaSourceResponse> = /*@__PURE__*/
+export const ResolveAddressResponseSchema: GenMessage<ResolveAddressResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_media, 1);
 
 /**
- * @generated from message numen.v1.GetPageSourceRequest
- */
-export type GetPageSourceRequest = Message<"numen.v1.GetPageSourceRequest"> & {
-  /**
-   * The plugin that serves the page.
-   *
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-
-  /**
-   * The page below the plugin's route, with its query: `embed?address=...`.
-   *
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
-
-/**
- * Describes the message numen.v1.GetPageSourceRequest.
- * Use `create(GetPageSourceRequestSchema)` to create a new message.
- */
-export const GetPageSourceRequestSchema: GenMessage<GetPageSourceRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_media, 2);
-
-/**
- * @generated from message numen.v1.GetPageSourceResponse
- */
-export type GetPageSourceResponse = Message<"numen.v1.GetPageSourceResponse"> & {
-  /**
-   * The address of the page on the loopback interface. Empty where this build
-   * serves no files.
-   *
-   * @generated from field: string src = 1;
-   */
-  src: string;
-};
-
-/**
- * Describes the message numen.v1.GetPageSourceResponse.
- * Use `create(GetPageSourceResponseSchema)` to create a new message.
- */
-export const GetPageSourceResponseSchema: GenMessage<GetPageSourceResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_media, 3);
-
-/**
- * MediaService returns the address a player loads a file of the vault from.
+ * MediaService resolves the address of a file to where a window loads its bytes from.
  *
  * It is a service apart from the vault's notes: a window that serves the notes
  * to a network need not serve the files, and a binary mounts a service whole.
@@ -117,29 +72,16 @@ export const GetPageSourceResponseSchema: GenMessage<GetPageSourceResponse> = /*
  */
 export const MediaService: GenService<{
   /**
-   * GetMediaSource returns where the bytes of a file are loaded from and the
-   * media type a player is told. A file a plugin keeps a copy of to play is
-   * loaded from the copy.
+   * ResolveAddress returns the address the bytes of a file are loaded from and
+   * the media type of those bytes. An address is a path of the vault, or
+   * plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
    *
-   * @generated from rpc numen.v1.MediaService.GetMediaSource
+   * @generated from rpc numen.v1.MediaService.ResolveAddress
    */
-  getMediaSource: {
+  resolveAddress: {
     methodKind: "unary";
-    input: typeof GetMediaSourceRequestSchema;
-    output: typeof GetMediaSourceResponseSchema;
-  },
-  /**
-   * GetPageSource returns where a page a plugin serves below its route is
-   * loaded from in a frame: an http address on the loopback interface. A page
-   * of the toolkit's own scheme sends no Referer, and a site framed in a page
-   * served there is sent the origin of the loopback socket.
-   *
-   * @generated from rpc numen.v1.MediaService.GetPageSource
-   */
-  getPageSource: {
-    methodKind: "unary";
-    input: typeof GetPageSourceRequestSchema;
-    output: typeof GetPageSourceResponseSchema;
+    input: typeof ResolveAddressRequestSchema;
+    output: typeof ResolveAddressResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_media, 0);

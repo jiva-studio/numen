@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.7",
+  "version": "2026.11.9",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -21,24 +21,64 @@
         "id": "graph.open",
         "title": "Open plex graph",
         "icon": "waypoints",
-        "shortcut": "mod+shift+x"
+        "shortcut": "mod+shift+x",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "graph.showNote",
         "title": "Show note in plex",
         "icon": "waypoints",
-        "scope": "note",
+        "when": "target.isNote",
         "shortcut": "mod+shift+p"
       }
     ],
-    "menus": [
+    "slots": [
       {
-        "location": "searchResult",
+        "slot": "palette.searchResult",
         "command": "graph.showNote",
         "group": "navigate",
         "order": 20
       },
-      { "location": "titleBar", "command": "graph.open", "group": "navigate", "order": 20 }
+      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
+      { "slot": "fileTree.context", "command": "graph.showNote", "group": "0-open", "order": 20 },
+      {
+        "slot": "fileTree.context",
+        "submenu": "plex.relation",
+        "title": "Relation",
+        "icon": "waypoints",
+        "group": "4-relation"
+      },
+      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
+      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
+      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      { "slot": "plexGraph.context", "command": "app:note.open", "group": "0-open", "order": 10 },
+      { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.copyPath",
+        "group": "2-file",
+        "order": 10
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createChild",
+        "group": "3-plex",
+        "order": 10
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createParent",
+        "group": "3-plex",
+        "order": 20
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.createJump",
+        "group": "3-plex",
+        "order": 30
+      },
+      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
+      { "slot": "plexGraph.context", "command": "app:note.trash", "group": "9-remove" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

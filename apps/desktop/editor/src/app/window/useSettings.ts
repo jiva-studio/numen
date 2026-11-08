@@ -1,7 +1,7 @@
 /**
  * Settings configuration, theme application, and palette lists for the window.
  */
-import { computed, watch } from 'vue'
+import { watch } from 'vue'
 import { themes } from '@/entities/settings'
 import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
@@ -16,7 +16,6 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
-import type { WindowButtons } from './useWindowFrame'
 
 type Words = typeof WORDS
 
@@ -27,6 +26,7 @@ export interface SettingsDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  getPlatform?: Installation['getPlatform']
   catalog?: PluginCatalog
 }
 
@@ -37,13 +37,23 @@ interface SettingsTabConfigDeps {
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
   getSettingsViews?: Installation['getSettingsViews']
+  getPlatform?: Installation['getPlatform']
   catalogEntries?: Installation['catalog']
   reportError: (error: unknown) => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, rest, secrets, retry, core, getSettingsViews, catalogEntries, reportError } =
-    deps
+  const {
+    appearance,
+    rest,
+    secrets,
+    retry,
+    core,
+    getSettingsViews,
+    getPlatform,
+    catalogEntries,
+    reportError,
+  } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
@@ -51,6 +61,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   }
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
+    ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
@@ -107,12 +118,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     app: rest.app,
     file: rest.path,
   }
-}
-
-function createWindowButtons(rest: ReturnType<typeof createSettingsStore>) {
-  return computed<WindowButtons>(() =>
-    rest.getSetting(['app', 'window', 'buttons']) === 'mac' ? 'mac' : 'windows',
-  )
 }
 
 function createChangeFollower(deps: {
@@ -208,6 +213,7 @@ export function useSettings({
   windowTabs,
   onSizeChanged,
   getSettingsViews,
+  getPlatform,
   catalog,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
@@ -244,6 +250,7 @@ export function useSettings({
       retry,
       core,
       ...(getSettingsViews ? { getSettingsViews } : {}),
+      ...(getPlatform ? { getPlatform } : {}),
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
     }),
@@ -273,7 +280,6 @@ export function useSettings({
 
   const api = {
     appearance,
-    windowButtons: createWindowButtons(rest),
     rest,
     configured,
     paletteLists: settingPalette.lists,

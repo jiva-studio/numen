@@ -66,9 +66,8 @@ func openRaw(t *testing.T, path string) *sql.DB {
 	return raw
 }
 
-// The dump in testdata is what the ten old steps produced, applied in order on an empty database,
-// with the content hash columns of sources and the renamed hashes of text_versions.
-func TestAFreshIndexHasExactlyTheSchemaTheTenOldStepsProduced(t *testing.T) {
+// The dump in testdata is the schema a fresh index has.
+func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	ctx := t.Context()
 	raw, err := os.ReadFile(filepath.Join("testdata", "schema_of_the_ten_steps.json"))
 	if err != nil {
@@ -93,7 +92,7 @@ func TestAFreshIndexHasExactlyTheSchemaTheTenOldStepsProduced(t *testing.T) {
 	if !slices.Equal(got, want) {
 		for _, e := range got {
 			if !slices.Contains(want, e) {
-				t.Errorf("a fresh index has %s %s as\n%s\nthe ten steps did not produce it so", e.kind, e.name, e.body)
+				t.Errorf("a fresh index has %s %s as\n%s\nthe recorded schema does not hold it so", e.kind, e.name, e.body)
 			}
 		}
 		for _, e := range want {

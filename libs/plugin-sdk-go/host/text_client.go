@@ -84,6 +84,7 @@ func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.Tex
 	res, err := c.rpc.PutTextVersion(ctx, newTextRequest(c, &v1.PutTextVersionRequest{
 		Path: params.Path, Key: params.Key, SourceVersionId: string(params.Source), Kind: string(params.Kind),
 		InputHash: params.InputHash, File: params.File,
+		SourceProperty: writeSourceProperty(params.SourceProperty),
 	}))
 	if err != nil {
 		return domain.TextVersion{}, readError(err)
@@ -132,8 +133,16 @@ func readTextVersion(v *v1.TextVersion) domain.TextVersion {
 	return domain.TextVersion{
 		Path: v.GetPath(), PluginID: v.GetPluginId(), Key: v.GetKey(), Source: domain.TextVersionID(v.GetSourceVersionId()),
 		Kind: domain.TextKind(v.GetKind()), File: v.GetFile(), InputHash: v.GetInputHash(), TextHash: v.GetTextHash(),
-		CreateTime: time.UnixMilli(v.GetCreateTimeUnixMs()),
+		CreateTime:     time.UnixMilli(v.GetCreateTimeUnixMs()),
+		SourceProperty: domain.TextSourceProperty{Key: v.GetSourceProperty().GetKey(), Value: v.GetSourceProperty().GetValue()},
 	}
+}
+
+func writeSourceProperty(p domain.TextSourceProperty) *v1.TextSourceProperty {
+	if p.Key == "" {
+		return nil
+	}
+	return &v1.TextSourceProperty{Key: p.Key, Value: p.Value}
 }
 
 func readTextSegments(segments []*v1.TextSegment) []domain.TextSegment {

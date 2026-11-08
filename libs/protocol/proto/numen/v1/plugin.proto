@@ -104,6 +104,9 @@ message PluginSettingOption {
   string title = 2;
   // What a person reads under the setting while the value is in force.
   string detail = 3;
+  // The condition the option is offered under, as in the manifest. The window evaluates it; an
+  // option whose condition does not hold is shown and cannot be chosen. Empty offers it always.
+  string when = 4;
 }
 
 // PluginSettingOptions is one list of options.
@@ -149,7 +152,7 @@ message PluginInfo {
   repeated string permissions = 8;
   // The secrets the manifest declares.
   repeated SecretRequest secrets = 9;
-  // Set while the host suspends the plugin after it failed to start.
+  // Set while the last start of the plugin failed, until a start succeeds.
   PluginFailure failure = 10;
   // Whether the plugin declares a frontend bundle a window loads.
   bool has_frontend = 11;
@@ -181,7 +184,7 @@ message PluginReader {
   repeated string extensions = 2;
 }
 
-// PluginFailure is why a plugin is suspended, and when it was.
+// PluginFailure is why the last start of a plugin failed, and when.
 message PluginFailure {
   // A short UI label for the failure, such as "Failed to start".
   string reason = 1;

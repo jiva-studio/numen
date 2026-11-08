@@ -65,7 +65,13 @@ const SECTIONS = [
 
 const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
-  note: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
+  note: computed(() => ({
+    path: 'Sanskrit/Roots.md',
+    body: '',
+    state: 'clean',
+    error: null,
+    isRead: true,
+  })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   deckCards: computed(() => CARDS),
   sections: computed(() => SECTIONS),

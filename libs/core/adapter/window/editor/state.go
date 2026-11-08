@@ -231,7 +231,9 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 	for _, went := range what.renamed {
 		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
 	}
-	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
+	return &v1.WatchVaultChangesResponse{
+		Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves, VersionPaths: what.versionPaths,
+	}
 }
 
 // GetWindow returns the window handle for requesting place focus.
@@ -280,6 +282,7 @@ type change struct {
 	paths        []string
 	shouldReload bool
 	renamed      []domain.Move
+	versionPaths []string
 }
 
 func newChangeBroadcaster() broadcaster[change] {
@@ -317,8 +320,9 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 // DetachedTab is a tab to open in a window of its own. The new window reads
 // the tab by its id with ReadDetachedTab.
 type DetachedTab struct {
-	ID   string
-	X, Y int
+	ID            string
+	X, Y          int
+	Width, Height int
 }
 
 func (v view) ActivateTab(_ context.Context, id string) error {

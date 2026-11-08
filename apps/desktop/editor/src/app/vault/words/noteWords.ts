@@ -21,9 +21,11 @@ import { mapConnection, type ConnectionWire } from './relationWords'
 interface NeighbourhoodWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
   readonly focusType: string
+  readonly focusTabKind?: string
   readonly related: readonly {
     readonly note?: { readonly path: string; readonly title: string } | undefined
     readonly type: string
+    readonly tabKind?: string
     readonly relation: NoteRelationCode
   }[]
   readonly connections: readonly ConnectionWire[]
@@ -91,6 +93,7 @@ export const mapWriteResult = (from: {
 export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: mapNoteType(answer.focusType),
+  ...(answer.focusTabKind ? { focusTabKind: answer.focusTabKind } : {}),
   related: answer.related.flatMap((one) => {
     const relation = relationByWire[one.relation] ?? null
     if (relation === null || one.note === undefined) return []
@@ -99,6 +102,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
         path: one.note.path,
         title: one.note.title,
         type: mapNoteType(one.type),
+        ...(one.tabKind ? { tabKind: one.tabKind } : {}),
         relation,
       },
     ]

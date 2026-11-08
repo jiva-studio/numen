@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * A deck editor: its cards as tiles in a grid, grouped under their sections,
- * with a plus button last.
- *
- * The grid lays out the cards, drags a card between positions, and requests
- * which card model a new card is created from. A card's content belongs to the
- * card. What a card means is the caller's.
- */
 import { computed, provide, shallowRef } from 'vue'
 import DeckRun from './DeckRun.vue'
 import { Icon } from '../icon'
@@ -27,7 +19,7 @@ import { getGrid, isMoved, type Run } from '../../lib/grid'
 import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { CardModel } from '../../lib/card'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
   defineProps<{
     cards: readonly DeckCard[]
@@ -50,19 +42,13 @@ const emit = defineEmits<{
   (event: 'remove-section', id: string): void
 }>()
 
-// --- State ---
-/**
- * The run whose plus is showing which card models a new card may be cut by.
- */
+/* --------------------------------- State ---------------------------------- */
 const activePickerRunId = shallowRef<string | null>(null)
 
-/**
- * The card under the pointer, and where dropping it would place it.
- */
 const {
   dragged,
   at: dropTarget,
-  lift,
+  startDrag,
   hover,
   release,
   drop,
@@ -81,6 +67,7 @@ provide(DECK_CONTEXT, {
   write: (card, target, text) => emit('write', card, target.field, target.index, text),
 })
 
+/* -------------------------------- Handlers -------------------------------- */
 function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
   hover(targetAt, event)
 }
@@ -101,8 +88,8 @@ function onRemoveCard(id: string): void {
   emit('remove', id)
 }
 
-function onLift(id: string, event: DragEvent): void {
-  lift(id, event)
+function onDragStart(id: string, event: DragEvent): void {
+  startDrag(id, event)
 }
 
 function onRelease(): void {
@@ -156,7 +143,7 @@ function onAddSection(): void {
       @rename-section="onRenameSection"
       @remove-section="onRemoveSection"
       @remove="onRemoveCard"
-      @lift="onLift"
+      @drag-start="onDragStart"
       @release="onRelease"
       @step="onStep"
       @ask="onAsk(run.id)"
@@ -173,10 +160,6 @@ function onAddSection(): void {
 </template>
 
 <style scoped>
-/* The deck is what scrolls. The grid inside it is as tall as its rows, which is
-   what lets every row take the height of the tallest tile of the whole deck.
-   The room the bar takes is kept whether it is drawn or not: how many columns
-   fit is read off this width. */
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;

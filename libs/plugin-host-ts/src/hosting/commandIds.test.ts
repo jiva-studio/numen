@@ -19,7 +19,14 @@ const createDeps = (...declarations: CommandDeclaration[]): PluginHostDeps => ({
   getCommandDeclarations: () => declarations,
 })
 
-const NOTE = { path: 'Notes/One.md', title: 'One', type: 'note' as const }
+const NOTE = {
+  path: 'Notes/One.md',
+  title: 'One',
+  type: 'note' as const,
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 describe('the full id of a command', () => {
   it('is the owner, a colon and the short id', () => {

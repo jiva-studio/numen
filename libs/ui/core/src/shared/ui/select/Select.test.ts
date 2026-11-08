@@ -272,3 +272,18 @@ describe('what a caller reaches the line by', () => {
     expect(document.activeElement).toBe(control.get('button').element)
   })
 })
+
+describe('a choice that is disabled', () => {
+  it('is drawn disabled and is not chosen', async () => {
+    const control = mountSelect({
+      choices: [CHOICES[0]!, { ...CHOICES[1]!, isDisabled: true }],
+    })
+    await openSelect(control)
+
+    const disabled = rows()[1] as HTMLButtonElement
+    expect(disabled.disabled).toBe(true)
+    disabled.click()
+    await settle()
+    expect(getEmitted(control)).toStrictEqual([])
+  })
+})

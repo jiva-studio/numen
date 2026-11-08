@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createAppInfo, DEV_VERSION, getPlatform, parseBuildNumber } from './appInfo'
+import { createAppInfo, DEV_VERSION, parseBuildNumber } from './appInfo'
+import type { AppInfo } from '@numen/plugin-sdk'
 
 describe('the build number', () => {
   it.each([
@@ -15,29 +16,28 @@ describe('the build number', () => {
   })
 })
 
-describe('the platform', () => {
-  it.each([
-    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)', 'darwin'],
-    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'windows'],
-    ['Mozilla/5.0 (X11; Linux x86_64)', 'linux'],
-    ['', 'linux'],
-  ])('%j is %s', (agent, expected) => {
-    expect(getPlatform(agent)).toBe(expected)
-  })
-})
-
 describe('the application info', () => {
   it('carries what the build was given', () => {
     expect(
-      createAppInfo({ version: '2026.10.1', build: '884', userAgent: 'Windows NT 10.0' }),
-    ).toEqual({ version: '2026.10.1', build: 884, platform: 'windows' })
+      createAppInfo({ version: '2026.10.1', build: '884', getPlatform: () => 'windows' }),
+    ).toEqual({ name: 'numen', version: '2026.10.1', build: 884, platform: 'windows' })
   })
 
   it('names a build made without a version the development build', () => {
-    expect(createAppInfo({ userAgent: 'Linux' })).toEqual({
+    expect(createAppInfo({ getPlatform: () => 'linux' })).toEqual({
+      name: 'numen',
       version: DEV_VERSION,
       build: 0,
       platform: 'linux',
     })
+  })
+
+  it('reports the platform the window reports at the time it is read', () => {
+    let platform: AppInfo['platform'] = 'windows'
+    const app = createAppInfo({ getPlatform: () => platform })
+
+    expect(app.platform).toBe('windows')
+    platform = 'darwin'
+    expect(app.platform).toBe('darwin')
   })
 })

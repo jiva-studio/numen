@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { getFileName, getFileStem, getRenamedPath, isNotePath } from '../src/workspace'
 
 describe('a note path', () => {
-  it('is a markdown file, or a path without an extension', () => {
+  it('is a file whose extension is md, in any case', () => {
     expect(isNotePath('Ideas/Plan.md')).toBe(true)
-    expect(isNotePath('Ideas/Plan')).toBe(true)
-    expect(isNotePath('Ideas.2024/Plan')).toBe(true)
-    expect(isNotePath('.archive/Plan')).toBe(true)
+    expect(isNotePath('Ideas/Plan.MD')).toBe(true)
+    expect(isNotePath('Ideas.2024/Plan.md')).toBe(true)
+  })
+
+  it('is not a file without an extension, nor a name that is only an extension', () => {
+    expect(isNotePath('Ideas/Plan')).toBe(false)
+    expect(isNotePath('Ideas.2024/Plan')).toBe(false)
+    expect(isNotePath('Data/README')).toBe(false)
+    expect(isNotePath('Ideas/.md')).toBe(false)
   })
 
   it('is not a file of any other extension', () => {

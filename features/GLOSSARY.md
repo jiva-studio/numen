@@ -6,7 +6,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 - file, note, text: a file is any file in a vault; a note is a markdown file that Numen reads as a note; a text is what is written inside a note, or a text version made from a file.
 - vault, folder, workspace, window: a vault is a folder that is added to Numen; a folder is a directory inside a vault; the workspace is the tab layout inside a window; a window shows one vault.
-- tab, pane, panel, banner, popover: a tab is one page in the tab bar; a pane is one stack of tabs; a panel is a side area in the flashcards review (and the palette action panel); a banner is the bar inside a note tab; a popover is a small box opened from the status bar or from a link.
+- tab, pane, panel, banner, popover: a tab is one page in the tab bar; a pane is one stack of tabs; a panel is a side area in the flashcards review (and the palette action panel); a banner is the bar inside a note tab; a popover is a small box opened from the title bar or from a link.
 - task, notice, message, notification: a task is a row in the task list for work or for a failure; a notice is a message from the core or a plugin that shows as a failed task; a message is a line in the agent conversation; "notification" is not a word of the interface.
 - link, wikilink, connection: a link joins two notes and is written in a note; a wikilink is `[[Note Title]]`; a connection is the pair of link records of two notes.
 - chunk, vector, passage: a chunk is a piece of text of the index; a vector is the numbers made for a chunk; a passage is a piece of text a search shows.
@@ -129,13 +129,13 @@ This file lists the things that exist in Numen, the word a person reads for each
 ## Window and status
 
 ### window
-- Is: One app window with its own vault, tabs and tasks. Two kinds: the editor and the flashcards window. It holds a title bar, a workspace and a status bar.
+- Is: One app window with its own vault, tabs and tasks. Two kinds: the editor and the flashcards window. It holds a title bar and a workspace, and a status bar where the plugin "Status bar" is enabled.
 - Texts: `appName` "numen" (editor/src/shared/words.ts).
 - Not: not a vault; two windows can show two vaults.
 
 ### title bar
-- Is: The bar at the top: the vault name (opens the vault switcher), action buttons that plugins place in the `titleBar` menu, window controls.
-- Texts: "More actions", "Minimise", "Maximise", "Restore", "Close" (libs/ui/shell/src/features/title-bar/lib/words.ts).
+- Is: The bar at the top, drawn by the plugin "Title bar": the vault name (opens the vault switcher), buttons for the commands that plugins place in the slot `titleBar.commands`, the status items that plugins place in `titleBar.status` (tasks, index stats, update), window controls.
+- Texts: "Title bar", "More commands", "Minimize", "Maximize", "Restore", "Close", "Switch vault" (plugins/views-title-bar/frontend/lib/words.ts).
 
 ### welcome screen
 - Is: The screen of a window that has no tab. It lists entry points and the vaults.
@@ -156,9 +156,9 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: a tool of the agent is not a command.
 
 ### status bar
-- Is: The thin bar at the bottom. On the left a summary of tasks; on the right the status views of plugins (index stats, update).
-- Texts: "Ready"; "<n> active"; "failed"; "Status Bar" (libs/ui/shell/src/features/status-bar/ui/StatusBar.vue).
-- Not: no text-only message line; "status corner" is an old name.
+- Is: The bar at the bottom, drawn by the plugin "Status bar", which is disabled by default. It holds the commands, submenus and views that plugins place in `statusBar.left` and `statusBar.right`.
+- Texts: "Status bar" (plugins/views-status-bar/frontend/lib/entries.ts).
+- Not: the summary of tasks and the index stats are in the title bar.
 
 ### task
 - Is: One row in the task list: work the app does behind the window, or a failure to tell about. Work has progress (`completedCount` of `total`, counted in `items`, `bytes` or `seconds`).
@@ -168,8 +168,8 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: three definitions in the code.
 
 ### task list
-- Is: The popover from the status bar that lists the tasks, newest first.
-- Texts: "Background Tasks"; "No active background tasks"; "Close" (libs/ui/shell/src/features/status-bar/ui/TaskPopover.vue).
+- Is: The popover from the task status in the title bar that lists the tasks, newest first. The task status is a chip that says "Idle" or "<n> of <m>".
+- Texts: "Background tasks"; "No active background tasks"; "Close" (plugins/views-tasks/frontend/lib/words.ts).
 
 ### notice
 - Is: A message of the window, the core or a plugin with a severity (`info`, `warning`, `error`). It has no screen of its own: a warning or an error shows as a failed task; `info` is dropped. Example: a bad value in `numen.json` is ignored with a notice titled "Read settings".
@@ -202,7 +202,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: "embedding" is the act; a vector is the result.
 
 ### index stats
-- Is: A status bar item that shows how many vectors the index holds, with a popover of numbers. Plugin "Index stats".
+- Is: A title bar item that shows how many vectors the index holds, with a popover of numbers. Plugin "Index stats".
 - Texts: "Index stats", "vectors", "indexing"; rows "Vectors", "Chunks", "Waiting for a vector", "Notes and files", "Model", "Recipe", "Vector size", "Performance profile" ("Eco", "Balanced", "Maximum"), "Index file size".
 - Not: not a notification.
 
@@ -277,9 +277,9 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: no highlight label in `words.ts`.
 
 ### recording
-- Is: An audio or video file played in a tab with its transcript. Tab kind `reader:media-player`, tab title "Audio Player".
-- States: "Audio playback not supported here."; "Recording failed to play."; "Loading stopped."; "Recording unreadable."; "Recording format not supported."; "Loading…".
-- Texts: plugins/views-media-player/frontend/words.ts.
+- Is: An audio or video file played in a tab with its transcript. Tab kind `reader:media-viewer`, tab title "Audio Player".
+- States: "Media playback not supported here."; "Recording failed to play."; "Loading stopped."; "Recording unreadable."; "Recording format not supported."; "Loading…".
+- Texts: plugins/views-media-viewer/frontend/words.ts.
 - Not: the recorder is another tab.
 
 ### recorder
@@ -291,7 +291,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: The written words of a recording, with times. The current line follows the audio.
 - States: "No transcript yet."; "Transcribing…".
 - Actions: `transcript.create` "Transcribe recording" (button "Transcribe"); "Proofread"; `transcript.delete` "Delete transcript"; "Follow".
-- Texts: "Transcript" (plugins/views-media-player/frontend/words.ts); plugin "Audio/Video Transcription" (plugins/engines-transcription/manifest.json).
+- Texts: "Transcript" (plugins/views-media-viewer/frontend/words.ts); plugin "Audio/Video Transcription" (plugins/engines-transcription/manifest.json).
 - Not: not "subtitles"; the agent chat key `noTranscript` means "No messages yet".
 
 ### text version
@@ -449,4 +449,4 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### update and release channel
 - Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Beta", "Custom".
 - Actions: "Download", "Release notes", "Dismiss".
-- Texts: "Update available", "Application update available", "Released on" (plugins/tools-updater/frontend/words.ts).
+- Texts: "Update available", "Released on" (plugins/tools-updater/frontend/words.ts); the chip in the title bar shows the version and its tooltip begins "Update available: v" (plugins/tools-updater/frontend/model/tooltip.ts).

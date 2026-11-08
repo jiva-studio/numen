@@ -2,10 +2,11 @@ package pdf
 
 import (
 	"bytes"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"math"
 	"os"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {

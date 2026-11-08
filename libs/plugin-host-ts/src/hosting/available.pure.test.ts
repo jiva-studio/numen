@@ -12,6 +12,7 @@ function createRegistry(
 ): HostRegistry {
   return {
     commands: { value: new Map(handlers) },
+    handlers: { value: new Map() },
     activated: { value: new Set(activated) },
     disposed: new Set<string>(),
     reportedIssues: new Set<string>(),
@@ -96,7 +97,14 @@ describe('the host reading the listed commands', () => {
     })
     host.createContext('md.tree')
     const event = new KeyboardEvent('keydown', { key: 'e' })
-    const note = { path: 'a.md', title: 'A', type: 'note' as const }
+    const note = {
+      path: 'a.md',
+      title: 'A',
+      type: 'note' as const,
+      isFolder: false,
+      others: [],
+      tab: '',
+    }
 
     host.getPaletteCommands()
     host.handleShortcut(event, async () => note)

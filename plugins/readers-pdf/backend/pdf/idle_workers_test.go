@@ -3,11 +3,12 @@ package pdf
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {

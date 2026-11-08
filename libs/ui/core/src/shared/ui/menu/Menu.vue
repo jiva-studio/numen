@@ -50,7 +50,7 @@ const isIgnored = (event: Event): boolean =>
 
 const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'), isIgnored)
 
-const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigation } =
+const { visibleItems, rows, here, submenu, focusInitial, pointTo, onKey, onResetNavigation } =
   useMenuNavigation({
     items: () => props.items,
     trigger: () => props.trigger,
@@ -69,6 +69,7 @@ const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigatio
 const isMenuVisible = computed(() => Boolean(props.isOpen))
 
 let highlightedId: string | null = null
+let lastPointer: { x: number; y: number } | null = null
 
 /* --------------------------------- Hooks ---------------------------------- */
 useMenuLifecycle({
@@ -86,14 +87,24 @@ useMenuLifecycle({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRowHover(item: MenuItem, event: MouseEvent): void {
+function onRowHover(item: MenuItem, index: number, event: MouseEvent): void {
   submenu.onRowHover(item, event)
   onHighlight(item.id)
+  // A row under a pointer that did not move (the list changed beneath it) is not taken.
+  if (event.type !== 'mousemove') return
+  const moved = !lastPointer || lastPointer.x !== event.clientX || lastPointer.y !== event.clientY
+  lastPointer = { x: event.clientX, y: event.clientY }
+  if (moved && !item.isDisabled) pointTo(index)
 }
 
 function onMenuLeave(event: MouseEvent): void {
   submenu.onMenuLeave(event)
   onHighlight(null)
+  // An open submenu keeps its parent row active.
+  if (!submenu.active.value) {
+    here.value = -1
+    menu.value?.focus({ preventScroll: true })
+  }
 }
 
 function onHighlight(id: string | null): void {
@@ -137,8 +148,9 @@ defineExpose({ getElement: () => menu.value })
         :current="current"
         :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
         :has-icons="Boolean($slots.icon)"
+        :is-active="index === here"
         @focus="here = index"
-        @hover="(event) => onRowHover(item, event)"
+        @hover="(event) => onRowHover(item, index, event)"
         @choose="submenu.onChoose(item)"
       >
         <slot name="icon" :id="item.id" />

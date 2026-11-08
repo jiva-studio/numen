@@ -7,10 +7,10 @@
 import { computed, ref } from 'vue'
 import { Menu, NamedIcon } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
-import MediaActions from '@plugins/views-media-player/frontend/MediaActions.vue'
-import Transcript from '@plugins/views-media-player/frontend/Transcript.vue'
+import MediaActions from '@plugins/views-media-viewer/frontend/MediaActions.vue'
+import Transcript from '@plugins/views-media-viewer/frontend/Transcript.vue'
 import { WORDS as words } from './words'
-import type { TranscriptState } from '@plugins/views-media-player/frontend/model/transcript'
+import type { TranscriptState } from '@plugins/views-media-viewer/frontend/model/transcript'
 
 function measureRect(el: HTMLElement): DOMRect {
   return el.getBoundingClientRect()

@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"context"
+
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -14,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -30,18 +31,17 @@ import (
 type Services struct {
 	state *State
 
-	Vault       *vaultHandler
-	Workspace   *workspaceHandler
-	File        *fileHandler
-	Note        *noteHandler
-	Search      *search.Handler
-	Vaults      *vaultsHandler
-	Settings    *settings.Handler
-	Agent       *wire.AgentHandler
-	Command     *command.Handler
-	Media       *mediaHandler
-	TextVersion *textmenu.Handler
-	Text        *texts.Handler
+	Vault     *vaultHandler
+	Workspace *workspaceHandler
+	File      *fileHandler
+	Note      *noteHandler
+	Search    *search.Handler
+	Vaults    *vaultsHandler
+	Settings  *settings.Handler
+	Agent     *wire.AgentHandler
+	Command   *command.Handler
+	Media     *mediaHandler
+	Text      *texts.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
@@ -62,21 +62,20 @@ type Services struct {
 
 func createServices(state *State) *Services {
 	return &Services{
-		state:       state,
-		Vault:       &vaultHandler{state: state},
-		Workspace:   &workspaceHandler{state: state},
-		File:        &fileHandler{state: state},
-		Note:        &noteHandler{state: state},
-		Search:      search.NewHandler(state),
-		Vaults:      &vaultsHandler{state: state},
-		Settings:    settings.NewHandler(),
-		Agent:       newAgentHandler(state),
-		Command:     command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil)),
-		Media:       &mediaHandler{state: state},
-		TextVersion: textmenu.NewHandler(state, nil),
-		Text:        texts.NewHandler(state, nil),
-		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
-		server:      &fileServer{state: state},
+		state:     state,
+		Vault:     &vaultHandler{state: state},
+		Workspace: &workspaceHandler{state: state},
+		File:      &fileHandler{state: state},
+		Note:      &noteHandler{state: state},
+		Search:    search.NewHandler(state),
+		Vaults:    &vaultsHandler{state: state},
+		Settings:  settings.NewHandler(),
+		Agent:     newAgentHandler(state),
+		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Media:     &mediaHandler{state: state},
+		Text:      texts.NewHandler(state, nil),
+		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
+		server:    &fileServer{state: state},
 	}
 }
 
@@ -85,12 +84,11 @@ func (s *Services) openPlaying(playing *Loopback) {
 	s.Media.playing = playing
 }
 
-func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenProxy, mediaTypes *file.GetMediaType) {
+func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
-	s.server.openCopy = openCopy
+	s.server.openPluginFile = openPluginFile
 	s.server.mediaTypes = mediaTypes
-	s.Media.statFile = file.NewStatFile(readers)
-	s.Media.openCopy = openCopy
+	s.Media.resolveAddress = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile)
 	s.Media.mediaTypes = mediaTypes
 }
 
@@ -100,6 +98,7 @@ type noteHandler struct {
 
 	getOpeningNote *note.GetOpeningNote
 	getTypes       *note.GetTypes
+	findTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
 	getHeadings    *note.GetHeadings
 	resolveLinks   *note.ResolveLinks
 

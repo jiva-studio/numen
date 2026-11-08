@@ -1,21 +1,21 @@
 /**
- * What each type of note is drawn as, wherever a note's type is drawn: the files list, the plex, and
- * the tab it opens in. A type a plugin declares is drawn with the icon of the tab kind that edits it,
- * and every other note as a note.
+ * What each note is drawn as, wherever a note is drawn: the files list, the palette and the tab it
+ * opens in. A note is drawn with the icon of the tab kind the core chose to open it (FileKind.tab_kind),
+ * and a note no tab kind with an icon opens as a note.
  */
 import { shallowReactive, type Component } from 'vue'
 import { FileText } from '@lucide/vue'
-import type { NoteType } from '@/shared/model/fileTypes'
 
-const icons = shallowReactive(new Map<NoteType, Component>())
+const icons = shallowReactive(new Map<string, Component>())
 
-/** Draws the notes of a type with an icon, until the returned function is called. */
-export function registerNoteIcon(type: NoteType, icon: Component): () => void {
-  icons.set(type, icon)
+/** Draws the notes the tab kind opens with an icon, until the returned function is called. */
+export function registerTabKindIcon(tabKind: string, icon: Component): () => void {
+  icons.set(tabKind, icon)
   return () => {
-    if (icons.get(type) === icon) icons.delete(type)
+    if (icons.get(tabKind) === icon) icons.delete(tabKind)
   }
 }
 
-/** The icon for a type of note. Every type has one. */
-export const getNoteIcon = (type: NoteType): Component => icons.get(type) ?? FileText
+/** The icon of a note by the tab kind that opens it; every note has one. */
+export const getNoteIcon = (tabKind: string | undefined): Component =>
+  (tabKind === undefined ? undefined : icons.get(tabKind)) ?? FileText

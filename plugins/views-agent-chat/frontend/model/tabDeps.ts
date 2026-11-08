@@ -1,7 +1,12 @@
 /**
  * What one agent tab requires of the window, supplied by the host's workspace and agent.
  */
-import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  formatErrorMessage,
+  type AgentHost,
+  type CommandsHost,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 
 /** The command of the window that opens the settings tab. */
@@ -11,6 +16,7 @@ const OPEN_SETTINGS = 'app:settings.open'
 export interface AgentChatHost {
   readonly workspace: WorkspaceHost
   readonly agent: AgentHost
+  readonly commands?: CommandsHost
   readonly getReasoning: () => string
 }
 
@@ -18,6 +24,7 @@ export interface AgentChatHost {
 export function createAgentTabDeps({
   workspace,
   agent,
+  commands,
   getReasoning,
 }: AgentChatHost): AgentTabDeps {
   return {
@@ -29,6 +36,10 @@ export function createAgentTabDeps({
     getSetting: (path) => agent.getSetting(path),
     getReasoning,
     getModelsAt: (path) => agent.getModelsAt(path),
-    openSettings: () => workspace.runCommand(OPEN_SETTINGS, workspace.getNoteInFocus()),
+    openSettings: () => {
+      commands
+        ?.run(OPEN_SETTINGS)
+        .catch((error: unknown) => workspace.showError(formatErrorMessage(error)))
+    },
   }
 }

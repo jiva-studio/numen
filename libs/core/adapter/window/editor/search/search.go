@@ -29,6 +29,7 @@ type Handler struct {
 	Finds          *search.Search
 	GetTitles      note.GetTitles
 	GetTypes       *note.GetTypes
+	ListTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
 }
 
 func NewHandler(vaults VaultProvider) *Handler {
@@ -61,12 +62,21 @@ func (h *Handler) SearchNames(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	paths := make([]string, 0, len(found))
+	for _, m := range found {
+		paths = append(paths, m.Path)
+	}
+	tabKinds, err := h.listTabKinds(ctx, showing, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.NameMatch{
-			Note:   &v1.Note{Path: m.Path, Title: m.Title},
-			Ranges: convertUnitRangesToWire(m.Ranges),
-			Type:   convertNoteTypeToWire(m.Type),
+			Note:    &v1.Note{Path: m.Path, Title: m.Title},
+			Ranges:  convertUnitRangesToWire(m.Ranges),
+			Type:    convertNoteTypeToWire(m.Type),
+			TabKind: tabKinds[m.Path],
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -121,6 +131,10 @@ func (h *Handler) SearchPassages(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	tabKinds, err := h.listTabKinds(ctx, showing, sources)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 
 	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
@@ -141,10 +155,18 @@ func (h *Handler) SearchPassages(
 		if noteRef, target := titles[p.Source]; target {
 			passage.Note = convertNoteToWire(noteRef)
 			passage.Type = convertNoteTypeToWire(types[p.Source])
+			passage.TabKind = tabKinds[p.Source]
 		}
 		out.Found = append(out.Found, passage)
 	}
 	return connect.NewResponse(out), nil
+}
+
+func (h *Handler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+	if h.ListTabKinds == nil {
+		return map[string]string{}, nil
+	}
+	return h.ListTabKinds(ctx, v, paths)
 }
 
 func convertNoteTypeToWire(noteType domain.NoteType) string {

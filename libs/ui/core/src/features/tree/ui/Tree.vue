@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * Indented rows, some of which contain other rows.
- *
- * What a row represents belongs to the caller: the tree takes names and returns
- * identities. The content shown next to a name comes from a slot, and the open
- * and selected rows are held by the caller. The tree determines what a press
- * with a modifier means and emits the resulting selection.
- */
 import { computed, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type RowId } from '../lib/row'
 import { useRowDrag } from '../model/drag'
@@ -32,7 +24,6 @@ const props = withDefaults(defineProps<TreeProps>(), {
   clock: () => browserClock,
 })
 
-/** The row whose name is in a field. */
 const renamingPath = defineModel<RowId | null>('renamingPath', { default: null })
 
 /* --------------------------------- Events --------------------------------- */
@@ -43,7 +34,6 @@ defineSlots<TreeSlots>()
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
 
-/** What the tree takes up on screen: a drop lands only over it. */
 const box = useTemplateRef<HTMLElement>('box')
 
 const visibleRows = computed(() => flatten(props.rows, new Set(props.open)))
@@ -84,9 +74,9 @@ const drag = useRowDrag({
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
   getCountWords: () => props.counted,
-  tell: emit,
+  emit,
 })
-const { into, before, lifted, label, at: dropTarget } = drag
+const { into, before, draggedIds, label, at: dropTarget } = drag
 
 const {
   onContextMenu,
@@ -111,7 +101,7 @@ const {
     const targetBox = rowEl ? measureElementRect(rowEl) : undefined
     return targetBox ? { x: targetBox.left, y: targetBox.bottom } : null
   },
-  tell: emit,
+  emit,
 })
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -148,7 +138,7 @@ function getRowHeight(): number {
         :row="row"
         :name="name"
         :is-selected="picked.has(row.id)"
-        :is-lifted="lifted.has(row.id)"
+        :is-dragged="draggedIds.has(row.id)"
         :is-drop-inside="row.id === into"
         :is-drop-above="row.id === before"
         :is-tab-stop="row.id === tabbed"
@@ -177,12 +167,10 @@ function getRowHeight(): number {
 
 <style scoped>
 .tree {
-  /* The indent per level, the row height, the padding at the row edges, and the gap between a mark and the name next to it. */
   --indent: 0.875rem;
   --row: 1.5rem;
   --pad: 0.25rem;
   --gap: 0.25rem;
-  /* How plainly a row on its way somewhere is drawn. */
   --dragged-fade: 0.5;
 
   display: flex;
@@ -195,7 +183,6 @@ function getRowHeight(): number {
   flex: 0 0 auto;
 }
 
-/* What a drop at the top level would land inside: the whole tree. */
 .tree[data-into] {
 }
 
@@ -208,7 +195,6 @@ function getRowHeight(): number {
   text-align: center;
 }
 
-/* The rows being dragged stand over the tree. */
 .tree__dragged {
   z-index: 3;
 }

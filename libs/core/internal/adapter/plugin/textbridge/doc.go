@@ -1,3 +1,2 @@
-// Package textbridge calls the text providers of plugins, and reports which
-// enabled plugins produce text and from which sources.
+// Package textbridge reports which plugins are enabled, which may record text versions.
 package textbridge

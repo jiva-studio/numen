@@ -1,8 +1,8 @@
 /**
  * The single entry point that opens a vault file, tested without a window.
  *
- * A note opens in the editor of its type; any other file in the reader
- * registered for its extension, at the selector given.
+ * A note opens in the tab kind the core chooses for it; a note no tab kind takes and
+ * any other file in the reader registered for its extension, at the selector given.
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
@@ -24,9 +24,21 @@ const vault = (stands: Record<string, FileKind> = {}) => {
   return { core, requested: request }
 }
 
-const note = (type: FileKind['type']): FileKind => ({ isNote: true, type })
+const note = (type: FileKind['type'], tabKind: string = type): FileKind => ({
+  isNote: true,
+  type,
+  tabKind,
+})
 
 const OTHER: FileKind = { isNote: false, type: 'note' }
+
+const editorsWithNotes = (tabOpeners: ReturnType<typeof fileOpeners>) => {
+  const activeEditors = editors(tabOpeners)
+  tabOpeners.registerExtensionReader('md', (path, selector) =>
+    activeEditors.push(`reader ${path} ${JSON.stringify(selector)}`),
+  )
+  return activeEditors
+}
 
 /** A vault that cannot answer at all. */
 const unreachable: FileOpenerDeps = {
@@ -63,6 +75,26 @@ describe('a path opened', () => {
     await tabOpeners.openFile(`${title}.md`, title)
 
     expect(activeEditors).toStrictEqual([`${type} ${title}.md ${title} current —`])
+  })
+
+  it('opens a note in the tab kind the core names for it, whatever its type', async () => {
+    const one = vault({ 'links/tide.md': note('link', 'form') })
+    const tabOpeners = fileOpeners(one.core)
+    const activeEditors = editors(tabOpeners)
+
+    await tabOpeners.openFile('links/tide.md', 'tide')
+
+    expect(activeEditors).toStrictEqual(['form links/tide.md tide current —'])
+  })
+
+  it('opens a note no tab kind takes in the reader of its extension', async () => {
+    const one = vault({ 'Entropy.md': note('note', '') })
+    const tabOpeners = fileOpeners(one.core)
+    const activeEditors = editorsWithNotes(tabOpeners)
+
+    await tabOpeners.openFile('Entropy.md', 'Entropy')
+
+    expect(activeEditors).toStrictEqual(['reader Entropy.md null'])
   })
 
   it('opens a file that is no note in the reader of its extension, at no place', async () => {
@@ -105,13 +137,13 @@ describe('a path opened', () => {
     expect(activeEditors).toStrictEqual([])
   })
 
-  it('opens as a note where the vault could not be requested at all', async () => {
+  it('opens in the reader of its extension where the vault could not be requested at all', async () => {
     const tabOpeners = fileOpeners(unreachable)
-    const activeEditors = editors(tabOpeners)
+    const activeEditors = editorsWithNotes(tabOpeners)
 
     await tabOpeners.openFile('Entropy.md', 'Entropy')
 
-    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy current —'])
+    expect(activeEditors).toStrictEqual(['reader Entropy.md null'])
   })
 
   it('asks the vault what remains there, the caller having returned nothing', async () => {
@@ -134,7 +166,7 @@ describe('a path opened', () => {
     expect(activeEditors).toStrictEqual(['sample Animals.md — current —'])
   })
 
-  it('opens nothing where no editor was passed for the kind', async () => {
+  it('opens nothing where no editor was registered for the kind', async () => {
     const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
 
@@ -209,31 +241,6 @@ describe('the icon of a file', () => {
     expect(tabOpeners.findFileIcon('.bin')).toBeUndefined()
     expect(tabOpeners.findFileIcon('a/b.png')).toBeUndefined()
     expect(tabOpeners.findFileIcon('a.dir/bin')).toBeUndefined()
-  })
-})
-
-describe('a file just made here', () => {
-  it('opens in its extension reader when no editor was passed for what it was made as', () => {
-    const tabOpeners = fileOpeners(vault().core)
-    const activeReaders: string[] = []
-    tabOpeners.registerExtensionReader('bin', (path, selector) =>
-      activeReaders.push(`${path}:${JSON.stringify(selector)}`),
-    )
-
-    expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')).not.toThrow()
-    tabOpeners.openNewFile('Physics.bin', 'Physics', 'sample')
-    expect(activeReaders).toStrictEqual(['Physics.bin:null'])
-  })
-
-  it('opens as what it was made as, the vault not being requested', async () => {
-    const one = vault()
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')
-
-    expect(activeEditors).toStrictEqual(['sample Animals.md Animals current —'])
-    expect(one.requested).toStrictEqual([])
   })
 })
 

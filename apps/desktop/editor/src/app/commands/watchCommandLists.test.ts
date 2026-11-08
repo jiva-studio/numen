@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { watchCommandLists } from './watchCommandLists'
 import type { DeclaredCommands } from './declaredCommands'
-import type { CommandTarget } from '@/features/command-palette'
 
 const PLEX = 'org.example.plex'
 
@@ -20,7 +19,6 @@ function setup() {
       rest: { getCommittedSetting },
     },
     ref(false),
-    () => ({}) as CommandTarget,
   )
   const switchOff = async () => {
     settings.value = { ...settings.value, [`${PLEX}.enabled`]: false }

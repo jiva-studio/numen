@@ -1,15 +1,8 @@
-/**
- * How a drag over the tree maps the pointer: where a drop would land, which
- * rows are lifted, and what is reported once the rows are released.
- *
- * The tree is 200 wide and 120 high, 100 from the top of the window, with one
- * row every 24: work, plans, notes, empty, loose.
- */
 import { effectScope, type EffectScope } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { stubClock } from '@/shared/fixtures/clock'
 import { flatten, type Row } from '../lib/row'
-import { useRowDrag, type RowDragState, type RowDragTell, type TreeMetrics } from './drag'
+import { useRowDrag, type RowDragEmit, type RowDragState, type TreeMetrics } from './drag'
 
 const ROWS: readonly Row[] = [
   {
@@ -40,7 +33,7 @@ afterEach(() => {
 
 const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
   const notifiedCalls: unknown[][] = []
-  const tell: RowDragTell = (...args: unknown[]) => {
+  const emit: RowDragEmit = (...args: unknown[]) => {
     notifiedCalls.push(args)
   }
   const world = stubClock()
@@ -53,7 +46,7 @@ const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
       getThreshold: () => 4,
       getClock: () => world.clock,
       getCountWords: () => (rows) => `${rows} rows`,
-      tell,
+      emit,
     }),
   ) as RowDragState
   return { drag, notified: notifiedCalls }
@@ -63,39 +56,42 @@ const pointer = (kind: string, x: number, y: number): void => {
   window.dispatchEvent(new MouseEvent(kind, { clientX: x, clientY: y }))
 }
 
-const lift = (drag: RowDragState, rows: readonly string[]): void => {
-  drag.lift(rows, new MouseEvent('pointerdown', { clientX: 10, clientY: 150 }) as PointerEvent)
+const startPress = (drag: RowDragState, rows: readonly string[]): void => {
+  drag.startPress(
+    rows,
+    new MouseEvent('pointerdown', { clientX: 10, clientY: 150 }) as PointerEvent,
+  )
 }
 
-describe('before a press', () => {
-  it('holds no rows, lands nowhere and shows nothing', () => {
+describe('initial state', () => {
+  it('starts with no dragged rows, no drop target, and no label', () => {
     const { drag } = setup()
 
     expect(drag.into.value).toBeNull()
     expect(drag.before.value).toBeNull()
-    expect([...drag.lifted.value]).toStrictEqual([])
+    expect([...drag.draggedIds.value]).toStrictEqual([])
     expect(drag.label.value).toBeNull()
     expect(drag.hasMoved.value).toBe(false)
   })
 })
 
-describe('a press that has become a drag', () => {
-  it('lands inside the row it is over, and holds the rows lifted', () => {
+describe('active drag', () => {
+  it('sets the drop target inside a folder row and tracks dragged row ids', () => {
     const { drag } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
 
     expect(drag.at.value).toStrictEqual({ into: 'work' })
     expect(drag.into.value).toBe('work')
     expect(drag.before.value).toBeNull()
-    expect([...drag.lifted.value]).toStrictEqual(['loose'])
+    expect([...drag.draggedIds.value]).toStrictEqual(['loose'])
     expect(drag.hasMoved.value).toBe(true)
     expect(drag.label.value?.label).toBe('Loose')
   })
 
-  it('lands above the row it is over the top of', () => {
+  it('sets the drop target before a row when near its top edge', () => {
     const { drag } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 102)
 
     expect(drag.at.value).toStrictEqual({ before: 'work' })
@@ -103,9 +99,9 @@ describe('a press that has become a drag', () => {
     expect(drag.into.value).toBeNull()
   })
 
-  it('lands at the top level past the last row', () => {
+  it('sets the drop target to root past the last row', () => {
     const { drag } = setup()
-    lift(drag, ['work'])
+    startPress(drag, ['work'])
     pointer('pointermove', 10, 218)
 
     expect(drag.at.value).toStrictEqual({ into: null })
@@ -113,18 +109,18 @@ describe('a press that has become a drag', () => {
     expect(drag.before.value).toBeNull()
   })
 
-  it('holds the rows lifted only while the pointer is down', () => {
+  it('clears draggedIds on pointerup', () => {
     const { drag } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
-    expect([...drag.lifted.value]).toStrictEqual([])
+    expect([...drag.draggedIds.value]).toStrictEqual([])
   })
 
-  it('lands nowhere where the tree is not drawn', () => {
+  it('returns a null drop target when measure returns null', () => {
     const { drag, notified } = setup(() => null)
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
@@ -132,70 +128,70 @@ describe('a press that has become a drag', () => {
     expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 
-  it('lands nowhere that would put a row inside itself', () => {
+  it('rejects dropping a row into its own descendant', () => {
     const { drag } = setup()
-    lift(drag, ['work'])
+    startPress(drag, ['work'])
     pointer('pointermove', 10, 136)
 
     expect(drag.at.value).toBeNull()
   })
 })
 
-describe('how far the tree reaches', () => {
+describe('hover bounds', () => {
   const canLandAt = (x: number, y: number): boolean => {
     const { drag } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', x, y)
     return drag.at.value !== null
   }
 
-  it('takes in each edge', () => {
+  it('accepts points on each edge of hoverRect', () => {
     expect(canLandAt(0, 150)).toBe(true)
     expect(canLandAt(200, 150)).toBe(true)
     expect(canLandAt(10, 100)).toBe(true)
     expect(canLandAt(10, 220)).toBe(true)
   })
 
-  it('takes in nothing beyond any edge', () => {
+  it('rejects points 1px outside any edge of hoverRect', () => {
     expect(canLandAt(-1, 150)).toBe(false)
     expect(canLandAt(201, 150)).toBe(false)
     expect(canLandAt(10, 99)).toBe(false)
     expect(canLandAt(10, 221)).toBe(false)
   })
 
-  it('takes in nothing alongside it, level with its rows', () => {
+  it('rejects points horizontally outside hoverRect', () => {
     expect(canLandAt(300, 150)).toBe(false)
     expect(canLandAt(-50, 150)).toBe(false)
   })
 
-  it('takes in nothing above or below it, in line with its rows', () => {
+  it('rejects points vertically outside hoverRect', () => {
     expect(canLandAt(10, 50)).toBe(false)
     expect(canLandAt(10, 300)).toBe(false)
   })
 })
 
-describe('a tree whose rows begin below its top edge', () => {
-  it('takes in nothing above the edge, though a row remains there', () => {
+describe('scrolled list top', () => {
+  it('rejects points above hoverRect.top when list top is scrolled above it', () => {
     const { drag } = setup(() => ({ ...METRICS, top: 88 }))
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 95)
 
     expect(drag.at.value).toBeNull()
   })
 
-  it('takes in the edge itself', () => {
+  it('accepts points at hoverRect.top when list top is scrolled above it', () => {
     const { drag } = setup(() => ({ ...METRICS, top: 88 }))
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 100)
 
     expect(drag.at.value).toStrictEqual({ into: 'work' })
   })
 })
 
-describe('letting go', () => {
-  it('notifies where the rows landed, then that they were let go', () => {
+describe('pointerup and pointercancel', () => {
+  it('emits move and drop on pointerup over a row', () => {
     const { drag, notified } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
@@ -206,27 +202,27 @@ describe('letting go', () => {
     ])
   })
 
-  it('drops at the pointerup position, not the last pointermove position', () => {
+  it('resolves the drop target at the pointerup position', () => {
     const { drag, notified } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 400)
 
     expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 
-  it('ends the drag without a drop on pointercancel', () => {
+  it('emits drop without move on pointercancel', () => {
     const { drag, notified } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointercancel', 10, 112)
 
     expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 
-  it('notifies only that they were let go where they landed nowhere', () => {
+  it('emits only drop when pointerup is outside the tree', () => {
     const { drag, notified } = setup()
-    lift(drag, ['loose'])
+    startPress(drag, ['loose'])
     pointer('pointermove', 10, 400)
     pointer('pointerup', 10, 400)
 

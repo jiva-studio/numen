@@ -1,325 +1,237 @@
 /**
- * The title bar the window draws above its workspace, and the buttons the plugins place in it.
+ * The title bar of the window: drawn by the plugin that registers the view of the slot `titleBar`,
+ * which reads the vaults and the window from its context, and absent while no plugin draws it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { TitleBar } from '@numen/shell'
-import {
-  declareCommand,
-  declared,
-  listed,
-  mountWindow,
-  mountWindowWithPalette,
-  requests,
-  settle,
-} from '@/testing/window'
+import { defineComponent, h, shallowRef } from 'vue'
+import { WorkspaceLayout } from '@numen/shell'
+import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-host'
+import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
+import { COMMAND } from '@/shared/commandIds'
 
 const frame = vi.hoisted(() => ({
-  controls: 'windows' as 'windows' | 'native-mac',
-  isMaximised: false,
-  close: vi.fn(),
-  minimise: vi.fn(),
-  toggleMaximise: vi.fn(),
+  platform: 'windows' as 'windows' | 'darwin',
+  isMaximized: false,
+  isFullscreen: false,
+  closeWindow: vi.fn(async () => undefined),
+  minimizeWindow: vi.fn(async () => undefined),
+  toggleMaximizeWindow: vi.fn(async () => undefined),
 }))
 
-vi.mock('../window/useWindowFrame', async () => {
+vi.mock('@numen/shell', async (importOriginal) => {
   const { computed } = await import('vue')
+  const shell = await importOriginal<typeof import('@numen/shell')>()
+  const { MAC_BUTTONS_INSET } = shell
   return {
+    ...shell,
     useWindowFrame: () => ({
-      controls: computed(() => frame.controls),
-      isMaximised: computed(() => frame.isMaximised),
-      close: frame.close,
-      minimise: frame.minimise,
-      toggleMaximise: frame.toggleMaximise,
+      platform: computed(() => frame.platform),
+      isMaximized: computed(() => frame.isMaximized),
+      isFullscreen: computed(() => frame.isFullscreen),
+      windowEdge: computed(() => ({
+        leftInset: frame.platform === 'darwin' && !frame.isFullscreen ? MAC_BUTTONS_INSET : 0,
+        rightInset: 0,
+      })),
+      closeWindow: frame.closeWindow,
+      minimizeWindow: frame.minimizeWindow,
+      toggleMaximizeWindow: frame.toggleMaximizeWindow,
     }),
   }
 })
 
-const TIDE = 'org.example.tide'
-const REEF = 'org.example.reef'
+/** The plugin host of the window last mounted, so a test registers a view as a plugin does. */
+const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
 
-const placeTideChart = () => {
-  declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
-  declared.menus = [
-    { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate' },
-  ]
+vi.mock('../plugins/useWindowPlugins', async (original) => {
+  const module = await original<typeof import('../plugins/useWindowPlugins')>()
+  return {
+    ...module,
+    createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {
+      const support = module.createPluginSupport(deps)
+      hosts.current = support.pluginHost
+      return support
+    },
+  }
+})
+
+const LEDGER = 'org.example.ledger'
+const HARBOR = 'org.example.harbor'
+
+/** A bar a plugin draws from the vaults, the window and the app its context holds. */
+interface BarContext {
+  readonly app: { readonly name: string }
+  readonly vaults: VaultsHost | undefined
+  readonly window: WindowHost | undefined
 }
 
-const getActions = (window: Awaited<ReturnType<typeof mountWindow>>) =>
-  window.findComponent(TitleBar).props('actions') as readonly {
-    id: string
-    title: string
-    group?: string
-  }[]
-
-const getButton = (window: Awaited<ReturnType<typeof mountWindow>>, id: string) =>
-  window.find(`[data-title-bar-action="${id}"]`)
-
-describe('the title bar of the window', () => {
-  it('is drawn above the workspace', async () => {
-    const window = await mountWindow()
-
-    const bar = window.find('[data-title-bar]')
-    expect(bar.exists()).toBe(true)
-    const order = window.find('main').element.children
-    expect(order[0]?.hasAttribute('data-title-bar')).toBe(true)
+const createBar = (name: string, context: BarContext) =>
+  defineComponent({
+    name,
+    setup: () => {
+      const vaults = shallowRef(context.vaults!.getState())
+      const window = shallowRef(context.window!.getState())
+      context.vaults!.watch((state) => (vaults.value = state))
+      context.window!.watch((state) => (window.value = state))
+      return () =>
+        h(
+          'header',
+          { 'data-title-bar': name, 'data-maximized': String(window.value.isMaximized) },
+          [
+            h('span', { 'data-title': '' }, `${context.app.name} — ${vaults.value.current?.name}`),
+            h('span', { 'data-vaults': '' }, vaults.value.vaults.map((one) => one.id).join(',')),
+            h('button', { 'data-control': 'close', onClick: () => context.window!.close() }),
+            h('button', {
+              'data-vault': 'trees',
+              onClick: () => context.vaults!.switchTo('trees'),
+            }),
+          ],
+        )
+    },
   })
 
-  it('names the application and the vault', async () => {
+const registerBar = async (pluginId: string, name = 'LedgerBar') => {
+  const { contextHost } = hosts.current!
+  const context = {
+    app: contextHost.app,
+    vaults: contextHost.getVaults?.(),
+    window: contextHost.getWindow?.(),
+  }
+  contextHost.registerSlotView(pluginId, 'titleBar', {
+    id: 'bar',
+    component: createBar(name, context),
+  })
+  await settle()
+}
+
+const getWindowEdge = (window: Awaited<ReturnType<typeof mountWindow>>) =>
+  window.findComponent(WorkspaceLayout).props('windowEdge') as
+    { leftInset: number; rightInset: number } | undefined
+
+afterEach(() => {
+  frame.platform = 'windows'
+  frame.isMaximized = false
+  frame.isFullscreen = false
+  frame.closeWindow.mockClear()
+  hosts.current = undefined
+})
+
+describe('the window without a plugin that draws the title bar', () => {
+  it('draws no bar, no window buttons and no drag area of its own', async () => {
     const window = await mountWindow()
 
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+    expect(window.find('[data-control]').exists()).toBe(false)
+    expect(window.find('[data-window-controls]').exists()).toBe(false)
+  })
+
+  it('gives the workspace the top of the window, with no room kept on Windows', async () => {
+    const window = await mountWindow()
+
+    expect(getWindowEdge(window)).toStrictEqual({ leftInset: 0, rightInset: 0 })
+    expect(window.find('main').element.children[0]?.hasAttribute('data-title-bar')).toBe(false)
+  })
+
+  it('keeps room for the macOS buttons in the top-left strip, and none in full screen', async () => {
+    frame.platform = 'darwin'
+    const window = await mountWindow()
+
+    expect(getWindowEdge(window)?.leftInset).toBe(80)
+
+    frame.isFullscreen = true
+    const fullscreen = await mountWindow()
+
+    expect(getWindowEdge(fullscreen)?.leftInset).toBe(0)
+  })
+})
+
+describe('the window with a plugin that draws the title bar', () => {
+  it('draws the bar of the plugin above the workspace, titled from the context', async () => {
+    const window = await mountWindow()
+
+    await registerBar(LEDGER)
+
+    expect(window.find('[data-title-bar="LedgerBar"]').exists()).toBe(true)
+    expect(window.find('main').element.children[0]?.hasAttribute('data-title-bar')).toBe(true)
     expect(window.find('[data-title]').text()).toBe('numen — Physics')
   })
 
-  it('names the application alone where no vault is open', async () => {
-    listed.showing = ''
-
+  it('moves the window by no strip of tabs and keeps no room in them', async () => {
     const window = await mountWindow()
 
-    expect(window.find('[data-title]').text()).toBe('numen')
+    await registerBar(LEDGER)
+
+    expect(getWindowEdge(window)).toBeUndefined()
+    expect(window.find('[data-workspace-strip][data-window-drag]').exists()).toBe(false)
   })
 
-  it('draws the window controls and the settings button where no plugin places a command', async () => {
+  it('draws the bar of the plugin first by id, and reports the other plugin', async () => {
     const window = await mountWindow()
 
-    const bar = window.findComponent(TitleBar)
-    expect(bar.props('controls')).toBe('windows')
-    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(5)
+    await registerBar(LEDGER, 'LedgerBar')
+    await registerBar(HARBOR, 'HarborBar')
+
+    expect(window.find('[data-title-bar="HarborBar"]').exists()).toBe(true)
+    expect(window.find('[data-title-bar="LedgerBar"]').exists()).toBe(false)
+    expect(cards().join('\n')).toContain(HARBOR)
   })
-})
 
-describe('the buttons of the plugins in the title bar', () => {
-  it('draws one button for the command a plugin places, then the settings button, next to the three window controls', async () => {
-    placeTideChart()
-
+  it('closes the window through the frame when the bar closes the window of its context', async () => {
     const window = await mountWindow()
-
-    expect(getActions(window).map((one) => one.id)).toStrictEqual([
-      `${TIDE}:chart.open`,
-      'app:settings.open',
-    ])
-    expect(getActions(window)[0]?.title).toBe('Open tide chart')
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(6)
-    expect(getButton(window, `${TIDE}:chart.open`).exists()).toBe(true)
-  })
-
-  it('draws the buttons in the groups and the order the plugins place them', async () => {
-    declared.commands = [
-      declareCommand(TIDE, 'chart.open', 'Open tide chart'),
-      declareCommand(REEF, 'map.open', 'Open reef map'),
-      declareCommand(REEF, 'log.open', 'Open reef log'),
-    ]
-    declared.menus = [
-      { pluginId: REEF, location: 'titleBar', command: 'log.open', group: 'new', order: 1 },
-      { pluginId: REEF, location: 'titleBar', command: 'map.open', group: 'navigate', order: 2 },
-      { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate', order: 1 },
-    ]
-
-    const window = await mountWindow()
-
-    expect(getActions(window).map((one) => [one.id, one.group])).toStrictEqual([
-      [`${TIDE}:chart.open`, 'navigate'],
-      [`${REEF}:map.open`, 'navigate'],
-      [`${REEF}:log.open`, 'new'],
-      ['app:settings.open', 'settings'],
-    ])
-  })
-
-  it('draws no button for a command placed in the search results, and the settings button alone', async () => {
-    declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
-    declared.menus = [{ pluginId: TIDE, location: 'searchResult', command: 'chart.open' }]
-
-    const window = await mountWindow()
-
-    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
-  })
-
-  it('draws no button while no vault is shown, even with commands placed', async () => {
-    placeTideChart()
-    listed.showing = ''
-
-    const window = await mountWindow()
-
-    expect(window.find('[data-title]').text()).toBe('numen')
-    expect(getActions(window)).toStrictEqual([])
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(3)
-  })
-
-  it('draws no pressed state on a button after it is pressed', async () => {
-    placeTideChart()
-    const window = await mountWindow()
-    const button = getButton(window, `${TIDE}:chart.open`)
-
-    await button.trigger('click')
-    await settle()
-
-    for (const name of ['aria-pressed', 'aria-checked', 'data-pressed', 'data-active']) {
-      expect(getButton(window, `${TIDE}:chart.open`).attributes(name)).toBeUndefined()
-    }
-  })
-
-  it('draws the same buttons in a window detachedWindow off from a tab', async () => {
-    declared.commands = [
-      declareCommand(TIDE, 'chart.open', 'Open tide chart'),
-      declareCommand(REEF, 'map.open', 'Open reef map'),
-    ]
-    declared.menus = [
-      { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate', order: 1 },
-      { pluginId: REEF, location: 'titleBar', command: 'map.open', group: 'new', order: 1 },
-    ]
-    const main = await mountWindow()
-    const inMain = getActions(main).map((one) => [one.id, one.title, one.group])
-    expect(inMain.map((one) => one[0])).toStrictEqual([
-      `${TIDE}:chart.open`,
-      `${REEF}:map.open`,
-      'app:settings.open',
-    ])
-    const address = globalThis.location.href
-
-    globalThis.history.replaceState(null, '', '/?window=secondary')
-    try {
-      const detachedWindow = await mountWindow()
-
-      expect(getActions(detachedWindow).map((one) => [one.id, one.title, one.group])).toStrictEqual(
-        inMain,
-      )
-    } finally {
-      globalThis.history.replaceState(null, '', address)
-    }
-  })
-})
-
-describe('a press on a button of the title bar', () => {
-  it('opens the palette at the name of a command that needs one, and makes nothing before it is typed', async () => {
-    declared.commands = []
-    declared.menus = [{ pluginId: TIDE, location: 'titleBar', command: 'app:note.create' }]
-    const window = await mountWindowWithPalette()
-    const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-
-    await getButton(window, 'app:note.create').trigger('click')
-    await settle()
-
-    expect(field()).not.toBeNull()
-    expect(requests.made).toStrictEqual([])
-
-    field()!.value = 'Brine'
-    field()!.dispatchEvent(new Event('input'))
-    await settle()
-    field()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-    await settle()
-
-    expect(requests.made).toStrictEqual(['Brine'])
-  })
-})
-
-describe('the window controls of the title bar with buttons placed', () => {
-  it('stay the circles of the system on macOS and draw none of its own', async () => {
-    placeTideChart()
-    frame.controls = 'native-mac'
-
-    const window = await mountWindow()
-
-    expect(window.findComponent(TitleBar).props('controls')).toBe('native-mac')
-    expect(window.findAll('[data-control]')).toHaveLength(0)
-    expect(getActions(window).map((one) => one.id)).toStrictEqual([
-      `${TIDE}:chart.open`,
-      'app:settings.open',
-    ])
-  })
-
-  it('close the window through the frame, whatever the buttons placed', async () => {
-    placeTideChart()
-    frame.controls = 'windows'
-    frame.close.mockClear()
-    const window = await mountWindow()
+    await registerBar(LEDGER)
 
     await window.find('[data-control="close"]').trigger('click')
 
-    expect(frame.close).toHaveBeenCalledTimes(1)
+    expect(frame.closeWindow).toHaveBeenCalledTimes(1)
   })
 
-  it('follow the maximised state of the frame and not the buttons', async () => {
-    placeTideChart()
-    frame.controls = 'windows'
-    frame.isMaximised = true
-
+  it('gives the bar the state of the frame', async () => {
+    frame.isMaximized = true
     const window = await mountWindow()
 
-    expect(window.findComponent(TitleBar).props('isMaximised')).toBe(true)
-    frame.isMaximised = false
-  })
-})
+    await registerBar(LEDGER)
 
-afterEach(() => {
-  frame.controls = 'windows'
-  frame.isMaximised = false
-  frame.close.mockClear()
-})
-
-describe('the vault switcher in the title', () => {
-  const addVault = (id: string, name: string) =>
-    listed.vaults.push({ id, name, path: `/vaults/${name}`, isMissing: false })
-
-  const openList = async (window: Awaited<ReturnType<typeof mountWindow>>) => {
-    await window.find('[data-title]').trigger('click')
-    await settle()
-  }
-
-  const getOptions = () => [...document.body.querySelectorAll('[role="option"]')]
-
-  it('is a button that lists the vaults of the installation and a row that adds a folder', async () => {
-    addVault('trees', 'Trees')
-
-    const window = await mountWindow()
-    await openList(window)
-
-    expect(window.find('[data-title]').element.tagName).toBe('BUTTON')
-    expect(getOptions().map((one) => one.textContent?.trim())).toStrictEqual([
-      'Physics',
-      'Trees',
-      'Create vault',
-    ])
-    expect(getOptions()[0]?.getAttribute('aria-current')).toBe('true')
+    expect(window.find('[data-title-bar]').attributes('data-maximized')).toBe('true')
   })
 
-  it('opens the vault that is chosen through the use case that opens a vault', async () => {
-    addVault('trees', 'Trees')
+  it('gives the bar only the vaults of the installation', async () => {
+    listed.vaults.push({ id: 'trees', name: 'Trees', path: '/vaults/Trees', isMissing: false })
     const window = await mountWindow()
-    await openList(window)
 
-    ;(getOptions()[1] as HTMLElement).click()
+    await registerBar(LEDGER)
+
+    const ids = window.find('[data-vaults]').text().split(',')
+    expect(ids.at(-1)).toBe('trees')
+    expect(ids).not.toContain(COMMAND.createVault)
+  })
+
+  it('opens the vault the bar switches to through the use case that opens a vault', async () => {
+    listed.vaults.push({ id: 'trees', name: 'Trees', path: '/vaults/Trees', isMissing: false })
+    const window = await mountWindow()
+    await registerBar(LEDGER)
+
+    await window.find('[data-vault="trees"]').trigger('click')
     await settle()
 
     expect(requests.opened).toStrictEqual(['trees'])
   })
+})
 
-  it('opens nothing for the vault the window shows', async () => {
-    addVault('trees', 'Trees')
-    const window = await mountWindow()
-    await openList(window)
-
-    ;(getOptions()[0] as HTMLElement).click()
-    await settle()
-
-    expect(requests.opened).toStrictEqual([])
-    expect(getOptions()).toHaveLength(0)
+describe('the platform the plugins of the window are given', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
-  it('asks for a folder from the last row', async () => {
-    const window = await mountWindow()
-    await openList(window)
+  it.each([
+    ['windows', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15'],
+    ['darwin', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15'],
+  ] as const)(
+    'is %s where the frame reports it and the user agent names another',
+    async (platform, agent) => {
+      vi.stubGlobal('navigator', { ...navigator, userAgent: agent })
+      frame.platform = platform
+      await mountWindow()
 
-    ;(getOptions().at(-1) as HTMLElement).click()
-    await settle()
-
-    expect(requests.chose).toBe(1)
-  })
-
-  it('leaves the title plain where no vault is open', async () => {
-    listed.showing = ''
-
-    const window = await mountWindow()
-
-    expect(window.find('[data-title]').element.tagName).toBe('SPAN')
-  })
+      expect(hosts.current!.contextHost.app.platform).toBe(platform)
+    },
+  )
 })

@@ -1,10 +1,3 @@
-/**
- * Every situation the plex has to survive. Also the test corpus: each story
- * is run in a browser by `@storybook/addon-vitest`.
- *
- * The knobs are flat, so everything a reader might want to turn is a slider, a
- * toggle or a select; the object they build is assembled here.
- */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
@@ -131,7 +124,6 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     const focus = ref<TitledNode | null>(null)
     const cameFrom = ref<TitledNode | null>(null)
 
-    /** What the application would keep: what has been made, and what is new. */
     const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
@@ -161,7 +153,6 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       focus.value = { id: selected.id, title: selected.title }
     }
 
-    /** A node related beside another one, linked the way that relation is written. */
     const createRelated = (from: string, title: string, relation: PlexRelation) => {
       const id = `made/${createdItem.value.length}`
       createdItem.value = [...createdItem.value, { id, title, relation }]
@@ -173,21 +164,10 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       ]
     }
 
-    /**
-     * A new node arrives complete: related, linked and already named. The
-     * gesture ends at the pointer release; the final name is chosen later by the
-     * application.
-     */
     const create = (from: string, relation: PlexRelation) => {
       createRelated(from, args.naming(), relation)
     }
 
-    /**
-     * What was dragged in from outside, each related beside the focus in the
-     * one relation and called by the identifier it was dragged in as. What those
-     * identifiers address is the story's to know, and the plex handed them
-     * back untouched.
-     */
     const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
       const here = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
@@ -271,12 +251,7 @@ const meta = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component:
-          'One node in focus, everything else placed by its relation: parents ' +
-          'above, children below, jumps to the left, siblings to the right. ' +
-          'It takes a neighbourhood and emits an identifier when a node is ' +
-          'chosen — it does not fetch anything and does not know what an ' +
-          'identifier addresses.',
+        component: 'Interactive plex graph component.',
       },
     },
   },
@@ -329,8 +304,6 @@ const meta = {
     siblings: range(0, 12, 1, 'Playground'),
     title: { control: 'text', table: { category: 'Playground' } },
 
-    // Not knobs: the input the caller builds, the clock a test replaces, what
-    // it names the nodes it makes, and what the component reports back.
     neighbourhood: { table: { disable: true } },
     options: { table: { disable: true } },
     clock: { table: { disable: true } },
@@ -400,27 +373,15 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/**
- * Every setting, live, and a plex to walk while turning them. The counts
- * invent the neighbourhood; choosing a node builds the next one around it.
- */
 const invented = {
   args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
   render: createNavigable((args: Knobs) => build(args.title, createCounts(args))),
 }
 
+/** Interactive playground story. */
 export const Playground: Story = invented
 
-/**
- * Dragging out of a node and the result.
- *
- * A dedicated story, not a check on the playground: a play function runs when
- * a story opens, and a plex that has already created a node is not the state
- * under test.
- *
- * It passes its own naming, which the check reads and which shows the contract:
- * the plex reports the gesture and the caller names the node.
- */
+/** Creates a new parent node by dragging from the focus handle. */
 export const MakingOne: Story = {
   args: { ...invented.args, naming: () => 'Reached for' },
   render: invented.render,
@@ -429,23 +390,18 @@ export const MakingOne: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
     const box = focus.getBoundingClientRect()
 
-    // The handle is offered on hover and not before.
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
     await userEvent.hover(focus)
     const surface = canvasElement.querySelector('svg')!
     const handle = canvasElement.querySelector('.plex__handle')
     await expect(handle).not.toBeNull()
 
-    // Labels on a connection are not text-selectable during the gesture, since
-    // the pointer passes over them. Read under the WebKit property spelling.
     await expect(
       getComputedStyle(canvasElement.querySelector('.plex__edge-label')!).getPropertyValue(
         '-webkit-user-select',
       ),
     ).toBe('none')
 
-    // Reaching upwards, where the parents are. Only a browser can answer this:
-    // pointer capture, a real matrix, and the drawing that follows the pointer.
     const above = { clientX: box.x + box.width / 2, clientY: box.y - 220 }
     await userEvent.pointer([
       {
@@ -460,37 +416,18 @@ export const MakingOne: Story = {
       canvasElement.querySelector('.plex__node--ghost .plex__title-text')?.textContent,
     ).toBe('parent')
 
-    // Release the pointer by dispatching the event: a second `userEvent.pointer`
-    // call does not track the button state of the first, so its release is a no-op.
     surface.dispatchEvent(new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }))
     await expect(args.onCreate).toHaveBeenCalledWith(expect.any(String), 'parent')
 
-    // Verifies that releasing a captured pointer elsewhere notifies the node it
-    // was captured from.
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
 
-    // The story relates the node and applies the name returned by its own
-    // naming. No prompt is shown and no text is typed.
     await waitFor(async () => {
       await expect(canvas.getByLabelText('Reached for, parent')).toBeInTheDocument()
     })
   },
 }
 
-/**
- * Items dragged over the plex from outside it.
- *
- * The gesture starts outside the plex, so the plex receives only a list of
- * identifiers and returns a relation, measured from the focus. Several items
- * form one line and one relation; the drag source provides the count label,
- * drawn at the pointer.
- *
- * The line and the label are drawn while the pointer moves, so the outcome of a
- * drop is visible before it happens. The story stops mid-drag.
- *
- * Only a browser can verify it: a real matrix, a pointer the plex never
- * captured, and a drawing that follows the pointer across.
- */
+/** Displays external drag preview over the plex. */
 export const DraggingThemIn: Story = {
   args: {
     ...invented.args,
@@ -515,43 +452,27 @@ export const DraggingThemIn: Story = {
       })
     }
 
-    // Above the focus, where the parents are, and in the words the story gave.
     dragTo(middle, box.y - 220)
     await expectDraggedTitle('as parent')
     await expect(canvasElement.querySelector('.plex__dragged .plex__thread')).not.toBeNull()
 
-    // Below it, where the children are: the words follow the pointer.
     dragTo(middle, box.bottom + 220)
     await expectDraggedTitle('as child')
 
-    // Off the edge of the plex, where letting go would join nothing: nothing
-    // is promised, and the line goes with the promise.
     dragTo(middle, -400)
     await expectDraggedTitle(null)
     await expect(canvasElement.querySelector('.plex__dragged')).toBeNull()
 
-    // Return over the plex and stay there for inspection.
     dragTo(middle, box.y - 220)
     await expectDraggedTitle('as parent')
   },
 }
 
-/** Whether a focus reads as the keyboard's. Browsers take it; the types do not. */
 interface KeyboardFocus extends FocusOptions {
   focusVisible?: boolean
 }
 
-/**
- * Handle placement and the one-handle limit.
- *
- * A handle belongs to the box under the pointer and to the box with visible
- * keyboard focus. A click leaves a box with a focus that is neither, so a box
- * that was clicked and then released shows no handle.
- *
- * Only a browser can verify it: a click and a tab leave the same focus, and
- * which of them counts as visible keyboard focus is decided by the browser. A
- * pointer driven from a story is untrusted and does not trigger that state.
- */
+/** Shows at most one handle at a time for pointer hover or keyboard focus. */
 export const OneHandleAtATime: Story = {
   args: invented.args,
   render: invented.render,
@@ -564,16 +485,12 @@ export const OneHandleAtATime: Story = {
     ]
     const first = boxes[0]!
 
-    // A plex with no pointer or keyboard focus on a node shows no handle.
     await expect(getHandles()).toHaveLength(0)
 
-    // The focus left by a click is not visible keyboard focus, and the pointer
-    // is not over the box.
     first.focus({ focusVisible: false } as KeyboardFocus)
     await expect(first).toHaveFocus()
     await expect(getHandles()).toHaveLength(0)
 
-    // Hover each box in turn; exactly one handle exists at a time.
     for (const box of boxes) {
       await userEvent.hover(box)
       await expect(getHandles()).toHaveLength(1)
@@ -582,7 +499,6 @@ export const OneHandleAtATime: Story = {
       await expect(getHandles()).toHaveLength(0)
     }
 
-    // Arriving by tab is keyboard use, and the box it stops at shows a handle.
     first.blur()
     await userEvent.tab()
     const stop = canvasElement.ownerDocument.activeElement!
@@ -592,17 +508,7 @@ export const OneHandleAtATime: Story = {
   },
 }
 
-/**
- * Requesting a context menu on a node.
- *
- * The plex reports which node was targeted, the position, and the input
- * source. The menu content and the item actions are outside the plex.
- *
- * Only a browser can verify it: whether a `contextmenu` event is dispatched to an SVG
- * group, whether preventing it suppresses the webview's own menu, and whether
- * the right button over the handle targets the node under it and not the
- * handle.
- */
+/** Opens the context menu on right-click. */
 export const AskingForAMenu: Story = {
   args: invented.args,
   render: invented.render,
@@ -610,7 +516,6 @@ export const AskingForAMenu: Story = {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
 
-    // Read after the node has had it: a listener above sees what the node did.
     let isPrevented: boolean | null = null
     const watch = (event: Event) => {
       isPrevented = event.defaultPrevented
@@ -619,7 +524,6 @@ export const AskingForAMenu: Story = {
     await userEvent.pointer({ keys: '[MouseRight]', target: focus })
     canvasElement.removeEventListener('contextmenu', watch)
 
-    // The focus is the note being read, and the likeliest one to ask about.
     await expect(args.onMenu).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Object),
@@ -627,7 +531,6 @@ export const AskingForAMenu: Story = {
     )
     await expect(isPrevented).toBe(true)
 
-    // The right button over the handle targets the node and creates nothing.
     await userEvent.hover(focus)
     const handle = canvasElement.querySelector('.plex__handle')!
     await userEvent.pointer({ keys: '[MouseRight]', target: handle })
@@ -637,14 +540,7 @@ export const AskingForAMenu: Story = {
   },
 }
 
-/**
- * Requesting a node itself without navigating to it.
- *
- * Triggered on the focus, the one node where a click does not move the focus.
- *
- * Only a browser can verify it: whether a double click is dispatched to an SVG group,
- * and whether a held modifier arrives with it.
- */
+/** Emits show on double-click or Shift+Enter. */
 export const AskingForANode: Story = {
   args: invented.args,
   render: invented.render,
@@ -652,23 +548,17 @@ export const AskingForANode: Story = {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
 
-    // One user session throughout, so a modifier held down is still held at the
-    // later pointer event.
     const hand = userEvent.setup()
 
     await hand.dblClick(focus)
     await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'current')
     await expect(args.onActivate).not.toHaveBeenCalled()
 
-    // The same gesture with the modifier held requests the node next to the
-    // reader's position. Its meaning belongs to the application; the plex does
-    // not receive it.
     await hand.keyboard('{Alt>}')
     await hand.dblClick(focus)
     await hand.keyboard('{/Alt}')
     await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'split')
 
-    // The keyboard route: a press with Shift, and the same modifier for where.
     focus.focus()
     await hand.keyboard('{Shift>}{Enter}{/Shift}')
     await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'current')
@@ -676,21 +566,16 @@ export const AskingForANode: Story = {
   },
 }
 
-/** Two parents, one a parent of the other: the only edge inside a row. */
+/** Renders a neighbourhood with multiple connected parents. */
 export const SeveralParents: Story = {
   args: { neighbourhood: neighbourhoods.diamond },
 }
 
-/** Past every limit. What the overflow line at the bottom is for. */
+/** Renders an overcrowded neighbourhood with overflow indicators. */
 export const Overcrowded: Story = {
   args: { neighbourhood: neighbourhoods.overcrowded },
 }
 
-/**
- * Titles on every shape of line a plex draws: across the page, down it, and
- * round out of a column. One of them is far longer than the curve it is set
- * on, and is cut to it.
- */
 const titledLines: PlexNeighbourhood = {
   nodes: [
     { id: 'focus', title: 'The meeting', relation: 'focus' },
@@ -709,41 +594,24 @@ const titledLines: PlexNeighbourhood = {
   ],
 }
 
-/**
- * How a line renders the title it carries: the title is set along the line and
- * truncated where the words are longer.
- *
- * Only a browser can verify it: the width of the words in the chosen type, the
- * length of the curve they are set on, and whether the two paint layers of a
- * title coincide.
- *
- * The layout is complete on load: a title belongs to a line at rest, and a line
- * in motion cannot be targeted.
- */
+/** Renders edge labels along curved paths and raises hovered lines. */
 export const TitledLines: Story = {
-  // At the settings, so the story is about the cutting and not about how far
-  // a roomy window opens the gaps a title is set along.
   args: { neighbourhood: titledLines, duration: 0, spread: 1 },
   play: async ({ canvasElement }) => {
-    /** Both layers of one title: the halo first, the letters over it. */
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
         (text) => text.textContent === words,
       )
 
-    /** The line a title is set along, by the path it names. */
     const getTextLine = (text: SVGTextElement) => {
       const href = text.querySelector('textPath')!.getAttribute('href')!
       return canvasElement.querySelector<SVGPathElement>(`defs path[id="${href.slice(1)}"]`)!
     }
 
-    // The window is measured after the first drawing, so the plex settles on
-    // its second.
     await waitFor(async () => {
       await expect(title('contains')).toHaveLength(2)
     })
 
-    // Every title is set along the line it belongs to, and none of them is
     const titles = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')]
     await expect(titles.length).toBeGreaterThan(0)
     for (const text of titles) {
@@ -753,7 +621,6 @@ export const TitledLines: Story = {
       )
     }
 
-    // Words longer than their curve are cut to it and end in an ellipsis.
     await expect(title('the minutes of the meeting')).toHaveLength(0)
     const truncatedTitles = titles.filter((text) => text.textContent!.endsWith('…'))
     await expect(truncatedTitles).toHaveLength(2)
@@ -761,7 +628,6 @@ export const TitledLines: Story = {
       'the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1)),
     ).toBe(true)
 
-    // A title is painted in two layers that land on one another.
     const [halo, letters] = title('contains')
     await expect(halo!.querySelector('textPath')).not.toBeNull()
     await expect(getComputedStyle(halo!).fill).toBe('none')
@@ -769,8 +635,6 @@ export const TitledLines: Story = {
     await expect(halo!.getComputedTextLength()).toBe(letters!.getComputedTextLength())
     const haloAtRest = Number.parseFloat(getComputedStyle(halo!).strokeWidth)
 
-    // Hovering the line raises it, and the raised title is painted the same way
-    // on a heavier halo.
     const axisHref = halo!.querySelector('textPath')!.getAttribute('href')!
     const viewElement = canvasElement
       .querySelector(`defs path[id="${axisHref.slice(1)}"]`)!
@@ -779,27 +643,23 @@ export const TitledLines: Story = {
       (line) => line.getAttribute('d') === viewElement,
     )
 
-    // The raised layer is drawn a render after the pointer enters. The window is
-    // measured after the first drawing, and a new drawing clears the hovered
-    // line without a new pointerenter. So the pointer leaves and enters the
-    // line again until the raised layer is there.
-    const lifted = await waitFor(async () => {
+    const raised = await waitFor(async () => {
       await userEvent.unhover(band!)
       await userEvent.hover(band!)
-      const found = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
+      const found = canvasElement.querySelectorAll<SVGTextElement>(
+        '.plex__raised .plex__edge-label',
+      )
       if (found.length !== 2) throw new Error(`${found.length} raised titles, not 2`)
       return found
     })
-    await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
-    await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
-    await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
+    await expect(getComputedStyle(raised[0]!).fill).toBe('none')
+    await expect(getComputedStyle(raised[1]!).stroke).toBe('none')
+    await expect(Number.parseFloat(getComputedStyle(raised[0]!).strokeWidth)).toBeGreaterThan(
       haloAtRest,
     )
-    await expect(lifted[0]!.getComputedTextLength()).toBe(lifted[1]!.getComputedTextLength())
+    await expect(raised[0]!.getComputedTextLength()).toBe(raised[1]!.getComputedTextLength())
     await userEvent.unhover(band!)
 
-    // A jump that leaves its column and comes round is set along its line like
-    // any other, and its words are short enough to stay whole.
     const loop = title('see also')[0]!
     await expect(loop.querySelector('textPath')).not.toBeNull()
     await expect(loop.getComputedTextLength()).toBeLessThan(getTextLine(loop).getTotalLength())
@@ -814,18 +674,12 @@ interface Edges {
 }
 
 const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-  /** Whether two boxes on the screen share any of it. */
   const isOverlapping = (one: Edges, other: Edges) =>
     one.left < other.right &&
     other.left < one.right &&
     one.top < other.bottom &&
     other.top < one.bottom
 
-  /**
-   * The screen rectangle of each letter of a title. A title set along a curve
-   * is a ribbon of letters: the box around a diagonal title covers an area
-   * that the letters do not occupy.
-   */
   const getLetters = (text: SVGTextElement): Edges[] => {
     const onScreen = text.getScreenCTM()!
     const letters: Edges[] = []
@@ -850,13 +704,10 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     return letters
   }
 
-  /** The letters of each title, which is the layer the halo is painted for. */
   const titles = () => [
     ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label--letters'),
   ]
 
-  // The plex draws on a fallback window until the canvas has been measured,
-  // and the counts below belong to the arrangement the measured one settles.
   await waitFor(async () => {
     const svg = canvasElement.querySelector('svg')!
     const drawnFor = Number(svg.getAttribute('viewBox')!.split(' ')[2])
@@ -892,41 +743,19 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
   await expect(overBoxes).toHaveLength(0)
 }
 
-/**
- * Overlap between titles. Uses the playground's neighbourhood, which is dense:
- * a fan of lines out of every node, many with the same word.
- *
- * Two counts are asserted directly, so a regression reports its magnitude. Only
- * a browser can verify either: the width of the words in the chosen type, and
- * the glyph positions after they are bent along their curves.
- *
- * It uses its own neighbourhood, since the playground exists for adjusting
- * knobs.
- */
+/** Verifies that edge titles do not overlap each other or node boxes. */
 export const TitlesFindSpace: Story = {
   args: { ...invented.args, duration: 0 },
   render: invented.render,
   play: expectTitlesClear,
 }
 
-/**
- * The lines of one note, every one of them named, and more children than a row
- * holds.
- *
- * The lines to the far row cross the near row, so their titles compete for
- * space in a band that the near row's titles already occupy. A title without a
- * clear span is truncated to the space available, and a title with space for
- * less than half of its words is not drawn.
- */
+/** Verifies that edge titles across multiple rows do not overlap. */
 export const TitlesAcrossRows: Story = {
   args: { neighbourhood: neighbourhoods.labelledRows, duration: 0 },
   play: expectTitlesClear,
 }
 
-/**
- * One note's lines: two lines with an arrow, one without, and a sibling's line
- * attached to the parent that the two share.
- */
 const arrowedLines: PlexNeighbourhood = {
   nodes: [
     { id: 'alice', title: 'Alice Fenn, The Chair', relation: 'focus' },
@@ -943,29 +772,19 @@ const arrowedLines: PlexNeighbourhood = {
   ],
 }
 
-/**
- * The arrow a line carries, drawn at either of the two ends it was given.
- *
- * Only a browser can verify it: whether the style produces a head, where the
- * head lands once its rotation is applied, and which side of the box it is on.
- *
- * The layout is complete on load: a line in motion has not reached the end its
- * arrow belongs at.
- */
+/** Renders directional arrowheads on edges and raises them on hover. */
 export const ArrowedLines: Story = {
   args: { neighbourhood: arrowedLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const svg = canvasElement.querySelector('svg')!
 
-    /** Whether a box holds a point, give or take a pixel. */
     const hasPoint = (box: DOMRect, point: DOMPoint) =>
       point.x >= box.left - 1 &&
       point.x <= box.right + 1 &&
       point.y >= box.top - 1 &&
       point.y <= box.bottom + 1
 
-    /** Every line drawn, with both its ends where they land on the screen. */
     const lines = () => {
       const onScreen = svg.getScreenCTM()!
       return [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge')].map((line) => ({
@@ -976,7 +795,6 @@ export const ArrowedLines: Story = {
       }))
     }
 
-    /** The line that touches a node's box, and the end of it that does. */
     const getLine = (name: string) => {
       const box = canvas.getByLabelText(name).getBoundingClientRect()
       for (const { line, ends } of lines()) {
@@ -990,11 +808,9 @@ export const ArrowedLines: Story = {
 
     const heads = () => [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow')]
 
-    /** Whether an arrowhead was drawn on a given end of a line. */
     const getHead = (end: DOMPoint) =>
       heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
-    /** The positions of every head and every line end, as one snapshot. */
     const readView = () =>
       JSON.stringify([
         heads().map((head) => {
@@ -1004,11 +820,8 @@ export const ArrowedLines: Story = {
         lines().map(({ ends }) => ends.map((end) => [end.x, end.y])),
       ])
 
-    /** A frame, after which what was arranged on the last one can be read. */
     const frame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
-    // The viewport is measured after the first drawing, so the plex settles on
-    // its second drawing and the layout is stable afterwards.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
       const was = readView()
@@ -1016,23 +829,18 @@ export const ArrowedLines: Story = {
       await expect(readView()).toBe(was)
     })
 
-    // A head is drawn and is not an empty path.
     for (const head of heads()) {
       const box = head.getBoundingClientRect()
       await expect(box.width).toBeGreaterThan(0)
       await expect(box.height).toBeGreaterThan(0)
     }
 
-    // Each of them at the far end of its own line, away from the focus.
     await expect(getHead(getEnd('Marrowfield allotments, parent'))).toBe(true)
     await expect(getHead(getEnd('Bram Doyle, jump'))).toBe(true)
 
-    // The lines given none carry none, the sibling's line among them.
     await expect(getHead(getEnd('Cora Hale, jump'))).toBe(false)
     await expect(getHead(getEnd('The question of the rota, sibling'))).toBe(false)
 
-    // The head is outside the box it points into: it is rotated along the
-    // line, and its tip touches the border.
     const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
@@ -1041,8 +849,6 @@ export const ArrowedLines: Story = {
       hasPoint(box, new DOMPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)),
     ).toBe(false)
 
-    // The title on that line is cut short of the head, at either end of the
-    // words: neither the letters nor the halo under them reach it.
     const clear = Math.max(bounds.width, bounds.height)
     const title = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].find(
       (text) => text.textContent!.startsWith('the oldest'),
@@ -1057,38 +863,24 @@ export const ArrowedLines: Story = {
       await expect(Math.hypot(point.x - jump.end.x, point.y - jump.end.y)).toBeGreaterThan(clear)
     }
 
-    // Hovering the line raises it, and the head is brightened with it.
     const restingLightness = getComputedStyle(head).fill
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
     )!
     await userEvent.hover(band)
 
-    const lifted = canvasElement.querySelector<SVGPathElement>('.plex__lift .plex__edge-arrow')!
-    await expect(lifted).not.toBeNull()
-    await expect(getComputedStyle(lifted).fill).not.toBe(restingLightness)
+    const raised = canvasElement.querySelector<SVGPathElement>('.plex__raised .plex__edge-arrow')!
+    await expect(raised).not.toBeNull()
+    await expect(getComputedStyle(raised).fill).not.toBe(restingLightness)
   },
 }
 
-/**
- * Not Latin, far too long, nothing to break at, and nothing at all — the whole
- * arrangement made of them, to see that text nothing fits into still leaves a
- * plex and not a pile.
- *
- * Whether a title stays inside its own box is the node's affair and is checked
- * on the node, against the same corpus.
- */
+/** Renders nodes with long, non-Latin, and empty labels. */
 export const AwkwardLabels: Story = {
   args: { neighbourhood: neighbourhoods.awkwardLabels },
 }
 
-/**
- * A title too long for its box, read by hovering the box.
- *
- * Only a browser can verify it: the width of a title is the evaluated width in
- * the chosen type, whether the box contains it is decided by the browser, and
- * overlap with neighbouring boxes depends on paint order.
- */
+/** Expands a truncated node box on hover to show the full title. */
 export const RestingOnATitle: Story = {
   args: { neighbourhood: neighbourhoods.awkwardLabels },
   play: async ({ canvasElement }) => {
@@ -1101,8 +893,6 @@ export const RestingOnATitle: Story = {
     const nodeWidth = getWidth(node)
     const adjacentX = adjacentNode.getBoundingClientRect().x
 
-    // Truncated in the box the arrangement drew, and shown in full while the
-    // pointer stays on it.
     const words = node.querySelector<HTMLElement>('.plex__title-text')!
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
@@ -1118,16 +908,12 @@ export const RestingOnATitle: Story = {
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
 
-    // After the pointer leaves, the title returns to its original state.
     await userEvent.unhover(node)
     await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
   },
 }
 
-/**
- * Walk the graph. Go back the way you came: nodes in both pictures travel
- * and not blinking out and in, because they are matched by identifier.
- */
+/** Navigates between nodes using keyboard and pointer. */
 export const Walk: Story = {
   render: renderWalk,
   args: {
@@ -1138,11 +924,6 @@ export const Walk: Story = {
     const canvas = within(canvasElement)
     const middle = canvasElement.getBoundingClientRect()
 
-    /**
-     * Measured on the box, not on the surrounding group: a node that has been
-     * clicked holds the focus and shows a handle at its trailing edge, which
-     * would add to the group's width.
-     */
     const waitForNode = async (label: string) =>
       await waitFor(
         async () => {
@@ -1156,9 +937,6 @@ export const Walk: Story = {
         { timeout: 3000 },
       )
 
-    // The keyboard, in a real browser: whether tab stops on an SVG group. The
-    // focus is also a tab stop although it cannot be chosen; a menu is requested
-    // from the keyboard position.
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveAttribute(
       'tabindex',
       '0',
@@ -1166,8 +944,6 @@ export const Walk: Story = {
     await userEvent.tab()
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveFocus()
 
-    // Past the handle the node under the keyboard now offers, onto the relation
-    // above it.
     await userEvent.tab()
     await userEvent.tab()
     await expect(canvas.getByLabelText('Architecture, parent')).toHaveFocus()
@@ -1176,33 +952,20 @@ export const Walk: Story = {
 
     await waitForNode('Architecture, focus')
 
-    // Go back the way you came. Where it ends up is what a browser is needed
-    // for: that a click on an SVG group lands, and that the plex settles with
-    // the chosen node centred.
     await userEvent.click(canvas.getByLabelText('Hexagonal architecture, child'))
     await waitForNode('Hexagonal architecture, focus')
 
-    // The node walked away from took the relation above, and the plex is a plex
-    // again.
     await expect(canvas.getByLabelText('Architecture, parent')).toBeInTheDocument()
   },
   parameters: {
     docs: {
       description: {
-        story:
-          'The graph, the parent/child/jump rules and the sibling derivation ' +
-          'all live in the story, because that is exactly the work the ' +
-          'application does and exactly the work the plex must not.',
+        story: 'Navigates across connected nodes in a sample graph.',
       },
     },
   },
 }
 
-/**
- * Everything hung headings have to survive, one node each: a nested set, far more
- * than fit, one alone, one that runs on past the box, headings not written in
- * Latin, a heading with no words at all, and nodes with none.
- */
 const INSIDE: Record<string, readonly PlexHeading[]> = {
   focus: [
     { id: '0', text: 'What it is', level: 1 },
@@ -1226,7 +989,6 @@ const INSIDE: Record<string, readonly PlexHeading[]> = {
     { id: '6', text: '日本語の見出し', level: 2 },
     { id: '11', text: 'مدخل بالعربية', level: 2 },
   ],
-  // The one node there is exactly one of, so the play can find it by its relation.
   'focus/jump-0': Array.from({ length: 30 }, (_, index) => ({
     id: `${index}`,
     text: `Section ${index + 1}`,
@@ -1234,6 +996,7 @@ const INSIDE: Record<string, readonly PlexHeading[]> = {
   })),
 }
 
+/** Shows and scrolls note headings on hover. */
 export const HeadingsInside: Story = {
   args: {
     ...invented.args,
@@ -1249,10 +1012,8 @@ export const HeadingsInside: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
     const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
 
-    /** The maximum number of headings shown at once, set by the knob. */
     const most = args.maxHeadings
 
-    // No headings appear until the pointer has stayed on the node for a while.
     await expect(getHeadings(focus)).toHaveLength(0)
 
     await userEvent.hover(focus)
@@ -1260,19 +1021,15 @@ export const HeadingsInside: Story = {
       timeout: 3000,
     })
 
-    // Nesting is drawn by indenting a heading, so a deeper heading is indented
-    // further than its parent.
     const getIndent = (heading: Element) =>
       Number.parseFloat(getComputedStyle(heading).paddingInlineStart)
     const [first, second, third] = getHeadings(focus)
     await expect(getIndent(second!)).toBeGreaterThan(getIndent(first!))
     await expect(getIndent(third!)).toBeGreaterThan(getIndent(second!))
 
-    // After the pointer leaves, the headings are hidden again.
     await userEvent.unhover(focus)
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
 
-    // Choosing a heading reports which heading it was, on the node it belongs to.
     await userEvent.hover(focus)
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
       timeout: 3000,
@@ -1280,17 +1037,13 @@ export const HeadingsInside: Story = {
     await userEvent.click(getHeadings(focus)[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
-    // A note with more headings than stand at once is scrolled through them.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
     await waitFor(async () => await expect(getHeadings(many)).toHaveLength(most), { timeout: 3000 })
 
-    // A window on more than it holds carries an arrow at the edge it may be
-    // scrolled towards, and scrolling it moves it by whole headings.
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)
 
-    // in pixels and scrolls when they come to a heading's height.
     const wheel = (deltaY: number) =>
       many
         .querySelector('.plex__inside')!
@@ -1308,15 +1061,13 @@ export const HeadingsInside: Story = {
       async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 1'),
     )
 
-    // Choosing a heading is not choosing the node it hangs from: the plex stays
-    // where it is standing.
     await userEvent.click(getHeadings(many)[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },
 }
 
-/** Too small a window: the plex is clipped and not shrunk. */
+/** Renders the plex inside a small fixed container. */
 export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({
