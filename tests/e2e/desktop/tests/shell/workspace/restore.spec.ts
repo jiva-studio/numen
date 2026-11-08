@@ -38,50 +38,6 @@ test.describe('The tabs of the window after a restart', () => {
     expect(answer.ok()).toBe(true)
   })
 
-  test('open a PDF at the page it was left at', async ({ page }) => {
-    await openWorkspace(page)
-    const tab = await openVaultFile(page, 'assets', 'shore.pdf')
-    await tab.getByRole('button', { name: 'Next page' }).click()
-    await expect(getPageField(page, /shore/i)).toHaveValue('2')
-    await expectSavedState(page, 'assets/shore.pdf', '"page":2')
-
-    await page.reload()
-
-    await expect(getPageField(page, /shore/i)).toHaveValue('2')
-  })
-
-  test('open an EPUB at the place it was left at', async ({ page }) => {
-    await openWorkspace(page)
-    const tab = await openVaultFile(page, 'assets', 'sample.epub')
-    const bookText = tab.locator('.book-tab__reading')
-    await expect(bookText).toContainText(/\d+ of \d+/)
-    await tab.locator('.book-tab').press('PageDown')
-    await expect(bookText).toContainText(/\d+ of \d+/)
-    const textBefore = await bookText.innerText()
-
-    await page.reload()
-
-    const panel = page.getByRole('tabpanel', { name: /sample/i })
-    await expect(panel.locator('.book-tab__reading')).toHaveText(textBefore, { useInnerText: true })
-  })
-
-  test('open a recording at the time it was left at', async ({ page }) => {
-    await openWorkspace(page)
-    const tab = await openVaultFile(page, 'assets', 'talk.mp3')
-    const player = tab.getByRole('group', { name: 'Recording' })
-    await expect(player).toContainText('3:07')
-    await player.getByRole('slider').fill('120000')
-    await expect(player).toContainText('2:00')
-    await expectSavedState(page, 'assets/talk.mp3', '"t":[120,')
-
-    await page.reload()
-
-    const panel = page.getByRole('tabpanel', { name: /talk/i }).getByRole('group', {
-      name: 'Recording',
-    })
-    await expect(panel).toContainText('2:00')
-  })
-
   test('show a placeholder for a tab whose plugin is disabled, and the tab once it is enabled', async ({
     page,
   }) => {

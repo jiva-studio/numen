@@ -59,41 +59,6 @@ const expectNoColonFile = async (page: Page, folders: readonly string[]): Promis
 test.describe('The note tabs of the window after a restart', () => {
   test.describe.configure({ timeout: 120_000 })
 
-  test('show each note named after its file, with its text, over two restarts', async ({
-    page,
-    request,
-  }) => {
-    const simple = await createNote(request, createUniqueTitle('dd'))
-    const nested = await createNote(request, createUniqueTitle('x'), 'cards')
-    const spaced = await createNote(request, createUniqueTitle('two words here'))
-    const russian = await createNote(request, createUniqueTitle('Мысли о приливе'))
-    const notes = [simple, nested, spaced, russian].map((path, index) => ({
-      path,
-      text: `Text of note ${index} at the tide.`,
-    }))
-    try {
-      for (const one of notes) await writeNote(request, one.path, `${one.text}\n`)
-      await openWorkspace(page)
-      for (const one of notes) await openNote(page, one.path)
-      await expectSavedPaths(
-        page,
-        notes.map((one) => one.path),
-      )
-
-      for (let restart = 0; restart < 2; restart += 1) {
-        await page.reload()
-        await expectRestored(page, notes)
-        await expectSavedPaths(
-          page,
-          notes.map((one) => one.path),
-        )
-      }
-      await expectNoColonFile(page, ['', 'notes', 'cards'])
-    } finally {
-      for (const one of notes) await destroyNote(request, one.path)
-    }
-  })
-
   test('keep the saved path of each note when the application asks the window to flush on quit', async ({
     page,
     request,

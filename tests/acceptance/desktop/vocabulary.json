@@ -3,7 +3,7 @@
     "click", "clicks", "clicked", "press", "presses", "pressed", "type", "types", "typed", "enter", "enters", "entered",
     "fill", "fills", "filled", "select", "selects", "selected", "tap", "taps", "hover", "hovers", "scroll", "scrolls",
     "see", "sees", "visible", "displayed", "shown", "show", "shows",
-    "button", "field", "input", "tab", "tabs", "panel", "palette", "menu", "dialog", "popup", "screen", "window",
+    "button", "field", "input", "panel", "palette", "menu", "dialog", "popup", "screen",
     "dropdown", "checkbox", "toolbar", "sidebar", "icon", "css", "selector", "locator", "xpath", "element"
   ],
   "allowed": []

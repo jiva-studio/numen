@@ -4,7 +4,8 @@
  * scenario say what happens and never how it looks.
  */
 import { expect, type Locator, type Page, type Route } from 'playwright/test'
-import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { openWorkspace, waitForWindow } from '../../../e2e/desktop/tests/support/workspace.js'
+import { expectTabAt, openTabAt } from './tab-position.js'
 import {
   createNote,
   createUniqueTitle,
@@ -113,6 +114,23 @@ export class Person {
     this.pausedSaves.clear()
     await this.page.unroute(WRITE_NOTE).catch(() => undefined)
     for (const path of this.createdPaths) await destroyNote(this.page.request, path)
+  }
+
+  // Tabs
+
+  async openTabAt(file: string, place: string, value: string): Promise<void> {
+    if (!this.hasWorkspace) await openWorkspace(this.page)
+    this.hasWorkspace = true
+    await openTabAt(this.page, file, place, value)
+  }
+
+  async startAgain(): Promise<void> {
+    await this.page.reload()
+    await waitForWindow(this.page)
+  }
+
+  async expectTabAt(file: string, place: string, value: string): Promise<void> {
+    await expectTabAt(this.page, file, place, value)
   }
 
   // What the notes and the files hold
