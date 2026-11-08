@@ -141,6 +141,8 @@ type textFiles struct{}
 
 func (textFiles) Open(domain.Vault) (textport.TextFiles, error) { return textFiles{}, nil }
 
+func (textFiles) DeleteTextFile(context.Context, string, string) error { return nil }
+
 func (textFiles) ReadTextFile(context.Context, string, string) (textport.TextFile, error) {
 	return textport.TextFile{TextHash: textOfMaps}, nil
 }

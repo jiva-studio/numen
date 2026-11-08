@@ -143,7 +143,7 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
-	commands, err := newCommands(transcriber, hosted)
+	commands, err := newCommands(transcriber)
 	if err != nil {
 		return err
 	}
@@ -160,12 +160,9 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	return nil
 }
 
-func newCommands(transcriber *Transcriber, hosted Host) (*command.Registry, error) {
+func newCommands(transcriber *Transcriber) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("app:file.createText", newTranscribeCommand(transcriber)); err != nil {
-		return nil, err
-	}
-	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
 		return nil, err
 	}
 	return commands, nil

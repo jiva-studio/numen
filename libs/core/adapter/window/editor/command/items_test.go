@@ -20,7 +20,8 @@ import (
 
 // versionItems offers two versions of every file, the first live, and records each run.
 type versionItems struct {
-	ran []string
+	ran     []string
+	deleted []string
 }
 
 func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ pluginport.PluginCommandEntry) ([]textversion.VersionItem, error) {

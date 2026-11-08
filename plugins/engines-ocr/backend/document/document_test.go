@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"image/png"
 	"os"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"

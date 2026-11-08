@@ -19,7 +19,6 @@ const (
 	commandCreateText    = "app:file.createText"
 	commandDownloadMedia = "app:link.downloadMedia"
 	commandDeleteMedia   = "app:link.deleteMedia"
-	commandDeleteText    = "app:version.delete"
 )
 
 // argumentAddress is the argument of app:link.import that holds the web address.
@@ -32,7 +31,6 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 		commandCreateText:    newDownloadTextCommand(links),
 		commandDownloadMedia: newDownloadCopyCommand(links),
 		commandDeleteMedia:   newDeleteCopyCommand(links),
-		commandDeleteText:    command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {

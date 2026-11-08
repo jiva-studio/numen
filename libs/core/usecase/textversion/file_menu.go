@@ -79,6 +79,35 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 	return listVersionItems(condition, values, versions, live, hasLive), nil
 }
 
+// ListEveryVersion lists every text version of the file at the path, as the items of the application
+// command DeleteCommand.
+func (u *FileMenu) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]VersionItem, error) {
+	versions, err := u.versions.getVersions(ctx, v, path)
+	if err != nil {
+		return nil, err
+	}
+	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]VersionItem, 0, len(versions))
+	for _, version := range versions {
+		isLive := hasLive && version.GetID() == live.GetID()
+		items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
+	}
+	return items, nil
+}
+
+// DeleteVersion deletes the version of the file at the path, its record and its file; see
+// Versions.DeleteVersion.
+func (u *FileMenu) DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error {
+	return u.versions.DeleteVersion(ctx, v, path, version)
+}
+
+// DeleteCommand is the application command that deletes a text version of a file. The core serves
+// it with no plugin: its items are every version of the file.
+const DeleteCommand = "app:version.delete"
+
 // RunVersionItem runs the command of the entry over the version of the file at the path, which it gets
 // as its argument version-id. A version the command does not offer over the file now, or a command
 // without items, is ErrInvalidVersion.
