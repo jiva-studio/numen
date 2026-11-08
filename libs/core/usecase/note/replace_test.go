@@ -84,9 +84,9 @@ func TestASpanActiveTwiceIsRefused(t *testing.T) {
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"foe advances", "foe retreats", domain.FileStat{})
-	var ambiguous note.AmbiguousSpan
+	var ambiguous note.AmbiguousSpanError
 	if !errors.As(err, &ambiguous) {
-		t.Fatalf("want AmbiguousSpan, got %v", err)
+		t.Fatalf("want AmbiguousSpanError, got %v", err)
 	}
 	if ambiguous.Places != 2 {
 		t.Errorf("counted %d places", ambiguous.Places)
@@ -104,9 +104,9 @@ func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"the wrath of the retreating foe", "nothing", domain.FileStat{})
-	var nowhere note.MissingSpan
+	var nowhere note.MissingSpanError
 	if !errors.As(err, &nowhere) {
-		t.Fatalf("want MissingSpan, got %v", err)
+		t.Fatalf("want MissingSpanError, got %v", err)
 	}
 	if !strings.HasPrefix(nowhere.Matched, "the wrath of the ") {
 		t.Errorf("what matched is reported as %q", nowhere.Matched)

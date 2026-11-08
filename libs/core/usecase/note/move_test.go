@@ -309,9 +309,12 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			want: boom,
 		},
 		"the note holding the link opens a frontmatter block it never closes": {
-			before: func(t *testing.T, c changing) { c.overwrite(t, "physics/Heat.md", unterminated) },
-			parts:  func(changing) moveParts { return moveParts{} },
-			want:   markdown.ErrUnterminated,
+			before: func(t *testing.T, c changing) {
+				t.Helper()
+				c.overwrite(t, "physics/Heat.md", unterminated)
+			},
+			parts: func(changing) moveParts { return moveParts{} },
+			want:  markdown.ErrUnterminated,
 		},
 		"the index cannot be updated": {
 			parts: func(changing) moveParts {

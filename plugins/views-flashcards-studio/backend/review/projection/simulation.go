@@ -542,7 +542,7 @@ func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed 
 		out.Clears = len(out.Load)
 	}
 	if answerRetained {
-		out.Retained.add(d.today, back)
+		addRetention(&out.Retained, d.today, back)
 	}
 	d.open = d.ends
 }

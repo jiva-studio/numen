@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func encodeJSON(t testing.TB, w io.Writer, value any) {
-	t.Helper()
+func encodeJSON(tb testing.TB, w io.Writer, value any) {
+	tb.Helper()
 	if err := json.NewEncoder(w).Encode(value); err != nil {
-		t.Errorf("encode the response: %v", err)
+		tb.Errorf("encode the response: %v", err)
 	}
 }

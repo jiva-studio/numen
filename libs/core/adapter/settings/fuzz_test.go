@@ -49,7 +49,7 @@ func FuzzAt(f *testing.F) {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
 			// the setting does not go to — and the rejection names which.
-			if !errors.As(err, new(*settings.OutsideBounds)) {
+			if !errors.As(err, new(*settings.OutsideBoundsError)) {
 				t.Fatalf("%s failed as %v, which names no setting", raw, err)
 			}
 			return

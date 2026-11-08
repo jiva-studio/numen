@@ -28,4 +28,7 @@ func newMigrated() *testsupport.Template {
 }
 
 // Path is a migrated index of the test's own, at a path nothing else uses.
-func Path(t testing.TB) string { return newMigrated().Path(t) }
+func Path(tb testing.TB) string {
+	tb.Helper()
+	return newMigrated().Path(tb)
+}

@@ -46,18 +46,18 @@ func getOther() map[string]string {
 // API is the review as these tests ask it.
 type API = reviewHandler
 
-func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
-	t.Helper()
-	handler, target, _ := newAPIOn(t, notes...)
+func newAPI(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
+	tb.Helper()
+	handler, target, _ := newAPIOn(tb, notes...)
 	return handler, target
 }
 
-func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, vaulttest.Installation) {
-	t.Helper()
+func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, vaulttest.Installation) {
+	tb.Helper()
 	installation := vaulttest.NewInstallation()
 	target := make([]domain.Vault, 0, len(notes))
 	for _, one := range notes {
-		target = append(target, installation.Add(t, one))
+		target = append(target, installation.Add(tb, one))
 	}
 	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()})
 	return &reviewHandler{Backend: backend}, target, installation

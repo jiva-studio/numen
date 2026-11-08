@@ -16,17 +16,17 @@ func (b Bounds) Check(targetPath string, value float64) error {
 	if b.Contains(value) {
 		return nil
 	}
-	return &OutsideBounds{At: targetPath, Number: value, Bounds: b}
+	return &OutsideBoundsError{At: targetPath, Number: value, Bounds: b}
 }
 
-// OutsideBounds is a number a setting does not accept, with the setting's
+// OutsideBoundsError is a number a setting does not accept, with the setting's
 // range. The number is kept as the user wrote it and is not applied.
-type OutsideBounds struct {
+type OutsideBoundsError struct {
 	At     string
 	Number float64
 	Bounds
 }
 
-func (o *OutsideBounds) Error() string {
+func (o *OutsideBoundsError) Error() string {
 	return fmt.Sprintf("%q: %v is out of range %v..%v", o.At, o.Number, o.Min, o.Max)
 }

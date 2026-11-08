@@ -63,10 +63,10 @@ func (f *File) GetAppearance() *Appearance { return &f.Appearance }
 func (f *File) AddNotice(notice string) { f.Notices = append(f.Notices, notice) }
 
 // Sync is whether a note's title and its filename are kept as one name.
-func (f File) Sync() bool { return f.Titles.Sync() }
+func (f *File) Sync() bool { return f.Titles.Sync() }
 
 // WriteJSON is every setting as JSON.
-func (f File) WriteJSON() (string, error) {
+func (f *File) WriteJSON() (string, error) {
 	content, err := json.Marshal(f)
 	if err != nil {
 		return "", err
@@ -76,7 +76,7 @@ func (f File) WriteJSON() (string, error) {
 
 // MarshalJSON writes the version, the object of the owner app, the secrets when there are any, and
 // the object of each plugin by id.
-func (f File) MarshalJSON() ([]byte, error) {
+func (f *File) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
 	out.WriteString(`{`)
 	members := []struct {

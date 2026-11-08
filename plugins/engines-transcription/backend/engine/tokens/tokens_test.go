@@ -77,15 +77,15 @@ func decodeReference(p Pieces, response []int) string {
 	return strings.TrimSpace(strings.ReplaceAll(out.String(), wordMark, " "))
 }
 
-func createVocabularyFile(t testing.TB, words []string) string {
-	t.Helper()
+func createVocabularyFile(tb testing.TB, words []string) string {
+	tb.Helper()
 	var file strings.Builder
 	for i, word := range words {
 		fmt.Fprintf(&file, "%s %d\n", word, i)
 	}
-	pos := t.TempDir() + "/tokens.txt"
+	pos := tb.TempDir() + "/tokens.txt"
 	if err := os.WriteFile(pos, []byte(file.String()), 0o644); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return pos
 }

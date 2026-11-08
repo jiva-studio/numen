@@ -18,27 +18,27 @@ import (
 // test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
-func newCompilation(t testing.TB) wazero.CompilationCache {
-	t.Helper()
+func newCompilation(tb testing.TB) wazero.CompilationCache {
+	tb.Helper()
 	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
-			t.Error(err)
+	tb.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(tb.Context())); err != nil {
+			tb.Error(err)
 		}
 	})
 	return compilation
 }
 
-func newWorkers(t testing.TB) *Workers {
-	t.Helper()
+func newWorkers(tb testing.TB) *Workers {
+	tb.Helper()
 	workers := NewWorkers()
-	workers.SetCompilationCache(newCompilation(t))
-	t.Cleanup(func() {
+	workers.SetCompilationCache(newCompilation(tb))
+	tb.Cleanup(func() {
 		if err := workers.Close(); err != nil {
-			t.Error(err)
+			tb.Error(err)
 		}
 	})
 	return workers

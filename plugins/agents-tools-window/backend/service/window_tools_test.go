@@ -275,7 +275,6 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	requirePlace(t, "the PDF tab", second.Place, `{"page":4,"pageCount":120}`)
 }
 
-
 func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 	for name, tc := range map[string]struct {
 		tab  host.OpenTab

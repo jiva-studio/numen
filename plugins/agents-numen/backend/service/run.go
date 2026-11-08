@@ -22,13 +22,13 @@ const reasonTurns = "the agent reached the limit of steps without finishing"
 // reasonCut is why a run stops when the model's answer was cut off at its length limit.
 const reasonCut = "the answer was cut off at the model's length limit"
 
-// chatFailure is a run stopped by a request to the chat API that failed. It stops the run and is
+// chatError is a run stopped by a request to the chat API that failed. It stops the run and is
 // reported as why it stopped.
-type chatFailure struct{ err error }
+type chatError struct{ err error }
 
-func (f *chatFailure) Error() string { return f.err.Error() }
+func (f *chatError) Error() string { return f.err.Error() }
 
-func (f *chatFailure) Unwrap() error { return f.err }
+func (f *chatError) Unwrap() error { return f.err }
 
 // run is one task worked by the model: the chat API, the tools, and where its steps go. isPlain
 type run struct {
@@ -83,7 +83,7 @@ func (r *run) turn(ctx context.Context, messages []message) ([]message, string, 
 		return messages, "", false, unsent
 	}
 	if err != nil {
-		return messages, "", false, &chatFailure{err: err}
+		return messages, "", false, &chatError{err: err}
 	}
 	if finished == "length" {
 		reply.ToolCalls = nil
