@@ -135,7 +135,7 @@ describe('the commands with items in the palette', () => {
     await settle()
     expect(lists.removeEmptyCommands(command)).toHaveLength(0)
 
-    front.value = { ...TARGET, path: 'assets/scan.pdf', file: 'assets/scan.pdf' }
+    front.value = { ...TARGET, path: 'assets/scan.pdf', file: 'assets/scan.pdf', isFolder: false }
     lists.removeEmptyCommands(command)
     await settle()
 
