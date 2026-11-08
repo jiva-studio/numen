@@ -5,10 +5,9 @@
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { State, Update } from './api/updater'
-import { getTooltip } from './lib/tooltip'
+import { getTooltip } from './model/tooltip'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
-import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
