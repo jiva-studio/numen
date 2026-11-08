@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TabLinkGroup } from '@/features/tab-linking'
+import { useTabLinks, type TabLinkGroup, type TabLinksSnapshot } from '@/features/tab-linking'
 import type { TabPathSync } from '../ports/vault'
 import { createTabSync, type TabSyncDeps } from './useTabSync'
 
@@ -489,5 +489,48 @@ describe('a moved tab that settles without reporting the path', () => {
     sync.syncPathFromTab('files:1', 'a.md')
 
     expect(sendSync).toHaveBeenLastCalledWith({ sourceTabId: 'files:1', path: 'a.md', title: '' })
+  })
+})
+
+describe('a path chosen in the files tab after its link ends', () => {
+  const LINKED: TabLinksSnapshot = {
+    groups: [{ id: 'group-1', colorIndex: 1, tabs: ['files:1', 'note:weir'], path: '', title: '' }],
+    tabs: [],
+    windows: [],
+  }
+  const ALONE: TabLinksSnapshot = { groups: [], tabs: [], windows: [] }
+
+  const setupLinked = () => {
+    const navigate = vi.fn<Navigate>()
+    const write = vi.fn((_change: unknown) => Promise.resolve())
+    const tabLinks = useTabLinks({ write, onError: vi.fn() })
+    tabLinks.applySnapshot(LINKED)
+    const { sync, sendSync } = setup({ 'files:1': {}, 'note:weir': { navigate } }, tabLinks)
+    return { sync, sendSync, navigate, tabLinks, write }
+  }
+
+  it('is left to open a note tab of its own once the person unlinks the files tab', async () => {
+    const { sync, sendSync, navigate, tabLinks, write } = setupLinked()
+    expect(sync.syncPathFromTab('files:1', 'notes/Weir.md')).toBe(true)
+    navigate.mockClear()
+    sendSync.mockClear()
+
+    tabLinks.unlinkTab('files:1')
+    await vi.waitFor(() => expect(write).toHaveBeenCalledWith({ unlink: 'files:1' }))
+    tabLinks.applySnapshot(ALONE)
+
+    expect(sync.syncPathFromTab('files:1', 'notes/Flume.md')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(sendSync).not.toHaveBeenCalled()
+  })
+
+  it('is left to open a note tab of its own once the linked note tab is closed', () => {
+    const { sync, sendSync, navigate, tabLinks } = setupLinked()
+
+    tabLinks.applySnapshot(ALONE)
+
+    expect(sync.syncPathFromTab('files:1', 'notes/Flume.md')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(sendSync).not.toHaveBeenCalled()
   })
 })

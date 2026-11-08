@@ -55,39 +55,6 @@ test.describe('Linked tabs', () => {
     )
   })
 
-  test('opens a note in a tab of its own once the files tab is unlinked', async ({ page }) => {
-    await openWorkspace(page)
-    await showInFiles(page, ['notes'])
-    await getRow(page, weir).press('Enter')
-    await linkTab(page, 'Files', 'Weir notes')
-
-    await getTab(page, 'Files').click({ button: 'right' })
-    await page.getByRole('menuitem', { name: /^Unlink tab/ }).click()
-    await expect(getTab(page, 'Files')).toHaveAccessibleName('Files Close Files')
-
-    await getTab(page, 'Files').click()
-    await getRow(page, flume).press('Enter')
-
-    await expect.poll(() => readNoteTabPaths(page)).toEqual([weir, flume])
-    await expect(getTab(page, 'Weir notes')).toBeVisible()
-    await expect(getTab(page, 'Flume notes')).toBeVisible()
-  })
-
-  test('drops the link when the linked note tab is closed', async ({ page }) => {
-    await openWorkspace(page)
-    await showInFiles(page, ['notes'])
-    await getRow(page, weir).press('Enter')
-    await linkTab(page, 'Files', 'Weir notes')
-
-    await page.getByRole('button', { name: 'Close Weir notes' }).click()
-    await expect(getTab(page, 'Weir notes')).toHaveCount(0)
-    await expect(getTab(page, 'Files')).toHaveAccessibleName('Files Close Files')
-
-    await getTab(page, 'Files').click()
-    await getRow(page, flume).press('Enter')
-    await expect.poll(() => readNoteTabPaths(page)).toEqual([flume])
-  })
-
   test('moves the note tab linked to the plex to the note chosen in the plex', async ({ page }) => {
     await openWorkspace(page)
     await showInFiles(page, ['notes'])
