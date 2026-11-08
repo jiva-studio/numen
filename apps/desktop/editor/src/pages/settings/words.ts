@@ -58,6 +58,53 @@ export const WORDS = {
   secretSearch: 'Search secrets',
   secretOpenPage: 'Open the page of secrets',
   secretFieldNone: 'No secret allowed',
+  /** The page of connections. */
+  connectionsIntro:
+    'A connection is a service you pay for, a server you run, or an agent on this computer. Keys are kept in the system keychain.',
+  connectionAdd: 'Add connection',
+  connectionEdit: 'Edit connection',
+  connectionActions: 'Connection actions',
+  connectionMenuEdit: 'Edit',
+  connectionMenuDelete: 'Delete',
+  connectionsEmpty: 'No connections yet.',
+  connectionsEmptyDetail:
+    'Add a connection to let a plugin use a service or a program. You enter the address and the key once.',
+  connectionsNoTypes: 'No installed plugin provides a kind of connection.',
+  connectionUnavailable: 'Type unavailable',
+  connectionUnavailableDetail:
+    '"Type unavailable" means no installed plugin provides this type. Plugins skip such a connection.',
+  connectionIncomplete: 'Incomplete',
+  connectionKeyMissing: 'No key',
+  connectionDelete: 'Delete connection',
+  connectionDeleteAsking: (name: string, hasKey: boolean) =>
+    hasKey ? `Delete "${name}"? Its key is removed from this machine.` : `Delete "${name}"?`,
+  connectionDeleteConfirm: 'Delete',
+  connectionDeleteCancel: 'Cancel',
+  connectionDeleteFailed: 'The connection was not deleted:',
+  connectionType: 'Type',
+  connectionName: 'Name',
+  connectionNameHint: 'Shown in lists. Leave empty to use the name of the type.',
+  connectionAddress: 'Address',
+  connectionAddressFixed: 'The address is part of this type.',
+  connectionAddressHint: 'The key is sent only to this address.',
+  connectionKeyStored: 'A key is stored. Type to replace it.',
+  connectionKeyHint: 'Stored in the system keychain. Not shown again after saving.',
+  connectionKeyClear: 'Remove key',
+  connectionKeyClearing: 'The key will be removed when you save.',
+  connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
+  connectionPrivateNetwork: 'Allow a private network address',
+  connectionPrivateNetworkHint:
+    'Needed for a server on your local network. Addresses on this computer are always allowed.',
+  connectionModelNote: 'The model is chosen on the page of the plugin that uses this connection.',
+  connectionAgentNote: (pluginName: string) =>
+    `Nothing else to enter. ${pluginName} runs the program on this computer with your own login.`,
+  connectionGuide: 'How to get a key and what leaves this computer',
+  connectionGuideAddress: 'https://docs.numen.md/connections/',
+  connectionSave: 'Save',
+  connectionCancel: 'Cancel',
+  connectionFieldSelect: 'Choose',
+  connectionRequired: 'Required.',
+  connectionOptionalKey: 'May stay empty for a server on this computer.',
   /** The label of the action that opens a plugin's settings. */
   configure: 'Configure',
   /** A plugin's setting of type file or folder. */

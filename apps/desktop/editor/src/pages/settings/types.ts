@@ -6,7 +6,14 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { CatalogEntry } from '@numen/core-client'
+import type {
+  CatalogEntry,
+  ConnectionChange,
+  ConnectionDraft,
+  ConnectionInfo,
+  ConnectionTypeInfo,
+  Result,
+} from '@numen/core-client'
 import type {
   Model,
   PluginInfo,
@@ -50,6 +57,18 @@ export interface Installation {
   /** Lets one declaration of a plugin read a secret. The group is empty for a declaration with none. */
   allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
   denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
+  /**
+   * The connections to services and programs, and the kinds of connection the plugins provide. A
+   * value of a secret is entered once and is never read back. The answer of a call is the
+   * connection, or the reason in words.
+   */
+  readonly connections?: Readonly<Ref<readonly ConnectionInfo[]>>
+  readonly connectionTypes?: Readonly<Ref<readonly ConnectionTypeInfo[]>>
+  /** Reads the types and the connections. Only the page of connections calls it. */
+  loadConnections?(): Promise<void>
+  createConnection?(draft: ConnectionDraft): Promise<Result<ConnectionInfo, string>>
+  updateConnection?(change: ConnectionChange): Promise<Result<ConnectionInfo, string>>
+  deleteConnection?(id: string): Promise<Result<undefined, string>>
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**

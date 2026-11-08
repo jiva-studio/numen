@@ -5,6 +5,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -73,7 +74,7 @@ func (h *Handler) CreateProviderConnection(
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: err.Error()}), nil
+		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	wire, err := writeConnection(entry)
 	if err != nil {
@@ -99,7 +100,7 @@ func (h *Handler) UpdateProviderConnection(
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: err.Error()}), nil
+		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	wire, err := writeConnection(entry)
 	if err != nil {
@@ -117,9 +118,22 @@ func (h *Handler) DeleteProviderConnection(
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: err.Error()}), nil
+		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{}), nil
+}
+
+func getDetail(err error) string {
+	sentinels := []error{
+		connections.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
+		connections.ErrTypeUnavailable, connections.ErrKeyStore, connections.ErrStaleRevision,
+	}
+	for _, sentinel := range sentinels {
+		if errors.Is(err, sentinel) {
+			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
+		}
+	}
+	return err.Error()
 }
 
 func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {

@@ -6,8 +6,9 @@ import { themes } from '@/entities/settings'
 import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
 import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
-import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
+import { formatErrorMessage, type ConnectionClient, type PluginCatalog } from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
+import { createConnectionStore } from '@/entities/connection'
 import { createFollower, runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
@@ -28,12 +29,14 @@ export interface SettingsDeps {
   getSettingsViews?: Installation['getSettingsViews']
   getPlatform?: Installation['getPlatform']
   catalog?: PluginCatalog
+  connections?: ConnectionClient
 }
 
 interface SettingsTabConfigDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
+  connections?: ReturnType<typeof createConnectionStore>
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
   getSettingsViews?: Installation['getSettingsViews']
@@ -42,11 +45,36 @@ interface SettingsTabConfigDeps {
   reportError: (error: unknown) => void
 }
 
+/** What the settings tab shows and calls for the connections, and nothing where the window has no client. */
+function createConnectionMembers(
+  connections: ReturnType<typeof createConnectionStore> | undefined,
+): Partial<Installation> {
+  if (!connections) return {}
+  return {
+    connections: connections.connections,
+    connectionTypes: connections.types,
+    loadConnections: () => connections.load(),
+    createConnection: connections.create,
+    updateConnection: connections.update,
+    deleteConnection: connections.delete,
+  }
+}
+
+function createConnections(client: ConnectionClient | undefined, words: Words, log: MessageLog) {
+  if (!client) return undefined
+  return createConnectionStore(client, {
+    describeFailure: words.connectionFailure,
+    loadFailed: words.connectionsLoadFailed,
+    notify: log.getWriter('connections'),
+  })
+}
+
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   const {
     appearance,
     rest,
     secrets,
+    connections,
     retry,
     core,
     getSettingsViews,
@@ -63,6 +91,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
+    ...createConnectionMembers(connections),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
@@ -215,6 +244,7 @@ export function useSettings({
   getSettingsViews,
   getPlatform,
   catalog,
+  connections: connectionClient,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
@@ -232,6 +262,7 @@ export function useSettings({
     notify: log.getWriter('keys'),
     refresh: () => rest.start(),
   })
+  const connections = createConnections(connectionClient, words, log)
   const retry = createPluginRetry(core, {
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
@@ -247,6 +278,7 @@ export function useSettings({
       appearance,
       rest,
       secrets,
+      ...(connections ? { connections } : {}),
       retry,
       core,
       ...(getSettingsViews ? { getSettingsViews } : {}),
@@ -263,7 +295,7 @@ export function useSettings({
 
   const changes = createChangeFollower({
     core,
-    refresh: () => Promise.all([rest.start(), appearance.reload()]),
+    refresh: () => Promise.all([rest.start(), appearance.reload(), connections?.reload()]),
   })
 
   const start = async () => {

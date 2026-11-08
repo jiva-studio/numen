@@ -1,0 +1,46 @@
+import type { ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
+import { getAddressField } from './form'
+
+/** Whether a connection can be used: it is unavailable, incomplete, or ready. */
+export type ConnectionState = 'unavailable' | 'incomplete' | 'ready'
+
+/** A connection whose type no plugin provides is unavailable whatever else it lacks. */
+export function getConnectionState(connection: ConnectionInfo): ConnectionState {
+  if (!connection.isTypeAvailable) return 'unavailable'
+  return connection.isComplete ? 'ready' : 'incomplete'
+}
+
+const OPERATION_TITLES: Readonly<Record<string, string>> = {
+  complete: 'Completion',
+  embed: 'Embeddings',
+}
+
+/** The name of an operation in words a person reads. */
+export function getOperationTitle(operation: string): string {
+  return OPERATION_TITLES[operation] ?? operation.charAt(0).toUpperCase() + operation.slice(1)
+}
+
+/** The titles of what a type can do, joined; empty where the type is not known. */
+export function getOperationsText(type: ConnectionTypeInfo | undefined): string {
+  return (type?.operations ?? []).map(getOperationTitle).join(' · ')
+}
+
+/** The address the person entered for a connection; empty for a fixed address or an unknown type. */
+export function getAddressText(
+  type: ConnectionTypeInfo | undefined,
+  connection: ConnectionInfo,
+): string {
+  const field = type ? getAddressField(type) : undefined
+  const value = field ? connection.fields[field.key] : undefined
+  return typeof value === 'string' ? value : ''
+}
+
+/** Whether an installed plugin provides at least one type. */
+export function hasAvailableType(types: readonly ConnectionTypeInfo[]): boolean {
+  return types.some((one) => one.isAvailable)
+}
+
+/** Whether some connection has a type no installed plugin provides. */
+export function hasUnavailableConnection(connections: readonly ConnectionInfo[]): boolean {
+  return connections.some((one) => !one.isTypeAvailable)
+}

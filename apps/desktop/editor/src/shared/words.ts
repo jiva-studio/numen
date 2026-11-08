@@ -13,6 +13,7 @@ import { ERRORS } from '@numen/core-client'
 export { ERRORS }
 
 const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1)
+const toUpperFirst = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1)
 
 export const WORDS = {
   /** The name the title bar of every window starts with. */
@@ -106,6 +107,28 @@ export const WORDS = {
   off: 'Off',
   unturned: 'Setting not saved:',
   secretFailed: 'The secret was not changed:',
+  /** The connections to services and programs. */
+  connectionsLoadFailed: 'The connections could not be read.',
+  connectionFailure: (failure: { readonly errorCode: string; readonly detail: string }) => {
+    switch (failure.errorCode) {
+      case 'name_taken':
+        return 'Another connection has this name.'
+      case 'invalid_field':
+        return failure.detail === ''
+          ? 'A value is not accepted.'
+          : `${toUpperFirst(failure.detail)}.`
+      case 'type_unavailable':
+        return 'No installed plugin provides this type of connection.'
+      case 'key_store_failed':
+        return 'The key could not be stored or removed. Check the system keychain.'
+      case 'stale_revision':
+        return 'Another window changed this connection. Close this dialog and open it again.'
+      case 'not_found':
+        return 'This connection no longer exists.'
+      default:
+        return failure.detail
+    }
+  },
   /** Plugin failures, shown as failed tasks: "<Name> stopped: <reason>", and errors raised by plugin code. */
   pluginStopped: (name: string, reason: string) => `${name} stopped: ${toLowerFirst(reason)}`,
   pluginRetryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,

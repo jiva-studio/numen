@@ -25,6 +25,8 @@ export const PLUGIN_WORDS = {
   noPlugins: 'No plugins installed.',
   secrets: 'Secrets',
   secretsDetail: 'API keys and tokens for plugins.',
+  connections: 'Connections',
+  connectionsDetail: 'Services and programs that plugins send requests to.',
   systemSettings: 'System',
   systemSettingsDetail: 'Theme, scale and filename sync.',
   searchPlugins: 'Search plugins…',

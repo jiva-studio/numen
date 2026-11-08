@@ -1,6 +1,7 @@
 export * from './clients'
 export * from './catalog'
 export * from './manifest'
+export * from './connections'
 export * from './protocol'
 export { transport } from './transport'
 export { getNames } from './settings/enumNames'

@@ -6,6 +6,7 @@ import {
   getFilteredPluginItems,
   getPluginCategory,
   matchesPluginQuery,
+  matchesConnectionsRow,
   matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
@@ -339,6 +340,16 @@ describe('getFilteredPluginItems', () => {
 
   it('formats the label of a category', () => {
     expect(formatCategoryLabel('views')).toBe('Views')
+  })
+})
+
+describe('matchesConnectionsRow', () => {
+  it('shows for an empty query and for words about connections, not for qualifiers or other words', () => {
+    expect(matchesConnectionsRow(parsePluginQuery(''))).toBe(true)
+    expect(matchesConnectionsRow(parsePluginQuery('connection'))).toBe(true)
+    expect(matchesConnectionsRow(parsePluginQuery('openrouter key'))).toBe(true)
+    expect(matchesConnectionsRow(parsePluginQuery('tree'))).toBe(false)
+    expect(matchesConnectionsRow(parsePluginQuery('@disabled'))).toBe(false)
   })
 })
 

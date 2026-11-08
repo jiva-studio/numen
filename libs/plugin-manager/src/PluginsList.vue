@@ -8,6 +8,7 @@ import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import {
   getFilteredPluginItems,
+  matchesConnectionsRow,
   matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
@@ -36,6 +37,8 @@ const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 
 const showsSystem = computed(() => matchesSystemRow(parsedQuery.value))
 
+const showsConnections = computed(() => matchesConnectionsRow(parsedQuery.value))
+
 const showsSecrets = computed(() => matchesSecretsRow(parsedQuery.value))
 
 const flatPlugins = computed(() =>
@@ -49,6 +52,10 @@ function onSelectPlugin(pluginId: string): void {
 
 function onSelectSystem(): void {
   emit('select-plugin', 'system')
+}
+
+function onSelectConnections(): void {
+  emit('select-plugin', 'connections')
 }
 
 function onSelectSecrets(): void {
@@ -80,6 +87,13 @@ function isPluginEnabled(pluginId: string): boolean {
     <div class="plugins-list__items">
       <SystemRow v-if="showsSystem" @select="onSelectSystem" />
       <SystemRow
+        v-if="showsConnections"
+        class="connections-row"
+        :name="words.connections"
+        :detail="words.connectionsDetail"
+        @select="onSelectConnections"
+      />
+      <SystemRow
         v-if="showsSecrets"
         class="secrets-row"
         :name="words.secrets"
@@ -101,7 +115,7 @@ function isPluginEnabled(pluginId: string): boolean {
       {{ words.noPlugins }}
     </div>
     <div
-      v-else-if="flatPlugins.length === 0 && !showsSystem && !showsSecrets"
+      v-else-if="flatPlugins.length === 0 && !showsSystem && !showsConnections && !showsSecrets"
       class="plugins-list__empty"
     >
       {{ words.noPluginsFound }}

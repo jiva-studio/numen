@@ -200,7 +200,7 @@ func TestAServedFailureIsAnErrorCodeAndNotAStatus(t *testing.T) {
 		TypeId: "md.numen.connections.llm/openrouter", Fields: map[string]*structpb.Value{"nope": structpb.NewStringValue("x")},
 		Secrets: map[string]string{"apiKey": "k"},
 	}))
-	if err != nil || invalid.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD || invalid.Msg.GetDetail() == "" {
+	if err != nil || invalid.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD || invalid.Msg.GetDetail() != `the type has no field "nope"` {
 		t.Errorf("invalid: response = %v, err = %v", invalid.Msg, err)
 	}
 	unavailable, err := handler.CreateProviderConnection(t.Context(), connect.NewRequest(&v1.CreateProviderConnectionRequest{TypeId: "gone.plugin/x"}))

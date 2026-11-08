@@ -121,6 +121,25 @@ describe('PluginsList', () => {
     expect(wrapper.find('.secrets-row').exists()).toBe(false)
   })
 
+  it('shows a Connections row with a description and emits connections for it', async () => {
+    const wrapper = mountList()
+
+    const row = wrapper.find('.connections-row')
+    await row.trigger('click')
+
+    expect(row.find('.plugin-row__name').text()).toBe('Connections')
+    expect(row.find('.plugin-row__description').text()).toBe(
+      'Services and programs that plugins send requests to.',
+    )
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['connections']])
+  })
+
+  it('hides the Connections row when the query matches nothing about connections', () => {
+    const wrapper = mountList({ query: 'notes' })
+
+    expect(wrapper.find('.connections-row').exists()).toBe(false)
+  })
+
   it('emits toggle-enabled with the id and the new state', () => {
     const wrapper = mountList()
 

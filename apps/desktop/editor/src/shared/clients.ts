@@ -16,4 +16,5 @@ export {
   workspace,
   keepaliveWorkspace,
   pluginCatalog,
+  connections,
 } from '@numen/core-client'

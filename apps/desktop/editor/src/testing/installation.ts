@@ -1,5 +1,6 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
+import { asFailure, asValue } from '@numen/core-client'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
@@ -23,6 +24,12 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   renameSecretGroup: fn(),
   allowPluginSecret: fn(),
   denyPluginSecret: fn(),
+  connections: ref([]),
+  connectionTypes: ref([]),
+  loadConnections: fn(() => Promise.resolve()),
+  createConnection: fn(() => Promise.resolve(asFailure('Not saved.'))),
+  updateConnection: fn(() => Promise.resolve(asFailure('Not saved.'))),
+  deleteConnection: fn(() => Promise.resolve(asValue(undefined))),
   retryPlugin: fn(),
   choosePath: fn(() => Promise.resolve('')),
   plugins: ref([]),
