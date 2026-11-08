@@ -101,3 +101,9 @@ func (c Config) settingsFile() (string, error) {
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return c.settings().Themes(say)
 }
+
+// UnsubscribeHost stops the plugin host from receiving setting changes. It returns after the batch
+// being delivered has been handled.
+func (c Config) UnsubscribeHost() {
+	c.settings().UnsubscribeHost()
+}
