@@ -59,10 +59,10 @@ func TestANoteMadeHereEndsWithALineEnding(t *testing.T) {
 	}
 }
 
-// TestTheProseIsSplitFromTheFrontmatterAndTheFrontmatterIsKeptOnSave. The
+// TestOpenSplitsTheProseFromTheFrontmatterAndSaveRestoresTheFrontmatter. The
 // prose of each shape is what the editor shows, and a save changes the prose
 // alone.
-func TestTheProseIsSplitFromTheFrontmatterAndTheFrontmatterIsKeptOnSave(t *testing.T) {
+func TestOpenSplitsTheProseFromTheFrontmatterAndSaveRestoresTheFrontmatter(t *testing.T) {
 	for name, tc := range map[string]struct {
 		frontmatter string
 		prose       string

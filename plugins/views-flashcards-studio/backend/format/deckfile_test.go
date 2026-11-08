@@ -1540,7 +1540,7 @@ func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
 
 // A template added with only its front typed is a heading and a Front side, and no
 // Back side is written for the empty half.
-func TestATemplateWithOnlyAFrontIsWrittenAsAHeadingAndAFrontSide(t *testing.T) {
+func TestCardModelBodyHasAHeadingAndAFrontSideForATemplateWithOnlyAFront(t *testing.T) {
 	body, err := format.CardModelBody("", []format.CardTemplate{
 		{Name: "Card 1", Front: "What lives under {{Field 1}}?"},
 	}, "")

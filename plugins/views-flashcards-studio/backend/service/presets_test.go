@@ -536,9 +536,9 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	}
 }
 
-// TestARetentionWrittenIsTheRetentionOnDisk. A retention between the bounds is
+// TestWritePresetStoresTheRetentionInTheFile. A retention between the bounds is
 // written into the preset file, and the other settings stay as they were.
-func TestARetentionWrittenIsTheRetentionOnDisk(t *testing.T) {
+func TestWritePresetStoresTheRetentionInTheFile(t *testing.T) {
 	f := newScheduling(t, getPointed())
 
 	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{Path: "Sanskrit.md"})

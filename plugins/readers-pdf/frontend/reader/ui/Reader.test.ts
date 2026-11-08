@@ -286,9 +286,9 @@ describe('the pages requested', () => {
 
     expect(getWidths(wrapper)).toStrictEqual(first)
     await vi.advanceTimersByTimeAsync(1000)
-    const asked = getWidths(wrapper).slice(first.length)
-    expect(asked).toHaveLength(1)
-    expect(asked[0]).toBeGreaterThan(first[0]!)
+    const newWidths = getWidths(wrapper).slice(first.length)
+    expect(newWidths).toHaveLength(1)
+    expect(newWidths[0]).toBeGreaterThan(first[0]!)
     vi.useRealTimers()
   })
 })

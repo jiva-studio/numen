@@ -49,7 +49,7 @@ const isApart = (first: DOMRect, second: DOMRect): boolean =>
 const getGaps = (row: readonly DOMRect[]): number[] =>
   row.slice(1).map((one, index) => one.left - (row[index]?.right ?? 0))
 
-/** The popover stands above the item, inside the window, framed, with its details and buttons laid out. */
+/** The popover is above the item, inside the window, framed, with its details and buttons laid out. */
 export const PopoverOpened: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

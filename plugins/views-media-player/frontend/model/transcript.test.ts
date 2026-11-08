@@ -211,7 +211,7 @@ describe('a recording tab that closes', () => {
 })
 
 describe('a line chosen by its time', () => {
-  it('seeks the player to the time the line stands at', async () => {
+  it('seeks the player to the time of the line', async () => {
     const { tab, seeks } = open()
     await tab.content.firstRead
 
