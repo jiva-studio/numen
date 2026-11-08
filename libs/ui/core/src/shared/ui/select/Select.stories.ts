@@ -9,7 +9,7 @@
  * document and not off the canvas.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Select from './Select.vue'
 import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
@@ -234,7 +234,7 @@ export const MultipleSeveralChosen: Story = {
     await openSelect(canvasElement)
     await expect(marks()).toHaveLength(2)
     document.body.querySelectorAll<HTMLElement>('[role="option"]')[1]!.click()
-    await expect(control(canvasElement).textContent).toContain('Sea +2')
+    await waitFor(() => expect(control(canvasElement).textContent).toContain('Sea +2'))
     await expect(document.body.querySelectorAll('[role="option"]')).toHaveLength(3)
   },
 }
