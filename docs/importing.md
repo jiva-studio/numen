@@ -27,7 +27,7 @@ An address dragged out of a browser onto the files tree is the same gesture: the
 | a video somebody published captions for | the captions, one segment each, with `t` in the selector (`transcript`) |
 | anything else                           | the prose the page is written around (`article`)                        |
 
-The plugin fetches the text when it makes the link. A run of `app:file.createText` (**Download captions**) fetches the text whoever started it, a person or the plugin's `file.added` trigger (setting `downloadCaptionsAutomatically`). Deleting the text version through the file's menu keeps the text deleted until **Download captions** fetches it again.
+The plugin fetches the text when it makes the link. A run of `app:file.createText` (**Download captions**) fetches the text whoever started it, a person or the plugin's `file.added` trigger (setting `downloadCaptionsAutomatically`). Deleting the text version through the file's menu keeps the text deleted until **Download captions** fetches it again; with `downloadCaptionsAutomatically` on, the next pass of the trigger fetches it again.
 
 Everything is kept in the plugin's folder of the vault's store, `.numen/md.numen.tools.media.importer/`. The text is kept under the hash of the address, `<key>`, and so are the copy and the page:
 

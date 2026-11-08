@@ -44,7 +44,7 @@
     {
       "name": "target.versions",
       "type": "list",
-      "about": "the text versions of the file, each with kind, pluginId and isLive, as target.versions.exists(v, v.kind == 'recognition' && v.isLive); empty where the file has none"
+      "about": "the text versions of the file, each with kind, pluginId, isValid and isLive, as target.versions.exists(v, v.kind == 'recognition' && v.isValid); a valid version still matches the file, its source chain whole, and the live one is the newest valid one; empty where the file has none"
     },
     {
       "name": "version.kind",
@@ -264,7 +264,8 @@
               {
                 "kind": "recognition",
                 "pluginId": "org.example.scans",
-                "isLive": true
+                "isLive": true,
+                "isValid": true
               }
             ]
           },
@@ -276,7 +277,8 @@
               {
                 "kind": "recognition",
                 "pluginId": "org.example.scans",
-                "isLive": false
+                "isLive": false,
+                "isValid": false
               }
             ]
           },
@@ -288,7 +290,8 @@
               {
                 "kind": "transcript",
                 "pluginId": "org.example.ears",
-                "isLive": true
+                "isLive": true,
+                "isValid": true
               }
             ]
           },
@@ -305,7 +308,8 @@
               {
                 "kind": "recognition",
                 "pluginId": "org.example.scans",
-                "isLive": false
+                "isLive": false,
+                "isValid": false
               }
             ]
           },
@@ -317,11 +321,49 @@
               {
                 "kind": "recognition",
                 "pluginId": "org.example.viewer",
-                "isLive": true
+                "isLive": true,
+                "isValid": true
               }
             ]
           },
           "value": false
+        }
+      ]
+    },
+    {
+      "when": "!target.versions.exists(v, v.kind == 'recognition' && v.isValid)",
+      "values": [
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": true
+              },
+              {
+                "kind": "proofreading",
+                "pluginId": "org.example.proofs",
+                "isLive": true,
+                "isValid": true
+              }
+            ]
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": false
+              }
+            ]
+          },
+          "value": true
         }
       ]
     }

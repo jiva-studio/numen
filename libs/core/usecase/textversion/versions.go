@@ -235,13 +235,9 @@ func (u *Versions) findLive(
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
-	var properties map[string]any
-	if slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
-		_, read, err := vaultport.ReadNote(ctx, u.readers, v, path)
-		if err != nil {
-			return domain.TextVersion{}, false, fmt.Errorf("read the properties of %s: %w", path, err)
-		}
-		properties = read
+	properties, err := u.readSourceProperties(ctx, v, path, versions)
+	if err != nil {
+		return domain.TextVersion{}, false, err
 	}
 	files, err := u.files.Open(v)
 	if err != nil {
@@ -252,6 +248,19 @@ func (u *Versions) findLive(
 		return err == nil && file.TextHash == version.TextHash
 	})
 	return live, ok, nil
+}
+
+func (u *Versions) readSourceProperties(
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion,
+) (map[string]any, error) {
+	if !slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
+		return nil, nil
+	}
+	_, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
+	if err != nil {
+		return nil, fmt.Errorf("read the properties of %s: %w", path, err)
+	}
+	return properties, nil
 }
 
 // DeletePluginVersions removes the records of every version a plugin made in a
@@ -319,8 +328,8 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 const fileExtension = ".jsonl"
 
 // ListTargetVersions lists the versions of the file at the path as the when variable target.versions
-// holds them, with the live one marked. The file is read for its content hash only where it has
-// versions.
+// holds them, each marked valid where its source chain still matches the file, and the live one. The
+// file is read for its content hash only where it has versions.
 func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil || len(versions) == 0 {
@@ -330,6 +339,10 @@ func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path 
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
+	properties, err := u.readSourceProperties(ctx, v, path, versions)
+	if err != nil {
+		return nil, err
+	}
 	live, hasLive, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
 		return nil, err
@@ -338,6 +351,7 @@ func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path 
 	for _, one := range versions {
 		out = append(out, pluginport.TargetVersion{
 			Kind: string(one.Kind), PluginID: one.PluginID, IsLive: hasLive && one.GetID() == live.GetID(),
+			IsValid: domain.IsChainValid(versions, one.GetID(), contentHash, properties),
 		})
 	}
 	return out, nil

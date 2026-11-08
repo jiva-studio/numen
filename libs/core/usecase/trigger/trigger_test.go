@@ -244,7 +244,7 @@ func (s *scene) runAll(t *testing.T) []string {
 func getExtractText() pluginport.PluginTriggerEntry {
 	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		Event: manifest.EventFileAdded, Command: "app:file.createText",
-		When: "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'text-layer' && v.isLive)",
+		When: "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'text-layer' && v.isValid)",
 	}}
 }
 
@@ -269,13 +269,17 @@ func TestTriggerRunsOverEveryFileWhereItsConditionIsTrue(t *testing.T) {
 	}
 }
 
-func TestTriggerSkipsAFileWithALiveVersionOfItsKind(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "scans/c.pdf": "%PDF c"}, getExtractText())
-	s.versions.byPath["scans/a.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: true}}
-	s.versions.byPath["scans/c.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: false}}
+func TestTriggerSkipsAFileWithAValidVersionOfItsKind(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "scans/c.pdf": "%PDF c", "scans/d.pdf": "%PDF d"}, getExtractText())
+	s.versions.byPath["scans/a.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: true, IsValid: true}}
+	s.versions.byPath["scans/c.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: false}}
+	s.versions.byPath["scans/d.pdf"] = []pluginport.TargetVersion{
+		{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: true},
+		{Kind: "proofreading", PluginID: "org.example.proofs", IsLive: true, IsValid: true},
+	}
 
 	if got, want := s.runAll(t), []string{scanner + " app:file.createText scans/b.pdf", scanner + " app:file.createText scans/c.pdf"}; !slices.Equal(got, want) {
-		t.Errorf("ran %v, want the files with no live text layer %v", got, want)
+		t.Errorf("ran %v, want the files with no valid text layer %v", got, want)
 	}
 }
 

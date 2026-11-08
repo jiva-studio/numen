@@ -87,11 +87,11 @@ func TestTheVersionsAndTheConfigAreGivenWhereTheyAreRead(t *testing.T) {
 	}
 
 	got := pluginport.NewTargetValues("scans/a.png", false, "image/png").
-		WithVersions([]pluginport.TargetVersion{{Kind: "recognition", PluginID: "org.example.scans", IsLive: true}}).
+		WithVersions([]pluginport.TargetVersion{{Kind: "recognition", PluginID: "org.example.scans", IsLive: true, IsValid: true}}).
 		WithConfig(map[string]any{"app": map[string]any{}}).
 		WithVersion("recognition", true).Get()
 
-	want := []any{map[string]any{"kind": "recognition", "pluginId": "org.example.scans", "isLive": true}}
+	want := []any{map[string]any{"kind": "recognition", "pluginId": "org.example.scans", "isLive": true, "isValid": true}}
 	if !reflect.DeepEqual(got["target.versions"], want) || got["config"] == nil ||
 		got["version.kind"] != "recognition" || got["version.isLive"] != true {
 		t.Errorf("got %v", got)

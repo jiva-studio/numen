@@ -60,7 +60,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
+        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)"
       }
     ]
   },
@@ -103,7 +103,7 @@
       "key": "downloadCaptionsAutomatically",
       "type": "boolean",
       "title": "Download captions automatically",
-      "description": "Download the captions or the article of every link note added to the vault",
+      "description": "Download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again",
       "default": false
     },
     {
