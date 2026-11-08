@@ -68,6 +68,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenWriteSettingsFn:    cfg.settings().OpenWriteSettings,
 		OpenWatchSettingsFn:    cfg.settings().OpenWatchSettings,
 		OpenSecretsFn:          cfg.OpenSecrets,
+		OpenConnectionsFn:      cfg.OpenConnections,
 		OpenRetryPluginFn:      func() *settings.RetryPlugin { return cfg.settings().OpenRetryPlugin(cfg.GetPluginRetrier()) },
 		ReportPluginFailuresFn: func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
 		SetPluginWorkFn:        cfg.SetPluginWork,

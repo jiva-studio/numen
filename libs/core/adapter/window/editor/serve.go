@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/connection"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
@@ -343,6 +344,9 @@ func (o *Installation) wireUseCases() {
 	services.Settings.Write = made.OpenWriteSettings()
 	services.Settings.Watch = made.OpenWatchSettings()
 	services.Settings.Secrets = made.OpenSecrets()
+	if connections := made.OpenConnections(); connections != nil {
+		services.Connection = connection.NewHandler(connections)
+	}
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
 	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
 	if data := made.OpenPluginData(); data != nil {

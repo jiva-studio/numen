@@ -4,6 +4,7 @@ import (
 	"context"
 
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
@@ -61,6 +62,7 @@ type Runtime[H, V any] struct {
 	OpenWriteSettingsFn      func() *settings.Write
 	OpenWatchSettingsFn      func() *settings.Watch
 	OpenSecretsFn            func() *secret.Secrets
+	OpenConnectionsFn        func() *connection.Connections
 	OpenRetryPluginFn        func() *settings.RetryPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
 	SetPluginWorkFn          func(tasks *run.Tasks, models *run.Lock)
@@ -113,8 +115,16 @@ func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.
 func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
 func (e Runtime[H, V]) OpenWatchSettings() *settings.Watch           { return e.OpenWatchSettingsFn() }
 func (e Runtime[H, V]) OpenSecrets() *secret.Secrets                 { return e.OpenSecretsFn() }
-func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin       { return e.OpenRetryPluginFn() }
-func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)        { e.ReportPluginFailuresFn(tasks) }
+
+// OpenConnections is the use cases on the connections, nil where the assembly names none.
+func (e Runtime[H, V]) OpenConnections() *connection.Connections {
+	if e.OpenConnectionsFn == nil {
+		return nil
+	}
+	return e.OpenConnectionsFn()
+}
+func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
+func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
 func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	e.SetPluginWorkFn(tasks, models)
 }

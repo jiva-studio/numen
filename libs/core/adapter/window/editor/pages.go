@@ -153,6 +153,9 @@ func (s *Services) newServices() []service {
 		{numenv1connect.CommandServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewCommandServiceHandler(s.Command, c)
 		}},
+		{numenv1connect.ProviderConnectionServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewProviderConnectionServiceHandler(s.Connection, c)
+		}},
 		{numenv1connect.TextServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewTextServiceHandler(s.Text, c)
 		}},

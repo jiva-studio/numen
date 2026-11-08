@@ -49,6 +49,8 @@ type Services struct {
 
 	Plugin numenv1connect.PluginServiceHandler
 
+	Connection numenv1connect.ProviderConnectionServiceHandler
+
 	Catalog numenv1connect.CatalogServiceHandler
 
 	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath
@@ -62,20 +64,21 @@ type Services struct {
 
 func createServices(state *State) *Services {
 	return &Services{
-		state:     state,
-		Vault:     &vaultHandler{state: state},
-		Workspace: &workspaceHandler{state: state},
-		File:      &fileHandler{state: state},
-		Note:      &noteHandler{state: state},
-		Search:    search.NewHandler(state),
-		Vaults:    &vaultsHandler{state: state},
-		Settings:  settings.NewHandler(),
-		Agent:     newAgentHandler(state),
-		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
-		Media:     &mediaHandler{state: state},
-		Text:      texts.NewHandler(state, nil),
-		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
-		server:    &fileServer{state: state},
+		state:      state,
+		Vault:      &vaultHandler{state: state},
+		Workspace:  &workspaceHandler{state: state},
+		File:       &fileHandler{state: state},
+		Note:       &noteHandler{state: state},
+		Search:     search.NewHandler(state),
+		Vaults:     &vaultsHandler{state: state},
+		Settings:   settings.NewHandler(),
+		Agent:      newAgentHandler(state),
+		Command:    command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Media:      &mediaHandler{state: state},
+		Text:       texts.NewHandler(state, nil),
+		Plugin:     numenv1connect.UnimplementedPluginServiceHandler{},
+		Connection: numenv1connect.UnimplementedProviderConnectionServiceHandler{},
+		server:     &fileServer{state: state},
 	}
 }
 

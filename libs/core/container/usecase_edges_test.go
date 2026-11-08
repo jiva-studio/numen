@@ -23,6 +23,7 @@ func getUseCaseEdges() map[string][]string {
 		"vault":         nil,
 		"indexing":      nil,
 		"completion":    nil,
+		"connection":    nil,
 		"plugincommand": nil,
 		"plugintheme":   nil,
 		"textversion":   nil,

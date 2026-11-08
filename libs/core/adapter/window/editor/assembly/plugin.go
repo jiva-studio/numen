@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
@@ -32,6 +33,8 @@ type PluginCatalog = interface {
 
 type pluginSecretAssembly interface {
 	OpenSecrets() *secret.Secrets
+	// OpenConnections is the use cases on the connections, and nil for an installation with no plugin host.
+	OpenConnections() *connection.Connections
 	GetPluginCommands() plugincommand.Commands
 	// OpenChooseTabKind is the choice of the kind of tab a note opens in.
 	OpenChooseTabKind() *tabkind.Choose

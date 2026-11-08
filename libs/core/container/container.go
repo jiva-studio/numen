@@ -12,6 +12,7 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
+	connectionswiring "github.com/jiva-studio/numen/libs/core/container/connections"
 	pluginswiring "github.com/jiva-studio/numen/libs/core/container/plugins"
 	searchwiring "github.com/jiva-studio/numen/libs/core/container/search"
 	settingswiring "github.com/jiva-studio/numen/libs/core/container/settings"
@@ -26,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
@@ -183,6 +185,34 @@ func (c Config) settings() settingswiring.Config {
 		SetSecretSource:  c.plugins().SetSecretSource,
 		SetCompleter:     c.plugins().SetCompleter,
 	}
+}
+
+func (c Config) connections() connectionswiring.Config {
+	res := c.getResources()
+	s := settingswiring.Config{
+		SettingsPath:  c.SettingsPath,
+		ThemesPath:    c.ThemesPath,
+		RegistryPath:  c.RegistryPath,
+		PluginHost:    c.PluginHost,
+		Watches:       res.watches,
+		SettingsFiles: res.settingsFiles,
+		SettingEvents: res.settingEvents,
+		ErrorHandler:  c.handleError,
+	}
+	return connectionswiring.Config{
+		PluginHost:           c.PluginHost,
+		KeyStore:             c.KeyStore,
+		SettingsFiles:        res.settingsFiles,
+		SettingsFile:         s.SettingsFile,
+		ReadCheckedSettings:  s.ReadCheckedSettings,
+		RefreshSettingEvents: s.RefreshSettingEvents,
+	}
+}
+
+// OpenConnections returns the use cases on the connections to services and programs, or nil where
+// the installation has no plugin host.
+func (c Config) OpenConnections() *connection.Connections {
+	return c.connections().OpenConnections()
 }
 
 func (c Config) search() searchwiring.Config {
