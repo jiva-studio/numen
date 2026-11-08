@@ -126,7 +126,7 @@ function onMoveDown(index: number): void {
           {{ info.description }}
         </p>
       </div>
-      <Button v-if="!isRenaming" variant="outline" size="small" @click="emit('add')">
+      <Button v-if="!isRenaming" variant="outline" @click="emit('add')">
         <Plus :size="14" aria-hidden="true" />
         {{ words.secretAdd }}
       </Button>
