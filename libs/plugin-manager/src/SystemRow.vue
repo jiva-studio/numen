@@ -1,8 +1,14 @@
 <script setup lang="ts">
 /**
- * System settings entry row in the settings list: window appearance, theme, scale.
+ * An entry row of the settings list that opens a page of settings: System by default, Secrets by props.
  */
 import { PLUGIN_WORDS as words } from './words'
+
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<{ name?: string; detail?: string }>(), {
+  name: words.systemSettings,
+  detail: words.systemSettingsDetail,
+})
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -27,17 +33,15 @@ function onKeydown(e: KeyboardEvent): void {
     class="plugin-row row-divider system-row"
     role="button"
     tabindex="0"
-    :aria-label="words.systemSettings"
+    :aria-label="props.name"
     @click="onClick"
     @keydown="onKeydown"
   >
     <div class="plugin-row__main">
       <div class="plugin-row__header">
-        <span class="plugin-row__name">{{ words.systemSettings }}</span>
+        <span class="plugin-row__name">{{ props.name }}</span>
       </div>
-      <p class="plugin-row__description">
-        {{ words.systemSettingsDetail }}
-      </p>
+      <p v-if="props.detail" class="plugin-row__description">{{ props.detail }}</p>
     </div>
 
     <div class="plugin-row__trail">

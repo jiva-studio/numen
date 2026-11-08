@@ -104,13 +104,21 @@ describe('PluginsList', () => {
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.notes'], ['system']])
   })
 
-  it('emits select-plugin with secrets for the Secrets button, whatever the query', async () => {
+  it('shows a Secrets row without a description and emits secrets for it', async () => {
+    const wrapper = mountList()
+
+    const row = wrapper.find('.secrets-row')
+    await row.trigger('click')
+
+    expect(row.find('.plugin-row__name').text()).toBe('Secrets')
+    expect(row.find('.plugin-row__description').exists()).toBe(false)
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['secrets']])
+  })
+
+  it('hides the Secrets row when the query matches nothing about secrets', () => {
     const wrapper = mountList({ query: 'notes' })
 
-    const button = wrapper.findAll('button').find((one) => one.text() === 'Secrets')
-    await button?.trigger('click')
-
-    expect(wrapper.emitted('select-plugin')).toStrictEqual([['secrets']])
+    expect(wrapper.find('.secrets-row').exists()).toBe(false)
   })
 
   it('emits toggle-enabled with the id and the new state', () => {

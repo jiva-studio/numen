@@ -4,11 +4,11 @@
  * plugin pages and the system settings.
  */
 import { computed } from 'vue'
-import { Button } from '@numen/ui'
 import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import {
   getFilteredPluginItems,
+  matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
@@ -35,6 +35,8 @@ const filterContext: PluginFilterContext = { isEnabled: isPluginEnabled }
 const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 
 const showsSystem = computed(() => matchesSystemRow(parsedQuery.value))
+
+const showsSecrets = computed(() => matchesSecretsRow(parsedQuery.value))
 
 const flatPlugins = computed(() =>
   getFilteredPluginItems(props.plugins, parsedQuery.value, filterContext),
@@ -73,11 +75,17 @@ function isPluginEnabled(pluginId: string): boolean {
         class="plugins-list__search-input"
         aria-label="Search plugins"
       />
-      <Button variant="outline" @click="onSelectSecrets">{{ words.secrets }}</Button>
     </div>
 
     <div class="plugins-list__items">
       <SystemRow v-if="showsSystem" @select="onSelectSystem" />
+      <SystemRow
+        v-if="showsSecrets"
+        class="secrets-row"
+        :name="words.secrets"
+        detail=""
+        @select="onSelectSecrets"
+      />
       <PluginRow
         v-for="item in flatPlugins"
         :key="item.plugin.id"
@@ -92,7 +100,10 @@ function isPluginEnabled(pluginId: string): boolean {
     <div v-if="props.plugins.length === 0" class="plugins-list__empty">
       {{ words.noPlugins }}
     </div>
-    <div v-else-if="flatPlugins.length === 0 && !showsSystem" class="plugins-list__empty">
+    <div
+      v-else-if="flatPlugins.length === 0 && !showsSystem && !showsSecrets"
+      class="plugins-list__empty"
+    >
       {{ words.noPluginsFound }}
     </div>
   </div>
