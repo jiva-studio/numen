@@ -15,8 +15,20 @@ interface ListedSecret {
 }
 
 const readSecrets = async (page: Page): Promise<ListedSecret[]> => {
-  const answer = await callRPC(page.request, 'SettingsService/GetSettings', {})
-  return (answer['secrets'] ?? []) as ListedSecret[]
+  const settings = await callRPC(page.request, 'SettingsService/GetSettings', {})
+  const states = await callRPC(page.request, 'SettingsService/ListSecretStates', {})
+  const hasValue = new Map(
+    ((states['states'] ?? []) as { id: string; hasValue?: boolean }[]).map((one) => [
+      one.id,
+      one.hasValue === true,
+    ]),
+  )
+  const sections = (settings['secretSections'] ?? []) as {
+    secrets?: Omit<ListedSecret, 'hasValue'>[]
+  }[]
+  return sections
+    .flatMap((one) => one.secrets ?? [])
+    .map((one) => ({ ...one, hasValue: hasValue.get(one.id) ?? false }))
 }
 
 const deleteSecrets = async (page: Page): Promise<void> => {
