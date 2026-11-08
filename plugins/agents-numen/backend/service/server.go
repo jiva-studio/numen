@@ -104,7 +104,6 @@ func (s *Server) ApplySecrets(secrets server.Secrets) {
 	s.models, s.isListed = nil, false
 }
 
-// readPositive reads a whole number above zero from a setting value.
 func readPositive(text string) (int, bool) {
 	val, err := strconv.Atoi(text)
 	return val, err == nil && val > 0

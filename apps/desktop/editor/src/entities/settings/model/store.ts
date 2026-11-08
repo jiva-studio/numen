@@ -83,10 +83,6 @@ const getDeclaredDefault = (
     ?.default
 }
 
-/**
- * What the vault answers about the settings, and nothing where it cannot be queried. That leaves
- * the settings unchanged, and the window already reports the lost connection to the vault.
- */
 const askVault = async (
   core: SettingsStoreDeps,
 ): Promise<Awaited<ReturnType<SettingsStoreDeps['getSettings']>> | undefined> => {
@@ -97,11 +93,6 @@ const askVault = async (
   }
 }
 
-/**
- * The settings the vault wrote, and nothing where no settings can be read out of the text. That is
- * not a vault that has gone away, and a write followed by it leaves the person watching their
- * setting go back with no word for it.
- */
 const parseSettingsText = (text: string): unknown => {
   try {
     return JSON.parse(text)
@@ -110,7 +101,6 @@ const parseSettingsText = (text: string): unknown => {
   }
 }
 
-/** What the vault answers about the settings and the settings it wrote, or nothing where either cannot be read. */
 const readVault = async (core: SettingsStoreDeps, words: Words, say: MessageWriter) => {
   const answer = await askVault(core)
   if (answer === undefined) return undefined

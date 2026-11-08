@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-// countOpenFiles returns the number of file descriptors the process holds, and false on a platform
-// where they cannot be counted.
 func countOpenFiles() (int, bool) {
 	entries, err := os.ReadDir("/proc/self/fd")
 	if err != nil {
@@ -21,8 +19,6 @@ func countOpenFiles() (int, bool) {
 	return len(entries), true
 }
 
-// holdLock takes the lock on the credentials file as another process would and releases it when the
-// test ends.
 func holdLock(t *testing.T, dir string) {
 	t.Helper()
 	release, err := NewStore(dir).locks.lock(t.Context(), filepath.Join(dir, credentialsFile+lockSuffix))
@@ -69,7 +65,6 @@ func TestCancelledWaitsForTheCredentialsLockAreBounded(t *testing.T) {
 	}
 }
 
-// waitForLockWaiter returns once a goroutine is blocked on the lock of the credentials file.
 func waitForLockWaiter(t *testing.T) {
 	t.Helper()
 	timeout := time.After(5 * time.Second)

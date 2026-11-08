@@ -354,7 +354,6 @@ type credentialsLocator interface {
 	GetCredentialsPath(ctx context.Context) string
 }
 
-// openSecretLedger returns the list of secrets in the settings file.
 func (c Config) openSecretLedger() *settings.SecretLedger {
 	return settings.NewSecretLedger(c.getResources().settingsFiles, c.settingsFile, c.readCheckedSettings, c.refreshSettingEvents)
 }
@@ -368,8 +367,6 @@ func (c Config) OpenSecrets() *secret.Secrets {
 	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath)
 }
 
-// getCredentialsPath returns the file the values of secrets are kept in, and the empty text while
-// the system keychain is in use.
 func (c Config) getCredentialsPath() string {
 	locator, isLocator := c.KeyStore.(credentialsLocator)
 	if !isLocator {
@@ -378,7 +375,6 @@ func (c Config) getCredentialsPath() string {
 	return locator.GetCredentialsPath(context.Background())
 }
 
-// newSecretID makes the id of a secret: "s" and 8 random hexadecimal digits.
 func newSecretID() (string, error) {
 	var random [4]byte
 	if _, err := rand.Read(random[:]); err != nil {
@@ -387,7 +383,6 @@ func newSecretID() (string, error) {
 	return "s" + hex.EncodeToString(random[:]), nil
 }
 
-// setSecretSource gives the plugin host the list of secrets and the means to drop permissions.
 func (c Config) setSecretSource() {
 	ledger := c.openSecretLedger()
 	c.PluginHost.SetSecretSource(pluginport.SecretSource{

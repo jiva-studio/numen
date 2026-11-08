@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// keysOf is the secrets a Configure call carries for the declaration apiKey, in the order given.
 func keysOf(values ...string) server.Secrets {
 	list := make([]server.Secret, 0, len(values))
 	for i, value := range values {

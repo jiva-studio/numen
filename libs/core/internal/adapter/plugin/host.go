@@ -61,75 +61,63 @@ const settingEnabled = "enabled"
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu               sync.RWMutex
-	target           string
-	dirs             []string
-	plugins          map[string]manifest.Discovered
-	supervisors      map[string]*lifecycle.Supervisor
-	endpoints        map[string]transport.Endpoint
-	launcher         Launcher
-	safeMode         bool
-	vaultPath        string
-	bus              *eventbus.Bus
-	settings         map[string]map[string]any
-	performance      string
-	persistHandler   PersistHandler
-	evictTicker      *time.Ticker
-	evictDone        chan struct{}
-	evictWg          sync.WaitGroup
-	isEvictStopped   bool
-	isClosed         bool
-	stdinsMu         sync.Mutex
-	stdins           map[stdinKey]io.Closer
-	processLimits    process.Limits
-	activation       lifecycle.ActivationPolicy
-	onPluginFailed   func(pluginport.PluginFailure)
-	onFailureCleared func(pluginID string)
-	configWatchers   map[string]map[int]func()
-	nextWatcher      int
-	errorHandler     eventbus.ErrorHandler
-	onDisk           map[string]bool
-	discoverMu       sync.RWMutex
-	failedPlugins    []pluginport.PluginFailure
-	problems         []manifestjson.DiscoveryProblem
-	// installed holds every plugin of the last scan whatever its target.
-	installed  []manifest.Discovered
-	hasScanned bool
-	completer  completionport.Completer
-	vault      pluginport.PluginVault
-	texts      pluginport.PluginTexts
-	window     pluginport.PluginWindow
-	vaultList  pluginport.PluginVaultList
-	search     pluginport.PluginSearch
-	keyStore   pluginport.KeyStore
-	// secretLock orders every operation on the secrets of every plugin and the Configure calls that
-	// deliver them. It is locked before mu, never while mu is locked.
-	secretLock   chan struct{}
-	secretSource pluginport.SecretSource
-	// delivered is the list of secrets each plugin was last configured with, as a signature.
-	delivered map[string]string
-	// awaitingFirstConfigure holds the plugins that are Active and have not yet been through the Configure of their activation.
+	mu                     sync.RWMutex
+	target                 string
+	dirs                   []string
+	plugins                map[string]manifest.Discovered
+	supervisors            map[string]*lifecycle.Supervisor
+	endpoints              map[string]transport.Endpoint
+	launcher               Launcher
+	safeMode               bool
+	vaultPath              string
+	bus                    *eventbus.Bus
+	settings               map[string]map[string]any
+	performance            string
+	persistHandler         PersistHandler
+	evictTicker            *time.Ticker
+	evictDone              chan struct{}
+	evictWg                sync.WaitGroup
+	isEvictStopped         bool
+	isClosed               bool
+	stdinsMu               sync.Mutex
+	stdins                 map[stdinKey]io.Closer
+	processLimits          process.Limits
+	activation             lifecycle.ActivationPolicy
+	onPluginFailed         func(pluginport.PluginFailure)
+	onFailureCleared       func(pluginID string)
+	configWatchers         map[string]map[int]func()
+	nextWatcher            int
+	errorHandler           eventbus.ErrorHandler
+	onDisk                 map[string]bool
+	discoverMu             sync.RWMutex
+	failedPlugins          []pluginport.PluginFailure
+	problems               []manifestjson.DiscoveryProblem
+	installed              []manifest.Discovered
+	hasScanned             bool
+	completer              completionport.Completer
+	vault                  pluginport.PluginVault
+	texts                  pluginport.PluginTexts
+	window                 pluginport.PluginWindow
+	vaultList              pluginport.PluginVaultList
+	search                 pluginport.PluginSearch
+	keyStore               pluginport.KeyStore
+	secretLock             chan struct{}
+	secretSource           pluginport.SecretSource
+	delivered              map[string]string
 	awaitingFirstConfigure map[string]bool
-	// noKeyStoreOnce reports once that a secret cannot be read on a machine without a key store.
-	noKeyStoreOnce sync.Once
-	hostEndpoint   *hostendpoint.Endpoint
-	hostAddress    string
-	dependencies   pluginport.DependencyCatalog
-	work           pluginport.PluginWork
-	builtIns       map[string]builtInPlugin
-	contentTypes   contentTypeTable
-	typeCache      contentTypeCache
-	clock          machineport.Clock
-	storage        storageRoots
-	// listenersMu serializes the binding and closing of listener ports. It is locked before mu,
-	// never while mu is locked.
-	listenersMu sync.Mutex
-	// listeners maps each plugin to its bound listener ports by listener name.
-	listeners map[string]map[string]listenerBinding
-	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
-	listenerPorts map[string]map[string]int
-	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
-	// reported, until the plugin activates or its failure is cleared.
+	noKeyStoreOnce         sync.Once
+	hostEndpoint           *hostendpoint.Endpoint
+	hostAddress            string
+	dependencies           pluginport.DependencyCatalog
+	work                   pluginport.PluginWork
+	builtIns               map[string]builtInPlugin
+	contentTypes           contentTypeTable
+	typeCache              contentTypeCache
+	clock                  machineport.Clock
+	storage                storageRoots
+	listenersMu            sync.Mutex
+	listeners              map[string]map[string]listenerBinding
+	listenerPorts          map[string]map[string]int
 	reportedTargetFailures map[string]struct{}
 }
 
@@ -547,7 +535,6 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.clearPluginTasks(pluginID)
 }
 
-// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported.
 func (h *Host) forgetEndpointLocked(pluginID string) {
 	delete(h.endpoints, pluginID)
 	delete(h.listenerPorts, pluginID)
@@ -1422,16 +1409,12 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	// declared are the secret declarations whose condition holds under the settings in force.
-	declared []manifest.Secret
-	// requested are the groups the installed plugins ask for.
-	requested []string
-	store     pluginport.KeyStore
-	source    pluginport.SecretSource
+	declared   []manifest.Secret
+	requested  []string
+	store      pluginport.KeyStore
+	source     pluginport.SecretSource
 }
 
-// takeConfigSnapshot reads what a Configure call to the plugin is made of, and reports whether the
-// plugin runs.
 func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -1464,8 +1447,6 @@ func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error)
 	}, true, nil
 }
 
-// listActiveDeclarationsLocked returns the secret declarations of the plugin whose condition holds
-// under the settings in force.
 func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.Secret {
 	p, ok := h.plugins[pluginID]
 	if !ok {
@@ -1724,8 +1705,6 @@ func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyReq
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))
 }
 
-// getRequirementIDsLocked returns the ids of the dependencies the plugin is launched with under the
-// settings in force. A plugin launched with others is stopped, and the next call launches it with them.
 func (h *Host) getRequirementIDsLocked(pluginID string) []string {
 	p, ok := h.plugins[pluginID]
 	if !ok {

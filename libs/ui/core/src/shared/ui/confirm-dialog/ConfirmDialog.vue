@@ -10,7 +10,6 @@ import Button from '../button/Button.vue'
 withDefaults(
   defineProps<{
     text: string
-    /** The accessible name of the dialog. */
     label: string
     confirmText: string
     cancelText: string
@@ -32,7 +31,6 @@ onMounted(() => {
   if (element instanceof HTMLElement) element.focus()
 })
 
-/** Moves focus from the last button to the first and back, so Tab never leaves the dialog. */
 function onKeepFocus(event: KeyboardEvent): void {
   const buttons = Array.from(dialog.value?.querySelectorAll<HTMLElement>('button') ?? [])
   const first = buttons[0]

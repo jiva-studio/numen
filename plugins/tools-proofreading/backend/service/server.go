@@ -97,9 +97,6 @@ func newSettings() *settings {
 	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
-// updateConfig applies the settings. The key is the first secret of the list the host passes for the
-// declaration apiKey; an empty list drops the key, and a call that does not carry the declaration
-// keeps it.
 func (s *settings) updateConfig(values map[string]string, secrets server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

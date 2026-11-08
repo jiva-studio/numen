@@ -31,14 +31,11 @@ const maxValueBytes = 2560
 // Store is keychain only: a machine without one fails every call with port.ErrNoKeyStore and no
 // key is written anywhere else.
 type Store struct {
-	// dir is the folder of the settings file. It is empty for a keychain only store.
 	dir string
 
-	mu sync.Mutex
-	// isKeychainUp is set once a probe reached the keychain. A probe that found none, or that the keychain refused, is not remembered, so the next call asks again.
+	mu           sync.Mutex
 	isKeychainUp bool
-	// locks holds the waits for the lock on the credentials file.
-	locks lockRegistry
+	locks        lockRegistry
 }
 
 // NewStore returns a store that keeps keys in the system keychain, and in
@@ -132,9 +129,6 @@ func (s *Store) GetCredentialsPath(ctx context.Context) string {
 	return s.getCredentialsFile()
 }
 
-// isKeychainReachable probes the keychain until it is reached and answers from that probe after it. It reports false with no error when the machine has none, and the error when the keychain is there and refuses.
-// A keychain only store has no file to fall back to, so it is never probed and its errors reach the
-// caller.
 func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
 	if s.dir == "" {
 		return true, nil
@@ -161,7 +155,6 @@ func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
 // probeName is the entry the probe asks the keychain for. No key is kept under it.
 const probeName = "probe"
 
-// getFromKeychain reads the key from the keychain.
 func getFromKeychain(ctx context.Context, name string) (string, error) {
 	key, err := await(ctx, func() (string, error) { return keyring.Get(service, name) })
 	if err != nil {
@@ -170,9 +163,6 @@ func getFromKeychain(ctx context.Context, name string) (string, error) {
 	return key, nil
 }
 
-// await returns when the call does or the context ends. A call the context ends
-// on is left to finish by itself: the keychain offers no way to stop it, and a
-// write may still land.
 func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 	type outcome struct {
 		value T

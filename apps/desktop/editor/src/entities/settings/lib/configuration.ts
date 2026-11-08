@@ -18,9 +18,7 @@ export type { PluginSettingType } from '@numen/core-client'
 /** One declaration of a plugin that may read a secret. */
 export interface SecretPermission {
   readonly pluginId: string
-  /** The name of the declaration in the manifest of the plugin. */
   readonly name: string
-  /** The group of the declaration, empty for a declaration with none. */
   readonly group: string
 }
 
@@ -29,9 +27,7 @@ export interface Secret {
   readonly id: string
   readonly name: string
   readonly group: string
-  /** The declarations that may read the secret. */
   readonly allowed: readonly SecretPermission[]
-  /** Whether the value is on this machine. */
   readonly hasValue: boolean
 }
 
@@ -69,8 +65,6 @@ export interface Configuration {
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
-  /** Every secret in priority order, without its value. */
   readonly secrets?: readonly Secret[] | undefined
-  /** The file the secret values are kept in where the system keychain is not in use, else empty. */
   readonly credentialsPath?: string | undefined
 }

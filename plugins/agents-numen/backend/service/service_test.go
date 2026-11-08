@@ -143,7 +143,6 @@ func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
 	}
 }
 
-// hostKey is the secrets a Configure call carries for the declaration apiKey: the key the chat stand-in accepts, then another.
 func hostKey() server.Secrets {
 	return server.Secrets{server.SecretAPIKey: {
 		{ID: "s00000001", Name: "Work", Group: "openrouter", Value: "host-key"},

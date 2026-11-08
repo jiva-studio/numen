@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
-// newSecretError is the answer to a failed call on the secrets. A text of it never carries a value.
 func newSecretError(err error) error {
 	switch {
 	case errors.Is(err, secret.ErrInvalid):
@@ -24,7 +23,6 @@ func newSecretError(err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-// checkSecrets returns the answer of a build that keeps no secrets.
 func (h *Handler) checkSecrets() error {
 	if h.Secrets == nil {
 		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
@@ -139,7 +137,6 @@ func (h *Handler) DenyPluginSecret(
 	return connect.NewResponse(&v1.DenyPluginSecretResponse{}), nil
 }
 
-// newWireSecretEntries is the secrets as the wire carries them: without a value.
 func newWireSecretEntries(entries []secret.Entry) []*v1.Secret {
 	secrets := make([]*v1.Secret, 0, len(entries))
 	for _, one := range entries {

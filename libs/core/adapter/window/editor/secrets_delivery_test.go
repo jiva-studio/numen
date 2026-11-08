@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 )
 
-// awaitIDs waits until the last Configure call of the plugin delivers exactly the secrets with those ids to the declaration.
 func (w *window) awaitIDs(t *testing.T, pluginID, name string, want ...string) {
 	t.Helper()
 	var got []string
@@ -27,7 +26,6 @@ func (w *window) awaitIDs(t *testing.T, pluginID, name string, want ...string) {
 	})
 }
 
-// assertIDs checks, at once, that the last Configure call of the plugin delivers exactly the secrets with those ids to the declaration.
 func (w *window) assertIDs(t *testing.T, pluginID, name string, want ...string) {
 	t.Helper()
 	got := w.probes[pluginID].ids(t, name)
@@ -201,7 +199,6 @@ func TestOnlyTheActiveDeclarationsAreDelivered(t *testing.T) {
 	}
 }
 
-// editFile changes the secrets section of the settings file as a user edits it by hand.
 func (w *window) editFile(t *testing.T, change func(secrets []map[string]any) []map[string]any) {
 	t.Helper()
 	var root map[string]any

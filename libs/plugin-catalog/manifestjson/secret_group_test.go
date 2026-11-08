@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-// readSecrets reads a manifest with a backend, the setting `provider` and the secrets given.
 func readSecrets(secrets string) (manifest.Manifest, error) {
 	return manifestjson.Read(strings.NewReader(`{
 		"id": "a.b", "name": "A", "version": "1.0.0", "backend": {"entrypoint": "bin/a"},

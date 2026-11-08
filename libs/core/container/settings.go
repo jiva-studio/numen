@@ -265,8 +265,6 @@ func (c Config) readSettingValues() (settingevents.Values, error) {
 	return c.listSettingValues(target)
 }
 
-// readCheckedSettings reads the settings in force. A file that is not there is an unconfigured
-// installation, and reading does not write it.
 func (c Config) readCheckedSettings() (Settings, error) {
 	path, err := c.settingsFile()
 	if err != nil {
@@ -278,7 +276,6 @@ func (c Config) readCheckedSettings() (Settings, error) {
 	return c.getCheckedSettingsAt(path)
 }
 
-// listDefaultSettingValues is the values of an installation with no settings file.
 func (c Config) listDefaultSettingValues() settingevents.Values {
 	values, err := c.listSettingValues(DefaultSettings())
 	if err != nil {
@@ -291,7 +288,6 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 // stored value for it is enabled.
 const hostFieldEnabled = "enabled"
 
-// secretsPath is the path of the secrets section of the settings file, which the core writes.
 func secretsPath() []string { return []string{"secrets"} }
 
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
@@ -381,7 +377,6 @@ func (c Config) tellHost(batch []settingsport.Setting) {
 
 func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }
 
-// isSecretDeclared reports whether an installed plugin declares the secret the permission names.
 func (c Config) isSecretDeclared(permission pluginport.SecretPermission) bool {
 	return slices.Contains(c.PluginHost.ListDeclarations(), permission)
 }

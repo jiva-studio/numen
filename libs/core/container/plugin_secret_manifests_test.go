@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// secretGroups returns the groups of the declarations named apiKey in the manifest of the plugin, in the order declared.
 func secretGroups(t *testing.T, pluginID string) []string {
 	t.Helper()
 	for _, one := range getPluginManifests(t) {

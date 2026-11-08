@@ -26,12 +26,9 @@ import SecretRow from './SecretRow.vue'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   section: SecretSection
-  /** The names of the secrets of the group not created yet. */
   drafts: readonly string[]
   declarations: readonly Declaration[]
-  /** Whether the name of the group is edited as the section appears. */
   isNew?: boolean
-  /** Creates the secret of a draft and resolves true when it was created; the field keeps a failed value. */
   create: (name: string, value: string) => Promise<boolean>
 }>()
 

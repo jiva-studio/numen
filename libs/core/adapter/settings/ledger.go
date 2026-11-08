@@ -4,12 +4,9 @@ import "github.com/jiva-studio/numen/libs/core/port/pluginport"
 
 // SecretLedger is the list of secrets in the settings file.
 type SecretLedger struct {
-	files *Files
-	// path answers where the settings file is.
-	path func() (string, error)
-	// read answers the settings with the invalid secrets left out.
-	read func() (File, error)
-	// changed delivers a write to the readers of the setting-changed event.
+	files   *Files
+	path    func() (string, error)
+	read    func() (File, error)
 	changed func()
 }
 

@@ -18,9 +18,7 @@ const props = defineProps<{
   secret: Secret
   isFirst: boolean
   isLast: boolean
-  /** Whether the group holds more than one secret, so that the order can change. */
   canMove: boolean
-  /** Whether the row shows its name, as the group holds more than one secret. */
   hasName: boolean
   declarations: readonly Declaration[]
 }>()

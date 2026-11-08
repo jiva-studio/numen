@@ -22,12 +22,10 @@ const (
 	valueTwo   = "value-two-for-tests"
 )
 
-// credentialsPath is the fallback file of a store opened over the directory of the settings file.
 func credentialsPath(dir string) string {
 	return filepath.Join(dir, "credentials", "credentials.json")
 }
 
-// useNoKeychain makes every call of the system keychain fail as a machine without one does.
 func useNoKeychain(t *testing.T) {
 	t.Helper()
 	keyring.MockInitWithError(fmt.Errorf("the secret service is not running: %w", keyring.ErrUnsupportedPlatform))

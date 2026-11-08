@@ -17,12 +17,9 @@ type SecretPermission struct {
 
 // Secret is one named secret. Its value is kept outside the settings file and is not part of it.
 type Secret struct {
-	// ID is "s" followed by 8 hexadecimal digits.
-	ID string
-	// Name is unique inside the group.
-	Name  string
-	Group string
-	// Allowed are the declarations that may read the secret.
+	ID      string
+	Name    string
+	Group   string
 	Allowed []SecretPermission
 }
 
@@ -48,9 +45,7 @@ type SecretPlugins interface {
 // SecretSource is where the host reads the list of secrets from and how it removes the permissions
 // of declarations that are gone.
 type SecretSource struct {
-	// List returns the valid secrets in list order.
-	List func() ([]Secret, error)
-	// Prune removes every permission whose declaration is not among those given.
+	List  func() ([]Secret, error)
 	Prune func(declared []SecretPermission) error
 }
 

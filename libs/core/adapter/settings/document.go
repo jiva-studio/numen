@@ -24,14 +24,9 @@ type File struct {
 	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
-	// Plugins holds the object of each plugin, keyed by plugin id.
-	Plugins map[string]map[string]any
-	// Secrets are the secrets in list order, which is the priority of each one inside its group. No
-	// value is part of the file.
-	Secrets []pluginport.Secret
-	// Notices are the warnings that reading the file produced, shown to the
-	// user. They are not written to the file.
-	Notices []string
+	Plugins     map[string]map[string]any
+	Secrets     []pluginport.Secret
+	Notices     []string
 }
 
 // appObject is the object of the owner app as the file lays it out.

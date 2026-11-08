@@ -9,7 +9,6 @@ import { WORDS } from '../words'
 /** The secrets of one group in priority order. */
 export interface SecretSection {
   readonly group: string
-  /** Whether an installed plugin asks for the group. */
   readonly isAsked: boolean
   readonly secrets: readonly Secret[]
 }
@@ -26,7 +25,6 @@ export interface Declaration {
 
 const encoder = new TextEncoder()
 
-/** The order of two names by their UTF-8 bytes, which no locale changes. */
 function compareNames(first: string, second: string): number {
   const one = encoder.encode(first)
   const other = encoder.encode(second)

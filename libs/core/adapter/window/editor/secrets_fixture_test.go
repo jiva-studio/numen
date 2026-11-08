@@ -115,15 +115,11 @@ func (k *secretKeys) snapshot() map[string]string {
 // probe is a plugin that records the Configure calls it receives.
 type probe struct {
 	testsupport.PluginLifecycle
-	mu    sync.Mutex
-	calls []*v1.ConfigureRequest
-	// failure, while set, is what Configure answers; such a call is not added to calls.
-	failure error
-	// hold, while set, keeps Configure from answering until it is closed or the call ends.
-	hold chan struct{}
-	// entered, while set, receives a value each time Configure is called.
-	entered chan struct{}
-	// attempts counts every Configure call, answered or not.
+	mu       sync.Mutex
+	calls    []*v1.ConfigureRequest
+	failure  error
+	hold     chan struct{}
+	entered  chan struct{}
 	attempts int
 }
 
@@ -156,14 +152,12 @@ func (p *probe) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-// setFailure makes Configure answer with err until it is called with nil.
 func (p *probe) setFailure(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.failure = err
 }
 
-// attemptCount returns the number of Configure calls received, answered or not.
 func (p *probe) attemptCount() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -192,7 +186,6 @@ func (p *probe) all() []*v1.ConfigureRequest {
 	return append([]*v1.ConfigureRequest(nil), p.calls...)
 }
 
-// entry returns the entry of the last Configure call for a declaration, and whether the call carries one.
 func (p *probe) entry(t *testing.T, name string) (*v1.ConfigureSecrets, bool) {
 	t.Helper()
 	var found []*v1.ConfigureSecrets
@@ -210,7 +203,6 @@ func (p *probe) entry(t *testing.T, name string) (*v1.ConfigureSecrets, bool) {
 	return found[0], true
 }
 
-// ids returns the ids of the secrets the last call delivers to a declaration, in the order delivered.
 func (p *probe) ids(t *testing.T, name string) []string {
 	t.Helper()
 	entry, _ := p.entry(t, name)
@@ -221,7 +213,6 @@ func (p *probe) ids(t *testing.T, name string) []string {
 	return ids
 }
 
-// serialized returns every call the plugin received as text.
 func (p *probe) serialized() string {
 	var text strings.Builder
 	for _, call := range p.all() {
@@ -250,8 +241,6 @@ func writeFile(t *testing.T, path, body string) {
 	}
 }
 
-// openSecretsWindow opens the window over three plugins, each running and configured once.
-// The settings file starts with the text given.
 func openSecretsWindow(t *testing.T, fileBody string) *window {
 	t.Helper()
 	pluginsDir := t.TempDir()
@@ -383,7 +372,6 @@ func (w *window) get(t *testing.T) *v1.GetSettingsResponse {
 	return response.Msg
 }
 
-// secrets returns the secrets of GetSettings in list order.
 func (w *window) secrets(t *testing.T) []*v1.Secret { return w.get(t).GetSecrets() }
 
 func (w *window) find(t *testing.T, id string) *v1.Secret {
@@ -406,7 +394,6 @@ func (w *window) setProvider(t *testing.T, value string) {
 	}
 }
 
-// readFile returns the settings file as text.
 func (w *window) readFile(t *testing.T) string {
 	t.Helper()
 	raw, err := os.ReadFile(w.file)
@@ -416,7 +403,6 @@ func (w *window) readFile(t *testing.T) string {
 	return string(raw)
 }
 
-// fileSecrets returns the secrets section of the settings file.
 func (w *window) fileSecrets(t *testing.T) []map[string]any {
 	t.Helper()
 	var root struct {

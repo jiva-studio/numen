@@ -19,7 +19,6 @@ var secretID = regexp.MustCompile(`^s[0-9a-f]{8}$`)
 
 func permission(plugin, name, group string) string { return plugin + "/" + name + "/" + group }
 
-// allowedOf returns the permissions of a secret as plugin/name/group.
 func allowedOf(one *v1.Secret) []string {
 	var list []string
 	for _, p := range one.GetAllowed() {

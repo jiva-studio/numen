@@ -14,9 +14,6 @@ import (
 // renames a new file over it.
 const lockSuffix = ".lock"
 
-// changeEntries runs work under an exclusive lock that every writer of the file takes, in this
-// process and in any other, so that a write reads the file after the writes before it ended. The
-// wait for the lock ends with the context, and the store is not locked while it lasts.
 func (s *Store) changeEntries(ctx context.Context, work func() error) (err error) {
 	if err := os.MkdirAll(s.dir, 0o700); err != nil {
 		return fmt.Errorf("lock the credentials file: %w", err)
@@ -33,12 +30,9 @@ func (s *Store) changeEntries(ctx context.Context, work func() error) (err error
 
 // lockWait is the one wait for the lock on a file that every caller waiting for it shares.
 type lockWait struct {
-	// ended is closed when the wait ended, with file locked or with err.
-	ended chan struct{}
-	file  *os.File
-	err   error
-	// waiters is the number of callers that have not left the wait or taken the lock. isEnded and
-	// isTaken, like it, are guarded by the mutex of the registry.
+	ended   chan struct{}
+	file    *os.File
+	err     error
 	waiters int
 	isEnded bool
 	isTaken bool
@@ -52,10 +46,6 @@ type lockRegistry struct {
 	waits map[string]*lockWait
 }
 
-// lock takes the exclusive lock on the file at path, creating the file when it is missing, and
-// returns the function that releases it. The wait ends with the context. Callers that wait for the
-// same file share one wait, and the one that finds it ended takes the lock; a wait without callers
-// releases the lock as soon as it has it.
 func (r *lockRegistry) lock(ctx context.Context, path string) (func() error, error) {
 	for {
 		wait := r.join(path)
@@ -79,7 +69,6 @@ func (r *lockRegistry) lock(ctx context.Context, path string) (func() error, err
 	}
 }
 
-// join adds a caller to the wait for the file, starting the wait when there is none.
 func (r *lockRegistry) join(path string) *lockWait {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -96,7 +85,6 @@ func (r *lockRegistry) join(path string) *lockWait {
 	return wait
 }
 
-// run opens and locks the file, and ends the wait.
 func (r *lockRegistry) run(path string, wait *lockWait) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err == nil {
@@ -117,8 +105,6 @@ func (r *lockRegistry) run(path string, wait *lockWait) {
 	close(wait.ended)
 }
 
-// take leaves the ended wait and returns the file it locked, and whether this caller is the one that
-// took it. Any other caller waits again.
 func (r *lockRegistry) take(wait *lockWait) (file *os.File, isTaken bool, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -133,7 +119,6 @@ func (r *lockRegistry) take(wait *lockWait) (file *os.File, isTaken bool, err er
 	return wait.file, true, nil
 }
 
-// leave removes a caller that stopped waiting.
 func (r *lockRegistry) leave(wait *lockWait) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -143,8 +128,6 @@ func (r *lockRegistry) leave(wait *lockWait) {
 	}
 }
 
-// releaseUntaken releases the lock of an ended wait that no caller took. The caller holds the mutex of
-// the registry.
 func (w *lockWait) releaseUntaken() {
 	if w.file == nil {
 		return

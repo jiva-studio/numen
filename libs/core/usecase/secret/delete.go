@@ -34,7 +34,6 @@ func (u *Delete) Execute(ctx context.Context, id string) error {
 	})
 }
 
-// restoreEntry puts a removed entry back at its position.
 func (u *Delete) restoreEntry(entry Secret, index int) error {
 	return u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 		if getIndex(list, entry.ID) >= 0 {

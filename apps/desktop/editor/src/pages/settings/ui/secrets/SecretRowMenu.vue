@@ -13,7 +13,6 @@ import { WORDS as words } from '../../words'
 const props = defineProps<{
   isFirst: boolean
   isLast: boolean
-  /** Whether the group holds more than one secret, so that the order can change. */
   canMove: boolean
 }>()
 

@@ -50,7 +50,6 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 	return id, nil
 }
 
-// makeID returns an id that no secret of the list has.
 func (u *Create) makeID(list []Secret) (string, error) {
 	for {
 		id, err := u.newID()

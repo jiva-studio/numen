@@ -17,18 +17,14 @@ import (
 
 // Handler answers every setting read and written, and the secrets shared between plugins.
 type Handler struct {
-	Get   *setting.Get
-	Write *setting.Write
-	// Watch is nil where the build reports no change of a setting.
-	Watch *setting.Watch
-	// Secrets is nil where the build keeps no secrets.
+	Get         *setting.Get
+	Write       *setting.Write
+	Watch       *setting.Watch
 	Secrets     *secret.Secrets
 	PluginRetry *setting.RetryPlugin
-	// PluginData and Vaults are nil where the installation keeps no text versions.
-	PluginData PluginData
-	Vaults     VaultProvider
-	// ChoosePath is nil where the application has no window to put a picker in.
-	ChoosePath *setting.ChoosePluginPath
+	PluginData  PluginData
+	Vaults      VaultProvider
+	ChoosePath  *setting.ChoosePluginPath
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -178,7 +174,6 @@ func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
 	return settings
 }
 
-// newWirePluginFailure is why the host suspends a plugin, as the wire carries it, and nil for a plugin it does not.
 func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
@@ -253,7 +248,6 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-// newWireSecrets is the secrets a plugin declares, as the wire carries them.
 func newWireSecrets(target []setting.PluginSecret) []*v1.SecretRequest {
 	secrets := make([]*v1.SecretRequest, 0, len(target))
 	for _, one := range target {

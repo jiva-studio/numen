@@ -66,14 +66,8 @@ export interface Installation {
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
-  /** Every secret in priority order, without its value. */
   readonly secrets?: Readonly<Ref<readonly Secret[]>>
-  /**
-   * The file the secret values are kept in where the system keychain is not in use, and empty
-   * where it is.
-   */
   readonly credentialsPath?: Readonly<Ref<string>>
-  /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
 }
 

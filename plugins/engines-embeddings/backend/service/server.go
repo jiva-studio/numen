@@ -113,10 +113,6 @@ func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo,
 	return engine.MockEmbedder{LogPath: s.mockLog}, nil
 }
 
-// updateConfig applies the settings of the selected provider: the host passes
-// the URL of a custom service, and the model of a remote one, only while that provider is
-// selected. The key is the first secret of the list the host passes for the declaration apiKey;
-// an empty list drops the key, and a call that does not carry the declaration keeps it.
 func (s *embeddingServer) updateConfig(values map[string]string, secrets server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -146,7 +142,6 @@ func (s *embeddingServer) updateConfig(values map[string]string, secrets server.
 	s.refreshModelInfoLocked()
 }
 
-// getFirstValue returns the value of the first secret of the list, and the empty text for an empty list.
 func getFirstValue(list []server.Secret) string {
 	if len(list) == 0 {
 		return ""
@@ -154,8 +149,6 @@ func getFirstValue(list []server.Secret) string {
 	return list[0].Value
 }
 
-// loadProfilesLocked reads the profile files of the owner again, so that a file added while the
-// plugin runs takes effect with the next change of a setting.
 func (s *embeddingServer) loadProfilesLocked() {
 	shipped, err := engine.GetShippedProfiles()
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="embedded shipped profiles json is valid"

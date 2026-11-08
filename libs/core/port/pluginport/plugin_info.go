@@ -50,26 +50,19 @@ func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, option
 
 // PluginInfo describes a discovered plugin and its declarative settings.
 type PluginInfo struct {
-	ID           string
-	Name         string
-	Version      string
-	Description  string
-	Capabilities []string
-	Settings     []PluginSetting
-	IsActive     bool
-	// Permissions are the permissions the manifest declares.
-	Permissions []string
-	// Secrets are the secrets the manifest declares. A value never appears here.
-	Secrets []PluginSecret
-	// Failure is set while the host suspends the plugin after it failed to start.
-	Failure *PluginFailure
-	// HasFrontend is whether the plugin declares a bundle the windows load.
-	HasFrontend bool
-	// HasBackend is whether the plugin declares a process the host starts.
-	HasBackend bool
-	// Readers are the readers the manifest declares, with the files each opens.
-	Readers []PluginReaderInfo
-	// SettingsViews are the components the settings page draws among the settings of the plugin.
+	ID            string
+	Name          string
+	Version       string
+	Description   string
+	Capabilities  []string
+	Settings      []PluginSetting
+	IsActive      bool
+	Permissions   []string
+	Secrets       []PluginSecret
+	Failure       *PluginFailure
+	HasFrontend   bool
+	HasBackend    bool
+	Readers       []PluginReaderInfo
 	SettingsViews []PluginSettingsView
 }
 

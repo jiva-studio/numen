@@ -97,7 +97,6 @@ func (c *LifecycleClient) Shutdown(ctx context.Context) (bool, error) {
 	return res.Msg.GetSuccess(), nil
 }
 
-// readSecrets reads the secrets a Configure request carries, by the name of their declaration.
 func readSecrets(entries []*v1.ConfigureSecrets) Secrets {
 	if len(entries) == 0 {
 		return nil
@@ -113,7 +112,6 @@ func readSecrets(entries []*v1.ConfigureSecrets) Secrets {
 	return secrets
 }
 
-// writeSecrets writes the secrets as the entries of a Configure request, in the order of the names.
 func writeSecrets(secrets Secrets) []*v1.ConfigureSecrets {
 	entries := make([]*v1.ConfigureSecrets, 0, len(secrets))
 	for _, name := range slices.Sorted(maps.Keys(secrets)) {

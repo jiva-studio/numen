@@ -13,8 +13,7 @@ type Entry struct {
 
 // Listing is every secret in list order and where the values are kept when it is a file.
 type Listing struct {
-	Entries []Entry
-	// CredentialsPath is empty while the system keychain is in use.
+	Entries         []Entry
 	CredentialsPath string
 }
 
@@ -40,8 +39,6 @@ func (u *List) Execute(ctx context.Context) (Listing, error) {
 	return listing, nil
 }
 
-// hasValue reports whether the key store holds a value for the secret. A store that fails counts
-// as holding none.
 func (u *List) hasValue(ctx context.Context, id string) bool {
 	if u.keys == nil {
 		return false

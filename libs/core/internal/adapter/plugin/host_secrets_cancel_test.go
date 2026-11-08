@@ -21,7 +21,6 @@ type cancelSetup struct {
 	changed atomic.Bool
 }
 
-// change is the secret operation: it renames the secret and replaces its value.
 func (c *cancelSetup) change(ctx context.Context) func() ([]string, error) {
 	return func() ([]string, error) {
 		c.changed.Store(true)
@@ -42,9 +41,6 @@ func newCancelSetup(t *testing.T) *cancelSetup {
 	return &cancelSetup{host: host, probe: probe, store: store, source: source}
 }
 
-// holdLock keeps the lock of the secret operations busy with the activation of the plugin, whose
-// Configure is held. It returns the function that lets the activation end and the channel that
-// receives its result.
 func (c *cancelSetup) holdLock(t *testing.T) (release func(), activation <-chan error) {
 	t.Helper()
 	activate := prepareActivation(t, c.host, true)
@@ -72,12 +68,10 @@ func (w *watchedContext) Done() <-chan struct{} {
 	return w.Context.Done()
 }
 
-// getOperationNames returns the names of the keys of operations.
 func getOperationNames() []string {
 	return []string{"ApplySecretChange", "RefreshSecrets", "NotifyPluginConfig"}
 }
 
-// operations are the calls that wait for the lock of the secret operations.
 func (c *cancelSetup) operations() map[string]func(ctx context.Context) error {
 	return map[string]func(ctx context.Context) error{
 		"ApplySecretChange": func(ctx context.Context) error {
@@ -92,8 +86,6 @@ func (c *cancelSetup) operations() map[string]func(ctx context.Context) error {
 	}
 }
 
-// assertNothingCommitted checks that the cancelled operation left the ledger and the key store as
-// they were and sent nothing besides the Configure of the activation that held the lock.
 func (c *cancelSetup) assertNothingCommitted(t *testing.T, calls int) {
 	t.Helper()
 	if c.changed.Load() {

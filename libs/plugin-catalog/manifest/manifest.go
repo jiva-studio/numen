@@ -102,7 +102,6 @@ func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 // host runs the plugin. No setting of a manifest takes the name.
 const SettingEnabled = "enabled"
 
-// listReservedSettingKeys returns the fields of the object of a plugin the host keeps for itself.
 func listReservedSettingKeys() []string { return []string{SettingEnabled} }
 
 var (
@@ -175,26 +174,13 @@ type Manifest struct {
 	Permissions      []string
 	Dependencies     []DependencyRequirement
 	Backend          Backend
-	// Frontend is nil for a plugin without a frontend.
-	Frontend *Frontend
-	Settings []Setting
-	// Secrets are the names of the secrets, such as an API key, that the plugin
-	// requests the host to store. The host passes them as Configure values,
-	// empty while a secret has no key, and never puts one in the environment or
-	// on the command line.
-	Secrets []Secret
-	// Services are the services the plugin serves to the windows, by their full names. A window that
-	// receives a call for one forwards it to the plugin; a service the host serves itself is never
-	// forwarded.
-	Services []string
-	// SettingsViews are the components of the plugin's frontend the settings page draws among the
-	// settings of the plugin, each by the id the frontend registers it under.
-	SettingsViews []SettingsView
-	// Contributes is what the plugin adds to the application, groups before its frontend is loaded.
-	Contributes Contributes
-	// Warnings are the findings of the reader that do not make the manifest invalid, such as a key the
-	// schema does not name. The reader fills them and a manifest built in code has none.
-	Warnings []string
+	Frontend         *Frontend
+	Settings         []Setting
+	Secrets          []Secret
+	Services         []string
+	SettingsViews    []SettingsView
+	Contributes      Contributes
+	Warnings         []string
 }
 
 // NoteType declares one type of note and how the index keeps the notes of it.
@@ -440,7 +426,6 @@ func (m Manifest) listSecretIssues() []error {
 	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
 }
 
-// listSecretGroupIssues checks that a declared group is trimmed, non-empty and short.
 func listSecretGroupIssues(secret Secret) []error {
 	group := secret.Group
 	if group == "" {
@@ -455,8 +440,6 @@ func listSecretGroupIssues(secret Secret) []error {
 	return nil
 }
 
-// listRepeatedSecretIssues checks that a name repeats only under conditions on one setting whose
-// value lists share no value, and that a name and group pair is declared once.
 func listRepeatedSecretIssues(secrets []Secret) []error {
 	var issues []error
 	byName := make(map[string][]Secret, len(secrets))
@@ -483,8 +466,6 @@ func listRepeatedSecretIssues(secrets []Secret) []error {
 	return issues
 }
 
-// isDisjoint reports whether every declaration has a condition, all on one setting, and no two
-// condition lists share a value.
 func isDisjoint(declared []Secret) bool {
 	values := make(map[string]bool)
 	for _, secret := range declared {

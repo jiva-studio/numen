@@ -212,7 +212,6 @@ export function matchesSecretsRow(query: ParsedPluginQuery): boolean {
   )
 }
 
-/** Orders categories by label with the catch-all last, then plugins by name. */
 function compareItems(a: FlatPluginItem, b: FlatPluginItem): number {
   if (a.category !== b.category) {
     if (a.category === OTHER_CATEGORY) return 1

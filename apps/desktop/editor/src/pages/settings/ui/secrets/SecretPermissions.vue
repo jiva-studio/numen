@@ -12,7 +12,6 @@ import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** Absent while the secret does not exist yet: the select is then disabled. */
   secret?: Secret | undefined
   declarations: readonly Declaration[]
 }>()
@@ -33,7 +32,6 @@ const allowedIds = computed(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-/** The select hands on the new list of allowed keys: the one that came or went is the one toggled. */
 function onSelect(next: readonly string[]): void {
   const added = next.find((id) => !allowedIds.value.includes(id))
   const key = added ?? allowedIds.value.find((one) => !next.includes(one))

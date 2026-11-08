@@ -9,10 +9,6 @@ import { runCommand } from '../../support/workspace.js'
 const ONE = 'md.numen.test.probe-one'
 const TWO = 'md.numen.test.probe-two'
 
-/**
- * A plugin whose backend appends, for each Configure call, the secrets it receives to a file as
- * one JSON line: `{ secrets: [{ name, group, values: [{ id, name, group, value }] }] }`.
- */
 const createProbe = (id: string, title: string, log: string): InstalledPlugin => ({
   id,
   files: {
@@ -102,7 +98,6 @@ interface Received {
   readonly value: string
 }
 
-/** The secrets of the last Configure call a probe received for its declaration, in the order delivered. */
 const readReceived = (log: string): Received[] => {
   if (!fs.existsSync(log)) return []
   const lines = fs
@@ -118,10 +113,6 @@ const readReceived = (log: string): Received[] => {
 /** The address of the server of this file, which the shared base address of the project does not name. */
 let serverUrl = ''
 
-/**
- * Loads the window of the server of this file, so it reads the secrets the core holds now. It waits
- * for the tab bar only: the restored layout of the previous test may have no plex graph.
- */
 const reopen = async (page: Page): Promise<void> => {
   await page.goto(serverUrl)
   await expect(page.getByRole('tablist').first()).toBeVisible()
@@ -164,20 +155,17 @@ const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']
   return settings
 }
 
-/** The row of the secret with that name inside a section or a page. */
 const rowOf = (scope: Locator, name: string): Locator =>
   scope
     .getByRole('listitem')
     .filter({ has: scope.page().getByLabel(`Value of ${name}`, { exact: true }) })
 
-/** Opens a list of choices of a multiple select, takes the choices by name and closes it. */
 const choose = async (page: Page, select: Locator, names: RegExp[]): Promise<void> => {
   await select.click()
   for (const name of names) await page.getByRole('option', { name }).click()
   await page.keyboard.press('Escape')
 }
 
-/** Opens the menu of a secret row and takes the item. */
 const takeRowAction = async (page: Page, row: Locator, item: RegExp): Promise<void> => {
   await row.getByRole('button', { name: 'Secret actions' }).click()
   await page.getByRole('menuitem', { name: item }).click()

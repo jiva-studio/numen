@@ -4,7 +4,6 @@
  * than one secret, the value, the plugins that may read it, and the actions.
  */
 defineProps<{
-  /** Whether the row has the name column. */
   hasName: boolean
 }>()
 </script>

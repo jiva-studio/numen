@@ -40,10 +40,6 @@ const betaWithoutSecrets = `{
 	"backend": {"entrypoint": "bin/beta"}
 }`
 
-// openOverFile opens the editor window in the order the product does: the plugins are discovered
-// first, and the settings, which hand the host its secret source, come after. The plugins in
-// active are started. The settings file and the plugin folder outlive the window, so a second call
-// is a restart.
 func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]string, keys pluginport.KeyStore, active []string) *window {
 	t.Helper()
 	for dir, body := range manifests {
@@ -135,8 +131,6 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	return w
 }
 
-// openFlashcardsOver starts the host of the flashcards window over the plugin folder and the settings file
-// of the editor window, in the order the product does, and returns once it has its settings.
 func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.KeyStore) *plugin.Host {
 	t.Helper()
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.flashcards", pluginsDir)

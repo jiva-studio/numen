@@ -53,8 +53,6 @@ func GetConfigFor(target string) container.Config {
 	return cfg
 }
 
-// getKeyStore is the system keychain, with a file next to the settings file for a machine that has
-// none. A machine with no folder for the settings keeps the keychain alone.
 func getKeyStore() *keychain.Store {
 	path, err := settings.Path()
 	if err != nil {
@@ -63,7 +61,6 @@ func getKeyStore() *keychain.Store {
 	return keychain.NewStore(filepath.Dir(path))
 }
 
-// getDevPluginsDirs is the plugin folders of a source checkout, relative to the working directory.
 func getDevPluginsDirs() []string { return []string{"plugins"} }
 
 func getCatalogConfig(target string, pluginDirs []string) catalog.Config {

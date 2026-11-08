@@ -31,8 +31,6 @@ type permissionEntry struct {
 	Group  string `json:"group"`
 }
 
-// readSecrets reads the section. An entry of the wrong shape is left out with a notice, and so is a
-// section that is no list.
 func (f *File) readSecrets(raw json.RawMessage) {
 	f.Secrets = nil
 	if string(raw) == "null" {
@@ -94,7 +92,6 @@ func (f *File) DropInvalidSecrets(isDeclared func(pluginport.SecretPermission) b
 	f.Secrets = kept
 }
 
-// getSecretIssue returns why the secret is invalid, and the empty text for a valid one.
 func getSecretIssue(secret pluginport.Secret, seenIDs map[string]bool, seenNames map[[2]string]bool) string {
 	switch {
 	case !pluginport.IsValidSecretID(secret.ID):
@@ -111,7 +108,6 @@ func getSecretIssue(secret pluginport.Secret, seenIDs map[string]bool, seenNames
 	return ""
 }
 
-// keepDeclared returns the permissions of the secret whose declaration is known, once each.
 func (f *File) keepDeclared(secret pluginport.Secret, isDeclared func(pluginport.SecretPermission) bool) []pluginport.SecretPermission {
 	var kept []pluginport.SecretPermission
 	for _, one := range secret.Allowed {
@@ -162,7 +158,6 @@ func (f *Files) ChangeSecrets(path string, change func([]pluginport.Secret) ([]p
 	})
 }
 
-// normalize returns the list with no nil permission list, and equal lists compare equal.
 func normalize(secrets []pluginport.Secret) []pluginport.Secret {
 	out := make([]pluginport.Secret, 0, len(secrets))
 	for _, secret := range secrets {

@@ -87,7 +87,6 @@ export function dispose(wrapper: VueWrapper): void {
   document.body.innerHTML = ''
 }
 
-/** The smallest ancestor of the element that satisfies the test. */
 const ancestorWhere = (
   element: Element,
   test: (candidate: HTMLElement) => boolean,

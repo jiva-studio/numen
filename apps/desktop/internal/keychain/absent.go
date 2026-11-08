@@ -17,9 +17,6 @@ var dbusMissing = []string{
 	"org.freedesktop.DBus.Error.NotSupported",
 }
 
-// isKeychainAbsent reports whether the error says this machine has no system keychain: the platform
-// has none, or no secret service is running. A keychain that is there and refuses, because it is
-// locked or the person denied the access, is not absent, and its key must not go to a file.
 func isKeychainAbsent(err error) bool {
 	if errors.Is(err, keyring.ErrUnsupportedPlatform) {
 		return true

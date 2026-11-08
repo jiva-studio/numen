@@ -182,7 +182,6 @@ export const EscapePutsItAway: Story = {
   },
 }
 
-/** The multiple select, drawn with the identifiers chosen at the start. */
 const multipleRender =
   (start: readonly string[]): NonNullable<Story['render']> =>
   () => ({

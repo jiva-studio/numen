@@ -14,13 +14,11 @@ interface ListedSecret {
   readonly hasValue: boolean
 }
 
-/** The secrets the core lists. A value is never answered. */
 const readSecrets = async (page: Page): Promise<ListedSecret[]> => {
   const answer = await callRPC(page.request, 'SettingsService/GetSettings', {})
   return (answer['secrets'] ?? []) as ListedSecret[]
 }
 
-/** Deletes every secret, so the next test starts with none. */
 const deleteSecrets = async (page: Page): Promise<void> => {
   for (const one of await readSecrets(page)) {
     await callRPC(page.request, 'SettingsService/DeleteSecret', { id: one.id })

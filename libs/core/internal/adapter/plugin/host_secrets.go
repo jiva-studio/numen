@@ -98,8 +98,6 @@ func (h *Host) RefreshSecrets(ctx context.Context) error {
 	return h.configurePlugins(ctx, ids)
 }
 
-// listSecretSignatures returns the signature of the list of secrets of every plugin. The caller
-// holds secretLock.
 func (h *Host) listSecretSignatures(ctx context.Context) map[string]string {
 	h.mu.RLock()
 	ids := make([]string, 0, len(h.plugins))
@@ -114,8 +112,6 @@ func (h *Host) listSecretSignatures(ctx context.Context) map[string]string {
 	return signatures
 }
 
-// getSecretsSignatureOf returns the signature of the list of secrets the plugin would be given now.
-// A plugin that is not running, or has not had its activation Configure, has the empty signature.
 func (h *Host) getSecretsSignatureOf(ctx context.Context, pluginID string) string {
 	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
 	if !isRunning || err != nil || h.isAwaitingFirstConfigure(pluginID) {
@@ -125,18 +121,12 @@ func (h *Host) getSecretsSignatureOf(ctx context.Context, pluginID string) strin
 	return "list:" + getSecretsSignature(secrets)
 }
 
-// isAwaitingFirstConfigure reports whether the plugin is between its activation and the Configure
-// of that activation.
 func (h *Host) isAwaitingFirstConfigure(pluginID string) bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.awaitingFirstConfigure[pluginID]
 }
 
-// configurePlugins sends Configure to the plugins at once and returns the failures joined in the
-// order of the ids. A plugin that awaits the Configure of its activation gets none, because that
-// one reads the list as it is. A plugin that does not answer holds up only itself, so the wait is
-// the longest single call and not their sum. The caller holds secretLock.
 func (h *Host) configurePlugins(ctx context.Context, ids []string) error {
 	failures := make([][2]error, len(ids))
 	var group sync.WaitGroup
@@ -159,9 +149,6 @@ func (h *Host) configurePlugins(ctx context.Context, ids []string) error {
 	return errors.Join(joined...)
 }
 
-// configurePluginLocked sends the configuration to the plugin and returns the failure to read its
-// secrets apart from the failure of the Configure call. A plugin that is not running gets no call.
-// The caller holds secretLock.
 func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (readErr, configureErr error) {
 	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
 	if !isRunning || err != nil {
@@ -202,8 +189,6 @@ func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (read
 	return secretsErr, nil
 }
 
-// hasSecretsChanged reports whether the list of secrets of a running plugin differs from the one
-// it was last given.
 func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
 	if !isRunning || err != nil {
@@ -219,9 +204,6 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	return !wasDelivered || last != getSecretsSignature(secrets)
 }
 
-// pruneSecretPermissions drops the permissions of declarations that are gone. It runs when the
-// scan and the secret source are both there, in whichever order they come. A scan that had
-// problems may have hidden an installed plugin, so it drops nothing.
 func (h *Host) pruneSecretPermissions() {
 	h.mu.RLock()
 	prune := h.secretSource.Prune
@@ -236,11 +218,6 @@ func (h *Host) pruneSecretPermissions() {
 	}
 }
 
-// listConfigureSecrets returns, for each active declaration of the plugin, the secrets it may read
-// in the order it receives them. With withValues, each carries its value, a secret with no value on
-// this machine is left out, and a declaration whose value cannot be read is not carried, so the
-// plugin keeps what it has. Without it the key store is not asked and every allowed secret is
-// listed, which is what the signature of the list is made of.
 func (h *Host) listConfigureSecrets(ctx context.Context, snapshot configSnapshot, withValues bool) ([]*v1.ConfigureSecrets, []error) {
 	if len(snapshot.declared) == 0 {
 		return nil, nil
@@ -275,8 +252,6 @@ func (h *Host) listConfigureSecrets(ctx context.Context, snapshot configSnapshot
 	return entries, failures
 }
 
-// readSecretValues reads the value of each secret. A secret the store has no value for is left
-// out, and so is every secret on a machine without a store.
 func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []secret.Secret) ([]*v1.SecretValue, error) {
 	values := make([]*v1.SecretValue, 0, len(secrets))
 	for _, one := range secrets {
@@ -295,7 +270,6 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 	return values, nil
 }
 
-// describeSecretValues lists the secrets without any value.
 func describeSecretValues(secrets []secret.Secret) []*v1.SecretValue {
 	values := make([]*v1.SecretValue, 0, len(secrets))
 	for _, one := range secrets {
@@ -304,8 +278,6 @@ func describeSecretValues(secrets []secret.Secret) []*v1.SecretValue {
 	return values
 }
 
-// getSecretsSignature describes the list of secrets of a Configure call without any value: the
-// declarations carried and, for each, the id, name and group of the secrets in order.
 func getSecretsSignature(entries []*v1.ConfigureSecrets) string {
 	var signature strings.Builder
 	for _, entry := range entries {
@@ -318,8 +290,6 @@ func getSecretsSignature(entries []*v1.ConfigureSecrets) string {
 	return signature.String()
 }
 
-// getSecretsError returns the secret read failures that are reported to the caller. A machine
-// without a key store is reported once through the error handler and is not returned.
 func (h *Host) getSecretsError(failures []error) error {
 	var notified []error
 	for _, failure := range failures {
@@ -366,9 +336,6 @@ func (h *Host) runConfigWatchers(pluginID string) {
 	}
 }
 
-// listInstalledDeclarationsLocked returns the declarations of every plugin installed in the plugin
-// folders whatever its target, and of the registered plugins that are not on disk. A host of one
-// target must not drop the permissions of a plugin that targets another window.
 func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
 	var declarations []pluginport.SecretPermission
 	installed := make(map[string]bool, len(h.installed))
@@ -384,7 +351,6 @@ func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
-// appendDeclarations adds the secret declarations of the plugin to the list.
 func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.Discovered) []pluginport.SecretPermission {
 	for _, declaration := range p.Manifest.Secrets {
 		declarations = append(declarations, pluginport.SecretPermission{
@@ -394,7 +360,6 @@ func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.D
 	return declarations
 }
 
-// lockSecrets waits for the lock of the secret operations until ctx ends.
 func (h *Host) lockSecrets(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -407,10 +372,8 @@ func (h *Host) lockSecrets(ctx context.Context) error {
 	}
 }
 
-// unlockSecrets releases the lock taken by lockSecrets.
 func (h *Host) unlockSecrets() { <-h.secretLock }
 
-// describeConfigureFailure names the status of a failed Configure call and never the text of the plugin.
 func describeConfigureFailure(err error) string {
 	if connect.CodeOf(err) == connect.CodeDeadlineExceeded {
 		return "timed out"

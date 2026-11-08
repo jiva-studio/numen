@@ -18,12 +18,10 @@ const (
 	credentialsFile = "credentials.json"
 )
 
-// getCredentialsFile returns the path of the fallback file.
 func (s *Store) getCredentialsFile() string {
 	return filepath.Join(s.dir, credentialsDir, credentialsFile)
 }
 
-// readEntries reads every entry of the file. A file that is not there holds none.
 func (s *Store) readEntries() (map[string]string, error) {
 	raw, err := os.ReadFile(s.getCredentialsFile())
 	if errors.Is(err, fs.ErrNotExist) {
@@ -39,7 +37,6 @@ func (s *Store) readEntries() (map[string]string, error) {
 	return entries, nil
 }
 
-// describeSyntax names where a file is malformed without quoting any of it.
 func describeSyntax(err error) string {
 	var syntax *json.SyntaxError
 	if errors.As(err, &syntax) {
@@ -48,7 +45,6 @@ func describeSyntax(err error) string {
 	return "a value has the wrong type"
 }
 
-// readFromFile returns the key stored under the name in the file.
 func (s *Store) readFromFile(name string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -63,7 +59,6 @@ func (s *Store) readFromFile(name string) (string, error) {
 	return key, nil
 }
 
-// writeToFile stores the key under the name in the file.
 func (s *Store) writeToFile(ctx context.Context, name, key string) error {
 	return s.changeEntries(ctx, func() error {
 		entries, err := s.readEntries()
@@ -75,7 +70,6 @@ func (s *Store) writeToFile(ctx context.Context, name, key string) error {
 	})
 }
 
-// removeFromFile removes the key stored under the name from the file, or fails with ErrNoKey.
 func (s *Store) removeFromFile(ctx context.Context, name string) error {
 	return s.changeEntries(ctx, func() error {
 		entries, err := s.readEntries()
@@ -90,8 +84,6 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 	})
 }
 
-// writeEntries replaces the file with the entries through a temporary file and a rename, in a
-// folder only the user can enter. The file is readable by the user alone.
 func (s *Store) writeEntries(entries map[string]string) (err error) {
 	content, err := json.Marshal(entries)
 	if err != nil {
@@ -123,7 +115,6 @@ func (s *Store) writeEntries(entries map[string]string) (err error) {
 	return nil
 }
 
-// writeTemporary writes the content to the file, flushes it, gives it the mode 0600 and closes it.
 func writeTemporary(tmp *os.File, content []byte) error {
 	if _, err := tmp.Write(content); err != nil {
 		return errors.Join(err, tmp.Close())

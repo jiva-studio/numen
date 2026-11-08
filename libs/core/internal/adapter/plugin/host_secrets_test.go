@@ -92,25 +92,18 @@ type configured struct {
 	calls         []*v1.ConfigureRequest
 	unimplemented bool
 	shutdowns     int
-	// failure, while set, is what Configure answers after it recorded the call.
-	failure error
-	// hold, while set, keeps Configure from answering until it is closed or the call ends.
-	hold chan struct{}
-	// entered, while set, receives a value each time a Configure call arrives.
-	entered chan struct{}
-	// delay is how long Configure takes to answer.
-	delay time.Duration
+	failure       error
+	hold          chan struct{}
+	entered       chan struct{}
+	delay         time.Duration
 }
 
-// setFailure makes Configure answer with err until it is called with nil.
 func (c *configured) setFailure(err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.failure = err
 }
 
-// setHold keeps Configure from answering until the returned function is called, and returns the
-// channel that receives a value each time a call arrives.
 func (c *configured) setHold(t *testing.T) (entered <-chan struct{}, release func()) {
 	t.Helper()
 	hold, arrivals := make(chan struct{}), make(chan struct{}, 8)
@@ -123,7 +116,6 @@ func (c *configured) setHold(t *testing.T) (entered <-chan struct{}, release fun
 	return arrivals, release
 }
 
-// count returns the number of Configure calls received.
 func (c *configured) count() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -233,7 +225,6 @@ func assertNoKey(t *testing.T, where, text string, keys ...string) {
 // secretID is the id of the one secret the tests of this file list.
 const secretID = "s0a1b2c3d"
 
-// allowOne is a source that lists one secret, allowed to the declaration apiKey of the plugin.
 func allowOne(pluginID string) pluginport.SecretSource {
 	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
 		return []pluginport.Secret{{
@@ -243,7 +234,6 @@ func allowOne(pluginID string) pluginport.SecretSource {
 	}}
 }
 
-// listed returns the secrets the last Configure call delivers to the declaration.
 func listed(t *testing.T, probe *configured, name string) []*v1.SecretValue {
 	t.Helper()
 	for _, entry := range probe.last(t).GetSecrets() {

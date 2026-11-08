@@ -64,7 +64,6 @@ const mountDetail = (secrets = [WORK, HOME, CHAT, SPARE, MINE]) => {
 /** The CSS selector of the select button in a row. */
 const SELECT = 'button[data-slot="select"]'
 
-/** The field of a declaration: the smallest element around its title that holds a select. */
 const fieldOf = (title: string): HTMLElement => {
   let one = (findText(title) as HTMLElement).parentElement
   while (one !== null && one.querySelector(SELECT) === null) one = one.parentElement
@@ -76,13 +75,11 @@ const openMenu = async (title: string): Promise<void> => {
   await click(fieldOf(title).querySelector(SELECT) as HTMLElement)
 }
 
-/** The rows of the list the select opened, in order: the name of each secret. */
 const optionNames = (): string[] =>
   Array.from(root().querySelectorAll('[role="option"] .searchable-list__text')).map((one) =>
     (one.textContent ?? '').trim(),
   )
 
-/** The row of the secret with that name in the list the select opened. */
 const menuItem = (name: string): HTMLElement => {
   const found = Array.from(root().querySelectorAll<HTMLElement>('[role="option"]')).filter(
     (one) => one.querySelector('.searchable-list__text')?.textContent?.trim() === name,

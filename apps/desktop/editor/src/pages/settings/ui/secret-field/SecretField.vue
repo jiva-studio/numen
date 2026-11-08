@@ -51,7 +51,6 @@ const labelledBy = computed(() => `settings-${props.at}`)
 const hasOwnSecrets = computed(() => hasGroupSecrets(props.sections, props.declaration))
 
 /* -------------------------------- Handlers -------------------------------- */
-/** The select hands on the new list of allowed ids: the one that came or went is the one toggled. */
 function onSelect(next: readonly string[]): void {
   const added = next.find((id) => !allowedIds.value.includes(id))
   const id = added ?? allowedIds.value.find((one) => !next.includes(one))

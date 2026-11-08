@@ -20,7 +20,6 @@ const (
 	configureTimeout = 3 * time.Second
 )
 
-// getFailure is the failure the plugin page shows for the plugin, and nil while there is none.
 func (w *window) getFailure(pluginID string) *pluginport.PluginFailure {
 	for _, info := range w.host.GetPluginInfos() {
 		if info.ID == pluginID {
@@ -30,7 +29,6 @@ func (w *window) getFailure(pluginID string) *pluginport.PluginFailure {
 	return nil
 }
 
-// tryAllow allows the secret to the declaration and returns the error of the call.
 func (w *window) tryAllow(ctx context.Context, secretID, pluginID, name, group string) error {
 	_, err := w.client.AllowPluginSecret(ctx, connect.NewRequest(&v1.AllowPluginSecretRequest{
 		SecretId: secretID, PluginId: pluginID, Name: name, Group: group,

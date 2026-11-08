@@ -289,7 +289,6 @@ func getSpoken(steps []*agentrun.Response) []string {
 	return response
 }
 
-// keySecrets is the secrets of a Configure call that carries one key for the declaration apiKey.
 func keySecrets(value string) server.Secrets {
 	return server.Secrets{SettingAPIKey: {{ID: "s00000001", Name: "Work", Group: "openrouter", Value: value}}}
 }

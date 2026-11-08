@@ -38,7 +38,6 @@ func (b *syncBuffer) String() string {
 	return b.buffer.String()
 }
 
-// captureLogs returns what the standard logger and slog write while the test runs.
 func captureLogs(t *testing.T) *syncBuffer {
 	t.Helper()
 	logs := &syncBuffer{}
@@ -53,8 +52,6 @@ func captureLogs(t *testing.T) *syncBuffer {
 	return logs
 }
 
-// assertOnlyPluginAndStatus checks that text holds nothing the plugin said: no value, no quoted form
-// of a value, no capital letter of a value (a piece of it) and none of the plugin's words.
 func assertOnlyPluginAndStatus(t *testing.T, where, text string, values []string) {
 	t.Helper()
 	for _, value := range values {
@@ -77,7 +74,6 @@ func assertOnlyPluginAndStatus(t *testing.T, where, text string, values []string
 	}
 }
 
-// getErrorTextCases returns the values a plugin may put in its error text, and how it puts them.
 func getErrorTextCases() []errorTextCase {
 	return []errorTextCase{
 		{"a value", []string{"ZKWQ"}, func(v []string) string { return pluginWords + " " + v[0] }},
@@ -98,7 +94,6 @@ type errorTextCase struct {
 	say    func(values []string) string
 }
 
-// newErrorTextHost returns a host whose plugin may read one secret for each of the values.
 func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 	t.Helper()
 	items := make(map[string]string, len(values))

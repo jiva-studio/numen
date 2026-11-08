@@ -92,7 +92,6 @@ func (l *listing) regroup(group string) {
 	l.group = group
 }
 
-// allow lets the plugin read the secret too.
 func (l *listing) allow(pluginID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -111,7 +110,6 @@ func (l *listing) source() pluginport.SecretSource {
 	}}
 }
 
-// renameBy returns an operation that renames the secret and names no reader.
 func (l *listing) renameBy(name string) func() ([]string, error) {
 	return func() ([]string, error) {
 		l.rename(name)
@@ -119,7 +117,6 @@ func (l *listing) renameBy(name string) func() ([]string, error) {
 	}
 }
 
-// deliveredName returns the name of the secret the last Configure call delivers to the declaration.
 func deliveredName(t *testing.T, probe *configured) string {
 	t.Helper()
 	got := listed(t, probe, declared)
@@ -129,7 +126,6 @@ func deliveredName(t *testing.T, probe *configured) string {
 	return got[0].GetName()
 }
 
-// newConfiguredHost returns a host whose plugin was given the secret named "Work".
 func newConfiguredHost(t *testing.T) (*Host, *configured, *listing) {
 	t.Helper()
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
@@ -141,15 +137,12 @@ func newConfiguredHost(t *testing.T) (*Host, *configured, *listing) {
 	return host, probe, source
 }
 
-// prepareActivation makes the plugin ready for an activation and returns a function that runs it.
-// With dormant set the plugin is first not running, as before its first start.
 func prepareActivation(t *testing.T, host *Host, dormant bool) func() error {
 	t.Helper()
 	activate := prepareActivationWith(t, host, dormant)
 	return func() error { return activate(t.Context()) }
 }
 
-// prepareActivationWith is prepareActivation for an activation that runs with the given context.
 func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx context.Context) error {
 	t.Helper()
 	port := host.endpoints[secretPluginID].Port
@@ -171,8 +164,6 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 	}
 }
 
-// addSecretPlugin adds a second running plugin that declares apiKey, lets it read the secret of the
-// listing, and returns the probe that records its Configure calls.
 func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string) *configured {
 	t.Helper()
 	probe := &configured{}

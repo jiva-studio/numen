@@ -11,9 +11,7 @@ import { getHeadings, type ListRow } from './rows'
 const props = defineProps<{
   rows: readonly ListRow[]
   activeIndex: number
-  /** The identifiers of the items in force. */
   current: readonly string[]
-  /** The identifier of the list, which the ones of its rows are made from. */
   listId: string
   label: string
 }>()

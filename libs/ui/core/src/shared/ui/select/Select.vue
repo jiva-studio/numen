@@ -60,7 +60,6 @@ const isCustomAvailable = computed(
 /** The choice in force, and none where the value is none of them. */
 const selectedChoice = computed(() => props.choices.find((one) => one.id === model.value))
 
-/** The text of a chosen choice, and the identifier where it names none. */
 const getChosenText = (id: string): string => props.choices.find((one) => one.id === id)?.text || id
 
 /** What is written on the line of a multiple select: the first choice, and how many more. */

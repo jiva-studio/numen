@@ -75,8 +75,6 @@ func (s *LifecycleServer) shutdown() error {
 	return closeErr
 }
 
-// configureWith stores the values and invokes the registered configure callback. The secrets go to
-// the callback and are not stored.
 func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]string, secrets Secrets) error {
 	s.mu.Lock()
 	if s.config == nil {

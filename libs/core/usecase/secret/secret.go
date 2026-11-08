@@ -42,7 +42,6 @@ func newInvalidError(format string, args ...any) error {
 
 func newNotFoundError(id string) error { return fmt.Errorf("%w: %s", ErrNotFound, id) }
 
-// setValue stores the value of the secret. The error never carries the value.
 func (o operation) setValue(ctx context.Context, id, value string) error {
 	if o.keys == nil {
 		return fmt.Errorf("%w: %w", ErrKeyStore, pluginport.ErrNoKeyStore)
@@ -53,7 +52,6 @@ func (o operation) setValue(ctx context.Context, id, value string) error {
 	return nil
 }
 
-// deleteValue removes the value of the secret. A value that is not there is not an error.
 func (o operation) deleteValue(ctx context.Context, id string) error {
 	if o.keys == nil {
 		return nil
@@ -64,19 +62,16 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	return nil
 }
 
-// getIndex returns the position of the secret in the list, or -1.
 func getIndex(list []Secret, id string) int {
 	return slices.IndexFunc(list, func(one Secret) bool { return one.ID == id })
 }
 
-// isNameTaken reports whether another secret of the group has the name.
 func isNameTaken(list []Secret, group, name, exceptID string) bool {
 	return slices.ContainsFunc(list, func(one Secret) bool {
 		return one.Group == group && one.Name == name && one.ID != exceptID
 	})
 }
 
-// checkName returns why the text is not a name of a secret or a group.
 func checkName(kind, name string) error {
 	if !pluginport.IsValidSecretName(name) {
 		return newInvalidError("the %s is empty, has leading or trailing space or is over %d characters", kind, pluginport.MaxSecretNameLength)
@@ -84,7 +79,6 @@ func checkName(kind, name string) error {
 	return nil
 }
 
-// listPluginIDs returns the plugins of the permissions once each, in order of appearance.
 func listPluginIDs(allowed []Permission) []string {
 	var ids []string
 	for _, one := range allowed {
