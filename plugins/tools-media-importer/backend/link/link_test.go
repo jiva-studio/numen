@@ -29,11 +29,14 @@ const (
 )
 
 // sites publishes an article at one address, a captioned video at another, and nothing at a third.
+// With started and gate set, a download signals started once it begins and waits for gate to close.
 type sites struct {
 	texts  atomic.Int32
 	failAt int
 	clip   []byte
 	media  []download.Media
+	started chan struct{}
+	gate    chan struct{}
 }
 
 func (s *sites) CanCopy(address string) bool { return address == videoAddress }
@@ -62,6 +65,10 @@ func (s *sites) GetText(_ context.Context, address string, _ download.PreferredC
 
 func (s *sites) Download(_ context.Context, _ string, media download.Media, into io.Writer) (download.Copy, error) {
 	s.media = append(s.media, media)
+	if s.gate != nil {
+		close(s.started)
+		<-s.gate
+	}
 	if s.failAt > 0 {
 		if _, err := into.Write(s.clip[:s.failAt]); err != nil {
 			return download.Copy{}, err
@@ -102,8 +109,16 @@ func newWorld(t *testing.T) *world {
 
 func (w *world) create(t *testing.T, address string) link.Link {
 	t.Helper()
-	made, err := w.links.Create(t.Context(), "", "links", address)
+	return w.createIn(t, "links", address)
+}
+
+func (w *world) createIn(t *testing.T, folder, address string) link.Link {
+	t.Helper()
+	made, err := w.links.Create(t.Context(), "", folder, address)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.vault.Scan(t.Context(), []string{made.Path}); err != nil {
 		t.Fatal(err)
 	}
 	content, _ := w.vault.Content(made.Path)
@@ -245,7 +260,7 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	if size != int64(len(w.sites.clip)) {
 		t.Errorf("the copy came to %d bytes, want %d", size, len(w.sites.clip))
 	}
-	copied, err := w.store.Read(t.Context(), made.Key+".mp4")
+	copied, err := w.store.Read(t.Context(), made.Key+".video.mp4")
 	if err != nil || !bytes.Equal(copied, w.sites.clip) {
 		t.Errorf("the folder keeps %d bytes (%v)", len(copied), err)
 	}
@@ -258,7 +273,7 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	if err := w.links.DeleteCopy(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := w.store.Read(t.Context(), made.Key+".mp4"); !errors.Is(err, host.ErrNotExist) {
+	if _, err := w.store.Read(t.Context(), made.Key+".video.mp4"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("a deleted copy is still kept: %v", err)
 	}
 	if got := w.readProperty(t, made.Path, "media"); got != "" {
@@ -389,7 +404,7 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want, got := "plugin://"+pluginID+"/"+made.Key+".mp4", w.readProperty(t, made.Path, "media"); got != want {
+	if want, got := "plugin://"+pluginID+"/"+made.Key+".video.mp4", w.readProperty(t, made.Path, "media"); got != want {
 		t.Errorf("the note holds media %q, want %q", got, want)
 	}
 	read, err := w.links.Read(t.Context(), made.Path)
@@ -549,7 +564,7 @@ func TestCopyOfAStoredVideoSetsTheMediaOfANewNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want, got := "plugin://"+pluginID+"/"+again.Key+".mp4", w.readProperty(t, again.Path, "media"); got != want {
+	if want, got := "plugin://"+pluginID+"/"+again.Key+".video.mp4", w.readProperty(t, again.Path, "media"); got != want {
 		t.Errorf("the note made again holds media %q, want %q", got, want)
 	}
 }
