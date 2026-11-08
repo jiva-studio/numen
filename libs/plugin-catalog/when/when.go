@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/types"
@@ -62,17 +63,42 @@ type Condition struct {
 
 var errNotCondition = errors.New("the expression gives no true or false")
 
-// Parse reads the condition. It fails on an expression that is malformed, names a variable that is
-// not declared, mixes types or gives no true or false. The empty text is a condition that always holds.
-func Parse(text string) (Condition, error) {
-	if text == "" {
-		return Condition{}, nil
-	}
+// getEnvironment is the one CEL environment of the variables of when.json.
+var getEnvironment = sync.OnceValues(func() (*cel.Env, error) {
 	options := make([]cel.EnvOption, 0, len(listVariables()))
 	for _, one := range listVariables() {
 		options = append(options, cel.Variable(one.name, one.kind.getType()))
 	}
-	environment, err := cel.NewEnv(options...)
+	return cel.NewEnv(options...)
+})
+
+// compiled holds the condition read from each text, valid or not, by the text.
+var compiled sync.Map
+
+// cacheEntry is the condition read from a text, or the error of reading it.
+type cacheEntry struct {
+	condition Condition
+	err       error
+}
+
+// Parse reads the condition. It fails on an expression that is malformed, names a variable that is
+// not declared, mixes types or gives no true or false. The empty text is a condition that always holds.
+// A text is compiled once; a later Parse of it returns the same condition.
+func Parse(text string) (Condition, error) {
+	if text == "" {
+		return Condition{}, nil
+	}
+	if found, isCompiled := compiled.Load(text); isCompiled {
+		one := found.(cacheEntry)
+		return one.condition, one.err
+	}
+	condition, err := compile(text)
+	compiled.Store(text, cacheEntry{condition: condition, err: err})
+	return condition, err
+}
+
+func compile(text string) (Condition, error) {
+	environment, err := getEnvironment()
 	if err != nil {
 		return Condition{}, fmt.Errorf("the variables of when: %w", err)
 	}
