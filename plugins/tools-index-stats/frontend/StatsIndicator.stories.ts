@@ -9,6 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { Stats } from './types'
 import StatsIndicator from './StatsIndicator.vue'
+import { expectText } from '../../../libs/ui/core/.storybook/contrastBrowser'
 import './styles.css'
 
 /** A made-up vault that is embedding: notes, a PDF and a book, with no media in it. */
@@ -24,7 +25,6 @@ const EMBEDDING: Stats = {
     { kind: 'media', sources: 0, chunks: 0 },
   ],
   model: 'bge-m3',
-  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
@@ -118,47 +118,48 @@ export const Embedded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = await canvas.findByRole('button', { name: /13,100/ })
-    await expect(trigger.textContent?.trim()).toBe('⬡ 13,100')
+    await expect(trigger.textContent?.trim()).toBe('⬡13,100')
     await userEvent.click(trigger)
     const popover = await canvas.findByRole('dialog')
     await expect(within(popover).queryByText('Embedding speed')).toBeNull()
   },
 }
 
-const getIcon = (canvasElement: HTMLElement): HTMLElement =>
-  canvasElement.querySelector('.index-stats__icon') as HTMLElement
+const getTrigger = (canvasElement: HTMLElement): HTMLElement =>
+  canvasElement.querySelector('.index-stats__trigger') as HTMLElement
+
+const getBox = (element: HTMLElement) => {
+  const { width, height } = element.getBoundingClientRect()
+  return { width, height }
+}
 
 const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
-  await expect(trigger.textContent?.trim()).toBe('⬡ 12,480')
+  await expect(trigger.textContent?.trim()).toBe('⬡12,480')
   await expect(trigger.textContent).not.toContain('/')
-  const icon = getIcon(canvasElement)
-  await expect(getComputedStyle(icon).animationName).not.toBe('none')
-  await expect(icon.getAnimations().some((one) => one.playState === 'running')).toBe(true)
-  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
-  await expect(getComputedStyle(icon).color).not.toBe(getComputedStyle(label).color)
-  await expect(getComputedStyle(label).animationName).toBe('none')
+  await expect(getComputedStyle(trigger).animationName).not.toBe('none')
+  await expect(trigger.getAnimations().some((one) => one.playState === 'running')).toBe(true)
+  await expect(getComputedStyle(getTrigger(canvasElement).querySelector('.index-stats__icon')!).animationName).toBe('none')
+  await expectText(trigger, 'index chip', 'indexing')
 }
 
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: '13,100 vectors' })
-  await expect(trigger.textContent?.trim()).toBe('⬡ 13,100')
-  const icon = getIcon(canvasElement)
-  await expect(getComputedStyle(icon).animationName).toBe('none')
-  await expect(icon.getAnimations()).toHaveLength(0)
-  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
-  await expect(getComputedStyle(icon).color).toBe(getComputedStyle(label).color)
+  await expect(trigger.textContent?.trim()).toBe('⬡13,100')
+  await expect(getComputedStyle(trigger).animationName).toBe('none')
+  await expect(trigger.getAnimations()).toHaveLength(0)
+  await expectText(trigger, 'index chip', 'idle')
 }
 
-/** The mark pulses green on the light tokens while chunks wait. */
+/** The chip pulses while chunks wait, on the light tokens. */
 export const IndexingLight: Story = { globals: { theme: 'light' }, play: checkIndexing }
 
 /** The same on the dark tokens. */
 export const IndexingDark: Story = { globals: { theme: 'dark' }, play: checkIndexing }
 
-/** The mark is still on the light tokens once the queue is empty. */
+/** The chip is still on the light tokens once the queue is empty. */
 export const IdleLight: Story = {
   args: { stats: DONE },
   globals: { theme: 'light' },
@@ -172,7 +173,27 @@ export const IdleDark: Story = {
   play: checkIdle,
 }
 
-/** With no motion in the theme the mark stays solid green and does not fade. */
+/** The chip keeps its size whether it is indexing, idle, loading or without an index. */
+export const KeepsItsSize: Story = {
+  render: () => ({
+    components: { StatsIndicator },
+    setup: () => ({ EMBEDDING, DONE }),
+    template: `
+      <div class="numen" data-chips style="display:flex;align-items:center;gap:8px;block-size:2rem;background:var(--numen-titlebar);color:var(--numen-ink);font-family:var(--numen-font-sans)">
+        <StatsIndicator :stats="EMBEDDING" phase="ready" locale="en-US" />
+        <StatsIndicator :stats="DONE" phase="ready" locale="en-US" />
+        <StatsIndicator :stats="null" phase="loading" locale="en-US" />
+        <StatsIndicator :stats="null" phase="unavailable" locale="en-US" />
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(getBox)
+    await expect(boxes).toHaveLength(4)
+    for (const box of boxes) await expect(box).toStrictEqual(boxes[0])
+  },
+}
+
+/** With no motion in the theme the chip stays still and does not pulse. */
 export const IndexingWithoutMotion: Story = {
   decorators: [
     (story) => ({
@@ -181,12 +202,8 @@ export const IndexingWithoutMotion: Story = {
     }),
   ],
   play: async ({ canvasElement }) => {
-    const icon = getIcon(canvasElement)
-    await expect(icon).toBeVisible()
-    await expect(getComputedStyle(icon).animationDuration).toBe('0s')
-    await expect(getComputedStyle(icon).opacity).toBe('1')
-    await expect(getComputedStyle(icon).color).not.toBe(
-      getComputedStyle(canvasElement.querySelector('.index-stats__label') as HTMLElement).color,
-    )
+    const trigger = getTrigger(canvasElement)
+    await expect(trigger).toBeVisible()
+    await expect(getComputedStyle(trigger).animationDuration).toBe('0s')
   },
 }

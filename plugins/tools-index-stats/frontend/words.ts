@@ -23,8 +23,6 @@ export const WORDS = {
   media: 'Media transcripts',
   other: 'Other files',
   model: 'Model',
-  recipe: 'Recipe',
-  recipeHint: 'What defines a vector: provider, model, size, pooling and storage',
   dimensions: 'Vector size',
   profile: 'Performance profile',
   profileHint: 'How much of the machine background work may use',

@@ -12,7 +12,6 @@ const STATS: Stats = {
   sources: 84,
   kinds: [],
   model: 'bge-m3',
-  recipe: 'r',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
@@ -61,7 +60,7 @@ describe('the index stats frontend', () => {
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(get).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('.index-stats__label').text()).toMatch(/^⬡ 12.480$/)
+    expect(wrapper.find('.index-stats__trigger').text()).toMatch(/^⬡12.480$/)
   })
 
   it('draws the new count when the next ask returns one', async () => {

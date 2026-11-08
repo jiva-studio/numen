@@ -54,6 +54,7 @@ describe('the slot entries of the window', () => {
         slot: 'titleBar.commands',
         command: 'app:settings.open',
         group: 'settings',
+        when: 'window.isVaultOpen',
       },
     ])
   })

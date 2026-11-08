@@ -10,7 +10,6 @@ const STATS: Stats = {
   sources: 2,
   kinds: [],
   model: 'bge-m3',
-  recipe: 'r',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,

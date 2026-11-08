@@ -20,14 +20,18 @@ export const getFitKey = (prefix: string, entry: SlotItem): string => `${prefix}
 const ENTRY = '[data-title-bar-entry]'
 const MORE = '[data-title-bar-more]'
 
-export function useBarFit(start: Readonly<Ref<HTMLElement | null>>, rows: () => readonly BarRow[]) {
+export function useBarFit(
+  start: Readonly<Ref<HTMLElement | null>>,
+  rows: () => readonly BarRow[],
+  getReserved: () => number,
+) {
   const { viewport } = useViewport(start)
   const widths = shallowRef<ReadonlyMap<string, number>>(new Map())
   const moreWidth = shallowRef(0)
   let observer: ResizeObserver | undefined
 
   const room = computed(() =>
-    viewport.value.width > 0 ? viewport.value.width - TITLE_MIN_WIDTH : null,
+    viewport.value.width > 0 ? viewport.value.width - getReserved() - TITLE_MIN_WIDTH : null,
   )
 
   const fit = computed(() => {
