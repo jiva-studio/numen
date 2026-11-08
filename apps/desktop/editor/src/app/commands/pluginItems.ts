@@ -14,13 +14,22 @@ import { toRunTarget } from './runTarget'
 
 type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
 
+/** The items a command offered over one target, kept with the key of that target. */
+interface ListedItems {
+  readonly over: string
+  readonly items: readonly CommandItem[]
+}
+
+const getTargetKey = (target: CommandTarget): string =>
+  `${target.path}\u0000${target.file}\u0000${target.isFolder ?? false}`
+
 interface PluginItemsDeps {
   readonly pluginHost: ItemHost
   readonly getTarget: () => CommandTarget
 }
 
 function createPluginItems(deps: PluginItemsDeps) {
-  const itemLists = shallowRef<ReadonlyMap<string, readonly CommandItem[]>>(new Map())
+  const itemLists = shallowRef<ReadonlyMap<string, ListedItems>>(new Map())
   const requests = new Set<string>()
   let generation = 0
 
@@ -28,22 +37,32 @@ function createPluginItems(deps: PluginItemsDeps) {
   const keep = (
     requestGeneration: number,
     command: string,
+    over: string,
     items: readonly CommandItem[],
   ): void => {
     if (requestGeneration === generation)
-      itemLists.value = new Map(itemLists.value).set(command, items)
+      itemLists.value = new Map(itemLists.value).set(command, { over, items })
   }
 
-  /** Asks the plugin for the items of the command over the target of the palette, once. */
+  /** The items stored for the command over the target of the palette now, not those stored over another. */
+  const readItems = (command: string): readonly CommandItem[] | undefined => {
+    const stored = itemLists.value.get(command)
+    return stored?.over === getTargetKey(deps.getTarget()) ? stored.items : undefined
+  }
+
+  /** Asks the plugin for the items of the command over the target of the palette, once for each target. */
   const ask = (command: string): void => {
-    if (requests.has(command) || !deps.pluginHost) return
-    requests.add(command)
-    const requestGeneration = generation
+    if (!deps.pluginHost) return
     const target = deps.getTarget()
-    const request = deps.pluginHost.listCommandItems(command, toRunTarget(target))
+    const over = getTargetKey(target)
+    const request = `${command}\u0000${over}`
+    if (requests.has(request)) return
+    requests.add(request)
+    const requestGeneration = generation
+    const pending = deps.pluginHost.listCommandItems(command, toRunTarget(target))
     runInBackground(
-      request.then((items) => keep(requestGeneration, command, items)),
-      () => keep(requestGeneration, command, []),
+      pending.then((items) => keep(requestGeneration, command, over, items)),
+      () => keep(requestGeneration, command, over, []),
     )
   }
 
@@ -51,7 +70,7 @@ function createPluginItems(deps: PluginItemsDeps) {
   const getGroups = (command: string, typed: string): readonly StepGroup[] | undefined => {
     if (!deps.pluginHost?.hasCommandItems(command)) return undefined
     ask(command)
-    const list = itemLists.value.get(command)
+    const list = readItems(command)
     const query = typed.trim().toLowerCase()
     const items = list
       ? list
@@ -65,14 +84,14 @@ function createPluginItems(deps: PluginItemsDeps) {
   const isEmpty = (command: string): boolean => {
     if (!deps.pluginHost?.hasCommandItems(command)) return false
     ask(command)
-    return itemLists.value.get(command)?.length === 0
+    return readItems(command)?.length === 0
   }
 
   /** The items of the command read over the target of the palette; undefined while they are read. */
   const getRead = (command: string): readonly CommandItem[] | undefined => {
     if (!deps.pluginHost?.hasCommandItems(command)) return undefined
     ask(command)
-    return itemLists.value.get(command)
+    return readItems(command)
   }
 
   /** Forgets the items asked for, so the next pick list asks again. */

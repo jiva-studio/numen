@@ -119,6 +119,31 @@ describe('the commands with items in the palette', () => {
     ])
   })
 
+  it('are read again over the target that comes to the front while the palette is open', async () => {
+    const front = ref({ ...TARGET, path: 'assets', file: 'assets', isFolder: true })
+    const listCommandItems = vi.fn(async (_id: string, target: { path: string }) =>
+      target.path.endsWith('.pdf') ? [{ id: 'pdf', title: 'Extract text layer' }] : [],
+    )
+    const lists = createItemLists(
+      { hasCommandItems: (id: string) => id === 'app:file.createText', listCommandItems },
+      { paletteLists: WINDOW_LISTS, getTarget: () => front.value, runs: RUNS },
+    )
+    const isOpen = ref(true)
+    lists.resetWhenClosed(isOpen)
+    const command = [createCommand('app:file.createText')]
+    lists.removeEmptyCommands(command)
+    await settle()
+    expect(lists.removeEmptyCommands(command)).toHaveLength(0)
+
+    front.value = { ...TARGET, path: 'assets/scan.pdf', file: 'assets/scan.pdf' }
+    lists.removeEmptyCommands(command)
+    await settle()
+
+    expect(lists.removeEmptyCommands(command).map((one) => one.id)).toStrictEqual([
+      'app:file.createText',
+    ])
+  })
+
   it('are all listed while the palette is closed, and no item is read', () => {
     const { removeEmptyCommands, isOpen, listCommandItems } = setUp({ 'version.delete': [] })
     isOpen.value = false
