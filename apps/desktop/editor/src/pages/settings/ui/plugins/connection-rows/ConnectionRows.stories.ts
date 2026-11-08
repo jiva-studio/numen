@@ -148,6 +148,12 @@ const readWritten = (canvasElement: HTMLElement): unknown => {
   return JSON.parse(text)
 }
 
+const getAnnouncement = (canvasElement: HTMLElement): HTMLElement => {
+  const found = canvasElement.querySelector<HTMLElement>('[aria-live]')
+  if (!found) throw new Error('no live region is drawn')
+  return found
+}
+
 const readModels = (canvasElement: HTMLElement): string[] =>
   within(canvasElement)
     .getAllByRole('button', { name: 'Model' })
@@ -208,17 +214,17 @@ export const DimmedConnection: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
     const menu = within(document.body)
-    const items = menu.getAllByRole('menuitem')
+    const items = menu.getAllByRole('menuitemradio')
     await expect(items.map((one) => one.textContent)).toStrictEqual([
       expect.stringContaining('Work'),
       expect.stringContaining('Local server'),
       expect.stringContaining('Embeddings only'),
       expect.stringContaining('Retired'),
     ])
-    const embeddings = menu.getByRole('menuitem', { name: /Embeddings only/ })
-    await expect(embeddings).toHaveAttribute('aria-disabled', 'true')
+    const embeddings = menu.getByRole('menuitemradio', { name: /Embeddings only/ })
+    await expect(embeddings).toBeDisabled()
     await expect(embeddings).toHaveTextContent('This type cannot complete')
-    await expect(menu.getByRole('menuitem', { name: /Retired/ })).toHaveTextContent(
+    await expect(menu.getByRole('menuitemradio', { name: /Retired/ })).toHaveTextContent(
       'Type unavailable',
     )
     await userEvent.keyboard('{Escape}')
@@ -242,7 +248,7 @@ export const ChoosingAConnectionFillsTheModel: Story = {
     await expect(readWritten(canvasElement)).toStrictEqual([])
 
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
-    await userEvent.click(within(document.body).getByRole('menuitem', { name: /^Work/ }))
+    await userEvent.click(within(document.body).getByRole('menuitemradio', { name: /^Work/ }))
 
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
@@ -317,10 +323,10 @@ export const RowMovedByTheKeyboard: Story = {
     await userEvent.keyboard(' ')
     await expect(first).toHaveAttribute('aria-pressed', 'true')
     await userEvent.keyboard('{ArrowDown}')
-    await expect(canvas.getByRole('status')).toHaveTextContent('Moved to position 2 of 3')
+    await expect(getAnnouncement(canvasElement)).toHaveTextContent('Moved to position 2 of 3')
     await userEvent.keyboard(' ')
 
-    await expect(canvas.getByRole('status')).toHaveTextContent('Dropped at position 2 of 3')
+    await expect(getAnnouncement(canvasElement)).toHaveTextContent('Dropped at position 2 of 3')
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
         row(LOCAL.id, 'qwen2.5:14b'),
@@ -342,7 +348,7 @@ export const MoveCancelledByEscape: Story = {
     await userEvent.keyboard('{ArrowDown}')
     await userEvent.keyboard('{Escape}')
 
-    await expect(canvas.getByRole('status')).toHaveTextContent('Move cancelled.')
+    await expect(getAnnouncement(canvasElement)).toHaveTextContent('Move cancelled.')
     await expect(readWritten(canvasElement)).toStrictEqual(SEVERAL)
   },
 }
