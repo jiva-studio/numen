@@ -583,7 +583,7 @@ type Secret struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Group         string                 `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
-	Allowed       []*SecretPermission    `protobuf:"bytes,4,rep,name=allowed,proto3" json:"allowed,omitempty"`
+	Allowed       []*DeclarationKey      `protobuf:"bytes,4,rep,name=allowed,proto3" json:"allowed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -639,7 +639,7 @@ func (x *Secret) GetGroup() string {
 	return ""
 }
 
-func (x *Secret) GetAllowed() []*SecretPermission {
+func (x *Secret) GetAllowed() []*DeclarationKey {
 	if x != nil {
 		return x.Allowed
 	}
@@ -780,8 +780,8 @@ func (x *SecretMenu) GetSecretIds() []string {
 	return nil
 }
 
-// SecretPermission is one declaration of a plugin that may read a secret.
-type SecretPermission struct {
+// DeclarationKey identifies one secret declaration of a plugin.
+type DeclarationKey struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -791,20 +791,20 @@ type SecretPermission struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SecretPermission) Reset() {
-	*x = SecretPermission{}
+func (x *DeclarationKey) Reset() {
+	*x = DeclarationKey{}
 	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SecretPermission) String() string {
+func (x *DeclarationKey) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SecretPermission) ProtoMessage() {}
+func (*DeclarationKey) ProtoMessage() {}
 
-func (x *SecretPermission) ProtoReflect() protoreflect.Message {
+func (x *DeclarationKey) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -816,26 +816,26 @@ func (x *SecretPermission) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SecretPermission.ProtoReflect.Descriptor instead.
-func (*SecretPermission) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeclarationKey.ProtoReflect.Descriptor instead.
+func (*DeclarationKey) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *SecretPermission) GetPluginId() string {
+func (x *DeclarationKey) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
 	}
 	return ""
 }
 
-func (x *SecretPermission) GetName() string {
+func (x *DeclarationKey) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *SecretPermission) GetGroup() string {
+func (x *DeclarationKey) GetGroup() string {
 	if x != nil {
 		return x.Group
 	}
@@ -2218,12 +2218,12 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\achanged\x18\x01 \x03(\v2\x11.numen.v1.SettingR\achanged\"E\n" +
 	"\x14WriteSettingsRequest\x12-\n" +
 	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"\x17\n" +
-	"\x15WriteSettingsResponse\"~\n" +
+	"\x15WriteSettingsResponse\"|\n" +
 	"\x06Secret\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
-	"\x05group\x18\x03 \x01(\tR\x05group\x124\n" +
-	"\aallowed\x18\x04 \x03(\v2\x1a.numen.v1.SecretPermissionR\aallowedJ\x04\b\x05\x10\x06\"l\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group\x122\n" +
+	"\aallowed\x18\x04 \x03(\v2\x18.numen.v1.DeclarationKeyR\aallowedJ\x04\b\x05\x10\x06\"l\n" +
 	"\rSecretSection\x12\x14\n" +
 	"\x05group\x18\x01 \x01(\tR\x05group\x12\x19\n" +
 	"\bis_asked\x18\x02 \x01(\bR\aisAsked\x12*\n" +
@@ -2234,8 +2234,8 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05group\x18\x03 \x01(\tR\x05group\x12\x1d\n" +
 	"\n" +
-	"secret_ids\x18\x04 \x03(\tR\tsecretIds\"Y\n" +
-	"\x10SecretPermission\x12\x1b\n" +
+	"secret_ids\x18\x04 \x03(\tR\tsecretIds\"W\n" +
+	"\x0eDeclarationKey\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05group\x18\x03 \x01(\tR\x05group\"Z\n" +
@@ -2358,7 +2358,7 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*Secret)(nil),                    // 9: numen.v1.Secret
 	(*SecretSection)(nil),             // 10: numen.v1.SecretSection
 	(*SecretMenu)(nil),                // 11: numen.v1.SecretMenu
-	(*SecretPermission)(nil),          // 12: numen.v1.SecretPermission
+	(*DeclarationKey)(nil),            // 12: numen.v1.DeclarationKey
 	(*CreateSecretRequest)(nil),       // 13: numen.v1.CreateSecretRequest
 	(*CreateSecretResponse)(nil),      // 14: numen.v1.CreateSecretResponse
 	(*RenameSecretRequest)(nil),       // 15: numen.v1.RenameSecretRequest
@@ -2403,7 +2403,7 @@ var file_numen_v1_settings_proto_depIdxs = []int32{
 	44, // 7: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
 	4,  // 8: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
 	4,  // 9: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	12, // 10: numen.v1.Secret.allowed:type_name -> numen.v1.SecretPermission
+	12, // 10: numen.v1.Secret.allowed:type_name -> numen.v1.DeclarationKey
 	9,  // 11: numen.v1.SecretSection.secrets:type_name -> numen.v1.Secret
 	25, // 12: numen.v1.ListSecretStatesResponse.states:type_name -> numen.v1.SecretState
 	1,  // 13: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest

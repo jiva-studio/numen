@@ -1368,7 +1368,7 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	declared   []manifest.Secret
+	declared   []manifest.SecretDeclaration
 	requested  []string
 	store      pluginport.KeyStore
 	source     pluginport.SecretSource
@@ -1404,12 +1404,12 @@ func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) 
 	}, true, nil
 }
 
-func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.Secret {
+func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.SecretDeclaration {
 	p, ok := h.plugins[pluginID]
 	if !ok {
 		return nil
 	}
-	var active []manifest.Secret
+	var active []manifest.SecretDeclaration
 	for _, declaration := range p.Manifest.Secrets {
 		if p.Manifest.IsSecretActive(declaration, values) {
 			active = append(active, declaration)

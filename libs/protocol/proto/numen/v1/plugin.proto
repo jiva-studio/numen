@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/manifest.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.
@@ -127,18 +129,6 @@ message PluginSettingCondition {
   repeated string is = 2;
 }
 
-// SecretRequest is the declaration of a secret, such as an API key, by a plugin.
-message SecretRequest {
-  // What the plugin reads the key under.
-  string name = 1;
-  string title = 2;
-  string description = 3;
-  // The condition under which the secret is shown and handed to the plugin.
-  PluginSettingCondition when = 4;
-  // The group the person finds the secrets for this declaration in.
-  string group = 5;
-}
-
 // PluginInfo describes a discovered plugin and its declarative settings.
 message PluginInfo {
   string id = 1;
@@ -151,7 +141,7 @@ message PluginInfo {
   // The permissions the manifest declares.
   repeated string permissions = 8;
   // The secrets the manifest declares.
-  repeated SecretRequest secrets = 9;
+  repeated SecretDeclaration secrets = 9;
   // Set while the last start of the plugin failed, until a start succeeds.
   PluginFailure failure = 10;
   // Whether the plugin declares a frontend bundle a window loads.

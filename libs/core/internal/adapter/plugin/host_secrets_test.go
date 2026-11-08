@@ -200,7 +200,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	})
 	host.plugins[secretPluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
-		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
+		Secrets: []pluginport.SecretDeclaration{{Name: "apiKey", Title: "API key"}},
 		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
@@ -233,7 +233,7 @@ func allowOne(pluginID string) pluginport.SecretSource {
 	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
 		return []pluginport.Secret{{
 			ID: secretID, Name: "Work", Group: "openrouter",
-			Allowed: []pluginport.SecretPermission{{Plugin: pluginID, Name: declared}},
+			Allowed: []pluginport.DeclarationKey{{Plugin: pluginID, Name: declared}},
 		}}, nil
 	}}
 }
@@ -271,9 +271,7 @@ func TestTheValueReachesThePluginOnlyInTheEntryOfItsDeclaration(t *testing.T) {
 	}
 }
 
-// A declaration nothing is allowed to is delivered as an entry with no values, without any read of
-// the key store.
-func TestADeclarationWithNothingAllowedIsDeliveredEmptyAndTheStoreIsNotRead(t *testing.T) {
+func TestEmptyDeclarationSkipsKeyStoreRead(t *testing.T) {
 	host, probe := newSecretHost(t, untouchable{t})
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
@@ -359,10 +357,7 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 
 var errLockedKeychain = errors.New("the keychain is locked")
 
-// A key store that fails to read an allowed secret is an error naming it, the plugin is still
-// configured with everything else, and the entry of the declaration is sent with no value, so the
-// plugin drops the secrets it may no longer hold.
-func TestAKeyStoreThatCannotBeReadFailsLoudlyAndTheDeclarationIsSentEmpty(t *testing.T) {
+func TestUnreadableKeyStoreFailsAndSendsEmptyDeclaration(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
@@ -519,15 +514,15 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	host.plugins["md.numen.other"] = manifest.Discovered{Manifest: pluginport.PluginManifest{
 		ID: "md.numen.other",
-		Secrets: []pluginport.PluginSecret{
+		Secrets: []pluginport.SecretDeclaration{
 			{Name: "token", Title: "Token", Group: "mistral"},
 		},
 	}}
-	want := []pluginport.SecretPermission{
+	want := []pluginport.DeclarationKey{
 		{Plugin: secretPluginID, Name: declared},
 		{Plugin: "md.numen.other", Name: "token", Group: "mistral"},
 	}
-	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []pluginport.SecretPermission{want[1], want[0]}) {
+	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []pluginport.DeclarationKey{want[1], want[0]}) {
 		t.Errorf("declarations = %v, want %v", got, want)
 	}
 }
@@ -536,8 +531,8 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 // a problem, which may have hidden an installed plugin.
 func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	var pruned [][]pluginport.SecretPermission
-	host.SetSecretSource(pluginport.SecretSource{Prune: func(declared []pluginport.SecretPermission) error {
+	var pruned [][]pluginport.DeclarationKey
+	host.SetSecretSource(pluginport.SecretSource{Prune: func(declared []pluginport.DeclarationKey) error {
 		pruned = append(pruned, declared)
 		return nil
 	}})

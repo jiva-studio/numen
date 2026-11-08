@@ -4,7 +4,7 @@
  * a secret in its menu allows or denies the declaration, and the button opens the page of secrets.
  */
 import { computed } from 'vue'
-import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
+import type { PluginInfo, SecretDeclaration, Secret } from '@/entities/settings'
 import { getDeclaration } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
 import { SecretField } from '../secret-field'
@@ -13,7 +13,7 @@ import { SecretField } from '../secret-field'
 const props = defineProps<{
   state: SettingsTabState
   plugin: PluginInfo
-  secrets: readonly PluginSecret[]
+  secrets: readonly SecretDeclaration[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -21,7 +21,7 @@ const installation = computed(() => props.state.installation)
 const sections = computed(() => installation.value.secretSections?.value ?? [])
 const menus = computed(() => installation.value.secretMenus?.value ?? [])
 /* -------------------------------- Handlers -------------------------------- */
-function onToggle(secret: PluginSecret, chosen: Secret, isAllowed: boolean): void {
+function onToggle(secret: SecretDeclaration, chosen: Secret, isAllowed: boolean): void {
   const { pluginId, name, group } = getDeclaration(props.plugin, secret)
   if (isAllowed) installation.value.allowPluginSecret(chosen.id, pluginId, name, group)
   else installation.value.denyPluginSecret(chosen.id, pluginId, name, group)

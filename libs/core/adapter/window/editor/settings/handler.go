@@ -249,11 +249,18 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-func newWireSecrets(target []setting.PluginSecret) []*v1.SecretRequest {
-	secrets := make([]*v1.SecretRequest, 0, len(target))
+func newWireManifestCondition(target *setting.PluginSettingCondition) *v1.ManifestCondition {
+	if target == nil {
+		return nil
+	}
+	return &v1.ManifestCondition{Setting: target.Setting, Is: target.Is}
+}
+
+func newWireSecrets(target []setting.SecretDeclaration) []*v1.SecretDeclaration {
+	secrets := make([]*v1.SecretDeclaration, 0, len(target))
 	for _, one := range target {
-		secrets = append(secrets, &v1.SecretRequest{
-			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireCondition(one.When), Group: one.Group,
+		secrets = append(secrets, &v1.SecretDeclaration{
+			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireManifestCondition(one.When), Group: one.Group,
 		})
 	}
 	return secrets
@@ -296,9 +303,7 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	return out
 }
 
-// WatchSettings reports each setting whose value changed until the client disconnects. The first
-// response holds no change, so the client knows it is listening. An empty response is a keepalive;
-// its send fails once the client disconnects.
+// WatchSettings streams setting changes until the client disconnects.
 func (h *Handler) WatchSettings(
 	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
 ) error {
@@ -331,7 +336,4 @@ func (h *Handler) WatchSettings(
 	}
 }
 
-// keepalive is how often a stream with no change sends an empty response. The send fails once the
-// window is gone, and the subscription ends; a window that leaves is otherwise noticed only by
-// the next change.
 const keepalive = 30 * time.Second

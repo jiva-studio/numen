@@ -17,7 +17,6 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// pluginWords is what every plugin of these tests says besides the values.
 const pluginWords = "rejected the key"
 
 // syncBuffer is a buffer the logger may write to from any goroutine.
@@ -103,7 +102,7 @@ func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 		items["secret/"+id] = value
 		secrets = append(secrets, pluginport.Secret{
 			ID: id, Name: fmt.Sprintf("Name %d", i), Group: "openrouter",
-			Allowed: []pluginport.SecretPermission{{Plugin: secretPluginID, Name: declared}},
+			Allowed: []pluginport.DeclarationKey{{Plugin: secretPluginID, Name: declared}},
 		})
 	}
 	host, probe := newSecretHost(t, newKeys(items))
@@ -111,10 +110,7 @@ func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 	return host, probe
 }
 
-// The error of a failed Configure holds the id of the plugin and the status code of the call and
-// nothing the plugin said, whatever the plugin put in its text. Neither the report to the error
-// handler, the failure passed on nor a log line holds it.
-func TestTheErrorOfAFailedConfigureContainsNoTextOfThePlugin(t *testing.T) {
+func TestConfigureErrorExcludesPluginText(t *testing.T) {
 	for _, c := range getErrorTextCases() {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)
@@ -143,8 +139,7 @@ func TestTheErrorOfAFailedConfigureContainsNoTextOfThePlugin(t *testing.T) {
 	}
 }
 
-// The error the activation reports when the Configure of the activation fails holds the same.
-func TestTheReportOfAFailedActivationConfigureContainsNoTextOfThePlugin(t *testing.T) {
+func TestActivationConfigureReportExcludesPluginText(t *testing.T) {
 	for _, c := range getErrorTextCases() {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)

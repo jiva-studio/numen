@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-func getAlphaPermission() pluginport.SecretPermission {
-	return pluginport.SecretPermission{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
+func getAlphaPermission() pluginport.DeclarationKey {
+	return pluginport.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
 }
 
 func readFile(t *testing.T, path string) string {
@@ -27,12 +27,12 @@ func readFile(t *testing.T, path string) string {
 	return string(raw)
 }
 
-func TestChangeSecretsWritesTheSectionAndKeepsTheRestOfTheFileByteForByte(t *testing.T) {
+func TestChangeSecretsPreservesOtherSections(t *testing.T) {
 	const before = "{\n  \"app\":   {\"appearance\": {\"mode\": \"dark\"}},\n  \"md.numen.alpha\": {\"model\": \"small\"}\n}\n"
 	path := write(t, before)
 
 	err := settings.NewFiles().ChangeSecrets(path, func(list []pluginport.Secret) ([]pluginport.Secret, error) {
-		return append(list, pluginport.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "openrouter", Allowed: []pluginport.SecretPermission{getAlphaPermission()}}), nil
+		return append(list, pluginport.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "openrouter", Allowed: []pluginport.DeclarationKey{getAlphaPermission()}}), nil
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func TestChangeSecretsWritesTheSectionAndKeepsTheRestOfTheFileByteForByte(t *tes
 	}
 }
 
-func TestChangeSecretsWritesNothingWhenTheChangeFailsOrChangesNothing(t *testing.T) {
+func TestChangeSecretsSkipsWriteOnFailureOrUnchangedList(t *testing.T) {
 	path := write(t, `{"secrets":[{"id":"s0a1b2c3d","name":"Work","group":"g","allowed":[]}]}`)
 	before := readFile(t, path)
 	errRefused := errors.New("refused")
@@ -73,7 +73,7 @@ func TestChangeSecretsWritesNothingWhenTheChangeFailsOrChangesNothing(t *testing
 	}
 }
 
-func TestChangeSecretsCreatesTheFileAndRefusesOneThatIsNotJSON(t *testing.T) {
+func TestChangeSecretsCreatesFileAndRejectsInvalidJSON(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "numen.json")
 	add := func(list []pluginport.Secret) ([]pluginport.Secret, error) {
 		return append(list, pluginport.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "g"}), nil
@@ -120,7 +120,7 @@ func TestChangeSecretsFromManyCallersLosesNoChange(t *testing.T) {
 	}
 }
 
-func TestInvalidSecretsAndUndeclaredPermissionsAreLeftOutOfForceWithANotice(t *testing.T) {
+func TestDropInvalidSecretsFiltersEntriesAndRecordsNotices(t *testing.T) {
 	path := write(t, `{"secrets":[
 		{"id":"s0a1b2c3d","name":"Work","group":"openrouter","allowed":[
 			{"plugin":"md.numen.alpha","name":"apiKey","group":"openrouter"},
@@ -137,7 +137,7 @@ func TestInvalidSecretsAndUndeclaredPermissionsAreLeftOutOfForceWithANotice(t *t
 		t.Fatal(err)
 	}
 
-	cfg.DropInvalidSecrets(func(one pluginport.SecretPermission) bool { return one == getAlphaPermission() })
+	cfg.DropInvalidSecrets(func(one pluginport.DeclarationKey) bool { return one == getAlphaPermission() })
 
 	var ids []string
 	for _, one := range cfg.Secrets {
@@ -157,7 +157,7 @@ func TestInvalidSecretsAndUndeclaredPermissionsAreLeftOutOfForceWithANotice(t *t
 	}
 }
 
-func TestTheSecretsSectionIsPartOfTheSettingsJSONAndContainsNoValue(t *testing.T) {
+func TestWriteJSONIncludesSecretsSectionWithoutValues(t *testing.T) {
 	cfg, err := openAt(write(t, `{`+validSecretsSection+`}`))
 	if err != nil {
 		t.Fatal(err)

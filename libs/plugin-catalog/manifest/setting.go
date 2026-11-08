@@ -52,9 +52,8 @@ type Condition struct {
 	Is      []string
 }
 
-// Secret is one secret, such as an API key, that a plugin requests the
-// host to store.
-type Secret struct {
+// SecretDeclaration is a secret declared by a plugin in its manifest.
+type SecretDeclaration struct {
 	Name        string
 	Title       string
 	Description string
@@ -184,7 +183,7 @@ func (m Manifest) IsSettingShown(s Setting, resolved map[string]any) bool {
 }
 
 // IsSecretActive reports whether the secret is handed to the plugin under the values in force.
-func (m Manifest) IsSecretActive(secret Secret, values map[string]any) bool {
+func (m Manifest) IsSecretActive(secret SecretDeclaration, values map[string]any) bool {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return m.isActive(secret.When, values, 0)
 }
