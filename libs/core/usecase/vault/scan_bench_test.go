@@ -2,6 +2,7 @@ package vault_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -213,13 +214,13 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 	<-scanning
 }
 
-func touchAll(root string) error {
+func touchAll(root string) (err error) {
 	pos := testsupport.GetMachine().Now()
 	scope, err := os.OpenRoot(root)
 	if err != nil {
 		return err
 	}
-	defer scope.Close()
+	defer func() { err = errors.Join(err, scope.Close()) }()
 	return fs.WalkDir(scope.FS(), ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err

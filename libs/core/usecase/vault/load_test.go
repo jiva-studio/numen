@@ -2,6 +2,7 @@ package vault_test
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -148,13 +149,13 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		all[len(all)-1].Round(time.Millisecond))
 }
 
-func touchEverything(root string) error {
+func touchEverything(root string) (err error) {
 	pos := testsupport.GetMachine().Now()
 	scope, err := os.OpenRoot(root)
 	if err != nil {
 		return err
 	}
-	defer scope.Close()
+	defer func() { err = errors.Join(err, scope.Close()) }()
 	return fs.WalkDir(scope.FS(), ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
