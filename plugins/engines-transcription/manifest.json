@@ -27,7 +27,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
+        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true && !target.versions.exists(v, v.kind == 'transcript' && v.isLive)"
       }
     ]
   },

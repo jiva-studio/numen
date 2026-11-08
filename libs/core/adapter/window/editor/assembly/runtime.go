@@ -83,6 +83,7 @@ type Runtime[H, V any] struct {
 	OpenFileMenuFn           func() *textversion.FileMenu
 	OpenPluginFileFn         func() *file.OpenPluginFile
 	OpenTriggersFn           func() *trigger.Triggers
+	WatchPluginChangesFn     func() (<-chan struct{}, func())
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -197,6 +198,16 @@ func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
 	}
 	return e.OpenTriggersFn()
 }
+
+// WatchPluginChanges reports each time the host applied settings or forgot the failure of a plugin,
+// and never where the installation runs no plugins.
+func (e Runtime[H, V]) WatchPluginChanges() (<-chan struct{}, func()) {
+	if e.WatchPluginChangesFn == nil {
+		return nil, func() {}
+	}
+	return e.WatchPluginChangesFn()
+}
+
 func (e Runtime[H, V]) GetMediaType() *file.GetMediaType { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)

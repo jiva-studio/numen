@@ -1,20 +1,18 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 )
 
 func (c Config) openTriggers() *trigger.Triggers {
-	if c.PluginHost == nil || c.SafeMode {
+	if c.PluginHost == nil || c.SafeMode || c.TextVersions == nil {
 		return nil
 	}
 	return trigger.NewTriggers(
 		commandbridge.Open(c.PluginHost), c.VaultReaders(), c.PluginHost,
-		derivedfile.TriggerRecords{Options: c.vaultOptions(), Folder: coreFolder},
-		c.getWhenConfig(),
+		c.TextVersions, c.getWhenConfig(),
 	)
 }
 

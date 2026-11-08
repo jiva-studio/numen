@@ -100,14 +100,14 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 
 	var running sync.WaitGroup
 
-	wakeTriggers := make(chan struct{}, 1)
+	triggerPasses := newTriggerPasses()
 	checkTexts := func(paths []string) {
 		if err := made.ReportTextFilesChanged(ctx, v, paths); err != nil {
 			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
 		}
 	}
 	read, run, refresh, unwatched := made.StartVault(
-		ctx, v, rebuild, newChangeReporter(state, worker, wakeTriggers, checkTexts), newErrorReporter(state))
+		ctx, v, rebuild, newChangeReporter(state, worker, triggerPasses, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
@@ -128,7 +128,9 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 		running.Add(1)
 		go func() {
 			defer running.Done()
-			runTriggers(ctx, triggers, v, wakeTriggers, made.OpenWatchSettings(), func(err error) {
+			changes, stop := made.WatchPluginChanges()
+			defer stop()
+			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
 				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
 			})
 		}()
@@ -148,12 +150,16 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 }
 
 func newChangeReporter(
-	state *State, worker *indexing.Worker, triggers chan<- struct{}, checkTexts func(paths []string),
+	state *State, worker *indexing.Worker, triggers *triggerPasses, checkTexts func(paths []string),
 ) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
-		signal(triggers)
 		// A client shows every file in the vault, so an asset is reported as a note is.
 		changePaths := slices.Concat(paths, assets)
+		if reload {
+			triggers.requestAll()
+		} else {
+			triggers.requestPaths(changePaths)
+		}
 		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
 		checkTexts(changePaths)
 		worker.ClearSkips(changePaths)

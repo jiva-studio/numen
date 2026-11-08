@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -316,6 +317,31 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 
 // fileExtension ends the name of a version file the core writes.
 const fileExtension = ".jsonl"
+
+// ListTargetVersions lists the versions of the file at the path as the when variable target.versions
+// holds them, with the live one marked. The file is read for its content hash only where it has
+// versions.
+func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error) {
+	versions, err := u.getVersions(ctx, v, path)
+	if err != nil || len(versions) == 0 {
+		return []pluginport.TargetVersion{}, err
+	}
+	contentHash, err := u.GetContentHash(ctx, v, path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	live, hasLive, err := u.findLive(ctx, v, path, versions, contentHash)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]pluginport.TargetVersion, 0, len(versions))
+	for _, one := range versions {
+		out = append(out, pluginport.TargetVersion{
+			Kind: string(one.Kind), PluginID: one.PluginID, IsLive: hasLive && one.GetID() == live.GetID(),
+		})
+	}
+	return out, nil
+}
 
 // IsTextSource reports whether the index keeps the text of the file: it has text versions.
 func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string) (bool, error) {

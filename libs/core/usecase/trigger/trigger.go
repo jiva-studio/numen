@@ -1,19 +1,16 @@
-// Package trigger runs the triggers the enabled plugins declare: on file.added and file.changed, the
-// plugin's own handler of the trigger's command runs over the file while the trigger's condition and
-// the handler's own condition hold, once for each content of the file.
+// Package trigger runs the triggers the enabled plugins declare: the plugin's own handler of the
+// trigger's command runs over each file where the trigger's condition and the handler's own condition
+// hold. Whether the work is done is read from the data, as target.versions, and nothing is recorded.
 package trigger
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/notes/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -28,41 +25,65 @@ type Plugins interface {
 	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
 }
 
-// Triggers runs the triggers over the files of a vault. One run over a vault is in progress at a time.
+// Versions gives the text versions of a file as target.versions holds them.
+type Versions interface {
+	// ListTargetVersions lists the versions of the file, each with its kind, its plugin and whether it
+	// is live.
+	ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error)
+}
+
+// Triggers runs the triggers over the files of a vault. One pass over a vault runs at a time.
 type Triggers struct {
-	plugins Plugins
-	readers vaultport.VaultReaders
-	types   contenttypeport.ContentTypeTable
-	records pluginport.TriggerRecords
-	config  pluginport.WhenConfig
+	plugins  Plugins
+	readers  vaultport.VaultReaders
+	types    contenttypeport.ContentTypeTable
+	versions Versions
+	config   pluginport.WhenConfig
 
 	mu sync.Mutex
 }
 
 // NewTriggers runs the triggers of the plugins over the files the readers open, the table giving a
-// file its type, recording what ran in records; config gives the settings as when conditions read
-// them.
+// file its type, the versions giving target.versions and config giving the settings.
 func NewTriggers(
 	plugins Plugins, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
-	records pluginport.TriggerRecords, config pluginport.WhenConfig,
+	versions Versions, config pluginport.WhenConfig,
 ) *Triggers {
-	return &Triggers{plugins: plugins, readers: readers, types: types, records: records, config: config}
+	return &Triggers{plugins: plugins, readers: readers, types: types, versions: versions, config: config}
 }
 
-// trigger is one trigger with its condition and the condition of its handler read.
-type trigger struct {
-	entry     pluginport.PluginTriggerEntry
-	condition pluginport.PluginCondition
-	handler   pluginport.PluginCondition
+// ExecuteAll runs every trigger over each file of the vault where its condition and the condition of
+// its handler hold. It returns the failures of the runs, joined; a failed file is tried again in the
+// next pass.
+func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
+	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
+		return reader.WalkFiles(ctx, each)
+	})
 }
 
-// Execute runs every trigger over each file of the vault where its condition and the condition of its
-// handler hold and it has not run over the file's current content. A file the triggers have not seen
-// before is added; a file whose content differs from what a trigger last ran over is changed. A
-// trigger on file.added runs over a file it has never run over, and a trigger on file.changed over a
-// file whose content changed since it last ran, or that it has never run over and that the vault held
-// before this run. A run that fails is not recorded, and is tried again on the next run.
-func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
+// Execute runs every trigger over the files at the paths, as ExecuteAll does over the vault. A path
+// that holds no file is passed over.
+func (u *Triggers) Execute(ctx context.Context, v domain.Vault, paths []string) error {
+	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
+		for _, path := range paths {
+			stat, err := reader.StatFile(ctx, path)
+			if errors.Is(err, vaultport.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				return fmt.Errorf("read %s: %w", path, err)
+			}
+			if err := each(stat); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (u *Triggers) execute(
+	ctx context.Context, v domain.Vault, walk func(vaultport.VaultReader, func(domain.FileStat) error) error,
+) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	triggers := u.readTriggers()
@@ -73,46 +94,25 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 	if err != nil {
 		return err
 	}
-	record, err := u.records.Open(v)
-	if err != nil {
-		return err
-	}
-	state, err := record.Read(ctx)
-	if err != nil {
-		return fmt.Errorf("read the record of the triggers: %w", err)
-	}
-	config := u.config.GetWhenConfig()
-	pass := &pass{triggers: u, reader: reader, list: triggers, config: config, state: newState(state), found: map[string]bool{}}
-	var failures []error
-	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
+	p := &pass{triggers: u, vault: v, list: triggers, config: u.config.GetWhenConfig(), skipped: map[string]bool{}}
+	err = walk(reader, func(stat domain.FileStat) error {
 		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
 			return nil
 		}
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		failures = append(failures, pass.runFile(ctx, stat)...)
+		p.runFile(ctx, stat.Path)
 		return nil
 	})
-	if err != nil {
-		// The runs made before the walk ended are kept, so the next pass does not run them again.
-		return errors.Join(err, pass.writeRecord(context.WithoutCancel(ctx), record))
-	}
-	pass.forgetUnseen()
-	if err := pass.writeRecord(ctx, record); err != nil {
-		return err
-	}
-	return errors.Join(failures...)
+	return errors.Join(append(p.failures, err)...)
 }
 
-func (p *pass) writeRecord(ctx context.Context, record pluginport.TriggerRecord) error {
-	if !p.isChanged {
-		return nil
-	}
-	if err := record.Write(ctx, p.state); err != nil {
-		return fmt.Errorf("write the record of the triggers: %w", err)
-	}
-	return nil
+// trigger is one trigger with its condition and the condition of its handler read.
+type trigger struct {
+	entry     pluginport.PluginTriggerEntry
+	condition pluginport.PluginCondition
+	handler   pluginport.PluginCondition
 }
 
 func (u *Triggers) readTriggers() []trigger {
@@ -139,154 +139,86 @@ func (u *Triggers) readTriggers() []trigger {
 	return out
 }
 
-func newState(state pluginport.TriggerState) pluginport.TriggerState {
-	if state.Files == nil {
-		state.Files = map[string]pluginport.TriggerFile{}
-	}
-	if state.Runs == nil {
-		state.Runs = map[string]string{}
-	}
-	return state
-}
-
-// pass is one run of the triggers over the files of a vault.
+// pass is one run of the triggers over files of a vault. skipped holds the plugins that could not be
+// reached in this pass.
 type pass struct {
-	triggers  *Triggers
-	reader    vaultport.VaultReader
-	list      []trigger
-	config    map[string]any
-	state     pluginport.TriggerState
-	found     map[string]bool
-	isChanged bool
+	triggers *Triggers
+	vault    domain.Vault
+	list     []trigger
+	config   map[string]any
+	skipped  map[string]bool
+	failures []error
 }
 
-// file is one file as a pass reads it: its content is read whole once, and only where a condition
-// reads the note.
+// file is the values of one file as a pass reads them: the note and the versions are read once, and
+// only where a condition depends on them.
 type file struct {
-	stat    domain.FileStat
-	hash    string
-	isNew   bool
-	raw     []byte
-	values  map[string]any
-	readErr error
+	path           string
+	values         pluginport.TargetValues
+	isNoteRead     bool
+	isVersionsRead bool
 }
 
-func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
-	p.found[stat.Path] = true
-	current, err := p.readFile(ctx, stat)
-	if err != nil {
-		return []error{err}
+func (p *pass) runFile(ctx context.Context, path string) {
+	current := &file{
+		path:   path,
+		values: pluginport.NewTargetValues(path, false, p.triggers.types.GetContentType(path)).WithConfig(p.config),
 	}
-	var failures []error
 	for _, one := range p.list {
-		key := getRunKey(one.entry, stat.Path)
-		last, hasRun := p.state.Runs[key]
-		if hasRun && last == current.hash {
+		if p.skipped[one.entry.PluginID] {
 			continue
 		}
-		if !p.isTrue(ctx, current, one.condition) || !p.isTrue(ctx, current, one.handler) {
+		isTrue, err := p.isTrue(ctx, current, one)
+		if err != nil {
+			p.failures = append(p.failures, fmt.Errorf("read %s: %w", path, err))
+			return
+		}
+		if !isTrue {
 			continue
 		}
-		if isDue(one.entry.Trigger.Event, hasRun, current.isNew) {
-			_, err := p.triggers.plugins.RunCommand(ctx, pluginport.PluginCommandCall{
-				PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: stat.Path,
-			})
-			if err != nil {
-				failures = append(failures, fmt.Errorf("%s on %s over %s: %w", one.entry.Trigger.Command, one.entry.Trigger.Event, stat.Path, err))
-				continue
-			}
+		_, err = p.triggers.plugins.RunCommand(ctx, pluginport.PluginCommandCall{
+			PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path,
+		})
+		if err == nil {
+			continue
 		}
-		p.state.Runs[key] = current.hash
-		p.isChanged = true
-	}
-	return failures
-}
-
-func isDue(event string, hasRun, isNew bool) bool {
-	if event == pluginport.EventFileAdded {
-		return !hasRun
-	}
-	return hasRun || !isNew
-}
-
-func (p *pass) readFile(ctx context.Context, stat domain.FileStat) (*file, error) {
-	known, isKnown := p.state.Files[stat.Path]
-	if isKnown && known.Size == stat.Size && known.ModTime.Equal(stat.ModTime) {
-		return &file{stat: stat, hash: known.Hash}, nil
-	}
-	hash, err := p.hashFile(ctx, stat.Path)
-	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", stat.Path, err)
-	}
-	p.state.Files[stat.Path] = pluginport.TriggerFile{Size: stat.Size, ModTime: stat.ModTime, Hash: hash}
-	p.isChanged = true
-	return &file{stat: stat, hash: hash, isNew: !isKnown}, nil
-}
-
-func (p *pass) hashFile(ctx context.Context, path string) (hash string, err error) {
-	content, err := p.reader.Open(ctx, path)
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		err = errors.Join(err, content.Close())
-	}()
-	return domain.HashReader(content)
-}
-
-func (p *pass) isTrue(ctx context.Context, current *file, condition pluginport.PluginCondition) bool {
-	return condition.Evaluate(p.getValues(ctx, current, condition)) == pluginport.ConditionTrue
-}
-
-func (p *pass) getValues(ctx context.Context, current *file, condition pluginport.PluginCondition) map[string]any {
-	if current.values != nil {
-		return current.values
-	}
-	names := condition.ListNames()
-	isReadingNote := slices.ContainsFunc(names, func(name string) bool {
-		return name == "target.noteType" || strings.HasPrefix(name, "target.properties")
-	})
-	var noteType domain.NoteType
-	properties := map[string]any{}
-	if isReadingNote && vaultport.IsNote(current.stat.Path) {
-		if current.raw == nil && current.readErr == nil {
-			current.raw, current.readErr = p.reader.Read(ctx, current.stat.Path)
+		var unavailable *pluginport.UnavailableError
+		if errors.As(err, &unavailable) {
+			p.skipped[one.entry.PluginID] = true
 		}
-		if current.readErr == nil {
-			note := markdown.Parse(current.stat, current.raw)
-			noteType, properties = note.Type, maps.Clone(note.Frontmatter)
-		}
-	}
-	values := pluginport.NewTargetValues(current.stat.Path, false, p.triggers.types.GetContentType(current.stat.Path)).
-		WithNote(noteType, properties).WithConfig(p.config).Get()
-	if isReadingNote {
-		current.values = values
-	}
-	return values
-}
-
-func (p *pass) forgetUnseen() {
-	for path := range p.state.Files {
-		if !p.found[path] {
-			delete(p.state.Files, path)
-			p.isChanged = true
-		}
-	}
-	for key := range p.state.Runs {
-		if !p.found[getRunPath(key)] {
-			delete(p.state.Runs, key)
-			p.isChanged = true
-		}
+		p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, path, err))
 	}
 }
 
-// runKeySeparator joins the parts of the key of a trigger's runs over a file; no part holds it.
-const runKeySeparator = "\x00"
-
-func getRunKey(entry pluginport.PluginTriggerEntry, path string) string {
-	return strings.Join([]string{entry.PluginID, entry.Trigger.Event, entry.Trigger.Command, path}, runKeySeparator)
+func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {
+	result := evaluate(current.values, one)
+	if result == pluginport.ConditionUnknown && current.values.IsNote() && !current.isNoteRead {
+		noteType, properties, err := vaultport.ReadNote(ctx, p.triggers.readers, p.vault, current.path)
+		if err != nil {
+			return false, err
+		}
+		current.values, current.isNoteRead = current.values.WithNote(noteType, properties), true
+		result = evaluate(current.values, one)
+	}
+	if result == pluginport.ConditionUnknown && !current.isVersionsRead {
+		versions, err := p.triggers.versions.ListTargetVersions(ctx, p.vault, current.path)
+		if err != nil {
+			return false, err
+		}
+		current.values, current.isVersionsRead = current.values.WithVersions(versions), true
+		result = evaluate(current.values, one)
+	}
+	return result == pluginport.ConditionTrue, nil
 }
 
-func getRunPath(key string) string {
-	return key[strings.LastIndex(key, runKeySeparator)+1:]
+func evaluate(values pluginport.TargetValues, one trigger) pluginport.PluginConditionResult {
+	got := values.Get()
+	results := []pluginport.PluginConditionResult{one.condition.Evaluate(got), one.handler.Evaluate(got)}
+	switch {
+	case slices.Contains(results, pluginport.ConditionFalse):
+		return pluginport.ConditionFalse
+	case slices.Contains(results, pluginport.ConditionUnknown):
+		return pluginport.ConditionUnknown
+	}
+	return pluginport.ConditionTrue
 }

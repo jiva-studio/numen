@@ -110,6 +110,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		SetTextVersionListenerFn: cfg.setTextVersionListener,
 		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
 		OpenFileMenuFn:           cfg.openFileMenu,
+		WatchPluginChangesFn:     cfg.WatchPluginChanges,
 		OpenTriggersFn: func() *trigger.Triggers {
 			return cfg.openTriggers()
 		},

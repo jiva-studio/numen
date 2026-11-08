@@ -182,6 +182,7 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	})
 	c.PluginHost.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
+		c.getResources().pluginChanges.signal()
 	})
 }
 

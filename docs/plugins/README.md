@@ -462,19 +462,19 @@ A shared command placed in a slot by several plugins shows once. A command with 
 
 ## Triggers
 
-A trigger runs the plugin's own handler of a shared command over a file of the vault on an event: `{ "on", "command", "when"? }` in `contributes.triggers`. The events are declared once, in `libs/protocol/events.json`:
+A trigger runs the plugin's own handler of a shared command over a file of the vault on an event: `{ "event", "command", "when"? }` in `contributes.triggers`. The events are declared once, in `libs/protocol/events.json`:
 
 | Event          | When it happens                                                        |
 | -------------- | ---------------------------------------------------------------------- |
 | `file.added`   | A file is added to the vault, or the core finds it for the first time. |
 | `file.changed` | The content of a file of the vault changes.                            |
 
-The core runs a trigger in the backend of its plugin, with the file as the target, while its `when` holds; the condition reads the target, including `target.noteType` and `target.properties` of a note, and the settings as `config`, built as the window builds it (`config.app.<key>`, `config.<plugin id split at dots>.<key>`). The core records, in the core's folder of the vault's store, which content of which file each trigger ran over, and runs a trigger once for each content. When a plugin is turned on, or a setting makes the `when` of a trigger hold, the core runs the trigger over the files already in the vault. A run that fails is tried again on the next pass. The manifest check rejects a trigger on an event that is not declared, of a command the plugin does not handle, or with a `when` that does not compile, and a plugin with triggers has a `backend`.
+The core runs a trigger in the backend of its plugin, with the file as the target, over each file where its `when` and the `when` of the handler hold. It runs the triggers over every file when a vault opens, when the host has applied a change of the settings (a plugin turned on or off, or a setting changed) and when a plugin recovers, as after a Retry, and over the changed files alone on a file event; both events run in those passes. The condition reads the target, including `target.noteType` and `target.properties` of a note and `target.versions`, and the settings as `config` (`config.app.<key>`, `config.<plugin id split at dots>.<key>`). Nothing is recorded: whether the work is done is read from the data, so a trigger says `!target.versions.exists(v, v.kind == 'recognition' && v.isLive)`. The core reads a note only where the path and the settings leave the condition undecided, and the versions, which read the file for its hash, only where the note leaves it undecided. A file whose run fails is tried again once in each pass; once a plugin cannot be reached, the pass skips its remaining files. The manifest check rejects a trigger on an event that is not declared, of a command the plugin does not handle, or with a `when` that does not compile, and a plugin with triggers has a `backend`.
 
 ```json
 "contributes": {
   "handlers": [{ "command": "app:file.createText", "title": "Extract text layer", "when": "target.contentType == 'application/pdf'" }],
-  "triggers": [{ "event": "file.added", "command": "app:file.createText", "when": "target.contentType == 'application/pdf'" }]
+  "triggers": [{ "event": "file.added", "command": "app:file.createText", "when": "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'page-text' && v.isLive)" }]
 }
 ```
 

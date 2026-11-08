@@ -27,7 +27,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
+        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true && !target.versions.exists(v, v.kind == 'recognition' && v.isLive)"
       }
     ]
   },

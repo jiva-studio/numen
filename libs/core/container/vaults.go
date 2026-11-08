@@ -83,6 +83,7 @@ type Resources struct {
 	settingsFiles  *settings.Files
 	settingEvents  *settingevents.Events
 	hostSubscribed sync.Once
+	pluginChanges  *pluginChanges
 }
 
 // NewResources returns the resources of one container.
@@ -92,6 +93,7 @@ func NewResources() *Resources {
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settings.NewFiles(),
 		settingEvents: settingevents.New(),
+		pluginChanges: &pluginChanges{},
 	}
 }
 
@@ -111,5 +113,5 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, pluginChanges: &pluginChanges{}}
 }
