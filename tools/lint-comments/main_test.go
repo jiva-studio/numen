@@ -66,3 +66,23 @@ func TestCheckSkipsGeneratedFiles(t *testing.T) {
 		t.Fatalf("findings = %+v, want none", findings)
 	}
 }
+
+func TestCheckKeepsExportedFieldCommentsOfTheSettingsPackages(t *testing.T) {
+	src := "package settings\n\ntype Agent struct {\n\t// Use names the program the panel uses.\n\tUse string `json:\"use\"`\n\t// cache is filled on first use.\n\tcache string\n}\n"
+	for _, path := range []string{"libs/core/adapter/settings/agent.go", "libs/core/adapter/settings/hardware/hw.go", "libs/core/usecase/completion/router.go"} {
+		findings, _, err := Check(path, []byte(src))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(findings) != 1 || findings[0].Line != 6 {
+			t.Fatalf("%s: findings = %+v, want only the unexported field on line 6", path, findings)
+		}
+	}
+	findings, _, err := Check("libs/core/usecase/completion/inner/x.go", []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(findings) != 2 {
+		t.Fatalf("subpackage of completion: findings = %+v, want both fields", findings)
+	}
+}

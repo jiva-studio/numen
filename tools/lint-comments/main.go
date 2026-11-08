@@ -3,8 +3,9 @@
 // -fix it removes those comments and rewrites the files.
 //
 // Exported fields of libs/plugin-sdk-go keep their comments: plugin authors read them in the
-// package documentation. Directive lines (//go:, //export, gomutants, Deprecated:)
-// are never reported.
+// package documentation. Exported fields of the settings packages keep theirs too:
+// apps/docs/tools/manual.mjs writes them into the settings reference of the manual.
+// Directive lines (//go:, //export, gomutants, Deprecated:) are never reported.
 package main
 
 import (
@@ -20,6 +21,10 @@ import (
 	"sort"
 	"strings"
 )
+
+// documentedFields are the packages whose exported field comments are read as documentation:
+// the plugin SDK and the packages listed in PACKAGES of apps/docs/tools/manual.mjs.
+var documentedFields = regexp.MustCompile(`(^|/)libs/(plugin-sdk-go/.*|core/adapter/settings/.*|core/usecase/completion/[^/]*)\.go$`)
 
 var directive = regexp.MustCompile(`^//(go:|lint:|export |line |extern |\s*gomutants:|\s*Deprecated:)`)
 
@@ -82,7 +87,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 	if ast.IsGenerated(file) {
 		return nil, src, nil
 	}
-	sdk := strings.Contains("/"+path, "/libs/plugin-sdk-go/") && !strings.HasSuffix(path, "_test.go")
+	documented := documentedFields.MatchString(path) && !strings.HasSuffix(path, "_test.go")
 	var findings []Finding
 	var cuts []span
 	report := func(group *ast.CommentGroup, message string) {
@@ -105,7 +110,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		switch x := n.(type) {
 		case *ast.StructType:
 			for _, field := range x.Fields.List {
-				if sdk && len(field.Names) > 0 && field.Names[0].IsExported() {
+				if documented && len(field.Names) > 0 && field.Names[0].IsExported() {
 					continue
 				}
 				message := "comment on a struct field; the name and type state what the field holds"

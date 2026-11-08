@@ -9,7 +9,8 @@ Rejects comments that repeat what a name and a type already state. The rule is Â
 
 Not reported:
 
-- exported fields of `libs/plugin-sdk-go` and properties of `libs/plugin-sdk-ts` outside tests;
+- exported fields of `libs/plugin-sdk-go` and properties of `libs/plugin-sdk-ts` outside tests, which plugin authors read in the SDK documentation;
+- exported fields of `libs/core/adapter/settings` (with its subpackages) and `libs/core/usecase/completion`, which `apps/docs/tools/manual.mjs` writes into the settings reference;
 - directives: `//go:`, `//export`, `gomutants:`, `Deprecated:`, `eslint`, `@ts-`, `Stryker`, `istanbul`, `prettier`, `@deprecated`;
 - section banners (`/* ---- Handlers ---- */`) and a comment separated from the declaration by a blank line;
 - generated files (`Code generated ... DO NOT EDIT` or `@generated` in the first lines);

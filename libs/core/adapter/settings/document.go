@@ -16,15 +16,20 @@ import (
 // `v` and the owners of settings: `app` holds the settings of the shell, and every other key is the
 // id of a plugin with the settings of that plugin below it.
 type File struct {
-	Version     int
+	// Version is the format version of the file. Nothing reads it yet.
+	Version int
+	// The tags of the sections name their keys under the owner app.
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
 	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
-	Plugins     map[string]map[string]any
-	Notices     []string
+	// Plugins holds the object of each plugin, keyed by plugin id.
+	Plugins map[string]map[string]any
+	// Notices are the warnings that reading the file produced, shown to the
+	// user. They are not written to the file.
+	Notices []string
 }
 
 // appObject is the object of the owner app as the file lays it out.

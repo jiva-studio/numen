@@ -78,7 +78,7 @@ type Limits struct {
 }
 ```
 
-Exported fields of `libs/plugin-sdk-go` and the properties of `libs/plugin-sdk-ts` keep their comments, because plugin authors read them in the SDK documentation.
+Exported fields of `libs/plugin-sdk-go` and the properties of `libs/plugin-sdk-ts` keep their comments, because plugin authors read them in the SDK documentation. Exported fields of `libs/core/adapter/settings` and `libs/core/usecase/completion` keep theirs, because `apps/docs/tools/manual.mjs` writes them into the settings reference of the manual.
 
 `tools/lint-comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
 
