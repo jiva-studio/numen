@@ -16,14 +16,21 @@ const manifest = JSON.parse(
       view?: string
       group?: string
       order?: number
+      when?: string
     }[]
   }
 }
 
 describe('the manifest', () => {
-  it('places creating a note, by the full id of the editor command, in the group new of the title bar', () => {
+  it('places creating a note, by the full id of the editor command, in the group new of the title bar while a vault is open', () => {
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'titleBar.commands', command: 'app:note.create', group: 'new', order: 10 },
+      {
+        slot: 'titleBar.commands',
+        command: 'app:note.create',
+        group: 'new',
+        order: 10,
+        when: 'window.isVaultOpen',
+      },
     ])
   })
 
