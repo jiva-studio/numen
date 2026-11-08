@@ -84,8 +84,9 @@ function onDelete(event: MouseEvent): void {
     <template #actions>
       <Button
         v-if="canMove"
-        variant="ghost"
-        size="icon-small"
+        variant="outline"
+        class="secret-action"
+        size="icon"
         :aria-label="words.secretMoveUp"
         :title="words.secretMoveUp"
         :disabled="isFirst"
@@ -95,8 +96,9 @@ function onDelete(event: MouseEvent): void {
       </Button>
       <Button
         v-if="canMove"
-        variant="ghost"
-        size="icon-small"
+        variant="outline"
+        class="secret-action"
+        size="icon"
         :aria-label="words.secretMoveDown"
         :title="words.secretMoveDown"
         :disabled="isLast"
@@ -105,8 +107,9 @@ function onDelete(event: MouseEvent): void {
         <ArrowDown :size="14" aria-hidden="true" />
       </Button>
       <Button
-        variant="ghost"
-        size="icon-small"
+        variant="outline"
+        class="secret-action"
+        size="icon"
         :aria-label="words.secretDelete"
         :title="words.secretDelete"
         @click="onDelete"

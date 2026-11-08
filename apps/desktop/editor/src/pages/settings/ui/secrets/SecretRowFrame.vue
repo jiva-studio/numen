@@ -31,4 +31,8 @@
   gap: 0.125rem;
   min-inline-size: 1.75rem;
 }
+
+:slotted(.secret-action) {
+  border-radius: var(--numen-radius);
+}
 </style>
