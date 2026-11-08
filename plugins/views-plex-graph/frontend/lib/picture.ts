@@ -80,13 +80,10 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
 }
 
 /**
- * A node is drawn under the token its note holds, and so is each end of an
- * edge. The caller supplies the token of a note.
- *
- * Every line is drawn from one connection of the neighbourhood, whichever notes
- * it joins: the note in focus and a neighbour, or two other notes that are both
- * drawn. An arrowhead is drawn at each end whose record carries a marker, and
- * nowhere else, and the labels of its records are set by how many there are, not by the arrowheads.
+ * A node is drawn under the token its note holds, as is each end of an edge; the caller supplies a note's token.
+ * Every line is drawn from one connection of the neighbourhood, whichever notes it joins.
+ * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
+ * Labels are set by how many records there are, not by the arrowheads.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
@@ -139,12 +136,9 @@ const areConnectionsEqual = (one: Connection, other: Connection): boolean =>
   areSidesEqual(one.secondSide, other.secondSide)
 
 /**
- * Whether two neighbourhoods draw one graph: the note in focus, and every
- * note joined to it in arrival order, and every line between them with the
- * label and the arrowhead of each of its records.
- *
- * A vault that changed elsewhere returns a neighbourhood equal to the one on
- * screen, and a graph equal to the one on screen is left unchanged.
+ * Whether two neighbourhoods draw one graph: the same note in focus, the same joined notes in arrival order,
+ * and the same lines with the label and arrowhead of each record.
+ * A vault that changed elsewhere returns a neighbourhood equal to the one on screen, and an equal graph is left unchanged.
  */
 export function areNeighbourhoodsEqual(
   one: Neighbourhood | null,

@@ -1556,9 +1556,8 @@ func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 }
 
 // TestImports_DroppedFileAppearsInTree covers the drop path: the window passes
-// the dropped file to the vault, the vault stores it, and every window rendering
+// the dropped file to the vault, which stores it, and every window rendering
 // the vault is notified of its location.
-//
 // The watcher does not report image files, so the stream is the only way the
 // tree learns of one.
 func TestImports_DroppedFileAppearsInTree(t *testing.T) {

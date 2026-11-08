@@ -125,12 +125,10 @@ type listed struct {
 	Deps       []string
 }
 
-// The core and the desktop reach a plugin only through the protocol: they are
-// compiled from no plugin and no module of the plugin SDK. The resolved build
-// dependencies are checked, so a plugin imported transitively through another
-// package is detected too, on every platform.
-//
-// Test files are excluded: a test is outside the package it exercises.
+// TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK checks that the core and
+// the desktop are compiled from no plugin and no module of the plugin SDK.
+// The resolved build dependencies are checked, so a plugin imported
+// transitively is detected too, on every platform. Test files are excluded.
 func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	builds := []struct {
 		module    string

@@ -186,12 +186,9 @@ func TestVaultCount_UnansweredVaultHasZeroLearned(t *testing.T) {
 	}
 }
 
-// The time the user waits when the review window opens on an installation with
-// several vaults.
-//
-// The first two benchmarks measure the window's cost: the time to display the
-// vault list, and the time until the last vault count arrives. The third
-// measures counting every vault in one response.
+// The time the user waits when the review window opens on an installation with several vaults.
+// The first two benchmarks measure the time to display the vault list and the time until the
+// last vault count arrives; the third measures counting every vault in one response.
 func BenchmarkWatchCardsDue(b *testing.B) {
 	const vaults, cards, days, perDay = 4, 5000, 60, 100
 

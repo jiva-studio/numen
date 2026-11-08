@@ -15,10 +15,8 @@ import (
 // ErrNotANote is what a path gets when there is a file at it and the vault does
 // not hold that file as a note: an attachment, an export, a folder some tool
 // keeps its state in, whatever the vault's own rules leave alone.
-//
-// It is its own answer and not ErrNotExist. A file that is there and a path
-// with nothing at it are different facts, and a caller acts on them
-// differently.
+// It is not ErrNotExist: a file that is there and a path with nothing at it are
+// different facts, and a caller acts on them differently.
 var ErrNotANote = edit.ErrNotANote
 
 // ErrNotExist is what a path with nothing at it gets.
@@ -34,10 +32,7 @@ var ErrOutside = errors.New("the path is outside the vault")
 
 // IsNoNote reports whether an error means there is no note at the path: nothing
 // exists there, or the file there is one the vault ignores.
-//
-// A caller that needs to act on a note checks this. The two cases are
-// distinguished by the two sentinel errors, for callers that handle them
-// differently.
+// A caller that must tell the two cases apart checks the two sentinel errors.
 func IsNoNote(err error) bool {
 	return edit.IsNoNote(err)
 }

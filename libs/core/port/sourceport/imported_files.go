@@ -15,11 +15,9 @@ type ImportedFile struct {
 }
 
 // ImportedFiles reads what the user supplied to this application from outside
-// every vault.
-//
-// It is the other half of the copy a VaultWriter finishes, and a port for the
-// same reason: what arrives is a path on one machine and a content URI on
-// another, and callers do not depend on which.
+// every vault. It is the other half of the copy a VaultWriter finishes, and a
+// port because what arrives is a path on one machine and a content URI on
+// another.
 type ImportedFiles interface {
 	// GetName is what the machine calls the file at a handle. It reads nothing,
 	GetName(handle string) string

@@ -498,12 +498,8 @@ export const SelectsNothingWhileResizing: Story = {
 
 /**
  * The hit area around a handle captures a press on either side of the line.
- *
- * The splitter accepts a press from a few pixels away, and those pixels overlap
- * the panels. A panel drawn after the handle receives the press unless the hit
- * area is stacked above it, and the panel then treats the press as its own: an
- * editor there starts a selection that extends through its text for the whole
- * drag.
+ * The splitter accepts a press a few pixels away, over the panels. A panel drawn after the handle receives that press
+ * unless the hit area is stacked above it, and an editor there starts a selection extending through its text for the whole drag.
  */
 export const CatchesAPressOnEitherSideOfTheLine: Story = {
   tags: ['!dev'],
@@ -521,12 +517,8 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
 }
 
 /**
- * The splitter has the pointer over the whole reach the handle draws, one
- * cursor throughout, and a press out at the far edge of that reach carries the
- * split with it.
- *
- * Only a browser can answer it: the splitter takes the pointer by where it is,
- * which a made-up event does not say.
+ * The splitter has the pointer over the whole reach the handle draws, one cursor throughout, and a press at the far edge of that reach drags the split.
+ * Only a browser can answer it: the splitter takes the pointer by where it is, which a made-up event does not say.
  */
 export const DragsFromItsWholeReach: Story = {
   tags: ['!dev'],

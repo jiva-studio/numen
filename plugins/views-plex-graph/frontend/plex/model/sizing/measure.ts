@@ -66,13 +66,10 @@ const parsePixels = (value: string): number => {
 }
 
 /**
- * The measurers for the titles a plex draws, taking their type and lengths from the
- * document and rebuilt whenever that type changes. The first measurement is taken before
- * anything is drawn, and a measurement equal to the last changes nothing.
- *
+ * The measurers for the titles a plex draws, taking their type and lengths from the document and rebuilt whenever that type changes.
+ * The first measurement is taken before anything is drawn, and a measurement equal to the last changes nothing.
  * `icon` is the space reserved beside a title for an icon the caller draws there.
- * Undefined where there is no canvas to measure against, and the arrangement then draws
- * every box at its widest.
+ * Undefined where there is no canvas to measure against; the arrangement then draws every box at its widest.
  */
 export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined> {
   const probe = openProbe()

@@ -86,12 +86,9 @@ export const Disabled: Story = {
 
 /**
  * The dark token set, with the pointer moved along the row.
- *
- * A filled button's background moves away from its text color, so hovering
- * never lowers the contrast, and an outlined one's moves toward it. On the dark
- * set a filled button is light and an outlined one is dark, and the one
- * expression has to work in both directions. A text-only button gains a
- * background it did not have.
+ * A filled button is light and an outlined one dark on this set, so the hover expression must move the background
+ * away from the text color for filled and toward it for outlined, in both directions.
+ * A text-only button gains a background.
  */
 export const Dark: Story = {
   globals: DARK,

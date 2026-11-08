@@ -70,12 +70,9 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	}
 }
 
-// The window under a button is the day the card comes back on.
-//
-// A card's day is chosen in one function: the scheduler works out an interval
-// and the preset chooses a day inside the tolerance around it. The button goes
-// through the same one, so a preset evening its load names the day it moved the
-// card to.
+// The window under a button is the day the card is due again. The scheduler works out an
+// interval and the preset chooses a day inside the tolerance around it, in one function that the
+// button goes through too, so a preset evening its load names the day it moved the card to.
 func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
@@ -1294,16 +1291,11 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsDue(t *testing.T) {
 	}
 }
 
-// The session and the curve share one computation.
-//
-// The count a day admits is computed in one place, so the count the curve plots at
-// the value the preset stores is the count the sessions of that day return. That
-// day is the next one the preset admits: a day with none of the load admits no
-// session, so the curve plots the day after it.
-//
-// The day is driven session by session until a session returns no cards. A card
-// that returns later in the day appears in a later session than its first
-// showing, so a single session is a batch of that day and not the whole day.
+// The session and the curve share one computation of the count a day admits, so the count the
+// curve plots at the value the preset stores is the count the sessions of that day return. That
+// day is the next one the preset admits: a day with none of the load admits no session, so the
+// curve plots the day after it. The day is driven session by session until one returns no cards,
+// because a card returning later appears in a later session, so one session is a batch of the day.
 func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 	t.Parallel()
 	// The weekday is read from the vault's own preset, so a light Saturday and a zero
@@ -1593,12 +1585,10 @@ func s0(t *testing.T, s vaulted) session {
 	return session{dueCount: countQueue(sat) - newCards, newCount: newCards}
 }
 
-// The share of the day that goes to the due cards changes the day's content only
-// when the day is one pool.
-//
-// A goal of minutes spends one pool on due and new cards, so the share decides how
-// many of each are returned. A goal of retention applies a separate count to each
-// side, so the order in which the two are drawn cannot change either total.
+// The share of the day that goes to the due cards changes the day's content only when the day
+// is one pool. A goal of minutes spends one pool on due and new cards, so the share decides how
+// many of each are returned. A goal of retention applies a separate count to each side, so the
+// order of drawing cannot change either total.
 func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	t.Parallel()
 	const minutes = "goal: minutes_a_day\nminutes_a_day: 4\n"
@@ -1624,12 +1614,9 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	}
 }
 
-// What a day's budget is spent on determines what a count charges, and does not
-// change the minutes.
-//
-// A review card already answered in the day returns with no count charge where the
-// preset counts cards, and its minutes are charged like every answer. A day that
-// charges a minute four times is wrong.
+// What a day's budget is spent on determines what a count charges, and does not change the
+// minutes. A review card already answered in the day returns with no count charge where the
+// preset counts cards, and its minutes are charged like every answer, once.
 func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	t.Parallel()
 	for _, counts := range []string{"cards", "shows"} {
@@ -1939,12 +1926,10 @@ func TestADeckWithMoreDueConsumesTheLargerShare(t *testing.T) {
 	}
 }
 
-// A deck that cannot use a whole share leaves the remainder to the other decks,
-// and the day still spends its full budget.
-//
-// Twenty minutes pay for sixty new cards. The deck of one card has a share too
-// small to pay for even that card, and the remainder of the shares pays for the
-// cards the other two decks could not afford from their own shares.
+// A deck that cannot use a whole share leaves the remainder to the other decks, and the day
+// still spends its full budget. Twenty minutes pay for sixty new cards; the deck of one card has
+// a share too small to pay for that card, and the remainder pays for the cards the other two
+// decks could not afford from their own shares.
 func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+

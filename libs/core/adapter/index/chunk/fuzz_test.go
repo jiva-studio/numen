@@ -38,11 +38,9 @@ func getTypedSeeds() []string {
 // maxQueryLength is how much of what was typed is put to a database.
 const maxQueryLength = 256
 
-// No typed input becomes FTS5 syntax. For any input, the generated
-// expression is a query FTS5 accepts, and the words it searches for are exactly
-// the words typed.
-//
-// The input is untrusted: it comes from a search box and, through the wire, from
+// FuzzExpression checks that no typed input becomes FTS5 syntax: the expression
+// is always a query FTS5 accepts and searches exactly the words typed.
+// The input is untrusted: it comes from a search box and from the wire.
 // anything that can address the application.
 func FuzzExpression(f *testing.F) {
 	db, err := sql.Open("sqlite", ":memory:")

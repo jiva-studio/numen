@@ -616,12 +616,11 @@ func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	}
 }
 
-// The store's folder is resolved once, and the result holds only while the
-// folder is unchanged. The folder is repointed from a subfolder to its parent,
-// and its identity moves with it as the same file. A link inside the new folder
-// leads back into the old one, so a name through that link resolves to the old
-// area, which is not an area of the store. The store opened before the move
-// rejects that name exactly as a store opened after the move does.
+// TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore checks that the store's
+// folder is resolved once and holds only while the folder is unchanged.
+// The folder is repointed to its parent and a link inside it leads back into
+// the old one; a name through that link resolves outside the store's areas, and
+// a store opened before the move rejects it as a store opened after does.
 func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	target := t.TempDir()
 	old := filepath.Join(target, "old")

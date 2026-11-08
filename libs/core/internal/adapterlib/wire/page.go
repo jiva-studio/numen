@@ -48,9 +48,8 @@ func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
 }
 
 // WritePage writes the document a window opens at, with the current settings
-// already applied. The bytes are generated per request and not cached, so no
-// frame renders with default colors or an unrequested size.
-//
+// applied. The bytes are generated per request and not cached, so no frame
+// renders with default colors or an unrequested size.
 // A build without an interface, and a page without a head, are served as the
 // file server provides them.
 func WritePage(

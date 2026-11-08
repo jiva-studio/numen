@@ -53,37 +53,21 @@ func weekday(number int) time.Weekday {
 	return time.Weekday(((number+int(time.Thursday))%7 + 7) % 7)
 }
 
-// AssignDueDay returns the day a card answered at this instant is due, and
-// counts the card against that day.
-//
-// The day is chosen inside the tolerance the scheduler allows around the
-// interval it computed. Every day of that window has a weight, the share of
-// the load its day of the week carries divided by the number of cards already
-// due on it, and the heaviest day takes the card; the day the scheduler chose
-// wins a tie. A day with zero share has zero weight and takes no card.
-//
-// The weight biases the choice and does not enforce a limit: no day is
-// prevented from carrying more than its share, and a preset with an uneven
-// load disabled keeps the card on the day the scheduler chose.
-//
-// A preset aiming at a date moves no review card. The days beyond the front of
-// a projection carry nothing, so the lightest day of a window is its last, and
-// a card moved there is presented later.
-//
-// This is the only place a day is chosen. A session and its projection both
-// call it.
+// AssignDueDay returns the day a card answered at this instant is due, and counts the card
+// against that day. The day is chosen inside the tolerance around the scheduler's interval; each
+// day weighs its day-of-week share of the load divided by the cards already due on it. The
+// heaviest takes the card, the scheduler's day wins a tie, and a zero share takes none. The
+// weight enforces no limit. A date preset moves no card. This is the only place a day is chosen.
 func (p Preset) AssignDueDay(s *DueByDay, now, due time.Time) time.Time {
 	out := p.computeDueDay(s, now, due)
 	s.Add(out)
 	return out
 }
 
-// GetDueDay returns the day a card answered at this instant would be due,
-// without counting it against any day.
-//
-// The four answer options shown to the user are four candidate answers for one
-// card, and one of them is applied. AssignDueDay chooses the day for the
-// applied answer, and GetDueDay chooses the day each button displays.
+// GetDueDay returns the day a card answered at this instant would be due, without counting it
+// against any day. The four answer buttons are four candidate answers for one card and one is
+// applied: AssignDueDay chooses the day for the applied answer, and GetDueDay the day each
+// button displays.
 func (p Preset) GetDueDay(s *DueByDay, now, due time.Time) time.Time {
 	return p.computeDueDay(s, now, due)
 }

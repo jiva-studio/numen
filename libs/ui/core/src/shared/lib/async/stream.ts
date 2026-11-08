@@ -12,11 +12,8 @@ export const AGAIN = 1000
 
 /**
  * The message reported when a stream ended in a fault.
- *
- * The fault itself belongs to the transport and is not actionable. What is
- * actionable is that the window is behind the vault and is retrying. Every
- * stream ends and resumes the same way, so one message serves them all and
- * this library needs no knowledge of what is being followed.
+ * The transport fault is not actionable; what is, is that the window is behind the vault and retrying.
+ * One message serves every stream, so this library needs no knowledge of what is followed.
  */
 export const LOST = 'lost touch with numen — the window keeps trying'
 

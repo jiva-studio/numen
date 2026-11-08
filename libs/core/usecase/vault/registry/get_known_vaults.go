@@ -20,11 +20,9 @@ type KnownVault struct {
 
 // GetKnownVaults returns every vault in this installation, each with its current
 // state. The current vault comes first and the rest follow in list order.
-//
 // The list records where a vault was last seen and which one was opened last;
-// whether the folder still exists is determined by the machine. Every screen
-// showing vaults checks both, and checking them together keeps one screen from
-// marking a vault that another leaves unmarked.
+// whether the folder still exists is determined by the machine. Checking both
+// together keeps one screen from marking a vault that another leaves unmarked.
 type GetKnownVaults struct {
 	registry vaultport.VaultRegistry
 	folders  check.FolderCheck

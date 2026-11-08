@@ -58,12 +58,9 @@ func NewShowNeighbourhood(
 	return ShowNeighbourhood{linked: linked, notes: notes, reads: reads}
 }
 
-// Execute gathers what the deck is joined to: what it points at first, then
-// what points at it.
-//
-// An error is the vault or the index being out of reach. What is wrong with one
-// note — gone, too long, not a note at all — is an outcome on that note's own
-// entry, and the rest of them are still read.
+// Execute gathers what the deck is joined to: what it points at first, then what points at it.
+// An error is the vault or the index being out of reach. What is wrong with one note (gone, too
+// long, not a note) is an outcome on that note's own entry, and the rest are still read.
 func (u ShowNeighbourhood) Execute(
 	ctx context.Context, v domain.Vault, deck string,
 ) (Neighbourhood, error) {
@@ -213,13 +210,9 @@ func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neigh
 }
 
 // AssignCardIDs gives a card id to every card of a vault that carries none.
-//
-// A card typed manually has no card id until the application writes its file, and
-// a card with no card id cannot have an answer recorded against it. A deck
-// containing one is written, which creates a card id for every card in it.
-//
-// This is the only write flashcards makes into a vault. It is made when a session
-// starts and not when due cards are counted.
+// A card typed manually has no card id until the application writes its file, and a card without
+// one cannot have an answer recorded against it. This is the only write flashcards makes into a
+// vault, and it is made when a session starts, not when due cards are counted.
 type AssignCardIDs struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters

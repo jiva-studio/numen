@@ -81,12 +81,10 @@ func (w Watcher) WatchVault(
 }
 
 // File follows one file and reports each time it changes.
-//
-// The watch is on the folder and not on the file: a file is replaced by being
-// written beside itself and renamed over, so a watch placed on the file itself
-// stops existing at the first write. Everything under that name is one file
-// here — a database and the journals beside it are written together and are one
-// change.
+// The watch is on the folder, because a file is replaced by being written
+// beside itself and renamed over, which ends a watch on the file itself.
+// Everything under that name is one file: a database and its journals are
+// written together and are one change.
 func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error) {
 	pos, err := filepath.Abs(path)
 	if err != nil {

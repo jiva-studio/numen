@@ -278,14 +278,11 @@ func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 	return out
 }
 
-// A day of one minute over a deck of one unbegun card and a deck of five: a
-// card costs twenty seconds, so the shares of the minute — ten seconds and
-// fifty — buy two cards in the larger deck and none in the smaller. The twenty
-// seconds that no deck could spend buy a third card in the larger deck, which
-// still has four cards remaining, and not the one card of the deck whose
-// name sorts first.
-//
-// Budget that no deck can use is offered again, to the deck with the most cards remaining.
+// A day of one minute over a deck of one unbegun card and a deck of five: a card costs twenty
+// seconds, so the shares (ten seconds and fifty) buy two cards in the larger deck and none in
+// the smaller. The twenty seconds no deck could spend buy a third card in the larger deck, not
+// the one card of the deck whose name sorts first. Unusable budget goes to the deck with the most
+// cards remaining.
 func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	t.Parallel()
 	keeps := review.Budget{New: 6, Minutes: 1}

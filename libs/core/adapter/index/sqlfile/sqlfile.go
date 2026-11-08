@@ -19,9 +19,8 @@ type Statements struct {
 
 // Load reads every .sql file in dir. A file that cannot be read is recorded
 // and reported by Get as a statement the database rejects, naming the cause.
-//
-// A file ends in a newline and a statement does not: what follows the semicolon
-// is a second statement to the driver. The text is the file with the whitespace
+// The text is the file with surrounding whitespace removed, because the driver
+// treats what follows a semicolon as a second statement.
 // around it taken off.
 func Load(fsys fs.FS, dir string) Statements {
 	out := Statements{byName: map[string]string{}}

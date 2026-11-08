@@ -35,13 +35,10 @@ const maxValueBytes = 2560
 // not in use for the file, and the path is empty.
 const credentialsProbeTimeout = 2 * time.Second
 
-// Store keeps keys in the system keychain and, where the machine has none, in a file next to the
-// settings file. A store made by NewStore probes the keychain until it is reached. While the
-// keychain is reachable the file is not read, and a key stored in the keychain is removed from the
-// file. The file serves only a machine that has no keychain; a keychain that is there and refuses
-// fails the call with port.ErrNoKeyStore and nothing is written to the file. The zero Store is
-// keychain only: a machine without one fails every call with port.ErrNoKeyStore and no key is
-// written anywhere else.
+// Store keeps keys in the system keychain and, where the machine has none, in a file next to the settings file.
+// A store made by NewStore probes the keychain until it is reached. While it is reachable the file is not read, and a key stored in the keychain is removed from the file.
+// A keychain that is there and refuses fails the call with port.ErrNoKeyStore, and nothing is written to the file.
+// The zero Store is keychain only: a machine without one fails every call with port.ErrNoKeyStore.
 type Store struct {
 	dir     string
 	writer  chan struct{}

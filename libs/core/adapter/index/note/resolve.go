@@ -173,13 +173,10 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ [
 }
 
 // GetBacklinks returns the notes that point at one note.
-//
-// A link is a backlink because it *resolves* here, not because its text looks
-// like this note. Those differ in both directions: a link written as a path is
-// filed under its last segment and so is offered by name as well, and a link
-// written as a bare name may resolve to a nearer note of the same name. So
-// every candidate goes through the same resolution the forward direction uses,
-// and only the ones that land here are kept.
+// A link is a backlink because it resolves here, not because its text looks
+// like this note: a path link is also filed under its last segment, and a bare
+// name may resolve to a nearer note of the same name. Every candidate goes
+// through the forward resolution and only those that land here are kept.
 func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {

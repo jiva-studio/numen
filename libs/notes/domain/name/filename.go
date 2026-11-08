@@ -29,15 +29,11 @@ func Filename(title string) (name string, exact bool, err error) {
 // 255 bytes for one component, and a title is not the place to find that out.
 const maxFilename = 120
 
-// GetReducedFilename returns the filename a title reduces to, rejecting nothing: a
-// title that reduces to no name at all returns empty.
-//
-// A note is shown by its `title`, else by its filename, so a file named after the
-// title needs no `title` key. When the title cannot be a filename, `exact` is false
-// and the caller writes the title into that key instead.
-//
-// Every returned name is one IsNameable accepts, so a link written with it resolves
-// back to the note.
+// GetReducedFilename returns the filename a title reduces to, or empty when the
+// title reduces to no name.
+// When the title cannot be a filename, exact is false and the caller writes the
+// title into the `title` key.
+// Every returned name is one IsNameable accepts.
 func GetReducedFilename(title string) (name string, exact bool) {
 	name = trimEnds(sanitizeRunes(title))
 	if len(name) > maxFilename {

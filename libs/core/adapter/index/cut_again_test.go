@@ -119,14 +119,11 @@ func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	return source
 }
 
-// A chunk is identified by the hash of its text, and cutting a source again is
-// a comparison against that column: a chunk whose hash is on a row of this
-// source keeps that row, a chunk whose hash is on no row is a new chunk, and a
-// row whose hash is in no chunk is a chunk that is gone.
-//
-// A row is claimed once, so text occurring twice in one source is two rows and
-// stays two, and the same text cut at two sizes is a row at each. A kept row
-// keeps the vector bought for it.
+// A chunk is identified by the hash of its text: cutting a source again keeps
+// the row of a hash already on a row, adds a row for a new hash and removes a
+// row whose hash is in no chunk.
+// A row is claimed once, so repeated text is repeated rows, and the same text
+// cut at two sizes is a row at each. A kept row keeps its vector.
 func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 	t.Parallel()
 	outer := t

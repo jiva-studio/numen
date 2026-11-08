@@ -2,10 +2,8 @@ package domain
 
 // Place is a location in the vault: a source, by the path the vault files it
 // under, and the spans of its text that are meant.
-//
-// The first span is the navigation target and the rest are shown where they
-// fall. A note is a place with no spans, and so is a document requested at its
-// beginning.
+// The first span is the navigation target; the rest are shown where they fall.
+// A note is a place with no spans.
 type Place struct {
 	Path   string
 	Ranges []ByteRange

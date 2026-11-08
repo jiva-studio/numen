@@ -186,16 +186,10 @@ func curves(handler *API) flashcards.ProjectCurve {
 	return c
 }
 
-// The curve over a preset's range and the day its decks offer use the same
-// arithmetic.
-//
-// The card count read from the curve at the control position and the card count
-// read from the deck screen are the same day of the same preset, so they are
-// the same number.
-//
-// This holds for a goal of minutes, because there the control changes today. A
-// retention target changes nothing until tomorrow, and its curve is the load
-// over the projected days.
+// The curve over a preset's range and the day its decks offer use the same arithmetic: the
+// card count read from the curve at the control position equals the one from the deck screen.
+// This holds for a goal of minutes, because there the control changes today. A retention target
+// changes nothing until tomorrow, and its curve is the load over the projected days.
 func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 	for _, one := range []struct {
 		what    string

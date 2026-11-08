@@ -23,12 +23,10 @@ func ScheduleBy(s Scheduler) Assignment {
 	return func(CardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
-// History is a vault's answers in the order they were given: no revoked lines,
-// one line per identifier, earliest first.
-//
-// One request queries several things from one history: the schedule of each
-// card, the tally of each day, and what a preset spent. The order is computed
-// once and shared by all of them.
+// History is a vault's answers in the order they were given: no revoked lines, one line per
+// identifier, earliest first. One request queries several things from one history (the schedule
+// of each card, the tally of each day, what a preset spent), so the order is computed once and
+// shared.
 type History []Answer
 
 // OrderAnswers puts a vault's answers in the order they were given.
@@ -51,13 +49,10 @@ func (h History) Replay(d Day, assignment Assignment) map[CardID]Schedule {
 	return out
 }
 
-// RecallTally is how many of the cards that came due in days were recalled,
-// over one day: the answers given to spaced review cards, and how many of those
-// were recalled.
-//
-// A review card still in the learning phase is in neither count. The question
-// for such a card is whether it is recalled after ten minutes, which gives no
-// information about long-term memory.
+// RecallTally is how many of the cards that came due in days were recalled, over one day: the
+// answers given to spaced review cards, and how many of those were recalled. A review card still
+// in the learning phase is in neither count, since its question (recalled after ten minutes)
+// says nothing about long-term memory.
 type RecallTally struct {
 	Tested   int
 	Recalled int

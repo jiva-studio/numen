@@ -37,16 +37,11 @@ type RenameResult struct {
 	NotWritten []UnwrittenDeck
 }
 
-// RenameField renames one of a card model's fields.
-//
-// A field's name is written where the card model declares it, in the braces of
-// every template that places it, and as a heading in every card of every deck that
-// the card model generates. The rename applies to all of them. The card model is
-// written once, with both names in the one write; then every deck of the vault is
-// read, the heading is rewritten in the cards of that card model, and the content
-// under it is not changed.
-//
-// Every field a card model declares is renamed this way, the first included.
+// RenameField renames one of a card model's fields, the first included.
+// The name is written in the card model's declaration, in the braces of every template that
+// places it, and as a heading in every card of every deck the card model generates. The card
+// model is written once with both names; then every deck of the vault is read and the heading is
+// rewritten in those cards. The content under a heading is not changed.
 type RenameField struct {
 	maxDecks int
 

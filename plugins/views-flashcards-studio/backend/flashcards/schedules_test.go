@@ -337,13 +337,11 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	}
 }
 
-// The due day of a card is the same whether the card is answered or projected.
-// A preset that evens out the load moves the card to the day with no load, and
-// the session and the plot move it to the same day.
-//
-// The card is answered twice at the hour the day opens. A card answered zero
-// time after its last answer is one the projection treats as certainly recalled,
-// so both paths compute the same interval and the test compares the day chosen.
+// The due day of a card is the same whether the card is answered or projected. A preset that
+// evens out the load moves the card to the day with no load, in the session and in the plot.
+// The card is answered twice at the hour the day opens: a card answered zero time after its last
+// answer is treated by the projection as certainly recalled, so both paths compute the same
+// interval.
 func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
@@ -810,13 +808,11 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 	}
 }
 
-// The requests a window makes of a vault, over fifty thousand review cards
-// answered a hundred and fifty times a day for six months.
-//
-// The first three are warm: the caches are filled before the clock starts, which
-// is the cost of a repeated query within a session. The last is the history
-// screen on a build without a counting cache, which is the cost of the first
-// query after a launch.
+// The requests a window makes of a vault, over fifty thousand review cards answered a hundred
+// and fifty times a day for six months.
+// The first three are warm, with the caches filled before the clock starts: the cost of a
+// repeated query within a session. The last is the history screen on a build without a counting
+// cache: the cost of the first query after a launch.
 func BenchmarkVault(b *testing.B) {
 	l := load(b, 50000, 180, 150)
 	ctx := b.Context()

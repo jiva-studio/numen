@@ -79,13 +79,10 @@ func Recall(away time.Duration, stability float64) float64 {
 	return math.Pow(1+factor*days/stability, recallDecay)
 }
 
-// RecallChance is the recall probability a projection assumes: how likely a
-// review card at this schedule is to be recalled when presented at this instant.
-//
-// A projection follows one card along the central path of what it may do,
-// weighing the recalled ending against the forgotten ending by this
-// probability. Every figure a run produces depends on the assumption it was
-// given, so a caller naming a figure states which.
+// RecallChance is the recall probability a projection assumes: how likely a review card at this
+// schedule is to be recalled when presented at this instant. A projection weighs the recalled
+// ending against the forgotten ending by it, and every figure a run produces depends on the
+// assumption it was given, so a caller naming a figure states which.
 type RecallChance func(Schedule, time.Time) float64
 
 // GetModelledRecall is the recall probability from the scheduler's own

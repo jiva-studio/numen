@@ -45,13 +45,10 @@ type cachedSchedule struct {
 }
 
 // Schedules is where the answers have left every review card of one vault.
-//
-// What is kept between launches is a cache: a file listing the runs it was
-// worked out from. A cache filled from every run the vault now holds, by this
-// scheduler, is used currently. Anything else is the whole history read
-// again — a run arriving from another machine holds answers older than ones
-// already counted, and a schedule depends on the order of the answers, so
-// nothing can be added to what the later ones produced.
+// What is kept between launches is a cache listing the runs it was worked out from. A cache
+// filled from every run the vault now holds, by this scheduler, is used as it is. Anything else
+// is the whole history read again: a run arriving from another machine can hold answers older
+// than ones counted, and a schedule depends on the order of the answers.
 type Schedules struct {
 	logs        ports.LogStores
 	Cache       ports.ScheduleStore

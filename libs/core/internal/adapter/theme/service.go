@@ -150,12 +150,10 @@ func (s *Service) WriteAppearance(
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-// WatchThemes notifies the client when the themes folder changes or when the
-// set of plugin themes changes, until the client disconnects.
-//
-// The set of plugin themes changes with the plugins that are enabled. It is
-// compared on each keepalive tick, and the names added or removed are reported
-// in place of the empty keepalive.
+// WatchThemes notifies the client when the themes folder or the set of plugin
+// themes changes, until the client disconnects.
+// The plugin set is compared on each keepalive tick, and the names added or
+// removed are reported in place of the empty keepalive.
 func (s *Service) WatchThemes(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchThemesRequest],

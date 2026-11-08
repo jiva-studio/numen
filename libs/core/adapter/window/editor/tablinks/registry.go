@@ -255,11 +255,10 @@ func (r *Registry) GetSnapshot() Snapshot {
 }
 
 // WriteTabs stores the report of a window and its linkable tabs. A report from
-// a window with no live watch is ignored. A tab of the window missing from the
-// list is unlinked unless it has a pending detach. A tab of another live window
-// moves to this window only by Accept. Outside a pending move or detach into
-// this window, it is claimed: it moves to this window when the last watch of
-// its owner closes.
+// a window with no live watch is ignored. A tab missing from the list is
+// unlinked unless it has a pending detach. A tab of another live window moves
+// to this window only by Accept; outside a pending move or detach into this
+// window it is claimed and moves when the last watch of its owner closes.
 func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

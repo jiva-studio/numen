@@ -1,5 +1,5 @@
-// Command lint-comments reports comments on Go struct fields and doc comments on unexported
-// functions. It reads the paths of the files to check from standard input, one per line; with
+// Command lint-comments reports comments on Go struct fields, doc comments on unexported
+// functions and doc comments of more than five lines on exported symbols. It reads the paths of the files to check from standard input, one per line; with
 // -fix it removes those comments and rewrites the files.
 //
 // The exported fields of a type whose doc comment carries a marker line keep their comments:
@@ -12,6 +12,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -26,13 +27,17 @@ import (
 
 var directive = regexp.MustCompile(`^//(go:|lint:|numen:|export |line |extern |\s*gomutants:|\s*Deprecated:)`)
 
+// maxDocLines is the most lines of text a doc comment on an exported symbol may have.
+const maxDocLines = 5
+
 var documentedMarker = regexp.MustCompile(`^//numen:(settings|api)$`)
 
-// Finding is one comment the rule rejects.
+// Finding is one comment the rule rejects. Long marks a doc comment over maxDocLines, which -fix does not remove.
 type Finding struct {
 	Path    string
 	Line    int
 	Message string
+	Long    bool
 }
 
 func main() {
@@ -55,10 +60,17 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", path, err)
 			os.Exit(2)
 		}
-		if *fix && len(found) > 0 {
-			if err := os.WriteFile(path, fixed, 0o644); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", path, err)
-				os.Exit(2)
+		if *fix {
+			if !bytes.Equal(fixed, src) {
+				if err := os.WriteFile(path, fixed, 0o644); err != nil {
+					fmt.Fprintf(os.Stderr, "%s: %v\n", path, err)
+					os.Exit(2)
+				}
+			}
+			for _, f := range found {
+				if f.Long {
+					findings = append(findings, f)
+				}
 			}
 			continue
 		}
@@ -77,6 +89,7 @@ func main() {
 }
 
 // Check returns the rejected comments of one Go source and the source with them removed.
+// A doc comment over maxDocLines lines on an exported symbol is a finding that is not removed.
 // A generated file returns no findings; a file that does not parse returns the parse error.
 func Check(path string, src []byte) ([]Finding, []byte, error) {
 	fset := token.NewFileSet()
@@ -90,6 +103,11 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 	documented := getDocumentedStructs(file)
 	var findings []Finding
 	var cuts []span
+	reportLength := func(group *ast.CommentGroup, name string) {
+		if n := countDocLines(group); n > maxDocLines {
+			findings = append(findings, Finding{Path: path, Line: fset.Position(group.Pos()).Line, Message: fmt.Sprintf("doc comment on exported %s has %d lines; A doc comment is at most five lines: say the fact the name and type cannot show", name, n), Long: true})
+		}
+	}
 	report := func(group *ast.CommentGroup, message string) {
 		if group == nil {
 			return
@@ -101,7 +119,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 			}
 			cuts = append(cuts, span{fset.Position(c.Pos()).Offset, fset.Position(c.End()).Offset})
 			if !reported {
-				findings = append(findings, Finding{path, fset.Position(c.Pos()).Line, message})
+				findings = append(findings, Finding{Path: path, Line: fset.Position(c.Pos()).Line, Message: message})
 				reported = true
 			}
 		}
@@ -127,14 +145,66 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		}
 		return true
 	})
+	for _, decl := range file.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			if d.Name.IsExported() {
+				reportLength(d.Doc, d.Name.Name)
+			}
+		case *ast.GenDecl:
+			for _, spec := range d.Specs {
+				if name, doc := getSpecDoc(d, spec); name != "" {
+					reportLength(doc, name)
+				}
+			}
+		}
+	}
 	if len(cuts) == 0 {
-		return nil, src, nil
+		return findings, src, nil
 	}
 	fixed, err := format.Source(removeSpans(src, cuts))
 	if err != nil {
 		return nil, src, fmt.Errorf("format after removing comments: %w", err)
 	}
 	return findings, fixed, nil
+}
+
+func getSpecDoc(decl *ast.GenDecl, spec ast.Spec) (string, *ast.CommentGroup) {
+	var name string
+	var doc *ast.CommentGroup
+	switch s := spec.(type) {
+	case *ast.TypeSpec:
+		if s.Name.IsExported() {
+			name = s.Name.Name
+		}
+		doc = s.Doc
+	case *ast.ValueSpec:
+		for _, n := range s.Names {
+			if n.IsExported() {
+				name = n.Name
+				break
+			}
+		}
+		doc = s.Doc
+	}
+	if doc == nil && len(decl.Specs) == 1 {
+		doc = decl.Doc
+	}
+	return name, doc
+}
+
+func countDocLines(group *ast.CommentGroup) int {
+	if group == nil {
+		return 0
+	}
+	count := 0
+	for _, c := range group.List {
+		if directive.MatchString(c.Text) {
+			continue
+		}
+		count += strings.Count(c.Text, "\n") + 1
+	}
+	return count
 }
 
 func getDocumentedStructs(file *ast.File) map[*ast.StructType]bool {

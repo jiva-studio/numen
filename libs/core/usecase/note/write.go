@@ -81,14 +81,10 @@ func (u Write) WithIndex(index IndexUpdater) Write {
 }
 
 // Execute writes body to the note at path.
-//
 // FileStat, when set, is the file state the caller expects on disk. A note
 // changed since it was read is left unchanged and port.ErrStale is returned:
-// the user's edits to their own note take precedence over a caller working from
-// an older read.
-//
-// The returned file stat describes the file this write produced, which the
-// caller presents at its next write.
+// the user's edits take precedence over a caller working from an older read.
+// The returned file stat describes the file this write produced.
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (result domain.FileStat, err error) {
@@ -131,18 +127,10 @@ func (u Write) Execute(
 }
 
 // Save writes body to the note at path, creating the note if it does not exist.
-//
-// This is the user saving their own note in the window. The body is written
-// onto the frontmatter the file holds when the write begins, and a note without
-// an identifier keeps none. A note created here has no frontmatter.
-//
-// Baseline is the state the caller last read. Under the write lock the file is
-// compared with it: a note matching the baseline is overwritten, and a note
-// whose prose differs is left unchanged and port.ErrStale is returned. A nil
-// Baseline skips the comparison and the body is written.
-//
-// The returned file stat describes the file the save produced, which the caller
-// presents at its next save.
+// This is the user saving their own note. The body is written onto the
+// frontmatter the file holds when the write begins; a note without an
+// identifier keeps none, and a created note has no frontmatter.
+// Baseline is the state the caller last read: a differing note is left unchanged and port.ErrStale is returned; nil skips the check.
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
 ) (domain.FileStat, error) {

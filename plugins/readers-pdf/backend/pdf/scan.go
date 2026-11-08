@@ -42,17 +42,9 @@ func (s *Scan) Close() error { return s.doc.Close() }
 // GetPageCount is how many pages the document has.
 func (s *Scan) GetPageCount() int { return s.doc.pages }
 
-// GetPageSize returns the width and height at which one page is rendered, in
-// the page's own units. Rendering at a given width derives its resolution from
-// this size, and the document returns it without rendering.
-//
-// The page is rendered rotated by its own rotation, so a page whose text is
-// written a quarter turn from the rendered orientation is as wide as its text
-// is high, and the size reflects that.
-//
-// The page is not loaded to measure it: a window laying out a book requests the
-// size of every page before rendering any of them, and loading hundreds of
-// pages takes seconds.
+// GetPageSize returns the width and height at which one page is rendered, in the page's own units. Rendering at a given width derives its resolution from this size.
+// The page is rendered rotated by its own rotation, so a page whose text is a quarter turn from the rendered orientation is as wide as its text is high.
+// The page is not loaded to measure it: a window laying out a book requests the size of every page before rendering any, and loading hundreds of pages takes seconds.
 func (s *Scan) GetPageSize(index int) (width, height float64, err error) {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INTEGER_DECREMENT,INVERT_LOGICAL,CONDITIONALS_BOUNDARY,BRANCH_IF reason="out-of-range page index is rejected before calling pdfium"
 	if index < 0 || index >= s.doc.pages {

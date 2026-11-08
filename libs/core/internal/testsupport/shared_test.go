@@ -13,14 +13,11 @@ import (
 // else stays in the file of the service that answers with it.
 const shared = "numen/v1/shared.proto"
 
-// A service is a file, and the shared file is not a service file: it declares
-// no service and imports nothing, so it is the base of the import graph and
-// every other file depends on it. Both properties underlie the rule for adding
-// a type to it: a file that declared a service or imported another file would
-// own a subject and would be a service file.
-//
-// buf's STANDARD rule set and its other categories do not check either
-// property, so the assertion is here, next to the other walk of the schema.
+// TestTheSharedFileDeclaresNoServiceAndImportsNothing checks that the shared
+// file declares no service and imports nothing, so it is the base of the import
+// graph; a file that did either would own a subject and be a service file.
+// buf's STANDARD rule set does not check either property, so the assertion is
+// here, next to the other walk of the schema.
 func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 	var target protoreflect.FileDescriptor
 	files := 0

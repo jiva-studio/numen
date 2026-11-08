@@ -23,12 +23,9 @@ const DefaultDebounceDelay = 50 * time.Millisecond
 
 // Ignoring excludes paths from the vault: the default rules and the rules the
 // vault configures. A path matched by either set is excluded.
-//
-// The two sets are separate matchers because vault configuration is untrusted
-// data. In a single list the last pattern wins, so a vault pattern `!.*` would
-// expose every dotfile folder to reads and writes. Keeping the sets separate
-// means a vault can only narrow what is read and written, and a negation in
-// vault rules affects only the vault's own exclusions.
+// The sets are separate matchers because vault configuration is untrusted: in
+// one list the last pattern wins, so a vault pattern `!.*` would expose every
+// dotfile folder. Separate sets let a vault only narrow what is read and written.
 type Ignoring struct {
 	defaults *ignore.GitIgnore
 	vaults   *ignore.GitIgnore

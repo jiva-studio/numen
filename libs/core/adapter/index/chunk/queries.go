@@ -203,12 +203,11 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, quer
 	return out, rows.Err()
 }
 
-// FindNearest is a semantic search: the chunks of one vault nearest a query
-// vector, nearest first, at most `search.Limit` of them.
-//
-// The coarse pass over the bit vectors keeps several times `search.Limit` candidates,
-// and the full-precision vectors order them. A chunk below the similarity floor
-// is not a result, so a vault without matching content returns no results.
+// FindNearest returns the chunks of one vault nearest a query vector, nearest
+// first, at most `search.Limit` of them.
+// The coarse pass over the bit vectors keeps several times `search.Limit`
+// candidates and the full-precision vectors order them.
+// A chunk below the similarity floor is not a result.
 func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, search sourceport.NearestQuery) ([]domain.Passage, error) {
 	if search.Limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", search.Limit)
@@ -583,9 +582,8 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 
 // GetRecognisedSources returns, by path, the sources of one kind whose text a
 // producer created and not read from the file's own bytes.
-//
-// A scan uses it to find sources whose files are gone: the store is a folder on
-// disk that the user may empty, and a source whose files are missing returns no
+// A scan uses it to find sources whose files are gone: the store is a folder
+// the user may empty.
 // search results.
 func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) (_ []SourceText, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)

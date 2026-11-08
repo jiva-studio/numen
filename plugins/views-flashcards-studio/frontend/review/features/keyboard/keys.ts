@@ -103,12 +103,9 @@ const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
 export const getLetter = (index: number): string => LETTERS[index] ?? ''
 
 /**
- * Keys of the deck picker: enter or space picks the whole vault, a letter picks
- * the deck at its index, and escape returns to the vault list.
- *
- * The whole vault is the daily action, so it has the most accessible keys. A
- * deck has a letter because the list is read top to bottom and the letter is
- * the one displayed.
+ * Keys of the deck picker: enter or space picks the whole vault, a letter picks the deck at its
+ * index, and escape returns to the vault list. The whole vault is the daily action, so it has
+ * the most accessible keys.
  */
 export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
   if (hasModifierOrRepeat(press)) return null

@@ -42,11 +42,8 @@ export type WorkspaceNode = Branch | Pane
 
 /**
  * A tree of splits with a stack of tabs at every leaf.
- *
- * `axis` is how the root divides its length, and every level below turns a
- * quarter from the one above: a row holds columns, and those columns hold
- * rows. One arrangement of the screen therefore has one tree, and `normalize`
- * restores that form after every edit.
+ * `axis` is how the root divides its length; every level below turns a quarter from the one above.
+ * One arrangement of the screen therefore has one tree, and `normalize` restores that form after every edit.
  */
 export interface Workspace {
   readonly root: WorkspaceNode

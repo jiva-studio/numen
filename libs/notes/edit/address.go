@@ -22,11 +22,8 @@ var ErrUnaddressable = errors.New("no link can address a note with this name")
 
 // GetAddress returns how a note known by path is written into a link: by its
 // name, or by its path when the name would match another note.
-//
-// A name is resolved as an exact path from the root before it is resolved
-// relative to the linking note, so a note in a subfolder with the same name as
-// a root note is reachable only by writing the path. The vault decides which
-// case applies, so GetAddress queries it.
+// An exact path from the root wins over a path relative to the linking note, so a
+// subfolder note named like a root note is reachable only by its path.
 func GetAddress(ctx context.Context, names NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
 	name := domain.Basename(path)
 	if name == "" {

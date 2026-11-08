@@ -98,12 +98,9 @@ func (a *App) getFloors() (*relevance.Floors, host.Queue) {
 	return a.floors, a.queue
 }
 
-// HandleEvent measures the vault when the host reports that all of its vectors exist. The first event
-// of any kind after the plugin starts checks the vault the host shows as well, so a plugin that starts
-// after the vectors were made still measures.
-//
-// A vault that is measured, or whose floor a person set, is not measured again: an event the host
-// repeats changes nothing.
+// HandleEvent measures the vault when the host reports that all of its vectors exist. The first event of any kind after the plugin starts checks the vault the host shows as well,
+// so a plugin that starts after the vectors were made still measures.
+// A vault that is measured, or whose floor a person set, is not measured again: an event the host repeats changes nothing.
 func (a *App) HandleEvent(ctx context.Context, event string) error {
 	floors, queue := a.getFloors()
 	if floors == nil {
