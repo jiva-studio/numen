@@ -9,6 +9,9 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
+/** A question over the window answered with a confirm or a cancel button. */
+export { ConfirmDialog } from './shared/ui/confirm-dialog'
+
 /** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
 
