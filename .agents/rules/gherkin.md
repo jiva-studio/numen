@@ -29,7 +29,6 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 
 ## 4. Language and data
 
-- The words of the product only: the things and the texts named in [`features/GLOSSARY.md`](../../features/GLOSSARY.md). A message or a label that a person reads is copied exactly. A word the glossary lacks is proposed to the owner first.
 - Plain English at level A1 to A2: short common words, present tense, no idioms, no figurative speech. The same word for the same thing in every feature (note, file, warns, keeps, takes).
 - A step is a short sentence of at most 8 words outside the quoted values. Two steps that do the same thing are one step: the step checker fails on a longer step and on two definitions with the same body.
 - The data is neutral and short, like the data of a real use: a note "Shopping list", the texts "milk", "bread", "eggs". No stories, no invented places, characters or scenery (no lock gates, harbours or dawns), and no sentences that read as prose.
