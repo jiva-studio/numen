@@ -39,8 +39,10 @@ type CreateLinksRequest struct {
 	URLs   []string `json:"urls"`
 }
 
-// CreateLinksResponse lists the notes created, in the order of the addresses; a text that is no web
-// address is skipped.
+// CreateLinksResponse lists the notes of the addresses, in their order: the ones created and the
+// ones that existed. A text that is no web address is skipped; Failed holds the addresses whose
+// note could be neither found nor created.
 type CreateLinksResponse struct {
-	Paths []string `json:"paths"`
+	Paths  []string `json:"paths"`
+	Failed []string `json:"failed"`
 }

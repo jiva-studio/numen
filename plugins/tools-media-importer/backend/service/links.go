@@ -72,16 +72,19 @@ func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (ap
 }
 
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {
-	out := api.CreateLinksResponse{Paths: []string{}}
+	out := api.CreateLinksResponse{Paths: []string{}, Failed: []string{}}
 	for _, raw := range req.URLs {
-		made, err := s.links.Create(ctx, "", req.Folder, raw)
+		made, isFound, err := s.links.FindOrCreate(ctx, "", req.Folder, raw)
 		if errors.Is(err, address.ErrNotAURL) {
 			continue
 		}
 		if err != nil {
-			return api.CreateLinksResponse{}, toAPIError(err)
+			out.Failed = append(out.Failed, raw)
+			continue
 		}
-		s.links.StartFetch(ctx, made)
+		if !isFound {
+			s.links.StartFetch(ctx, made)
+		}
 		out.Paths = append(out.Paths, made.Path)
 	}
 	return out, nil
