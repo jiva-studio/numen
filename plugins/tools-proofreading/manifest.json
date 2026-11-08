@@ -46,7 +46,7 @@
     {
       "name": "apiKey",
       "title": "API key",
-      "description": "API key for the remote chat service",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
       "group": "openrouter",
       "when": {
         "setting": "provider",
@@ -56,7 +56,7 @@
     {
       "name": "apiKey",
       "title": "API key",
-      "description": "API key for the remote chat service",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
       "group": "openai",
       "when": {
         "setting": "provider",
@@ -66,7 +66,7 @@
     {
       "name": "apiKey",
       "title": "API key",
-      "description": "API key for the remote chat service",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
       "when": {
         "setting": "provider",
         "is": ["custom"]

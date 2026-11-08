@@ -15,7 +15,14 @@
     "window:focus",
     "index:read"
   ],
-  "secrets": [{ "name": "apiKey", "title": "API key", "group": "openrouter" }],
+  "secrets": [
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets the Numen Agent talk to the AI service you chose and answer on your behalf.",
+      "group": "openrouter"
+    }
+  ],
   "backend": { "entrypoint": "bin/agents-numen" },
   "services": ["numen.v1.AgentService"],
   "settings": [
