@@ -337,7 +337,6 @@ describe('a document tab closed after the layout landed', () => {
 })
 
 describe('a document the documents service fails to open', () => {
-  /** What the tab of Gone.pdf says once the service has answered with `answer`. */
   const openWithAnswer = async (answer: typeof fetch): Promise<string> => {
     vi.useFakeTimers({ toFake: ['setTimeout'] })
     try {

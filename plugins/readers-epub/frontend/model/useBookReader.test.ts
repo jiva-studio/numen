@@ -587,7 +587,6 @@ describe('what is returned of a book that will not open', () => {
 })
 
 describe('a book the books service fails to read', () => {
-  /** What the tab of Broken.epub says once the service has answered with `answer`. */
   const openWithAnswer = async (answer: typeof fetch): Promise<string> => {
     vi.useFakeTimers({ toFake: ['setTimeout'] })
     try {

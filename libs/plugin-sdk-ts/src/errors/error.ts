@@ -48,11 +48,10 @@ const CARRIES = new Set<Code>([
   Code.Unimplemented,
 ])
 
-/** The name of a ReportedError; both copies of this module match it by name. */
 const REPORTED = 'ReportedError'
 
 /**
- * An error whose message is a sentence written for the person, shown as it is.
+ * An error whose message is shown as it is.
  * Other errors carry backend or platform text and are shown by their code.
  */
 export class ReportedError extends Error {
@@ -62,7 +61,6 @@ export class ReportedError extends Error {
   }
 }
 
-/** Matched by shape: another realm has an Error prototype of its own. */
 const isReportedError = (error: unknown): error is { readonly message: string } =>
   typeof error === 'object' &&
   error !== null &&
