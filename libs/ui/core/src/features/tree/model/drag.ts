@@ -1,10 +1,3 @@
-/**
- * Rows lifted off the tree, where letting go of them would put them, and what
- * follows the pointer while they are on their way.
- *
- * Where the pointer is over is worked out from the drawing: the rows are one
- * height each.
- */
 import { computed, type ComputedRef, type Ref } from 'vue'
 import type { Clock } from '@/shared/lib/time/clock'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -13,7 +6,7 @@ import { dragLabel, type DragLabel } from '../lib/drag'
 import { findHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
-/** Screen measurements of the tree, available only from the rendering. */
+/** Screen measurements of the tree list and row height. */
 export interface TreeMetrics {
   readonly hoverRect: {
     readonly left: number
@@ -25,6 +18,7 @@ export interface TreeMetrics {
   readonly height: number
 }
 
+/** Options for tree row drag state. */
 export interface RowDragOptions {
   readonly getRows: () => readonly Row[]
   readonly getShownRows: () => readonly ShownRow[]
@@ -32,42 +26,44 @@ export interface RowDragOptions {
   readonly getThreshold: () => number
   readonly getClock: () => Clock
   readonly getCountWords: () => (rows: number) => string
-  readonly tell: RowDragTell
+  readonly emit: RowDragEmit
 }
 
-/** The rows lifted, where they were let go, and that they were let go at all. */
-export interface RowDragTell {
+/** Emits tree row drag, move, and drop events. */
+export interface RowDragEmit {
   (event: 'drag', rows: readonly RowId[]): void
   (event: 'move', rows: readonly RowId[], target: RowDropTarget): void
   (event: 'drop'): void
 }
 
+/** Reactive state and handlers for dragging tree rows. */
 export interface RowDragState {
   readonly into: ComputedRef<RowId | null>
   readonly before: ComputedRef<RowId | null>
-  readonly lifted: ComputedRef<ReadonlySet<RowId>>
+  readonly draggedIds: ComputedRef<ReadonlySet<RowId>>
   readonly label: ComputedRef<DragLabel | null>
   readonly hasMoved: ComputedRef<boolean>
   readonly at: Readonly<Ref<RowDropTarget | null>>
-  readonly lift: (rows: readonly RowId[], event: PointerEvent) => void
+  readonly startPress: (rows: readonly RowId[], event: PointerEvent) => void
 }
 
+/** Tracks row drag state and resolves drop targets inside the tree. */
 export function useRowDrag(options: RowDragOptions): RowDragState {
   const {
     dragging,
     at: dropTarget,
     position,
-    lift,
+    startPress,
   } = usePressDrag<readonly RowId[], RowDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
     getDropTargetAt,
     commit: (rows, found) => {
-      if (found) options.tell('move', rows, found)
-      options.tell('drop')
+      if (found) options.emit('move', rows, found)
+      options.emit('drop')
     },
-    begin: (rows) => options.tell('drag', rows),
-    cancel: () => options.tell('drop'),
+    begin: (rows) => options.emit('drag', rows),
+    cancel: () => options.emit('drop'),
   })
 
   const into = computed(() =>
@@ -77,7 +73,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     dropTarget.value && 'before' in dropTarget.value ? dropTarget.value.before : null,
   )
 
-  const lifted = computed(() => new Set(position.value ? dragging.value!.item : []))
+  const draggedIds = computed(() => new Set(position.value ? dragging.value!.item : []))
 
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
@@ -91,12 +87,10 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     })
   })
 
-  /** Where the pointer is, read off the drawing: the rows are one height each. */
   function getDropTargetAt(rows: readonly RowId[], where: Position): RowDropTarget | null {
     const measurements = options.measure()
     if (!measurements) return null
 
-    // A pointer that has left the tree is taking what it holds somewhere else.
     const { hoverRect } = measurements
     const inside =
       where.x >= hoverRect.left &&
@@ -115,5 +109,5 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     return isRefused(options.getRows(), rows, findHolder(shownRows, found)) ? null : found
   }
 
-  return { into, before, lifted, label, hasMoved, at: dropTarget, lift }
+  return { into, before, draggedIds, label, hasMoved, at: dropTarget, startPress }
 }

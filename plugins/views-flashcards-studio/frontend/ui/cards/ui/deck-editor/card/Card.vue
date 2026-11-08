@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * One card of a deck, as a tile: a strip it is dragged by and removed from, and
- * under it the card's values, each in a box that is always editable.
- *
- * Every field of the card model is placed under its own name and holds as many
- * lines as the card writes. Problems with the card are shown under its strip, and
- * problems with one value are shown under that value.
- */
 import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { CardHeader } from '../../card-header'
@@ -16,6 +8,7 @@ import { DECK_WORDS, type CardWords } from '../../../lib/deck'
 import type { PlacedFieldValue, Tile } from '../../../lib/grid'
 import { createSealedMap, type StepDirection } from '../../../lib/order'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     tile: Tile
@@ -26,27 +19,22 @@ const props = withDefaults(
   { wrong: () => [], wrongUnder: () => createSealedMap(), words: () => DECK_WORDS },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'remove'): void
-  /** The card taken up by the pointer, and let go again. */
-  (event: 'lift', press: DragEvent): void
+  (event: 'drag-start', press: DragEvent): void
   (event: 'release'): void
-  /** The card requested to move one place along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
 }>()
 
-/** What this card's boxes are named by, which is this card's alone. */
+/* --------------------------------- State ---------------------------------- */
 const uid = useId()
 
-/**
- * What the card is announced as. A card holds no name of its own: what it is
- * called is the line its first field evaluates to, and the file writes that.
- */
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
-/** The card model name shown on the strip, or the unknown text when the card has none. */
 const cardModelTitle = computed(() => props.tile.cardModel ?? props.words.unknown(null))
 
+/* -------------------------------- Helpers --------------------------------- */
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
 const getProblems = (value: PlacedFieldValue): readonly string[] =>
@@ -65,14 +53,10 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   >
     <CardHeader
       :drag="`${words.drag}: ${called}`"
-      @dragstart="emit('lift', $event)"
+      @dragstart="emit('drag-start', $event)"
       @dragend="emit('release')"
       @step="(direction, press) => emit('step', direction, press)"
     >
-      <!-- A deck holds cards cut by more than one cardModel, so the strip says
-           which cut this one, and where nothing did, that nothing did. A name
-           is exposed by nothing standing on a paragraph, so the text takes a
-           role that carries one. -->
       <p
         class="card__cut text-small text-hushed truncate"
         role="group"
@@ -88,7 +72,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
     </CardHeader>
 
     <div class="card__body flex flex-col">
-      <!-- A card is waiting for a cardModel only where it names one. -->
       <ErrorMessage
         v-if="!tile.isKnown && tile.cardModel !== null"
         class="card__objections"
@@ -123,8 +106,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
 
 <style scoped>
 .card {
-  /* The name of a value, the box it is typed in and its error message share
-     one inline edge. */
   --box-air: 0.5rem;
   --box-pad-inline: var(--numen-box-air);
 
@@ -160,7 +141,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   padding-inline: var(--box-pad-inline);
 }
 
-/* A card with no values displays its empty message centered in the card. */
 .card__silence {
   margin: auto;
   padding-inline: var(--box-pad-inline);

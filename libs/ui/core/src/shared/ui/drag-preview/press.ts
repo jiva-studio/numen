@@ -1,25 +1,13 @@
-/**
- * A press that becomes a drag once the pointer has moved far enough.
- *
- * All event handling is here; the landing position and the meaning of a release are
- * the caller's.
- */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { Clock } from '@/shared/lib/time/clock'
 
-/** What is being carried, and whether the pointer has gone far enough to mean it. */
 interface Drag<Item> {
   readonly item: Item
   readonly hasMoved: boolean
 }
 
-/**
- * What following a press takes.
- *
- * `Item` is what the press picked up and `At` is where letting go would put it;
- * both are returned untouched.
- */
+/** Callbacks and settings for a press-and-drag gesture. */
 export interface Press<Item, At> {
   readonly getThreshold: () => number
   readonly getClock: () => Clock
@@ -29,20 +17,20 @@ export interface Press<Item, At> {
   readonly cancel?: (item: Item) => void
 }
 
-/** What a press answers: what is held, where it would land, and how to start one. */
+/** Reactive state and handlers for a press-and-drag gesture. */
 export interface PressDragState<Item, At> {
   readonly dragging: ShallowRef<Drag<Item> | null>
   readonly at: ShallowRef<At | null>
   readonly position: ShallowRef<Position | null>
-  readonly lift: (item: Item, event: PointerEvent) => void
+  readonly startPress: (item: Item, event: PointerEvent) => void
 }
 
-/** The element that captured the pointer, and the pointer id. */
 interface Capture {
   readonly element: Element
   readonly pointer: number
 }
 
+/** Tracks a pointer press and starts a drag after the pointer moves past the threshold. */
 export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<Item, At> {
   const dragging = shallowRef<Drag<Item> | null>(null)
   const dropTarget = shallowRef<At | null>(null)
@@ -95,22 +83,17 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     detach()
     dropTarget.value = null
     position.value = null
-    // Kept for one more frame: the click that follows the release reads it and is
-    // suppressed.
     press.getClock().schedule(() => {
       dragging.value = null
     })
   }
 
-  // WebKit delivers events of a captured pointer outside the page. Without capture, a
-  // pointerup outside the window can be lost.
   function takeCapture(event: PointerEvent): void {
     const element = event.currentTarget ?? event.target
     if (!(element instanceof Element)) return
     try {
       element.setPointerCapture(event.pointerId)
     } catch {
-      // setPointerCapture throws for an inactive pointer, e.g. one from a synthetic event.
       return
     }
     capture = { element, pointer: event.pointerId }
@@ -123,7 +106,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (element.hasPointerCapture(pointer)) element.releasePointerCapture(pointer)
   }
 
-  const lift = (item: Item, event: PointerEvent): void => {
+  const startPress = (item: Item, event: PointerEvent): void => {
     start = { x: event.clientX, y: event.clientY }
     dragging.value = { item, hasMoved: false }
     takeCapture(event)
@@ -139,5 +122,5 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     dragging.value = null
   })
 
-  return { dragging, at: dropTarget, position, lift }
+  return { dragging, at: dropTarget, position, startPress }
 }

@@ -1,4 +1,3 @@
-/** What one tab reports about itself: its name, its contents, and its close control. */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import WorkspaceTab from './WorkspaceTab.vue'
@@ -16,8 +15,8 @@ const pressOn = (tab: ReturnType<typeof mountTab>, button: number) => {
   return press
 }
 
-describe('what a tab is called', () => {
-  it('is drawn, and carried whole for a name too long to draw', () => {
+describe('tab title', () => {
+  it('renders the title text and sets the title attribute', () => {
     const tab = mountTab({ title: 'A note with a name longer than the strip has room for' })
 
     expect(tab.text()).toContain('A note with a name longer')
@@ -26,17 +25,17 @@ describe('what a tab is called', () => {
     )
   })
 
-  it('is what the close is announced by', () => {
+  it('sets the close button aria-label from the title', () => {
     expect(mountTab().find('button').attributes('aria-label')).toBe('Close Notes')
   })
 })
 
-describe('what a tab carries', () => {
-  it('is nothing until it is given something', () => {
+describe('tab mark', () => {
+  it('does not render a mark element when mark is undefined', () => {
     expect(mountTab().find('.tab__mark').exists()).toBe(false)
   })
 
-  it('is drawn as a dot, and returned in the word it was given', () => {
+  it('renders the default mark dot with aria-label and title', () => {
     const mark = mountTab({ mark: 'unsaved' }).find('.tab__mark')
 
     expect(mark.exists()).toBe(true)
@@ -44,7 +43,7 @@ describe('what a tab carries', () => {
     expect(mark.attributes('title')).toBe('unsaved')
   })
 
-  it('is drawn by the caller where the caller draws one', () => {
+  it('renders the custom mark slot when provided', () => {
     const tab = mountTab({ mark: 'stuck' }, { mark: '<b class="mine">{{ params.mark }}</b>' })
 
     expect(tab.find('.tab__mark').exists()).toBe(false)
@@ -52,56 +51,56 @@ describe('what a tab carries', () => {
   })
 })
 
-describe('what a tab is to a keyboard', () => {
-  it('is a tab in a strip, and says whether it is the one showing', () => {
+describe('keyboard accessibility', () => {
+  it('sets role="tab" and aria-selected', () => {
     const tab = mountTab({ isShowing: true })
 
     expect(tab.attributes('role')).toBe('tab')
     expect(tab.attributes('aria-selected')).toBe('true')
   })
 
-  it('is stopped at only where it is the one showing', () => {
+  it('sets tabindex to 0 only when isShowing is true', () => {
     expect(mountTab({ isShowing: true }).attributes('tabindex')).toBe('0')
     expect(mountTab({ isShowing: false }).attributes('tabindex')).toBe('-1')
   })
 })
 
-describe('picking a tab up', () => {
-  it('is requested for under the primary button', () => {
+describe('pointerdown on a tab', () => {
+  it('emits press on primary button pointerdown', () => {
     const tab = mountTab()
     pressOn(tab, 0)
 
-    expect(tab.emitted('lift')).toHaveLength(1)
+    expect(tab.emitted('press')).toHaveLength(1)
   })
 
-  it('is not requested for under any other button', () => {
+  it('does not emit press on non-primary button pointerdown', () => {
     const tab = mountTab()
     pressOn(tab, 2)
 
-    expect(tab.emitted('lift')).toBeUndefined()
+    expect(tab.emitted('press')).toBeUndefined()
   })
 
-  it('selects no text as it travels', () => {
+  it('prevents default on primary button pointerdown', () => {
     const press = pressOn(mountTab(), 0)
 
     expect(press.defaultPrevented).toBe(true)
   })
 
-  it('takes the keyboard, which is where the strip is walked on from', () => {
+  it('focuses the tab element on primary button pointerdown', () => {
     const tab = mountTab()
     pressOn(tab, 0)
 
     expect(document.activeElement).toBe(tab.element)
   })
 
-  it('leaves the keyboard where it was under any other button', () => {
+  it('does not focus the tab on non-primary button pointerdown', () => {
     const tab = mountTab()
     pressOn(tab, 2)
 
     expect(document.activeElement).not.toBe(tab.element)
   })
 
-  it('leaves the press to the pane under it', () => {
+  it('allows pointerdown to bubble to the parent pane', () => {
     const events: Event[] = []
     const listen = (event: Event) => events.push(event)
     document.addEventListener('pointerdown', listen)
@@ -112,15 +111,15 @@ describe('picking a tab up', () => {
     expect(events).toContain(press)
   })
 
-  it('lets a press of any other button be answered elsewhere', () => {
+  it('does not prevent default on non-primary button pointerdown', () => {
     const press = pressOn(mountTab(), 2)
 
     expect(press.defaultPrevented).toBe(false)
   })
 })
 
-describe('asking for a menu', () => {
-  it('says where, and keeps the native menu away', async () => {
+describe('contextmenu', () => {
+  it('emits menu with pointer coordinates and prevents default', async () => {
     const tab = mountTab()
     const event = new MouseEvent('contextmenu', {
       bubbles: true,
@@ -135,18 +134,18 @@ describe('asking for a menu', () => {
   })
 })
 
-describe('closing', () => {
-  it('is requested for by the close', async () => {
+describe('close button', () => {
+  it('emits close on click', async () => {
     const tab = mountTab()
     await tab.find('button').trigger('click')
 
     expect(tab.emitted('close')).toHaveLength(1)
   })
 
-  it('does not pick the tab up on the way', async () => {
+  it('does not emit press on close button pointerdown', async () => {
     const tab = mountTab()
     await tab.find('button').trigger('pointerdown')
 
-    expect(tab.emitted('lift')).toBeUndefined()
+    expect(tab.emitted('press')).toBeUndefined()
   })
 })

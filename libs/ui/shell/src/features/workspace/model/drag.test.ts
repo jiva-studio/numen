@@ -1,4 +1,3 @@
-/** A tab lifted off its strip, and where letting go of it lands it. */
 import { effectScope, shallowRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useTabDrag, type TabDragState } from './drag'
@@ -80,7 +79,6 @@ function createDrag(
     }),
   )!
 
-  /** A tab pressed at one place and dragged to another, then held there. */
   const dragTo = (tab: string, from: [number, number], to: [number, number]): void => {
     drag.press(tab, pointer('pointerdown', ...from))
     window.dispatchEvent(pointer('pointermove', ...to))
@@ -95,7 +93,6 @@ function createDrag(
   return { drag, workspace, scope, frame, state, main, dragTo, release, cancel }
 }
 
-/** Per viewport side: the last pointermove position (inside the edge band) and the pointerup position (first pixel outside). */
 const OUTSIDE_SIDES: readonly [string, [number, number], [number, number]][] = [
   ['left', [105, 300], [-1, 300]],
   ['right', [1095, 300], [1100, 300]],
@@ -119,8 +116,8 @@ afterEach(() => {
   Reflect.deleteProperty(document, 'elementFromPoint')
 })
 
-describe('a press on a tab', () => {
-  it('is no drag until the pointer has travelled far enough', () => {
+describe('tab press threshold', () => {
+  it('does not start a drag before the pointer moves past the threshold', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [352, 300])
 
@@ -130,7 +127,7 @@ describe('a press on a tab', () => {
     expect(drag.dropTarget.value).toBeNull()
   })
 
-  it('is a drag once the pointer has travelled far enough', () => {
+  it('starts a drag after the pointer moves past the threshold', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [360, 300])
 
@@ -138,7 +135,7 @@ describe('a press on a tab', () => {
     expect(drag.position.value).toStrictEqual({ x: 360, y: 300 })
   })
 
-  it('is no drag when made with another button', () => {
+  it('ignores pointerdown from non-primary buttons', () => {
     const { drag } = start()
     drag.press('plex', pointer('pointerdown', 350, 300, 2))
     window.dispatchEvent(pointer('pointermove', 400, 300))
@@ -147,22 +144,22 @@ describe('a press on a tab', () => {
   })
 })
 
-describe('a tab being dragged', () => {
-  it('is named at the pointer by its title', () => {
+describe('active tab drag', () => {
+  it('uses the tab title for the drag label', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [360, 300])
 
     expect(drag.label.value).toBe('Plex')
   })
 
-  it('is named by its identity where nothing says what it is', () => {
+  it('falls back to the tab id when getTab returns undefined', () => {
     const { drag, dragTo } = start({ getTab: () => undefined })
     dragTo('plex', [350, 300], [360, 300])
 
     expect(drag.label.value).toBe('plex')
   })
 
-  it('shows the area a drop would take, in the coordinates of the frame', () => {
+  it('computes the drop overlay in frame coordinates', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [850, 300])
 
@@ -170,7 +167,7 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 500, y: 0, width: 500, height: 600 })
   })
 
-  it('lands on the side of a pane the pointer is nearest', () => {
+  it('targets the nearest pane side when over a pane border zone', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [620, 300])
 
@@ -178,7 +175,7 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 500, y: 0, width: 250, height: 600 })
   })
 
-  it('lands on the outer edge where the pointer is within reach of it', () => {
+  it('targets the workspace outer edge when inside the edge band', () => {
     const { drag, dragTo } = start()
     dragTo('chat', [650, 60], [105, 300])
 
@@ -186,7 +183,7 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 0, y: 0, width: 500, height: 600 })
   })
 
-  it('lands among the tabs of a strip, at the gap the pointer is nearest', () => {
+  it('targets the nearest tab slot when over a tab strip', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [150, 60], [790, 60])
 
@@ -194,7 +191,7 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 700, y: 0, width: 0, height: 30 })
   })
 
-  it('returns a drop target for every point of the frame inside the viewport', () => {
+  it('returns a drop target at the frame bounds inside the viewport', () => {
     const { drag, dragTo } = start()
 
     for (const [x, y] of [
@@ -209,7 +206,7 @@ describe('a tab being dragged', () => {
     expect(drag.dropTarget.value?.kind).toBe('strip')
   })
 
-  it('lands nowhere outside the frame', () => {
+  it('returns a null drop target outside the frame bounds', () => {
     const { drag, dragTo } = start()
 
     for (const [x, y] of [
@@ -225,14 +222,14 @@ describe('a tab being dragged', () => {
     }
   })
 
-  it('lands nowhere where no frame is drawn', () => {
+  it('returns a null drop target when frame is null', () => {
     const { drag, dragTo } = start({ hasFrame: false })
     dragTo('plex', [350, 300], [850, 300])
 
     expect(drag.dropTarget.value).toBeNull()
   })
 
-  it('lands nowhere over what is no pane', () => {
+  it('returns a null drop target when the element under the pointer is not in a pane', () => {
     const { drag, dragTo, state, frame } = start()
     state.targetElement = () => frame
     dragTo('plex', [350, 300], [850, 300])
@@ -240,7 +237,7 @@ describe('a tab being dragged', () => {
     expect(drag.dropTarget.value).toBeNull()
   })
 
-  it('lands nowhere over a pane that has no identity', () => {
+  it('returns a null drop target when the pane has an empty data-workspace-pane attribute', () => {
     const { drag, dragTo, state, main } = start()
     main.setAttribute('data-workspace-pane', '')
     state.targetElement = () => main
@@ -249,7 +246,7 @@ describe('a tab being dragged', () => {
     expect(drag.dropTarget.value).toBeNull()
   })
 
-  it('lands nowhere where the document has nothing under the pointer', () => {
+  it('returns a null drop target when elementFromPoint returns null', () => {
     const { drag, dragTo, state } = start()
     state.targetElement = () => null
     dragTo('plex', [350, 300], [850, 300])
@@ -259,8 +256,8 @@ describe('a tab being dragged', () => {
   })
 })
 
-describe('letting go of a tab', () => {
-  it('puts it into the pane it is over', () => {
+describe('dropping a tab', () => {
+  it('moves the tab into the target pane when dropped on its center', () => {
     const { workspace, dragTo, release } = start()
     dragTo('plex', [350, 300], [850, 300])
     release(850, 300)
@@ -268,7 +265,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['chat', 'notes', 'plex']])
   })
 
-  it('divides the pane it is over, where it is over a side', () => {
+  it('splits the target pane when dropped on a pane side', () => {
     const { workspace, dragTo, release } = start()
     dragTo('chat', [650, 60], [620, 300])
     release(620, 300)
@@ -276,7 +273,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['chat'], ['notes']])
   })
 
-  it('divides the whole workspace, where it is over an outer edge', () => {
+  it('splits the workspace root when dropped on an outer edge', () => {
     const { workspace, dragTo, release } = start()
     dragTo('chat', [650, 60], [105, 300])
     release(105, 300)
@@ -284,7 +281,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['chat'], ['plex'], ['notes']])
   })
 
-  it('puts it in order among the tabs of its own strip', () => {
+  it('reorders the tab within its own strip', () => {
     const { workspace, dragTo, release } = start()
     dragTo('chat', [650, 60], [790, 60])
     release(790, 60)
@@ -292,7 +289,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
   })
 
-  it('puts it in order among the tabs of another strip, which it joins', () => {
+  it('moves the tab into another strip at the target slot', () => {
     const { workspace, dragTo, release } = start()
     dragTo('plex', [150, 60], [610, 60])
     release(610, 60)
@@ -300,16 +297,15 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
-  it('counts the pane it was pressed in from the pointer, not from the focus', () => {
+  it('resolves the source pane from the pointerdown position', () => {
     const { workspace, dragTo, release } = start()
-    // `chat` is pressed in `aside`, where the focus is `main`.
     dragTo('chat', [650, 60], [790, 60])
     release(790, 60)
 
     expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
   })
 
-  it('counts the pane it was pressed in as the focus where the press is over no pane', () => {
+  it('falls back to the focused pane when pointerdown is not over a pane', () => {
     const { workspace, state, drag, release } = start()
     const origTargetElement = state.targetElement
     state.targetElement = () => null
@@ -321,7 +317,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
-  it('counts the pane it was pressed in from the pointer where the focus is elsewhere', () => {
+  it('moves a tab from an unfocused pane to another strip', () => {
     const { workspace, dragTo, release } = start()
     workspace.value = { ...workspace.value, focus: 'aside' }
     dragTo('plex', [150, 60], [610, 60])
@@ -330,7 +326,7 @@ describe('letting go of a tab', () => {
     expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
-  it('leaves the shown tab of a pane as it was when a tab is put in order within it', () => {
+  it('preserves the active tab when reordering within the same strip', () => {
     const { workspace, dragTo, release } = start()
     dragTo('notes', [750, 60], [610, 60])
     release(610, 60)
@@ -340,7 +336,7 @@ describe('letting go of a tab', () => {
     expect(aside?.active).toBe('chat')
   })
 
-  it('changes nothing where the pointer is let go over no drop target', () => {
+  it('leaves the workspace unchanged when pointerup is over no drop target', () => {
     const { workspace, dragTo, release } = start()
     const before = workspace.value
     dragTo('plex', [350, 300], [20, 300])
@@ -349,7 +345,7 @@ describe('letting go of a tab', () => {
     expect(workspace.value).toBe(before)
   })
 
-  it('changes nothing where the press never became a drag', () => {
+  it('leaves the workspace unchanged when pointerup occurs before the drag threshold', () => {
     const { workspace, drag, release } = start()
     const before = workspace.value
     drag.press('plex', pointer('pointerdown', 350, 300))

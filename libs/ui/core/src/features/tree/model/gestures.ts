@@ -1,9 +1,3 @@
-/**
- * The evaluation of a press, a double press, a key or a menu request on a row.
- *
- * The selection and the drag compute what a gesture means for them; this is
- * where a gesture is read and the tree emits the resulting event.
- */
 import type { Ref } from 'vue'
 import { getDraggedRows } from '../lib/drag'
 import type { RowId, ShownRow } from '../lib/row'
@@ -16,8 +10,8 @@ import type { RowDragState } from './drag'
 import type { DrawnRowsState } from './rows'
 import type { RowSelectionState } from './selection'
 
-/** The events the tree emits for a gesture. */
-export interface TreeGesturesTell {
+/** Emits tree gesture events. */
+export interface TreeGesturesEmit {
   (event: 'open', row: RowId): void
   (event: 'close', row: RowId): void
   (event: 'activate', row: RowId): void
@@ -26,6 +20,7 @@ export interface TreeGesturesTell {
   (event: 'menu', row: RowId | null, pos: Position): void
 }
 
+/** Options for tree pointer and keyboard gesture handlers. */
 export interface TreeGesturesOptions {
   readonly getShownRows: () => readonly ShownRow[]
   readonly getSelected: () => readonly RowId[]
@@ -34,9 +29,10 @@ export interface TreeGesturesOptions {
   readonly selection: RowSelectionState
   readonly drag: RowDragState
   readonly getMenuAt: (row: RowId) => Position | null
-  readonly tell: TreeGesturesTell
+  readonly emit: TreeGesturesEmit
 }
 
+/** Event handlers for tree pointer and keyboard gestures. */
 export interface TreeGesturesState {
   readonly onContextMenu: (event: MouseEvent) => void
   readonly onRowContextMenu: (row: ShownRow, event: MouseEvent) => void
@@ -57,11 +53,11 @@ function focusInBackground(rows: DrawnRowsState, row: RowId | null): void {
 function createTreeRenaming(
   renamingPath: Ref<RowId | null>,
   rows: DrawnRowsState,
-  tell: TreeGesturesTell,
+  emit: TreeGesturesEmit,
 ) {
   function onRename(row: RowId, name: string): void {
     renamingPath.value = null
-    tell('rename', row, name)
+    emit('rename', row, name)
     focusInBackground(rows, row)
   }
 
@@ -83,7 +79,7 @@ interface TreeKeyboardHelpers {
 }
 
 function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelpers) {
-  const { getShownRows, getSelected, rows, selection, tell } = options
+  const { getShownRows, getSelected, rows, selection, emit } = options
 
   function takeSelectionKey(event: KeyboardEvent): void {
     const chorded = event.ctrlKey || event.metaKey
@@ -92,7 +88,7 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
       selection.selectEveryRow()
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
-      if (getSelected().length > 0) tell('remove', getSelected())
+      if (getSelected().length > 0) emit('remove', getSelected())
     }
   }
 
@@ -111,8 +107,8 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
   }
 
   function applyStep(step: Step, press: Press): void {
-    if (step.turn?.isOpen) tell('open', step.turn.row)
-    else if (step.turn) tell('close', step.turn.row)
+    if (step.turn?.isOpen) emit('open', step.turn.row)
+    else if (step.turn) emit('close', step.turn.row)
     // Stryker disable next-line ConditionalExpression: step.at is non-null whenever getShownRows() has a tabbed row
     if (step.at !== null) selection.selectRow(step.at, press)
     focusInBackground(rows, step.at)
@@ -137,22 +133,23 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
   return { onKeyDown }
 }
 
+/** Creates pointer, keyboard, and rename event handlers for a tree. */
 export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const { getSelected, renamingPath, rows, selection, drag, tell } = options
+  const { getSelected, renamingPath, rows, selection, drag, emit } = options
 
   function toggleRow(row: ShownRow): void {
-    if (row.isOpen) tell('close', row.id)
-    else tell('open', row.id)
+    if (row.isOpen) emit('close', row.id)
+    else emit('open', row.id)
   }
 
   function activateRow(row: ShownRow): void {
     if (row.hasChildren) toggleRow(row)
-    tell('activate', row.id)
+    emit('activate', row.id)
   }
 
   function requestMenu(row: ShownRow | null, pos: Position): void {
     if (row && !selection.picked.value.has(row.id)) selection.selectRow(row.id, PLAIN)
-    tell('menu', row?.id ?? null, pos)
+    emit('menu', row?.id ?? null, pos)
   }
 
   function onContextMenu(event: MouseEvent): void {
@@ -177,7 +174,7 @@ export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesSt
       how.isJoining || how.isExtending || !selection.picked.value.has(row)
     const selectedRows = selection.hasApplied.value ? selection.selectRow(row, how) : getSelected()
 
-    drag.lift(getDraggedRows(selectedRows, row), event)
+    drag.startPress(getDraggedRows(selectedRows, row), event)
   }
 
   function onRowClick(row: ShownRow): void {
@@ -191,7 +188,7 @@ export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesSt
     activateRow(row)
   }
 
-  const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, tell)
+  const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, emit)
   const { onKeyDown } = createTreeKeyboard(options, { activateRow, requestMenu })
 
   return {

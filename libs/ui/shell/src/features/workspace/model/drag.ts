@@ -1,10 +1,3 @@
-/**
- * Dragging a tab off its strip: the drop target under the pointer, and the
- * resulting workspace layout after the drop.
- *
- * The element under the pointer is looked up in the document, in the
- * coordinates of the frame the workspace is drawn in.
- */
 import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@numen/ui'
 import { usePressDrag } from '@numen/ui'
@@ -18,17 +11,22 @@ import {
   getSlot,
   type TabDropTarget,
 } from '../lib/drop'
-import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
+import {
+  dropOnEdge,
+  dropTab as dropTabInTree,
+  moveTabWithin,
+  type NodeIdFactory,
+} from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
 import { getViewportSize, getWindowOrigin } from '@/shared/lib/dom'
 
-/** A tab under the pointer, and the pane its strip belongs to. */
 interface Drag {
   readonly tab: TabId
   readonly from: NodeId
 }
 
+/** Options for workspace tab drag state. */
 export interface TabDragOptions {
   readonly workspace: Ref<Workspace>
   readonly frame: Readonly<ShallowRef<HTMLElement | null>>
@@ -41,6 +39,7 @@ export interface TabDragOptions {
   readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
 }
 
+/** Reactive state and handlers for dragging a workspace tab. */
 export interface TabDragState {
   readonly hasMoved: ComputedRef<boolean>
   readonly overlay: ComputedRef<Rect | null>
@@ -50,6 +49,7 @@ export interface TabDragState {
   readonly press: (tab: TabId, pointer: PointerEvent) => void
 }
 
+/** Tracks tab drag gestures and updates the workspace layout on drop. */
 export function useTabDrag(options: TabDragOptions): TabDragState {
   const getViewport = options.getViewport ?? getViewportSize
 
@@ -57,7 +57,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     dragging,
     at: dropTarget,
     position,
-    lift,
+    startPress,
   } = usePressDrag<Drag, TabDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
@@ -67,7 +67,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
         : null,
     commit: (item, target, point) => {
       if (target) {
-        land(item, target)
+        dropTab(item, target)
       } else if (options.onTearOff && !isInsideViewport(point, getViewport())) {
         options.onTearOff(item.tab, getScreenPosition(point))
       }
@@ -92,11 +92,11 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
       : null
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
 
-    lift({ tab, from }, pointer)
+    startPress({ tab, from }, pointer)
   }
 
-  function land(drag: Drag, target: TabDropTarget): void {
-    options.workspace.value = landTab(options.workspace.value, {
+  function dropTab(drag: Drag, target: TabDropTarget): void {
+    options.workspace.value = applyTabDrop(options.workspace.value, {
       drag,
       target,
       ids: options.getIdFactory(),
@@ -106,7 +106,6 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   return { hasMoved, overlay, label, position, dropTarget, press }
 }
 
-/** A box put in the coordinates of the frame. */
 type ToLocal = (box: Rect) => Rect
 
 interface StripTarget {
@@ -149,26 +148,26 @@ function getPaneDropTarget(
   return { kind: 'pane', pane: pane.id, side, box: local(getOverlay(side, box)) }
 }
 
-interface LandAction {
+interface DropAction {
   readonly drag: Drag
   readonly target: TabDropTarget
   readonly ids: NodeIdFactory
 }
 
-function landTab(workspace: Workspace, action: LandAction): Workspace {
+function applyTabDrop(workspace: Workspace, action: DropAction): Workspace {
   const { drag, target, ids } = action
   if (target.kind === 'edge') {
     return dropOnEdge(workspace, { tab: drag.tab, side: target.side }, ids)
   }
 
   if (target.kind === 'pane') {
-    return dropTab(workspace, { tab: drag.tab, onto: target.pane, side: target.side }, ids)
+    return dropTabInTree(workspace, { tab: drag.tab, onto: target.pane, side: target.side }, ids)
   }
 
   const joined =
     target.pane === drag.from
       ? workspace
-      : dropTab(workspace, { tab: drag.tab, onto: target.pane, side: 'center' }, ids)
+      : dropTabInTree(workspace, { tab: drag.tab, onto: target.pane, side: 'center' }, ids)
   return moveTabWithin(joined, drag.tab, target.slot)
 }
 

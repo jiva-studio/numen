@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * The fields a card model declares, edited: one row per field, each with a drag
- * handle, the editable name and a remove button.
- *
- * The first field names the cards the card model produces, so it stays first and
- * cannot be moved. Problems with a field are supplied by the caller and placed
- * under that field's row.
- */
 import { computed, useId } from 'vue'
 import { Icon } from '../../icon'
 import { Divider } from '../../divider'
@@ -39,18 +31,12 @@ const emit = defineEmits<{
   (event: 'add', name: string): void
   (event: 'rename', field: string, name: string): void
   (event: 'remove', field: string): void
-  /** A field let go somewhere in the order: before another, or at the end. */
   (event: 'move', field: string, target: InsertionPoint): void
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/** What these objections are named by, which is this list's alone. */
 const uid = useId()
 
-/**
- * A name typed over the one a field carries. A field is named by its own name,
- * and what it is measured against is every other field's.
- */
 const naming = useNameEntry<Objection>({
   getName: (field) => field,
   getTakenNames: (field) => props.fields.filter((each) => each !== field),
@@ -58,15 +44,10 @@ const naming = useNameEntry<Objection>({
   rename: (field, name) => emit('rename', field, name),
 })
 
-/**
- * The field being dragged and its drop position: before a field, at the end, or
- * none. The first field names every card, so nothing is dropped above it and it
- * cannot be dragged itself.
- */
 const {
   dragged,
   at: dropTarget,
-  lift,
+  startDrag,
   hover,
   release,
   drop,
@@ -93,9 +74,6 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
 </script>
 
 <template>
-  <!-- A field is let go anywhere in the part its list is in, so the way the
-       list is added by takes it and a card model naming no field still has
-       somewhere to put one. -->
   <section
     class="card-model__part"
     :aria-label="words.fields"
@@ -116,7 +94,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
         :words="words"
         @drag-over="hover"
         @drop="drop"
-        @lift="(press) => lift(row.field, press)"
+        @drag-start="(press) => startDrag(row.field, press)"
         @release="release"
         @step="(direction, press) => step(row.field, direction, press)"
         @remove="emit('remove', row.field)"
@@ -140,8 +118,6 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
 .card-model__fields {
   display: flex;
   flex-direction: column;
-  /* The spacing between rows is the editor's, and this is the value it takes
-     where the rows stand anywhere else. */
   gap: var(--row-gap);
   inline-size: 100%;
   margin: 0;

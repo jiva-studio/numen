@@ -1,9 +1,9 @@
-/** An edge with the properties the drawing needs, computed once for both layers. */
 import { computed, ref, watch } from 'vue'
 import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
 import { edgeKey, type EdgeArrow, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
 
+/** Rendered edge line with its SVG path, arrowheads, and titles. */
 export interface EdgeLine {
   readonly edge: PlacedEdge
   readonly key: string
@@ -13,7 +13,7 @@ export interface EdgeLine {
   readonly titles: readonly TitleLine[]
 }
 
-/** One title of a line, with the path it is set along. */
+/** Positioned title along an edge line. */
 export interface TitleLine {
   readonly words: string
   readonly path: string
@@ -22,14 +22,7 @@ export interface TitleLine {
   readonly across: number
 }
 
-/**
- * Every edge with the properties the drawing needs. A title is always set along
- * the line it belongs to, in the words the arrangement split for it and at the
- * position along the line the arrangement chose.
- *
- * `uid` names the paths the titles are set along, so two plexes on one page
- * each name their own.
- */
+/** Builds the rendered edge lines for the given placed edges. */
 export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly EdgeLine[] =>
   edges.map((edge, index) => ({
     edge,
@@ -49,27 +42,18 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
     })),
   }))
 
-/**
- * The lines of one frame, split by the one under the pointer: that one is drawn
- * over the boxes, and every other under them.
- *
- * `uid` names the paths the titles are set along.
- */
+/** Splits the frame edges into resting lines and hovered raised lines. */
 export function useEdgeLines(frame: () => PlexFrame, uid: string) {
   const lines = computed(() => getLines(frame().edges, uid))
-
-  /** The edge under the pointer, by a key that survives the re-routing of a move. */
   const overKey = ref<string | null>(null)
 
-  // A new frame is still in transition, and no edge is under the pointer until it
-  // settles.
   watch(frame, () => {
     overKey.value = null
   })
 
   return {
     lines,
-    lifted: computed(() => lines.value.filter((line) => line.pair === overKey.value)),
+    raisedLines: computed(() => lines.value.filter((line) => line.pair === overKey.value)),
     resting: computed(() => lines.value.filter((line) => line.pair !== overKey.value)),
     setOver: (pair: string | null) => {
       overKey.value = pair
