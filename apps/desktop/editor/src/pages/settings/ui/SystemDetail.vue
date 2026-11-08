@@ -5,6 +5,7 @@
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
+import { PluginSettingsCard } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import type { PluginInfo } from '@/entities/settings'
 import type { SettingsTabState } from '../types'
@@ -49,11 +50,13 @@ function onBack(): void {
       &larr; {{ words.backToPlugins }}
     </Button>
 
+    <PluginSettingsCard>
+      <PluginFields :state="props.state" :plugin="owner" />
+    </PluginSettingsCard>
+
     <div class="system-detail__where">
       <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
     </div>
-
-    <PluginFields :state="props.state" :plugin="owner" />
   </div>
 </template>
 
@@ -61,25 +64,18 @@ function onBack(): void {
 .system-detail {
   display: flex;
   flex-direction: column;
-  inline-size: 100%;
-  max-inline-size: var(--settings-measure);
+  align-items: stretch;
+  max-inline-size: 54rem;
   margin-inline: auto;
 }
 
 .system-detail__back {
   align-self: flex-start;
   margin-block-end: 0.75rem;
-  margin-inline-start: -0.5rem;
 }
 
 .system-detail__where {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  margin-block-end: var(--settings-apart);
-  padding-block-end: 1rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+  margin-block-start: 0.75rem;
 }
 
 .system-detail__file {
