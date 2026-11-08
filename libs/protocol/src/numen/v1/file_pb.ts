@@ -368,7 +368,7 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   error?: ErrorCode | undefined;
 
   /**
-   * Set when the file is gone and the index could not be updated for it.
+   * Set when the file no longer exists and the index could not be updated for it.
    * Search answers about it as it read it last, until a walk goes past.
    *
    * @generated from field: bool is_index_outdated = 4;

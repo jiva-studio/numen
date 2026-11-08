@@ -648,7 +648,7 @@ type RemoveFileResponse struct {
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
 	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the file is gone and the index could not be updated for it.
+	// Set when the file no longer exists and the index could not be updated for it.
 	// Search answers about it as it read it last, until a walk goes past.
 	IsIndexOutdated bool `protobuf:"varint,4,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	unknownFields   protoimpl.UnknownFields
