@@ -197,6 +197,9 @@ message ManifestSettingOption {
   string title = 2;
   string detail = 3;
   repeated string dependencies = 4;
+  // when is a condition the option is offered under, as a CEL expression over the variables of
+  // when.json. Empty offers the option always.
+  string when = 5;
 }
 
 message ManifestOptionsBy {

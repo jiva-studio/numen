@@ -16,5 +16,6 @@ export const WHEN_VARIABLES = [
   { name: 'window.isVaultOpen', type: 'bool' },
   { name: 'window.isVaultReady', type: 'bool' },
   { name: 'window.isTabOpen', type: 'bool' },
+  { name: 'app.platform', type: 'string' },
   { name: 'config', type: 'map' },
 ] as const

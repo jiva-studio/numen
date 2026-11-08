@@ -281,7 +281,7 @@ func newSettingOptions(list *structpb.ListValue) (manifest.SettingOptions, error
 	for _, item := range list.GetValues() {
 		switch kind := item.GetKind().(type) {
 		case *structpb.Value_StringValue:
-			options = append(options, manifest.SettingOption{Value: kind.StringValue, Title: "", Detail: "", Dependencies: nil})
+			options = append(options, manifest.SettingOption{Value: kind.StringValue, Title: "", Detail: "", Dependencies: nil, When: ""})
 		case *structpb.Value_StructValue:
 			option, err := newSettingOption(kind.StructValue)
 			if err != nil {
@@ -310,6 +310,7 @@ func newSettingOption(object *structpb.Struct) (manifest.SettingOption, error) {
 		Title:        wire.GetTitle(),
 		Detail:       wire.GetDetail(),
 		Dependencies: wire.GetDependencies(),
+		When:         wire.GetWhen(),
 	}, nil
 }
 

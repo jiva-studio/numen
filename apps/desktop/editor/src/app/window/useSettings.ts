@@ -26,6 +26,7 @@ export interface SettingsDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  getPlatform?: Installation['getPlatform']
   catalog?: PluginCatalog
 }
 
@@ -36,13 +37,23 @@ interface SettingsTabConfigDeps {
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
   getSettingsViews?: Installation['getSettingsViews']
+  getPlatform?: Installation['getPlatform']
   catalogEntries?: Installation['catalog']
   reportError: (error: unknown) => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, rest, secrets, retry, core, getSettingsViews, catalogEntries, reportError } =
-    deps
+  const {
+    appearance,
+    rest,
+    secrets,
+    retry,
+    core,
+    getSettingsViews,
+    getPlatform,
+    catalogEntries,
+    reportError,
+  } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
@@ -50,6 +61,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   }
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
+    ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
@@ -201,6 +213,7 @@ export function useSettings({
   windowTabs,
   onSizeChanged,
   getSettingsViews,
+  getPlatform,
   catalog,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
@@ -237,6 +250,7 @@ export function useSettings({
       retry,
       core,
       ...(getSettingsViews ? { getSettingsViews } : {}),
+      ...(getPlatform ? { getPlatform } : {}),
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
     }),

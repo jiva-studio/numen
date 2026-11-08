@@ -9,7 +9,7 @@ import { command, separator, submenu, view } from '../testing/entries'
 interface Options {
   vaultName?: string
   platform?: AppInfo['platform']
-  buttons?: 'windows' | 'mac'
+  buttons?: 'windows' | 'mac' | 'none'
   isMaximized?: boolean
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
@@ -144,6 +144,14 @@ describe('the window controls', () => {
 
     expect(wrapper.findAll('[data-control]')).toHaveLength(3)
     expect(close.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('draw no control and keep no room in the none style', () => {
+    const wrapper = mountBar({ platform: 'linux', buttons: 'none' })
+
+    expect(wrapper.findAll('[data-control]')).toHaveLength(0)
+    expect(wrapper.find('[data-mac-buttons-inset]').exists()).toBe(false)
+    expect(wrapper.find('[data-title-bar]').attributes('data-controls')).toBe('none')
   })
 
   it('draw no control in the native-mac style', () => {

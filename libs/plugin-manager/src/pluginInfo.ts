@@ -11,6 +11,7 @@ export interface PluginSettingOption {
   readonly value: string
   readonly title: string
   readonly detail: string
+  readonly when?: string | undefined
 }
 
 /** A setting is shown, and handed to its plugin, while another holds one of the values listed. */

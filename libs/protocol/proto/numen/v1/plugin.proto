@@ -104,6 +104,9 @@ message PluginSettingOption {
   string title = 2;
   // What a person reads under the setting while the value is in force.
   string detail = 3;
+  // The condition the option is offered under, as in the manifest. The window evaluates it; an
+  // option whose condition does not hold is shown and cannot be chosen. Empty offers it always.
+  string when = 4;
 }
 
 // PluginSettingOptions is one list of options.

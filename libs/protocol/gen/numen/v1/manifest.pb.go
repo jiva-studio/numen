@@ -1057,11 +1057,14 @@ func (*ManifestFrontend) Descriptor() ([]byte, []int) {
 // in a manifest holds each option as this message, or as a bare string that
 // stands for an option with that value.
 type ManifestSettingOption struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
-	Dependencies  []string               `protobuf:"bytes,4,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Value        string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Title        string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Detail       string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Dependencies []string               `protobuf:"bytes,4,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	// when is a condition the option is offered under, as a CEL expression over the variables of
+	// when.json. Empty offers the option always.
+	When          string `protobuf:"bytes,5,opt,name=when,proto3" json:"when,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1122,6 +1125,13 @@ func (x *ManifestSettingOption) GetDependencies() []string {
 		return x.Dependencies
 	}
 	return nil
+}
+
+func (x *ManifestSettingOption) GetWhen() string {
+	if x != nil {
+		return x.When
+	}
+	return ""
 }
 
 type ManifestOptionsBy struct {
@@ -1931,12 +1941,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"entrypoint\x18\x02 \x01(\tR\n" +
 	"entrypoint\"\x12\n" +
-	"\x10ManifestFrontend\"\x7f\n" +
+	"\x10ManifestFrontend\"\x93\x01\n" +
 	"\x15ManifestSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x12\"\n" +
-	"\fdependencies\x18\x04 \x03(\tR\fdependencies\"\xc9\x01\n" +
+	"\fdependencies\x18\x04 \x03(\tR\fdependencies\x12\x12\n" +
+	"\x04when\x18\x05 \x01(\tR\x04when\"\xc9\x01\n" +
 	"\x11ManifestOptionsBy\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12B\n" +
 	"\aoptions\x18\x02 \x03(\v2(.numen.v1.ManifestOptionsBy.OptionsEntryR\aoptions\x1aV\n" +

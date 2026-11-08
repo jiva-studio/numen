@@ -23,7 +23,7 @@ const manifest = JSON.parse(
   id: string
   targets: readonly string[]
   contributes: { slots: readonly { slot: string; view: string }[] }
-  settings: readonly { key: string; default: string; options: readonly { value: string }[] }[]
+  settings: readonly { key: string; default: string; options: readonly { value: string; when?: string }[] }[]
 }
 
 const ORCHARD = { id: 'orchard', name: 'Orchard notes' }
@@ -96,7 +96,17 @@ describe('the plugin', () => {
     const setting = manifest.settings.find((one) => one.key === 'buttons')
 
     expect(setting?.default).toBe('windows')
-    expect(setting?.options.map((one) => one.value)).toStrictEqual(['windows', 'mac'])
+    expect(setting?.options.map((one) => one.value)).toStrictEqual(['mac', 'windows', 'none'])
+  })
+
+  it('offers Right and None except on macOS, and Left everywhere', () => {
+    const options = manifest.settings.find((one) => one.key === 'buttons')?.options ?? []
+
+    expect(options.map((one) => [one.value, one.when ?? ''])).toStrictEqual([
+      ['mac', ''],
+      ['windows', "app.platform != 'darwin'"],
+      ['none', "app.platform != 'darwin'"],
+    ])
   })
 })
 
@@ -434,6 +444,35 @@ describe('the window buttons', () => {
   })
 })
 
+describe('the window buttons by the setting', () => {
+  it('stand at the right on Windows, and at the left when the setting says so', () => {
+    const left = mountBar({ platform: 'windows', settings: { buttons: 'mac' } }).bar
+    const right = mountBar({ platform: 'windows', settings: { buttons: 'windows' } }).bar
+
+    expect(left.find('[data-title-bar]').attributes('data-controls')).toBe('mac')
+    expect(right.find('[data-title-bar]').attributes('data-controls')).toBe('windows')
+  })
+
+  it('draw no control and keep no room when the setting says none', async () => {
+    for (const platform of ['linux', 'windows'] as const) {
+      const { bar } = mountBar({ platform, settings: { buttons: 'none' } })
+
+      expect(bar.find('[data-title-bar]').attributes('data-controls')).toBe('none')
+      expect(bar.findAll('[data-control]')).toHaveLength(0)
+      expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(false)
+    }
+  })
+
+  it('keep the system buttons on macOS whatever the setting says', () => {
+    for (const buttons of ['windows', 'mac', 'none']) {
+      const { bar } = mountBar({ platform: 'darwin', settings: { buttons } })
+
+      expect(bar.find('[data-title-bar]').attributes('data-controls')).toBe('native-mac')
+      expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(true)
+    }
+  })
+})
+
 describe('the window buttons on Linux', () => {
   it('stand at the right while the setting says nothing', () => {
     const { bar } = mountBar({ platform: 'linux' })
@@ -451,13 +490,6 @@ describe('the window buttons on Linux', () => {
     expect(bar.find('[data-title-bar]').attributes('data-controls')).toBe('windows')
   })
 
-  it('stay with the system on macOS and at the right on Windows, whatever the setting', () => {
-    const mac = mountBar({ platform: 'darwin', settings: { buttons: 'mac' } }).bar
-    const windows = mountBar({ platform: 'windows', settings: { buttons: 'mac' } }).bar
-
-    expect(mac.find('[data-title-bar]').attributes('data-controls')).toBe('native-mac')
-    expect(windows.find('[data-title-bar]').attributes('data-controls')).toBe('windows')
-  })
 })
 
 describe('the bar in a window that offers no slots, vaults or window', () => {

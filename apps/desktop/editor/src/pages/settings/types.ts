@@ -32,6 +32,8 @@ export interface Installation {
    */
   isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
+  /** The operating system of the window: darwin, windows or linux; the `app.platform` of conditions. */
+  getPlatform?(): string
   write(content: readonly SettingEdit[]): void
   /**
    * The secrets, each a name in a group with the plugin declarations that may read it. A value
