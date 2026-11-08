@@ -114,6 +114,7 @@ describe('every setting', () => {
                   palette: true,
                   icon: 'sparkles',
                   multiple: true,
+                  activeOptions: [],
                   options: [
                     { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
                   ],
@@ -125,6 +126,7 @@ describe('every setting', () => {
                   description: '',
                   defaultJson: '{bad',
                   palette: false,
+                  activeOptions: [],
                   options: [],
                   optionsBy: {
                     setting: 'model',
