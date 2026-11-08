@@ -34,6 +34,8 @@ export function createStatusView(context: PluginContext, updates: Updates) {
     name: 'UpdateStatusView',
     setup: () => () =>
       h(UpdateIndicator, {
+        version: context.app.version,
+        state: updates.status.value.state,
         update: updates.announced.value,
         platform: context.app.platform,
         onDownload: () => showFailure(context, updates.openDownload()),
