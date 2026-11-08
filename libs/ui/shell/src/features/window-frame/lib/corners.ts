@@ -49,5 +49,7 @@ export function getWindowRadius(
   isFullscreen: boolean,
 ): number {
   if (platform !== 'darwin' || isFullscreen) return 0
-  return macMajor !== undefined && macMajor < MAC_TAHOE_MAJOR ? MAC_RADIUS_EARLIER : MAC_RADIUS_TAHOE
+  return macMajor !== undefined && macMajor < MAC_TAHOE_MAJOR
+    ? MAC_RADIUS_EARLIER
+    : MAC_RADIUS_TAHOE
 }

@@ -178,7 +178,8 @@ describe('the room of the system buttons', () => {
 })
 
 describe('the corner radius of the window', () => {
-  const readRoot = (): string => document.documentElement.style.getPropertyValue('--numen-window-radius')
+  const readRoot = (): string =>
+    document.documentElement.style.getPropertyValue('--numen-window-radius')
 
   /** A macOS runtime that reports the version, and full screen when asked. */
   function createMacRuntime(version: string | undefined, isFullscreen = false): FrameRuntime {
@@ -257,7 +258,8 @@ describe('the corner radius of the window', () => {
 })
 
 describe('the top edge of the window', () => {
-  const readEdge = (): string => document.documentElement.style.getPropertyValue('--numen-window-edge')
+  const readEdge = (): string =>
+    document.documentElement.style.getPropertyValue('--numen-window-edge')
 
   it('sets one pixel on the root on macOS', async () => {
     const { runtime } = createRuntime('mac')
