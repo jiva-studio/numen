@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // lockSuffix is added to the name of the credentials file to name the file its writers lock, which
@@ -31,7 +33,7 @@ func (s *Store) changeEntries(ctx context.Context, work func() error) (err error
 	if err := os.MkdirAll(s.dir, 0o700); err != nil {
 		return fmt.Errorf("lock the credentials file: %w", err)
 	}
-	file, err := lockFile(ctx, filepath.Join(s.dir, credentialsFile+lockSuffix))
+	file, err := lockFile(ctx, s.wait, filepath.Join(s.dir, credentialsFile+lockSuffix))
 	if err != nil {
 		return fmt.Errorf("lock the credentials file: %w", err)
 	}
@@ -39,19 +41,12 @@ func (s *Store) changeEntries(ctx context.Context, work func() error) (err error
 	return work()
 }
 
-func lockFile(ctx context.Context, path string) (*os.File, error) {
+func lockFile(ctx context.Context, wait machineport.Wait, path string) (*os.File, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, err
 	}
-	timer := time.NewTimer(0)
-	defer timer.Stop()
 	for {
-		select {
-		case <-timer.C:
-		case <-ctx.Done():
-			return nil, errors.Join(ctx.Err(), file.Close())
-		}
 		err := tryLockFile(file)
 		if err == nil {
 			return file, nil
@@ -59,6 +54,8 @@ func lockFile(ctx context.Context, path string) (*os.File, error) {
 		if !errors.Is(err, errLocked) {
 			return nil, errors.Join(err, file.Close())
 		}
-		timer.Reset(lockPollInterval)
+		if err := wait(ctx, lockPollInterval); err != nil {
+			return nil, errors.Join(err, file.Close())
+		}
 	}
 }

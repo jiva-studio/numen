@@ -58,7 +58,7 @@ func getKeyStore() *keychain.Store {
 	if err != nil {
 		return &keychain.Store{}
 	}
-	return keychain.NewStore(filepath.Dir(path))
+	return keychain.NewStore(filepath.Dir(path), container.Config{}.GetWait())
 }
 
 func getDevPluginsDirs() []string { return []string{"plugins"} }

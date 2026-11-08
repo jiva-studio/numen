@@ -118,7 +118,7 @@ describe('the move of a secret', () => {
     expect(getMoveTarget(secrets, 1, 'down')).toStrictEqual({ id: 'b', beforeId: '' })
   })
 
-  it('stays where it is first and cannot move up, or last and cannot move down', () => {
+  it('has no target above the first secret and none below the last', () => {
     expect(getMoveTarget(secrets, 0, 'up')).toBeNull()
     expect(getMoveTarget(secrets, 2, 'down')).toBeNull()
   })

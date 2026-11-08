@@ -9,7 +9,7 @@ import (
 )
 
 func TestTwoWritesOfOneStoreRunOneAfterTheOther(t *testing.T) {
-	store := NewStore(t.TempDir())
+	store := newTestStore(t.TempDir())
 	var running, overlaps atomic.Int32
 	finished := make(chan error, 2)
 	for range 2 {
@@ -36,7 +36,7 @@ func TestTwoWritesOfOneStoreRunOneAfterTheOther(t *testing.T) {
 
 func TestAWriteWaitingForTheLockReturnsWhenItsContextEnds(t *testing.T) {
 	dir := t.TempDir()
-	first, second := NewStore(dir), NewStore(dir)
+	first, second := newTestStore(dir), newTestStore(dir)
 	entered, release := make(chan struct{}), make(chan struct{})
 	firstResult := make(chan error, 1)
 	go func() {

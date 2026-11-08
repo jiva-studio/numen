@@ -94,10 +94,10 @@ const mountPage = (
   secrets = [WORK, HOME, MINE],
   overrides: Parameters<typeof createInstallation>[0] = {},
 ) => {
-  const listed = overrides.plugins?.value ?? plugins
+  const pluginList = overrides.plugins?.value ?? plugins
   const installation = createInstallation({
-    plugins: ref(listed),
-    ...createSecretAnswer(listed, secrets),
+    plugins: ref(pluginList),
+    ...createSecretAnswer(pluginList, secrets),
     ...overrides,
   })
   const wrapper = mount(SettingsTab, {

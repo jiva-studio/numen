@@ -138,8 +138,10 @@ func TestACancelledContextEndsAStalledCall(t *testing.T) {
 		t.Errorf("error = %v, want context.Canceled", err)
 	}
 	close(release)
-	deadline := time.Now().Add(2 * time.Second)
-	for runtime.NumGoroutine() > baseline && time.Now().Before(deadline) {
+	for range 400 {
+		if runtime.NumGoroutine() <= baseline {
+			break
+		}
 		time.Sleep(5 * time.Millisecond)
 	}
 	if got := runtime.NumGoroutine(); got > baseline {

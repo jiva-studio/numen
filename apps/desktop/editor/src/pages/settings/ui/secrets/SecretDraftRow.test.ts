@@ -35,7 +35,7 @@ describe('the focus of a new row', () => {
     wrapper.unmount()
   })
 
-  it('stays where it is on a row that does not ask for it', () => {
+  it('takes no focus on a row that does not request it', () => {
     const wrapper = mountRow()
     expect(document.activeElement).toBe(document.body)
     wrapper.unmount()

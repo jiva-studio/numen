@@ -26,7 +26,7 @@ func useNoSessionBus(t *testing.T) {
 	t.Setenv("XDG_RUNTIME_DIR", t.TempDir())
 }
 
-func TestAKeychainIsAbsentWhenTheSystemSaysSo(t *testing.T) {
+func TestTheErrorsOfAMissingKeychainAreAbsent(t *testing.T) {
 	useReachableSessionBus(t)
 	for name, err := range map[string]error{
 		"unsupported platform": fmt.Errorf("no keychain: %w", keyring.ErrUnsupportedPlatform),
@@ -81,7 +81,7 @@ func TestAKeychainThatFailsIsNotReplacedByTheFile(t *testing.T) {
 	} {
 		keyring.MockInitWithError(failure)
 		dir := t.TempDir()
-		store := NewStore(dir)
+		store := newTestStore(dir)
 		if err := store.SetKey(t.Context(), entryName, valueOne); !errors.Is(err, pluginport.ErrNoKeyStore) {
 			t.Errorf("%s: SetKey returned %v, want ErrNoKeyStore", name, err)
 		}

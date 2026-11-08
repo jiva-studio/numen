@@ -9,7 +9,7 @@ import (
 func TestTwoStoresOnOneFileKeepEveryEntryBothWrite(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	editor, flashcards := NewStore(dir), NewStore(dir)
+	editor, flashcards := newTestStore(dir), newTestStore(dir)
 	const each = 40
 
 	var group sync.WaitGroup

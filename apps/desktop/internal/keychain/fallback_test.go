@@ -47,7 +47,7 @@ func readCredentials(t *testing.T, dir string) map[string]string {
 func TestAValueGoesToTheCredentialsFileWhenTheMachineHasNoKeychain(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 
 	if err := store.SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestTheCredentialsFileIsPrivateToTheUser(t *testing.T) {
 	}
 	useNoKeychain(t)
 	dir := t.TempDir()
-	if err := NewStore(dir).SetKey(t.Context(), entryName, valueOne); err != nil {
+	if err := newTestStore(dir).SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
 	}
 	file, err := os.Stat(credentialsPath(dir))
@@ -88,7 +88,7 @@ func TestTheCredentialsFileIsPrivateToTheUser(t *testing.T) {
 func TestEachWriteReplacesTheCredentialsFileThroughARename(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 	if err := store.SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestEachWriteReplacesTheCredentialsFileThroughARename(t *testing.T) {
 func TestADeleteRemovesTheEntryFromTheCredentialsFileAndKeepsTheOthers(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 	for name, value := range map[string]string{entryName: valueOne, otherEntry: valueTwo} {
 		if err := store.SetKey(t.Context(), name, value); err != nil {
 			t.Fatal(err)
@@ -142,7 +142,7 @@ func TestADeleteRemovesTheEntryFromTheCredentialsFileAndKeepsTheOthers(t *testin
 func TestAKeychainThatAppearsLaterIsUsedAndTheFileStillAnswersForItsKeys(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 	if err := store.SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func TestAKeychainThatAppearsLaterIsUsedAndTheFileStillAnswersForItsKeys(t *test
 func TestAKeyStoredInTheKeychainIsRemovedFromTheFile(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 	for name, value := range map[string]string{entryName: valueOne, otherEntry: valueTwo} {
 		if err := store.SetKey(t.Context(), name, value); err != nil {
 			t.Fatal(err)
@@ -170,7 +170,7 @@ func TestAKeyStoredInTheKeychainIsRemovedFromTheFile(t *testing.T) {
 	}
 
 	keyring.MockInit()
-	other := NewStore(dir)
+	other := newTestStore(dir)
 	if err := other.SetKey(t.Context(), entryName, "rotated-value"); err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 	useReachableSessionBus(t)
 	keyring.MockInitWithError(errors.New("the collection is locked"))
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 
 	err := store.SetKey(t.Context(), entryName, valueOne)
 	if !errors.Is(err, pluginport.ErrNoKeyStore) {
@@ -204,7 +204,7 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 func TestWithAReachableKeychainTheCredentialsFileIsNotCreated(t *testing.T) {
 	keyring.MockInit()
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(dir)
 
 	if err := store.SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
@@ -229,7 +229,7 @@ func TestTheCredentialsFileIsNotReadWhileTheKeychainIsReachable(t *testing.T) {
 	if err := os.WriteFile(credentialsPath(dir), []byte(`{"`+entryName+`":"`+valueOne+`"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	store := NewStore(dir)
+	store := newTestStore(dir)
 
 	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("error = %v, want ErrNoKey: the file is not read while the keychain is reachable", err)
@@ -244,7 +244,7 @@ func TestTheCredentialsFileIsNotReadWhileTheKeychainIsReachable(t *testing.T) {
 
 func TestAValueWithNoEntryAnywhereIsNoKey(t *testing.T) {
 	keyring.MockInit()
-	if _, err := NewStore(t.TempDir()).GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := newTestStore(t.TempDir()).GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("error = %v, want ErrNoKey", err)
 	}
 }
@@ -270,7 +270,7 @@ func TestAValueOverTheSmallestKeychainLimitFailsNamingTheLimitAndStoresNothing(t
 	t.Run("file", func(t *testing.T) {
 		useNoKeychain(t)
 		dir := t.TempDir()
-		store := NewStore(dir)
+		store := newTestStore(dir)
 		err := store.SetKey(t.Context(), entryName, tooLong)
 		if err == nil || !strings.Contains(err.Error(), "2560") || strings.Contains(err.Error(), tooLong) {
 			t.Fatalf("error = %v, want one that names 2560 and not the value", err)
@@ -291,7 +291,7 @@ func TestNoErrorOfAFailingStoreCarriesTheValue(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "credentials"), []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	err := NewStore(dir).SetKey(t.Context(), entryName, valueOne)
+	err := newTestStore(dir).SetKey(t.Context(), entryName, valueOne)
 	if err == nil {
 		t.Fatal("a write with no place to go succeeded")
 	}

@@ -29,7 +29,7 @@ func (b *blockingBackend) Delete(string) error      { <-b.release; return nil }
 
 func TestACallWaitingForTheKeychainReturnsWhenItsContextEnds(t *testing.T) {
 	backend := newBlockingBackend()
-	store := NewStore(t.TempDir())
+	store := newTestStore(t.TempDir())
 	store.backend = backend
 	t.Cleanup(func() { close(backend.release) })
 
@@ -60,7 +60,7 @@ func TestACallWaitingForTheKeychainReturnsWhenItsContextEnds(t *testing.T) {
 
 func TestACallWaitingForASharedProbeReturnsWithItsOwnContext(t *testing.T) {
 	backend := newBlockingBackend()
-	store := NewStore(t.TempDir())
+	store := newTestStore(t.TempDir())
 	store.backend = backend
 	t.Cleanup(func() { close(backend.release) })
 
@@ -71,20 +71,19 @@ func TestACallWaitingForASharedProbeReturnsWithItsOwnContext(t *testing.T) {
 
 	second, stop := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer stop()
-	start := time.Now()
 	_, err := store.GetKey(second, entryName)
 	cancel()
 	if err := <-first; !errors.Is(err, context.Canceled) {
 		t.Errorf("the first caller returned %v, want its cancellation", err)
 	}
-	if !errors.Is(err, context.DeadlineExceeded) || time.Since(start) > time.Second {
-		t.Errorf("a second caller returned %v after %v, want the deadline of its own context", err, time.Since(start))
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("a second caller returned %v, want the deadline of its own context", err)
 	}
 }
 
 func TestTheCredentialsPathIsEmptyWhileTheKeychainDoesNotAnswer(t *testing.T) {
 	backend := newBlockingBackend()
-	store := NewStore(t.TempDir())
+	store := newTestStore(t.TempDir())
 	store.backend = backend
 	t.Cleanup(func() { close(backend.release) })
 

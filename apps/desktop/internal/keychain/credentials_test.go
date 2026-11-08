@@ -12,12 +12,12 @@ import (
 func TestTheCredentialsPathIsReportedOnlyWhileTheFileIsInUse(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	if got := NewStore(dir).GetCredentialsPath(t.Context()); got != credentialsPath(dir) {
+	if got := newTestStore(dir).GetCredentialsPath(t.Context()); got != credentialsPath(dir) {
 		t.Errorf("path = %q, want %q", got, credentialsPath(dir))
 	}
 
 	keyring.MockInit()
-	if got := NewStore(dir).GetCredentialsPath(t.Context()); got != "" {
+	if got := newTestStore(dir).GetCredentialsPath(t.Context()); got != "" {
 		t.Errorf("path = %q with a reachable keychain, want none", got)
 	}
 	store := Store{}
@@ -28,7 +28,7 @@ func TestTheCredentialsPathIsReportedOnlyWhileTheFileIsInUse(t *testing.T) {
 
 func TestADeleteOfAKeyHeldNowhereIsNoKey(t *testing.T) {
 	useNoKeychain(t)
-	store := NewStore(t.TempDir())
+	store := newTestStore(t.TempDir())
 	if err := store.DeleteKey(t.Context(), entryName); err == nil {
 		t.Error("a delete of a key held nowhere succeeded")
 	}
@@ -43,7 +43,7 @@ func TestADeleteRemovesTheKeyFromTheKeychainAndFromTheFile(t *testing.T) {
 	if err := os.WriteFile(credentialsPath(dir), []byte(`{"`+entryName+`":"`+valueOne+`"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	store := NewStore(dir)
+	store := newTestStore(dir)
 	if err := store.SetKey(t.Context(), entryName, valueTwo); err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestACredentialsFileThatIsNotJSONFailsWithoutQuotingItsContent(t *testing.T
 	if err := os.WriteFile(credentialsPath(dir), []byte(`{"`+entryName+`": `+valueOne), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	_, err := NewStore(dir).GetKey(t.Context(), entryName)
+	_, err := newTestStore(dir).GetKey(t.Context(), entryName)
 	if err == nil || strings.Contains(err.Error(), valueOne) {
 		t.Errorf("error = %v", err)
 	}

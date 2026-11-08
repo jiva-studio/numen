@@ -36,7 +36,7 @@ const items: readonly MenuItem[] = [
 ]
 const isRenaming = ref(false)
 const draftName = ref('')
-const refusal = ref<'' | 'long' | 'taken'>('')
+const nameProblem = ref<'' | 'long' | 'taken'>('')
 const info = computed(() => getServiceInfo(props.group))
 const nameInput = useTemplateRef<InstanceType<typeof SecretInput>>('nameInput')
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
@@ -52,7 +52,7 @@ onMounted(async () => {
 /* -------------------------------- Handlers -------------------------------- */
 async function onStartRename(): Promise<void> {
   draftName.value = props.group
-  refusal.value = ''
+  nameProblem.value = ''
   isRenaming.value = true
   await nextTick()
   nameInput.value?.focus()
@@ -62,15 +62,15 @@ async function onStartRename(): Promise<void> {
 function onCommitRename(): void {
   if (!isRenaming.value) return
   const name = trimName(draftName.value)
-  refusal.value = getRefusal(name)
-  if (refusal.value !== '') return
+  nameProblem.value = getNameProblem(name)
+  if (nameProblem.value !== '') return
   isRenaming.value = false
   if (name !== '' && name !== props.group) emit('rename', name)
 }
 
 function onCancelRename(): void {
   isRenaming.value = false
-  refusal.value = ''
+  nameProblem.value = ''
 }
 
 async function onChoose(id: string, opener: HTMLElement): Promise<void> {
@@ -79,13 +79,13 @@ async function onChoose(id: string, opener: HTMLElement): Promise<void> {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getRefusal(name: string): '' | 'long' | 'taken' {
+function getNameProblem(name: string): '' | 'long' | 'taken' {
   if (isNameTooLong(name)) return 'long'
   return isGroupNameTaken(props.groups, props.group, name) ? 'taken' : ''
 }
 
-function getRefusalText(): string {
-  return refusal.value === 'long'
+function getNameProblemText(): string {
+  return nameProblem.value === 'long'
     ? words.secretGroupTooLong(MAX_NAME_LENGTH)
     : words.secretGroupTaken(trimName(draftName.value))
 }
@@ -100,14 +100,14 @@ function getRefusalText(): string {
         v-model="draftName"
         type="text"
         :aria-label="words.secretGroupRenameName"
-        :aria-invalid="refusal !== ''"
+        :aria-invalid="nameProblem !== ''"
         @keydown.enter="onCommitRename"
         @keydown.esc="onCancelRename"
         @change="onCommitRename"
         @blur="onCommitRename"
       />
-      <p v-if="refusal !== ''" role="alert" class="secret-title__refusal">
-        {{ getRefusalText() }}
+      <p v-if="nameProblem !== ''" role="alert" class="secret-title__refusal">
+        {{ getNameProblemText() }}
       </p>
       <h2 v-show="!isRenaming" :id="headingId" class="secret-title__name">{{ info.title }}</h2>
       <p v-if="info.description !== '' && !isRenaming" class="secret-title__about">
