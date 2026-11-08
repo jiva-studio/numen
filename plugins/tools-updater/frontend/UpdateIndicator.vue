@@ -2,15 +2,17 @@
 /**
  * The title bar indicator of a new release, and the popover with its details.
  */
-import { ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
-import type { Update } from './api/updater'
+import type { State, Update } from './api/updater'
+import { getTooltip } from './model/tooltip'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
-import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
+  version: string
+  state: State
   update: Update | null
   platform: Platform
 }>()
@@ -24,6 +26,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tooltip = computed(() => getTooltip(props.version, props.update, props.state))
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose)
 
@@ -56,19 +59,29 @@ function onDismiss() {
 </script>
 
 <template>
-  <div v-if="update" ref="root" class="update-indicator">
+  <div
+    ref="root"
+    class="update-indicator"
+    :class="{ 'update-indicator--available': update !== null }"
+  >
     <button
+      v-if="update"
       type="button"
       class="update-indicator__trigger"
       :aria-expanded="isOpen"
-      :aria-label="words.indicatorLabel"
+      aria-haspopup="dialog"
+      :aria-label="tooltip"
+      :title="tooltip"
       @click="onToggle"
     >
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
+    <span v-else class="update-indicator__trigger" role="img" :aria-label="tooltip" :title="tooltip">
+      <span class="update-indicator__label">v{{ version }}</span>
+    </span>
 
     <UpdatePopover
-      v-if="isOpen"
+      v-if="isOpen && update"
       :update="update"
       :platform="platform"
       @close="onClose"

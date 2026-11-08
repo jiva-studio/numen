@@ -32,7 +32,12 @@ const dismissal = useMenuDismissal(root, onClose)
 
 const summary = computed(() => summarizeTasks(props.tasks))
 const summaryText = computed(() =>
-  summary.value.isIdle ? words.idle : `${summary.value.activeCount} ${words.active}`,
+  summary.value.activeCount === 0 ? words.idle : `${summary.value.activeCount} ${words.active}`,
+)
+const label = computed(() =>
+  summary.value.failedCount > 0
+    ? `${summaryText.value}, ${summary.value.failedCount} ${words.failed}`
+    : summaryText.value,
 )
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -52,20 +57,25 @@ function onClose() {
   <div
     ref="root"
     class="tasks-status"
-    :class="{ 'tasks-status--active': !summary.isIdle }"
+    :class="{ 'tasks-status--active': summary.activeCount > 0 }"
     data-tasks-status
   >
     <button
       type="button"
       class="tasks-status__trigger"
+      :class="{
+        'tasks-status__trigger--busy': summary.activeCount > 0,
+        'tasks-status__trigger--failed': summary.failedCount > 0,
+      }"
+      :aria-label="label"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       @click="onToggle"
     >
       <div class="tasks-status__icon-wrap">
         <CircularProgress
-          v-if="!summary.isIdle"
-          :progress="summary.progress"
+          v-if="summary.activeCount > 0"
+          :progress="summary.progress ?? 0"
           :size="14"
           :stroke-width="2"
         />
@@ -75,7 +85,7 @@ function onClose() {
       <span class="tasks-status__summary">{{ summaryText }}</span>
 
       <span v-if="summary.failedCount > 0" class="tasks-status__badge tasks-status__badge--alarm">
-        {{ summary.failedCount }} {{ words.failed }}
+        {{ summary.failedCount }}
       </span>
     </button>
 

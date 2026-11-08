@@ -3,6 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
+import { WINDOWS_CONTROLS_WIDTH } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
 
@@ -11,6 +12,7 @@ interface Options {
   platform?: AppInfo['platform']
   buttons?: 'windows' | 'mac'
   isMaximized?: boolean
+  isFullscreen?: boolean
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
   listItems?: (command: string) => Promise<readonly CommandItem[]>
@@ -66,6 +68,60 @@ describe('the title', () => {
 
     expect(wrapper.find('[data-title]').attributes('title')).toBe(
       'numen — A very long name of a vault',
+    )
+  })
+})
+
+describe('the place of the title', () => {
+  const cells = (wrapper: VueWrapper) =>
+    wrapper
+      .find('[data-title-bar-start]')
+      .findAll(':scope > [data-title-bar-lead], :scope > [data-title-bar-middle], :scope > [data-title-bar-trail]')
+      .map((one) => Object.keys(one.attributes()).find((name) => name.startsWith('data-title-bar-'))!)
+  const style = (wrapper: VueWrapper, name: string) =>
+    (wrapper.find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(name).trim()
+
+  it('is a middle cell between the cell of the buttons and the cell of the status', () => {
+    const wrapper = mountBar({ commands: [command('a')], status: [view('tasks')] })
+
+    expect(cells(wrapper)).toStrictEqual([
+      'data-title-bar-lead',
+      'data-title-bar-middle',
+      'data-title-bar-trail',
+    ])
+    expect(wrapper.find('[data-title-bar-middle] [data-title]').exists()).toBe(true)
+    expect(wrapper.find('[data-title-bar-lead] [data-title-bar-command]').exists()).toBe(true)
+    expect(wrapper.find('[data-title-bar-trail] [data-label-view]').exists()).toBe(true)
+  })
+
+  it('is in the middle cell whether or not the buttons are drawn', async () => {
+    const wrapper = mountBar({ commands: [command('a')] })
+    const before = cells(wrapper)
+
+    await wrapper.setProps({ commands: [] })
+
+    expect(cells(wrapper)).toStrictEqual(before)
+    expect(wrapper.find('[data-title-bar-middle] [data-title]').exists()).toBe(true)
+  })
+
+  it('keeps the room of the window buttons at the end of the bar in the windows style', () => {
+    const wrapper = mountBar()
+
+    expect(style(wrapper, '--title-bar-lead')).toBe('0px')
+    expect(style(wrapper, '--title-bar-trail')).toBe('132px')
+  })
+
+  it('keeps the room of the circles at the start of the bar in the mac style', () => {
+    const wrapper = mountBar({ platform: 'linux', buttons: 'mac' })
+
+    expect(style(wrapper, '--title-bar-lead')).toBe('76px')
+    expect(style(wrapper, '--title-bar-trail')).toBe('0px')
+  })
+
+  it('keeps the room of the system buttons at the start of the bar in the native-mac style, none in full screen', () => {
+    expect(style(mountBar({ platform: 'darwin' }), '--title-bar-lead')).toBe('80px')
+    expect(style(mountBar({ platform: 'darwin', isFullscreen: true }), '--title-bar-lead')).toBe(
+      '0px',
     )
   })
 })
@@ -254,7 +310,7 @@ describe('the entries that do not fit', () => {
   }
 
   const resize = async (wrapper: VueWrapper, room: number): Promise<void> => {
-    slotWidth = TITLE_MIN_WIDTH + room
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
     const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
     for (const tell of callbacks) tell(entries, {} as ResizeObserver)
     await settle(wrapper)
@@ -271,7 +327,7 @@ describe('the entries that do not fit', () => {
   ]
 
   const mountOverflowing = async (room: number, options: Options = {}): Promise<VueWrapper> => {
-    slotWidth = TITLE_MIN_WIDTH + room
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
     const wrapper = mountBar({ commands: FIVE, ...options })
     await resize(wrapper, room)
     return wrapper

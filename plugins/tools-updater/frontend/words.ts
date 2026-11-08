@@ -1,7 +1,12 @@
 /** Words used across the updater frontend. */
 export const WORDS = {
-  indicatorLabel: 'Application update available',
   title: 'Update available',
+  available: 'Update available',
+  running: 'You run',
+  clickToDownload: 'Click to download.',
+  product: 'Numen',
+  latest: 'This is the latest version.',
+  versionYouRun: 'the version you run.',
   close: 'Close update popover',
   download: 'Download',
   releaseNotes: 'Release notes',

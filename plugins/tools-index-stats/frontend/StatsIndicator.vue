@@ -55,22 +55,15 @@ function isResize(event: Event): boolean {
     <button
       type="button"
       class="index-stats__trigger"
+      :class="{ 'index-stats__trigger--indexing': isIndexing }"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       :title="summary"
       :aria-label="summary"
       @click="onToggle"
     >
-      <span class="index-stats__label">
-        <span
-          class="index-stats__icon"
-          :class="{ 'index-stats__icon--indexing': isIndexing }"
-          aria-hidden="true"
-        >
-          {{ MARK }}
-        </span>
-        {{ figure }}
-      </span>
+      <span class="index-stats__icon" aria-hidden="true">{{ MARK }}</span>
+      <span class="index-stats__figure">{{ figure }}</span>
     </button>
 
     <StatsPopover v-if="isOpen && stats" :stats="stats" :locale="locale" @close="onClose" />

@@ -21,7 +21,8 @@
         "id": "graph.open",
         "title": "Open plex graph",
         "icon": "waypoints",
-        "shortcut": "mod+shift+x"
+        "shortcut": "mod+shift+x",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "graph.showNote",
