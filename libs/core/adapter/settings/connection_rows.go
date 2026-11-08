@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // ConnectionRowsSource is what the rows of the plugins are read from and written to. Plugins lists
@@ -43,7 +44,7 @@ func (r *ConnectionRows) ListRows(pluginID, operation string) ([]connectionport.
 			continue
 		}
 		for _, one := range plugin.Settings {
-			if one.Type == "connections" && one.Operation == operation && one.IsShown {
+			if one.Type == manifest.SettingTypeConnections && one.Operation == operation && one.IsShown {
 				return r.readExistingRows(one.ValueJSON)
 			}
 		}
@@ -89,7 +90,7 @@ func (r *ConnectionRows) ListUses(connectionID string) ([]connectionport.Use, er
 	var uses []connectionport.Use
 	for _, plugin := range r.source.Plugins() {
 		for _, one := range plugin.Settings {
-			if one.Type != "connections" || !one.IsShown || !namesConnection(readRowsJSON(one.ValueJSON), connectionID) {
+			if one.Type != manifest.SettingTypeConnections || !one.IsShown || !namesConnection(readRowsJSON(one.ValueJSON), connectionID) {
 				continue
 			}
 			uses = append(uses, connectionport.Use{PluginID: plugin.ID, PluginName: plugin.Name, Operation: one.Operation})
@@ -110,24 +111,9 @@ func (r *ConnectionRows) RemoveRows(connectionID string) error {
 	if err != nil {
 		return err
 	}
-	var entries []settingsport.Setting
-	for _, owner := range slices.Sorted(maps.Keys(stored.Plugins)) {
-		declared, isFound := r.source.Declared(owner)
-		if !isFound {
-			continue
-		}
-		for _, one := range declared {
-			if one.Type != "connections" {
-				continue
-			}
-			entry, isChanged, err := removeRowsOf(stored, owner, one.Key, connectionID)
-			if err != nil {
-				return err
-			}
-			if isChanged {
-				entries = append(entries, entry)
-			}
-		}
+	entries, err := r.listEntriesWithout(stored, connectionID)
+	if err != nil {
+		return err
 	}
 	if len(entries) == 0 {
 		return nil
@@ -183,4 +169,27 @@ func (r *ConnectionRows) Refresh(ctx context.Context, connectionID string) error
 		r.source.Report(fmt.Errorf("send the configuration after connection %s changed: %w", connectionID, err))
 	}
 	return nil
+}
+
+func (r *ConnectionRows) listEntriesWithout(stored File, connectionID string) ([]settingsport.Setting, error) {
+	var entries []settingsport.Setting
+	for _, owner := range slices.Sorted(maps.Keys(stored.Plugins)) {
+		declared, isFound := r.source.Declared(owner)
+		if !isFound {
+			continue
+		}
+		for _, one := range declared {
+			if one.Type != manifest.SettingTypeConnections {
+				continue
+			}
+			entry, isChanged, err := removeRowsOf(stored, owner, one.Key, connectionID)
+			if err != nil {
+				return nil, err
+			}
+			if isChanged {
+				entries = append(entries, entry)
+			}
+		}
+	}
+	return entries, nil
 }

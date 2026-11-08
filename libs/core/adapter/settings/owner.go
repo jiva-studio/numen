@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // OwnerApp is the owner of the settings of the shell. Every other first-level key of the file
@@ -124,7 +125,7 @@ func checkValue(declared pluginport.PluginManifestSetting, registries Registries
 		return checkNumber(declared, value)
 	case "enum":
 		return checkOption(declared, registries, value)
-	case "connections":
+	case manifest.SettingTypeConnections:
 		return checkRows(declared, registries, value)
 	}
 	return nil
@@ -240,11 +241,7 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
-		for _, one := range settings {
-			if one.Type == "connections" {
-				f.dropInvalidRows(id, one)
-			}
-		}
+		f.dropInvalidRowsOf(id, settings)
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)

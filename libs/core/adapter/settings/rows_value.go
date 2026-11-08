@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // The keys of a row in the value of a setting of rows.
@@ -147,5 +148,13 @@ func (f *File) withConnectionIDs(registries Registries) Registries {
 			return nil, false
 		}
 		return registries(name)
+	}
+}
+
+func (f *File) dropInvalidRowsOf(owner string, settings []pluginport.PluginManifestSetting) {
+	for _, one := range settings {
+		if one.Type == manifest.SettingTypeConnections {
+			f.dropInvalidRows(owner, one)
+		}
 	}
 }

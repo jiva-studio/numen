@@ -73,6 +73,10 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
+	return u.describe(ctx, updated)
+}
+
+func (u *Update) describe(ctx context.Context, updated connectionport.Connection) (Entry, error) {
 	entry, err := u.buildEntry(ctx, updated)
 	if err != nil {
 		return Entry{}, err
