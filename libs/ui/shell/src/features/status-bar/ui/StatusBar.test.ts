@@ -167,6 +167,16 @@ describe('StatusBar', () => {
     expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
   })
 
+  it('closes the popover on its close button', async () => {
+    const wrapper = await openBar()
+    expect(wrapper.find('.status-bar__trigger').attributes('aria-expanded')).toBe('true')
+
+    await wrapper.find('.task-popover__close-btn').trigger('click')
+
+    expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
+    expect(wrapper.find('.status-bar__trigger').attributes('aria-expanded')).toBe('false')
+  })
+
   it('draws the labels it is given', () => {
     const wrapper = mount(StatusBar, {
       props: {
