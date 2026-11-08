@@ -19,7 +19,7 @@
 <style scoped>
 .secret-row {
   display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr) 9rem auto;
+  grid-template-columns: 11rem minmax(0, 1fr) 12rem var(--numen-action-size);
   align-items: center;
   gap: 0.5rem;
   padding-block: 0.375rem;
