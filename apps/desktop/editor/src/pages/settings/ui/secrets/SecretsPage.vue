@@ -124,7 +124,6 @@ function getNamesInGroup(group: string): readonly string[] {
       &larr; {{ words.backToPlugins }}
     </Button>
 
-    <h1 class="secrets-page__title">{{ words.secretsTitle }}</h1>
     <p v-if="credentialsPath !== ''" class="secrets-page__where">
       {{ words.secretsFile(credentialsPath) }}
     </p>
@@ -177,15 +176,8 @@ function getNamesInGroup(group: string): readonly string[] {
 
 .secrets-page__back {
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--settings-apart);
   margin-inline-start: -0.5rem;
-}
-
-.secrets-page__title {
-  margin: 0 0 var(--settings-apart);
-  color: var(--numen-ink);
-  font-size: var(--numen-title-size);
-  font-weight: 500;
 }
 
 .secrets-page__where {
