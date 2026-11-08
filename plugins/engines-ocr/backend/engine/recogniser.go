@@ -55,14 +55,14 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(found.recognise, cfg.Recognize)
+	classes, dict, err := alphabet(found.recognize, cfg.Recognize)
 	if err != nil {
 		return nil, errors.Join(err, layout.Close())
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
 		OnnxRuntimeLibPath:  pos,
 		DetModelPath:        found.detect,
-		RecModelPath:        found.recognise,
+		RecModelPath:        found.recognize,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
@@ -88,7 +88,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		jobs:   cfg.jobs(),
 		model: Model{
 			Layout:     name(found.layout),
-			Recogniser: name(found.recognise),
+			Recogniser: name(found.recognize),
 			DPI:        cfg.Recognize.dpi(),
 			From:       found.from,
 		},

@@ -129,7 +129,7 @@ func TestACallCancelledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRes
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	canceling := c
-	cancelling.index = func(ctx context.Context, v domain.Vault, paths []string) error {
+	canceling.index = func(ctx context.Context, v domain.Vault, paths []string) error {
 		err := c.index(ctx, v, paths)
 		cancel()
 		return err
