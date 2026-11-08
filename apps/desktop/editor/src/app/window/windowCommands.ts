@@ -6,6 +6,7 @@
 import { computed, watch } from 'vue'
 import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { CommandTarget } from '@/features/command-palette'
+import { getNamedTarget, toRunTarget } from '../commands/runTarget'
 
 interface WindowCommandsDeps {
   readonly getAppIds: () => readonly string[]
@@ -19,33 +20,8 @@ interface WindowCommandsDeps {
 export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
   const ids = computed<readonly string[]>(() => [...deps.getAppIds(), ...deps.getPluginIds()])
 
-  /**
-   * The target of the tab in front, with what the run names in place of its own. A run that names
-   * no target, as from a bar, is over the file of the tab in front, named as a menu names its own.
-   */
-  const getRunTarget = (target: RunTarget | undefined): CommandTarget => {
-    const front = deps.getTarget()
-    if (!target) return { ...front, isTargetNamed: true }
-    return {
-      ...front,
-      path: target.path,
-      file: target.path,
-      title: target.title,
-      isFolder: target.isFolder,
-      others: target.others,
-      tab: target.tab || front.tab,
-      isTargetNamed: true,
-    }
-  }
-
-  /** The run target in the words of the SDK, which the items and a run with an item take. */
-  const toRunTarget = (target: CommandTarget): RunTarget => ({
-    path: target.path,
-    title: target.title,
-    isFolder: target.isFolder ?? false,
-    others: target.others ?? [],
-    tab: target.tab,
-  })
+  const getRunTarget = (target: RunTarget | undefined): CommandTarget =>
+    getNamedTarget(deps.getTarget(), target)
 
   return {
     getIds: () => ids.value,

@@ -53,6 +53,7 @@ export function usePluginCommands(
   pluginHost: PluginHost | undefined,
   context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
   getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
+  getCommandNote: ReturnType<typeof createCommandNoteReader> = createCommandNoteReader(core),
 ) {
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
@@ -91,8 +92,6 @@ export function usePluginCommands(
       .filter((cmd) => !hasNoteVariable(cmd.when) && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
-
-  const getCommandNote = createCommandNoteReader(core)
 
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []

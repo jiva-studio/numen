@@ -10,6 +10,7 @@ import { SHARED_COMMANDS, type CommandItem, type PluginHost } from '@numen/plugi
 import type { Command, CommandTarget, PaletteLists, RunSupport } from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
+import { toRunTarget } from './runTarget'
 
 type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
 
@@ -32,13 +33,7 @@ function createPluginItems(deps: PluginItemsDeps) {
     if (requests.has(command) || !deps.pluginHost) return
     requests.add(command)
     const target = deps.getTarget()
-    const request = deps.pluginHost.listCommandItems(command, {
-      path: target.path,
-      title: target.title,
-      isFolder: target.isFolder ?? false,
-      others: target.others ?? [],
-      tab: target.tab,
-    })
+    const request = deps.pluginHost.listCommandItems(command, toRunTarget(target))
     runInBackground(
       request.then((items) => keep(command, items)),
       () => keep(command, []),

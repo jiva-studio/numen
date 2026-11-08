@@ -84,15 +84,6 @@ vi.mock('../commands/useCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
-  createPaletteItems: () => ({
-    hasCommandItems: () => false,
-    listCommandItems: async () => [],
-    runWithItem: async () => undefined,
-  }),
-  createCommandRunner: () => ({
-    runCommand: () => undefined,
-    runCommandToEnd: async () => undefined,
-  }),
 }))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (_core: unknown, args: unknown) => {
@@ -257,6 +248,12 @@ beforeEach(() => {
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
+      runCommandToEnd: vi.fn(async () => undefined),
+      items: {
+        hasCommandItems: () => false,
+        listCommandItems: async () => [],
+        runWithItem: async () => undefined,
+      },
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),

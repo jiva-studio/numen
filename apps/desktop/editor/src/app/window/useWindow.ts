@@ -33,7 +33,7 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { createCommandRunner, createPaletteItems, useCommands } from '../commands/useCommands'
+import { useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { createVersionCommands } from '../commands/versionCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
@@ -83,6 +83,7 @@ interface WindowCommandsOptions {
   declaredCommands: ReturnType<typeof useDeclaredCommands>
   slots?: SlotHost | undefined
   getAppCommands: () => readonly Command[]
+  readCommandNote: ReturnType<typeof createCommandNoteReader>
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -91,6 +92,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     declaredCommands: deps.declaredCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,
+    readCommandNote: deps.readCommandNote,
     core,
     words,
     log: deps.log,
@@ -547,6 +549,7 @@ function initWindowKindsAndCommands(
     declaredCommands: base.declaredCommands,
     slots: base.pluginHost.slots,
     getAppCommands: () => getAppCommandList(ctx),
+    readCommandNote: createCommandNoteReader(base.itemLists),
   })
 
   return {
@@ -751,32 +754,14 @@ function createWindowFrameServices(
   const { frame } = base
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => getAppCommandList(ctx)
-  const getCommandNote = createCommandNoteReader(base.itemLists)
-  const getCommandDeps = () => getCommands(ctx).commandDeps
-  const items = createPaletteItems(
-    {
-      getAppCommands,
-      declaredCommands: base.declaredCommands,
-      pluginHost: base.pluginHost,
-      getTarget: commands.getTarget,
-    },
-    getCommandNote,
-    getCommandDeps,
-  )
-  const runner = createCommandRunner({
-    ...getCommands(ctx),
-    pluginHost: base.pluginHost,
-    getCommandNote,
-    getCommandDeps,
-    writeMessage: base.writeMessage,
-  })
+  const { items, runCommandToEnd } = getCommands(ctx)
   const windowCommands = createWindowCommands({
     getAppIds: () => [
       ...(tableIds ??= createCommands(words).map((one) => one.id)),
       ...getAppCommands().map((one) => one.id),
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
-    runCommandToEnd: runner.runCommandToEnd,
+    runCommandToEnd,
     listItems: items.listCommandItems,
     runWithItem: items.runWithItem,
     getTarget: commands.getTarget,

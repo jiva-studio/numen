@@ -19,7 +19,10 @@ const VERSION_WORDS = { deleteText: 'Delete text' }
 
 export interface VersionCommandsDeps {
   /** The items of a command the core serves, over the file. */
-  listItems(command: { readonly pluginId: string; readonly id: string }, path: string): Promise<readonly CommandItem[]>
+  listItems(
+    command: { readonly pluginId: string; readonly id: string },
+    path: string,
+  ): Promise<readonly CommandItem[]>
   /** Runs a command the core serves over the file, with the item picked. */
   run(command: string, path: string, itemId: string): Promise<DeclaredCommandOutcome>
 }

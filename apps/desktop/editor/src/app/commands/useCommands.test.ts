@@ -275,7 +275,10 @@ describe('a plugin command over a note', () => {
     shortcut: 'mod+shift+x',
     icon: 'waypoints',
   }
-  const setupPlugin = (declared: readonly object[] = [SUMMARY]) => {
+  const setupPlugin = (
+    declared: readonly object[] = [SUMMARY],
+    extra: Partial<CommandsDepsOptions> = {},
+  ) => {
     const executeCommand = vi.fn(async () => true)
     const handleShortcut = vi.fn(() => false)
     const writeMessage = vi.fn()
@@ -304,6 +307,7 @@ describe('a plugin command over a note', () => {
       rest: {},
       writeMessage,
       pluginHost,
+      ...extra,
     } as unknown as CommandsDepsOptions
     return { executeCommand, handleShortcut, writeMessage, ...useCommands(options) }
   }
@@ -408,6 +412,26 @@ describe('a plugin command over a note', () => {
     one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
     await vi.waitFor(() => expect(one.writeMessage).toHaveBeenCalled())
     expect(one.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('reads the note of every run through the one reader the window gives, a run to its end too', async () => {
+    const note = {
+      path: 'Animals.md',
+      title: 'Animals',
+      type: 'deck',
+      isFolder: false,
+      others: [],
+      tab: '',
+    }
+    const readCommandNote = vi.fn(async () => note)
+    const one = setupPlugin([SUMMARY], { readCommandNote })
+    const target = { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget
+
+    one.runCommand('summary', target)
+    await one.runCommandToEnd('summary', target)
+
+    expect(readCommandNote).toHaveBeenCalledTimes(2)
+    expect(one.executeCommand.mock.calls.map((call) => call[1])).toStrictEqual([note, note])
   })
 
   it('delegates shortcuts to pluginHost.handleShortcut with a lazy note getter', async () => {

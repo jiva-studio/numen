@@ -9,6 +9,7 @@ import {
   type PluginHost,
 } from '@numen/plugin-host'
 import type { Command, CommandTarget } from '@/features/command-palette'
+import { getNamedTarget } from './runTarget'
 
 interface CommandItemsDeps {
   readonly getAppCommands: () => readonly Command[]
@@ -23,19 +24,7 @@ export function createCommandItems(deps: CommandItemsDeps) {
   const findAppCommand = (id: string) =>
     deps.getAppCommands().find((one) => one.id === id && one.listItems !== undefined)
 
-  /** The target of the tab in front, with what the run names in place of its own. */
-  const toAppTarget = (target: RunTarget): CommandTarget => {
-    const front = deps.getTarget()
-    return {
-      ...front,
-      path: target.path,
-      file: target.path === '' ? front.file : target.path,
-      title: target.title,
-      isFolder: target.isFolder,
-      others: target.others,
-      tab: target.tab || front.tab,
-    }
-  }
+  const toAppTarget = (target: RunTarget): CommandTarget => getNamedTarget(deps.getTarget(), target)
 
   return {
     hasCommandItems: (id: string): boolean =>
