@@ -1,6 +1,6 @@
 # Glossary of the product
 
-This file lists the things that exist in Numen, the word a person reads for each, and the similar words that are wrong. A scenario in `features/` uses these words and no others. The canonical term is the word in the interface (`words.ts`, manifests, command titles), not the name in the code. Code names are in backticks. Where the interface uses two words for one thing, both are kept and the pair is in "Decisions for the owner".
+This file lists the things that exist in Numen, the word a person reads for each, and the similar words that are wrong. A scenario in `features/` uses these words and no others. The canonical term is the word in the interface (`words.ts`, manifests, command titles), not the name in the code. Code names are in backticks. Where the interface uses two words for one thing, both are listed under the entry.
 
 ## The words that look alike
 
@@ -12,7 +12,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - chunk, vector, passage: a chunk is a piece of text of the index; a vector is the numbers made for a chunk; a passage is a piece of text a search shows.
 - transcript, caption, recognition, proofreading: text made from speech, text from a video site, text read from a scan, and a cleaned text.
 - card, review card, card model, template, field: a card is written in a deck; a review card is a card with one template; a card model gives fields and templates.
-- plugin, provider, engine, tool: a plugin is an add-on; "Provider" is a setting name (see decisions); an engine is a plugin that does heavy work (speech, OCR, vectors); a tool is an action the agent calls.
+- plugin, provider, engine, tool: a plugin is an add-on; "Provider" is a setting name; an engine is a plugin that does heavy work (speech, OCR, vectors); a tool is an action the agent calls.
 - remove, trash, delete, erase: remove moves a note or folder to the trash (and removes a vault from the list); "Move note to trash" is reversible; "Delete note permanently" is not; "Erase vault" moves the vault folder to the trash.
 
 ## Vault and files
@@ -65,7 +65,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A markdown file of a vault that Numen opens in a note tab. It has a path, a title, an id, frontmatter, headings, links and a body.
 - Actions: `note.open` "Open note", `note.openBeside` "Open note beside", `note.goTo` "Go to note", `note.create` "Create note", `note.rename` "Rename note", `note.copyPath` "Copy note path".
 - Texts: "No active note"; "Broken links in:" (editor/src/shared/words.ts).
-- Not: the conflict texts say "file" in one place and "note" in another (decision 1). The core says "source" (index side). A "document" is the PDF reader word; a "passage" is a piece of text found by search.
+- Not: the conflict texts say "file" in one place and "note" in another. The core says "source" (index side). A "document" is the PDF reader word; a "passage" is a piece of text found by search.
 
 ### note title and filename
 - Is: The title is the name a note is shown by (the `title` key of the frontmatter, else the filename without `.md`). The filename is the name of the file.
@@ -116,7 +116,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### tab link
 - Is: A group of tabs that follow each other (for example a text and its recording), also across windows (`TabLinkGroup`).
-- Not: no interface text found (open question).
+- Not: no interface text found.
 
 ### plugin unavailable pane
 - Is: The page in a tab whose plugin is off, stopped, missing or incompatible.
@@ -165,7 +165,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: `running`, `failed` (has an error), `cancelling`, `completed`, `notice`.
 - Actions: "Cancel task" (then "Cancelling"), "Retry task", "Dismiss", "Configure in settings".
 - Texts: titles "Indexing the vault", "Indexing", "Update index", "Read embedding model", "Import files", "Plugin stopped", "Downloading <dependency>"; "<Name> stopped: <reason>" (editor/src/shared/words.ts).
-- Not: three definitions in the code (decision 6).
+- Not: three definitions in the code.
 
 ### task list
 - Is: The popover from the status bar that lists the tasks, newest first.
@@ -220,7 +220,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: `dangling` (matches no note), `ambiguous` (matches more than one note).
 - Actions: "Add link", "Remove link", "Add reverse direction"; "Done", "Cancel".
 - Texts: "Link description"; "No arrow"; "Arrow to <title>"; "The link between these notes will be removed."; "Links not created:" (plugins/views-plex-graph/frontend/words.ts).
-- Not: not the imported "link" (decision 11). The pair of records of two notes is a connection (`parent: B` in A and `child: A` in B).
+- Not: not the imported "link". The pair of records of two notes is a connection (`parent: B` in A and `child: A` in B).
 
 ### wikilink
 - Is: A link written in the text of a note as `[[Note Title]]`.
@@ -235,7 +235,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: "Loading…".
 - Actions: `graph.open` "Open plex graph"; `graph.showNote` "Show note in plex"; click a node to move the focus; drag a line to link.
 - Texts: settings "Nest headings under notes", "Headings per note" (plugins/views-plex-graph/frontend/words.ts).
-- Not: "graph" and "map" (decision 4). A node is a note in the plex.
+- Not: "graph" and "map". A node is a note in the plex.
 
 ### relation
 - Is: The place of a note compared to the focus note: `parent` (above), `child` (below), `jump` (left), `sibling` (right, derived, never written).
@@ -258,7 +258,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### chapter and contents
 - Is: A chapter is a part of a book named in the contents. The contents is the list of chapters that you click to go there.
 - Texts: "Contents"; "Find in contents"; "No table of contents."; "N pages left in chapter" (plugins/readers-epub/frontend/words.ts).
-- Not: "section" and "table of contents" (decisions 2 and 3).
+- Not: "section" and "table of contents".
 
 ### page
 - Is: One screen of a book or one sheet of a PDF. A PDF page has a fixed number; the pages of a book depend on the text size.
@@ -271,7 +271,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### highlight
 - Is: A coloured mark on a passage of a book or PDF. A passage linked from a note is also marked.
-- Not: no highlight label in `words.ts` (open question).
+- Not: no highlight label in `words.ts`.
 
 ### recording
 - Is: An audio or video file played in a tab with its transcript. Tab kind `reader:media-player`, tab title "Audio Player".
@@ -294,7 +294,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### text version
 - Is: A text made from a file by a plugin: a transcript, a recognition, an article, a proofread text. Shown and indexed when it is the live one.
 - Actions: "Transcribe recording", "Recognise text", "Proofread text", "Delete transcript", "Delete recognition", "Delete proofreading".
-- Not: the person reads the text, not the word "version" (open question).
+- Not: the person reads the text, not the word "version".
 
 ## Agent
 
@@ -307,7 +307,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### agent provider
 - Is: A plugin that connects one kind of AI program as an agent (capability `ai.agent.provider`): "Numen Agent", "Claude Code Agent", "OpenAI Codex Agent", "Antigravity Agent", "ACP Agents".
 - Texts: settings "Chat API", "Model", "Temperature", "Max Tokens", "Max Steps", "Executable Path", "Hooks & skills" (plugins/agents-*/manifest.json).
-- Not: not the setting "Provider" (decision 10).
+- Not: not the setting "Provider".
 
 ### agent tab
 - Is: The tab where a person chats with the agent. Tab kind `agent`, tab title "Agent", plugin Agent Chat.
@@ -340,7 +340,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A note of type `deck` that holds cards, grouped under sections. It names a preset ("Scheduled by"). Tab kind `deck`, tab title "Deck".
 - Actions: `deck.create` "Create deck" (argument "Title"); the conflict buttons of a note tab.
 - Texts: "Scheduled by", "Not a deck.", "This vault holds no deck.", "No preset set. Scheduled by the defaults." (plugins/views-flashcards-studio/frontend/cards/words.ts).
-- Not: a deck is a note, not a folder. Its conflict text says "file" (decision 1).
+- Not: a deck is a note, not a folder. Its conflict text says "file".
 
 ### card
 - Is: One question and answer written in a deck. It has a card id, field values and a card model.
@@ -356,7 +356,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A note of type `card-model` that says which fields a card has and how it looks. Tab kind `card-model`.
 - Actions: `cardModel.create` "Create card model"; "Add a field", "Add a template".
 - Texts: "Fields", "Templates", "No fields yet", "A field needs a name", "That name is taken" (.../ui/cards/lib/card-model.ts).
-- Not: old name in code and stories: "cut" (decision 9). Not the AI "model".
+- Not: old name in code and stories: "cut". Not the AI "model".
 
 ### template, field and section
 - Is: A template is one front and back of a card model (fields go in braces). A field is a named slot of a card model. A section is a named group of cards in a deck, written as a heading.
@@ -381,7 +381,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### rating
 - Is: How well a card was recalled: "Again" (1), "Hard" (2), "Good" (3), "Easy" (4). Each button shows the time the card would wait.
-- Not: the frontend says `Grade`, the backend `Rating`, the person reads "answer" (decision 5).
+- Not: the frontend says `Grade`, the backend `Rating`, the person reads "answer".
 
 ### schedule, due and heatmap
 - Is: The schedule is the next day a card is due, computed by FSRS from the answers. Due is a card ready today, and the count of such cards. The heatmap is a grid of days with the cards answered and the cards ahead.
@@ -405,7 +405,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### recognition
 - Is: Text read from a scanned PDF or an image. Plugin "Document OCR".
 - Actions: `recognition.create` "Recognise text"; `recognition.delete` "Delete recognition".
-- Not: "Recognise" is British (decision 8).
+- Not: "Recognise" is British.
 
 ### proofreading
 - Is: Cleaning of a transcript or scanned text with a language model, in batches of lines. Plugin "LLM Proofreading".
@@ -447,42 +447,3 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Beta", "Custom".
 - Actions: "Download", "Release notes", "Dismiss".
 - Texts: "Update available", "Application update available", "Released on" (plugins/tools-updater/frontend/words.ts).
-
-## Decisions for the owner
-
-1. note and file. Menus, commands and the plex say "note" ("Move note to trash", "Rename note"). Conflict texts say "file" ("Saving paused: the file changed on disk."), the deck and card model tabs say "file" too, the "File" command group and the file tree say "file", and the note buffer words say "note". Recommend: "note" for a markdown note and every tab that edits one (a deck is a note), "file" only for a file that is not a note; the scenarios then use one word for one thing.
-2. chapter and section. Books say "chapter" ("N pages left in chapter"); stories of the book say "Book sections"; a deck has a "section" too. Recommend: "chapter" for books and "section" only for decks, so one word means one thing.
-3. contents and table of contents. The title is "Contents" and the empty text is "No table of contents."; a PDF has an "outline tree". Recommend: "Contents" for both, because it is the title a person sees.
-4. graph, plex and map. The command and plugin say "graph" ("Open plex graph", "Plex Graph"); the tab and its drawing say "Plex"; the README says "map". Recommend: "plex" for the tab and the picture, never "map".
-5. rating, grade and answer. The frontend says `Grade`, the backend `Rating`, the screen says "answer" ("N answered.") and shows Again, Hard, Good, Easy. Recommend: "answer" because the person reads it.
-6. task. The core defines a task with a kind `work` or `NOTICE`; the window defines `Task` (with `TaskState` including `notice`); the shell has `StatusBarTask` and another `Task` in `features/notices`. All show in one list. Recommend: "task" for work and "failed task" for a problem, and a single definition.
-7. notice, message, notification and banner. A notice shows as a failed task, "message" is also a line of the agent conversation, "banner" is the bar in a note tab, "notification" has no entity. Recommend: no scenario uses "notification"; "notice" only for the core message, "banner" only for the file conflict bar.
-8. Recognise and Minimise against the American rule. "Recognise text" (plugins/engines-ocr/manifest.json) and "Minimise", "Maximise" (title bar) are British. Recommend: "Recognize text", "Minimize", "Maximize", because the project rule is American spelling.
-9. card model and cut. The interface says "Card model"; code and stories say "cut" ("Cut by no card model"); the manifest title is "Card Model" and the words say "Card model". Recommend: "card model", one capital letter style: "Card model".
-10. Provider. "Provider" is a setting of proofreading (Agent, OpenRouter, OpenAI, Custom service), a setting of embeddings (Local, OpenRouter, OpenAI, Custom service), and "agent provider" is a plugin kind. Recommend: "agent provider" for plugins and "Provider" only inside its own settings; scenarios name the plugin.
-11. link. "Link" is a connection between two notes, a note of type `link` with a web address (tab title "Link"), and "Numen Link" (sync). Recommend: "link" for the connection between notes and "imported link" for the web address note.
-12. transcript, messages. The agent chat code uses "transcript" and "thread" for the conversation; the interface says "No messages yet". Recommend: "messages" and "conversation"; "transcript" only for a recording.
-13. agent and assistant. Manifests say "AI assistant"; the interface says "agent". Recommend: "agent".
-14. text version. The code and docs say "version"; the person reads the text. Recommend: "text" with the kind: "transcript", "recognition", "article".
-15. words, text and meaning. The search modes are `words`, `meaning`, `names`, `hybrid`; the result groups read "Names", "Text", "Meaning"; one message says "Semantic index". Recommend: "Names", "Text", "Meaning" as in the groups.
-16. remove, trash, delete and erase. A note "Move note to trash" and "Delete note permanently"; a vault "Remove vault from list" and "Erase vault"; the confirm buttons say "Destroy", "Erase", "Remove". Recommend: "remove" for the list, "trash" for reversible, "delete permanently" for the note, "erase" for the vault folder.
-17. relation, role and jump. A link has a role; a note in the plex has a relation; `jump` is only a name. Recommend: use "relation" for the plex and "role" for a stored link; describe a jump note as "jump note".
-18. threshold, relevance and floor. The code says `floor`; the interface says "Relevance threshold" and "Search relevance". Recommend: "relevance threshold".
-19. recording, Audio Player and Record Audio. The word "Recording" names the file, the player tab is "Audio Player" and the recorder tab is "Record Audio". Recommend: "recording" for the file, "player" and "recorder" for the tabs.
-20. theme and appearance. The settings say "Theme" and "Light or dark"; the flashcards window says "Appearance" and "Mode". Recommend: "theme" for colours and "mode" for light or dark.
-21. conflict button case. "Recreate it" in the notes plugin, "recreate it" in the editor entity. Recommend: "Recreate it".
-22. Files tab and file tree. The command is "Open file tree"; the tab title is "Files". Recommend: "file tree" for the feature and "Files" for the tab title.
-23. Pane, panel and popover. The code says pane for a stack of tabs; "panel" is used in flashcards ("Source notes", "Ask about this card"). Recommend: keep both, one meaning each.
-
-## Open questions
-
-1. What words does the interface use for a tab link group?
-2. Is "Live Preview" a setting? It is in the README of the notes plugin but not in plugins/notes/manifest.json.
-3. Does the interface show the word "version" for a text version anywhere?
-4. Is there a label for a highlight in the interface?
-5. Should a sibling note have a create command, or are siblings only derived?
-6. What are the exact day lines of the heatmap that the window passes in?
-7. Does "notification" exist anywhere in the interface for the person?
-8. Is "source" (README) the same as "Notes and files" (index stats)?
-9. Is the tab title "Markdown Note Editor" the title a person reads, or is it "Note"?
-10. Is a "document" (PDF code word) read anywhere by the person instead of "PDF"?
