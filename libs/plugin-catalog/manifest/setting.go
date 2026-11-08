@@ -210,17 +210,23 @@ func (m Manifest) listSettingLinkIssues() []error {
 		issues = append(issues, listConditionIssues("setting "+s.Key, s.When, declared)...)
 		for _, options := range m.getAllOptions(s) {
 			for _, option := range options {
-				if _, err := when.Parse(option.When); err != nil {
-					issues = append(issues, fmt.Errorf("%w: %s option %q: when %q: %w", ErrInvalidSetting, s.Key, option.Value, option.When, err))
-				}
-				for _, id := range option.Dependencies {
-					if !slices.ContainsFunc(m.Dependencies, func(req DependencyRequirement) bool { return req.ID == id }) {
-						issues = append(issues, fmt.Errorf("%w: %s option %q provisions %q, which the manifest does not declare", ErrInvalidSetting, s.Key, option.Value, id))
-					}
-				}
+				issues = append(issues, m.listOptionIssues(s, option)...)
 			}
 		}
 		declared[s.Key] = s
+	}
+	return issues
+}
+
+func (m Manifest) listOptionIssues(s Setting, option SettingOption) []error {
+	var issues []error
+	if _, err := when.Parse(option.When); err != nil {
+		issues = append(issues, fmt.Errorf("%w: %s option %q: when %q: %w", ErrInvalidSetting, s.Key, option.Value, option.When, err))
+	}
+	for _, id := range option.Dependencies {
+		if !slices.ContainsFunc(m.Dependencies, func(req DependencyRequirement) bool { return req.ID == id }) {
+			issues = append(issues, fmt.Errorf("%w: %s option %q provisions %q, which the manifest does not declare", ErrInvalidSetting, s.Key, option.Value, id))
+		}
 	}
 	return issues
 }
