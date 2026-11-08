@@ -582,11 +582,11 @@ func TestTheSignatureOfAListContainsNoValue(t *testing.T) {
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.SetSecretSource(allowOne(secretPluginID))
-	host.mu.Lock()
-	host.awaitingFirstConfigure[secretPluginID] = true
-	host.mu.Unlock()
+	host.secrets.mu.Lock()
+	host.secrets.awaitingFirstConfigure[secretPluginID] = true
+	host.secrets.mu.Unlock()
 
-	if host.hasSecretsChanged(t.Context(), secretPluginID) {
+	if host.secrets.hasSecretsChanged(t.Context(), secretPluginID) {
 		t.Error("a plugin that awaits the Configure of its activation is due a Configure")
 	}
 	if err := host.RefreshSecrets(t.Context()); err != nil {

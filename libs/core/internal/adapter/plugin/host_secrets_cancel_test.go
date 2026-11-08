@@ -212,7 +212,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return c.host.isAwaitingFirstConfigure(secretPluginID)
+		return c.host.secrets.isAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()
 	select {
@@ -223,7 +223,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	case <-time.After(configureCallTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
-	if c.host.isAwaitingFirstConfigure(secretPluginID) {
+	if c.host.secrets.isAwaitingFirstConfigure(secretPluginID) {
 		t.Error("the plugin still awaits a Configure that will not be sent")
 	}
 

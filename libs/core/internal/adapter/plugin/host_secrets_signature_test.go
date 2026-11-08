@@ -31,7 +31,7 @@ func TestCheckingTheListOfSecretsDoesNotReadTheKeyStore(t *testing.T) {
 		t.Fatal("the Configure call carried no value")
 	}
 
-	if host.hasSecretsChanged(t.Context(), secretPluginID) {
+	if host.secrets.hasSecretsChanged(t.Context(), secretPluginID) {
 		t.Error("an unchanged list is reported as changed")
 	}
 	if err := host.RefreshSecrets(t.Context()); err != nil {

@@ -533,9 +533,7 @@ func TestAnOperationBeforeTheActivationConfigureEndsWithOneCallWithTheNewList(t 
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		host.mu.RLock()
-		defer host.mu.RUnlock()
-		return host.awaitingFirstConfigure[secretPluginID]
+		return host.secrets.isAwaitingFirstConfigure(secretPluginID)
 	})
 	close(gate)
 

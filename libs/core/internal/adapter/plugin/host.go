@@ -61,63 +61,64 @@ const settingEnabled = "enabled"
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu                     sync.RWMutex
-	target                 string
-	dirs                   []string
-	plugins                map[string]manifest.Discovered
-	supervisors            map[string]*lifecycle.Supervisor
-	endpoints              map[string]transport.Endpoint
-	launcher               Launcher
-	safeMode               bool
-	vaultPath              string
-	bus                    *eventbus.Bus
-	settings               map[string]map[string]any
-	performance            string
-	persistHandler         PersistHandler
-	evictTicker            *time.Ticker
-	evictDone              chan struct{}
-	evictWg                sync.WaitGroup
-	isEvictStopped         bool
-	isClosed               bool
-	stdinsMu               sync.Mutex
-	stdins                 map[stdinKey]io.Closer
-	processLimits          process.Limits
-	activation             lifecycle.ActivationPolicy
-	onPluginFailed         func(pluginport.PluginFailure)
-	onFailureCleared       func(pluginID string)
-	configWatchers         map[string]map[int]func()
-	nextWatcher            int
-	errorHandler           eventbus.ErrorHandler
-	onDisk                 map[string]bool
-	discoverMu             sync.RWMutex
-	failedPlugins          []pluginport.PluginFailure
-	problems               []manifestjson.DiscoveryProblem
-	installed              []manifest.Discovered
-	hasScanned             bool
-	completer              completionport.Completer
-	vault                  pluginport.PluginVault
-	texts                  pluginport.PluginTexts
-	window                 pluginport.PluginWindow
-	vaultList              pluginport.PluginVaultList
-	search                 pluginport.PluginSearch
-	keyStore               pluginport.KeyStore
-	secretLock             chan struct{}
-	secretSource           pluginport.SecretSource
-	delivered              map[string]string
-	awaitingFirstConfigure map[string]bool
-	noKeyStoreOnce         sync.Once
-	hostEndpoint           *hostendpoint.Endpoint
-	hostAddress            string
-	dependencies           pluginport.DependencyCatalog
-	work                   pluginport.PluginWork
-	builtIns               map[string]builtInPlugin
-	contentTypes           contentTypeTable
-	typeCache              contentTypeCache
-	clock                  machineport.Clock
-	storage                storageRoots
-	listenersMu            sync.Mutex
-	listeners              map[string]map[string]listenerBinding
-	listenerPorts          map[string]map[string]int
+	mu               sync.RWMutex
+	target           string
+	dirs             []string
+	plugins          map[string]manifest.Discovered
+	supervisors      map[string]*lifecycle.Supervisor
+	endpoints        map[string]transport.Endpoint
+	launcher         Launcher
+	safeMode         bool
+	vaultPath        string
+	bus              *eventbus.Bus
+	settings         map[string]map[string]any
+	performance      string
+	persistHandler   PersistHandler
+	evictTicker      *time.Ticker
+	evictDone        chan struct{}
+	evictWg          sync.WaitGroup
+	isEvictStopped   bool
+	isClosed         bool
+	stdinsMu         sync.Mutex
+	stdins           map[stdinKey]io.Closer
+	processLimits    process.Limits
+	activation       lifecycle.ActivationPolicy
+	onPluginFailed   func(pluginport.PluginFailure)
+	onFailureCleared func(pluginID string)
+	errorHandler     eventbus.ErrorHandler
+	onDisk           map[string]bool
+	discoverMu       sync.RWMutex
+	failedPlugins    []pluginport.PluginFailure
+	problems         []manifestjson.DiscoveryProblem
+	// installed holds every plugin of the last scan whatever its target.
+	installed  []manifest.Discovered
+	hasScanned bool
+	completer  completionport.Completer
+	vault      pluginport.PluginVault
+	texts      pluginport.PluginTexts
+	window     pluginport.PluginWindow
+	vaultList  pluginport.PluginVaultList
+	search     pluginport.PluginSearch
+	// secrets delivers the secrets to the plugins.
+	secrets      *secretDelivery
+	hostEndpoint *hostendpoint.Endpoint
+	hostAddress  string
+	dependencies pluginport.DependencyCatalog
+	work         pluginport.PluginWork
+	builtIns     map[string]builtInPlugin
+	contentTypes contentTypeTable
+	typeCache    contentTypeCache
+	clock        machineport.Clock
+	storage      storageRoots
+	// listenersMu serializes the binding and closing of listener ports. It is locked before mu,
+	// never while mu is locked.
+	listenersMu sync.Mutex
+	// listeners maps each plugin to its bound listener ports by listener name.
+	listeners map[string]map[string]listenerBinding
+	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
+	listenerPorts map[string]map[string]int
+	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
+	// reported, until the plugin activates or its failure is cleared.
 	reportedTargetFailures map[string]struct{}
 }
 
@@ -152,10 +153,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		failedPlugins:          nil,
 		problems:               nil,
 		completer:              nil,
-		keyStore:               nil,
-		delivered:              make(map[string]string),
-		secretLock:             make(chan struct{}, 1),
-		awaitingFirstConfigure: make(map[string]bool),
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
 		dependencies:           nil,
@@ -167,6 +164,11 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
 	}
+	h.secrets = newSecretDelivery(secretHost{
+		takeConfigSnapshot: h.takeConfigSnapshot,
+		listPluginIDs:      h.listPluginIDs,
+		reportError:        h.reportError,
+	})
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
 	return h
@@ -669,25 +671,18 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
-	h.mu.Lock()
-	delete(h.delivered, p.Manifest.ID)
-	h.awaitingFirstConfigure[p.Manifest.ID] = true
-	h.mu.Unlock()
+	h.secrets.startActivation(p.Manifest.ID)
 	sup.RecordActivationSuccess()
 
 	// No secret operation runs between the Configure of the activation and the end of the wait for it.
 	// A failed push leaves the plugin running, and it gets its settings again on the next change.
-	if lockErr := h.lockSecrets(ctx); lockErr != nil {
-		h.mu.Lock()
-		delete(h.awaitingFirstConfigure, p.Manifest.ID)
-		h.mu.Unlock()
+	if lockErr := h.secrets.lockSecrets(ctx); lockErr != nil {
+		h.secrets.endActivation(p.Manifest.ID)
 		return endpoint, lockErr
 	}
-	readErr, configureErr := h.configurePluginLocked(ctx, p.Manifest.ID)
-	h.mu.Lock()
-	delete(h.awaitingFirstConfigure, p.Manifest.ID)
-	h.mu.Unlock()
-	h.unlockSecrets()
+	readErr, configureErr := h.secrets.configurePlugin(ctx, p.Manifest.ID)
+	h.secrets.endActivation(p.Manifest.ID)
+	h.secrets.unlockSecrets()
 	if err := errors.Join(readErr, configureErr); err != nil {
 		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
 	}
@@ -1395,11 +1390,11 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	if err := h.lockSecrets(ctx); err != nil {
+	if err := h.secrets.lockSecrets(ctx); err != nil {
 		return err
 	}
-	defer h.unlockSecrets()
-	readErr, configureErr := h.configurePluginLocked(ctx, pluginID)
+	defer h.secrets.unlockSecrets()
+	readErr, configureErr := h.secrets.configurePlugin(ctx, pluginID)
 	return errors.Join(readErr, configureErr)
 }
 
@@ -1409,10 +1404,13 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	declared   []manifest.Secret
-	requested  []string
-	store      pluginport.KeyStore
-	source     pluginport.SecretSource
+	// declared are the secret declarations whose condition holds under the settings in force.
+	declared []manifest.Secret
+	// requested are the groups the installed plugins ask for.
+	requested []string
+	// store and source are filled in by secretDelivery, not by the host.
+	store  pluginport.KeyStore
+	source pluginport.SecretSource
 }
 
 func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
@@ -1442,8 +1440,6 @@ func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error)
 		values:     values,
 		declared:   h.listActiveDeclarationsLocked(pluginID, rawSettings),
 		requested:  secret.ListAskedGroups(h.listDeclarationsLocked()),
-		store:      h.keyStore,
-		source:     h.secretSource,
 	}, true, nil
 }
 
