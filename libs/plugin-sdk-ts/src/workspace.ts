@@ -36,6 +36,7 @@ export interface NoteNeighbour {
   readonly title: string
   readonly relation: NoteRelation
   readonly type: NoteType
+  readonly tabKind?: string
 }
 
 // NoteNeighbourhood is a note in focus, the notes joined to it, and one connection for every line drawn between
@@ -45,6 +46,7 @@ export interface NoteNeighbour {
 export interface NoteNeighbourhood {
   readonly focus: NoteRef
   readonly focusType: NoteType
+  readonly focusTabKind?: string
   readonly related: readonly NoteNeighbour[]
   readonly connections: readonly Connection[]
 }

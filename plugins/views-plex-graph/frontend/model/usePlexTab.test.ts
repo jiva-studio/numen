@@ -119,7 +119,7 @@ const tab = (
       return NODE_MENU
     },
     listItems: async () => [],
-    getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
+    getNoteIcon: (tabKind) => (tabKind === 'sample' ? SAMPLE_ICON : null),
     runCommand: async (id, target) => {
       ran.push([id, target.path, target.title])
     },
@@ -1031,7 +1031,7 @@ describe('what a node remains for', () => {
     expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
 
-  it('is drawn with the icon the window gives its type, and an ordinary note with none', () => {
+  it('is drawn with the icon of the tab kind the core chose for it, and a note it reports none for with none', () => {
     const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
 
     expect(one.state.getNodeIcon(one.node('Sample.md'))).toBe(SAMPLE_ICON)

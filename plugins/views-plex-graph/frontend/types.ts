@@ -128,7 +128,7 @@ export interface PlexTabDeps {
   /** Runs a command of the menu over the note of a node; with `itemId`, the item picked. */
   runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
   /** The icon the window draws a type of note with. */
-  getNoteIcon(type: NoteType): Component | null
+  getNoteIcon(tabKind: string): Component | null
   readonly openingPath: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
   showMessage(text: string): void

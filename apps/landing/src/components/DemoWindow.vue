@@ -1772,7 +1772,7 @@ const plexState = createPlexTab(plexView, {
   runCommand: async (command, target) => {
     runVaultCommand(command, target.path, 'plex')
   },
-  getNoteIcon: (type) => (type === 'deck' ? Layers : FileText),
+  getNoteIcon: (tabKind) => (tabKind === 'deck' ? Layers : FileText),
   openingPath: ref('physics/Entropy.md'),
   readOpeningPath: async () => 'physics/Entropy.md',
   dragged: draggedPaths,

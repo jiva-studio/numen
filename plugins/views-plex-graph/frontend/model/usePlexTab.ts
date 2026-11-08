@@ -13,7 +13,7 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import { NEW_NOTE, NONE } from '../lib/menu'
-import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
+import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { WORDS as words } from '../words'
@@ -82,6 +82,13 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
 
+  const tabKinds = computed<ReadonlyMap<string, string>>(() => {
+    const neighbourhood = view.neighbourhood.value
+    return neighbourhood ? getTabKinds(neighbourhood) : new Map()
+  })
+
+  const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
+
   const activePaths = computed<readonly string[]>(() => {
     const neighbourhood = view.neighbourhood.value
     if (!neighbourhood) return []
@@ -90,7 +97,7 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, drawn: activePaths }
+  return { picture, empty, dragged, types, getType, getTabKind, drawn: activePaths }
 }
 
 function createPlexNodeActions(options: {
@@ -258,6 +265,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     dragged,
     types,
     getType,
+    getTabKind,
     drawn: drawnNodes,
   } = usePlexImage(view, deps, map)
 
@@ -298,8 +306,8 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     menuItems,
     getMenuIcon,
     getNodeIcon: (node: string) => {
-      const type = getType(node)
-      return type === NOTE_TYPE ? null : deps.getNoteIcon(type)
+      const tabKind = getTabKind(node)
+      return tabKind === undefined ? null : deps.getNoteIcon(tabKind)
     },
     creatable: deps.creatable,
     getType,
