@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
  * A secret that does not exist yet, drawn as a saved one: a name to type, a masked field and a
- * discard button. The secret is created, under the name typed, when a value is entered. Its
+ * discard button, or the disabled actions button where it cannot be discarded. The secret is created, under the name typed, when a value is entered. Its
  * plugin list stays disabled until the secret exists. The empty secret of a group a plugin asks
  * for has no way to be discarded.
  */
 import { ref } from 'vue'
-import { Trash2 } from '@lucide/vue'
+import { Ellipsis, Trash2 } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import { trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
@@ -69,6 +69,17 @@ async function onSubmit(value: string): Promise<boolean> {
         @click="emit('discard')"
       >
         <Trash2 :size="14" aria-hidden="true" />
+      </Button>
+      <Button
+        v-else
+        variant="outline"
+        class="secret-action"
+        size="icon"
+        disabled
+        :aria-label="words.secretActions"
+        :title="words.secretSaveFirst"
+      >
+        <Ellipsis :size="14" aria-hidden="true" />
       </Button>
     </template>
   </SecretRowFrame>
