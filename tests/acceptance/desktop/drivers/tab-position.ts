@@ -5,6 +5,7 @@
 import path from 'node:path'
 import { expect, type Locator, type Page } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
+import { readBox } from '../../../e2e/desktop/tests/support/browser.js'
 import { openVaultFile } from '../../../e2e/desktop/tests/support/workspace.js'
 
 import { assertPosition, getEscaped, getStem, parseTime, type TabKind } from './rules.js'
@@ -49,6 +50,20 @@ const leavePdfAt = async (page: Page, panel: Locator, file: string, target: numb
     .toContain(`"page":${target}`)
 }
 
+const moveToFirstPane = async (page: Page, file: string): Promise<void> => {
+  const tabName = new RegExp('^' + getEscaped(getStem(file)), 'i')
+  const panes = page.locator('section[data-workspace-pane]')
+  const first = panes.first()
+  if ((await first.getByRole('tab', { name: tabName }).count()) > 0) return
+  const from = await readBox(page.getByRole('tab', { name: tabName }))
+  const to = await readBox(first)
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
+  await page.mouse.up()
+  await expect(first.getByRole('tab', { name: tabName })).toHaveCount(1)
+}
+
 const leaveBookAt = async (page: Page, panel: Locator, file: string, target: number): Promise<void> => {
   const count = getCount(panel)
   const before = (await readSavedStates(page.request)).get(file)
@@ -75,7 +90,10 @@ export const openTabAt = async (page: Page, file: string, position: string, wher
   const panel = await openVaultFile(page, path.dirname(file), path.basename(file))
   const kind = await readKind(panel, file, position)
   if (kind === 'PDF Reader') await leavePdfAt(page, panel, file, Number(where))
-  else if (kind === 'EPUB Reader') await leaveBookAt(page, panel, file, Number(where))
+  else if (kind === 'EPUB Reader') {
+    await moveToFirstPane(page, file)
+    await leaveBookAt(page, panel, file, Number(where))
+  }
   else await leaveRecordingAt(page, panel, file, where)
 }
 
