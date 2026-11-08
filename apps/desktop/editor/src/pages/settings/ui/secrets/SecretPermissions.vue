@@ -5,6 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import { ChevronDown } from '@lucide/vue'
+import { Checkbox } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import { isAllowed, type Declaration } from '../../lib/secretSections'
 import { WORDS as words } from '../../words'
@@ -26,11 +27,6 @@ const count = computed(() => {
   const secret = props.secret
   return secret ? props.declarations.filter((one) => isAllowed(secret, one)).length : 0
 })
-
-/* -------------------------------- Handlers -------------------------------- */
-function onToggle(declaration: Declaration, event: Event): void {
-  emit('toggle', declaration, (event.target as HTMLInputElement).checked)
-}
 </script>
 
 <template>
@@ -53,19 +49,16 @@ function onToggle(declaration: Declaration, event: Event): void {
       role="group"
       :aria-label="words.secretAllowedTo"
     >
-      <label
+      <Checkbox
         v-for="one in declarations"
         :key="`${one.pluginId}/${one.name}/${one.group}`"
         class="secret-permissions__declaration"
         :title="one.description"
+        :model-value="secret !== undefined && isAllowed(secret, one)"
+        @update:model-value="(value) => emit('toggle', one, value)"
       >
-        <input
-          type="checkbox"
-          :checked="secret !== undefined && isAllowed(secret, one)"
-          @change="(event) => onToggle(one, event)"
-        />
         {{ one.pluginName }}
-      </label>
+      </Checkbox>
     </div>
   </div>
 </template>
@@ -122,10 +115,6 @@ function onToggle(declaration: Declaration, event: Event): void {
 }
 
 .secret-permissions__declaration {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   color: var(--numen-ink);
-  cursor: pointer;
 }
 </style>
