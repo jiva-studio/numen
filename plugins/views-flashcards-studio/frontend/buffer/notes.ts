@@ -15,6 +15,9 @@ import type {
 } from './types'
 import { convertErrorCode, STALE_CONFLICT } from './words'
 
+/** The write errors that the next edit retries, as in the notes editor. */
+const RETRYABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyUnwritable', 'unreachable']
+
 interface BufferTab {
   readonly id: string
   path: string
@@ -168,6 +171,10 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     // An edit is refused until a read returned the body: a pending read would replace it, and after a failed read there is no file version to write it against.
     if (!tab || tab.baseline === null) return
     tab.body = body
+    if (tab.state === 'error' && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)) {
+      tab.state = 'unsaved'
+      tab.error = null
+    }
     if (tab.state === 'clean' || tab.state === 'saving') {
       tab.state = 'unsaved'
     }
