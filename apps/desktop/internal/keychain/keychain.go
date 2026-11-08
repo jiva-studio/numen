@@ -13,7 +13,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
@@ -45,7 +45,7 @@ const credentialsProbeTimeout = 2 * time.Second
 type Store struct {
 	dir     string
 	writer  chan struct{}
-	wait    machineport.Wait
+	wait    machinecontract.Wait
 	backend keychainBackend
 
 	mu           sync.Mutex
@@ -83,7 +83,7 @@ type probeCall struct {
 // NewStore returns a store that keeps keys in the system keychain, and in
 // <dir>/credentials/credentials.json where the keychain cannot be reached. dir is the folder of
 // the settings file.
-func NewStore(dir string, wait machineport.Wait) *Store {
+func NewStore(dir string, wait machinecontract.Wait) *Store {
 	return &Store{dir: dir, wait: wait, writer: make(chan struct{}, 1)}
 }
 
