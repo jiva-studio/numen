@@ -193,8 +193,10 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
 	}
-	noteType, properties := u.readNote(ctx, v, condition, call.Path)
-	values := pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)).WithNote(noteType, properties)
+	values, err := u.readNote(ctx, v, condition, pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)), call.Path)
+	if err != nil {
+		return fmt.Errorf("read the note %s: %w", call.Path, err)
+	}
 	if u.config != nil && slices.Contains(condition.ListNames(), "config") {
 		values = values.WithConfig(u.config.GetWhenConfig())
 	}
@@ -258,17 +260,17 @@ func (u Run) getContentType(path string) domain.ContentType {
 }
 
 func (u Run) readNote(
-	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string,
-) (domain.NoteType, map[string]any) {
+	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, target pluginport.TargetValues, path string,
+) (pluginport.TargetValues, error) {
 	names := condition.ListNames()
-	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || path == "" {
-		return "", map[string]any{}
+	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || !target.IsNote() {
+		return target, nil
 	}
 	noteType, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
 	if err != nil {
-		return "", map[string]any{}
+		return target, err
 	}
-	return noteType, properties
+	return target.WithNote(noteType, properties), nil
 }
 
 // ListContentTypes gives the content type of a file by its extension, lowercase and without the dot,

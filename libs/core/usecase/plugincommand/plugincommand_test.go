@@ -268,3 +268,16 @@ func TestRunRefusesACommandWhoseSettingDoesNotHold(t *testing.T) {
 		t.Errorf("got %v, ran %v", err, declared.calls)
 	}
 }
+
+func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
+	declared := &declaredCommands{entries: []plugincommand.Entry{
+		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
+	}}
+	commands := plugincommand.NewCommands(declared, getTypes(), noteFiles{}, nil)
+
+	_, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
+
+	if !errors.Is(err, fs.ErrNotExist) || errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
+		t.Errorf("got %v, ran %v, want the read error", err, declared.calls)
+	}
+}
