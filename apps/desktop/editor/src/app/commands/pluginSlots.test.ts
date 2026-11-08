@@ -197,3 +197,63 @@ describe('a shared command in a slot', () => {
     expect(find('app:link.deleteMedia', NOTE)).toBeUndefined()
   })
 })
+
+describe('a shared command over what the window knows of the target', () => {
+  const PDF = 'application/pdf'
+  const DECK: CommandTarget = { ...NOTE, path: 'cards/Bees.md', noteType: 'deck' }
+  const LINK: CommandTarget = { ...NOTE, path: 'links/Bees.md', noteType: 'link' }
+  const PAPER: CommandTarget = { ...NOTE, path: 'papers/Bees.pdf' }
+  const find = createSlotCommandFinder({
+    getPluginCommands: () => [],
+    getDeclaredCommands: () => [],
+    getEditorCommands: () => [],
+    getHandlerDeclarations: () => [
+      {
+        pluginId: TIDE,
+        command: 'app:file.createText',
+        title: 'Extract text',
+        when: `target.contentType == '${PDF}'`,
+        hasItems: false,
+      },
+      {
+        pluginId: TIDE,
+        command: 'app:link.deleteMedia',
+        title: 'Delete media',
+        when: "target.noteType == 'link' && has(target.properties.media)",
+        hasItems: false,
+      },
+      {
+        pluginId: TIDE,
+        command: 'app:version.delete',
+        title: 'Delete text',
+        when: "version.pluginId == 'org.example.tide' && version.kind == 'captions'",
+        hasItems: true,
+      },
+    ],
+    getWhenValues: (target) =>
+      getTargetValues(target, { pdf: PDF, md: 'text/markdown' }, { type: target?.noteType }),
+  })
+
+  it('is not drawn where every handler is false over the note type and the content type', () => {
+    expect(find('app:file.createText', DECK)).toBeUndefined()
+    expect(find('app:link.deleteMedia', DECK)).toBeUndefined()
+  })
+
+  it('is drawn where a handler is true over what is known', () => {
+    expect(find('app:file.createText', PAPER)).toMatchObject({ title: 'Create text' })
+  })
+
+  it('is drawn where a handler depends on the properties of the note, which are not read yet', () => {
+    expect(find('app:link.deleteMedia', LINK)).toMatchObject({ title: 'Delete media' })
+  })
+
+  it('is drawn where a handler depends on the versions of the file', () => {
+    expect(find('app:version.delete', DECK)).toMatchObject({ title: 'Delete text' })
+  })
+
+  it('is drawn where the place has not read the type of the note', () => {
+    expect(find('app:link.deleteMedia', { ...NOTE, path: 'links/Bees.md' })).toMatchObject({
+      title: 'Delete media',
+    })
+  })
+})

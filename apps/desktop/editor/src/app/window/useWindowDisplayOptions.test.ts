@@ -10,6 +10,7 @@ const createWiring = (leavePath: (from: string, to: string) => Promise<void>) =>
     tabOpeners: { openFileAt: vi.fn() },
     getVaults: () => ({ reload: vi.fn() }),
     notifyPlugins: vi.fn(),
+    itemLists: { dropPaths: vi.fn(), dropAll: vi.fn() },
     writeMessage,
   } as unknown as DisplayWiring
   return { wiring, writeMessage }
@@ -60,6 +61,50 @@ describe('a change of the vault', () => {
     await vi.waitFor(() =>
       expect(writeMessage).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
     )
+  })
+})
+
+describe('the item lists of the commands kept by the window', () => {
+  it('are dropped for the files that changed and those whose text versions changed', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged(['notes/a.md'], [], ['talks/b.mp3'])
+
+    expect(wiring.itemLists.dropPaths).toHaveBeenCalledWith(['notes/a.md', 'talks/b.mp3'])
+    expect(wiring.itemLists.dropAll).not.toHaveBeenCalled()
+  })
+
+  it('are all dropped where the vault is read again', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged([], [])
+
+    expect(wiring.itemLists.dropAll).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a change of the text versions of a file', () => {
+  it('is passed to the plugins as a change of the file, and reads no note again', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged([], [], ['talks/b.mp3'])
+
+    expect(wiring.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
+      paths: ['talks/b.mp3'],
+      renamed: [],
+    })
+    expect(wiring.editing.notes.applyPathChanges).not.toHaveBeenCalled()
+  })
+
+  it('is passed to the plugins together with the files that changed', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+
+    createDisplayOptions(wiring).onVaultChanged(['notes/a.md'], [], ['notes/a.md', 'talks/b.mp3'])
+
+    expect(wiring.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
+      paths: ['notes/a.md', 'talks/b.mp3'],
+      renamed: [],
+    })
   })
 })
 

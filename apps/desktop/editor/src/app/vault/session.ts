@@ -67,6 +67,7 @@ export const sessionCore: SessionCore = {
         paths: change.paths,
         shouldReload: change.reload,
         renamed: change.renamed.map((went) => ({ from: went.from, to: went.to })),
+        versionPaths: change.versionPaths,
       }
     }
   },

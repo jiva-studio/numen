@@ -2,8 +2,13 @@
  * A command of the menu of a row that offers choices: a submenu of its choices, read when the menu
  * opens, and a run of the command with the choice picked.
  */
-import { describe, expect, it } from 'vitest'
-import type { CommandItem, CommandTarget, SlotCommand } from '@numen/plugin-sdk'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  MENU_HOLD_MS,
+  type CommandItem,
+  type CommandTarget,
+  type SlotCommand,
+} from '@numen/plugin-sdk'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { createFileTree, ROOT } from './useFileTree'
@@ -148,5 +153,39 @@ describe('a command of the menu that offers choices', () => {
     expect(runs).toStrictEqual([])
     expect(errors).toHaveLength(1)
     expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
+  })
+})
+
+describe('the menu of a row whose commands offer items', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('is not shown while the items are read, and is shown once they are', async () => {
+    const { one, answerChoices } = await setUp(async () => CHOICES)
+
+    expect(one.menu.value).toBeNull()
+    await answerChoices()
+
+    expect(one.menu.value?.path).toBe('Scan.pdf')
+  })
+
+  it('is shown with its loading row once the hold has passed', async () => {
+    vi.useFakeTimers()
+    const { one } = await setUp(async () => CHOICES)
+
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+
+    expect(one.menu.value?.path).toBe('Scan.pdf')
+    expect(getChildren(one)).toStrictEqual([{ text: WORDS.loadingItems, isDisabled: true }])
+  })
+
+  it('is not shown after Escape is pressed while the items are read', async () => {
+    const { one, answerChoices } = await setUp(async () => CHOICES)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await answerChoices()
+
+    expect(one.menu.value).toBeNull()
   })
 })

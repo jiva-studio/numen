@@ -104,13 +104,23 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
-  it('notifies each change of the vault, and where every note named went', async () => {
+  it('notifies each change of the vault, where every note named went, and the files whose text versions changed', async () => {
     request.watchVaultChanges.mockImplementation(async function* () {
-      yield { paths: ['Llama.md'], reload: true, renamed: [{ from: 'A.md', to: 'B.md' }] }
+      yield {
+        paths: ['Llama.md'],
+        reload: true,
+        renamed: [{ from: 'A.md', to: 'B.md' }],
+        versionPaths: ['talks/a.mp3'],
+      }
     })
 
     expect(await readAll(sessionCore.watchVaultChanges(signal))).toStrictEqual([
-      { paths: ['Llama.md'], shouldReload: true, renamed: [{ from: 'A.md', to: 'B.md' }] },
+      {
+        paths: ['Llama.md'],
+        shouldReload: true,
+        renamed: [{ from: 'A.md', to: 'B.md' }],
+        versionPaths: ['talks/a.mp3'],
+      },
     ])
     expect(request.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
   })

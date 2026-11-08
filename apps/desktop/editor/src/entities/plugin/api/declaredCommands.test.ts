@@ -20,8 +20,8 @@ const request = {
 
 const {
   isOverTarget,
-  listDeclaredCommandItems,
   listDeclaredCommands,
+  listDeclaredItemLists,
   runDeclaredCommand,
   runDeclaredHandler,
 } = await import('./declaredCommands')
@@ -238,7 +238,7 @@ describe('a run', () => {
 })
 
 describe('the items of a command', () => {
-  it('are the items the core lists over the file', async () => {
+  it('are the items the core lists over the file for each command, in one request', async () => {
     request.listCommandItems.mockResolvedValue({
       lists: [
         {
@@ -248,24 +248,9 @@ describe('the items of a command', () => {
           error: COMMAND_ERROR_CODE.UNSPECIFIED,
           message: '',
         },
-      ],
-    })
-
-    expect(await listDeclaredCommandItems(proofread, 'talks/a.mp3')).toStrictEqual([
-      { id: 'org.example.ears/ears', title: 'transcript (live)' },
-    ])
-    expect(request.listCommandItems).toHaveBeenLastCalledWith({
-      path: 'talks/a.mp3',
-      commands: [{ pluginId: 'org.example.ink', command: 'ink.proofread' }],
-    })
-  })
-
-  it('that cannot be listed fail with why', async () => {
-    request.listCommandItems.mockResolvedValue({
-      lists: [
         {
-          pluginId: 'org.example.ink',
-          command: 'ink.proofread',
+          pluginId: 'md.numen.pages',
+          command: 'convert',
           items: [],
           error: COMMAND_ERROR_CODE.FAILED,
           message: 'talks/a.mp3 is not in the vault',
@@ -273,9 +258,30 @@ describe('the items of a command', () => {
       ],
     })
 
-    await expect(listDeclaredCommandItems(proofread, 'talks/a.mp3')).rejects.toThrow(
-      'talks/a.mp3 is not in the vault',
-    )
+    expect(
+      await listDeclaredItemLists('talks/a.mp3', [
+        { pluginId: 'org.example.ink', command: 'ink.proofread' },
+        { pluginId: 'md.numen.pages', command: 'convert' },
+      ]),
+    ).toStrictEqual([
+      {
+        pluginId: 'org.example.ink',
+        command: 'ink.proofread',
+        result: { ok: true, value: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }] },
+      },
+      {
+        pluginId: 'md.numen.pages',
+        command: 'convert',
+        result: { ok: false, error: 'talks/a.mp3 is not in the vault' },
+      },
+    ])
+    expect(request.listCommandItems).toHaveBeenLastCalledWith({
+      path: 'talks/a.mp3',
+      commands: [
+        { pluginId: 'org.example.ink', command: 'ink.proofread' },
+        { pluginId: 'md.numen.pages', command: 'convert' },
+      ],
+    })
   })
 
   it('run the command over the file with the item picked as its argument', async () => {

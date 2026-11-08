@@ -68,12 +68,11 @@ function onToggle(event: MouseEvent): void {
   width.value = box?.width ?? 0
   trigger.value = event.detail === 0 ? 'keyboard' : 'pointer'
   itemSubscription?.dispose()
-  itemSubscription = readCommandItemLists(
-    props.entries,
-    props.listItems,
-    (lists) => (itemLists.value = lists),
-  )
-  isOpen.value = true
+  itemSubscription = readCommandItemLists(props.entries, props.listItems, {
+    onChange: (lists) => (itemLists.value = lists),
+    onShow: () => (isOpen.value = true),
+    onCancel: onClose,
+  })
 }
 
 function onClose(): void {

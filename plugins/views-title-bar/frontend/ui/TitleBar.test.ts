@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import type { AppInfo, CommandItem, SlotItem } from '@numen/plugin-sdk'
+import { MENU_HOLD_MS, type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
@@ -429,11 +429,16 @@ describe('a command with items', () => {
     expect(menuTexts()).toStrictEqual(['Window 1', 'Window 2'])
   })
 
-  it('shows a loading row while the items are read', async () => {
+  it('opens no dropdown while the items are read, and one with a loading row once the hold has passed', async () => {
+    vi.useFakeTimers()
     const wrapper = mountBar({ commands: [MOVE], listItems: () => new Promise(() => undefined) })
 
     await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
     await settle()
+    expect(menuTexts()).toStrictEqual([])
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    await settle()
+    vi.useRealTimers()
 
     expect(menuTexts()).toStrictEqual(['Loading…'])
   })

@@ -77,3 +77,42 @@ describe('a when condition', () => {
     expect(parsed.ok ? '' : parsed.error).toContain('target.isRemote')
   })
 })
+
+describe('a when condition evaluated over what is known', () => {
+  it.each([
+    [
+      "target.noteType == 'link' && version.kind == 'captions'",
+      { 'target.noteType': 'deck' },
+      'false',
+    ],
+    [
+      "target.noteType == 'link' && version.kind == 'captions'",
+      { 'target.noteType': 'link' },
+      'unknown',
+    ],
+    ['version.isLive || target.isFolder', { 'target.isFolder': true }, 'true'],
+    ['version.isLive || target.isFolder', { 'target.isFolder': false }, 'unknown'],
+    [
+      "has(target.properties.media) || target.noteType == 'link'",
+      { 'target.noteType': 'deck' },
+      'unknown',
+    ],
+    ["target.contentType == 'application/pdf'", { 'target.contentType': 'audio/mpeg' }, 'false'],
+    [
+      "target.contentType == 'application/pdf'",
+      { 'target.contentType': 'application/pdf' },
+      'true',
+    ],
+    ['', {}, 'true'],
+  ] as const)('%s over %o is %s', (text, values, want) => {
+    expect(read(text).evaluatePartial(values)).toBe(want)
+  })
+
+  it('is the value of the full evaluation where every variable it reads is given', () => {
+    const condition = read("target.isNote && target.noteType == 'deck'")
+    const values = { 'target.isNote': true, 'target.noteType': 'deck' }
+
+    expect(condition.evaluatePartial(values)).toBe('true')
+    expect(condition.evaluate(values)).toBe(true)
+  })
+})

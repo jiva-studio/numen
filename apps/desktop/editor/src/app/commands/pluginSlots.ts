@@ -88,16 +88,38 @@ export function createSlotCommandFinder(
     }
   }
 
-  /** A shared command some enabled plugin handles: its handlers are its items, read when a menu opens. */
-  const findSharedLook = (command: string) => {
+  /**
+   * The values of the target a handler is judged by before a menu is drawn: the properties of the note
+   * and the variables of a version are unknown until the menu reads them, and so is the type of a note
+   * the place has not read.
+   */
+  const getKnownValues = (target: CommandTarget | undefined): WhenValues => {
+    const { ['target.properties']: _properties, ...known } = deps.getWhenValues(target)
+    if (known['target.isNote'] !== true || target?.noteType !== undefined) return known
+    const { ['target.noteType']: _noteType, ...typeless } = known
+    return typeless
+  }
+
+  /**
+   * A shared command some enabled plugin handles: its handlers are its items, read when a menu opens.
+   * It is not drawn where every handler is false over what the window knows of the target.
+   */
+  const findSharedLook = (command: string, target: CommandTarget | undefined) => {
     const shared = SHARED_COMMANDS.find((one) => one.id === command)
     if (!shared) return undefined
-    const isHandled = deps.getHandlerDeclarations?.()?.some((one) => one.command === command)
-    return isHandled ? { title: shared.title, shortcut: '', hasItems: true } : undefined
+    const partialValues = getKnownValues(target)
+    const isPossible = deps
+      .getHandlerDeclarations?.()
+      ?.some(
+        (one) =>
+          one.command === command &&
+          getCondition(one.when)?.evaluatePartial(partialValues) !== 'false',
+      )
+    return isPossible ? { title: shared.title, shortcut: '', hasItems: true } : undefined
   }
 
   return (command, target) => {
-    if (SHARED_COMMANDS.some((one) => one.id === command)) return findSharedLook(command)
+    if (SHARED_COMMANDS.some((one) => one.id === command)) return findSharedLook(command, target)
     return getCommandOwner(command) === APP_COMMAND_OWNER
       ? findEditorLook(command, target)
       : findPluginLook(command, target)

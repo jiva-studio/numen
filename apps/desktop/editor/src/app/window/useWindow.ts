@@ -38,7 +38,8 @@ import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
 import { createBackendHandlers } from '../commands/backendHandlers'
-import { listDeclaredCommandItems, runDeclaredHandler } from '@/entities/plugin'
+import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
+import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
 import { getNamedIcon } from '@/shared/icons'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowFrame } from './useWindowFrame'
@@ -285,20 +286,36 @@ const createWindowHandlers = (
   declaredCommands: ReturnType<typeof useDeclaredCommands>,
   writeMessage: (text: string, severity: 'info' | 'error') => void,
   tabOpeners: ReturnType<typeof fileOpeners>,
-  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+  itemLists: CommandItemLists,
 ) =>
   createBackendHandlers({
     getHandlers: () => declaredCommands.handlers.value,
-    list: listDeclaredCommandItems,
+    list: itemLists.listItems,
     run: runDeclaredHandler,
     writeMessage,
     openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
-    notifyVaultChange: (paths) => hostHolder.current?.notifyVaultChange({ paths }),
   })
 
+/** The commands the plugins declare, and the item lists of their commands, which the window keeps. */
+const createDeclaredParts = (
+  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+  settingsHolder: { current?: ReturnType<typeof useSettings> },
+) => {
+  const itemLists = createCommandItemLists({
+    listLists: listDeclaredItemLists,
+    fileKinds: (paths) => core.fileKinds(paths),
+  })
+  const declaredCommands = useDeclaredCommands({
+    ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
+    listItems: itemLists.listItems,
+    onCommandsChanged: itemLists.dropAll,
+  })
+  return { itemLists, declaredCommands }
+}
+
 /** The type and the properties of the note at the path, which the menu of its tab is read over. */
-const readNoteKind = async (path: string) => {
-  const kind = (await core.fileKinds([path])).get(path)
+const createNoteKindReader = (itemLists: CommandItemLists) => async (path: string) => {
+  const kind = (await itemLists.fileKinds([path])).get(path)
   return {
     noteType: kind?.type ?? '',
     ...(kind?.properties ? { properties: kind.properties } : {}),
@@ -338,9 +355,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes(core)
   const hostHolder: { current?: import('@numen/plugin-host').PluginHost } = {}
-  const declaredCommands = useDeclaredCommands({
-    ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
-  })
+  const { itemLists, declaredCommands } = createDeclaredParts(hostHolder, settingsHolder)
   const appCommands: { current?: () => readonly Command[] } = {}
   const slots = createWindowSlots({
     declaredCommands,
@@ -352,7 +367,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const { pluginHost, pluginLoader } = createPluginSupport({
     slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
-    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners, hostHolder),
+    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners, itemLists),
     windowTabs,
     tabLinks,
     tabOpeners,
@@ -388,6 +403,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginNotes,
     slotWindowValues: slots.windowValues,
     appCommands,
+    itemLists,
   }
 }
 
@@ -450,6 +466,7 @@ function initWindowServices(
       windowTabs: base.windowTabs,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
+      itemLists: base.itemLists,
       writeMessage: base.writeMessage,
     }),
   )
@@ -750,7 +767,7 @@ function createWindowFrameServices(
   const { frame } = base
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => ctx.tabCommands?.commands ?? []
-  const getCommandNote = createCommandNoteReader(core)
+  const getCommandNote = createCommandNoteReader(base.itemLists)
   const getCommandDeps = () => getCommands(ctx).commandDeps
   const items = createPaletteItems(
     {
@@ -860,7 +877,7 @@ export const useWindow = () => {
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
-    readNoteKind,
+    readNoteKind: createNoteKindReader(base.itemLists),
     isLayoutReady,
     ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>

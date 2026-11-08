@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import {
+  MENU_HOLD_MS,
   SLOT,
   type SlotCommand,
   type SlotHost,
@@ -127,10 +128,11 @@ describe('the menu of a tab', () => {
     expect(setup().menu.menu.value).toBeNull()
   })
 
-  it('draws the entries of the slot over the tab, and no row of its own', () => {
+  it('draws the entries of the slot over the tab, and no row of its own', async () => {
     const { menu, getEntries } = setup()
 
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
     expect(menu.menu.value?.tab).toBe('reef')
     expect(menu.menu.value?.at).toStrictEqual({ x: 4, y: 8 })
@@ -150,9 +152,10 @@ describe('the menu of a tab', () => {
     expect(menu.menu.value).toBeNull()
   })
 
-  it('runs the command of an entry over the tab and its file, and closes', () => {
+  it('runs the command of an entry over the tab and its file, and closes', async () => {
     const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
     menu.choose('reef', DETACH.key)
 
@@ -160,9 +163,10 @@ describe('the menu of a tab', () => {
     expect(menu.menu.value).toBeNull()
   })
 
-  it('runs nothing for a menu since closed, or one requested on another tab', () => {
+  it('runs nothing for a menu since closed, or one requested on another tab', async () => {
     const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
     menu.choose('plex', DETACH.key)
     menu.dismiss()
@@ -171,9 +175,10 @@ describe('the menu of a tab', () => {
     expect(commands.getRuns()).toStrictEqual([])
   })
 
-  it('draws an entry with the icon of its command', () => {
+  it('draws an entry with the icon of its command', async () => {
     const { menu } = setup()
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
     expect(menu.getIcon(SHOW.key)).toBe(Pin)
     expect(menu.getIcon(DETACH.key)).toBeNull()
@@ -291,13 +296,35 @@ describe('an entry of the menu of a tab that offers items', () => {
         isDisabled: one.isDisabled ?? false,
       }))
 
-  it('asks for its items over the tab when the menu opens, and shows a loading row until then', () => {
+  it('asks for its items over the tab when the menu opens, and is not drawn until they are read', () => {
     const { menu, commands } = setup()
 
     menu.open('reef', { x: 4, y: 8 })
 
     expect(commands.listItems).toHaveBeenCalledWith(MOVE.command, TARGETS.reef)
+    expect(menu.menu.value).toBeNull()
+  })
+
+  it('is drawn with a loading row once the hold has passed', async () => {
+    vi.useFakeTimers()
+    const { menu, commands } = setup()
+    commands.listItems.mockReturnValue(new Promise(() => undefined))
+
+    menu.open('reef', { x: 4, y: 8 })
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    vi.useRealTimers()
+
     expect(getItemRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])
+  })
+
+  it('is not drawn after Escape is pressed while its items are read', async () => {
+    const { menu } = setup()
+
+    menu.open('reef', { x: 4, y: 8 })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await settle()
+
+    expect(menu.menu.value).toBeNull()
   })
 
   it('is a submenu of its items once they are read', async () => {
@@ -364,6 +391,7 @@ describe('a command of the menu of a tab of the window that fails', () => {
       reportError,
     })
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
     menu.choose('reef', DETACH.key)
     await settle()

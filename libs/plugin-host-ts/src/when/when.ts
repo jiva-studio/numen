@@ -4,7 +4,16 @@
  * manifest checks them, types included; the window reads a condition once and evaluates it over the
  * values of each place.
  */
-import { celEnv, isCelError, mapType, parse, plan, CelScalar, type CelType } from '@bufbuild/cel'
+import {
+  celEnv,
+  celError,
+  isCelError,
+  mapType,
+  parse,
+  plan,
+  CelScalar,
+  type CelType,
+} from '@bufbuild/cel'
 import { asFailure, asValue, WHEN_VARIABLES, type Result } from '@numen/plugin-sdk'
 
 /** The settings by their dotted keys, nested: config.editor.lineNumbers reads `{ editor: { lineNumbers } }`. */
@@ -18,11 +27,19 @@ export interface WhenSettings {
  */
 export type WhenValues = Readonly<Record<string, unknown>> & { readonly config?: WhenSettings }
 
+/** The value of a condition over values that may leave variables out: unknown where its value depends on one of them. */
+export type WhenResult = 'true' | 'false' | 'unknown'
+
 /** A condition read once and evaluated over the values of many places. */
 export interface WhenCondition {
   /** The variables it reads, sorted; the settings count as `config`. */
   readonly names: readonly string[]
   evaluate(values: WhenValues): boolean
+  /**
+   * The value over the values, a variable they do not give being unknown. A condition that fails to
+   * evaluate for another reason, such as a setting config does not hold, is unknown as well.
+   */
+  evaluatePartial(values: WhenValues): WhenResult
 }
 
 const TYPES: Readonly<Record<string, CelType>> = {
@@ -109,7 +126,10 @@ function toCelMap(value: unknown): unknown {
   return new Map(Object.entries(value).map(([key, one]) => [key, toCelMap(one)]))
 }
 
-const ALWAYS: WhenCondition = { names: [], evaluate: () => true }
+/** The value of a variable that is not given: an error, which `&&` and `||` absorb where the other side decides. */
+const UNKNOWN = celError('the value of the variable is not known')
+
+const ALWAYS: WhenCondition = { names: [], evaluate: () => true, evaluatePartial: () => 'true' }
 
 /** Reads a condition; a failure where it is malformed or reads a variable that is not declared. */
 export function parseWhen(text: string): Result<WhenCondition, string> {
@@ -135,6 +155,17 @@ export function parseWhen(text: string): Result<WhenCondition, string> {
       )
       const result = run(bindings as Parameters<typeof run>[0])
       return !isCelError(result) && result === true
+    },
+    evaluatePartial: (values) => {
+      const bindings = Object.fromEntries(
+        WHEN_VARIABLES.map((one) => [
+          one.name,
+          values[one.name] === undefined ? UNKNOWN : toCelMap(values[one.name]),
+        ]),
+      )
+      const result = run(bindings as Parameters<typeof run>[0])
+      if (isCelError(result)) return 'unknown'
+      return result === true ? 'true' : 'false'
     },
   })
 }

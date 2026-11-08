@@ -7,13 +7,14 @@ import { computed, shallowRef, watch } from 'vue'
 import {
   formatCommandId,
   type CommandDeclaration,
+  type CommandItem,
   type HandlerDeclaration,
   type WhenSettings,
 } from '@numen/plugin-host'
 import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
-  listDeclaredCommandItems,
+  listDeclaredItemLists,
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
@@ -25,6 +26,22 @@ import {
   getWhenGroup,
   type WindowWhenContext,
 } from './whenContext'
+
+/** The items a command of a plugin offers over a file. */
+type ListItems = (
+  command: Pick<DeclaredCommand, 'pluginId' | 'id'>,
+  path: string,
+) => Promise<readonly CommandItem[]>
+
+/** The items the command offers over the file, as the core lists them in a request of its own. */
+const listItemsOfOne: ListItems = async (command, path) => {
+  const [answer] = await listDeclaredItemLists(path, [
+    { pluginId: command.pluginId, command: command.id },
+  ])
+  if (!answer) throw new Error(`no list of the items of ${command.id}`)
+  if (!answer.result.ok) throw new Error(answer.result.error)
+  return answer.result.value
+}
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
 const getPluginCommandId = (pluginId: string, commandId: string): string =>
@@ -41,7 +58,7 @@ export const getPaletteId = (command: DeclaredCommand): string =>
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
   context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
-  listItems: typeof listDeclaredCommandItems = listDeclaredCommandItems,
+  listItems: ListItems = listItemsOfOne,
 ): readonly Command[] {
   const isWhenAvailable = createWhenAvailability(context)
   return declared.map((one): Command => {
@@ -91,6 +108,10 @@ export interface DeclaredCommandsDeps {
   readonly hasBackend?: (pluginId: string) => boolean
   /** The settings by their dotted keys, which the when conditions read as config. */
   readonly getConfig?: () => WhenSettings
+  /** The items a command offers over a file. */
+  readonly listItems?: ListItems
+  /** Called when the commands or the handlers the core lists change. */
+  readonly onCommandsChanged?: () => void
 }
 
 /** The declaration the plugin host receives for a declared command. */
@@ -111,6 +132,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
   const run = deps.run ?? runDeclaredCommand
   const isListed = deps.isListed ?? (() => false)
+  const listItems = deps.listItems ?? listItemsOfOne
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
@@ -168,10 +190,14 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     if (mine !== newest) return
     // An answer equal to the lists held keeps them, so the commands are not registered again while
     // the palette lists them.
+    const handlers = commands.handlers ?? []
+    const isChanged =
+      !isSameList(declared.value, commands.commands) ||
+      !isSameList(declaredHandlers.value, handlers)
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
-    const handlers = commands.handlers ?? []
     if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
+    if (isChanged) deps.onCommandsChanged?.()
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }
@@ -186,7 +212,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     /** Settles once the lists of a read are held, or a read has failed. */
     waitForFirstList: (): Promise<void> => firstList,
     paletteCommands: computed(() =>
-      createDeclaredPaletteCommands(backendCommands.value, whenContext),
+      createDeclaredPaletteCommands(backendCommands.value, whenContext, listItems),
     ),
     /** What the when conditions of the commands read besides their target. */
     whenContext,

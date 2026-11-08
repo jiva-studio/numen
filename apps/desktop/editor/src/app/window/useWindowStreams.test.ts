@@ -56,6 +56,20 @@ const task = (id: string): Task => ({
 })
 
 describe('following the vault', () => {
+  it('passes on a change that names only files whose text versions changed', async () => {
+    const deps = setup({
+      core: {
+        ...setup().core,
+        watchVaultChanges: () =>
+          yielding({ paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
+      },
+    })
+
+    await createWindowStreams(deps).follow()
+
+    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], ['talks/a.mp3'])
+  })
+
   it('ignores a change that names no path, no reload and no rename', async () => {
     const deps = setup({
       core: {

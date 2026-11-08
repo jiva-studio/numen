@@ -52,13 +52,23 @@ function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
     itemSubscription?.dispose()
     itemSubscription = null
   }
-  const read = (entries: readonly SlotItem[], target: RunTarget) => {
+  /** Reads the lists of the entries over the target; onShow once the menu may be drawn, onCancel when its open is cancelled. */
+  const read = (
+    entries: readonly SlotItem[],
+    target: RunTarget,
+    onShow: () => void,
+    onCancel: () => void,
+  ) => {
     stop()
     itemSubscription = readCommandItemLists(
       entries,
       (command) => deps.listItems?.(command, target) ?? Promise.resolve([]),
-      (next) => (lists.value = next),
-      (error) => deps.reportError?.(error),
+      {
+        onChange: (next) => (lists.value = next),
+        onShow,
+        onCancel,
+        onError: (error) => deps.reportError?.(error),
+      },
     )
   }
   return { lists, read, stop }
@@ -128,10 +138,16 @@ export function useTabMenu(deps: TabMenuDeps) {
   const show = (tab: string, where: { x: number; y: number }, target: RunTarget): void => {
     const found = getEntries(target)
     if (found.length === 0) return
-    tabId.value = tab
-    position.value = where
-    openTarget.value = target
-    entryItems.read(found, target)
+    entryItems.read(
+      found,
+      target,
+      () => {
+        tabId.value = tab
+        position.value = where
+        openTarget.value = target
+      },
+      dismiss,
+    )
   }
 
   /**

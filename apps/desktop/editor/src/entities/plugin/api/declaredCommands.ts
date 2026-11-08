@@ -213,19 +213,36 @@ export async function runDeclaredCommand(
   return { ok: false, error: answer.message }
 }
 
-/** The items the command offers over the file, as the core lists them. */
-export async function listDeclaredCommandItems(
-  command: Pick<DeclaredCommand, 'pluginId' | 'id'>,
+/** One command of a plugin whose items are listed: a command it declares, or its handler of a shared command. */
+export interface ItemListRequest {
+  readonly pluginId: string
+  readonly command: string
+}
+
+/** The items the core listed for one command, or why it could not list them. */
+export interface ItemListAnswer extends ItemListRequest {
+  readonly result:
+    | { readonly ok: true; readonly value: readonly CommandItem[] }
+    | { readonly ok: false; readonly error: string }
+}
+
+/** The items each of the commands offers over the file, as the core lists them in one request. */
+export async function listDeclaredItemLists(
   path: string,
-): Promise<readonly CommandItem[]> {
+  commands: readonly ItemListRequest[],
+): Promise<readonly ItemListAnswer[]> {
   const answer = await pluginCommands.listCommandItems({
     path,
-    commands: [{ pluginId: command.pluginId, command: command.id }],
+    commands: commands.map((one) => ({ pluginId: one.pluginId, command: one.command })),
   })
-  const list = answer.lists[0]
-  if (!list) throw new Error(`no list of the items of ${command.id}`)
-  if (list.error !== COMMAND_ERROR_CODE.UNSPECIFIED) throw new Error(list.message)
-  return list.items.map((one) => ({ id: one.id, title: one.title }))
+  return answer.lists.map((one): ItemListAnswer => ({
+    pluginId: one.pluginId,
+    command: one.command,
+    result:
+      one.error === COMMAND_ERROR_CODE.UNSPECIFIED
+        ? { ok: true, value: one.items.map((item) => ({ id: item.id, title: item.title })) }
+        : { ok: false, error: one.message },
+  }))
 }
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */

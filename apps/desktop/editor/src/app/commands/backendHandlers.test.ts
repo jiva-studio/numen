@@ -16,7 +16,6 @@ const createWith = (
     run: vi.fn(async () => outcome),
     writeMessage: vi.fn(),
     openFile: vi.fn(async () => undefined),
-    notifyVaultChange: vi.fn(),
   }
   return { deps, handlers: createBackendHandlers(deps) }
 }
@@ -56,19 +55,6 @@ describe('createBackendHandlers', () => {
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
   })
 
-  it('notifies the plugins of a change to the file a handler ran over', async () => {
-    const { deps, handlers } = createWith({ ok: true, value: { message: '', openedPath: '' } })
-
-    await handlers.runBackendHandler({
-      pluginId: 'md.ears',
-      command: 'app:version.delete',
-      target: TARGET,
-      argument: 'md.ears:t1',
-    })
-
-    expect(deps.notifyVaultChange).toHaveBeenCalledExactlyOnceWith(['talks/a.mp3'])
-  })
-
   it('writes the error of a run that did not succeed as the plugin words it', async () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 
@@ -80,7 +66,6 @@ describe('createBackendHandlers', () => {
 
     expect(deps.writeMessage).toHaveBeenCalledExactlyOnceWith('no audio', 'error')
     expect(deps.openFile).not.toHaveBeenCalled()
-    expect(deps.notifyVaultChange).not.toHaveBeenCalled()
   })
 
   it('gives the handlers the core lists', () => {

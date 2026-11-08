@@ -34,6 +34,8 @@ export interface VaultPort {
     paths: string[]
     shouldReload: boolean
     renamed: readonly PathRename[]
+    /** The files whose text versions changed: one was made or deleted, or became live or no longer live. */
+    versionPaths?: string[]
   }>
   /**
    * Everything the application is doing in the background, until the caller aborts the signal.

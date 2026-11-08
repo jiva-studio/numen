@@ -1,10 +1,15 @@
 /**
  * The menu tree of the entries of a slot, and the item lists read for their commands.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CommandItem } from '../commands/commands'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from './slots'
-import { createSlotMenu, readCommandItemLists, type CommandItemLists } from './slotMenu'
+import {
+  createSlotMenu,
+  MENU_HOLD_MS,
+  readCommandItemLists,
+  type CommandItemLists,
+} from './slotMenu'
 
 const WORDS = { loadingText: 'Loading…' }
 
@@ -216,45 +221,145 @@ describe('the icon of a row', () => {
   })
 })
 
+/** The handlers of a read, each a mock, with the events that cancel it. */
+const createHandlers = () => ({
+  onChange: vi.fn(),
+  onShow: vi.fn(),
+  onCancel: vi.fn(),
+  onError: vi.fn(),
+  events: new EventTarget(),
+})
+
+/** A keydown event of the key, as a page receives it. */
+const createKeyEvent = (key: string): Event => Object.assign(new Event('keydown'), { key })
+
 describe('readCommandItemLists', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('reads the items of every command with items, inside submenus too', async () => {
     const listItems = vi.fn(async (id: string) => [{ id: `${id}-1`, title: 'One' }])
-    const onChange = vi.fn()
+    const handlers = createHandlers()
 
-    readCommandItemLists([OPEN, submenu('new', [MOVE])], listItems, onChange)
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2))
+    readCommandItemLists([OPEN, submenu('new', [MOVE])], listItems, handlers)
+    await vi.waitFor(() => expect(handlers.onChange).toHaveBeenCalledTimes(2))
 
     expect(listItems.mock.calls.map(([id]) => id)).toStrictEqual([MOVE.command])
-    expect(onChange.mock.calls[0]?.[0]).toStrictEqual(new Map([[MOVE.key, null]]))
-    expect(onChange.mock.calls[1]?.[0]).toStrictEqual(
+    expect(handlers.onChange.mock.calls[0]?.[0]).toStrictEqual(new Map([[MOVE.key, null]]))
+    expect(handlers.onChange.mock.calls[1]?.[0]).toStrictEqual(
       new Map([[MOVE.key, [{ id: `${MOVE.command}-1`, title: 'One' }]]]),
     )
   })
 
-  it('stops reporting once disposed', async () => {
+  it('shows the menu at once when no command of it lists items', () => {
+    const handlers = createHandlers()
+
+    readCommandItemLists([OPEN, RENAME], vi.fn(), handlers)
+
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the menu once every list is read, before the hold ends', async () => {
+    vi.useFakeTimers()
+    const resolvers: ((items: readonly CommandItem[]) => void)[] = []
+    const handlers = createHandlers()
+    readCommandItemLists(
+      [MOVE, CREATE_TEXT],
+      () => new Promise((resolve) => resolvers.push(resolve)),
+      handlers,
+    )
+
+    resolvers[0]?.([{ id: 'w1', title: 'Window 1' }])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(handlers.onShow).not.toHaveBeenCalled()
+    resolvers[1]?.([])
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
+    expect(handlers.onChange).toHaveBeenLastCalledWith(
+      new Map([
+        [MOVE.key, [{ id: 'w1', title: 'Window 1' }]],
+        [CREATE_TEXT.key, []],
+      ]),
+    )
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the menu with its loading rows when the lists are not read within the hold', async () => {
+    vi.useFakeTimers()
+    const handlers = createHandlers()
+    readCommandItemLists([MOVE], () => new Promise(() => undefined), handlers)
+
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS - 1)
+    expect(handlers.onShow).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
+    expect(handlers.onChange).toHaveBeenLastCalledWith(new Map([[MOVE.key, null]]))
+  })
+
+  it.each([
+    ['Escape', createKeyEvent('Escape')],
+    ['a pointer press', new Event('pointerdown')],
+  ])('cancels the open on %s before the menu is shown', async (_name, event) => {
+    vi.useFakeTimers()
     let resolve: (items: readonly CommandItem[]) => void = () => undefined
-    const onChange = vi.fn()
+    const handlers = createHandlers()
+    readCommandItemLists([MOVE], () => new Promise((done) => (resolve = done)), handlers)
+
+    handlers.events.dispatchEvent(event)
+    resolve([{ id: 'w1', title: 'Window 1' }])
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+
+    expect(handlers.onCancel).toHaveBeenCalledTimes(1)
+    expect(handlers.onShow).not.toHaveBeenCalled()
+    expect(handlers.onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an open menu on another key and after it is shown', async () => {
+    vi.useFakeTimers()
+    const handlers = createHandlers()
+    readCommandItemLists([MOVE], () => new Promise(() => undefined), handlers)
+
+    handlers.events.dispatchEvent(createKeyEvent('ArrowDown'))
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    handlers.events.dispatchEvent(createKeyEvent('Escape'))
+    handlers.events.dispatchEvent(new Event('pointerdown'))
+
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
+    expect(handlers.onCancel).not.toHaveBeenCalled()
+  })
+
+  it('stops reporting once disposed', async () => {
+    vi.useFakeTimers()
+    let resolve: (items: readonly CommandItem[]) => void = () => undefined
+    const handlers = createHandlers()
     const itemSubscription = readCommandItemLists(
       [MOVE],
       () => new Promise((done) => (resolve = done)),
-      onChange,
+      handlers,
     )
 
     itemSubscription.dispose()
     resolve([{ id: 'w1', title: 'Window 1' }])
-    await Promise.resolve()
+    await vi.advanceTimersByTimeAsync(MENU_HOLD_MS)
+    handlers.events.dispatchEvent(createKeyEvent('Escape'))
 
-    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(handlers.onChange).toHaveBeenCalledTimes(1)
+    expect(handlers.onShow).not.toHaveBeenCalled()
+    expect(handlers.onCancel).not.toHaveBeenCalled()
   })
 
   it('reports a failed read and lists no item for its command', async () => {
     const error = new Error('core is down')
-    const onError = vi.fn()
-    const onChange = vi.fn()
+    const handlers = createHandlers()
 
-    readCommandItemLists([MOVE], () => Promise.reject(error), onChange, onError)
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(error))
+    readCommandItemLists([MOVE], () => Promise.reject(error), handlers)
+    await vi.waitFor(() => expect(handlers.onError).toHaveBeenCalledWith(error))
 
-    expect(onChange).toHaveBeenLastCalledWith(new Map([[MOVE.key, []]]))
+    expect(handlers.onChange).toHaveBeenLastCalledWith(new Map([[MOVE.key, []]]))
+    expect(handlers.onShow).toHaveBeenCalledTimes(1)
   })
 })

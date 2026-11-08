@@ -119,27 +119,29 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const itemLists = shallowRef<CommandItemLists>(new Map())
   let itemSubscription: Disposable | null = null
 
-  /** Reads the items of the commands of the menu opened by the request, while it stays open. */
-  const readItems = (request: MenuRequest) => {
-    itemSubscription?.dispose()
-    const target = getTarget(request.path)
-    itemSubscription = readCommandItemLists(
-      deps.getMenuEntries(target),
-      (command) => deps.listItems(command, target),
-      (lists) => (itemLists.value = lists),
-      reportFailure,
-    )
-  }
-
-  const openMenu = (request: MenuRequest) => {
-    menu.value = request
-    readItems(request)
-  }
-
   const dismissMenu = () => {
     itemSubscription?.dispose()
     itemSubscription = null
     menu.value = null
+  }
+
+  /**
+   * Reads the items of the commands of the menu the request opens, and shows the menu once they are
+   * read or the hold has passed; Escape or a pointer press before that cancels the open.
+   */
+  const openMenu = (request: MenuRequest) => {
+    dismissMenu()
+    const target = getTarget(request.path)
+    itemSubscription = readCommandItemLists(
+      deps.getMenuEntries(target),
+      (command) => deps.listItems(command, target),
+      {
+        onChange: (lists) => (itemLists.value = lists),
+        onShow: () => (menu.value = request),
+        onCancel: dismissMenu,
+        onError: reportFailure,
+      },
+    )
   }
 
   const getOverPaths = (path: string): readonly string[] =>

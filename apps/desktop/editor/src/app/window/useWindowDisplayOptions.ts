@@ -6,6 +6,7 @@ import type { CommandTarget } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
+import type { CommandItemLists } from '../commands/commandItemLists'
 import type { useCommands } from '../commands/useCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
@@ -20,6 +21,8 @@ export interface DisplayWiring {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'handle'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
+  /** The item lists of the commands the window keeps, dropped for what changed. */
+  itemLists: Pick<CommandItemLists, 'dropPaths' | 'dropAll'>
   writeMessage: MessageWriter
 }
 
@@ -27,7 +30,19 @@ export function createDisplayOptions(deps: DisplayWiring) {
   const { editing, getCommands, getKinds, tabOpeners, windowTabs, getVaults, notifyPlugins } = deps
   const { writeMessage } = deps
   return {
-    onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
+    onVaultChanged: (
+      paths: readonly string[],
+      renamed: readonly PathRename[],
+      versionPaths: readonly string[] = [],
+    ) => {
+      const changed = [...new Set([...paths, ...versionPaths])]
+      if (changed.length === 0 && renamed.length === 0) deps.itemLists.dropAll()
+      else deps.itemLists.dropPaths(changed)
+      // A change of the text versions alone changes no note.
+      if (paths.length === 0 && renamed.length === 0 && versionPaths.length > 0) {
+        notifyPlugins({ paths: changed, renamed })
+        return
+      }
       editing.notes.applyPathChanges(paths, renamed)
       // Every open tab on a moved or renamed file is navigated to the new path.
       for (const one of renamed) {
@@ -36,7 +51,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
         )
       }
       getCommands().commands.applyRenames(renamed)
-      notifyPlugins({ paths, renamed })
+      notifyPlugins({ paths: changed, renamed })
     },
     reportChange: editing.changes.reportChange,
     travelTo: (path: string) => getKinds().travel(path),

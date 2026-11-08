@@ -44,7 +44,7 @@ describe('a shared command placed by several plugins', () => {
           hasItems: false,
         },
       ],
-      getWhenValues: (target) => getTargetValues(target, {}),
+      getWhenValues: (target) => getTargetValues(target, { pdf: 'application/pdf' }),
     })
     const registry = createSlotRegistry({
       getEntries: () =>
