@@ -17,7 +17,6 @@ const DEFAULT_OFF = (
   ) as { off: readonly string[] }
 ).off
 
-/** Whether the core runs the plugin now. */
 const isPluginActive = async (request: APIRequestContext, pluginId: string): Promise<boolean> => {
   const answer = await callRPC(request, 'SettingsService/GetSettings', {})
   const plugins = (answer['plugins'] ?? []) as readonly { id?: string; isActive?: boolean }[]

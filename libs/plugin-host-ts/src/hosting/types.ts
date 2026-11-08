@@ -106,7 +106,6 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 export interface PluginHostDeps {
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
-  /** The reader of the conditions of the window; the host makes one of its own where none is given. */
   readonly whenReader?: WhenReader
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined

@@ -732,7 +732,6 @@ function createWindowVersionCommands(base: WindowCore) {
   return versionCommands
 }
 
-/** The commands of the window over its tabs and over the text versions of a file. */
 const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
   ...(ctx.tabCommands?.commands ?? []),
   ...(ctx.versionCommands?.commands ?? []),

@@ -76,7 +76,6 @@ export interface CommandsDepsOptions {
   slots?: SlotHost
   getAppCommands?: () => readonly Command[]
   declaredCommands?: DeclaredCommands
-  /** Reads the note a plugin command runs over; the reader of the core where none is given. */
   readCommandNote?: ReturnType<typeof createCommandNoteReader>
 }
 
@@ -104,7 +103,6 @@ const listExtraCommands = (
   ...pluginEntries,
 ]
 
-/** The items of the commands of the palette, of the window and of the plugins, and their runs. */
 function createPaletteItems(
   options: Pick<
     CommandsDepsOptions,
