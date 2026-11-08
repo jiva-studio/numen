@@ -101,7 +101,10 @@ const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
   getPanes(getLayout(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
 
 const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =>
-  window.findComponent(WorkspaceLayout).props('tabs') ?? []
+  (window.findComponent(WorkspaceLayout).props('tabs') as readonly {
+    id: string
+    title: string
+  }[]) ?? []
 
 export {
   requests,

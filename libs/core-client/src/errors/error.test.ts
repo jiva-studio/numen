@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import type { ErrorCode as ProtoErrorCode } from '@numen/protocol'
-import { ErrorCodeSchema } from '@numen/protocol'
+import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
 
 import { formatErrorCodeMessage, formatErrorMessage } from './error'
 

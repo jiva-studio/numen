@@ -51,7 +51,7 @@ vi.mock('@/app/vault', () => ({
       coverage: {
         chunkCount: 0n,
         embeddedCount: BigInt(mockVaultState.embedded),
-        isEmbedding: false,
+        isEmbedding: false as boolean,
       },
     }),
     agentUnreachable: async () => '',

@@ -99,7 +99,7 @@ async function listHandlerItems(
     return handlers.map((one) => ({ id: one.pluginId, title: one.title }))
   }
   return handlers.flatMap((one, index) =>
-    (own[index] ?? [{ id: '', title: one.title }]).map((item) => ({
+    (own[index] ?? [{ id: '', title: one.title } as CommandItem]).map((item) => ({
       id: item.id === '' ? one.pluginId : one.pluginId + ITEM_SEPARATOR + item.id,
       title: item.title,
       group: item.group ?? one.pluginId,
