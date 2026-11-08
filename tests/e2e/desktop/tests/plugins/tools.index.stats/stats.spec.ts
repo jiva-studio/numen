@@ -10,7 +10,7 @@ import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { waitForCurrentVectors } from '../../support/index-stats.js'
 
-const getItem = (page: Page): Locator => page.locator('.index-stats__label')
+const getItem = (page: Page): Locator => page.locator('.index-stats__trigger')
 
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''
@@ -19,7 +19,7 @@ const readVectors = async (item: Locator): Promise<number> => {
 
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
-  const isIndexing = await item.locator('.index-stats__icon--indexing').count()
+  const isIndexing = await item.locator('.index-stats__trigger--indexing').count()
   return /\d/.test(text) && isIndexing === 0
 }
 
@@ -49,7 +49,7 @@ test.describe('the index stats item', () => {
 
     const item = getItem(page)
     await expect(item).toBeVisible()
-    await expect(item).toHaveText(/^⬡\s+\d/)
+    await expect(item).toHaveText(/^⬡\s*\d/)
     expect(await readSettledVectors(item)).toBeGreaterThan(0)
   })
 

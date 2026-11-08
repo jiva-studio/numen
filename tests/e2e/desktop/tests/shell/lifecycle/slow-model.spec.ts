@@ -33,7 +33,7 @@ test.describe('Start-up while the embeddings model is still opening', () => {
     await observeFor(page, 2_000)
     await page.reload()
     await expectWorkspaceDrawn(page)
-    await expect(page.locator('.index-stats__label')).toBeVisible(within)
+    await expect(page.locator('.index-stats__trigger')).toBeVisible(within)
     await page.keyboard.press('Control+k')
     await getPaletteField(page).fill('Entropy')
     await expect(page.getByRole('option').first()).toBeVisible(within)

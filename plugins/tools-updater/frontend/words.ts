@@ -1,6 +1,5 @@
 /** Words used across the updater frontend. */
 export const WORDS = {
-  indicatorLabel: 'Application update available',
   title: 'Update available',
   available: 'Update available',
   running: 'You run',
