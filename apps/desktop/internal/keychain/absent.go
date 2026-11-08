@@ -10,23 +10,17 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-// dbusMissing are the errors of the message bus that say no secret service is there to answer.
-var dbusMissing = []string{
-	"org.freedesktop.DBus.Error.ServiceUnknown",
-	"org.freedesktop.DBus.Error.NameHasNoOwner",
-	"org.freedesktop.DBus.Error.NotSupported",
-}
-
 func isKeychainAbsent(err error) bool {
 	if errors.Is(err, keyring.ErrUnsupportedPlatform) {
 		return true
 	}
 	var busErr dbus.Error
 	if errors.As(err, &busErr) {
-		for _, name := range dbusMissing {
-			if busErr.Name == name {
-				return true
-			}
+		switch busErr.Name {
+		case "org.freedesktop.DBus.Error.ServiceUnknown",
+			"org.freedesktop.DBus.Error.NameHasNoOwner",
+			"org.freedesktop.DBus.Error.NotSupported":
+			return true
 		}
 		return false
 	}
