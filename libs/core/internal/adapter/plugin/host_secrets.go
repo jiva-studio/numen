@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -132,19 +133,30 @@ func (h *Host) isAwaitingFirstConfigure(pluginID string) bool {
 	return h.awaitingFirstConfigure[pluginID]
 }
 
-// configurePlugins sends Configure to the plugins in turn and returns the failures joined. A plugin
-// that awaits the Configure of its activation gets none, because that one reads the list as it is.
-// The caller holds secretLock.
+// configurePlugins sends Configure to the plugins at once and returns the failures joined in the
+// order of the ids. A plugin that awaits the Configure of its activation gets none, because that
+// one reads the list as it is. A plugin that does not answer holds up only itself, so the wait is
+// the longest single call and not their sum. The caller holds secretLock.
 func (h *Host) configurePlugins(ctx context.Context, ids []string) error {
-	var failures []error
-	for _, id := range ids {
+	failures := make([][2]error, len(ids))
+	var group sync.WaitGroup
+	for i, id := range ids {
 		if h.isAwaitingFirstConfigure(id) {
 			continue
 		}
-		readErr, configureErr := h.configurePluginLocked(ctx, id)
-		failures = append(failures, configureErr, readErr)
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			readErr, configureErr := h.configurePluginLocked(ctx, id)
+			failures[i] = [2]error{configureErr, readErr}
+		}()
 	}
-	return errors.Join(failures...)
+	group.Wait()
+	var joined []error
+	for _, pair := range failures {
+		joined = append(joined, pair[0], pair[1])
+	}
+	return errors.Join(joined...)
 }
 
 // configurePluginLocked sends the configuration to the plugin and returns the failure to read its
