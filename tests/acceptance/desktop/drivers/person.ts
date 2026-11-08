@@ -1,12 +1,13 @@
 /**
  * The person at the window. Every method is one thing a person does or one outcome the product
- * holds, grouped by the level a step works at: the application, a tab, a note, the search, the web. How it is done on
+ * holds, grouped by the level a step works at: the application, a tab, a note, the search, the plex, the web. How it is done on
  * the screen (the tabs, the keys, the labels) stays in drivers/, so a step and a scenario say what
  * happens and never how it looks.
  */
 import type { Page } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { NoteDriver } from './notes.js'
+import { PlexDriver } from './plex.js'
 import { Scenario } from './scenario.js'
 import { SearchDriver } from './search.js'
 import { TabDriver } from './tabs.js'
@@ -17,6 +18,7 @@ export class Person {
   readonly tab: TabDriver
   readonly note: NoteDriver
   readonly search: SearchDriver
+  readonly plex: PlexDriver
   readonly web: WebDriver
   private readonly scenario: Scenario
 
@@ -26,6 +28,7 @@ export class Person {
     this.tab = new TabDriver(this.scenario)
     this.note = new NoteDriver(this.scenario)
     this.search = new SearchDriver(this.scenario)
+    this.plex = new PlexDriver(this.scenario)
     this.web = new WebDriver()
   }
 

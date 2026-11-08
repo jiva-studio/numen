@@ -1,15 +1,12 @@
 import { test, expect, forgetOpenTabs, readActivePath, type Page } from '../../support/test.js'
 import {
-  getGraph,
   getPaletteField,
-  openWorkspace,
   runCommand,
   waitForWindow,
 } from '../../support/workspace.js'
 
 const OPEN_NOTE = 'Open note'
-const SHOW_IN_PLEX = 'Show note in plex'
-/** A note of the vault the scenarios share, which the plex does not have in focus when the window opens. */
+/** A note of the vault the scenarios share. */
 const NOTE = 'Entropy'
 
 const openWindow = async (page: Page): Promise<void> => {
@@ -58,20 +55,6 @@ const setPlexEnabled = async (page: Page, isEnabled: boolean): Promise<void> => 
   if ((await toggle.isChecked()) !== isEnabled) await toggle.click()
   await expect(toggle).toBeChecked({ checked: isEnabled })
 }
-
-test.describe('The actions of a note found by its name, with the plex plugin enabled', () => {
-
-  test('shows the note in the plex when the second action is chosen', async ({ page }) => {
-    await openWorkspace(page)
-    await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeHidden()
-
-    await searchForNote(page)
-    const rows = await openActions(page)
-    await rows.filter({ hasText: SHOW_IN_PLEX }).click()
-
-    await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeAttached()
-  })
-})
 
 test.describe('The actions of a note found by its name, with the plex plugin disabled', () => {
   test.afterEach(async ({ page }) => {

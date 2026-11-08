@@ -18,7 +18,7 @@ export const getStem = (file: string): string => path.basename(file).replace(/\.
 
 export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export const getTitlePattern = (title: string): RegExp => new RegExp(`^${getEscaped(title)}( Close |$)`)
+export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${getEscaped(title)}( Close |$)`)
 
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
@@ -42,11 +42,11 @@ export const parseTime = (time: string): number => {
   return Number(hit[1]) * 60 + Number(hit[2])
 }
 
-export type PaletteField = 'name' | 'item' | 'text'
+export type PaletteField = 'name' | 'item' | 'note' | 'text'
 
-const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item' }
+const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item', 'Search notes': 'note' }
 
-/** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, or a text. */
+/** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, a note found by words, or a text. */
 export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
 
 export const assertApplication = (name: string): void => {

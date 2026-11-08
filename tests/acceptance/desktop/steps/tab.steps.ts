@@ -26,6 +26,18 @@ Then('the tab {reference} {string} is open', async ({ person }, reference: strin
   await person.tab.expectOpen(reference, name)
 })
 
+Then('the tab {reference} {string} is not open', async ({ person }, reference: string, name: string) => {
+  await person.tab.expectNotOpen(reference, name)
+})
+
+When(
+  'the person runs the command {string} on the tab {reference} {string}',
+  async ({ person }, label: string, reference: string, name: string) => {
+    await person.tab.activate(reference, name)
+    await person.application.runCommand(label)
+  },
+)
+
 Then(
   'the tab {reference} {string} has {string}',
   async ({ person }, reference: string, name: string, text: string) => {

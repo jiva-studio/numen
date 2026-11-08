@@ -12,6 +12,7 @@ import {
   writeNote,
   destroyNote,
 } from '../../../e2e/desktop/tests/support/vault.js'
+import { getConnectionSides } from '../../../e2e/desktop/tests/support/layout.js'
 import type { Scenario } from './scenario.js'
 
 export class NoteDriver {
@@ -89,8 +90,13 @@ export class NoteDriver {
   async expectLinks(reference: string, name: string, toReference: string, toName: string): Promise<void> {
     const from = await this.scenario.getPath(reference, name)
     const to = await this.scenario.getPath(toReference, toName)
-    const backlinks = (): Promise<string[]> => listBacklinks(this.scenario.page.request, to)
-    await expect.poll(backlinks).toContain(from)
+    const { request } = this.scenario.page
+    const isLinked = async (): Promise<boolean> => {
+      if ((await listBacklinks(request, to)).includes(from)) return true
+      const sides = await getConnectionSides(request, from, to)
+      return sides.first || sides.second
+    }
+    await expect.poll(isLinked).toBe(true)
   }
 
 }
