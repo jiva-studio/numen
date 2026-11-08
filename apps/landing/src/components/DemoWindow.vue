@@ -1230,8 +1230,8 @@ const NEW_SUBMENU: SlotItem = {
   title: 'New',
   icon: Plus,
   entries: [
-    createMenuCommand(DEMO_COMMAND.newTreeNote, 'New note'),
-    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'New folder'),
+    createMenuCommand(DEMO_COMMAND.newTreeNote, 'Create note here'),
+    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
   ],
 }
 
@@ -1342,7 +1342,7 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
     entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
   )
   const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
-  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename')
+  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename file')
   if (target.path === ROOT) return [NEW_SUBMENU]
   if (target.others.length > 0) {
     const selected = [target.path, ...target.others]

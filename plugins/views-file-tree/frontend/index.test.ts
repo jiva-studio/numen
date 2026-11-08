@@ -81,9 +81,9 @@ describe('view-file-tree plugin', () => {
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'tree.open',
       'tree.revealNote',
-      'tree.rename',
-      'tree.newNote',
-      'tree.newFolder',
+      'tree.renameFile',
+      'tree.createNote',
+      'tree.createFolder',
     ])
     await ctx.triggerCommand('tree.open')
     await ctx.triggerCommand('tree.revealNote', {
@@ -140,7 +140,7 @@ describe('view-file-tree plugin', () => {
     const { ctx, state } = await openTab()
     state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.rename', {
+    await ctx.triggerCommand('tree.renameFile', {
       path: 'A.md',
       title: 'A.md',
       type: 'note',
@@ -156,7 +156,7 @@ describe('view-file-tree plugin', () => {
     const { ctx, state } = await openTab()
     state.openMenu({ path: null, at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.rename', {
+    await ctx.triggerCommand('tree.renameFile', {
       path: '',
       title: '',
       type: 'note',
@@ -172,7 +172,7 @@ describe('view-file-tree plugin', () => {
     const { ctx, recorded, state } = await openTab()
     state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.newNote', {
+    await ctx.triggerCommand('tree.createNote', {
       path: 'A.md',
       title: 'A.md',
       type: 'note',
@@ -180,7 +180,7 @@ describe('view-file-tree plugin', () => {
       others: [],
       tab: '',
     })
-    await ctx.triggerCommand('tree.newFolder', {
+    await ctx.triggerCommand('tree.createFolder', {
       path: '',
       title: '',
       type: 'note',
@@ -196,7 +196,7 @@ describe('view-file-tree plugin', () => {
     const { ctx, recorded } = createContext()
     activate(ctx)
 
-    await ctx.triggerCommand('tree.newNote', {
+    await ctx.triggerCommand('tree.createNote', {
       path: 'A.md',
       title: 'A.md',
       type: 'note',
@@ -204,7 +204,7 @@ describe('view-file-tree plugin', () => {
       others: [],
       tab: '',
     })
-    await ctx.triggerCommand('tree.rename', {
+    await ctx.triggerCommand('tree.renameFile', {
       path: 'A.md',
       title: 'A.md',
       type: 'note',

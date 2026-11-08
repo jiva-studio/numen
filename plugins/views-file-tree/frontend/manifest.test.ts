@@ -54,21 +54,21 @@ describe('the menu of a row', () => {
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.newNote',
+        command: 'tree.createNote',
         group: '0-tree',
         order: 10,
         when: 'target.isFolder',
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.newFolder',
+        command: 'tree.createFolder',
         group: '0-tree',
         order: 20,
         when: 'target.isFolder',
       },
       {
         slot: 'fileTree.context',
-        command: 'tree.rename',
+        command: 'tree.renameFile',
         group: '2-edit',
         order: 10,
         when: '!target.isRoot && !target.isMultiple',
@@ -77,19 +77,19 @@ describe('the menu of a row', () => {
   })
 
   it('declares the commands the menu runs, over any row', () => {
-    expect(getCommand('tree.rename')).toStrictEqual({
-      id: 'tree.rename',
-      title: 'Rename',
+    expect(getCommand('tree.renameFile')).toStrictEqual({
+      id: 'tree.renameFile',
+      title: 'Rename file',
       icon: 'pencil',
     })
-    expect(getCommand('tree.newNote')).toStrictEqual({
-      id: 'tree.newNote',
-      title: 'New note',
+    expect(getCommand('tree.createNote')).toStrictEqual({
+      id: 'tree.createNote',
+      title: 'Create note here',
       icon: 'file-plus',
     })
-    expect(getCommand('tree.newFolder')).toStrictEqual({
-      id: 'tree.newFolder',
-      title: 'New folder',
+    expect(getCommand('tree.createFolder')).toStrictEqual({
+      id: 'tree.createFolder',
+      title: 'Create folder',
       icon: 'folder-plus',
     })
   })
