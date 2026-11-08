@@ -74,6 +74,9 @@ test.describe('a deck made from the New submenu of a row of the file tree', () =
   })
 })
 
+/** The rows of the file menu whose commands list no item for a deck or a card model. */
+const ITEM_ROWS = ['Create text', 'Download media', 'Delete media', 'Delete text']
+
 test.describe('a file open in an editor of cards, removed from the tree', () => {
   for (const [what, path, editor] of [
     ['deck', 'cards/empty-deck.md', '.deck'],
@@ -90,6 +93,11 @@ test.describe('a file open in an editor of cards, removed from the tree', () => 
 
       await page.getByRole('tab', { name: /^Files/ }).click()
       await row.click({ button: 'right' })
+      // These rows are drawn while their items are read and hidden when the list is empty, which
+      // moves the rows below them.
+      for (const name of ITEM_ROWS) {
+        await expect(page.getByRole('menuitem', { name, exact: true })).toHaveCount(0)
+      }
       await page.getByRole('menuitem', { name: 'Move note to trash', exact: true }).first().click()
 
       await expect(page.locator(editor)).toHaveCount(0)
