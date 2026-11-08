@@ -84,4 +84,4 @@ Prompt the user clearly when all tests are green:
 > - All tests passing (green).  
 > - Local typecheck and lint gates passed with exit 0.  
 >  
-> *Next step:* Run `/nm-review` to execute the 3-stage code review pipeline (Gatekeeper $\rightarrow$ Bug Hunter $\rightarrow$ Adversary).
+> *Next step:* Run `/nm-review` to execute the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check).
