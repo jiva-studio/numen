@@ -59,7 +59,7 @@ func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if made.OpenedPath == "" || made.Message != made.OpenedPath+" is made" {
+	if made.OpenedPath == "" || made.Message != "Created "+made.OpenedPath {
 		t.Fatalf("import answered %+v", made)
 	}
 	if hasCopy(t, store) {

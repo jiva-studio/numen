@@ -42,11 +42,14 @@ func newCommands(links *link.Links) (*command.Registry, error) {
 
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		made, err := links.Create(ctx, "", "", req.Arguments.GetString(argumentAddress))
+		found, isFound, err := links.FindOrCreate(ctx, "", "", req.Arguments.GetString(argumentAddress))
 		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: made.Path + " is made", OpenedPath: made.Path}, nil
+		if isFound {
+			return command.Result{Message: "Opened " + found.Path, OpenedPath: found.Path}, nil
+		}
+		return command.Result{Message: "Created " + found.Path, OpenedPath: found.Path}, nil
 	}
 }
 

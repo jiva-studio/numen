@@ -155,10 +155,9 @@ func TestURLImportOfSameAddressToSameFolderUpdatesLinkNote(t *testing.T) {
 	}
 }
 
-func TestURLImportOfSameAddressToOtherFolderCreatesSecondNote(t *testing.T) {
+func TestURLImportOfSameAddressToOtherFolderReturnsTheNoteItHas(t *testing.T) {
 	s := newUnblockedFixture(t)
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "reading"})
-	before, _ := s.vault.Content(first.Path)
 
 	res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "archive"})
 
@@ -166,19 +165,11 @@ func TestURLImportOfSameAddressToOtherFolderCreatesSecondNote(t *testing.T) {
 		t.Fatalf("url_import of %s into archive was rejected: %s", articleAddress, res.GetResult().GetText())
 	}
 	second := decodeImportAnswer(t, res)
-	if !strings.HasPrefix(second.Path, "archive/") || !second.HasText {
-		t.Errorf("url_import into archive returned %+v, want a note in archive with its text", second)
+	if second.Path != first.Path || !second.HasText {
+		t.Errorf("url_import into archive returned %+v, want the note %s with its text", second, first.Path)
 	}
-	notes := getLinkNotes(t, s.vault)
-	slices.Sort(notes)
-	if want := []string{second.Path, first.Path}; !slices.Equal(notes, want) {
-		t.Errorf("the vault has the link notes %v, want %v", notes, want)
-	}
-	if after, isKept := s.vault.Content(first.Path); !isKept || after != before {
-		t.Errorf("the first note %s reads %q, want it unchanged as %q", first.Path, after, before)
-	}
-	if !hasVersion(t, s.texts, second.Path) || !hasVersion(t, s.texts, first.Path) {
-		t.Errorf("the notes %s and %s do not both have a text version", first.Path, second.Path)
+	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{first.Path}) {
+		t.Errorf("the vault has the link notes %v, want %s alone", notes, first.Path)
 	}
 }
 
@@ -191,6 +182,7 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 			s := newUnblockedFixture(t)
 			probe := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "probe"})
 			targetPath := path.Join("desk", path.Base(probe.Path))
+			s.vault.Remove(probe.Path)
 			s.vault.File(targetPath, content)
 
 			res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "desk"})

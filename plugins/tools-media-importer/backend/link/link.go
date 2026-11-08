@@ -231,36 +231,62 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
+	// The index takes the note in at once, so a lookup by type finds it before the watch reports it.
+	if err := target.Scan(ctx, []string{path}); err != nil {
+		return Link{}, err
+	}
 	return newLinkIn(ctx, target, path, parsed, content)
 }
 
-// FindOrCreate calls Create and, when a file is already at the path of the note, returns the link
-// note there if it has the same address. Any other file at the path is an error naming the path,
-// and the file is unchanged.
-func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
+// FindOrCreate returns the link note of the address in a vault, wherever it is, and true; it calls
+// Create where the vault has none. Where a file other than the link note of the address is at the
+// path of the note, the error names the path, and the file is unchanged.
+func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, bool, error) {
+	parsed, err := address.Parse(raw)
+	if err != nil {
+		return Link{}, false, err
+	}
+	if found, isFound, err := l.findByAddress(ctx, l.getVaultByID(vault), parsed); err != nil || isFound {
+		return found, isFound, err
+	}
 	made, err := l.Create(ctx, vault, folder, raw)
 	if !errors.Is(err, host.ErrAlreadyExists) {
-		return made, err
-	}
-	parsed, err := address.Parse(raw)
-	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it opened the file"
-	if err != nil {
-		return Link{}, err
+		return made, false, err
 	}
 	name, _, err := domain.Filename(string(parsed))
 	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it opened the file"
 	if err != nil {
-		return Link{}, err
+		return Link{}, false, err
 	}
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	found, err := readLink(ctx, l.getVaultByID(vault), path)
 	if err != nil && !errors.Is(err, ErrNotALink) {
-		return Link{}, err
+		return Link{}, false, err
 	}
 	if err != nil || found.Address != parsed {
-		return Link{}, fmt.Errorf("%s already exists and is not the link note of %s", path, parsed)
+		return Link{}, false, fmt.Errorf("%s already exists and is not the link note of %s", path, parsed)
 	}
-	return found, nil
+	return found, true, nil
+}
+
+func (l *Links) findByAddress(ctx context.Context, vault host.Vault, parsed address.URL) (Link, bool, error) {
+	paths, err := vault.GetPathsOfType(ctx, NoteType)
+	if err != nil {
+		return Link{}, false, err
+	}
+	for _, path := range paths {
+		found, err := readLink(ctx, vault, path)
+		if errors.Is(err, ErrNotALink) || errors.Is(err, host.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return Link{}, false, err
+		}
+		if found.Address == parsed {
+			return found, true, nil
+		}
+	}
+	return Link{}, false, nil
 }
 
 func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
