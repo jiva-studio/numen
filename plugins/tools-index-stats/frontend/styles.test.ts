@@ -29,3 +29,17 @@ describe('the popover of the vector count', () => {
     expect(rule.has('bottom')).toBe(false)
   })
 })
+
+
+describe('the chip of the vector count', () => {
+  it('is flat, 20px high, 12px in text, 8px in padding, and still', () => {
+    const rule = readRule('.index-stats__trigger')
+
+    expect(rule.get('--chip-height')).toBe('20px')
+    expect(rule.get('--chip-text')).toBe('12px')
+    expect(rule.get('--chip-pad')).toBe('8px')
+    expect(rule.get('border')).toBe('none')
+    expect(rule.get('border-radius')).toBe('var(--numen-radius)')
+    expect(css).not.toMatch(/animation|@keyframes|transition|focus-visible|outline:\s*var/)
+  })
+})

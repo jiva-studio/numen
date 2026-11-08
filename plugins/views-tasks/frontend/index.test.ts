@@ -59,32 +59,56 @@ describe('the manifest', () => {
 })
 
 describe('the summary', () => {
-  it('says Ready while no task runs', () => {
+  it('says Idle with an empty ring while no task runs', () => {
     const { view } = activateTasks()
 
     const wrapper = mountTasks(view)
 
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('Ready')
-    expect(wrapper.find('.tasks-status__badge').exists()).toBe(false)
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('No tasks running')
+    expect(wrapper.find('.tasks-status__ring-track').exists()).toBe(true)
+    expect(wrapper.find('.tasks-status__ring-fill').exists()).toBe(false)
   })
 
-  it('counts the active tasks and follows the changes of the list', async () => {
+  it('counts the tasks done of all and follows the changes of the list', async () => {
+    const { context, view } = activateTasks()
+    const wrapper = mountTasks(view)
+    const running = (id: string) => createTask({ id, state: 'running' })
+
+    context.backgroundTasks.setTasks([running('a'), running('b'), running('c')])
+    await flushPromises()
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 3')
+
+    context.backgroundTasks.setTasks([running('b'), running('c')])
+    await flushPromises()
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('1 of 3 tasks done')
+    expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
+
+    context.backgroundTasks.setTasks([running('c'), running('d')])
+    await flushPromises()
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('2 of 4')
+
+    context.backgroundTasks.setTasks([])
+    await flushPromises()
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
+  })
+
+  it('fills the ring by the progress of the batch', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
     context.backgroundTasks.setTasks([
-      createTask({ id: 'a', state: 'running' }),
-      createTask({ id: 'b', state: 'cancelling' }),
+      createTask({ id: 'a', state: 'running', done: 1, total: 2 }),
     ])
     await flushPromises()
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('2 active')
 
-    context.backgroundTasks.setTasks([])
-    await flushPromises()
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('Ready')
+    const fill = wrapper.find('.tasks-status__ring-fill')
+    const length = Number(fill.attributes('stroke-dasharray'))
+    expect(Number(fill.attributes('stroke-dashoffset'))).toBeCloseTo(length / 2)
   })
 
-  it('shows a badge with the number of failed tasks', async () => {
+  it('says how many failed when nothing else runs', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
@@ -94,8 +118,31 @@ describe('the summary', () => {
     ])
     await flushPromises()
 
-    expect(wrapper.find('.tasks-status__badge').text()).toBe('2')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('Ready, 2 failed')
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('2 failed')
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('2 failed')
+    expect(wrapper.find('.tasks-status__trigger').classes()).toContain('tasks-status__trigger--failed')
+  })
+
+  it('says how many are done and how many failed while others run', async () => {
+    const { context, view } = activateTasks()
+    const wrapper = mountTasks(view)
+
+    context.backgroundTasks.setTasks([
+      createTask({ id: 'a', state: 'running' }),
+      createTask({ id: 'f', state: 'running' }),
+      createTask({ id: 'b', state: 'running' }),
+    ])
+    await flushPromises()
+    context.backgroundTasks.setTasks([
+      createTask({ id: 'a', state: 'running' }),
+      createTask({ id: 'f', state: 'failed', error: 'x' }),
+    ])
+    await flushPromises()
+
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3 · 1 failed')
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
+      '1 of 3 tasks done, 1 failed',
+    )
   })
 
   it('takes the tasks the window lists before the view is drawn', () => {
@@ -104,48 +151,24 @@ describe('the summary', () => {
 
     const wrapper = mountTasks(view)
 
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('1 active')
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 1')
   })
 })
 
 describe('the chip', () => {
-  it('keeps the cell of the mark in every state and draws a still ring while a task runs', async () => {
+  it('is flat, still and out of the tab order, and opens on a click', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
-    expect(wrapper.find('.tasks-status__icon-wrap .tasks-status__idle-dot').exists()).toBe(true)
+    context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
+    await flushPromises()
+
+    const trigger = wrapper.find('.tasks-status__trigger')
+    expect(trigger.attributes('tabindex')).toBe('-1')
+    expect(wrapper.find('.tasks-status__badge').exists()).toBe(false)
     expect(wrapper.find('.circular-progress').exists()).toBe(false)
-
-    context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
-    await flushPromises()
-
-    expect(wrapper.find('.tasks-status__icon-wrap').exists()).toBe(true)
-    expect(wrapper.find('.tasks-status__icon-wrap .circular-progress').exists()).toBe(true)
-    expect(wrapper.find('.circular-progress--indeterminate').exists()).toBe(false)
-  })
-
-  it('pulses while a task runs and not otherwise', async () => {
-    const { context, view } = activateTasks()
-    const wrapper = mountTasks(view)
-    expect(wrapper.find('.tasks-status__trigger').classes()).not.toContain(
-      'tasks-status__trigger--busy',
-    )
-
-    context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
-    await flushPromises()
-
-    expect(wrapper.find('.tasks-status__trigger').classes()).toContain('tasks-status__trigger--busy')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('1 active')
-  })
-
-  it('draws the failed count in a badge that takes no room of its own', async () => {
-    const { context, view } = activateTasks()
-    const wrapper = mountTasks(view)
-
-    context.backgroundTasks.setTasks([createTask({ id: 'f', state: 'failed', error: 'x' })])
-    await flushPromises()
-
-    expect(wrapper.find('.tasks-status__trigger > .tasks-status__badge').exists()).toBe(true)
-    expect(wrapper.find('.tasks-status__trigger').classes()).toContain('tasks-status__trigger--failed')
+    expect(trigger.classes()).toStrictEqual(['tasks-status__trigger'])
+    await trigger.trigger('click')
+    expect(wrapper.find('.task-popover').exists()).toBe(true)
   })
 })
 

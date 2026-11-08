@@ -125,9 +125,6 @@ export const Embedded: Story = {
   },
 }
 
-const getTrigger = (canvasElement: HTMLElement): HTMLElement =>
-  canvasElement.querySelector('.index-stats__trigger') as HTMLElement
-
 const getBox = (element: HTMLElement) => {
   const { width, height } = element.getBoundingClientRect()
   return { width, height }
@@ -138,9 +135,8 @@ const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
   await expect(trigger.textContent?.trim()).toBe('⬡12,480')
   await expect(trigger.textContent).not.toContain('/')
-  await expect(getComputedStyle(trigger).animationName).not.toBe('none')
-  await expect(trigger.getAnimations().some((one) => one.playState === 'running')).toBe(true)
-  await expect(getComputedStyle(getTrigger(canvasElement).querySelector('.index-stats__icon')!).animationName).toBe('none')
+  await expect(trigger.getAnimations()).toHaveLength(0)
+  await expect(getComputedStyle(trigger).borderTopWidth).toBe('0px')
   await expectText(trigger, 'index chip', 'indexing')
 }
 
@@ -153,7 +149,7 @@ const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expectText(trigger, 'index chip', 'idle')
 }
 
-/** The chip pulses while chunks wait, on the light tokens. */
+/** The chip is still while chunks wait, on the light tokens. */
 export const IndexingLight: Story = { globals: { theme: 'light' }, play: checkIndexing }
 
 /** The same on the dark tokens. */
@@ -173,7 +169,7 @@ export const IdleDark: Story = {
   play: checkIdle,
 }
 
-/** The chip keeps its size whether it is indexing, idle, loading or without an index. */
+/** The chip is 20px high whether it is indexing, idle, loading or without an index. */
 export const KeepsItsSize: Story = {
   render: () => ({
     components: { StatsIndicator },
@@ -189,21 +185,6 @@ export const KeepsItsSize: Story = {
   play: async ({ canvasElement }) => {
     const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(getBox)
     await expect(boxes).toHaveLength(4)
-    for (const box of boxes) await expect(box).toStrictEqual(boxes[0])
-  },
-}
-
-/** With no motion in the theme the chip stays still and does not pulse. */
-export const IndexingWithoutMotion: Story = {
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="--numen-motion: 0ms"><story /></div>',
-    }),
-  ],
-  play: async ({ canvasElement }) => {
-    const trigger = getTrigger(canvasElement)
-    await expect(trigger).toBeVisible()
-    await expect(getComputedStyle(trigger).animationDuration).toBe('0s')
+    for (const box of boxes) await expect(box.height).toBe(20)
   },
 }

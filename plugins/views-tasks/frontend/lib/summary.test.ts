@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTask } from '../testing/tasks'
-import { getProgress, orderTasks, summarizeTasks } from './summary'
+import { getProgress, orderTasks, summarizeBatch, summarizeTasks } from './summary'
 
 describe('summarizeTasks', () => {
   it('is idle when no task runs and none failed', () => {
@@ -66,5 +66,32 @@ describe('orderTasks', () => {
     const tasks = [createTask({ id: 'old' }), createTask({ id: 'mid' }), createTask({ id: 'new' })]
 
     expect(orderTasks(tasks).map((one) => one.id)).toStrictEqual(['new', 'mid', 'old'])
+  })
+})
+
+describe('summarizeBatch', () => {
+  it('is empty while nothing was seen', () => {
+    expect(summarizeBatch([], new Set())).toStrictEqual({ total: 0, done: 0, fraction: 0 })
+  })
+
+  it('counts the tasks that left the list as done and adds the progress of the active ones', () => {
+    const tasks = [
+      createTask({ id: 'c', state: 'running', done: 1, total: 2 }),
+      createTask({ id: 'd', state: 'running' }),
+    ]
+
+    const batch = summarizeBatch(tasks, new Set(['a', 'b', 'c', 'd']))
+
+    expect(batch).toStrictEqual({ total: 4, done: 2, fraction: 0.625 })
+  })
+
+  it('does not count a failed task as done', () => {
+    const tasks = [createTask({ id: 'f', state: 'failed', error: 'x' })]
+
+    expect(summarizeBatch(tasks, new Set(['f', 'a']))).toStrictEqual({
+      total: 2,
+      done: 1,
+      fraction: 0.5,
+    })
   })
 })

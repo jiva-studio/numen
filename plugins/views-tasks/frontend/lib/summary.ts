@@ -40,3 +40,26 @@ export function summarizeTasks(tasks: readonly BackgroundTask[]): TaskSummary {
 export function orderTasks(tasks: readonly BackgroundTask[]): readonly BackgroundTask[] {
   return [...tasks].reverse()
 }
+
+/** The tasks of one busy period of the window, counted for the chip. */
+export interface TaskBatch {
+  readonly total: number
+  readonly done: number
+  readonly fraction: number
+}
+
+/**
+ * The batch the chip counts: every task seen since the window was last idle, the ones that ended
+ * as done, and how far the whole batch has come. A task that failed is neither done nor active.
+ */
+export function summarizeBatch(tasks: readonly BackgroundTask[], seen: ReadonlySet<string>): TaskBatch {
+  const total = seen.size
+  if (total === 0) return { total: 0, done: 0, fraction: 0 }
+  const active = tasks.filter(isActive)
+  const failedIds = new Set(tasks.filter((task) => task.state === 'failed').map((task) => task.id))
+  const done = [...seen].filter(
+    (id) => !failedIds.has(id) && !active.some((task) => task.id === id),
+  ).length
+  const partial = active.reduce((sum, task) => sum + (getProgress(task) ?? 0) / 100, 0)
+  return { total, done, fraction: Math.min(1, (done + partial) / total) }
+}

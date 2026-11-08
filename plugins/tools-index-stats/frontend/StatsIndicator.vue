@@ -6,7 +6,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { Stats } from './api/stats'
 import type { Phase } from './model/stats'
-import { formatSummary, formatVectors, isPending, MARK } from './lib/format'
+import { formatSummary, formatVectors, MARK } from './lib/format'
 import StatsPopover from './StatsPopover.vue'
 import { WORDS as words } from './words'
 
@@ -24,10 +24,8 @@ const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isResize)
 
 const figure = computed(() => {
-  if (props.stats) return formatVectors(props.stats, props.locale)
-  return props.phase === 'loading' ? words.loading : words.unavailable
+  return props.stats ? formatVectors(props.stats, props.locale) : words.unavailable
 })
-const isIndexing = computed(() => props.stats !== null && isPending(props.stats))
 const summary = computed(() => {
   if (props.stats) return formatSummary(props.stats, props.locale)
   return props.phase === 'loading' ? words.loadingHint : words.unavailableHint
@@ -55,7 +53,7 @@ function isResize(event: Event): boolean {
     <button
       type="button"
       class="index-stats__trigger"
-      :class="{ 'index-stats__trigger--indexing': isIndexing }"
+      tabindex="-1"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       :title="summary"

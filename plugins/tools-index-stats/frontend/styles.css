@@ -7,21 +7,26 @@
   padding-inline: calc(var(--numen-inset) / 4);
 }
 
-/* The chip: one height, a width that fits the longest usual figure, a cell for the mark that is
-   always there and numerals of one width, so no state moves its neighbours. */
+/* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
+   same in the three title bar chips; only the width follows the content. */
 .index-stats__trigger {
+  --chip-height: 20px;
+  --chip-text: 12px;
+  --chip-pad: 8px;
+  --chip-mark: 12px;
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--numen-inset) / 2);
+  gap: calc(var(--chip-pad) / 2);
   box-sizing: border-box;
-  height: calc(var(--numen-action-size) * 0.75);
-  padding-inline: var(--numen-inset);
+  height: var(--chip-height);
+  padding: 0 var(--chip-pad);
   background: var(--numen-surface);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-pill);
+  border: none;
+  border-radius: var(--numen-radius);
+  outline: none;
   color: var(--numen-ink);
   font: inherit;
-  font-size: var(--numen-text-1);
+  font-size: var(--chip-text);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   cursor: pointer;
@@ -29,8 +34,9 @@
 
 .index-stats__icon {
   flex: none;
-  width: 1em;
+  width: var(--chip-mark);
   color: var(--numen-hushed);
+  font-size: var(--chip-mark);
   text-align: center;
 }
 
@@ -43,11 +49,6 @@
 .index-stats__trigger:hover,
 .index-stats__trigger[aria-expanded='true'] {
   background: var(--numen-raised);
-}
-
-.index-stats__trigger:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 0;
 }
 
 .index-popover {
@@ -148,24 +149,4 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--numen-ink);
-}
-
-/* While chunks wait for a vector the chip pulses: its ground turns toward the accent and back.
-   The turn takes the motion duration of the theme, so a motion of 0ms leaves it still, and a
-   request for less motion leaves it tinted. */
-.index-stats__trigger--indexing {
-  animation: index-stats-pulse calc(var(--numen-motion) * 8) ease-in-out infinite;
-}
-
-@keyframes index-stats-pulse {
-  50% {
-    background: color-mix(in srgb, var(--numen-accent) 22%, var(--numen-surface));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .index-stats__trigger--indexing {
-    background: color-mix(in srgb, var(--numen-accent) 22%, var(--numen-surface));
-    animation: none;
-  }
 }

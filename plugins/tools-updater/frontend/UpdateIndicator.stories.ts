@@ -46,6 +46,7 @@ const checkCurrent: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.textContent?.trim()).toBe('v2026.11.2')
   await expect(chip.getAttribute('title')).toContain('latest version')
   await expect(chip.tagName).toBe('SPAN')
+  await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
   await expectText(chip, 'version chip', 'current')
 }
 
@@ -79,7 +80,7 @@ export const AvailableDark: Story = {
   play: checkAvailable,
 }
 
-/** The chip keeps its height and its width whether it shows the running version or the update. */
+/** The chip is 20px high whether it shows the running version or the update. */
 export const KeepsItsSize: Story = {
   render: () => ({
     components: { UpdateIndicator },
@@ -99,6 +100,6 @@ export const KeepsItsSize: Story = {
       },
     )
     await expect(boxes).toHaveLength(2)
-    await expect(boxes[1]).toStrictEqual(boxes[0])
+    for (const box of boxes) await expect(box.height).toBe(20)
   },
 }

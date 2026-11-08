@@ -67,6 +67,7 @@ function onDismiss() {
     <button
       v-if="update"
       type="button"
+      tabindex="-1"
       class="update-indicator__trigger"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"

@@ -129,6 +129,7 @@ describe('the updater frontend', () => {
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(wrapper.find('.update-indicator').classes()).toContain('update-indicator--available')
+    expect(wrapper.find('.update-indicator__trigger').attributes('tabindex')).toBe('-1')
     expect(wrapper.find('.update-indicator__trigger').attributes('title')).toBe(
       'Update available: v2026.10.1. You run v2026.9.0. Click to download.',
     )

@@ -5,26 +5,31 @@
   height: 100%;
   padding-inline: calc(var(--numen-inset) / 4);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
   user-select: none;
 }
 
-/* The chip: one height, a cell for the mark that is always there, a text cell that fits the
-   longest usual summary, and numerals of one width. The failed count sits on the corner of the chip
-   and takes no room, so no state moves its neighbours. */
+/* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
+   same in the three title bar chips; only the width follows the content. The text cell reserves
+   the width of "10 of 10" so a growing count does not move the neighbours. */
 .tasks-status__trigger {
-  position: relative;
+  --chip-height: 20px;
+  --chip-text: 12px;
+  --chip-pad: 8px;
+  --chip-mark: 12px;
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--numen-inset) / 2);
+  gap: calc(var(--chip-pad) / 2);
   box-sizing: border-box;
-  height: calc(var(--numen-action-size) * 0.75);
-  padding-inline: var(--numen-inset);
+  height: var(--chip-height);
+  padding: 0 var(--chip-pad);
   background: var(--numen-surface);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-pill);
-  color: inherit;
+  border: none;
+  border-radius: var(--numen-radius);
+  outline: none;
+  color: var(--numen-ink);
   font: inherit;
+  font-size: var(--chip-text);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   cursor: pointer;
 }
@@ -40,87 +45,32 @@
   background: var(--numen-raised);
 }
 
-.tasks-status__trigger:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 0;
+.tasks-status__trigger--failed,
+.tasks-status__trigger--failed:hover,
+.tasks-status__trigger--failed[aria-expanded='true'] {
+  background: var(--numen-alarm-bg);
+  color: var(--numen-alarm);
 }
 
-.tasks-status__trigger--failed {
-  border-color: var(--numen-alarm);
-}
-
-.tasks-status__icon-wrap {
-  display: inline-flex;
+.tasks-status__ring {
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: var(--chip-mark);
+  height: var(--chip-mark);
+  fill: none;
+  transform: rotate(-90deg);
 }
 
-.tasks-status__idle-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--numen-rule);
+.tasks-status__ring-track {
+  stroke: color-mix(in srgb, currentColor 30%, transparent);
 }
 
-.tasks-status--active .tasks-status__idle-dot {
-  background: var(--numen-accent);
+.tasks-status__ring-fill {
+  stroke: currentColor;
 }
 
 .tasks-status__summary {
-  min-width: 9ch;
-  font-variant-numeric: tabular-nums;
-  color: var(--numen-hushed);
+  min-width: 8ch;
   white-space: nowrap;
-}
-
-.tasks-status--active .tasks-status__summary {
-  color: var(--numen-ink);
-}
-
-.tasks-status__badge {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25em;
-  box-sizing: border-box;
-  padding-inline: 0.25em;
-  border-radius: var(--numen-radius-pill);
-  font-size: var(--numen-text-1);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1.25;
-  transform: translate(35%, -35%);
-}
-
-.tasks-status__badge--alarm {
-  background: var(--numen-alarm);
-  color: var(--numen-surface);
-}
-
-/* While a task runs the chip pulses: its ground turns toward the accent and back. The turn takes
-   the motion duration of the theme, so a motion of 0ms leaves it still, and a request for less
-   motion leaves it tinted. */
-.tasks-status__trigger--busy {
-  animation: tasks-status-pulse calc(var(--numen-motion) * 8) ease-in-out infinite;
-}
-
-@keyframes tasks-status-pulse {
-  50% {
-    background: color-mix(in srgb, var(--numen-accent) 22%, var(--numen-surface));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tasks-status__trigger--busy {
-    background: color-mix(in srgb, var(--numen-accent) 22%, var(--numen-surface));
-    animation: none;
-  }
 }
 
 .tasks-status__popover-container {

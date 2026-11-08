@@ -7,22 +7,26 @@
   padding-inline: calc(var(--numen-inset) / 4);
 }
 
-/* The chip: one height and a width that fits the longest usual version, in every state. The
-   version that runs is neutral; the accent means an update waits. */
+/* The chip: flat, with a ground and no border. Height, text size and padding are the same in the
+   three title bar chips; only the width follows the content. The version that runs is neutral; the
+   accent means an update waits. */
 .update-indicator__trigger {
+  --chip-height: 20px;
+  --chip-text: 12px;
+  --chip-pad: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-width: 12ch;
-  height: calc(var(--numen-action-size) * 0.75);
-  padding-inline: var(--numen-inset);
+  height: var(--chip-height);
+  padding: 0 var(--chip-pad);
   background: var(--numen-surface);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-pill);
+  border: none;
+  border-radius: var(--numen-radius);
+  outline: none;
   color: var(--numen-ink);
   font: inherit;
-  font-size: var(--numen-text-1);
+  font-size: var(--chip-text);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   white-space: nowrap;
@@ -34,7 +38,6 @@ button.update-indicator__trigger {
 
 .update-indicator--available .update-indicator__trigger {
   background: var(--numen-accent);
-  border-color: var(--numen-accent);
   color: var(--numen-accent-ink);
   font-weight: 500;
 }
@@ -42,11 +45,6 @@ button.update-indicator__trigger {
 button.update-indicator__trigger:hover,
 button.update-indicator__trigger[aria-expanded='true'] {
   filter: brightness(1.08);
-}
-
-.update-indicator__trigger:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 1px;
 }
 
 /* The panel of the Background tasks popover: raised ground, rule border, panel radius and shadow. */

@@ -32,6 +32,10 @@ describe('the index stats indicator', () => {
     }
   })
 
+  it('is out of the tab order', () => {
+    expect(draw(STATS).find('.index-stats__trigger').attributes('tabindex')).toBe('-1')
+  })
+
   it('shows the vectors alone, with no end value, while chunks wait', () => {
     const wrapper = draw(STATS)
     const trigger = wrapper.find('.index-stats__trigger')
@@ -40,7 +44,7 @@ describe('the index stats indicator', () => {
     expect(trigger.text()).not.toContain('/')
     expect(trigger.attributes('aria-label')).toBe('12,480 vectors, indexing')
     expect(trigger.attributes('title')).toBe('12,480 vectors, indexing')
-    expect(trigger.classes()).toContain('index-stats__trigger--indexing')
+    expect(trigger.classes()).toStrictEqual(['index-stats__trigger'])
     expect(wrapper.find('.index-stats__icon').classes()).toStrictEqual(['index-stats__icon'])
   })
 
@@ -49,15 +53,12 @@ describe('the index stats indicator', () => {
 
     expect(wrapper.find('.index-stats__trigger').text()).toBe('⬡13,100')
     expect(wrapper.find('.index-stats__trigger').attributes('aria-label')).toBe('13,100 vectors')
-    expect(wrapper.find('.index-stats__trigger').classes()).not.toContain(
-      'index-stats__trigger--indexing',
-    )
   })
 
-  it('draws a placeholder before the first answer', () => {
+  it('draws the mark and a dash before the first answer', () => {
     const view = draw(null, 'loading')
     expect(view.find('.index-stats').exists()).toBe(true)
-    expect(view.text()).toContain('…')
+    expect(view.find('.index-stats__trigger').text()).toBe('⬡–')
   })
 
   it('shows a dash where the index has nothing to show', () => {

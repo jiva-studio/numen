@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * The summary of the background tasks of the window, Ready or how many are active, with a badge of
- * the failed ones, and the list of the tasks it opens.
+ * The summary of the background tasks of the window as a chip: a ring filled by the progress of the
+ * batch, and Idle, how many tasks are done of how many, or how many failed. The list of the tasks
+ * opens from it.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
-import { summarizeTasks } from '../lib/summary'
+import { summarizeBatch, summarizeTasks } from '../lib/summary'
 import { WORDS as words } from '../lib/words'
-import CircularProgress from './CircularProgress.vue'
 import TaskPopover from './TaskPopover.vue'
 import './tasksStatus.css'
 
@@ -31,17 +31,42 @@ const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose)
 
 const summary = computed(() => summarizeTasks(props.tasks))
-const summaryText = computed(() =>
-  summary.value.activeCount === 0 ? words.idle : `${summary.value.activeCount} ${words.active}`,
-)
-const label = computed(() =>
-  summary.value.failedCount > 0
-    ? `${summaryText.value}, ${summary.value.failedCount} ${words.failed}`
-    : summaryText.value,
-)
+// The tasks of one busy period: the ids are forgotten when the window is idle again.
+const seen = ref<ReadonlySet<string>>(new Set())
+const batch = computed(() => summarizeBatch(props.tasks, seen.value))
+const hasFailed = computed(() => summary.value.failedCount > 0)
+const summaryText = computed(() => {
+  const failed = `${summary.value.failedCount} ${words.failed}`
+  if (summary.value.activeCount === 0) return hasFailed.value ? failed : words.idle
+  const count = `${batch.value.done} ${words.of} ${batch.value.total}`
+  return hasFailed.value ? `${count}${words.separator}${failed}` : count
+})
+const label = computed(() => {
+  if (summary.value.activeCount === 0) {
+    return hasFailed.value ? summaryText.value : words.noneRunning
+  }
+  const done = `${batch.value.done} ${words.of} ${batch.value.total} ${words.tasksDone}`
+  return hasFailed.value ? `${done}, ${summary.value.failedCount} ${words.failed}` : done
+})
+
+// The ring is a circle of RING_SIZE pixels; its arc is the share of the batch that is done.
+const RING_SIZE = 12
+const RING_STROKE = 2
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS
+const ringOffset = computed(() => RING_LENGTH * (1 - batch.value.fraction))
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
+watch(
+  () => props.tasks,
+  (tasks) => {
+    const active = tasks.filter((task) => task.state === 'running' || task.state === 'cancelling')
+    seen.value =
+      active.length === 0 ? new Set() : new Set([...seen.value, ...active.map((task) => task.id)])
+  },
+  { immediate: true },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
@@ -62,31 +87,42 @@ function onClose() {
   >
     <button
       type="button"
+      tabindex="-1"
       class="tasks-status__trigger"
-      :class="{
-        'tasks-status__trigger--busy': summary.activeCount > 0,
-        'tasks-status__trigger--failed': summary.failedCount > 0,
-      }"
+      :class="{ 'tasks-status__trigger--failed': hasFailed }"
       :aria-label="label"
+      :title="label"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       @click="onToggle"
     >
-      <div class="tasks-status__icon-wrap">
-        <CircularProgress
-          v-if="summary.activeCount > 0"
-          :progress="summary.progress ?? 0"
-          :size="14"
-          :stroke-width="2"
+      <svg
+        class="tasks-status__ring"
+        :width="RING_SIZE"
+        :height="RING_SIZE"
+        :viewBox="`0 0 ${RING_SIZE} ${RING_SIZE}`"
+        aria-hidden="true"
+      >
+        <circle
+          class="tasks-status__ring-track"
+          :cx="RING_SIZE / 2"
+          :cy="RING_SIZE / 2"
+          :r="RING_RADIUS"
+          :stroke-width="RING_STROKE"
         />
-        <span v-else class="tasks-status__idle-dot" />
-      </div>
+        <circle
+          v-if="summary.activeCount > 0 && batch.fraction > 0"
+          class="tasks-status__ring-fill"
+          :cx="RING_SIZE / 2"
+          :cy="RING_SIZE / 2"
+          :r="RING_RADIUS"
+          :stroke-width="RING_STROKE"
+          :stroke-dasharray="RING_LENGTH"
+          :stroke-dashoffset="ringOffset"
+        />
+      </svg>
 
       <span class="tasks-status__summary">{{ summaryText }}</span>
-
-      <span v-if="summary.failedCount > 0" class="tasks-status__badge tasks-status__badge--alarm">
-        {{ summary.failedCount }}
-      </span>
     </button>
 
     <div v-if="isOpen" class="tasks-status__popover-container">

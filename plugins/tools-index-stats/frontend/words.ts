@@ -4,7 +4,6 @@ export const WORDS = {
   vectorsUnit: 'vectors',
   indexing: 'indexing',
   close: 'Close index stats',
-  loading: '…',
   loadingHint: 'Reading the search index',
   unavailable: '–',
   unavailableHint: 'The search index is not available',

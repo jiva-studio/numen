@@ -1,8 +1,11 @@
 /** The words the task status writes. */
 export const WORDS = {
-  idle: 'Ready',
-  active: 'active',
+  idle: 'Idle',
+  of: 'of',
   failed: 'failed',
+  separator: ' · ',
+  noneRunning: 'No tasks running',
+  tasksDone: 'tasks done',
   title: 'Background tasks',
   empty: 'No active background tasks',
   close: 'Close',
