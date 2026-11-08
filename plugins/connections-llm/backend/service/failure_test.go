@@ -1,0 +1,168 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
+)
+
+func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
+	cases := []struct {
+		status     int
+		retryAfter string
+		want       failureWant
+	}{
+		{http.StatusUnauthorized, "", failureWant{isTryNext: true, reason: connection.ReasonKeyRejected}},
+		{http.StatusForbidden, "", failureWant{isTryNext: true, reason: connection.ReasonKeyRejected}},
+		{http.StatusPaymentRequired, "", failureWant{isTryNext: true, reason: connection.ReasonPaymentRequired}},
+		{http.StatusTooManyRequests, "", failureWant{isTryNext: true, reason: connection.ReasonRateLimited}},
+		{http.StatusTooManyRequests, "30", failureWant{isTryNext: true, reason: connection.ReasonRateLimited, retryAfter: 30 * time.Second}},
+		{http.StatusBadGateway, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
+		{http.StatusServiceUnavailable, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
+		{http.StatusGatewayTimeout, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
+		{http.StatusNotFound, "", failureWant{reason: connection.ReasonBadRequest}},
+		{http.StatusBadRequest, "", failureWant{reason: connection.ReasonBadRequest}},
+		{http.StatusUnprocessableEntity, "", failureWant{reason: connection.ReasonBadRequest}},
+		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnknown}},
+		{http.StatusTeapot, "", failureWant{reason: connection.ReasonBadRequest}},
+	}
+	for _, one := range cases {
+		fake, address := startFake(t, fakeopenai.Config{})
+		fake.Fail("/chat/completions", one.status, one.retryAfter)
+		fake.Fail("/embeddings", one.status, one.retryAfter)
+
+		_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		checkFailure(t, err, one.want)
+		_, err = New().Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
+		checkFailure(t, err, one.want)
+	}
+}
+
+func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
+	fake, address := startFake(t, fakeopenai.Config{})
+	fake.Fail("/chat/completions", http.StatusTooManyRequests, time.Now().Add(90*time.Second).UTC().Format(http.TimeFormat))
+	_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+	retryAfter, ok := connection.IsTryNext(err)
+	if !ok || retryAfter < 60*time.Second || retryAfter > 90*time.Second {
+		t.Errorf("retryAfter = %v, ok = %v, want about 90 s", retryAfter, ok)
+	}
+}
+
+func TestARetryAfterThatIsNotAWaitIsLeftOut(t *testing.T) {
+	for _, value := range []string{"soon", "-5", ""} {
+		fake, address := startFake(t, fakeopenai.Config{})
+		fake.Fail("/chat/completions", http.StatusTooManyRequests, value)
+		_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonRateLimited})
+	}
+}
+
+func TestAServiceThatCannotBeReachedIsTryNext(t *testing.T) {
+	ts := httptest.NewServer(http.NotFoundHandler())
+	address := ts.URL + "/v1"
+	ts.Close()
+	_, err := New().Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi"))
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
+}
+
+func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
+	fake, address := startFake(t, fakeopenai.Config{})
+	fake.Delay("/chat/completions", 2*time.Second)
+	fake.Delay("/embeddings", 2*time.Second)
+	svc := New()
+	svc.Configure(map[string]string{"requestTimeout": "0.1"})
+
+	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+	_, err = svc.Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+}
+
+func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
+	fake, address := startFake(t, fakeopenai.Config{})
+	fake.Delay("/chat/completions", 10*time.Second)
+	ctx, cancel := context.WithCancel(newContext(t))
+	done := make(chan error, 1)
+	go func() {
+		_, err := New().Complete(ctx, newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		done <- err
+	}()
+	waitForRequest(t, fake)
+	cancel()
+
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+	select {
+	case <-fake.Aborted():
+	case <-time.After(5 * time.Second):
+		t.Fatal("the request to the service was not ended")
+	}
+}
+
+func TestACallThatIsAlreadyCancelledNeverReachesTheService(t *testing.T) {
+	fake, address := startFake(t, fakeopenai.Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := New().Embed(ctx, newCall("openrouter", address, testKey, "m"), []string{"a"})
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+	if len(fake.Requests()) != 0 {
+		t.Errorf("the service received %d requests", len(fake.Requests()))
+	}
+}
+
+func TestARedirectIsNotFollowed(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		t.Error("the redirect target received a request")
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(target.Close)
+	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL+"/v1/chat/completions", http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(redirector.Close)
+
+	_, err := New().Complete(newContext(t), newCall("openai-compatible", redirector.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
+	checkFailure(t, err, failureWant{reason: connection.ReasonUnknown})
+}
+
+func TestAFailureShowsNeitherTheKeyNorTheTextOfTheService(t *testing.T) {
+	const leaked = "account acme-corp has 0 credits, key " + testKey
+	for _, status := range []int{http.StatusUnauthorized, http.StatusBadRequest, http.StatusInternalServerError, http.StatusPaymentRequired} {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(status)
+			if _, err := w.Write([]byte(`{"error":{"message":"` + leaked + `"}}`)); err != nil {
+				t.Error(err)
+			}
+		}))
+		t.Cleanup(ts.Close)
+
+		_, err := New().Complete(newContext(t), newCall("openrouter", ts.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
+		if err == nil {
+			t.Fatalf("status %d gave no error", status)
+		}
+		if text := err.Error(); strings.Contains(text, testKey) || strings.Contains(text, "acme-corp") {
+			t.Errorf("status %d: error %q shows the key or the text of the service", status, text)
+		}
+	}
+}
+
+func waitForRequest(t *testing.T, fake *fakeopenai.Server) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for len(fake.Requests()) == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("the service received no request")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}

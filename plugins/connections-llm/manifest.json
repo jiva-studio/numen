@@ -1,0 +1,105 @@
+{
+  "id": "md.numen.connections.llm",
+  "name": "Language model services",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions and embeddings",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "connections",
+    "connectionTypes": [
+      {
+        "id": "openrouter",
+        "title": "OpenRouter",
+        "description": "One key for many models.",
+        "operations": ["complete", "embed"],
+        "fields": [
+          {
+            "key": "baseUrl",
+            "type": "string",
+            "title": "Address",
+            "isAddress": true,
+            "fixedValue": "https://openrouter.ai/api/v1"
+          },
+          { "key": "apiKey", "type": "secret", "title": "API key", "required": true },
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 4,
+            "min": 1,
+            "max": 32,
+            "step": 1
+          }
+        ]
+      },
+      {
+        "id": "openai",
+        "title": "OpenAI",
+        "description": "Models from OpenAI.",
+        "operations": ["complete", "embed"],
+        "fields": [
+          {
+            "key": "baseUrl",
+            "type": "string",
+            "title": "Address",
+            "isAddress": true,
+            "fixedValue": "https://api.openai.com/v1"
+          },
+          { "key": "apiKey", "type": "secret", "title": "API key", "required": true },
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 4,
+            "min": 1,
+            "max": 32,
+            "step": 1
+          }
+        ]
+      },
+      {
+        "id": "openai-compatible",
+        "title": "OpenAI-compatible server",
+        "description": "A server that speaks the OpenAI API, such as Ollama or LM Studio.",
+        "operations": ["complete", "embed"],
+        "fields": [
+          {
+            "key": "baseUrl",
+            "type": "string",
+            "title": "Address",
+            "description": "For example http://localhost:11434/v1",
+            "isAddress": true,
+            "required": true
+          },
+          { "key": "apiKey", "type": "secret", "title": "API key" },
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 4,
+            "min": 1,
+            "max": 32,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": ["network:outbound"],
+  "services": ["numen.v1.ProviderService"],
+  "settings": [
+    {
+      "key": "requestTimeout",
+      "type": "number",
+      "title": "Request timeout",
+      "description": "Seconds to wait for a service to answer. Without a value, a completion waits 120 seconds and an embedding 60 seconds.",
+      "min": 1,
+      "max": 3600,
+      "step": 1
+    }
+  ],
+  "backend": {
+    "entrypoint": "bin/connections-llm"
+  }
+}
