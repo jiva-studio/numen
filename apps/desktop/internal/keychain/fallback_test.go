@@ -3,6 +3,7 @@ package keychain
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,7 +30,7 @@ func credentialsPath(dir string) string {
 // useNoKeychain makes every call of the system keychain fail as a machine without one does.
 func useNoKeychain(t *testing.T) {
 	t.Helper()
-	keyring.MockInitWithError(errors.New("the secret service is not running"))
+	keyring.MockInitWithError(fmt.Errorf("the secret service is not running: %w", keyring.ErrUnsupportedPlatform))
 }
 
 func readCredentials(t *testing.T, dir string) map[string]string {
@@ -140,7 +141,7 @@ func TestADeleteRemovesTheEntryFromTheCredentialsFileAndKeepsTheOthers(t *testin
 	}
 }
 
-func TestTheKeychainIsProbedOnceAndTheFileStaysInUse(t *testing.T) {
+func TestAKeychainThatAppearsLaterIsUsedAndTheFileStillAnswersForItsKeys(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	store := NewStore(dir)
@@ -152,11 +153,28 @@ func TestTheKeychainIsProbedOnceAndTheFileStaysInUse(t *testing.T) {
 	if err := store.SetKey(t.Context(), otherEntry, valueTwo); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := keyring.Get(service, otherEntry); !errors.Is(err, keyring.ErrNotFound) {
-		t.Errorf("a later write went to a keychain that was probed as down: %v", err)
+	if got, err := keyring.Get(service, otherEntry); err != nil || got != valueTwo {
+		t.Errorf("a write after the keychain appeared did not reach it: %q, %v", got, err)
 	}
-	if got := readCredentials(t, dir); got[otherEntry] != valueTwo {
-		t.Errorf("the file holds %v", got)
+	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != valueOne {
+		t.Errorf("a key kept in the file read as %q, %v", got, err)
+	}
+}
+
+func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
+	keyring.MockInitWithError(errors.New("the collection is locked"))
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	err := store.SetKey(t.Context(), entryName, valueOne)
+	if !errors.Is(err, pluginport.ErrNoKeyStore) {
+		t.Fatalf("a write to a refusing keychain returned %v, want ErrNoKeyStore", err)
+	}
+	if _, statErr := os.Stat(credentialsPath(dir)); !errors.Is(statErr, os.ErrNotExist) {
+		t.Errorf("a key was written to the file: %v", statErr)
+	}
+	if got := store.GetCredentialsPath(t.Context()); got != "" {
+		t.Errorf("path = %q for a keychain that refuses, want none", got)
 	}
 }
 

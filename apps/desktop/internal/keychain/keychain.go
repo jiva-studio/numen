@@ -27,16 +27,15 @@ var (
 const maxValueBytes = 2560
 
 // Store keeps keys in the system keychain and, where the machine has none, in a file next to the
-// settings file. A store made by NewStore probes the keychain once, at the first call. The zero
+// settings file. A store made by NewStore probes the keychain until it is reached. The file serves only a machine that has no keychain; a keychain that is there and refuses fails the call with port.ErrNoKeyStore and nothing is written to the file. The zero
 // Store is keychain only: a machine without one fails every call with port.ErrNoKeyStore and no
 // key is written anywhere else.
 type Store struct {
 	// dir is the folder of the settings file. It is empty for a keychain only store.
 	dir string
 
-	mu       sync.Mutex
-	isProbed bool
-	// isKeychainUp is the result of the probe.
+	mu sync.Mutex
+	// isKeychainUp is set once a probe reached the keychain. A probe that found none, or that the keychain refused, is not remembered, so the next call asks again.
 	isKeychainUp bool
 	// locks holds the waits for the lock on the credentials file.
 	locks lockRegistry
@@ -133,7 +132,7 @@ func (s *Store) GetCredentialsPath(ctx context.Context) string {
 	return s.getCredentialsFile()
 }
 
-// isKeychainReachable probes the keychain at the first call and answers from the probe after that.
+// isKeychainReachable probes the keychain until it is reached and answers from that probe after it. It reports false with no error when the machine has none, and the error when the keychain is there and refuses.
 // A keychain only store has no file to fall back to, so it is never probed and its errors reach the
 // caller.
 func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
@@ -142,16 +141,21 @@ func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.isProbed {
-		return s.isKeychainUp, nil
+	if s.isKeychainUp {
+		return true, nil
 	}
 	_, err := await(ctx, func() (string, error) { return keyring.Get(service, probeName) })
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	switch {
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return false, err
+	case err == nil, errors.Is(err, keyring.ErrNotFound):
+		s.isKeychainUp = true
+		return true, nil
+	case isKeychainAbsent(err):
+		return false, nil
+	default:
+		return false, readError(probeName, err)
 	}
-	s.isProbed = true
-	s.isKeychainUp = err == nil || errors.Is(err, keyring.ErrNotFound)
-	return s.isKeychainUp, nil
 }
 
 // probeName is the entry the probe asks the keychain for. No key is kept under it.
