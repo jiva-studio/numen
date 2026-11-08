@@ -25,7 +25,7 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 	f.installation.Services.SetTabKindChoice(tabkind.NewChoose(tabKinds{
 		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}},
 		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault}},
-	}, nil))
+	}, nil, nil))
 
 	kinds := getKindsByPath(t, f, "Entropy.md", "links/tide.md", "Physics.epub")
 

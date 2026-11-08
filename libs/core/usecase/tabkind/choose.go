@@ -2,6 +2,8 @@
 package tabkind
 
 import (
+	"slices"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
@@ -10,14 +12,15 @@ import (
 
 // Choose gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
 type Choose struct {
-	kinds pluginport.PluginTabKinds
-	types contenttypeport.ContentTypeTable
+	kinds  pluginport.PluginTabKinds
+	types  contenttypeport.ContentTypeTable
+	config pluginport.WhenConfig
 }
 
-// NewChoose makes the choice over the tab kinds and the table that gives a file its type. Without
-// tab kinds it chooses none.
-func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable) *Choose {
-	return &Choose{kinds: kinds, types: types}
+// NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
+// settings a condition reads as config. Without tab kinds it chooses none.
+func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
+	return &Choose{kinds: kinds, types: types, config: config}
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
@@ -32,18 +35,20 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 	if u.types != nil {
 		contentType = u.types.GetContentType(path)
 	}
-	values := pluginport.GetTargetValues(path, string(contentType), string(noteType))
-	if properties == nil {
-		properties = map[string]any{}
-	}
-	values["target.properties"] = properties
+	values := pluginport.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range u.kinds.ListTabKinds() {
 		if one.TabKind.When == "" {
 			continue
 		}
 		condition, err := pluginport.ParseCondition(one.TabKind.When)
-		if err != nil || condition.Evaluate(values) != pluginport.ConditionTrue {
+		if err != nil {
+			continue
+		}
+		if _, isRead := values["config"]; !isRead && u.config != nil && slices.Contains(condition.ListNames(), "config") {
+			values["config"] = u.config.GetWhenConfig()
+		}
+		if condition.Evaluate(values) != pluginport.ConditionTrue {
 			continue
 		}
 		matching = append(matching, domain.ContentHandler{

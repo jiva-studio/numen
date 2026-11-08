@@ -110,16 +110,6 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 	return false
 }
 
-func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
-	commands, _ := newMockCommands(t)
-
-	_, err := commands.RunCommand(t.Context(), command.Request{Command: commandDeleteText, Path: "Mills.md"})
-
-	if !errors.Is(err, command.ErrBadArguments) {
-		t.Fatalf("a deletion with no version: got %v, want ErrBadArguments", err)
-	}
-}
-
 type configurableFetcher struct {
 	canCopy       bool
 	textErr       error

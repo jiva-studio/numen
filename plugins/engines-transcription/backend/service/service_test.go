@@ -284,7 +284,7 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 
 func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
-	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.queue})
+	commands, err := newCommands(s.transcriber)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, e
 
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
-	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.finishing})
+	commands, err := newCommands(s.transcriber)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -367,11 +367,11 @@ func TestTheHandlerOfCreateTextFailsForARecordingBeingTranscribed(t *testing.T) 
 	s.waitFinished(t, getTaskID(lecture))
 }
 
-func TestTheHandlerOfDeleteTextNeedsAVersion(t *testing.T) {
+func TestThePluginRunsNeitherDeleteTextNorTheCommandOfBefore(t *testing.T) {
 	s := newScene(t)
 
-	if _, err := s.runHandler(t, command.Request{Command: "app:version.delete", Path: lecture}); !errors.Is(err, command.ErrBadArguments) {
-		t.Errorf("a deletion naming no version answered %v, want ErrBadArguments", err)
+	if _, err := s.runHandler(t, command.Request{Command: "app:version.delete", Path: lecture}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("Delete text, which the core runs, answered %v, want ErrUnknownCommand", err)
 	}
 	if _, err := s.runHandler(t, command.Request{Command: "transcript.create", Path: lecture}); !errors.Is(err, command.ErrUnknownCommand) {
 		t.Errorf("the command of before answered %v, want ErrUnknownCommand", err)

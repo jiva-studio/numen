@@ -107,41 +107,6 @@ func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 	}
 }
 
-func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
-	ctx := t.Context()
-	file := []byte("%PDF")
-	ocr := hosttest.NewTexts("v1", "org.example.ocr")
-	ocr.File("a.pdf", file)
-	store := ocr.GetStore("org.example.ocr")
-	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
-		t.Fatal(err)
-	}
-	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := host.DeleteText(ctx, ocr.As("org.example.fixer"), ocr.GetStore("org.example.fixer"), "org.example.fixer", "a.pdf", a.GetID()); !errors.Is(err, host.ErrNotOwner) {
-		t.Fatalf("a version of another plugin: got %v, want ErrNotOwner", err)
-	}
-	if err := host.DeleteText(ctx, ocr, store, "org.example.ocr", "a.pdf", a.GetID()); err != nil {
-		t.Fatal(err)
-	}
-	listing, err := ocr.ListVersions(ctx, "a.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 0 {
-		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
-	}
-	if _, err := store.Read(ctx, "k.jsonl"); !errors.Is(err, host.ErrNotExist) {
-		t.Fatalf("the file after the deletion: got %v, want ErrNotExist", err)
-	}
-	if err := host.DeleteText(ctx, ocr, store, "org.example.ocr", "a.pdf", a.GetID()); !errors.Is(err, host.ErrNotExist) {
-		t.Fatalf("a version already deleted: got %v, want ErrNotExist", err)
-	}
-}
-
 func putFiveSegments(t *testing.T, texts *hosttest.Texts) domain.TextVersion {
 	t.Helper()
 	file := []byte("%PDF")

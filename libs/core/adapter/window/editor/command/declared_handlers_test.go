@@ -31,7 +31,7 @@ func (handlingPlugins) GetParts(pluginID string) plugincommand.Parts {
 }
 
 func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(handlingPlugins{}, nil, nil), nil)
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(handlingPlugins{}, nil, nil, nil), nil)
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -64,7 +64,7 @@ func (p commandReadsCounted) ListCommands() []plugincommand.Entry {
 
 func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	reads := 0
-	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, nil, nil)
+	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, nil, nil, nil)
 	handler := command.NewHandler(shownVault{}, commands, &versionItems{})
 
 	list := listItemsOfOne(t, handler, "org.example.scans", "app:link.downloadMedia", "scans/page.png")

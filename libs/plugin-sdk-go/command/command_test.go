@@ -9,9 +9,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -100,44 +97,6 @@ func TestAddRejectsDuplicateID(t *testing.T) {
 	}
 }
 
-func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
-	ctx := t.Context()
-	file := []byte("%PDF")
-	texts := hosttest.NewTexts("v1", "org.example.ocr")
-	texts.File("a.pdf", file)
-	store := texts.GetStore("org.example.ocr")
-	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
-		t.Fatal(err)
-	}
-	version, err := texts.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	run := NewDeleteTextRun(texts, store, "org.example.ocr")
-
-	if _, err := run(ctx, Request{Command: "delete", Path: "a.pdf"}); !errors.Is(err, ErrBadArguments) {
-		t.Fatalf("a call with no version: got %v, want ErrBadArguments", err)
-	}
-	if _, err := run(ctx, Request{Command: "delete", Path: "a.pdf", Arguments: Arguments{ArgumentVersion: "missing"}}); err == nil {
-		t.Fatal("expected error when deleting a missing version")
-	}
-	arguments := Arguments{ArgumentVersion: string(version.GetID())}
-	res, err := run(ctx, Request{Command: "delete", Path: "a.pdf", Arguments: arguments})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := "deleted " + string(version.GetID()) + " of a.pdf"; res.Message != want {
-		t.Fatalf("got message %q, want %q", res.Message, want)
-	}
-	listing, err := texts.ListVersions(ctx, "a.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 0 {
-		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
-	}
-}
-
 func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	registry := newRegistry(t)
 	h, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
@@ -171,5 +130,22 @@ func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	_, err = service{handler: registry}.RunCommand(canceledCtx, connect.NewRequest(&v1.RunCommandRequest{Command: "fail"}))
 	if connect.CodeOf(err) != connect.CodeCanceled {
 		t.Fatalf("got %v, want CodeCanceled", err)
+	}
+}
+
+func TestCommand_PassesTheItemPickedToTheRun(t *testing.T) {
+	registry := New()
+	var got Request
+	if err := registry.Add("download", func(_ context.Context, request Request) (Result, error) {
+		got = request
+		return Result{}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	run(t, registry, &v1.RunCommandRequest{Command: "download", Path: "talk.md", ItemId: "audio"})
+
+	if got.ItemID != "audio" || got.Path != "talk.md" {
+		t.Errorf("the run received %+v", got)
 	}
 }

@@ -439,7 +439,6 @@ A shared command is a command of the application that does nothing by itself: pl
 | Command                  | Title          | What a handler does                          |
 | ------------------------ | -------------- | -------------------------------------------- |
 | `app:file.createText`    | Create text    | Creates a text version of a file.            |
-| `app:version.delete`     | Delete text    | Deletes a text version of a file.            |
 | `app:link.import`        | Import link    | Creates a link note from a web address.      |
 | `app:link.downloadMedia` | Download media | Downloads the media of a link note.          |
 | `app:link.deleteMedia`   | Delete media   | Deletes the downloaded media of a link note. |
@@ -449,8 +448,7 @@ A plugin handles one in `contributes.handlers` with `{ "command", "title", "when
 ```json
 "contributes": {
   "handlers": [
-    { "command": "app:file.createText", "title": "Recognize text", "when": "target.contentType == 'image/png'" },
-    { "command": "app:version.delete", "title": "Delete recognition", "when": "version.pluginId == 'org.example.scans' && version.kind == 'recognition'" }
+    { "command": "app:file.createText", "title": "Recognize text", "when": "target.contentType == 'image/png'" }
   ],
   "slots": [{ "slot": "fileTree.context", "command": "app:file.createText", "group": "3-text" }]
 }
@@ -541,23 +539,23 @@ The application places commands of its own in the same slots, from a list of its
 
 A condition, `when`, is an expression of [CEL](https://cel.dev), as a when clause of VS Code: `target.isNote`, `target.contentType in ['application/pdf', 'image/png']`, `target.contentType.startsWith('audio/')`, `version.isLive && version.kind != ''`. The manifest check compiles it against the variables below and rejects one that is malformed, names another variable or gives no true or false. An empty or absent `when` always holds. The variables are listed once, in `libs/protocol/when.json`, which the Go check of the manifest and the window both read; a plugin writes no code for them.
 
-| Variable              | Type   | What it is                                                                                                     |
-| --------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
-| `target.isRoot`       | bool   | The target is the root folder of the vault.                                                                    |
-| `target.isFolder`     | bool   | The target is a folder.                                                                                        |
-| `target.isMultiple`   | bool   | The target is one of several paths selected together.                                                          |
-| `target.isNote`       | bool   | The target is a note.                                                                                          |
-| `target.isFile`       | bool   | The target is a file that is not a note.                                                                       |
-| `target.contentType`  | string | The content type of the target, such as `application/pdf`; empty for a folder.                                 |
-| `target.noteType`     | string | The type of the note, such as `link`; empty where the target is no note.                                       |
-| `target.properties`   | map    | The frontmatter of the note by its keys, such as `target.properties.media`; empty where the target is no note. |
-| `version.kind`        | string | The kind of a text version of the file, as the plugin that made it names it.                                   |
-| `version.pluginId`    | string | The id of the plugin that made a text version of the file; a handler of `app:version.delete` names its own.    |
-| `version.isLive`      | bool   | The text version is the one shown and indexed now.                                                             |
-| `window.isVaultOpen`  | bool   | A vault is open in the window.                                                                                 |
-| `window.isVaultReady` | bool   | The vault of the window is open and accepts operations.                                                        |
-| `window.isTabOpen`    | bool   | A tab is in front.                                                                                             |
-| `config.<key>`        | any    | A setting by its dotted key: `config.app.<key>` for the application, `config.<plugin id>.<key>` for a plugin.  |
+| Variable              | Type   | What it is                                                                                                                                  |
+| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target.isRoot`       | bool   | The target is the root folder of the vault.                                                                                                 |
+| `target.isFolder`     | bool   | The target is a folder.                                                                                                                     |
+| `target.isMultiple`   | bool   | The target is one of several paths selected together.                                                                                       |
+| `target.isNote`       | bool   | The target is a note.                                                                                                                       |
+| `target.isFile`       | bool   | The target is a file that is not a note.                                                                                                    |
+| `target.contentType`  | string | The content type of the target, such as `application/pdf`; empty for a folder.                                                              |
+| `target.noteType`     | string | The type of the note, such as `link`; empty where the target is no note.                                                                    |
+| `target.properties`   | map    | The frontmatter of the note by its keys, such as `target.properties.media`; empty where the target is no note.                              |
+| `target.versions`     | list   | The text versions of the file, each with `kind`, `pluginId` and `isLive`: `target.versions.exists(v, v.kind == 'recognition' && v.isLive)`. |
+| `version.kind`        | string | The kind of a text version of the file, as the plugin that made it names it.                                                                |
+| `version.isLive`      | bool   | The text version is the one shown and indexed now.                                                                                          |
+| `window.isVaultOpen`  | bool   | A vault is open in the window.                                                                                                              |
+| `window.isVaultReady` | bool   | The vault of the window is open and accepts operations.                                                                                     |
+| `window.isTabOpen`    | bool   | A tab is in front.                                                                                                                          |
+| `config.<key>`        | any    | A setting by its dotted key: `config.app.<key>` for the application, `config.<plugin id>.<key>` for a plugin.                               |
 
 `target` is what the command runs over, as its place gives it: the clicked row in the file tree, the file of the tab in the tab menu, the result in the palette search, and in the palette the note or file in front. A bar gives no target, and every target variable is then false or empty. The window derives `target.contentType`, `target.isNote` and `target.isFile` from the path; the menus of the file tree and of a tab read the note type and the properties of the row before they open (`FileService.ListFileKinds` returns both). `version.*` is set only over a text version of a file, in its menu.
 

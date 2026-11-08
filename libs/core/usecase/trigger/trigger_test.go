@@ -215,7 +215,7 @@ func newScene(t *testing.T, files map[string]string, entries ...pluginport.Plugi
 	t.Helper()
 	s := &scene{memoryVault: newMemoryVault(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
 	s.triggers = trigger.NewTriggers(s.plugins, readers{s.memoryVault}, types{}, &memoryRecord{},
-		func() (map[string]any, error) { return s.config, nil })
+		sceneConfig{s: s})
 	return s
 }
 
@@ -383,3 +383,8 @@ func TestATriggerRunsOnlyWhereTheConditionOfItsHandlerIsTrue(t *testing.T) {
 		t.Errorf("the scan ran %v, want %v", got, want)
 	}
 }
+
+// sceneConfig is the config of the scene as when conditions read it.
+type sceneConfig struct{ s *scene }
+
+func (c sceneConfig) GetWhenConfig() map[string]any { return c.s.config }

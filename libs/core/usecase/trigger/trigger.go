@@ -34,7 +34,7 @@ type Triggers struct {
 	readers vaultport.VaultReaders
 	types   contenttypeport.ContentTypeTable
 	records pluginport.TriggerRecords
-	config  func() (map[string]any, error)
+	config  pluginport.WhenConfig
 
 	mu sync.Mutex
 }
@@ -44,7 +44,7 @@ type Triggers struct {
 // them.
 func NewTriggers(
 	plugins Plugins, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
-	records pluginport.TriggerRecords, config func() (map[string]any, error),
+	records pluginport.TriggerRecords, config pluginport.WhenConfig,
 ) *Triggers {
 	return &Triggers{plugins: plugins, readers: readers, types: types, records: records, config: config}
 }
@@ -81,10 +81,7 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 	if err != nil {
 		return fmt.Errorf("read the record of the triggers: %w", err)
 	}
-	config, err := u.config()
-	if err != nil {
-		return fmt.Errorf("read the settings: %w", err)
-	}
+	config := u.config.GetWhenConfig()
 	pass := &pass{triggers: u, reader: reader, list: triggers, config: config, state: newState(state), found: map[string]bool{}}
 	var failures []error
 	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
@@ -260,9 +257,8 @@ func (p *pass) getValues(ctx context.Context, current *file, condition pluginpor
 			noteType, properties = note.Type, maps.Clone(note.Frontmatter)
 		}
 	}
-	values := pluginport.GetTargetValues(current.stat.Path, string(p.triggers.types.GetContentType(current.stat.Path)), string(noteType))
-	values["target.properties"] = properties
-	values["config"] = p.config
+	values := pluginport.NewTargetValues(current.stat.Path, false, p.triggers.types.GetContentType(current.stat.Path)).
+		WithNote(noteType, properties).WithConfig(p.config).Get()
 	if isReadingNote {
 		current.values = values
 	}

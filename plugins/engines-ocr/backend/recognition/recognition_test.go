@@ -108,6 +108,15 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 	return t.Texts.PutVersion(ctx, params)
 }
 
+func (t textsOfVault) With(id domain.VaultID) host.Texts {
+	texts, isTexts := t.Texts.With(id).(*hosttest.Texts)
+	vault, isVault := t.vault.With(id).(*hosttest.Vault)
+	if !isTexts || !isVault {
+		return t.Texts.With(id)
+	}
+	return textsOfVault{Texts: texts, vault: vault}
+}
+
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
 type scene struct {
 	vault      *hosttest.Vault
