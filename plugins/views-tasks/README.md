@@ -1,12 +1,12 @@
 # Tasks
 
-Shows the background tasks of the window in the title bar: whether any run, how many failed, and the list of them with their progress.
+Shows the background tasks of the window in the title bar: whether any run, and the list of them with their progress.
 
 <!-- more -->
 
 ## What You Can Do
 
-- **See what the window is doing**: The title bar says **Ready** while no task runs, or how many tasks are active, with a ring that fills as they progress. A red badge counts the tasks that failed.
+- **See what the window is doing**: The title bar says **Idle** while no task runs, or how many tasks are done of how many, with a ring that fills as they progress. A task that failed tints the chip red and changes no text.
 - **Open the list**: Click the summary for the list of tasks, newest first. Each row names the task, what it works on and how far it has got. Escape, a click outside or the close button closes the list.
 - **Cancel a task**: Point at a running task and click the cross. The row shows the task as cancelling until the application has stopped it.
 - **Clear a failure or a notice**: A failed task and a notice have a button that takes them out of the list. A failed task that can be started again has a retry button instead.

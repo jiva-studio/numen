@@ -60,7 +60,7 @@ const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
 const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
   await expect(chip.getAttribute('aria-label')).toBe('1 failed')
-  await expect(chip.textContent?.trim()).toBe('1 failed')
+  await expect(chip.textContent?.trim()).toBe('Idle')
   await expect(chip.querySelector('.tasks-status__badge')).toBeNull()
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
   await expectText(chip, 'tasks chip', 'failed')
@@ -86,7 +86,7 @@ export const ActiveDark: Story = {
   play: checkActive,
 }
 
-/** A task failed: the chip has the alarm ground and says how many failed, on the light tokens. */
+/** A task failed: the chip has the alarm ground and keeps its text, on the light tokens. */
 export const FailedLight: Story = {
   args: { tasks: FAILED },
   globals: { theme: 'light' },

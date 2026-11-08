@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The summary of the background tasks of the window as a chip: a ring filled by the progress of the
- * batch, and Idle, how many tasks are done of how many, or how many failed. The list of the tasks
+ * batch, and Idle, how many tasks are done of how many. A failed task tints the chip and changes no text. The list of the tasks
  * opens from it.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
@@ -36,17 +36,14 @@ const seen = ref<ReadonlySet<string>>(new Set())
 const batch = computed(() => summarizeBatch(props.tasks, seen.value))
 const hasFailed = computed(() => summary.value.failedCount > 0)
 const summaryText = computed(() => {
-  const failed = `${summary.value.failedCount} ${words.failed}`
-  if (summary.value.activeCount === 0) return hasFailed.value ? failed : words.idle
-  const count = `${batch.value.done} ${words.of} ${batch.value.total}`
-  return hasFailed.value ? `${count}${words.separator}${failed}` : count
+  if (summary.value.activeCount === 0) return words.idle
+  return `${batch.value.done} ${words.of} ${batch.value.total}`
 })
 const label = computed(() => {
-  if (summary.value.activeCount === 0) {
-    return hasFailed.value ? summaryText.value : words.noneRunning
-  }
+  const failed = hasFailed.value ? `${summary.value.failedCount} ${words.failed}` : ''
+  if (summary.value.activeCount === 0) return failed || words.noneRunning
   const done = `${batch.value.done} ${words.of} ${batch.value.total} ${words.tasksDone}`
-  return hasFailed.value ? `${done}, ${summary.value.failedCount} ${words.failed}` : done
+  return failed ? `${done}, ${failed}` : done
 })
 
 // The ring is a circle of RING_SIZE pixels; its arc is the share of the batch that is done.

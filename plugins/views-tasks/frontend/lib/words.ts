@@ -3,7 +3,6 @@ export const WORDS = {
   idle: 'Idle',
   of: 'of',
   failed: 'failed',
-  separator: ' · ',
   noneRunning: 'No tasks running',
   tasksDone: 'tasks done',
   title: 'Background tasks',

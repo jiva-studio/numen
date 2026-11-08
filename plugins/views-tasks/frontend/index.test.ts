@@ -108,7 +108,7 @@ describe('the summary', () => {
     expect(Number(fill.attributes('stroke-dashoffset'))).toBeCloseTo(length / 2)
   })
 
-  it('says how many failed when nothing else runs', async () => {
+  it('keeps the text of the chip and tints it when tasks failed and nothing else runs', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
@@ -118,12 +118,12 @@ describe('the summary', () => {
     ])
     await flushPromises()
 
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('2 failed')
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('2 failed')
     expect(wrapper.find('.tasks-status__trigger').classes()).toContain('tasks-status__trigger--failed')
   })
 
-  it('says how many are done and how many failed while others run', async () => {
+  it('keeps the text of the chip and tints it when some task failed while others run', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
@@ -139,7 +139,7 @@ describe('the summary', () => {
     ])
     await flushPromises()
 
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3 · 1 failed')
+    expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
       '1 of 3 tasks done, 1 failed',
     )
