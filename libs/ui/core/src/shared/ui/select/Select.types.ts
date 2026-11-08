@@ -8,7 +8,17 @@ export interface SelectProps {
   isDisabled?: boolean
   isSearchable?: boolean
   canEnterCustom?: boolean
-  isMultiple?: boolean
   searchName?: string
+  class?: HTMLAttributes['class']
+}
+
+export interface MultiSelectProps {
+  choices: readonly SelectChoice[]
+  selected: readonly string[]
+  placeholder?: string
+  name?: string
+  isDisabled?: boolean
+  searchName?: string
+  getMoreText?: (count: number) => string
   class?: HTMLAttributes['class']
 }

@@ -26,7 +26,7 @@ export { Slider } from './shared/ui/slider'
 export { SegmentedControl } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
-export { Select } from './shared/ui/select'
+export { Select, MultiSelect } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
 /** One search line over a list of rows in one frame, drawn in the window or as a popup. */
