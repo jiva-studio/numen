@@ -230,4 +230,5 @@ The settings of the plugin Title bar.
 | | | |
 | --- | --- | --- |
 | `buttons` | text | where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu. One of `mac`, `windows`, `none`. |
+| `hideInFullscreen` | yes or no | draw no bar while the window is in full screen, so the tabs start at the top of the window. The bar is drawn again when the window leaves full screen. |
 <!-- END AUTOGEN -->
