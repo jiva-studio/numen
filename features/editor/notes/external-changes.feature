@@ -45,7 +45,7 @@ Feature: External changes of a note
 
   Rule: A note removed from disk still has its text
 
-    Scenario: A note removed from disk still has its text
+    Scenario: The text of a note is kept in its tab after its file is removed
       When another program removes the note titled "Shopping list" from disk
       Then the note titled "Shopping list" has "the note was removed from the vault"
       And the note titled "Shopping list" has "tea"
