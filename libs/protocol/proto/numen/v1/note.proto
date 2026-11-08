@@ -128,6 +128,10 @@ message GetNeighbourhoodResponse {
   // child as second, and each side holds the label and the marker of the record
   // written in that note.
   repeated Connection connections = 4;
+
+  // The kind of tab the note in focus opens in, chosen as FileKind.tab_kind is.
+  // Empty where none holds.
+  string focus_tab_kind = 5;
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
@@ -149,6 +153,10 @@ message Neighbour {
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   // Empty for an ordinary note.
   string type = 6;
+
+  // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
+  // where none holds.
+  string tab_kind = 7;
 }
 
 message ResolveAddressesRequest {
