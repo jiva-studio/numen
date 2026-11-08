@@ -166,7 +166,9 @@ const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']
 
 /** The row of the secret with that name inside a section or a page. */
 const rowOf = (scope: Locator, name: string): Locator =>
-  scope.getByRole('listitem').filter({ has: scope.getByLabel(`Value of ${name}`, { exact: true }) })
+  scope
+    .getByRole('listitem')
+    .filter({ has: scope.page().getByLabel(`Value of ${name}`, { exact: true }) })
 
 /** Opens a list of choices of a multiple select, takes the choices by name and closes it. */
 const choose = async (page: Page, select: Locator, names: RegExp[]): Promise<void> => {

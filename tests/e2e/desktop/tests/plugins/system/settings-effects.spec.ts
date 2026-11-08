@@ -85,9 +85,9 @@ test.describe('Plugin settings take effect', () => {
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
     await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
-    const field = settings.getByRole('textbox', { name: 'API key' })
-    await expect(field).toHaveAttribute('type', 'password')
-    await expect(field).not.toBeEditable()
+    // The key is chosen from the secrets on this machine and is never typed or shown here.
+    await expect(settings.locator('.settings__secret')).toBeVisible()
+    await expect(settings.getByRole('textbox', { name: 'API key' })).toHaveCount(0)
     await settings.getByRole('button', { name: 'All plugins' }).click()
 
     await settings.getByRole('button', { name: /^Secrets$/ }).click()
