@@ -32,7 +32,7 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 - Plain English at level A1 to A2: short common words, present tense, no idioms, no figurative speech. The same word for the same thing in every feature (note, file, warns, keeps, takes).
 - A step is a short sentence. Two steps that do the same thing are one step: the step checker fails on two definitions with the same body.
 - The data is neutral and short, like the data of a real use: a note "Shopping list", the texts "milk", "bread", "eggs". No stories, no invented places, characters or scenery (no lock gates, harbours or dawns), and no sentences that read as prose.
-- A scenario title names the rule in a few plain words. No adverbs of time or manner ("at once", "quickly", "silently") unless the rule is that timing.
+- A scenario title names the rule in a few plain words. Titles and Rule names state a fact the scenario shows, with the verbs of the product and no figures of speech (not follows, gives, takes, lit). No adverbs of time or manner ("at once", "quickly", "silently") unless the rule is that timing.
 
 ### Steps are functions
 
