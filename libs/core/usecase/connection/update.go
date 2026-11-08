@@ -137,7 +137,6 @@ func (u *Update) plan(
 	return updated, plan, nil
 }
 
-// planSecrets decides what happens to each secret field and reports whether the connection holds a key afterwards.
 func (u *Update) planSecrets(
 	ctx context.Context, declared connectionport.Type, current, updated connectionport.Connection, requested map[string]string,
 ) (secretPlan, bool, error) {

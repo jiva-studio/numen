@@ -238,7 +238,6 @@ func (o operation) buildEntry(ctx context.Context, one connectionport.Connection
 	return entry, nil
 }
 
-// addField adds one field of the type to the entry and reports whether the connection holds a value for it.
 func (o operation) addField(
 	ctx context.Context, entry *Entry, one connectionport.Connection, field connectionport.ConnectionField, fingerprint string,
 ) (bool, error) {

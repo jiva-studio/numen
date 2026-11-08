@@ -45,7 +45,6 @@ interface SettingsTabConfigDeps {
   reportError: (error: unknown) => void
 }
 
-/** What the settings tab shows and calls for the connections, and nothing where the window has no client. */
 function createConnectionMembers(
   connections: ReturnType<typeof createConnectionStore> | undefined,
 ): Partial<Installation> {
