@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -23,7 +23,13 @@
       { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
     ],
     "slots": [
-      { "slot": "titleBar.commands", "command": "app:note.create", "group": "new", "order": 10 }
+      {
+        "slot": "titleBar.commands",
+        "command": "app:note.create",
+        "group": "new",
+        "order": 10,
+        "when": "window.isVaultOpen"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
