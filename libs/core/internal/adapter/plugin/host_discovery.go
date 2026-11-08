@@ -37,6 +37,8 @@ func (h *Host) discoverPlugins() error {
 		return nil
 	}
 	h.problems = problems
+	h.installed = all
+	h.hasScanned = true
 	stalePlugins := h.registerDiscoveredLocked(discovered)
 	h.mu.Unlock()
 
@@ -52,6 +54,7 @@ func (h *Host) discoverPlugins() error {
 			h.removeCacheDir(id)
 		}
 	}
+	h.pruneSecretPermissions()
 	return nil
 }
 

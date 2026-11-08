@@ -59,7 +59,6 @@ type PluginInfo struct {
 	IsActive      bool
 	Permissions   []string
 	Secrets       []PluginSecret
-	StoredSecrets []string
 	Failure       *PluginFailure
 	HasFrontend   bool
 	HasBackend    bool

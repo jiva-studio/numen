@@ -79,21 +79,21 @@ func WithToken(token string) Option {
 }
 
 // WithConfigure registers a callback for Configure RPC calls.
-func WithConfigure(fn func(ctx context.Context, values map[string]string) error) Option {
+func WithConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) Option {
 	return func(s *Server) {
 		s.onConfigure = fn
 	}
 }
 
 // WithUpdateConfig registers a simplified callback for Configure RPC calls.
-func WithUpdateConfig(fn func(values map[string]string)) Option {
+func WithUpdateConfig(fn func(values map[string]string, secrets Secrets)) Option {
 	return func(s *Server) {
 		if fn == nil {
 			s.onConfigure = nil
 			return
 		}
-		s.onConfigure = func(_ context.Context, values map[string]string) error {
-			fn(values)
+		s.onConfigure = func(_ context.Context, values map[string]string, secrets Secrets) error {
+			fn(values, secrets)
 			return nil
 		}
 	}
@@ -143,7 +143,7 @@ type Server struct {
 	signals           []os.Signal
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
-	onConfigure       func(ctx context.Context, values map[string]string) error
+	onConfigure       func(ctx context.Context, values map[string]string, secrets Secrets) error
 	onEvent           EventHandler
 
 	closeOnce sync.Once
@@ -280,15 +280,15 @@ func (s *Server) Lifecycle() *LifecycleServer {
 }
 
 // SetConfigure registers the callback invoked during Configure RPC calls.
-func (s *Server) SetConfigure(fn func(ctx context.Context, values map[string]string) error) {
+func (s *Server) SetConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) {
 	s.onConfigure = fn
 	s.lifecycle.SetConfigure(fn)
 }
 
 // SetUpdateConfig registers a simplified configuration updater callback.
-func (s *Server) SetUpdateConfig(fn func(values map[string]string)) {
-	s.SetConfigure(func(_ context.Context, values map[string]string) error {
-		fn(values)
+func (s *Server) SetUpdateConfig(fn func(values map[string]string, secrets Secrets)) {
+	s.SetConfigure(func(_ context.Context, values map[string]string, secrets Secrets) error {
+		fn(values, secrets)
 		return nil
 	})
 }

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
@@ -46,10 +46,30 @@
     {
       "name": "apiKey",
       "title": "API key",
-      "description": "API key for the remote chat service",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
+      "group": "openrouter",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": ["openrouter"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
+      "group": "openai",
+      "when": {
+        "setting": "provider",
+        "is": ["openai"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
       }
     }
   ],

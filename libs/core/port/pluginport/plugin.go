@@ -147,8 +147,11 @@ type PluginSettingDeclarer interface {
 
 type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
-	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
-	DeletePluginSecret(ctx context.Context, pluginID, name string) error
+	SetSecretSource(source SecretSource)
+	// Refresh configures the running plugins whose list of secrets differs from the one they were
+	// last given, and the plugins named in forced.
+	Refresh(ctx context.Context, forced ...string) error
+	ListDeclarations() []SecretPermission
 }
 
 type pluginSettingsPush interface {

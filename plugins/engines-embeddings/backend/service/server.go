@@ -113,7 +113,7 @@ func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo,
 	return engine.MockEmbedder{LogPath: s.mockLog}, nil
 }
 
-func (s *embeddingServer) updateConfig(values map[string]string) {
+func (s *embeddingServer) updateConfig(values map[string]string, secrets server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.applyProfileLocked(performance.Read(values))
@@ -132,14 +132,21 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if _, ok := values[settingChunkTokens]; ok {
 		s.chunkTokens = ReadChunkTokens(values)
 	}
-	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
-		s.apiKey = key
+	if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
+		s.apiKey = getFirstValue(list)
 	}
 	s.baseURL = values["baseUrl"]
 	if s.provider == providerLocal || s.provider == "" {
 		s.updateLocalModelLocked(model)
 	}
 	s.refreshModelInfoLocked()
+}
+
+func getFirstValue(list []server.Secret) string {
+	if len(list) == 0 {
+		return ""
+	}
+	return list[0].Value
 }
 
 func (s *embeddingServer) loadProfilesLocked() {

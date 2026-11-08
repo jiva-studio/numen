@@ -104,7 +104,6 @@ describe('what remains at a setting', () => {
               isActive: true,
               capabilities: [],
               secrets: [],
-              storedSecrets: [],
               hasFrontend: false,
               hasBackend: false,
               settings: [

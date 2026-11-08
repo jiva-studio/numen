@@ -1284,11 +1284,14 @@ func (x *ManifestSetting) GetGenerate() string {
 }
 
 type ManifestSecret struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	When          *ManifestCondition     `protobuf:"bytes,4,opt,name=when,proto3" json:"when,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Title       string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	When        *ManifestCondition     `protobuf:"bytes,4,opt,name=when,proto3" json:"when,omitempty"`
+	// group is where the person finds the secrets for this declaration. It is a hint and not a limit.
+	// Optional; when set it is non-empty, trimmed and at most 64 characters.
+	Group         string `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1349,6 +1352,13 @@ func (x *ManifestSecret) GetWhen() *ManifestCondition {
 		return x.When
 	}
 	return nil
+}
+
+func (x *ManifestSecret) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
 }
 
 type ManifestNoteType struct {
@@ -1896,12 +1906,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bgenerate\x18\x14 \x01(\tR\bgenerateB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\x8d\x01\n" +
+	"\x05_step\"\xa3\x01\n" +
 	"\x0eManifestSecret\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12/\n" +
-	"\x04when\x18\x04 \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\"\xd1\x01\n" +
+	"\x04when\x18\x04 \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\x12\x14\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\"\xd1\x01\n" +
 	"\x10ManifestNoteType\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1b\n" +
 	"\x06chunks\x18\x02 \x01(\bH\x00R\x06chunks\x88\x01\x01\x126\n" +

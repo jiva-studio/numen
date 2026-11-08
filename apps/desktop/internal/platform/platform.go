@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
+	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
@@ -42,7 +43,7 @@ func GetConfigFor(target string) container.Config {
 		PluginHost:    newPluginHost(target, dirs...),
 		PluginDirs:    dirs,
 		PluginCatalog: getCatalogConfig(target, dirs),
-		KeyStore:      keychain.Store{},
+		KeyStore:      getKeyStore(),
 		Resources:     container.NewResources(),
 	})
 	// A machine with no data folder leaves the path empty, and the core fails to start.
@@ -50,6 +51,14 @@ func GetConfigFor(target string) container.Config {
 		cfg.IndexPath = path
 	}
 	return cfg
+}
+
+func getKeyStore() *keychain.Store {
+	path, err := settings.Path()
+	if err != nil {
+		return &keychain.Store{}
+	}
+	return keychain.NewStore(filepath.Dir(path), container.Config{}.GetWait())
 }
 
 func getDevPluginsDirs() []string { return []string{"plugins"} }

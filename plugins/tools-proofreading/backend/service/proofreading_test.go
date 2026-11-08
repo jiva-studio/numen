@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 const (
@@ -202,7 +203,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 
 func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 	s := newScene(t)
-	s.settings.updateConfig(map[string]string{"batchSize": "2", "overlap": "1", "inFlight": "1"})
+	s.settings.updateConfig(map[string]string{"batchSize": "2", "overlap": "1", "inFlight": "1"}, nil)
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
 	s.model.script = func(prompt string) string {
 		return getRows(prompt, func(_, text string) string { return text + "!" })
@@ -437,8 +438,10 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 		"provider": "custom",
 		"baseUrl":  srv.URL,
 		"model":    "google/gemini-2.5-flash",
-		"apiKey":   "secret-key",
-	})
+	}, server.Secrets{server.SecretAPIKey: {
+		{ID: "s00000001", Name: "Work", Group: "", Value: "secret-key"},
+		{ID: "s00000002", Name: "Home", Group: "", Value: "other-key"},
+	}})
 	scan := s.holdScan(t)
 
 	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})

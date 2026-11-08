@@ -68,6 +68,9 @@ type (
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
 	PluginSimilaritySample = pluginport.PluginSimilaritySample
 	PluginSecret           = pluginport.PluginSecret
+	SecretSource           = pluginport.SecretSource
+	Secret                 = pluginport.Secret
+	SecretPermission       = pluginport.SecretPermission
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition
@@ -145,7 +148,6 @@ const (
 	HandleTextProvider          = pluginport.HandleTextProvider
 	ContextAnyValue             = pluginport.ContextAnyValue
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
-	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
 	SettingTypeFile             = pluginport.SettingTypeFile
 	SettingTypeString           = pluginport.SettingTypeString

@@ -7,7 +7,7 @@
  * which Enter chooses. Rows may be set under group names, and an action row may
  * stand first. A press outside it and Escape ask for it to be closed.
  */
-import { nextTick, onMounted, provide, useId, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, provide, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '../menu'
 import SearchableListRows from './SearchableListRows.vue'
 import type { SearchableListProps, SearchableListSlots } from './SearchableList.types'
@@ -54,11 +54,17 @@ const { rows, queryText, isListOpen, activeKey, activeIndex, moveBy, moveToEnd, 
   useListRows({
     items: () => props.items,
     query,
-    current: () => model.value,
+    current: () => currentIds.value[0] ?? null,
     isFiltered: () => props.isFiltered,
     hasAction: () => props.hasAction,
     needsQuery: () => props.needsQuery,
   })
+
+/** The items in force: the chosen ones where the caller gave them, else the model. */
+const currentIds = computed<readonly string[]>(() => {
+  if (props.chosen) return props.chosen
+  return model.value === null ? [] : [model.value]
+})
 
 provide(LIST_CONTEXT, { slots, getQuery: () => queryText.value })
 
@@ -142,7 +148,7 @@ function onChoose(key: string): void {
           ref="rowList"
           :rows="rows"
           :active-index="activeIndex"
-          :current="model"
+          :current="currentIds"
           :list-id="listId"
           :label="label"
           @choose="onChoose"

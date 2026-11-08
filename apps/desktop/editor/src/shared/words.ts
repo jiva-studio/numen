@@ -106,7 +106,7 @@ export const WORDS = {
   on: 'On',
   off: 'Off',
   unturned: 'Setting not saved:',
-  secretFailed: 'Key not changed:',
+  secretFailed: 'The secret was not changed:',
   /** Plugin failures, shown as failed tasks: "<Name> stopped: <reason>", and errors raised by plugin code. */
   pluginStopped: (name: string, reason: string) => `${name} stopped: ${toLowerFirst(reason)}`,
   pluginRetryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,

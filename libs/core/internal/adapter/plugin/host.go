@@ -30,6 +30,7 @@ import (
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
@@ -84,23 +85,20 @@ type Host struct {
 	activation             lifecycle.ActivationPolicy
 	onPluginFailed         func(pluginport.PluginFailure)
 	onFailureCleared       func(pluginID string)
-	configWatchers         map[string]map[int]func()
-	nextWatcher            int
 	errorHandler           eventbus.ErrorHandler
 	onDisk                 map[string]bool
 	discoverMu             sync.RWMutex
 	failedPlugins          []pluginport.PluginFailure
 	problems               []manifestjson.DiscoveryProblem
+	installed              []manifest.Discovered
+	hasScanned             bool
 	completer              completionport.Completer
 	vault                  pluginport.PluginVault
 	texts                  pluginport.PluginTexts
 	window                 pluginport.PluginWindow
 	vaultList              pluginport.PluginVaultList
 	search                 pluginport.PluginSearch
-	secretLocksMu          sync.Mutex
-	secretLocks            map[string]*sync.Mutex
-	keyStore               pluginport.KeyStore
-	noKeyStoreOnce         sync.Once
+	secrets                *secretDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
 	dependencies           pluginport.DependencyCatalog
@@ -147,7 +145,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		failedPlugins:          nil,
 		problems:               nil,
 		completer:              nil,
-		keyStore:               nil,
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
 		dependencies:           nil,
@@ -159,6 +156,11 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
 	}
+	h.secrets = newSecretDelivery(secretHost{
+		getConfigSnapshot: h.getConfigSnapshot,
+		listPluginIDs:     h.listPluginIDs,
+		reportError:       h.reportError,
+	})
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
 	return h
@@ -661,11 +663,20 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
+	h.secrets.markAwaitingFirstConfigure(p.Manifest.ID)
 	sup.RecordActivationSuccess()
 
-	// The plugin also receives its settings on the next change, so a failed push leaves it running.
-	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
-		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
+	// No refresh runs between the Configure of the activation and the end of the wait for it.
+	// A failed push leaves the plugin running, and it gets its settings again on the next change.
+	if lockErr := h.secrets.lockSecrets(ctx); lockErr != nil {
+		h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
+		return endpoint, lockErr
+	}
+	configureErr := h.secrets.configurePlugin(ctx, p.Manifest.ID)
+	h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
+	h.secrets.unlockSecrets()
+	if configureErr != nil {
+		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, configureErr))
 	}
 	return endpoint, nil
 }
@@ -1213,7 +1224,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	if result == nil {
 		result = map[string]any{}
 	}
-	delete(result, pluginport.SettingStoredSecrets)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.GetSecretNames() {
 			delete(result, name)
@@ -1254,9 +1264,6 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin. A listener
 // port the host cannot bind is rejected before it is persisted.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
-	if key == pluginport.SettingStoredSecrets {
-		return fmt.Errorf("plugin %s: %w: %s", pluginID, pluginport.ErrReservedSettingKey, key)
-	}
 	if err := h.checkListenerPort(ctx, pluginID, key, value); err != nil {
 		return err
 	}
@@ -1272,13 +1279,9 @@ func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value
 }
 
 // UpdatePluginSetting updates the setting in memory and notifies the plugin without re-persisting.
-// The record of the stored secrets is written by the host alone, so a write of it
-// here changes nothing. A value the listeners of the plugin cannot be synced with is replaced by the
+// A value the listeners of the plugin cannot be synced with is replaced by the
 // previous one, and the error is returned.
 func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
-	if key == pluginport.SettingStoredSecrets {
-		return nil
-	}
 	h.mu.Lock()
 	before := h.getRequirementIDsLocked(pluginID)
 	if _, ok := h.settings[pluginID]; !ok {
@@ -1379,68 +1382,67 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	defer h.lockSecrets(pluginID)()
-	return h.notifyPluginConfigLocked(ctx, pluginID)
+	if err := h.secrets.lockSecrets(ctx); err != nil {
+		return err
+	}
+	defer h.secrets.unlockSecrets()
+	return h.secrets.configurePlugin(ctx, pluginID)
 }
 
-func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
+// configSnapshot is what a Configure call to one plugin is made of, read while mu is held.
+type configSnapshot struct {
+	pluginID   string
+	endpoint   transport.Endpoint
+	configJSON string
+	values     map[string]string
+	declared   []manifest.Secret
+	requested  []string
+	store      pluginport.KeyStore
+	source     pluginport.SecretSource
+}
+
+func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
 	h.mu.RLock()
+	defer h.mu.RUnlock()
 	endpoint, hasEndpoint := h.endpoints[pluginID]
 	sup, hasSup := h.supervisors[pluginID]
 	if !hasEndpoint || !hasSup {
-		h.mu.RUnlock()
-		return nil
+		return configSnapshot{}, false, nil
 	}
-	state := sup.GetState()
-	if state != lifecycle.StateActive && state != lifecycle.StateIdle {
-		h.mu.RUnlock()
-		return nil
+	if state := sup.GetState(); state != lifecycle.StateActive && state != lifecycle.StateIdle {
+		return configSnapshot{}, false, nil
 	}
 	cfgJSON, err := h.getPluginConfigJSONLocked(pluginID)
 	if err != nil {
-		h.mu.RUnlock()
-		return err
+		return configSnapshot{}, true, err
 	}
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := formatPluginSettings(rawSettings)
-	secretNames := h.getActiveSecretNamesLocked(pluginID)
-	stored := h.getStoredSecretsLocked(pluginID)
-	store := h.keyStore
-	performance := h.performance
-	h.mu.RUnlock()
-
-	if performance != "" {
-		values[pluginport.ConfigPerformanceProfile] = performance
+	if h.performance != "" {
+		values[pluginport.ConfigPerformanceProfile] = h.performance
 	}
-	secrets, failures := readPluginSecrets(ctx, store, pluginID, secretNames, stored)
-	secretsErr := h.getSecretsError(failures)
-	for name, key := range secrets {
-		values[name] = key
-	}
+	return configSnapshot{
+		pluginID:   pluginID,
+		endpoint:   endpoint,
+		configJSON: cfgJSON,
+		values:     values,
+		declared:   h.listActiveDeclarationsLocked(pluginID, rawSettings),
+		requested:  secret.ListAskedGroups(h.listDeclarationsLocked()),
+	}, true, nil
+}
 
-	httpClient := transport.EndpointClient(endpoint)
-	client := numenv1connect.NewPluginLifecycleServiceClient(
-		httpClient,
-		transport.GetBaseURL(endpoint),
-		connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
-	)
-	req := connect.NewRequest(&v1.ConfigureRequest{
-		PluginId:          pluginID,
-		ConfigurationJson: cfgJSON,
-		Values:            values,
-	})
-	configCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	_, err = client.Configure(configCtx, req)
-	if err != nil {
-		var connectErr *connect.Error
-		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(secretNames) == 0 {
-			return secretsErr
+func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.Secret {
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		return nil
+	}
+	var active []manifest.Secret
+	for _, declaration := range p.Manifest.Secrets {
+		if p.Manifest.IsSecretActive(declaration, values) {
+			active = append(active, declaration)
 		}
-		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
 	}
-	h.runConfigWatchers(pluginID)
-	return secretsErr
+	return active
 }
 
 func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
@@ -1499,7 +1501,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			IsActive:      isActive,
 			Permissions:   p.Manifest.Permissions,
 			Secrets:       p.Manifest.Secrets,
-			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
 			HasBackend:    p.Manifest.HasBackend(),
@@ -1686,21 +1687,6 @@ func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyReq
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))
-}
-
-func (h *Host) getActiveSecretNamesLocked(pluginID string) []string {
-	p, ok := h.plugins[pluginID]
-	if !ok {
-		return nil
-	}
-	values := h.getPluginSettingsLocked(pluginID)
-	var names []string
-	for _, secret := range p.Manifest.Secrets {
-		if p.Manifest.IsSecretActive(secret, values) {
-			names = append(names, secret.Name)
-		}
-	}
-	return names
 }
 
 func (h *Host) getRequirementIDsLocked(pluginID string) []string {

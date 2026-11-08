@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
@@ -57,8 +58,7 @@ type Runtime[H, V any] struct {
 	OpenGetSettingsFn        func() *settings.Get
 	OpenWriteSettingsFn      func() *settings.Write
 	OpenWatchSettingsFn      func() *settings.Watch
-	OpenWritePluginSecretFn  func() *settings.WriteSecret
-	OpenDeletePluginSecretFn func() *settings.DeleteSecret
+	OpenSecretsFn            func() *secret.Secrets
 	OpenRetryPluginFn        func() *settings.RetryPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
 	SetPluginWorkFn          func(tasks *run.Tasks, models *run.Lock)
@@ -106,14 +106,9 @@ func (e Runtime[H, V]) CloseIndex() error                            { return e.
 func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }
 func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
 func (e Runtime[H, V]) OpenWatchSettings() *settings.Watch           { return e.OpenWatchSettingsFn() }
-func (e Runtime[H, V]) OpenWritePluginSecret() *settings.WriteSecret {
-	return e.OpenWritePluginSecretFn()
-}
-func (e Runtime[H, V]) OpenDeletePluginSecret() *settings.DeleteSecret {
-	return e.OpenDeletePluginSecretFn()
-}
-func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
-func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
+func (e Runtime[H, V]) OpenSecrets() *secret.Secrets                 { return e.OpenSecretsFn() }
+func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin       { return e.OpenRetryPluginFn() }
+func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)        { e.ReportPluginFailuresFn(tasks) }
 func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	e.SetPluginWorkFn(tasks, models)
 }

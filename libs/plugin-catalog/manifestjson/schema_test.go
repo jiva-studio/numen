@@ -34,7 +34,7 @@ const everyFieldManifest = `{
 		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
 		{"key": "token", "type": "string", "title": "Token", "generate": "token"}
 	],
-	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
+	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "group": "openrouter", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],

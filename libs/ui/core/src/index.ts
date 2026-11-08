@@ -9,10 +9,15 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
+/** A question over the window answered with a confirm or a cancel button. */
+export { ConfirmDialog } from './shared/ui/confirm-dialog'
+
 /** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
+
+/** A box that is ticked or not, with an optional label beside it. */
 
 /** One value along a track, moved by a handle. */
 export { Slider } from './shared/ui/slider'
@@ -21,7 +26,7 @@ export { Slider } from './shared/ui/slider'
 export { SegmentedControl } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
-export { Select } from './shared/ui/select'
+export { Select, MultiSelect } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
 /** One search line over a list of rows in one frame, drawn in the window or as a popup. */

@@ -13,17 +13,16 @@ import (
 
 func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
 	for body, want := range map[string]string{
-		`{"app":{"appearance":{"textScale":9}}}`:             `numen.json: "app.appearance.textScale": 9 is out of range 0.8..1.75; the value is ignored`,
-		`{"app":{"appearance":{"tint":"warm"}}}`:             `numen.json: "app.appearance.tint": no such setting; the value is ignored`,
-		`{"app":3}`:                                          `numen.json: app is not a JSON object; its settings are ignored`,
-		`{"importing":{"ffmpeg":{"command":[]}}}`:            `numen.json: importing is not a valid plugin id; its settings are ignored`,
-		`{"md.numen.sample.speech":3}`:                       `numen.json: md.numen.sample.speech is not a JSON object; its settings are ignored`,
-		`{"md.numen.ghost":{"model":"small"}}`:               `numen.json: no installed plugin md.numen.ghost; its settings are ignored`,
-		`{"md.numen.sample.speech":{"temperature":5}}`:       `numen.json: "md.numen.sample.speech.temperature": 5 is out of range 0..2; the value is ignored`,
-		`{"md.numen.sample.speech":{"model":"huge"}}`:        `numen.json: "md.numen.sample.speech.model": "huge" is not one of the options; the value is ignored`,
-		`{"md.numen.sample.speech":{"mistyped":1}}`:          `numen.json: "md.numen.sample.speech.mistyped": no such setting; the value is ignored`,
-		`{"md.numen.sample.speech":{"storedSecrets":"key"}}`: `numen.json: "md.numen.sample.speech.storedSecrets": wrong type: expected a list of secret names; the value is ignored`,
-		`{"app":{"appearance":{"theme":"mine:absent"}}}`:     `numen.json: "app.appearance.theme": "mine:absent" is not one of the options listed in themes; the default preset:numen applies`,
+		`{"app":{"appearance":{"textScale":9}}}`:         `numen.json: "app.appearance.textScale": 9 is out of range 0.8..1.75; the value is ignored`,
+		`{"app":{"appearance":{"tint":"warm"}}}`:         `numen.json: "app.appearance.tint": no such setting; the value is ignored`,
+		`{"app":3}`:                                      `numen.json: app is not a JSON object; its settings are ignored`,
+		`{"importing":{"ffmpeg":{"command":[]}}}`:        `numen.json: importing is not a valid plugin id; its settings are ignored`,
+		`{"md.numen.sample.speech":3}`:                   `numen.json: md.numen.sample.speech is not a JSON object; its settings are ignored`,
+		`{"md.numen.ghost":{"model":"small"}}`:           `numen.json: no installed plugin md.numen.ghost; its settings are ignored`,
+		`{"md.numen.sample.speech":{"temperature":5}}`:   `numen.json: "md.numen.sample.speech.temperature": 5 is out of range 0..2; the value is ignored`,
+		`{"md.numen.sample.speech":{"model":"huge"}}`:    `numen.json: "md.numen.sample.speech.model": "huge" is not one of the options; the value is ignored`,
+		`{"md.numen.sample.speech":{"mistyped":1}}`:      `numen.json: "md.numen.sample.speech.mistyped": no such setting; the value is ignored`,
+		`{"app":{"appearance":{"theme":"mine:absent"}}}`: `numen.json: "app.appearance.theme": "mine:absent" is not one of the options listed in themes; the default preset:numen applies`,
 	} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {

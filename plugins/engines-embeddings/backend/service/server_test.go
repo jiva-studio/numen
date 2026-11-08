@@ -65,7 +65,7 @@ func TestLifecycleConfigure(t *testing.T) {
 
 	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"model": "text-embedding-3-small",
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
 		emb.updateConfig(map[string]string{
 			"provider": tc.provider,
 			"model":    tc.model,
-		})
+		}, nil)
 		info, err := emb.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatalf("%s/%s: %v", tc.provider, tc.model, err)
@@ -184,7 +184,7 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 	srv.updateConfig(map[string]string{
 		"provider": "openrouter",
 		"model":    "openai/text-embedding-3-small",
-	})
+	}, nil)
 
 	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
 	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
@@ -208,7 +208,7 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	srv.updateConfig(map[string]string{
 		"provider": "local",
 		"model":    "openai/text-embedding-3-small",
-	})
+	}, nil)
 
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
@@ -244,7 +244,7 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 		{map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5 again"},
 	}
 	for _, step := range steps {
-		srv.updateConfig(step.values)
+		srv.updateConfig(step.values, nil)
 		info, err := srv.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatalf("%s: %v", step.description, err)
@@ -265,7 +265,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 		openedInfo = info
 		return engine.MockEmbedder{}, nil
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"})
+	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, nil)
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 	if srv.modelInfo.MinChunkLength != 40 {
 		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"})
+	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, nil)
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -327,32 +327,32 @@ func TestOpenMockModelHoldWaitAndContextCancel(t *testing.T) {
 
 func TestUpdateConfigDefaultRemoteModelsAndProviderSelection(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "openrouter"})
+	srv.updateConfig(map[string]string{"provider": "openrouter"}, nil)
 	if srv.remoteModel != modelOpenRouterEmbedding3Small || srv.modelInfo.Name != modelOpenRouterEmbedding3Small {
 		t.Fatalf("openrouter default remoteModel = %q / %q, want %q", srv.remoteModel, srv.modelInfo.Name, modelOpenRouterEmbedding3Small)
 	}
 
 	srv2 := newEmbeddingServer()
-	srv2.updateConfig(map[string]string{"provider": "openai"})
+	srv2.updateConfig(map[string]string{"provider": "openai"}, nil)
 	if srv2.remoteModel != modelEmbedding3Small || srv2.modelInfo.Name != modelEmbedding3Small {
 		t.Fatalf("openai default remoteModel = %q / %q, want %q", srv2.remoteModel, srv2.modelInfo.Name, modelEmbedding3Small)
 	}
 
 	srv3 := newEmbeddingServer()
-	srv3.updateConfig(map[string]string{"provider": "local"})
+	srv3.updateConfig(map[string]string{"provider": "local"}, nil)
 	if srv3.remoteModel != "" {
 		t.Fatalf("local provider set remoteModel = %q, want empty", srv3.remoteModel)
 	}
 
 	srv4 := newEmbeddingServer()
-	srv4.updateConfig(map[string]string{"model": "Xenova/bge-m3"})
+	srv4.updateConfig(map[string]string{"model": "Xenova/bge-m3"}, nil)
 	if srv4.remoteModel != "" || srv4.modelInfo.Name != "Xenova/bge-m3" {
 		t.Fatalf("empty provider with local model: remote=%q, name=%q", srv4.remoteModel, srv4.modelInfo.Name)
 	}
 
 	srv5 := newEmbeddingServer()
-	srv5.updateConfig(map[string]string{"provider": "openai", "model": "text-embedding-3-large"})
-	srv5.updateConfig(map[string]string{"provider": "openai", "model": ""})
+	srv5.updateConfig(map[string]string{"provider": "openai", "model": "text-embedding-3-large"}, nil)
+	srv5.updateConfig(map[string]string{"provider": "openai", "model": ""}, nil)
 	if srv5.remoteModel != "text-embedding-3-large" {
 		t.Fatalf("empty model overwrote remoteModel to %q", srv5.remoteModel)
 	}
@@ -362,7 +362,7 @@ func TestRefreshModelInfoPreservesDimensionsEnvAndConcurrency(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.modelInfo.Concurrency = 7
 	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "777")
-	srv.updateConfig(map[string]string{"provider": "openai", "model": "text-embedding-3-small"})
+	srv.updateConfig(map[string]string{"provider": "openai", "model": "text-embedding-3-small"}, nil)
 	if srv.modelInfo.Dimensions != 777 {
 		t.Fatalf("remote Dimensions with env override = %d, want 777", srv.modelInfo.Dimensions)
 	}
@@ -370,7 +370,7 @@ func TestRefreshModelInfoPreservesDimensionsEnvAndConcurrency(t *testing.T) {
 		t.Fatalf("remote Concurrency = %d, want 7", srv.modelInfo.Concurrency)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel})
+	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
 	if srv.modelInfo.Concurrency != 7 {
 		t.Fatalf("local Concurrency after refresh = %d, want 7", srv.modelInfo.Concurrency)
 	}
@@ -550,13 +550,13 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 		t.Fatalf("empty EmbedTexts = %v, %v", vecs, err)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": "", server.SecretAPIKey: "my-key"})
+	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": ""}, keysOf("my-key"))
 	_, err = srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
 	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "URL is not configured") {
 		t.Fatalf("missing URL err = %v", err)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": "https://example.com", server.SecretAPIKey: ""})
+	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": "https://example.com"}, keysOf())
 	_, err = srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
 	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "API key is not configured") {
 		t.Fatalf("missing key err = %v", err)
@@ -679,11 +679,10 @@ func TestEmbedRemoteTextsAndComputeServiceVector(t *testing.T) {
 
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{
-		"provider":          "custom",
-		"baseUrl":           remote.URL,
-		server.SecretAPIKey: "secret",
-		"model":             "remote-test",
-	})
+		"provider": "custom",
+		"baseUrl":  remote.URL,
+		"model":    "remote-test",
+	}, keysOf("secret"))
 
 	vecs, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
 	if err != nil || len(vecs) != 1 || len(vecs[0]) != 5 {

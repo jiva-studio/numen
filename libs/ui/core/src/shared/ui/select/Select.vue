@@ -8,13 +8,12 @@
  * with a search line over it, and may take what is typed as the value.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { ChevronDown } from '@lucide/vue'
 import { measureElementRect } from '@/shared/lib/dom'
-import { cn } from '@/shared/lib/dom/classes'
 import { Menu, type MenuItem } from '../menu'
 import { SearchableListPopup, filterItems } from '../searchable-list'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { SelectProps } from './Select.types'
+import SelectTrigger from './SelectTrigger.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -55,10 +54,10 @@ const isCustomAvailable = computed(
 /** The choice in force, and none where the value is none of them. */
 const selectedChoice = computed(() => props.choices.find((one) => one.id === model.value))
 
-/** What is written on the line: the choice, the value itself, or the stand-in. */
 const displayText = computed(() => selectedChoice.value?.text || model.value || props.placeholder)
 
-const element = useTemplateRef<HTMLButtonElement>('element')
+const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger')
+const element = computed(() => trigger.value?.element ?? null)
 
 /**
  * Where the choices are drawn and how wide the line asking for them is, and
@@ -98,38 +97,18 @@ const onKey = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <button
-    ref="element"
+  <SelectTrigger
+    ref="trigger"
     v-bind="$attrs"
-    type="button"
-    data-slot="select"
-    :aria-haspopup="isSearchable ? 'listbox' : 'menu'"
-    :aria-expanded="menuAnchor !== null"
-    :disabled="isDisabled"
-    :class="
-      cn(
-        'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
-        'h-action rounded-node border-field-rule bg-field border px-2.5',
-        'text-ink text-left font-sans text-base leading-none',
-        'ease-numen cursor-pointer transition-colors duration-100 outline-none',
-        'hover:border-rule',
-        'focus-visible:outline-none',
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        props.class,
-      )
-    "
+    :text="displayText"
+    :is-hushed="!model && !selectedChoice"
+    :is-disabled="isDisabled"
+    :is-expanded="menuAnchor !== null"
+    :has-popup="isSearchable ? 'listbox' : 'menu'"
+    :class="props.class"
     @click="onOpenChoices"
     @keydown="onKey"
-  >
-    <span
-      class="select__reading min-w-0"
-      :class="{ 'text-hushed': !selectedChoice && !model }"
-      :title="displayText"
-    >
-      {{ displayText }}
-    </span>
-    <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
-  </button>
+  />
 
   <SearchableListPopup
     v-if="menuAnchor && isSearchable"
@@ -176,24 +155,6 @@ const onKey = (event: KeyboardEvent) => {
 .select__custom-note {
   margin-inline-start: auto;
   font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-}
-
-/* One line, then an ellipsis. A model is named by a word and addressed by a
-   line too long to read, and the name is what the line carries. */
-.select__reading {
-  padding-block: 0.125rem;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.select__mark {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  stroke-width: 1.875;
   color: var(--numen-hushed);
 }
 </style>
