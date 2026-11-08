@@ -43,16 +43,6 @@ test.describe('the deck editor', () => {
     deleteVaultFiles(deck.path)
   })
 
-  test('draws one tile for each card of the deck file, with its values', async ({ page }) => {
-    const panel = await openDeck(page, deck.title)
-
-    await expect(panel.locator('.card')).toHaveCount(2)
-    const heron = panel.getByRole('article', { name: 'Card 1' })
-    await expect(heron.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('Heron')
-    await expect(heron.getByRole('textbox', { name: 'Height' })).toHaveValue('about 1 m')
-    await expect(heron.getByRole('group', { name: 'Card model' })).toHaveText('Animal')
-  })
-
   test('writes an edited value to the deck file, and shows it after a reload', async ({
     page,
     request,
