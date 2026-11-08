@@ -1,7 +1,7 @@
 /**
  * The item lists of the commands the core lists them for: read in one request for the commands a
- * menu asks for at once, over one read of the kind of the file, and kept until the file, its text
- * versions or the commands change. Every path is invented.
+ * menu asks for at once, over one read of the kind of the file, and read again for every menu. Every
+ * path is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
@@ -85,54 +85,12 @@ describe('the item lists of the commands of one menu', () => {
   })
 })
 
-describe('the item lists kept', () => {
-  it('answer the same command over the same file without a request', async () => {
+describe('the item lists of a later menu', () => {
+  it('are read again for the same command over the same file', async () => {
     const { lists, requests } = setUp()
     await lists.listItems(DELETE_TEXT, SCAN)
 
     expect(await lists.listItems(DELETE_TEXT, SCAN)).toStrictEqual(ITEMS)
-    expect(requests).toHaveLength(1)
-  })
-
-  it('are read again for a file that changed, and kept for the others', async () => {
-    const { lists, requests } = setUp()
-    await Promise.all([lists.listItems(DELETE_TEXT, SCAN), lists.listItems(DELETE_TEXT, TALK)])
-
-    lists.dropPaths([SCAN])
-    await lists.listItems(DELETE_TEXT, SCAN)
-    await lists.listItems(DELETE_TEXT, TALK)
-
-    expect(requests.map((one) => one.path)).toStrictEqual([SCAN, TALK, SCAN])
-  })
-
-  it('are all read again once the commands change', async () => {
-    const { lists, requests } = setUp()
-    await lists.listItems(DELETE_TEXT, SCAN)
-
-    lists.dropAll()
-    await lists.listItems(DELETE_TEXT, SCAN)
-
-    expect(requests).toHaveLength(2)
-  })
-
-  it('do not keep a list read while its file changed', async () => {
-    const { lists, requests } = setUp()
-    const request = lists.listItems(DELETE_TEXT, SCAN)
-    await settle()
-
-    lists.dropPaths([SCAN])
-    await request
-    await lists.listItems(DELETE_TEXT, SCAN)
-
-    expect(requests).toHaveLength(2)
-  })
-
-  it('do not keep a list that failed', async () => {
-    const { lists, requests } = setUp()
-    const unknownCommand = { pluginId: PROOFREAD.pluginId, id: 'ink.gone' }
-    await expect(lists.listItems(unknownCommand, SCAN)).rejects.toThrow()
-
-    await expect(lists.listItems(unknownCommand, SCAN)).rejects.toThrow()
     expect(requests).toHaveLength(2)
   })
 })

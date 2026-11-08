@@ -295,7 +295,6 @@ const createDeclaredParts = (
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
     listItems: itemLists.listItems,
-    onCommandsChanged: itemLists.dropAll,
   })
   return { itemLists, declaredCommands }
 }
@@ -450,7 +449,6 @@ function initWindowServices(
       windowTabs: base.windowTabs,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
-      itemLists: base.itemLists,
       writeMessage: base.writeMessage,
     }),
   )

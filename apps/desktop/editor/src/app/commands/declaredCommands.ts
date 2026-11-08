@@ -103,7 +103,6 @@ export interface DeclaredCommandsDeps {
   readonly hasBackend?: (pluginId: string) => boolean
   readonly getConfig?: () => WhenSettings
   readonly listItems?: ListItems
-  readonly onCommandsChanged?: () => void
 }
 
 const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => ({
@@ -182,13 +181,9 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // An answer equal to the lists held keeps them, so the commands are not registered again while
     // the palette lists them.
     const handlers = commands.handlers ?? []
-    const isChanged =
-      !isSameList(declared.value, commands.commands) ||
-      !isSameList(declaredHandlers.value, handlers)
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
     if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
-    if (isChanged) deps.onCommandsChanged?.()
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }

@@ -6,7 +6,6 @@ import type { CommandTarget } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import type { CommandItemLists } from '../commands/commandItemLists'
 import type { useCommands } from '../commands/useCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
@@ -21,7 +20,6 @@ export interface DisplayWiring {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'handle'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
-  itemLists: Pick<CommandItemLists, 'dropPaths' | 'dropAll'>
   writeMessage: MessageWriter
 }
 
@@ -35,8 +33,6 @@ export function createDisplayOptions(deps: DisplayWiring) {
       versionPaths: readonly string[] = [],
     ) => {
       const changed = [...new Set([...paths, ...versionPaths])]
-      if (changed.length === 0 && renamed.length === 0) deps.itemLists.dropAll()
-      else deps.itemLists.dropPaths(changed)
       // A change of the text versions alone changes no note.
       if (paths.length === 0 && renamed.length === 0 && versionPaths.length > 0) {
         notifyPlugins({ paths: changed, renamed })
