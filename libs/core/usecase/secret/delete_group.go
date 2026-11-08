@@ -13,7 +13,7 @@ type DeleteGroup struct{ operation }
 // that could read them in one round. An entry whose value cannot be removed returns to its place
 // with its permissions, so the value stays named and the call can be repeated.
 func (u *DeleteGroup) Execute(ctx context.Context, group string) error {
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		var removed []Secret
 		var indexes []int
 		err := u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {

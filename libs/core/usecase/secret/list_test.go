@@ -22,7 +22,7 @@ func (s forbiddenStore) GetKey(_ context.Context, name string) (string, error) {
 
 func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
 	f := newFixture(secret.Secret{ID: "s00000001", Name: "Here", Group: "g"})
-	f.secrets = secret.NewSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func() string { return "/credentials.json" })
+	f.secrets = secret.NewSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func() string { return "/credentials.json" }, nil)
 
 	listing, err := f.secrets.List.Execute()
 	if err != nil {

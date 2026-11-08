@@ -11,13 +11,13 @@ import (
 
 // countingPlugins counts the rounds of configuration.
 type countingPlugins struct {
-	plugins
+	*plugins
 	rounds int
 }
 
-func (p *countingPlugins) ApplySecretChange(ctx context.Context, change func() ([]string, error)) error {
+func (p *countingPlugins) Refresh(ctx context.Context, forced ...string) error {
 	p.rounds++
-	return p.plugins.ApplySecretChange(ctx, change)
+	return p.plugins.Refresh(ctx, forced...)
 }
 
 func newGroupFixture() fixture {
@@ -33,8 +33,8 @@ func TestDeleteGroupRemovesEverySecretOfTheGroupWithItsValuesInOneRound(t *testi
 	f.keys["secret/s00000001"] = "invented-one"
 	f.keys["secret/s00000002"] = "invented-other"
 	f.keys["secret/s00000003"] = "invented-two"
-	host := &countingPlugins{plugins: *f.plugins}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, host, nil, nil)
+	host := &countingPlugins{plugins: f.plugins}
+	f.secrets = secret.NewSecrets(f.ledger, f.keys, host, nil, nil, nil)
 
 	if err := f.secrets.DeleteGroup.Execute(t.Context(), "g"); err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ func TestDeleteGroupOfAGroupWithNoSecretIsNotFound(t *testing.T) {
 func TestDeleteGroupWithAFailingStoreRestoresTheEntryWithItsPermissions(t *testing.T) {
 	f := newGroupFixture()
 	f.keys["secret/s00000003"] = "invented-two"
-	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil)
+	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
 	err := f.secrets.DeleteGroup.Execute(t.Context(), "g")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
