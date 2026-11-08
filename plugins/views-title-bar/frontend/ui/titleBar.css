@@ -12,16 +12,44 @@
 }
 
 .title-bar__inset {
+  position: relative;
+  z-index: 1;
   flex: none;
-  margin-inline-end: 4px;
 }
 
-/* The slots and the title share the room between the controls. The room is measured here. It
-   clips nothing: the views of the slots draw their popovers below the bar. */
+/* The bar is three columns: the buttons, the title and the status. The two outer columns are equal,
+   so the title sits in the middle of the bar whatever they hold; a column never gets less than its
+   content, and the title gives way first. The window buttons overlap the ends of the area and the
+   columns keep clear of them with padding. */
 .title-bar__start {
-  display: flex;
-  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
   align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  margin-inline: calc(-1 * var(--title-bar-lead, 0px)) calc(-1 * var(--title-bar-trail, 0px));
+}
+
+.title-bar__lead,
+.title-bar__trail {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.title-bar__lead {
+  padding-inline-start: var(--title-bar-lead, 0px);
+}
+
+.title-bar__trail {
+  justify-content: flex-end;
+  padding-inline-end: var(--title-bar-trail, 0px);
+}
+
+.title-bar__middle {
+  display: flex;
+  justify-content: center;
   min-width: 0;
   height: 100%;
 }
@@ -82,9 +110,10 @@
 }
 
 .title-bar__title {
-  flex: 1 1 0;
   min-width: 0;
   padding-inline: 12px;
+  line-height: 32px;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -92,13 +121,11 @@
 
 /* The title as a button is as wide as its text, so the room beside it still drags the window. */
 .title-bar__title--trigger {
-  flex: 0 1 auto;
   height: 100%;
   background: transparent;
   border: none;
   color: inherit;
   font: inherit;
-  text-align: start;
   cursor: pointer;
 }
 
@@ -112,8 +139,3 @@
   box-shadow: inset 0 0 0 1px var(--numen-accent);
 }
 
-.title-bar__fill {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 100%;
-}

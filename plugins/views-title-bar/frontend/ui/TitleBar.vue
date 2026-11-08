@@ -15,7 +15,7 @@ import {
   type SlotItem,
   type VaultsState,
 } from '@numen/plugin-sdk'
-import { getControls, type ButtonsSetting } from '../lib/frame'
+import { getControls, getControlsRoom, type ButtonsSetting } from '../lib/frame'
 import { formatTitle } from '../lib/title'
 import { TITLE_BAR_WORDS } from '../lib/words'
 import MacButtonsInset from './frame/MacButtonsInset.vue'
@@ -81,7 +81,8 @@ const rows = computed<readonly BarRow[]>(() => [
   { prefix: SLOT.titleBarCommands, entries: props.commands },
   { prefix: SLOT.titleBarStatus, entries: props.status },
 ])
-const { fit } = useBarFit(start, () => rows.value)
+const room = computed(() => getControlsRoom(controls.value, props.isFullscreen))
+const { fit } = useBarFit(start, () => rows.value, () => room.value.lead + room.value.trail)
 const { onKeydown, onFocusin } = useToolbarFocus(start)
 const overflow = computed<readonly SlotItem[]>(() => {
   const overflowKeys = new Set(fit.value.overflow)
@@ -163,6 +164,7 @@ function onRunCommand(command: string, itemId?: string): void {
     class="title-bar"
     data-title-bar
     :data-controls="controls"
+    :style="{ '--title-bar-lead': `${room.lead}px`, '--title-bar-trail': `${room.trail}px` }"
     @dblclick="onDoubleClick"
   >
     <MacButtonsInset
@@ -190,30 +192,33 @@ function onRunCommand(command: string, itemId?: string): void {
       @keydown="onKeydown"
       @focusin="onFocusin"
     >
-      <TitleBarSlot
-        :name="SLOT.titleBarCommands"
-        :entries="commands"
-        :get-key="(entry) => getFitKey(SLOT.titleBarCommands, entry)"
-        :hidden="fit.hidden"
-        :platform="platform"
-        :list-items="listItems"
-        :report-error="reportError"
-        @run-command="onRunCommand"
-      />
+      <div class="title-bar__lead" data-title-bar-lead>
+        <TitleBarSlot
+          :name="SLOT.titleBarCommands"
+          :entries="commands"
+          :get-key="(entry) => getFitKey(SLOT.titleBarCommands, entry)"
+          :hidden="fit.hidden"
+          :platform="platform"
+          :list-items="listItems"
+          :report-error="reportError"
+          @run-command="onRunCommand"
+        />
 
-      <TitleBarMenuButton
-        v-if="fit.overflow.length > 0"
-        :entries="overflow"
-        :label="TITLE_BAR_WORDS.more"
-        :icon="Ellipsis"
-        data-title-bar-more
-        :list-items="listItems"
-        :report-error="reportError"
-        @run-command="onRunCommand"
-      />
+        <TitleBarMenuButton
+          v-if="fit.overflow.length > 0"
+          :entries="overflow"
+          :label="TITLE_BAR_WORDS.more"
+          :icon="Ellipsis"
+          data-title-bar-more
+          :list-items="listItems"
+          :report-error="reportError"
+          @run-command="onRunCommand"
+        />
+      </div>
 
-      <template v-if="hasVaults">
+      <div class="title-bar__middle" data-title-bar-middle>
         <button
+          v-if="hasVaults"
           ref="trigger"
           type="button"
           class="title-bar__title title-bar__title--trigger"
@@ -227,21 +232,21 @@ function onRunCommand(command: string, itemId?: string): void {
         >
           {{ fullTitle }}
         </button>
-        <span class="title-bar__fill" data-title-fill />
-      </template>
+        <span v-else class="title-bar__title" data-title :title="fullTitle">{{ fullTitle }}</span>
+      </div>
 
-      <span v-else class="title-bar__title" data-title :title="fullTitle">{{ fullTitle }}</span>
-
-      <TitleBarSlot
-        :name="SLOT.titleBarStatus"
-        :entries="status"
-        :get-key="(entry) => getFitKey(SLOT.titleBarStatus, entry)"
-        :hidden="fit.hidden"
-        :platform="platform"
-        :list-items="listItems"
-        :report-error="reportError"
-        @run-command="onRunCommand"
-      />
+      <div class="title-bar__trail" data-title-bar-trail>
+        <TitleBarSlot
+          :name="SLOT.titleBarStatus"
+          :entries="status"
+          :get-key="(entry) => getFitKey(SLOT.titleBarStatus, entry)"
+          :hidden="fit.hidden"
+          :platform="platform"
+          :list-items="listItems"
+          :report-error="reportError"
+          @run-command="onRunCommand"
+        />
+      </div>
     </div>
 
     <SearchableListPopup

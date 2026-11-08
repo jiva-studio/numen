@@ -21,7 +21,8 @@
         "id": "chat.open",
         "title": "Open agent chat",
         "icon": "message-square",
-        "shortcut": "mod+shift+a"
+        "shortcut": "mod+shift+a",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "note.ask",

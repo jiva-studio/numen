@@ -21,7 +21,8 @@
         "id": "tree.open",
         "title": "Open file tree",
         "icon": "folder-tree",
-        "shortcut": "mod+shift+e"
+        "shortcut": "mod+shift+e",
+        "when": "window.isVaultOpen"
       },
       {
         "id": "tree.revealNote",

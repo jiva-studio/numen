@@ -16,6 +16,7 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
     slot: 'titleBar.commands',
     command: 'app:settings.open',
     group: 'settings',
+    when: 'window.isVaultOpen',
   },
   {
     pluginId: APP_PLACEMENT_OWNER,

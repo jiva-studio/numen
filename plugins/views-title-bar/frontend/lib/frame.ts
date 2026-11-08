@@ -27,6 +27,25 @@ export function getControls(platform: AppInfo['platform'], buttons: ButtonsSetti
   return platform === 'linux' ? buttons : 'windows'
 }
 
+/** The width of the three window buttons the bar draws at its end in the Windows style, in pixels. */
+export const WINDOWS_CONTROLS_WIDTH = 132
+
+/** The width of the three circles the bar draws at its start in the mac style, in pixels. */
+export const MAC_CIRCLES_WIDTH = 76
+
+/** The width the bar keeps at its start for the system buttons of macOS, in pixels. */
+export const MAC_INSET_WIDTH = 80
+
+/** The widths the window buttons take at the start and at the end of the bar, in pixels. */
+export function getControlsRoom(
+  controls: ControlsStyle,
+  isFullscreen: boolean,
+): { readonly lead: number; readonly trail: number } {
+  if (controls === 'windows') return { lead: 0, trail: WINDOWS_CONTROLS_WIDTH }
+  if (controls === 'mac') return { lead: MAC_CIRCLES_WIDTH, trail: 0 }
+  return { lead: isFullscreen ? 0 : MAC_INSET_WIDTH, trail: 0 }
+}
+
 /** The names of the window buttons, shown as their tooltips. */
 export interface WindowControlsWords {
   readonly minimize: string
