@@ -207,6 +207,7 @@ export const nameAnswer = (path: string, title: string, type: string = 'note') =
   line: -1,
   at: [] as [],
   type,
+  ...(type === 'note' ? {} : { tabKind: type }),
 })
 
 /** One passage the search answers with, read out of a note of some kind. */
@@ -220,6 +221,7 @@ export const passageAnswer = (path: string, title: string, type: string = 'note'
   line: 3,
   at: [] as [],
   type,
+  ...(type === 'note' ? {} : { tabKind: type }),
   selector: null as Record<string, unknown> | null,
 })
 

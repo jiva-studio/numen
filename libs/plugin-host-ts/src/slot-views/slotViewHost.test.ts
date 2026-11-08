@@ -10,6 +10,7 @@ const PLUGIN = 'org.example.bar'
 
 const createView = (pluginId = PLUGIN): DeclaredSlotView => ({
   pluginId,
+  slot: 'statusBar',
   registration: {
     id: 'bar',
     component: defineComponent({ setup: () => () => h('div', { 'data-bar': pluginId }) }),

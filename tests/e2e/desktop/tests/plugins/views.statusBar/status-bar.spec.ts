@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext } from 'playwright/test'
 import { test, expect } from '../../support/test.js'
 import { writePluginSetting } from '../../support/media.js'
 import { callRPC } from '../../support/vault.js'

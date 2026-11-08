@@ -35,6 +35,7 @@ type WindowHostDeps = Required<
     | 'getSlotWhenValues'
     | 'getWindowValues'
     | 'getContentTypes'
+    | 'whenReader'
   >
 >
 
