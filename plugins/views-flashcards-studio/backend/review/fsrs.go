@@ -17,7 +17,7 @@ import (
 // difficulty as its own, and answer confidently with a wrong day.
 const FSRSName = "fsrs-5"
 
-// FSRS spaces a card by how well it came back, carrying two numbers between answers: how long
+// FSRS spaces a card by how well it was recalled, carrying two numbers between answers: how long
 // the card is expected to stay recalled, and how hard it is. The parameters come from the library
 // and the arithmetic over them is here, so a scheduler keeps no state between answers and one
 // instance can serve many review cards concurrently.

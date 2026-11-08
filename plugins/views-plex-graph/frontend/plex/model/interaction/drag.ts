@@ -31,7 +31,7 @@ export interface PlexDragDeps {
 }
 
 /**
- * Follow a pointer dragging something across the plex until it is let go or given up on.
+ * Follow a pointer dragging something across the plex until the pointer is released or the drag is cancelled.
  * The gesture began where the plex cannot see, so it is followed on the window while there is something to drag,
  * and it is over the instant the pointer comes up, wherever that is.
  */

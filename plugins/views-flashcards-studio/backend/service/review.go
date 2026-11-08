@@ -403,7 +403,7 @@ func (h *reviewHandler) GetVaultDeckPreset(
 }
 
 // ListReviewDays is how much of a vault was answered on each day it was reviewed. The days
-// come back in order, oldest first. A caller naming a stretch is answered that stretch; the
+// are returned in order, oldest first. A caller naming a stretch is answered that stretch; the
 // streak and the count are over the whole vault either way.
 func (h *reviewHandler) ListReviewDays(
 	ctx context.Context, req *api.ListReviewDaysRequest,

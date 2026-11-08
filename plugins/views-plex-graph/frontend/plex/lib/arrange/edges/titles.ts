@@ -39,7 +39,7 @@ const getSpanLength = (span: Span): number => span.to - span.from
 /**
  * Give every title a place on its line, clear of the boxes and of every title already settled, so a fan of lines out of one node reads as a list.
  * The tightest line goes first: a line barely longer than its words has one place to put them, and a roomy one takes what is left.
- * Where nothing measured the words there is no extent to keep clear of, and every title stays where it was put.
+ * Where nothing measured the words there is no extent to keep clear of, and every title keeps its position.
  */
 export function separateTitles(
   edges: readonly PlacedEdge[],

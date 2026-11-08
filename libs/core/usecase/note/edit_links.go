@@ -51,7 +51,7 @@ func (u EditLinks) WithWriters(writers vaultport.VaultWriters) EditLinks {
 // to the same place with the same role again changes nothing.
 // At least one link is named, so a call stamps an identifier into a note without one.
 // FileStat is what the caller believes is on disk: a changed note is left alone
-// and port.ErrStale comes back. The empty file stat skips that check.
+// and port.ErrStale is returned. The empty file stat skips that check.
 func (u EditLinks) Add(
 	ctx context.Context, v domain.Vault, from string, stat domain.FileStat,
 	add domain.Link, more ...domain.Link,
@@ -103,7 +103,7 @@ func (u EditLinks) Update(
 // write. An empty address takes the entry out.
 // Its role, label and reason are kept, and every other entry of the block is
 // written back byte for byte. FileStat, when given, is what the caller believes
-// is on disk; a changed note is left alone and port.ErrStale comes back.
+// is on disk; a changed note is left alone and port.ErrStale is returned.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from string, p LinkPoint,
 ) (domain.FileStat, error) {

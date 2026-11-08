@@ -70,7 +70,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	}
 }
 
-// The window under a button is the day the card comes back on. The scheduler works out an
+// The window under a button is the day the card is due again. The scheduler works out an
 // interval and the preset chooses a day inside the tolerance around it, in one function that the
 // button goes through too, so a preset evening its load names the day it moved the card to.
 func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {

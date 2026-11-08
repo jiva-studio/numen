@@ -15,7 +15,7 @@ type CardID struct {
 
 // Whole is a deck's body with every card made whole: a card carrying no card id is given one,
 // and a heading out of step with the card's first field is written again from the field. Every
-// other byte is left as it arrived, and the card ids given come back beside it. A card whose
+// other byte is left as it arrived, and the card ids given are returned with it. A card whose
 // card model is not in cardModels, or declares no field, or writes no heading for its first
 // field keeps its heading, but is still given a card id. The body has normalized line endings.
 func Whole(

@@ -367,7 +367,7 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 
 // Point puts the deck at path on a preset, by writing the entry of its `links:` block that
 // carries `type: preset`. An empty preset takes that entry out, and the deck is scheduled by the
-// defaults. A deck changed since stat was read is left alone and port.ErrStale comes back. A
+// defaults. A deck changed since stat was read is left alone and port.ErrStale is returned. A
 // landed write answers with the new file stat; an index that could not be updated is
 // note.ErrIndexOutdated beside it.
 func (u Presets) Point(
@@ -410,7 +410,7 @@ func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset st
 // Save writes the settings into the preset at path.
 // Each key the application owns is replaced on its own; every other key, its order, its
 // formatting and the body are left as they arrived. A note changed since stat was read is left
-// alone and port.ErrStale comes back. A landed write answers with the new file stat; an index
+// alone and port.ErrStale is returned. A landed write answers with the new file stat; an index
 // that could not be updated is note.ErrIndexOutdated beside it.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,

@@ -51,7 +51,7 @@ export interface SelectionTarget {
 /**
  * What a press on a row makes the selection.
  * Reaching takes the rows from the anchor to this one and keeps the anchor; joining toggles the row and moves the anchor to it.
- * The rows come back in drawn order, and a row that is not drawn is in none of them.
+ * The rows are returned in drawn order, and a row that is not drawn is in none of them.
  */
 export function resolveSelection(
   visibleRows: readonly ShownRow[],
