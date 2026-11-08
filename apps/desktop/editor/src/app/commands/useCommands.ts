@@ -15,6 +15,7 @@ import {
   ANSWER_WORDS,
   type Command,
   type CommandDeps,
+  type CommandInvocation,
   type CommandTarget,
   type ResultChoice,
   type SearchMenuDeps,
@@ -127,11 +128,11 @@ export function createPaletteItems(
     ],
     pluginHost,
     getTarget: options.getTarget,
-    runApp: async (id, target, argument) => {
-      await runInvocation(createInvocation(id, target, argument), getCommandDeps(), ANSWER_WORDS)
-    },
+    runApp: (id, target, argument) =>
+      runInvocationToEnd(createInvocation(id, target, argument), getCommandDeps()),
     runPlugin: async (id, target, argument) => {
-      await pluginHost?.executeCommand(id, await getCommandNote(target), { argument })
+      const note = await getCommandNote(target)
+      await pluginHost?.executeCommand(id, note, { argument, isAwaited: true })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)
@@ -140,8 +141,97 @@ export function createPaletteItems(
   })
 }
 
+/**
+ * Runs the invocation and settles when it has run. An error the run would write is not written: the
+ * run rejects with it, and the caller that awaits the run shows it.
+ */
+async function runInvocationToEnd(invocation: CommandInvocation, deps: CommandDeps): Promise<void> {
+  const errors: string[] = []
+  const writeMessage: MessageWriter = (text, severity) => {
+    if (severity === 'error') errors.push(text)
+    else deps.writeMessage(text, severity)
+  }
+  await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
+  if (errors[0] !== undefined) throw new Error(errors[0])
+}
+
+/** What the runs of the window go through: the palettes, the plugin host and the deps of a command. */
+interface CommandRunnerParts {
+  readonly commands: ReturnType<typeof useCommandPalette>
+  readonly palette: { setOpen(isOpen: boolean): void }
+  readonly pluginHost: CommandsDepsOptions['pluginHost']
+  readonly getCommandNote: ReturnType<typeof createCommandNoteReader>
+  readonly getCommandDeps: () => CommandDeps
+  readonly writeMessage: MessageWriter
+}
+
+/** How a command is run: with the text typed for it, and whether its caller awaits it. */
+interface RunWay {
+  readonly input?: string | undefined
+  readonly isAwaited: boolean
+}
+
+/**
+ * The two runs of a command of the window. The run of the palette and the shortcuts writes its
+ * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
+ * writes nothing: it settles when the run ends and rejects with its error.
+ */
+export function createCommandRunner(parts: CommandRunnerParts) {
+  const { commands, palette, pluginHost, getCommandNote } = parts
+
+  /** The run of the command over the target, or the objection to it where it cannot start. */
+  const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
+    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
+      commands.setOpen(false)
+      return getCommandNote(target).then((note) =>
+        way.isAwaited
+          ? pluginHost.executeCommand(id, note, { isAwaited: true })
+          : pluginHost.executeCommand(id, note),
+      )
+    }
+    const invocation =
+      way.input === undefined
+        ? commands.startCommand(id, target)
+        : commands.startCommand(id, target, way.input)
+    if (invocation) {
+      const deps = parts.getCommandDeps()
+      return way.isAwaited
+        ? runInvocationToEnd(invocation, deps)
+        : runInvocation(invocation, deps, ANSWER_WORDS)
+    }
+    if (commands.open.value) {
+      palette.setOpen(false)
+      return Promise.resolve()
+    }
+    return commands.getObjection(id, target)
+  }
+
+  return {
+    runCommand: (id: string, target: CommandTarget, input?: string): void => {
+      const run = startRun(id, target, { input, isAwaited: false })
+      if (typeof run === 'string') parts.writeMessage(run, 'error')
+      else runInBackground(run, (error) => parts.writeMessage(formatErrorMessage(error), 'error'))
+    },
+    runCommandToEnd: async (id: string, target: CommandTarget): Promise<void> => {
+      const run = startRun(id, target, { isAwaited: true })
+      if (typeof run === 'string') throw new Error(run)
+      await run
+    },
+  }
+}
+
+/** The palette of the commands, which lists the extra commands beside its own table. */
+function useWindowCommandPalette(
+  options: CommandsDepsOptions,
+  lists: PaletteLists,
+  listExtras: () => readonly Command[],
+) {
+  const { core, words, getTarget, knows, runs } = options
+  return useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, listExtras)
+}
+
 export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
+  const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
     core,
@@ -158,8 +248,8 @@ export function useCommands(options: CommandsDepsOptions) {
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
-  const extra = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
+  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
+  const commands = useWindowCommandPalette(options, lists, listExtras)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)
@@ -172,31 +262,14 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
-  const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
-
-  const runCommand = (id: string, target: CommandTarget, input?: string) => {
-    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
-      commands.setOpen(false)
-      runInBackground(
-        getCommandNote(target).then((note) => pluginHost.executeCommand(id, note)),
-        reportError,
-      )
-      return
-    }
-    const invocation =
-      input === undefined
-        ? commands.startCommand(id, target)
-        : commands.startCommand(id, target, input)
-    if (invocation) {
-      runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), reportError)
-      return
-    }
-    if (commands.open.value) {
-      palette.setOpen(false)
-      return
-    }
-    writeMessage(commands.getObjection(id, target), 'error')
-  }
+  const { runCommand } = createCommandRunner({
+    commands,
+    palette,
+    pluginHost,
+    getCommandNote,
+    getCommandDeps: () => commandDeps,
+    writeMessage,
+  })
 
   /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
   const runChoice = (choice: ResultChoice): void =>

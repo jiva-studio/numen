@@ -11,7 +11,7 @@ import {
   type SlotItem,
   type CommandTarget as RunTarget,
 } from '@numen/plugin-host'
-import { getTabFileTarget, useTabMenu, type NoteKind } from './useTabMenu'
+import { getTabFileTarget, useTabMenu, useWindowTabMenu, type NoteKind } from './useTabMenu'
 
 const ATLAS = 'org.example.atlas'
 const Pin = defineComponent({ name: 'PinIcon', setup: () => () => h('svg') })
@@ -343,5 +343,31 @@ describe('an entry of the menu of a tab that offers items', () => {
       ['window-a', true],
       ['window-a', false],
     ])
+  })
+})
+
+describe('a command of the menu of a tab of the window that fails', () => {
+  it('is reported once, with the error of its run', async () => {
+    const reportError = vi.fn()
+    const failure = new Error('the window is gone')
+    const menu = useWindowTabMenu({
+      windowTabs: { tabs: { value: [] }, getTab: () => undefined } as never,
+      slots: createSlots(ENTRIES),
+      commands: {
+        getIds: () => [],
+        watch: () => ({ dispose: () => undefined }),
+        listItems: async () => [],
+        run: async () => {
+          throw failure
+        },
+      },
+      reportError,
+    })
+    menu.open('reef', { x: 4, y: 8 })
+
+    menu.choose('reef', DETACH.key)
+    await settle()
+
+    expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
   })
 })

@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick, type Component } from 'vue'
-import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
+import {
+  createMockNoticeHost,
+  createMockPluginContext,
+  type MockPluginContext,
+} from '@numen/plugin-sdk/testing'
 import {
   SLOT,
   TITLE_BAR_SLOT,
@@ -155,6 +159,24 @@ describe('the commands of the slots', () => {
     expect(context.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:chart.open', target: undefined, argument: undefined },
     ])
+  })
+
+  it('shows the error of a run that fails as one notice', async () => {
+    const notices = createMockNoticeHost()
+    const context = createMockPluginContext({ pluginId: manifest.id, notices })
+    activate(context)
+    const bar = mount(context.getRegisteredSlotViews()[0]!.component as Component, {
+      attachTo: document.body,
+    })
+    mounted.push(bar)
+    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    await nextTick()
+    vi.spyOn(context.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
+
+    await getButton(bar, 'org.example.tide:chart.open').trigger('click')
+    await flushPromises()
+
+    expect(notices.getShown()).toStrictEqual([{ text: 'the chart is gone', severity: 'error' }])
   })
 
   it('follows a change of the entries of the slot', async () => {

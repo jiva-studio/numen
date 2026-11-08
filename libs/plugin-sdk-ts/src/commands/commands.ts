@@ -5,7 +5,8 @@
 import type { Disposable } from '../types'
 
 // CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
-// on, the file of a tab, the note of a search result or the note a plugin names. A bar has none.
+// on, the file of a tab, the note of a search result or the note a plugin names. A run without
+// one, as from a bar, is over the file of the tab in front.
 export interface CommandTarget {
   // The path of the file or folder; empty where there is none.
   readonly path: string

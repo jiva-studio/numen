@@ -3,6 +3,7 @@
  */
 import { startInterfacePlugins } from './interfaceStart'
 import { INTERFACE_WAIT_MS } from './limits'
+import { createStartLimit, type StartLimit } from './startLimit'
 
 export interface StartLoaderDeps {
   readonly pluginIds: readonly string[]
@@ -16,15 +17,23 @@ export interface StartLoaderDeps {
   readonly onInterfaceStarted: () => void
 }
 
-/** What reading a plugin gave: its module, or the failure, which the activation reads again and reports. */
-type Loaded = { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
+/**
+ * What reading a plugin gave: its module, or the failure, which the activation reads again and
+ * reports. `limit` is the start limit of the plugin, which runs from the moment the read began.
+ */
+type Loaded = { readonly limit: StartLimit } & (
+  { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
+)
 
-type Activate = (id: string, module?: unknown) => Promise<boolean>
+type Activate = (id: string, module?: unknown, limit?: StartLimit) => Promise<boolean>
 
 /** A plugin that has no frontend has no module, and nothing to activate. */
 const startPlugin = async (activate: Activate, id: string, one: Loaded): Promise<void> => {
-  if (one.isRead && one.module === undefined) return
-  await activate(id, one.isRead ? one.module : undefined)
+  if (one.isRead && one.module === undefined) {
+    one.limit.stop()
+    return
+  }
+  await activate(id, one.isRead ? one.module : undefined, one.limit)
 }
 
 /** What the read of a plugin gave within INTERFACE_WAIT_MS, or 'late' where it gave nothing yet. */
@@ -43,12 +52,14 @@ async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
 }
 
 /** The read of a plugin, which settles with what it gave and never rejects. */
-const readPlugin = (deps: StartLoaderDeps, id: string): Promise<Loaded> =>
-  deps.load(id).then(
-    (module): Loaded => ({ isRead: true, module }),
+const readPlugin = (deps: StartLoaderDeps, id: string): Promise<Loaded> => {
+  const limit = createStartLimit()
+  return deps.load(id).then(
+    (module): Loaded => ({ isRead: true, module, limit }),
     // Stryker disable next-line ObjectLiteral: falsy isRead property is equivalent to isRead: false
-    (): Loaded => ({ isRead: false }),
+    (): Loaded => ({ isRead: false, limit }),
   )
+}
 
 /**
  * Reads the plugins of the list at once and activates them in its order, so each plugin registers

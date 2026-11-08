@@ -7,16 +7,14 @@ import type { Disposable } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
-  getLifecycleHooks,
   removePluginStyles,
   isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
-  type ResolveModuleContext,
 } from './module'
-import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { startLoader } from './loading/startLoader'
-import { createStartContext } from './loading/startContext'
+import { activateEntry, type ActivateContext, type ActivePluginEntry } from './loading/activation'
+import type { StartLimit } from './loading/startLimit'
 import { createPluginStarts } from './loading/pluginStarts'
 import { createSignal } from './loading/signal'
 
@@ -33,119 +31,6 @@ export const DEFAULT_PLUGIN_ENABLED = true
 /** A plugin is enabled unless its setting is false. */
 export function isPluginEnabledValue(value: unknown): boolean {
   return typeof value === 'boolean' ? value : DEFAULT_PLUGIN_ENABLED
-}
-
-interface ActivePluginEntry {
-  readonly pluginId: string
-  readonly deactivate?: (() => Promise<void> | void) | undefined
-}
-
-interface ActivateContext extends ResolveModuleContext {
-  readonly host: LoaderHost
-  readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
-  readonly failures: { value: ReadonlyMap<string, string> }
-  readonly reportError: (pluginId: string, error: unknown) => void
-  /** The number of the latest start of each plugin, so a start cancelled at the limit takes back only its own. */
-  readonly starts: Map<string, number>
-}
-
-function getFailureMessage(error: unknown): string {
-  return error instanceof Error ? error.message : `the plugin threw a ${typeof error}, not an Error`
-}
-
-function setFailure(ctx: ActivateContext, pluginId: string, error: string | undefined): void {
-  const next = new Map(ctx.failures.value)
-  if (error === undefined) next.delete(pluginId)
-  else next.set(pluginId, error)
-  ctx.failures.value = next
-}
-
-/** Takes back what a plugin registered, for a start that failed. */
-function discardEntry(ctx: ActivateContext, pluginId: string): void {
-  removePluginStyles(pluginId)
-  ctx.host.disposePlugin(pluginId)
-}
-
-/**
- * Reads and activates the plugin with a context of its own. Once the start is cancelled the context
- * registers nothing, and a start that ends after the limit has passed takes back what it registered and
- * marks nothing, unless the plugin has been started again since.
- */
-async function startEntry(
-  ctx: ActivateContext,
-  pluginId: string,
-  start: { readonly module: unknown; readonly isExpired: () => boolean; readonly number: number },
-): Promise<boolean> {
-  const { module: pluginModule, isExpired } = start
-  const isLatest = (): boolean => ctx.starts.get(pluginId) === start.number
-  const discardExpired = (): void => {
-    if (isLatest()) discardEntry(ctx, pluginId)
-  }
-  const { host, activePlugins } = ctx
-  try {
-    const resolved = await resolveModule(pluginId, pluginModule, ctx)
-    if (!resolved) return false
-
-    const manifest = ctx.manifests.get(pluginId)
-    const { activate, deactivate } = getLifecycleHooks(resolved)
-    if (activate) {
-      if (isLatest()) host.markPluginStarting?.(pluginId)
-      await activate(createStartContext(host.createContext(pluginId, manifest), isExpired))
-      if (isLatest()) host.markPluginStarted?.(pluginId)
-    }
-    if (isExpired()) {
-      discardExpired()
-      return false
-    }
-
-    const next = new Map(activePlugins.value)
-    next.set(pluginId, { pluginId, deactivate })
-    activePlugins.value = next
-    setFailure(ctx, pluginId, undefined)
-    return true
-  } catch (error) {
-    if (isExpired()) {
-      discardExpired()
-      return false
-    }
-    discardEntry(ctx, pluginId)
-    setFailure(ctx, pluginId, getFailureMessage(error))
-    ctx.reportError(pluginId, error)
-    return false
-  }
-}
-
-/**
- * Starts the plugin within PLUGIN_START_LIMIT_MS. A plugin that has not started by then counts as
- * failed: what it has registered is taken back at once, what its start registers afterwards is taken
- * back too, and it never becomes active. Its backend is left running.
- */
-async function activateEntry(
-  ctx: ActivateContext,
-  pluginId: string,
-  pluginModule?: unknown,
-): Promise<boolean> {
-  if (ctx.activePlugins.value.has(pluginId)) return true
-  let isExpired = false
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const limit = new Promise<'expired'>((resolve) => {
-    timer = setTimeout(() => resolve('expired'), PLUGIN_START_LIMIT_MS)
-  })
-  const number = (ctx.starts.get(pluginId) ?? 0) + 1
-  ctx.starts.set(pluginId, number)
-  const starting = startEntry(ctx, pluginId, {
-    module: pluginModule,
-    isExpired: () => isExpired,
-    number,
-  })
-  const outcome = await Promise.race([starting, limit]).finally(() => clearTimeout(timer))
-  if (outcome !== 'expired') return outcome
-  isExpired = true
-  discardEntry(ctx, pluginId)
-  const error = new Error(`the plugin did not start within ${PLUGIN_START_LIMIT_MS / 1000} s`)
-  setFailure(ctx, pluginId, error.message)
-  ctx.reportError(pluginId, error)
-  return false
 }
 
 interface DeactivateDeps {
@@ -265,8 +150,8 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
       !moduleLoaders.has(id) &&
       ((await readPluginManifest(id, activateContext).catch(() => undefined))?.contributes?.tabKinds
         .length ?? 0) > 0,
-    activatePlugin: (id: string, module?: unknown) =>
-      enqueue(id, () => activateEntry(activateContext, id, module)),
+    activatePlugin: (id: string, module?: unknown, limit?: StartLimit) =>
+      enqueue(id, () => activateEntry(activateContext, id, { module, limit })),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
   }
 }
@@ -280,7 +165,7 @@ interface LoaderState {
 
 interface Activation {
   readonly loadModule: (id: string) => Promise<unknown>
-  readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
+  readonly activatePlugin: (id: string, module?: unknown, limit?: StartLimit) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
   readonly hasTabKinds: (id: string) => Promise<boolean>

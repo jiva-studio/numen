@@ -41,11 +41,11 @@ export function createWhenAvailability(context: WindowWhenContext) {
 }
 
 /** Whether the condition reads whether the target is a note: its command is over the note in front. */
-export const namesNote = (when: string | undefined): boolean =>
+export const hasNoteVariable = (when: string | undefined): boolean =>
   getCondition(when)?.names.includes('target.isNote') ?? false
 
 /** The palette group of a command by its condition: over the note, over a file, or over the window. */
 export function getWhenGroup(when: string | undefined): 'note' | 'file' | 'window' {
-  if (namesNote(when)) return 'note'
+  if (hasNoteVariable(when)) return 'note'
   return getCondition(when)?.names.some((name) => name.startsWith('target.')) ? 'file' : 'window'
 }

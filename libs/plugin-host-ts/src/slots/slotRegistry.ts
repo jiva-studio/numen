@@ -96,14 +96,32 @@ const compareGroups = (a: string, b: string): number => {
   return compareText(a, b)
 }
 
+/** Orders two entries of one slot: by group, then within the group. */
+const compareInSlot = (a: Placed, b: Placed): number =>
+  compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
+
+/**
+ * The placed entries with one row per command: a command that several plugins place in the slot, as
+ * a shared command its handlers place, keeps the entry that comes first in the slot.
+ */
+function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
+  const first = new Map<string, Placed>()
+  for (const one of placed) {
+    if (one.item.kind !== 'command') continue
+    const held = first.get(one.item.command)
+    if (held === undefined || compareInSlot(one, held) < 0) first.set(one.item.command, one)
+  }
+  return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
+}
+
 /** The full id of the command of an entry. */
 const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
   command.includes(':') ? command : formatCommandId(entry.pluginId, command)
 
-/** Lays out the placed entries: groups in order, a separator between two of them. */
+/** Lays out the placed entries: one row per command, groups in order, a separator between two of them. */
 function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   const groups = new Map<string, Placed[]>()
-  for (const one of placed) {
+  for (const one of keepFirstOfEachCommand(placed)) {
     const name = one.entry.group ?? ''
     groups.set(name, [...(groups.get(name) ?? []), one])
   }

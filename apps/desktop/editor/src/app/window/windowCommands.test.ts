@@ -19,7 +19,7 @@ const FRONT = {
 
 function setup() {
   const pluginIds = shallowRef<readonly string[]>(['org.example.tide:chart.open'])
-  const runCommand = vi.fn<(id: string, target: CommandTarget) => void>()
+  const runCommandToEnd = vi.fn(async (_id: string, _target: CommandTarget) => undefined)
   const runWithArgument = vi.fn(
     async (_id: string, _target: RunTarget, _argument: string) => undefined,
   )
@@ -29,12 +29,12 @@ function setup() {
   const commands = createWindowCommands({
     getAppIds: () => ['app:vault.create', 'app:settings.open'],
     getPluginIds: () => pluginIds.value,
-    runCommand,
+    runCommandToEnd,
     listItems,
     runWithArgument,
     getTarget: () => FRONT,
   })
-  return { commands, pluginIds, runCommand, runWithArgument, listItems }
+  return { commands, pluginIds, runCommandToEnd, runWithArgument, listItems }
 }
 
 describe('the commands of the window', () => {
@@ -60,16 +60,19 @@ describe('the commands of the window', () => {
     expect(calls.map((ids) => ids.length)).toStrictEqual([3, 2])
   })
 
-  it('run a command with no target over the target of the tab in front', async () => {
-    const { commands, runCommand } = setup()
+  it('run a command with no target, as a bar does, over the file of the tab in front, named as a menu names its target', async () => {
+    const { commands, runCommandToEnd } = setup()
 
-    await commands.run('app:vault.create')
+    await commands.run('org.example.tide:chart.open')
 
-    expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:vault.create', FRONT)
+    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('org.example.tide:chart.open', {
+      ...FRONT,
+      isTargetNamed: true,
+    })
   })
 
   it('run a command over the target given, its file and the others selected with it included, and mark the target named', async () => {
-    const { commands, runCommand } = setup()
+    const { commands, runCommandToEnd } = setup()
     const target: RunTarget = {
       path: 'reef/Coral.md',
       title: 'Coral',
@@ -80,7 +83,7 @@ describe('the commands of the window', () => {
 
     await commands.run('app:note.trash', target)
 
-    expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:note.trash', {
+    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('app:note.trash', {
       ...FRONT,
       path: 'reef/Coral.md',
       file: 'reef/Coral.md',
@@ -92,7 +95,7 @@ describe('the commands of the window', () => {
   })
 
   it('run a command over the tab a tab menu names, in place of the tab in front', async () => {
-    const { commands, runCommand } = setup()
+    const { commands, runCommandToEnd } = setup()
     const target: RunTarget = {
       path: 'reef/Coral.md',
       title: 'Coral',
@@ -103,7 +106,7 @@ describe('the commands of the window', () => {
 
     await commands.run('app:tab.close', target)
 
-    expect(runCommand.mock.calls[0]?.[1].tab).toBe('note:7')
+    expect(runCommandToEnd.mock.calls[0]?.[1].tab).toBe('note:7')
   })
 
   it('give the items a command offers over the target, over the tab in front where none is named', async () => {
@@ -119,12 +122,25 @@ describe('the commands of the window', () => {
   })
 
   it('run a command with the item picked as its argument', async () => {
-    const { commands, runCommand, runWithArgument } = setup()
+    const { commands, runCommandToEnd, runWithArgument } = setup()
 
     await commands.run('org.example.tide:chart.move', undefined, 'w2')
 
-    expect(runCommand).not.toHaveBeenCalled()
+    expect(runCommandToEnd).not.toHaveBeenCalled()
     expect(runWithArgument.mock.calls[0]?.[0]).toBe('org.example.tide:chart.move')
     expect(runWithArgument.mock.calls[0]?.[2]).toBe('w2')
+  })
+
+  it('run a command to its end, and reject with the error of the run', async () => {
+    const { commands, runCommandToEnd } = setup()
+    let isEnded = false
+    runCommandToEnd.mockImplementationOnce(async () => {
+      await Promise.resolve()
+      isEnded = true
+      throw new Error('the disk is full')
+    })
+
+    await expect(commands.run('org.example.tide:chart.open')).rejects.toThrow('the disk is full')
+    expect(isEnded).toBe(true)
   })
 })

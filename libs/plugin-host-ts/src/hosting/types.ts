@@ -94,6 +94,12 @@ export interface BackendHandlerRun {
 export interface CommandRun {
   readonly argument?: string | undefined
   readonly values?: Readonly<Record<string, string>> | undefined
+  /**
+   * Whether the caller awaits the run and shows its failure, as `context.commands.run` does: the run
+   * rejects with its error and the host reports nothing. A run from the palette or a shortcut is
+   * reported by the host.
+   */
+  readonly isAwaited?: boolean | undefined
 }
 
 export interface PluginPaletteCommand {
