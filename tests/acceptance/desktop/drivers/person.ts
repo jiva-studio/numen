@@ -18,8 +18,18 @@ import {
 } from '../../../e2e/desktop/tests/support/vault.js'
 
 const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
-const CHANGED_ON_DISK = 'Saving paused: the file changed on disk.'
-const REMOVED_FROM_VAULT = 'the note was removed from the vault'
+/** The warnings the note gives, by the name a scenario uses. */
+const WARNINGS: Record<string, string> = {
+  change: 'Saving paused: the file changed on disk.',
+  removal: 'the note was removed from the vault',
+}
+
+/** The ways out of a warning, by the name a scenario uses. */
+const BANNER_CHOICES: Record<string, string> = {
+  'keep my text': 'Keep my version',
+  'use the file text': 'Use disk version',
+  'save the note again': 'Recreate it',
+}
 
 /** The note the scenario works with. */
 interface Subject {
@@ -44,6 +54,25 @@ export class Person {
   private getSubject(): Subject {
     if (!this.subject) throw new Error('the scenario has no open note')
     return this.subject
+  }
+
+  async expectHas(subject: string, text: string): Promise<void> {
+    if (subject === 'file') await waitForSavedBody(this.page.request, this.getSubject().path, text)
+    else await expect(this.getSubject().text).toContainText(text)
+  }
+
+  async expectLacks(subject: string, text: string): Promise<void> {
+    if (subject === 'file') {
+      expect((await readNote(this.page.request, this.getSubject().path)).body).not.toContain(text)
+    } else {
+      await expect(this.getSubject().text).not.toContainText(text)
+    }
+  }
+
+  async expectWarning(kind: string): Promise<void> {
+    const message = WARNINGS[kind]
+    if (!message) throw new Error(`no warning "${kind}"`)
+    await expect(this.getBanner()).toContainText(message)
   }
 
   private getBanner(): Locator {
@@ -99,16 +128,10 @@ export class Person {
     await destroyNote(this.page.request, this.getSubject().path)
   }
 
-  async keepOwnVersion(): Promise<void> {
-    await this.getBanner().getByRole('button', { name: 'Keep my version' }).click()
-  }
-
-  async takeDiskVersion(): Promise<void> {
-    await this.getBanner().getByRole('button', { name: 'Use disk version' }).click()
-  }
-
-  async recreateNote(): Promise<void> {
-    await this.getBanner().getByRole('button', { name: 'Recreate it' }).click()
+  async choose(option: string): Promise<void> {
+    const name = BANNER_CHOICES[option]
+    if (!name) throw new Error(`no choice "${option}"`)
+    await this.getBanner().getByRole('button', { name }).click()
   }
 
   async leaveVault(): Promise<void> {
@@ -124,27 +147,4 @@ export class Person {
 
   // Outcomes
 
-  async expectNoteHas(text: string): Promise<void> {
-    await expect(this.getSubject().text).toContainText(text)
-  }
-
-  async expectNoteLacks(text: string): Promise<void> {
-    await expect(this.getSubject().text).not.toContainText(text)
-  }
-
-  async expectConflictReported(): Promise<void> {
-    await expect(this.getBanner()).toContainText(CHANGED_ON_DISK)
-  }
-
-  async expectRemovalReported(): Promise<void> {
-    await expect(this.getBanner()).toContainText(REMOVED_FROM_VAULT)
-  }
-
-  async expectFileHas(text: string): Promise<void> {
-    await waitForSavedBody(this.page.request, this.getSubject().path, text)
-  }
-
-  async expectFileLacks(text: string): Promise<void> {
-    expect((await readNote(this.page.request, this.getSubject().path)).body).not.toContain(text)
-  }
 }

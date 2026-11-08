@@ -30,9 +30,13 @@ This rule defines the format of the acceptance scenarios in `features/`. The sce
 ## 4. Language and data
 
 - Plain English at level A1 to A2: short common words, present tense, no idioms, no figurative speech. The same word for the same thing in every feature (note, file, warns, keeps, takes).
-- A step is a short sentence of at most 8 words outside the quoted values. The step checker fails on a longer step.
+- A step is a short sentence of at most 8 words outside the quoted values. Two steps that do the same thing are one step: the step checker fails on a longer step and on two definitions with the same body.
 - The data is neutral and short, like the data of a real use: a note "Shopping list", the texts "milk", "bread", "eggs". No stories, no invented places, characters or scenery (no lock gates, harbours or dawns), and no sentences that read as prose.
 - A scenario title names the rule in a few plain words. No adverbs of time or manner ("at once", "quickly", "silently") unless the rule is that timing.
+
+### Steps are functions
+
+A step is a function with parameters: the sentence is its name, the quoted values and the one word it takes are its arguments. Before a new sentence, look for the step that already does it (`npm run acceptance:steps` in `tests/acceptance/desktop`) and pass it a different value. A choice among several outcomes is one step with the choice as its argument (`the person chooses "keep my text"`, `the note warns about "removal"`), not one sentence for each outcome. One step serves Given, When and Then when it is the same action. Do not rephrase a step to fit one scenario.
 
 ## 5. Example
 

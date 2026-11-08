@@ -8,50 +8,26 @@ Given('the person writes {string}', async ({ person }, text: string) => {
   await person.writeWithoutSaving(text)
 })
 
-Given('another program writes {string} in the note', async ({ person }, text: string) => {
+Given('another program writes {string} in the file', async ({ person }, text: string) => {
   await person.changeNoteOnDisk(text)
 })
 
-Given('another program removes the note', async ({ person }) => {
+Given('another program removes the file', async ({ person }) => {
   await person.removeNoteFromDisk()
 })
 
-When('the person keeps their text', async ({ person }) => {
-  await person.keepOwnVersion()
+When('the person chooses {string}', async ({ person }, option: string) => {
+  await person.choose(option)
 })
 
-When('the person takes the text from the file', async ({ person }) => {
-  await person.takeDiskVersion()
+Then('the {word} has {string}', async ({ person }, subject: string, text: string) => {
+  await person.expectHas(subject, text)
 })
 
-When('the person saves the note again', async ({ person }) => {
-  await person.recreateNote()
+Then('the {word} does not have {string}', async ({ person }, subject: string, text: string) => {
+  await person.expectLacks(subject, text)
 })
 
-Then('the note has {string}', async ({ person }, text: string) => {
-  await person.expectNoteHas(text)
-})
-
-Then('the note does not have {string}', async ({ person }, text: string) => {
-  await person.expectNoteLacks(text)
-})
-
-Then('the note keeps {string}', async ({ person }, text: string) => {
-  await person.expectNoteHas(text)
-})
-
-Then('the note warns that the file changed', async ({ person }) => {
-  await person.expectConflictReported()
-})
-
-Then('the note warns that the file is gone', async ({ person }) => {
-  await person.expectRemovalReported()
-})
-
-Then('the file has {string}', async ({ person }, text: string) => {
-  await person.expectFileHas(text)
-})
-
-Then('the file does not have {string}', async ({ person }, text: string) => {
-  await person.expectFileLacks(text)
+Then('the note warns about {string}', async ({ person }, kind: string) => {
+  await person.expectWarning(kind)
 })

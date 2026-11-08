@@ -55,6 +55,17 @@ const features = walk(featuresDir, '.feature').map((file) => {
   return { file, name: doc.feature?.name ?? '', scenarios, background }
 })
 
+/** The body of the step starting at `start`, with its parameter names replaced by their position. */
+const getBody = (source, start) => {
+  const open = source.indexOf('=> {', start)
+  const close = source.indexOf('\n})', open)
+  if (open < 0 || close < 0) return ''
+  const names = [...source.slice(start, open).matchAll(/,\s*(\w+)\s*:/g)].map((hit) => hit[1])
+  return names
+    .reduce((body, name, index) => body.replace(new RegExp(`\\b${name}\\b`, 'g'), `ARG${index}`), source.slice(open + 5, close))
+    .trim()
+}
+
 // The definitions: Given/When/Then('pattern', ...) in steps.
 const registry = new ParameterTypeRegistry()
 const definitions = walk(stepsDir, '.ts').flatMap((file) => {
@@ -63,7 +74,8 @@ const definitions = walk(stepsDir, '.ts').flatMap((file) => {
     const keyword = hit[1]
     const pattern = hit[3]
     const line = source.slice(0, hit.index).split('\n').length
-    return { file, line, keyword, pattern, expression: new CucumberExpression(pattern, registry), uses: [] }
+    const body = getBody(source, hit.index)
+    return { file, line, keyword, pattern, body, expression: new CucumberExpression(pattern, registry), uses: [] }
   })
 })
 
@@ -97,6 +109,18 @@ for (const feature of features) {
 for (const definition of definitions) {
   if (definition.uses.length === 0) {
     report('unused', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' is used by no scenario`)
+  }
+}
+
+// Two definitions with the same body say one thing under two names.
+const bodies = new Map()
+for (const definition of definitions) {
+  if (definition.body === '') continue
+  const first = bodies.get(definition.body)
+  if (first) {
+    report('same-body', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' does what '${first.pattern}' does; keep one step`)
+  } else {
+    bodies.set(definition.body, definition)
   }
 }
 

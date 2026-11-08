@@ -4,43 +4,43 @@ Feature: A note that changes on disk
   Background:
     Given the note "Shopping list" is open with "tea"
 
-  Scenario: The note follows a change on disk
-    When another program writes "milk" in the note
+  Scenario: The note follows a change in the file
+    When another program writes "milk" in the file
     Then the note has "milk"
 
   Scenario: Unsaved text is kept when the file changes
     Given the person writes "bread"
-    When another program writes "milk" in the note
-    Then the note warns that the file changed
-    And the note keeps "bread"
+    When another program writes "milk" in the file
+    Then the note warns about "change"
+    And the note has "bread"
 
   Scenario: The person keeps their text
     Given the person writes "bread"
-    And another program writes "milk" in the note
-    When the person keeps their text
+    And another program writes "milk" in the file
+    When the person chooses "keep my text"
     Then the file has "bread"
     And the file does not have "milk"
 
   Scenario: The person takes the text from the file
     Given the person writes "bread"
-    And another program writes "milk" in the note
-    When the person takes the text from the file
+    And another program writes "milk" in the file
+    When the person chooses "use the file text"
     Then the note has "milk"
     And the note does not have "bread"
 
   Scenario: The note takes the latest change
     Given the person writes "bread"
-    And another program writes "milk" in the note
-    And another program writes "eggs" in the note
-    When the person takes the text from the file
+    And another program writes "milk" in the file
+    And another program writes "eggs" in the file
+    When the person chooses "use the file text"
     Then the note has "eggs"
 
   Scenario: A removed file keeps the text in the note
-    When another program removes the note
-    Then the note warns that the file is gone
-    And the note keeps "tea"
+    When another program removes the file
+    Then the note warns about "removal"
+    And the note has "tea"
 
   Scenario: The person saves a removed note to its file again
-    Given another program removes the note
-    When the person saves the note again
+    Given another program removes the file
+    When the person chooses "save the note again"
     Then the file has "tea"
