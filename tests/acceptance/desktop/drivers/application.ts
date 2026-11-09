@@ -10,20 +10,16 @@ import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertApplication, assertEntry, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
+import { listVersions } from './text-versions.js'
 
+const COMMAND_PLACEHOLDER = 'Type a command'
+const DELETE_TEXT = 'Delete text'
+const DELETE_TEXT_ID = 'app:version.delete'
+const PROOFREAD_TEXT = 'Proofread text'
+/** The title of the version a file has before any plugin makes text of it. */
+const TEXT_LAYER = 'Text layer'
 /** A plugin may take this long to start before the first command of it answers. */
 const PLUGIN_START_LIMIT_MS = 35_000
-
-interface PluginCommand {
-  pluginId?: string
-  command: string
-}
-
-/** The commands that work on the text of the open file, and the command whose items must list a text first. */
-const TEXT_COMMANDS: Partial<Record<string, PluginCommand>> = {
-  'Delete text': { command: 'app:version.delete' },
-  'Proofread text': { pluginId: 'md.numen.tools.proofreading', command: 'proofreading.create' },
-}
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -51,13 +47,13 @@ export class ApplicationDriver {
     const command = page
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
-    const textCommand = TEXT_COMMANDS[label]
-    if (textCommand) await this.expectOpenTabHasText(textCommand)
+    if (label === DELETE_TEXT) await this.expectOpenTabHasText()
+    if (label === PROOFREAD_TEXT) await this.expectActiveFileHasMadeText()
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)
     await expect(command).toHaveAttribute('data-here', 'true')
-    await page.keyboard.press('Enter')
+    await command.click()
     const crumb = page.locator('[data-palette="crumb"]')
     await expect
       .poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label), {
@@ -77,6 +73,8 @@ export class ApplicationDriver {
       return
     }
     const field = getPaletteInput(page)
+    // The palette that took the command asks for its input once its placeholder is no longer the command prompt.
+    await expect(field).not.toHaveAttribute('placeholder', COMMAND_PLACEHOLDER)
     const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
     if (kind === 'item') {
       await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
@@ -133,14 +131,21 @@ export class ApplicationDriver {
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
   }
 
-  private async expectOpenTabHasText(textCommand: PluginCommand): Promise<void> {
+  private async expectActiveFileHasMadeText(): Promise<void> {
+    const { request } = this.scenario.page
+    await expect
+      .poll(async () => (await listVersions(request, await readActivePath(request))).some((one) => !one.title.startsWith(TEXT_LAYER)))
+      .toBe(true)
+  }
+
+  private async expectOpenTabHasText(): Promise<void> {
     const { page } = this.scenario
     await expect
       .poll(async () => {
         const notePath = await readActivePath(page.request)
         const answer = await callRPC(page.request, 'CommandService/ListCommandItems', {
           path: notePath,
-          commands: [{ ...(textCommand.pluginId ? { pluginId: textCommand.pluginId } : {}), command: textCommand.command }],
+          commands: [{ command: DELETE_TEXT_ID }],
         })
         const lists = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
         return lists.flatMap((one) => one.items ?? []).length

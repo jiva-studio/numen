@@ -1,18 +1,17 @@
 /** What one scenario shares between the levels of the driver: the page, the notes it made, its vault. */
 import type { Page } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
-import { callRPC, destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
+import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { deleteVersion, listVersionIds } from './text-versions.js'
 import { parseReference, pickByTitle } from './rules.js'
-
-const DELETE_TEXT_ID = 'app:version.delete'
 
 export class Scenario {
   private readonly paths = new Map<string, string>()
   private readonly titles = new Set<string>()
-  private readonly files = new Set<string>()
   private hasWorkspace = false
   private filesBefore: readonly string[] = []
+  private readonly versionsBefore = new Map<string, readonly string[]>()
   private vaultName: string | undefined
 
   constructor(readonly page: Page) {}
@@ -35,13 +34,15 @@ export class Scenario {
     return [...nested.flat(), ...entries.map((one) => one.path)]
   }
 
+  /** Notes the text versions a file has when the person opens it, so the scenario can delete the ones it makes. */
+  async watchVersions(filePath: string): Promise<void> {
+    if (this.versionsBefore.has(filePath)) return
+    this.versionsBefore.set(filePath, await listVersionIds(this.page.request, filePath).catch(() => []))
+  }
+
   async claimTitle(title: string): Promise<void> {
     this.titles.add(title)
     await destroyNote(this.page.request, `notes/${title}.md`).catch(() => undefined)
-  }
-
-  rememberFile(filePath: string): void {
-    this.files.add(filePath)
   }
 
   rememberNote(title: string, notePath: string): void {
@@ -62,26 +63,17 @@ export class Scenario {
     }
   }
 
-  /** Deletes the text versions made over the files the scenario opened: a file of the vault outlives the scenario. */
-  async removeTexts(): Promise<void> {
-    for (const filePath of this.files) {
-      const answer: Record<string, unknown> = await callRPC(this.page.request, 'CommandService/ListCommandItems', {
-        path: filePath,
-        commands: [{ command: DELETE_TEXT_ID }],
-      }).catch(() => ({}))
-      const lists = (answer['lists'] as { items?: { id: string }[] }[] | undefined) ?? []
-      for (const item of lists.flatMap((one) => one.items ?? [])) {
-        await callRPC(this.page.request, 'CommandService/RunPluginCommand', {
-          command: DELETE_TEXT_ID,
-          path: filePath,
-          itemId: item.id,
-        })
-      }
+  /** Deletes the text versions the scenario made over the files it opened: a file of the vault outlives the scenario. */
+  async removeVersions(): Promise<void> {
+    const { request } = this.page
+    for (const [filePath, before] of this.versionsBefore) {
+      const now = await listVersionIds(request, filePath).catch(() => [])
+      for (const id of now.filter((one) => !before.includes(one))) await deleteVersion(request, filePath, id).catch(() => undefined)
     }
+    this.versionsBefore.clear()
   }
 
   async removeNotes(): Promise<void> {
-    await this.removeTexts()
     const made = this.hasWorkspace
       ? (await this.listEntries()).filter((one) => !this.filesBefore.includes(one))
       : []
