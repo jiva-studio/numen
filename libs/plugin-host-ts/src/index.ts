@@ -44,7 +44,7 @@ export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
 export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './hosting/host'
-export { createPluginContext } from './hosting/context'
+export { createPluginAgent, createPluginContext } from './hosting/context'
 export { createCustomTabKind } from './hosting/customTabKind'
 export type {
   NoteBuffer,
