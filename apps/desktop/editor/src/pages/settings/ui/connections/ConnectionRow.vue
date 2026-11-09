@@ -149,7 +149,7 @@ function onChoose(id: string): void {
 
 .connection-row__address {
   overflow-wrap: anywhere;
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
 }
 
 .connection-row__state {

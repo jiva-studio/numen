@@ -146,7 +146,7 @@ function onInput(event: Event): void {
 }
 
 .connection-field__input--address {
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
 }
 
 .connection-field__input:focus {

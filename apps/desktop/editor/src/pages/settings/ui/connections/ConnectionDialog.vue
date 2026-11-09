@@ -155,8 +155,8 @@ function onKeepFocus(event: KeyboardEvent): void {
   overflow-y: auto;
   padding: 1rem 1.25rem;
   background: var(--numen-raised);
-  border: var(--numen-stroke) solid var(--numen-field-rule);
-  border-radius: var(--numen-radius-node);
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
