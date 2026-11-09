@@ -22,8 +22,8 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
-import { guardAgent } from './agentGuard'
-import { checkPermission, type PermissionTarget } from './permission'
+import { guardAgent } from './guards/agentGuard'
+import { checkPermission, type PermissionTarget } from './guards/permission'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
