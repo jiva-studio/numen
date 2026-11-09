@@ -198,6 +198,9 @@ function hold(action: string, row: unknown): void {
   --panel-width: 17.5rem;
   --panel-tallest: 15rem;
 
+  /* The panel covers the palette footer, so it is opaque: the footer actions key would show through the tint. */
+  background: var(--numen-raised);
+
   position: absolute;
   inset-block-end: var(--numen-inset);
   inset-inline-end: var(--numen-inset);
