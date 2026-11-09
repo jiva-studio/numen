@@ -26,7 +26,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
       folder: 'talks',
       urls: ['https://www.youtube.com/watch?v=tidalmill01', 'not an address'],
     },
-    response: { paths: ['talks/tidal-mill.md'] },
+    response: { paths: ['talks/tidal-mill.md'], failed: ['https://example.com/broken'] },
   },
 }
 

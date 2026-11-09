@@ -4,5 +4,6 @@ export const WORDS = {
   audio: 'Audio',
   failed: 'Link unreadable',
   notALink: 'This note has no web address',
+  notCreated: 'Could not create a note for:',
   noVault: 'No vault open',
 } as const

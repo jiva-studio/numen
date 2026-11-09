@@ -35,6 +35,7 @@ export interface CreateLinksRequest {
 
 export interface CreateLinksResponse {
   readonly paths: readonly string[]
+  readonly failed: readonly string[]
 }
 
 /** The request and response of each method by name. */
