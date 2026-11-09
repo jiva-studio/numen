@@ -120,8 +120,7 @@ export function createViewRegistry() {
   const mountView = (
     capability: string,
     element: HTMLElement,
-    context: unknown,
-    access?: MountAccess,
+    ...[context, access]: [context: unknown, access?: MountAccess]
   ): MountedView => {
     const declaredView = declared.find((one) => one.registration.capability === capability)
     for (const permission of declaredView?.vaultPermissions ?? []) {
