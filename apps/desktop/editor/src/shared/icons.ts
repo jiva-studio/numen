@@ -12,7 +12,6 @@ import { COMMAND, ROW, SETTING_COMMAND_PREFIX } from './commandIds'
 import {
   AppWindow,
   ArrowRightLeft,
-  Command,
   Copy,
   Download,
   CornerDownRight,
@@ -37,49 +36,48 @@ import {
   SquareX,
   Trash2,
   Type,
-  Waypoints,
   X,
   type LucideIcon,
 } from '@lucide/vue'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
+  // open
   [COMMAND.openFile, FileText],
   [ROW.openDocument, File],
   [ROW.openNoteBeside, FileText],
+  [ROW.goToNote, Navigation],
+  [COMMAND.searchVault, Search],
+  [COMMAND.openSettings, Settings],
+  // create
+  [COMMAND.createNote, FilePlus],
+  [COMMAND.createFolder, FolderPlus],
   [COMMAND.createChildNote, CornerDownRight],
   [COMMAND.createParentNote, CornerLeftUp],
   [COMMAND.createJumpNote, ArrowRightLeft],
+  // file
   [COMMAND.renameNote, Type],
   [COMMAND.copyFilePath, Copy],
   [COMMAND.removeFile, Trash2],
   [ROW.destroyFile, Trash2],
   [COMMAND.deleteText, FileX],
+  // tab
+  [COMMAND.closeTab, SquareX],
   [COMMAND.detachTab, ExternalLink],
   [COMMAND.unlinkTab, Link2Off],
   [COMMAND.linkTab, Link2],
   [COMMAND.moveTabToWindow, AppWindow],
-  ['app:file.createText', FileText],
-  ['app:link.import', Link],
-  ['app:link.downloadMedia', Download],
-  ['app:link.deleteMedia', Trash2],
-  ['new', Plus],
-  ['relation', Waypoints],
-  ['newNote', FilePlus],
-  ['newFolder', FolderPlus],
-  ['rename', PenLine],
-  [COMMAND.createNote, FilePlus],
-  [COMMAND.createFolder, FolderPlus],
-  [COMMAND.searchVault, Search],
-  ['commands', Command],
-  [COMMAND.closeTab, SquareX],
-  [COMMAND.openSettings, Settings],
-  [ROW.goToNote, Navigation],
+  // vault
   [COMMAND.openVault, FolderRoot],
   [COMMAND.createVault, Plus],
   [COMMAND.renameVault, PenLine],
   [COMMAND.removeVault, X],
   [COMMAND.eraseVault, Trash2],
+  // shared commands: their ids are not constants
+  ['app:file.createText', FileText],
+  ['app:link.import', Link],
+  ['app:link.downloadMedia', Download],
+  ['app:link.deleteMedia', Trash2],
 ])
 
 /**
