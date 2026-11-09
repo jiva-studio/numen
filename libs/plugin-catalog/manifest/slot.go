@@ -21,10 +21,13 @@ var (
 	fullCommandIDPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9.]*:[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$`)
 )
 
-// WindowCommandArgument is an argument of a command of the window and the values it allows.
-type WindowCommandArgument struct {
-	Name   string
-	Values []string
+// AppCommandArgument is an argument of an app command; an argument of the type enum lists the values it
+// allows in Options.
+type AppCommandArgument struct {
+	Name    string
+	Title   string
+	Type    string
+	Options []string
 }
 
 // SlotEntry places one thing of the plugin in a slot of a window, or in a submenu a plugin declares.
@@ -151,9 +154,13 @@ func listForeignValueIssues(entry SlotEntry) []error {
 		return nil
 	}
 	allowed := map[string][]string{}
-	if windowArguments, isWindowCommand := GetWindowCommandArguments(entry.Command); isWindowCommand {
-		for _, argument := range windowArguments {
-			allowed[argument.Name] = argument.Values
+	if appArguments, isAppCommand := GetAppCommandArguments(entry.Command); isAppCommand {
+		for _, argument := range appArguments {
+			if argument.Type == SettingTypeEnum {
+				allowed[argument.Name] = argument.Options
+			} else {
+				allowed[argument.Name] = nil
+			}
 		}
 	}
 	for _, argument := range GetSharedCommandArguments(entry.Command) {
@@ -161,12 +168,12 @@ func listForeignValueIssues(entry SlotEntry) []error {
 	}
 	var issues []error
 	for _, name := range slices.Sorted(maps.Keys(entry.Values)) {
-		values, isDeclared := allowed[name]
+		options, isDeclared := allowed[name]
 		switch {
 		case !isDeclared:
 			issues = append(issues, fmt.Errorf("%w: values of command %q name the argument %q, which the command does not take", ErrInvalidSlotEntry, entry.Command, name))
-		case len(values) > 0 && !slices.Contains(values, entry.Values[name]):
-			issues = append(issues, fmt.Errorf("%w: value %q of the argument %q of command %q is not one of %s", ErrInvalidSlotEntry, entry.Values[name], name, entry.Command, strings.Join(values, ", ")))
+		case len(options) > 0 && !slices.Contains(options, entry.Values[name]):
+			issues = append(issues, fmt.Errorf("%w: value %q of the argument %q of command %q is not one of %s", ErrInvalidSlotEntry, entry.Values[name], name, entry.Command, strings.Join(options, ", ")))
 		}
 	}
 	return issues

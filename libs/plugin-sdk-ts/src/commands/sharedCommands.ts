@@ -33,15 +33,21 @@ export const SHARED_COMMANDS: readonly SharedCommand[] = [
   { id: 'app:link.deleteMedia', title: 'Delete media', arguments: [] },
 ]
 
-/** One argument of a command of the window and the values it allows. */
-export interface WindowCommandArgument {
+/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */
+export interface AppCommandArgument {
   readonly name: string
-  readonly values: readonly string[]
+  readonly title: string
+  readonly type: string
+  readonly options: readonly string[]
 }
 
-// WINDOW_COMMANDS are the commands of the window that take arguments. A slot entry passes values only
+// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only
 // for these arguments and these values.
-export const WINDOW_COMMANDS: Readonly<Record<string, readonly WindowCommandArgument[]>> = {
-  'app:file.open': [{ name: 'placement', values: ['current', 'split'] }],
-  'app:file.remove': [{ name: 'removal', values: ['trash', 'permanent'] }],
+export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {
+  'app:file.open': [
+    { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
+  ],
+  'app:file.remove': [
+    { name: 'removal', title: 'Removal', type: 'enum', options: ['trash', 'permanent'] },
+  ],
 }
