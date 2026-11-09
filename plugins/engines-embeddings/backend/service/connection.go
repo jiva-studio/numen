@@ -48,10 +48,10 @@ const profileFetchLimit = time.Minute
 // profileFetch is one read of the profile. It runs on its own, so a caller that stops waiting leaves it
 // running for the next call.
 type profileFetch struct {
-	finished    chan struct{}
-	cancel  context.CancelFunc
-	profile connection.EmbeddingProfile
-	err     error
+	finished chan struct{}
+	cancel   context.CancelFunc
+	profile  connection.EmbeddingProfile
+	err      error
 }
 
 // resetConnectionLocked forgets the profile and ends the read of it, so the next call asks again.
