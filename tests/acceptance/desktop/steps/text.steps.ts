@@ -28,6 +28,10 @@ When('the person downloads the video of the link {string}', async ({ person }, a
   await person.text.downloadVideo(address)
 })
 
+When('the person opens the note of the link {string} in the file tree', async ({ person }, address: string) => {
+  await person.text.openLink(address)
+})
+
 When('the person deletes the text of the link {string}', async ({ person }, address: string) => {
   await person.text.deleteText(address)
 })

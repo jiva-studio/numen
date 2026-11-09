@@ -7,6 +7,7 @@ import {
   assertPosition,
   assertSingleTab,
   getAddressTitle,
+  getLinkNotePath,
   getAncestors,
   getStem,
   getTitlePattern,
@@ -37,6 +38,12 @@ describe('parseReference', () => {
     expect(() => parseReference('named', 'A')).toThrow(
       '"named" does not name a tab or a note: use "at", "titled" or "for the web address"',
     )
+  })
+})
+
+describe('getLinkNotePath', () => {
+  it('names the note file of an address', () => {
+    expect(getLinkNotePath('https://youtu.be/mill01')).toBe('https---youtu.be-mill01.md')
   })
 })
 
@@ -245,7 +252,7 @@ describe('parseTabKind', () => {
 
   it('fails on a word that is not a kind and lists the words', () => {
     expect(() => parseTabKind('chart tab')).toThrow(
-      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Files, Agent, Deck, Card Model, Preset',
+      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Media, Files, Agent, Deck, Card Model, Preset',
     )
   })
 })

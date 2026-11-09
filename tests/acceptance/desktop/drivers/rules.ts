@@ -23,6 +23,8 @@ export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked t
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 
+export const getLinkNotePath = (address: string): string => `${getAddressTitle(address)}.md`
+
 export const parseReference = (reference: string, name: string): Reference => {
   if (reference !== 'at' && reference !== 'titled' && reference !== 'for the web address') {
     throw new Error(`"${reference}" does not name a tab or a note: use "at", "titled" or "for the web address"`)
@@ -211,6 +213,7 @@ export const TAB_KINDS = {
   PDF: { id: 'reader:reader-pdf', title: 'PDF Reader' },
   book: { id: 'reader:reader-epub', title: 'EPUB Reader' },
   recording: { id: 'reader:media-viewer', title: 'Audio Player' },
+  Media: { id: 'media', title: 'Media' },
   Files: { id: 'files', title: 'Files' },
   Agent: { id: 'agent', title: 'Agent' },
   Deck: { id: 'deck', title: 'Deck' },
