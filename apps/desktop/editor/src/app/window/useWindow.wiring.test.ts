@@ -921,6 +921,34 @@ describe('tab links wiring', () => {
     }
   })
 
+  it('restores the saved tabs once the plugins of their kinds started or failed', async () => {
+    try {
+      vi.stubGlobal('location', new URL('http://localhost/'))
+      useWindow()
+      h.f.vaults.activeVault.value = { id: 'vault' }
+      h.core.readOpenTabs.mockResolvedValueOnce({
+        tabs: [{ id: 'chat:a', kind: 'chat', title: 'A', path: '', state: '' }] as never,
+        activeId: 'chat:a',
+      })
+      let settleTabPlugins: () => void = () => undefined
+      const tabPluginsSettled = new Promise<undefined>((resolve) => {
+        settleTabPlugins = () => resolve(undefined)
+      })
+      h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
+      h.f.windowTabs.restoreTabs.mockClear()
+
+      const layout = h.args.bootstrap.startLayout()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(h.f.windowTabs.restoreTabs).not.toHaveBeenCalled()
+      settleTabPlugins()
+      await layout
+
+      expect(h.f.windowTabs.restoreTabs).toHaveBeenCalledOnce()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('opens a detached tab with its id and saved state', async () => {
     try {
       vi.stubGlobal('location', new URL('http://localhost/?window=secondary&id=plex:4f1c'))
