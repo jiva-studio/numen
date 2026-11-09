@@ -450,10 +450,10 @@ describe('createPluginHost', () => {
   })
 })
 
-describe('a note editor view mounted by a plugin', () => {
-  // The view of the notes plugin, reduced: it reads the note of the path it is mounted with
-  // through the notes service of the plugin that registered it, and draws the body.
-  const createHost = () => {
+describe('a view mounted by a plugin', () => {
+  // The note editor view of the notes plugin, reduced: like the real one it reads the note of
+  // context.path unconditionally, through the notes service of the plugin that registered it.
+  const createHost = (registerNow = true) => {
     const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
     const host = createPluginHost({
       registerKind: () => vi.fn(),
@@ -468,28 +468,33 @@ describe('a note editor view mounted by a plugin', () => {
         permissions: ['vault:read', 'vault:write'],
       }),
     )
-    notesPlugin.registerView({
-      capability: NOTE_EDITOR,
-      component: defineComponent({
-        props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
-        setup(props) {
-          const body = ref('')
-          if (props.context.path) {
+    const registerViews = () => {
+      notesPlugin.registerView({
+        capability: NOTE_EDITOR,
+        component: defineComponent({
+          props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
+          setup(props) {
+            const body = ref('')
             notesPlugin.notes!.read(props.context.path).then(
               (one) => (body.value = one.body),
               (error: unknown) => (body.value = `Failed: ${String(error)}`),
             )
-          }
-          return () => h('div', body.value)
-        },
-      }),
-    })
+            return () => h('div', body.value)
+          },
+        }),
+      })
+      notesPlugin.registerView({
+        capability: CONVERSATION,
+        component: defineComponent({ setup: () => () => h('p', 'conversation') }),
+      })
+    }
+    if (registerNow) registerViews()
     const createCaller = (permissions: string[]) =>
       host.createContext(
         'md.numen.caller',
         createMockManifest('md.numen.caller', { name: 'Caller', permissions }),
       )
-    return { read, createCaller }
+    return { read, createCaller, registerViews }
   }
   const settle = async () => {
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -509,6 +514,63 @@ describe('a note editor view mounted by a plugin', () => {
     expect(element.textContent).toBe('')
   })
 
+  it('refuses to mount the note editor with an empty context to a plugin without vault:read', async () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+
+    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, {})).toThrow(/vault:read/)
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
+    expect(element.textContent).toBe('')
+  })
+
+  it('refuses to mount the note editor with a path that reads falsy first and set afterwards', async () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+    let reads = 0
+    const context = {
+      get path() {
+        return reads++ === 0 ? '' : 'Notes/Example.md'
+      },
+    }
+
+    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
+    expect(element.textContent).toBe('')
+  })
+
+  it('refuses to mount the note editor with a context that hides its path from in', async () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+    const context = new Proxy(
+      {},
+      { has: () => false, get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined) },
+    )
+
+    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
+    expect(element.textContent).toBe('')
+  })
+
+  it('refuses to mount the note editor whose path is set after the mount, before the view exists', async () => {
+    const { read, createCaller, registerViews } = createHost(false)
+    const element = document.createElement('div')
+    const context: { path?: string } = {}
+
+    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    context.path = 'Notes/Example.md'
+    registerViews()
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
+    expect(element.textContent).toBe('')
+  })
+
   it('mounts a view with a note path for a plugin with vault:read', async () => {
     const { createCaller } = createHost()
     const element = document.createElement('div')
@@ -517,13 +579,14 @@ describe('a note editor view mounted by a plugin', () => {
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
 
-  it('mounts a view without a note path for a plugin without vault:read', async () => {
+  it('mounts the conversation view for a plugin without vault:read', async () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, {})).not.toThrow()
+    expect(() => createCaller([]).mountView(CONVERSATION, element, {})).not.toThrow()
     await settle()
 
+    expect(element.textContent).toBe('conversation')
     expect(read).not.toHaveBeenCalled()
   })
 })
