@@ -15,7 +15,5 @@ export default defineConfig({
   ...base,
   testDir,
   testMatch: undefined,
-  // A scenario may wait for the engines to read a file and for the search to index it.
-  timeout: 180_000,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 })
