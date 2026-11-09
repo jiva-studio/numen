@@ -6,12 +6,15 @@ import {
   getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
+import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
+import { listVersionIds } from './text-versions.js'
 
 const COMMAND_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
+const PROOFREAD_TEXT = 'Proofread text'
 const DELETE_TEXT_ID = 'app:version.delete'
 
 export class ApplicationDriver {
@@ -37,6 +40,7 @@ export class ApplicationDriver {
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
     if (label === DELETE_TEXT) await this.expectOpenTabHasText()
+    if (label === PROOFREAD_TEXT) await this.expectActiveFileHasVersion()
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)
@@ -113,6 +117,12 @@ export class ApplicationDriver {
     this.scenario.setVault(vaultName)
     const expected = parseCount(count)
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
+  }
+
+  private async expectActiveFileHasVersion(): Promise<void> {
+    const { request } = this.scenario.page
+    // Proofreading offers the versions the file has when it is asked for them, so it waits for the first one.
+    await expect.poll(async () => (await listVersionIds(request, await readActivePath(request))).length).toBeGreaterThan(0)
   }
 
   private async expectOpenTabHasText(): Promise<void> {
