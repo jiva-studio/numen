@@ -27,7 +27,7 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-func TestManifestTakesUpToFiveRowsOfConnectionsToComplete(t *testing.T) {
+func TestManifestDeclaresOneSettingOfFiveRowsOfConnectionsToComplete(t *testing.T) {
 	var found int
 	for _, one := range readManifest(t).Settings {
 		if one.Type != "connections" {

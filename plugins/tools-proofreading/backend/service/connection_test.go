@@ -79,10 +79,10 @@ func TestTheMockAnswersOnlyWhereNoConnectionIsSet(t *testing.T) {
 	if _, err := completeOrMock(failWith(&connection.AllFailedError{}))(t.Context(), request); err == nil {
 		t.Error("with a connection that failed the mock answered")
 	}
-	answered := func(context.Context, connection.CompleteRequest) (connection.CompleteResult, error) {
+	fromConnection := func(context.Context, connection.CompleteRequest) (connection.CompleteResult, error) {
 		return connection.CompleteResult{Text: "from the connection"}, nil
 	}
-	got, err := completeOrMock(answered)(t.Context(), request)
+	got, err := completeOrMock(fromConnection)(t.Context(), request)
 	if err != nil || got.Text != "from the connection" {
 		t.Errorf("with a connection the answer was %q, %v", got.Text, err)
 	}
