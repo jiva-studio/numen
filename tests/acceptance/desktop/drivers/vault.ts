@@ -86,6 +86,17 @@ export class VaultDriver {
     await expect(page.locator('[data-title]')).toContainText(vault)
   }
 
+  async addToList(vault: string): Promise<void> {
+    const name = this.scenario.getVault(vault)
+    const folder = this.scenario.getWorld().getFolder(name)
+    const { request } = this.scenario.page
+    if (!(await listVaults(request)).some((one) => one.path === folder)) await addVault(request, folder, name)
+  }
+
+  async expectWindowShows(name: string): Promise<void> {
+    await expect(this.scenario.page.locator('[data-title]')).toContainText(name)
+  }
+
   async expectContains(vault: string, entry: string, entryPath: string): Promise<void> {
     if (this.scenario.hasWorld) {
       const world = this.scenario.getWorld()
