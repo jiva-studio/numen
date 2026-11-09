@@ -1,0 +1,4 @@
+# Invented keys of two tests, in the commit that added them. A scan reads every commit of a change, so a later edit of the files does not clear these.
+3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/internal/adapter/plugin/hostendpoint/host_model_test.go:generic-api-key:246
+3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:21
+3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:22
