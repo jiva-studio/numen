@@ -49,6 +49,7 @@ Feature: Plex
         | notes/Thermodynamics.md | ---\nlinks:\n  - to: "[[notes/Entropy]]"\n    role: child\n---\n\n# Thermodynamics\n\nThe study of energy. |
       And the person opens the note titled "Thermodynamics"
       And the person opens the note titled "Weir notes"
+      And the person runs the command "Show note in plex" on the note tab titled "Thermodynamics"
       And the person runs the command "Link with tab" on the note tab titled "Thermodynamics"
       And the person picks "Weir notes"
       When the person clicks the note titled "Entropy" in the plex
