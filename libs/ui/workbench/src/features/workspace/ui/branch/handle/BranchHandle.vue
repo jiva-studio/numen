@@ -44,7 +44,7 @@ const reach = { fine: 7, coarse: 15 }
 /* A press on either side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
-  --reach: 7px;
+  --reach: 0.4375rem;
 
   position: relative;
   z-index: 1;
@@ -91,7 +91,7 @@ const reach = { fine: 7, coarse: 15 }
 /* A finger is caught from further out than a pointer. */
 @media (pointer: coarse) {
   .branch__handle {
-    --reach: 15px;
+    --reach: 0.9375rem;
   }
 }
 </style>

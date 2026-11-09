@@ -83,7 +83,7 @@ defineSlots<{
 
 .welcome-page__row:focus-visible {
   outline: none;
-  outline-offset: 1px;
+  outline-offset: var(--numen-stroke);
 }
 
 /* A long name ends in an ellipsis.

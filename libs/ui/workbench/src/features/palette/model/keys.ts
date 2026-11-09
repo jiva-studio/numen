@@ -9,6 +9,7 @@ import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef 
 import { stepTo } from '@numen/ui'
 import { canLandOn, findKeptPlace, type PaletteAction } from '../lib/item'
 import { isActionsChord } from '../lib/keys'
+import type { ActiveItemState } from './activeItem'
 import type { PalettePlacesState } from './places'
 
 /** The field, which takes the keyboard and holds it. */
@@ -21,6 +22,7 @@ export interface PaletteKeysOptions {
   readonly field: Readonly<ShallowRef<PaletteFieldHandle | null>>
   readonly reveal: () => void
   readonly places: PalettePlacesState
+  readonly active: ActiveItemState
   readonly isPanelOpen: Ref<boolean>
   readonly getActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
@@ -47,6 +49,7 @@ const STEPS: Readonly<Record<string, readonly [by: number, from?: number]>> = {
 interface KeyContext {
   readonly typed: Readonly<{ value: string }>
   readonly places: PalettePlacesState
+  readonly active: ActiveItemState
   readonly isPanelOpen: { value: boolean }
   readonly options: PaletteKeysOptions
   readonly stepBy: (delta: number, from?: number) => void
@@ -69,10 +72,10 @@ function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
   if (event.key === 'Enter') {
     event.preventDefault()
     const pos =
-      context.places.here.value >= 0
-        ? context.places.here.value
+      context.active.here.value >= 0
+        ? context.active.here.value
         : stepTo(context.places.places.value, { from: -1, by: 1 }, canLandOn)
-    context.places.chooseAt(pos, event.shiftKey)
+    context.active.chooseAt(pos, event.shiftKey)
     return
   }
 
@@ -92,7 +95,7 @@ function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
 }
 
 export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
-  const { field, places, isPanelOpen, typed } = options
+  const { field, places, active, isPanelOpen, typed } = options
 
   // The keyboard returns to the field when the panel over it goes, and a
   // palette that is going takes it somewhere else itself.
@@ -103,8 +106,8 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   })
 
   /** The keyboard moved through the places, and what it lands on brought into sight. */
-  const stepBy = (delta: number, from = places.here.value): void => {
-    places.goTo(stepTo(places.places.value, { from, by: delta }, canLandOn))
+  const stepBy = (delta: number, from = active.here.value): void => {
+    active.goTo(stepTo(places.places.value, { from, by: delta }, canLandOn))
     options.reveal()
   }
 
@@ -116,7 +119,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   }
 
   const onKey = (event: KeyboardEvent): void => {
-    handlePaletteKey(event, { typed, places, isPanelOpen, options, stepBy, openActions })
+    handlePaletteKey(event, { typed, places, active, isPanelOpen, options, stepBy, openActions })
   }
 
   /**
@@ -127,7 +130,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
    */
   const enter = async (): Promise<void> => {
     isPanelOpen.value = false
-    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.selectedId.value))
+    active.goTo(findKeptPlace(places.places.value, options.getOpensOn() || active.selectedId.value))
     await nextTick()
     field.value?.focus()
     field.value?.select()
@@ -136,7 +139,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   const leave = (): void => {
     isPanelOpen.value = false
-    places.selectedId.value = ''
+    active.selectedId.value = ''
     const back = options.getOpenedFrom()
     if (back?.isConnected) back.focus()
   }

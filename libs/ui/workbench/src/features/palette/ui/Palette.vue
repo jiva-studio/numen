@@ -21,6 +21,7 @@ import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
 import { commandKeyChord, getShortcuts } from '../lib/keys'
+import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
 import { useActionPanel } from '../model/panel'
 import { usePalettePlaces } from '../model/places'
@@ -84,13 +85,16 @@ const field = useTemplateRef<InstanceType<typeof PaletteField>>('field')
 /** The list, for asking it to bring what is lit into sight. */
 const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
-const places = usePalettePlaces({
-  groups: () => props.groups,
+const places = usePalettePlaces({ groups: () => props.groups })
+const { placed, announcement } = places
+
+const active = useActiveItem({
+  places: places.places,
   typed: searchQuery,
   onItemActive: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
-const { placed, announcement, here, activeItem, actions, selectedId, chooseAt } = places
+const { here, activeItem, actions, selectedId, chooseAt } = active
 
 /** The actions available through keys, shown in the palette footer. */
 const hinted = computed(() => getShortcuts(activeItem.value))
@@ -111,6 +115,7 @@ const { onKey } = usePaletteKeys({
   field,
   reveal,
   places,
+  active,
   isPanelOpen,
   getActions: () => actions.value,
   typed: searchQuery,
@@ -124,7 +129,7 @@ const { onKey } = usePaletteKeys({
 
 /* -------------------------------- Handlers -------------------------------- */
 const onOver = (pos: number, event: PointerEvent) => {
-  if (!isPanelOpen.value) places.lightAt(pos, event)
+  if (!isPanelOpen.value) active.lightAt(pos, event)
 }
 
 /* --------------------------------- Helpers -------------------------------- */

@@ -7,7 +7,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref, shallowRef } from 'vue'
 import { usePaletteKeys, type PaletteFieldHandle, type PaletteKeysState } from './keys'
-import { usePalettePlaces, type PalettePlacesState } from './places'
+import { useActiveItem, type ActiveItemState } from './activeItem'
+import { usePalettePlaces } from './places'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '../lib/item'
 
 const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
@@ -53,13 +54,14 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   backs.push(back)
   const errors: unknown[] = []
   let keys!: PaletteKeysState
-  let places!: PalettePlacesState
+  let active!: ActiveItemState
 
   const wrapper = mount(
     defineComponent({
       setup() {
-        places = usePalettePlaces({
-          groups: () => GROUPS,
+        const places = usePalettePlaces({ groups: () => GROUPS })
+        active = useActiveItem({
+          places: places.places,
           typed: searchQuery,
           onItemActive: () => undefined,
           tellChoice,
@@ -68,8 +70,9 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           field,
           reveal,
           places,
+          active,
           isPanelOpen,
-          getActions: () => places.actions.value,
+          getActions: () => active.actions.value,
           typed: searchQuery,
           isOpen: () => isOpen.value,
           getStep: () => step.value,
@@ -105,7 +108,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
     tellChoice,
     back,
     errors,
-    places,
+    active,
     press,
     wrapper,
   }
@@ -113,26 +116,26 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
 
 describe('usePaletteKeys', () => {
   describe('the keys', () => {
-    it('step through the places, claim the key, and bring what is lit into sight', () => {
-      const { places, press, reveal } = setUp({ isOpen: true })
-      places.goTo(0)
+    it('step through the active, claim the key, and bring what is lit into sight', () => {
+      const { active, press, reveal } = setUp({ isOpen: true })
+      active.goTo(0)
       reveal.mockClear()
       const down = press('ArrowDown')
       expect(down.defaultPrevented).toBe(true)
-      expect(places.activeItem.value?.id).toBe('b')
+      expect(active.activeItem.value?.id).toBe('b')
       expect(reveal).toHaveBeenCalledOnce()
       const up = press('ArrowUp')
       expect(up.defaultPrevented).toBe(true)
-      expect(places.activeItem.value?.id).toBe('a')
+      expect(active.activeItem.value?.id).toBe('a')
     })
 
     it('go to the first place on Home and the last on End', () => {
-      const { places, press } = setUp({ isOpen: true })
-      places.goTo(1)
+      const { active, press } = setUp({ isOpen: true })
+      active.goTo(1)
       expect(press('End').defaultPrevented).toBe(true)
-      expect(places.activeItem.value?.id).toBe('c')
+      expect(active.activeItem.value?.id).toBe('c')
       expect(press('Home').defaultPrevented).toBe(true)
-      expect(places.activeItem.value?.id).toBe('a')
+      expect(active.activeItem.value?.id).toBe('a')
     })
 
     it('claim Enter', () => {
@@ -141,9 +144,9 @@ describe('usePaletteKeys', () => {
     })
 
     it('chooses the first selectable row on Enter when no row is selected yet', () => {
-      const { places, press, tellChoice } = setUp({ isOpen: true })
-      places.selectedId.value = ''
-      expect(places.here.value).toBe(-1)
+      const { active, press, tellChoice } = setUp({ isOpen: true })
+      active.selectedId.value = ''
+      expect(active.here.value).toBe(-1)
       press('Enter')
       expect(tellChoice).toHaveBeenCalledWith('a', 'open')
     })
@@ -234,27 +237,27 @@ describe('usePaletteKeys', () => {
     })
 
     it('relies on the item the step opens on', async () => {
-      const { isOpen, places, opensOn } = setUp()
+      const { isOpen, active, opensOn } = setUp()
       opensOn.value = 'b'
-      places.selectedId.value = 'c'
+      active.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.activeItem.value?.id).toBe('b')
+      expect(active.activeItem.value?.id).toBe('b')
     })
 
     it('relies on the item it was on when the step names none', async () => {
-      const { isOpen, places } = setUp()
-      places.selectedId.value = 'c'
+      const { isOpen, active } = setUp()
+      active.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.activeItem.value?.id).toBe('c')
+      expect(active.activeItem.value?.id).toBe('c')
     })
 
     it('relies on the first item when nothing is named or retained', async () => {
-      const { isOpen, places } = setUp()
+      const { isOpen, active } = setUp()
       isOpen.value = true
       await flushPromises()
-      expect(places.activeItem.value?.id).toBe('a')
+      expect(active.activeItem.value?.id).toBe('a')
     })
 
     it('carries on without a field', async () => {
@@ -301,13 +304,13 @@ describe('usePaletteKeys', () => {
 
   describe('as the palette closes', () => {
     it('releases the panel and what was lit, and goes back to where it came from', async () => {
-      const { isOpen, isPanelOpen, places, back } = setUp({ isOpen: true })
+      const { isOpen, isPanelOpen, active, back } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true
       isOpen.value = false
       await flushPromises()
       expect(isPanelOpen.value).toBe(false)
-      expect(places.selectedId.value).toBe('')
+      expect(active.selectedId.value).toBe('')
       expect(document.activeElement).toBe(back)
     })
 
@@ -330,11 +333,11 @@ describe('usePaletteKeys', () => {
     })
 
     it('leaves the keyboard alone when it was closed', () => {
-      const { wrapper, back, places } = setUp()
-      places.selectedId.value = 'b'
+      const { wrapper, back, active } = setUp()
+      active.selectedId.value = 'b'
       wrapper.unmount()
       expect(document.activeElement).not.toBe(back)
-      expect(places.selectedId.value).toBe('b')
+      expect(active.selectedId.value).toBe('b')
     })
   })
 })
