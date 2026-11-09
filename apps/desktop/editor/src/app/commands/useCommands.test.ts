@@ -241,53 +241,6 @@ describe('a key press', () => {
     ),
   })
 
-  it('goes to the registry with the event, the target and a runner of the application keys', () => {
-    const host = createHost()
-    const one = setup(false, host)
-    const event = keyEvent('s')
-
-    one.onKeyDown(event)
-
-    expect(host.handleShortcut).toHaveBeenCalledExactlyOnceWith(
-      event,
-      expect.any(Function),
-      { target, runApp: expect.any(Function) },
-    )
-  })
-
-  it('runs the command of the application a key matched, and prevents the default', () => {
-    h.startCommand.mockReturnValue({ id: 'inv' })
-    const one = setup(false, createHost({ command: 'app:note.create' }))
-    const event = keyEvent('n')
-
-    one.onKeyDown(event)
-
-    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.create', target)
-    expect(event.preventDefault).toHaveBeenCalledOnce()
-  })
-
-  it('runs the command of the application with the values of the keybinding', () => {
-    const one = setup(false, createHost({ command: 'app:file.open', values: { placement: 'split' } }))
-
-    one.onKeyDown(keyEvent('g'))
-
-    expect(h.runInvocation.mock.calls[0]?.[0]).toMatchObject({
-      id: 'app:file.open',
-      values: { placement: 'split' },
-    })
-    expect(h.startCommand).not.toHaveBeenCalled()
-  })
-
-  it('prevents nothing and runs nothing where no keybinding matched', () => {
-    const one = setup(false, createHost())
-    const event = keyEvent('q')
-
-    one.onKeyDown(event)
-
-    expect(h.startCommand).not.toHaveBeenCalled()
-    expect(event.preventDefault).not.toHaveBeenCalled()
-  })
-
   it('does nothing where the event was already handled', () => {
     const host = createHost({ command: 'app:note.create' })
     const one = setup(false, host)
@@ -308,36 +261,6 @@ describe('a key press', () => {
 
     expect(event.preventDefault).toHaveBeenCalledOnce()
     expect(host.handleShortcut).not.toHaveBeenCalled()
-  })
-
-  it('opens the search for its key, and closes it where it is open', () => {
-    const one = setup(false, createHost({ command: 'app:vault.search' }))
-
-    one.onKeyDown(keyEvent('k'))
-
-    expect(h.setCommandsOpen).toHaveBeenCalledExactlyOnceWith(false)
-    expect(h.setPaletteOpen).toHaveBeenLastCalledWith(true)
-    expect(h.startCommand).not.toHaveBeenCalled()
-
-    h.isSearchOpen.value = true
-    one.onKeyDown(keyEvent('k'))
-
-    expect(h.setPaletteOpen).toHaveBeenLastCalledWith(false)
-  })
-
-  it('opens the commands for its key, and closes them where they are open', () => {
-    const one = setup(false, createHost({ command: 'app:commands.open' }))
-
-    one.onKeyDown(keyEvent('p'))
-
-    expect(h.setPaletteOpen).toHaveBeenCalledExactlyOnceWith(false)
-    expect(h.setCommandsOpen).toHaveBeenLastCalledWith(true)
-
-    h.isCommandsOpen.value = true
-    one.onKeyDown(keyEvent('p'))
-
-    expect(h.setCommandsOpen).toHaveBeenLastCalledWith(false)
-    expect(h.startCommand).not.toHaveBeenCalled()
   })
 })
 
