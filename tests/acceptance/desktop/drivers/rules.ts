@@ -163,6 +163,8 @@ export const TAB_KINDS = {
   PDF: { id: 'reader:reader-pdf', title: 'PDF Reader' },
   book: { id: 'reader:reader-epub', title: 'EPUB Reader' },
   recording: { id: 'reader:media-viewer', title: 'Audio Player' },
+  Files: { id: 'files', title: 'Files' },
+  Agent: { id: 'agent', title: 'Agent' },
 } as const
 
 export type TabKindWord = keyof typeof TAB_KINDS

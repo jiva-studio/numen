@@ -218,11 +218,13 @@ describe('parseTabKind', () => {
     expect(parseTabKind('PDF tab')).toBe('PDF')
     expect(parseTabKind('book tab')).toBe('book')
     expect(parseTabKind('recording tab')).toBe('recording')
+    expect(parseTabKind('Files tab')).toBe('Files')
+    expect(parseTabKind('Agent tab')).toBe('Agent')
   })
 
   it('fails on a word that is not a kind and lists the words', () => {
     expect(() => parseTabKind('chart tab')).toThrow(
-      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording',
+      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Files, Agent',
     )
   })
 })
@@ -234,6 +236,13 @@ describe('pickKindTab', () => {
   it('picks the tab of the kind among tabs that share the title', () => {
     expect(pickKindTab('note', [plex, note], 'at', 'Entropy.md')).toBe(note)
     expect(pickKindTab('Plex', [plex, note], 'titled', 'Entropy')).toBe(plex)
+  })
+
+  it('picks the file tree and the chat by the ids of their manifests', () => {
+    const files = { id: 'files:1', kind: 'files' }
+    const agent = { id: 'agent:1', kind: 'agent' }
+    expect(pickKindTab('Files', [agent, files], 'titled', 'Files')).toBe(files)
+    expect(pickKindTab('Agent', [files, agent], 'titled', 'Agent')).toBe(agent)
   })
 
   it('finds none where no tab matches the reference', () => {
