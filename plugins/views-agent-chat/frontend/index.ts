@@ -44,8 +44,8 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'chat.open',
-    handler: async () => {
-      await context.openTab?.(AGENT)
+    handler: async (note) => {
+      await context.navigateTab?.(AGENT, note.path)
     },
   })
   context.registerCommand({

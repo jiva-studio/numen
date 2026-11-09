@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, PlexGraphView, PLEX } from './index'
 import { createHost } from './fixtures/host'
@@ -14,6 +15,28 @@ const createContext = () => {
     relations: host.relations,
   })
   return { ctx, requested }
+}
+
+/** The window's tab strip over the registered kinds; only the opening of a tab is recorded. */
+const createWindow = () => {
+  let getKinds = (): readonly TabKindRegistration[] => []
+  const opened: (readonly [string, string])[] = []
+  const tabs: { kind: string; state: unknown }[] = []
+  const navigateTab = async (kind: string, path: string): Promise<string> => {
+    const registration = getKinds().find((one) => one.kind === kind)!
+    const last = tabs.filter((one) => one.kind === kind).at(-1)
+    if (last) {
+      await registration.navigate?.(last.state, path, '')
+      return kind
+    }
+    opened.push([kind, path])
+    tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
+    return kind
+  }
+  const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
+    getKinds = () => ctx.getRegisteredTabKinds()
+  }
+  return { opened, tabs, navigateTab, bind }
 }
 
 describe('view-plex-graph plugin', () => {
@@ -47,24 +70,104 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['graph.open'])
   })
 
-  it('opens a plex', async () => {
-    const openCalls: (readonly [string, string | undefined])[] = []
+  const createWindowContext = () => {
     const { host } = createHost({ opening: 'Root.md' })
+    const strip = createWindow()
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.plex.graph',
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      openTab: (kind, path) => {
-        openCalls.push([kind, path])
-        return Promise.resolve('')
-      },
+      navigateTab: strip.navigateTab,
     })
+    strip.bind(ctx)
     activate(ctx)
+    return { ctx, strip }
+  }
+
+  it('opens one plex however many times the command runs', async () => {
+    const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('graph.open')
+    await ctx.triggerCommand('graph.open')
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+      title: 'Other.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
-    expect(openCalls).toStrictEqual([[PLEX, undefined]])
+    expect(strip.opened).toStrictEqual([[PLEX, '']])
+    expect(strip.tabs).toHaveLength(1)
+  })
+
+  it('shows the active note in a plex that is already open', async () => {
+    const { ctx, strip } = createWindowContext()
+    await ctx.triggerCommand('graph.open')
+    await settle()
+
+    await ctx.triggerCommand('graph.open', {
+
+      path: 'Other.md',
+
+      title: 'Other.md',
+
+      type: 'note',
+
+      isFolder: false,
+
+      others: [],
+
+      tab: '',
+
+    })
+    await settle()
+
+    const state = strip.tabs[0]!.state as PlexTabState
+    expect(state.view.here.value).toBe('Other.md')
+  })
+
+  it('shows the active note in the plex it opens', async () => {
+    const { ctx, strip } = createWindowContext()
+
+    await ctx.triggerCommand('graph.open', {
+
+      path: 'Other.md',
+
+      title: 'Other.md',
+
+      type: 'note',
+
+      isFolder: false,
+
+      others: [],
+
+      tab: '',
+
+    })
+
+    expect(strip.opened).toStrictEqual([[PLEX, 'Other.md']])
+  })
+
+  it('keeps the note a plex stands on when no note is active', async () => {
+    const { ctx, strip } = createWindowContext()
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+      title: 'Other.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+    await settle()
+
+    await ctx.triggerCommand('graph.open')
+    await settle()
+
+    const state = strip.tabs[0]!.state as PlexTabState
+    expect(state.view.here.value).toBe('Other.md')
   })
 
   it('registers no command that makes a note', () => {

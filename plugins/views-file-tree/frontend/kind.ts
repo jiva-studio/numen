@@ -56,7 +56,9 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
       if (menuTab === state) menuTab = null
       return true
     },
-    navigate: (state, path) => state.list.revealPath(path),
+    navigate: async (state, path) => {
+      if (path) await state.list.revealPath(path)
+    },
   }
 
   /** Every files tab takes the change, the ones out of sight included. */

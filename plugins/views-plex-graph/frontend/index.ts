@@ -34,8 +34,8 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'graph.open',
-    handler: async () => {
-      await context.openTab?.(PLEX)
+    handler: async (note) => {
+      await context.navigateTab?.(PLEX, note.path)
     },
   })
 }
