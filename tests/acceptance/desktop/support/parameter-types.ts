@@ -1,5 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parseVaultName } from '../drivers/rules.js'
+import { parseTabKind, parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -35,4 +35,10 @@ defineParameterType({
   name: 'vault',
   regexp: /the vault(?: "[^"]+")?/,
   transformer: (vault: string) => parseVaultName(vault),
+})
+
+defineParameterType({
+  name: 'tab',
+  regexp: /(?:[A-Za-z]+ )?tab/,
+  transformer: (tab: string) => parseTabKind(tab),
 })

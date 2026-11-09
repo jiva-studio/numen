@@ -13,7 +13,9 @@ import {
   getPaletteField,
   parseCount,
   parseReference,
+  parseTabKind,
   parseTime,
+  pickKindTab,
   pickByTitle,
   readNoteType,
 } from './rules.js'
@@ -201,5 +203,54 @@ describe('parseReviewScope', () => {
 
   it('throws for any other word', () => {
     expect(() => parseReviewScope('card')).toThrow('"card" is not reviewed')
+  })
+})
+
+describe('parseTabKind', () => {
+  it('takes the tab as a tab of any kind', () => {
+    expect(parseTabKind('tab')).toBe('any')
+  })
+
+  it('takes the word before tab as the kind', () => {
+    expect(parseTabKind('note tab')).toBe('note')
+    expect(parseTabKind('Plex tab')).toBe('Plex')
+    expect(parseTabKind('PDF tab')).toBe('PDF')
+    expect(parseTabKind('book tab')).toBe('book')
+    expect(parseTabKind('recording tab')).toBe('recording')
+  })
+
+  it('fails on a word that is not a kind and lists the words', () => {
+    expect(() => parseTabKind('chart tab')).toThrow(
+      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording',
+    )
+  })
+})
+
+describe('pickKindTab', () => {
+  const plex = { id: 'plex:1', kind: 'plex' }
+  const note = { id: 'note:1', kind: 'note' }
+
+  it('picks the tab of the kind among tabs that share the title', () => {
+    expect(pickKindTab('note', [plex, note], 'at', 'Entropy.md')).toBe(note)
+    expect(pickKindTab('Plex', [plex, note], 'titled', 'Entropy')).toBe(plex)
+  })
+
+  it('finds none where no tab matches the reference', () => {
+    expect(pickKindTab('note', [], 'at', 'Entropy.md')).toBeUndefined()
+  })
+
+  it('fails with the kind the tab has when it is of another kind', () => {
+    expect(() => pickKindTab('note', [plex], 'at', 'Entropy.md')).toThrow(
+      'the tab at "Entropy.md" is a Plex tab, not a Note tab',
+    )
+    expect(() => pickKindTab('PDF', [{ id: 'x', kind: 'reader:reader-epub' }], 'at', 'a.pdf')).toThrow(
+      'is a EPUB Reader tab, not a PDF Reader tab',
+    )
+  })
+
+  it('fails when two tabs of the kind match', () => {
+    expect(() => pickKindTab('note', [note, { id: 'note:2', kind: 'note' }], 'titled', 'A')).toThrow(
+      '2 Note tabs match "A": use "at" with the path',
+    )
   })
 })

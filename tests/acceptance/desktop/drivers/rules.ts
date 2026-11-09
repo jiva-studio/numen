@@ -152,3 +152,55 @@ export const assertVaultPath = (entryPath: string): void => {
     throw new Error(`"${entryPath}" is not a path inside the vault: write it relative to the vault, like "assets/a.pdf"`)
   }
 }
+
+/** The kind a step means by "any" tab: it names none, so a tab of any kind is meant. */
+export const ANY_TAB = 'any'
+
+/** The words a scenario puts before "tab", with the id and the title the product gives the kind (the `tabKinds` of the plugin manifests). */
+export const TAB_KINDS = {
+  note: { id: 'note', title: 'Note' },
+  Plex: { id: 'plex', title: 'Plex' },
+  PDF: { id: 'reader:reader-pdf', title: 'PDF Reader' },
+  book: { id: 'reader:reader-epub', title: 'EPUB Reader' },
+  recording: { id: 'reader:media-viewer', title: 'Audio Player' },
+} as const
+
+export type TabKindWord = keyof typeof TAB_KINDS
+
+export type TabKindChoice = TabKindWord | typeof ANY_TAB
+
+export interface KindedTab {
+  readonly id: string
+  readonly kind: string
+}
+
+const isTabKindWord = (word: string): word is TabKindWord => Object.hasOwn(TAB_KINDS, word)
+
+/** The kind a step names in "the note tab" or "the tab": a word of TAB_KINDS, or "any" for none. */
+export const parseTabKind = (text: string): TabKindChoice => {
+  const match = /^(?:([A-Za-z]+) )?tab$/.exec(text)
+  if (!match) throw new Error(`"${text}" does not name a tab: write the tab or the note tab`)
+  const word = match[1] as string | undefined
+  if (word === undefined) return ANY_TAB
+  if (!isTabKindWord(word)) {
+    throw new Error(`the tab kind "${word}" is not a tab kind: use ${Object.keys(TAB_KINDS).join(', ')}`)
+  }
+  return word
+}
+
+const getKindTitle = (kind: string): string =>
+  Object.values(TAB_KINDS).find((one) => one.id === kind)?.title ?? kind
+
+/** The tab of the kind among the tabs the reference names; none of the kind fails with the kind the tabs have. */
+export const pickKindTab = <T extends KindedTab>(
+  kind: TabKindWord,
+  candidates: readonly T[],
+  reference: string,
+  name: string,
+): T | undefined => {
+  const found = candidates.filter((one) => one.kind === TAB_KINDS[kind].id)
+  if (found.length > 1) throw new Error(`${found.length} ${TAB_KINDS[kind].title} tabs match "${name}": use "at" with the path`)
+  if (found.length === 1 || candidates.length === 0) return found[0]
+  const kinds = [...new Set(candidates.map((one) => `${getKindTitle(one.kind)} tab`))].join(' and a ')
+  throw new Error(`the tab ${reference} "${name}" is a ${kinds}, not a ${TAB_KINDS[kind].title} tab`)
+}

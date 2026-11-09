@@ -12,7 +12,7 @@ Feature: Search
       And the application "editor" starts
       When the person searches the vault for "Entropy"
       And the person chooses the search result "Entropy is a measure of uncertainty" in the group "Text"
-      Then the tab at "Entropy.md" is active
+      Then the note tab at "Entropy.md" is active
       And the note titled "Entropy" has "Entropy is a measure of uncertainty."
 
     Scenario: A note is found by a word it does not have
