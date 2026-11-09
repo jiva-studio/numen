@@ -166,7 +166,7 @@ describe('the rules of a card file', () => {
 
   it('refuses templates given twice', () => {
     expect(() => assertTemplatesAreNew(model, 'Animal')).not.toThrow()
-    const given = model + createTemplatesText([{ name: 'A', front: 'f', back: 'b' }])
-    expect(() => assertTemplatesAreNew(given, 'Animal')).toThrow('already has its templates')
+    const withTemplates = model + createTemplatesText([{ name: 'A', front: 'f', back: 'b' }])
+    expect(() => assertTemplatesAreNew(withTemplates, 'Animal')).toThrow('already has its templates')
   })
 })
