@@ -275,14 +275,13 @@ export function useSettings({
   models,
   countNotes,
 }: SettingsDeps) {
+  const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
-  const getPluginName = (pluginId: string): string =>
-    rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
     words,
-    write: log.getWriter('appearance'),
+    write: writeAppearanceMessage,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
   const secrets = createSecretStore(core, {
@@ -295,7 +294,7 @@ export function useSettings({
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.start(),
-    getName: getPluginName,
+    getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
   const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined

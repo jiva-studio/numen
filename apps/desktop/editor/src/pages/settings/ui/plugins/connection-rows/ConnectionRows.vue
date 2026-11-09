@@ -49,7 +49,7 @@ const { drafts, write, reset, add, remove, update, move } = useRowDrafts({
   onChange: (rows) => onRowsChange(rows),
 })
 const { question, ask, confirm, cancel } = useIndexQuestion({
-  countNotes: readNoteCount,
+  countNotes: () => props.installation.countNotes?.(),
   getText: (rows, count) =>
     words.connectionRowsIndexQuestion(
       count,
@@ -118,14 +118,6 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
   const getKey = (one: StoredRow): string => `${one.connection}\0${one.model}`
   const stored = readRows(props.value).map(getKey)
   return rows.length > 0 && rows.map(getKey).join('\n') !== stored.join('\n')
-}
-
-async function readNoteCount(): Promise<number | undefined> {
-  try {
-    return await props.installation.countNotes?.()
-  } catch {
-    return undefined
-  }
 }
 
 function getReason(row: RowDraft): string {

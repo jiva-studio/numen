@@ -4,7 +4,7 @@ import type { StoredRow } from '@/entities/connection'
 
 /** What the question about indexing the vault again needs from the page of the rows. */
 export interface IndexQuestionSource {
-  readonly countNotes: () => Promise<number | undefined>
+  readonly countNotes: () => Promise<number> | undefined
   readonly getText: (rows: readonly StoredRow[], count: number | undefined) => string
   readonly onConfirm: (rows: readonly StoredRow[]) => void
   readonly onCancel: () => void
@@ -18,7 +18,8 @@ export function useIndexQuestion(source: IndexQuestionSource) {
   const question = ref<{ readonly rows: readonly StoredRow[]; readonly text: string } | undefined>()
 
   const show = async (rows: readonly StoredRow[]): Promise<void> => {
-    question.value = { rows, text: source.getText(rows, await source.countNotes()) }
+    const count = await source.countNotes()?.catch(() => undefined)
+    question.value = { rows, text: source.getText(rows, count) }
   }
 
   return {
