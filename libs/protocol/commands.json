@@ -35,7 +35,7 @@
       "id": "app:file.open",
       "arguments": [
         {
-          "name": "showing",
+          "name": "placement",
           "title": "Showing",
           "type": "string",
           "required": false,

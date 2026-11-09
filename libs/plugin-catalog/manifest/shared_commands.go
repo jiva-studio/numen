@@ -30,7 +30,7 @@ func GetWindowCommandArguments(id string) ([]WindowCommandArgument, bool) {
 	switch id {
 	case "app:file.open":
 		return []WindowCommandArgument{
-			{Name: "showing", Values: []string{"current", "split"}},
+			{Name: "placement", Values: []string{"current", "split"}},
 		}, true
 	case "app:file.remove":
 		return []WindowCommandArgument{

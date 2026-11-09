@@ -42,6 +42,6 @@ export interface WindowCommandArgument {
 // WINDOW_COMMANDS are the commands of the window that take arguments. A slot entry passes values only
 // for these arguments and these values.
 export const WINDOW_COMMANDS: Readonly<Record<string, readonly WindowCommandArgument[]>> = {
-  'app:file.open': [{ name: 'showing', values: ['current', 'split'] }],
+  'app:file.open': [{ name: 'placement', values: ['current', 'split'] }],
   'app:file.remove': [{ name: 'removal', values: ['trash', 'permanent'] }],
 }

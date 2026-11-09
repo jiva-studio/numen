@@ -107,7 +107,7 @@ describe('the values of a slot entry', () => {
             icon: '',
             group: '',
             when: '',
-            values: { showing: 'split' },
+            values: { placement: 'split' },
           },
         },
         {
@@ -132,7 +132,7 @@ describe('the values of a slot entry', () => {
         pluginId: 'org.example.ledger',
         slot: 'titleBar.commands',
         command: 'app:file.open',
-        values: { showing: 'split' },
+        values: { placement: 'split' },
       },
       { pluginId: 'org.example.ledger', slot: 'titleBar.commands', command: 'ledger.sum' },
     ])

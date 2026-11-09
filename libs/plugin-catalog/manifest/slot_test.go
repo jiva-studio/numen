@@ -111,7 +111,7 @@ func TestSlotEntryValuesAreDecoded(t *testing.T) {
 	parsed, err := readValueSlots(`[
 		{"slot":"titleBar.commands","command":"ledger.open","values":{"book":"main"}},
 		{"slot":"fileTree.context","command":"ledger.open"},
-		{"slot":"palette.searchResult","command":"app:file.open","values":{"showing":"split"}}
+		{"slot":"palette.searchResult","command":"app:file.open","values":{"placement":"split"}}
 	]`)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestSlotEntryValuesAreDecoded(t *testing.T) {
 	if len(slots[1].Values) != 0 {
 		t.Errorf("an entry without values came out with %v", slots[1].Values)
 	}
-	if got := slots[2].Values; got["showing"] != "split" {
+	if got := slots[2].Values; got["placement"] != "split" {
 		t.Errorf("the values of a command of the application came out as %v", got)
 	}
 }
@@ -155,7 +155,7 @@ func TestSlotEntryValueAsNumberIsRefused(t *testing.T) {
 
 func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 	valid := []string{
-		`[{"slot":"titleBar.commands","command":"app:file.open","values":{"showing":"split"}}]`,
+		`[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"split"}}]`,
 		`[{"slot":"titleBar.commands","command":"app:file.remove","values":{"removal":"trash"}}]`,
 		`[{"slot":"titleBar.commands","command":"app:link.import","values":{"address":"https://example.org"}}]`,
 		`[{"slot":"titleBar.commands","command":"org.example.harbor:harbor.open","values":{"any":"thing"}}]`,
@@ -167,8 +167,8 @@ func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 	}
 	invalid := map[string]string{
 		"an argument the command does not take":  `[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"split"}}]`,
-		"a value the argument does not allow":    `[{"slot":"titleBar.commands","command":"app:file.open","values":{"showing":"aside"}}]`,
-		"values for a command without arguments": `[{"slot":"titleBar.commands","command":"app:settings.open","values":{"showing":"split"}}]`,
+		"a value the argument does not allow":    `[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"aside"}}]`,
+		"values for a command without arguments": `[{"slot":"titleBar.commands","command":"app:settings.open","values":{"placement":"split"}}]`,
 	}
 	for name, slots := range invalid {
 		if _, err := readValueSlots(slots); !errors.Is(err, manifest.ErrInvalidSlotEntry) {
