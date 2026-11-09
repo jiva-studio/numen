@@ -788,3 +788,17 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		t.Fatalf("expected (1, 2) for (1000, 2000), got (%d, %d)", fqProgress.tasks[1].CompletedCount, fqProgress.tasks[1].TotalCount)
 	}
 }
+
+func TestStartReportsTaskBeforeReturning(t *testing.T) {
+	s := newToolFixture(t)
+
+	started, err := s.transcriber.Start(t.Context(), s.vault.Vault().ID, lecture)
+	if err != nil || !started {
+		t.Fatalf("Start returned (%v, %v)", started, err)
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 1 || tasks[0].Detail != lecture {
+		t.Errorf("tasks right after Start = %+v, want the task reported", tasks)
+	}
+	close(s.blocking.release)
+	s.waitFinished(t, getTaskID("Lectures", lecture))
+}

@@ -62,7 +62,10 @@ func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id doma
 
 func (vaultBookTexts) RequestText(context.Context, string, string) error { return nil }
 
-func (vaultBookTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
+func (t vaultBookTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
+	ref, err := t.files.StatFile(ctx, path)
+	return err == nil && ref.Kind == domain.KindFile, nil
+}
 
 func (t vaultBookTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
 	file, err := t.files.Open(ctx, path)

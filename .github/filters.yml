@@ -120,6 +120,7 @@ desktop:
   - .github/actions/setup-webkit/**
   - .github/actions/cache-apt/**
   - apps/desktop/**
+  - tests/e2e/cli/**
   - '!apps/desktop/editor/**'
   - '!apps/desktop/flashcards/**'
   - '!**/*.md'
