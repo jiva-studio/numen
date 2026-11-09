@@ -9,7 +9,6 @@
   },
   "ignoreWorkspaces": [
     ".",
-    "libs/core/protocol",
     "tools/*"
   ],
   "workspaces": {
@@ -35,6 +34,23 @@
       "project": [
         "src/**/*.{ts,vue,mdx,css}",
         ".storybook/**/*.{ts,js}"
+      ]
+    },
+    "libs/core/protocol": {
+      "entry": [
+        "index.ts",
+        "capabilities.ts",
+        "src/numen/v1/*_pb.ts",
+        "tools/*.mjs"
+      ],
+      "project": [
+        "**/*.{ts,mjs}"
+      ],
+      "ignoreBinaries": [
+        "buf"
+      ],
+      "ignoreDependencies": [
+        "@bufbuild/protoc-gen-es"
       ]
     },
     "libs/core/client": {

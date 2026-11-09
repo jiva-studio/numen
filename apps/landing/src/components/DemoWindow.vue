@@ -54,7 +54,6 @@ import {
 } from '@numen/workbench'
 import type {
   ActionWords,
-  PaletteAction,
   PaletteGroup,
   PaletteItem,
   Tab,
@@ -67,7 +66,6 @@ import {
   type Connection,
   type SlotCommand,
   type SlotItem,
-  type SlotSeparator,
   type CommandTarget as RowTarget,
   type VaultEntry,
 } from '@numen/plugin-loader'
@@ -98,10 +96,12 @@ import type { Recordings } from '@plugins/views-media-viewer/frontend/types'
 import DeckTab from '@plugins/views-flashcards-studio/frontend/deck/ui/DeckTab.vue'
 import { createMarks } from '@plugins/views-flashcards-studio/frontend/cards'
 import type { DeckTabState } from '@plugins/views-flashcards-studio/frontend/deck/types'
-import type {
-  CardModel,
-  DeckCard,
-  DeckSection,
+import {
+  HEAD,
+  getRunEnd,
+  type CardModel,
+  type DeckCard,
+  type DeckSection,
 } from '@plugins/views-flashcards-studio/frontend/ui/cards'
 import { Agent } from '@plugins/views-agent-chat/frontend/agent'
 import type { AgentModelOption } from '@plugins/views-agent-chat/frontend/message-composer'
@@ -380,6 +380,15 @@ const notesByPath = reactive<Record<string, VaultNoteRecord>>(
   ),
 )
 
+const ENTROPY_PATH = 'physics/Entropy.md'
+
+/** The note at a path, or the entropy note where there is none. */
+function getNoteOrEntropy(path: string): VaultNoteRecord {
+  const note = notesByPath[path] ?? notesByPath[ENTROPY_PATH]
+  if (!note) throw new Error(`the demo vault has no note at ${ENTROPY_PATH}`)
+  return note
+}
+
 const customFolders = ref<string[]>(['physics', 'computation', 'reading', 'lectures', 'decks'])
 
 const EDGE_LABELS = reactive<Record<string, string>>({
@@ -391,17 +400,17 @@ const EDGE_LABELS = reactive<Record<string, string>>({
   'computation/Shannon entropy.md->physics/Entropy.md': 'see also',
 })
 
-const PDF_DOCS: Readonly<
-  Record<
-    string,
-    {
-      title: string
-      leaves: number
-      firstPage: number
-      pages: readonly (readonly string[])[]
-    }
-  >
-> = {
+const BOLTZMANN_PATH = 'reading/Boltzmann 1877.pdf'
+const SHANNON_PATH = 'reading/Shannon 1948.pdf'
+
+interface PdfDoc {
+  title: string
+  leaves: number
+  firstPage: number
+  pages: readonly (readonly string[])[]
+}
+
+const PDF_DOCS: Readonly<Record<typeof BOLTZMANN_PATH | typeof SHANNON_PATH, PdfDoc>> = {
   'reading/Boltzmann 1877.pdf': {
     title: 'Boltzmann 1877',
     leaves: 412,
@@ -492,9 +501,19 @@ const PDF_DOCS: Readonly<
   },
 }
 
+const PDF_BY_PATH: ReadonlyMap<string, PdfDoc> = new Map(Object.entries(PDF_DOCS))
+
+/** The document at a path; a path of no document reads as the first one. */
+const getPdfDoc = (path: string): PdfDoc => PDF_BY_PATH.get(path) ?? PDF_DOCS[BOLTZMANN_PATH]
+
+/** Writes the failure of a call that nothing waits for: the demo window has no other place to show it. */
+const logFailure = (error: unknown): void => {
+  console.error(error)
+}
+
 const pdfPagesState = reactive<Record<string, number>>({
-  'reading/Boltzmann 1877.pdf': PDF_DOCS['reading/Boltzmann 1877.pdf']!.firstPage,
-  'reading/Shannon 1948.pdf': PDF_DOCS['reading/Shannon 1948.pdf']!.firstPage,
+  'reading/Boltzmann 1877.pdf': PDF_DOCS[BOLTZMANN_PATH].firstPage,
+  'reading/Shannon 1948.pdf': PDF_DOCS[SHANNON_PATH].firstPage,
 })
 
 /* ------------------- Real `RecordingTab` (Media Viewer) ------------------- */
@@ -704,42 +723,35 @@ function getCuesRefForPath(path: string) {
 }
 
 const demoRecordings: Recordings = {
-  getSource: async (path) =>
-    path === YOUTUBE_LINK_PATH
-      ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html', pageUrl: '' }
-      : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg', pageUrl: '' },
-  readTranscript: async (path) => getCuesRefForPath(path).value,
-  readArticle: async () => '',
-  writeTranscript: async (path, text) => {
-    const targetCues = getCuesRefForPath(path)
-    const paragraphs = text.split(/\n\n+/).filter(Boolean)
-    targetCues.value = paragraphs.map((p, index) => {
-      const existing = targetCues.value[index]
-      const fallbackFrom = index === 0 ? 0 : (targetCues.value[index - 1]?.to ?? index * 8_000)
-      return {
-        text: p,
-        from: existing?.from ?? fallbackFrom,
-        to: existing?.to ?? fallbackFrom + 8_000,
-      }
-    })
+  getSource: (path) =>
+    Promise.resolve(
+      path === YOUTUBE_LINK_PATH
+        ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html', pageUrl: '' }
+        : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg', pageUrl: '' },
+    ),
+  readTranscript: (path) => Promise.resolve(getCuesRefForPath(path).value),
+  readArticle: () => Promise.resolve(''),
+  writeTranscript: (path, cues) => {
+    getCuesRefForPath(path).value = [...cues]
+    return Promise.resolve()
   },
-  findCueTime: async (path, offset) => {
+  findCueTime: (path, span) => {
     const list = getCuesRefForPath(path).value
     let charPos = 0
     for (const cue of list) {
       const endPos = charPos + cue.text.length
-      if (offset <= endPos) return cue.from
-      charPos = endPos + 2
+      if (span.start <= endPos) return Promise.resolve(cue.from)
+      charPos = endPos + 1
     }
-    return list[0]?.from ?? 0
+    return Promise.resolve(null)
   },
-  canCreateText: async () => false,
-  createText: async () => undefined,
+  canCreateText: () => Promise.resolve(false),
+  createText: () => Promise.resolve(),
   watchWork: (_path, onChange) => {
     onChange(false)
-    return () => {}
+    return () => undefined
   },
-  watchChanges: () => () => {},
+  watchChanges: () => () => undefined,
 }
 
 const recordingHow = {
@@ -833,7 +845,7 @@ const DECK_CHOICES = [
 let nextCardNum = 1
 const deckState: DeckTabState = {
   id: DECK_PATH,
-  note: computed(() => ({ path: DECK_PATH, body: '', state: 'clean', error: null })),
+  note: computed(() => ({ path: DECK_PATH, body: '', state: 'clean', error: null, isRead: true })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   deckCards: computed(() => deckCardsList.value),
   sections: computed(() => deckSectionsList.value),
@@ -863,19 +875,21 @@ const deckState: DeckTabState = {
   removeCard: (cardId) => {
     deckCardsList.value = deckCardsList.value.filter((c) => c.id !== cardId)
   },
-  moveCard: (cardId, to) => {
+  moveCard: (cardId, target) => {
     const moving = deckCardsList.value.find((c) => c.id === cardId)
     if (!moving) return
     const rest = deckCardsList.value.filter((c) => c.id !== cardId)
-    const updated: DeckCard = { ...moving, section: to.section }
-    if (to.before !== null) {
-      const idx = rest.findIndex((c) => c.id === to.before)
-      if (idx >= 0) {
-        deckCardsList.value = [...rest.slice(0, idx), updated, ...rest.slice(idx)]
-        return
-      }
+    const before = rest.findIndex((c) => c.id === target)
+    const runEnd = target === null ? null : getRunEnd(target)
+    if (before >= 0) {
+      const updated: DeckCard = { ...moving, section: rest[before]?.section ?? null }
+      deckCardsList.value = [...rest.slice(0, before), updated, ...rest.slice(before)]
+      return
     }
-    deckCardsList.value = [...rest, updated]
+    const section = runEnd === HEAD ? null : (runEnd ?? deckSectionsList.value.at(-1)?.id ?? null)
+    const lastInSection = rest.findLastIndex((c) => c.section === section)
+    const at = lastInSection >= 0 ? lastInSection + 1 : rest.length
+    deckCardsList.value = [...rest.slice(0, at), { ...moving, section }, ...rest.slice(at)]
   },
   writeCardField: (cardId, field, _index, text) => {
     deckCardsList.value = deckCardsList.value.map((card) => {
@@ -903,9 +917,9 @@ const deckState: DeckTabState = {
     deckSectionsList.value = deckSectionsList.value.filter((s) => s.id !== sectionId)
     deckCardsList.value = deckCardsList.value.filter((c) => c.section !== sectionId)
   },
-  keepMine: () => {},
-  takeFile: () => {},
-  close: () => {},
+  keepMine: () => undefined,
+  takeFile: () => undefined,
+  close: () => undefined,
 }
 
 const PRIMARY_NOTE_TAB = 'note:1'
@@ -913,6 +927,17 @@ let nextNoteTabCount = 1
 const noteTabPaths = reactive<Record<string, string>>({
   [PRIMARY_NOTE_TAB]: 'physics/Entropy.md',
 })
+
+/** The note a note tab shows, and nothing for a tab of another kind. */
+function findTabNote(tabId: string): VaultNoteRecord | undefined {
+  const path = noteTabPaths[tabId]
+  return path === undefined ? undefined : notesByPath[path]
+}
+
+function writeTabNoteBody(tabId: string, body: string): void {
+  const note = findTabNote(tabId)
+  if (note) note.body = body
+}
 
 function findNoteTabAt(path: string): string | undefined {
   return openTabIds.value.find((id) => id.startsWith('note:') && noteTabPaths[id] === path)
@@ -1066,7 +1091,7 @@ function createDemoTabLinks() {
     write: (change: TabLinksChange) => {
       if ('link' in change) groups = linkDemoTabs(groups, change.link.source, change.link.target)
       else groups = unlinkDemoTab(groups, change.unlink)
-      tabLinks.applySnapshot({ groups, tabs: [] })
+      tabLinks.applySnapshot({ groups, tabs: [], windows: [] })
       return Promise.resolve()
     },
     onError: (error: unknown) => console.error(error),
@@ -1112,7 +1137,7 @@ const tabs = computed<readonly Tab[]>(() =>
     }
     if (id.startsWith('reader:pdf:')) {
       const path = id.slice(11)
-      return { id, title: PDF_DOCS[path]?.title ?? path.split('/').pop() ?? path }
+      return { id, title: PDF_BY_PATH.get(path)?.title ?? path.split('/').pop() ?? path }
     }
     if (id.startsWith('recording:')) {
       return { id, title: 'Lecture 4' }
@@ -1206,10 +1231,10 @@ function syncPathFromTab(sourceTabId: string, path: string, _title = ''): boolea
     for (const targetId of targets) {
       if (targetId === PLEX_TAB && isNotePath(path) && notesByPath[path]) {
         if (plexState.view.here.value !== path) {
-          void plexState.view.go(path)
+          plexState.view.go(path).catch(logFailure)
         }
       } else if (targetId === FILES_TAB) {
-        void fileTree.revealPath(path)
+        fileTree.revealPath(path).catch(logFailure)
       } else if (targetId.startsWith('note:') && isNotePath(path) && notesByPath[path]) {
         navigateNoteTab(targetId, path)
       }
@@ -1237,7 +1262,7 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.createJumpNote]: ArrowRightLeft,
   [DEMO_COMMAND.renameNote]: Type,
   [DEMO_COMMAND.copyNotePath]: Copy,
-  [DEMO_COMMAND.trashNote]: Trash2,
+  [DEMO_COMMAND.removeFile]: Trash2,
   [DEMO_COMMAND.createNote]: FilePlus,
   [DEMO_COMMAND.openPlex]: Waypoints,
   [DEMO_COMMAND.openFiles]: FolderTree,
@@ -1258,7 +1283,10 @@ const createMenuCommand = (command: string, title: string): SlotCommand => ({
   hasItems: false,
 })
 
-const createMenuSeparator = (index: number): SlotSeparator => ({
+/** A divider line between groups of menu entries. */
+type MenuSeparator = Extract<SlotItem, { kind: 'separator' }>
+
+const createMenuSeparator = (index: number): MenuSeparator => ({
   kind: 'separator',
   key: `demo/separator/${index}`,
 })
@@ -1278,7 +1306,7 @@ const PLEX_MENU: readonly SlotItem[] = [
   createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
   createMenuCommand(DEMO_COMMAND.renameNote, 'Rename note'),
   createMenuSeparator(4),
-  createMenuCommand(DEMO_COMMAND.trashNote, 'Move note to trash'),
+  createMenuCommand(DEMO_COMMAND.removeFile, 'Move note to trash'),
 ]
 
 /** The New submenu the file tree declares, with what the tree makes. */
@@ -1398,7 +1426,7 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
 function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
   const entry = fileTree.getEntryAt(target.path)
   const removeItem = createMenuCommand(
-    DEMO_COMMAND.trashNote,
+    DEMO_COMMAND.removeFile,
     entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
   )
   const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
@@ -1438,13 +1466,13 @@ async function runMenuCommand(command: string, target: RowTarget): Promise<strin
     return createUntitledInVault(target.path)
   if (command === DEMO_COMMAND.createFolder && target.isFolder)
     return createFolderInVault(target.path)
-  const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
+  const paths = command === DEMO_COMMAND.removeFile ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')
   return ''
 }
 
 const fileTree = createFileTree({
-  list: async (folder: string) => listFolderEntries(folder),
+  list: (folder: string) => Promise.resolve(listFolderEntries(folder)),
 })
 
 let untitledCounter = 0
@@ -1494,7 +1522,7 @@ function rekeySingleNotePath(from: string, to: string) {
     }
   }
   if (plexState.view.here.value === from) {
-    void plexState.view.go(to)
+    plexState.view.go(to).catch(logFailure)
   }
 }
 
@@ -1540,11 +1568,12 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
     }
   },
   getMenuEntries: (target) => getMenuEntriesForRow(target),
+  listItems: () => Promise.resolve([]),
   runCommand: (command, target) => runMenuCommand(command, target),
-  movePath: async (from, to) => {
+  movePath: (from, to) => {
     if (notesByPath[from]) {
       rekeySingleNotePath(from, to)
-      return
+      return Promise.resolve()
     }
     const prefix = `${from}/`
     customFolders.value = customFolders.value.map((f) => {
@@ -1558,14 +1587,16 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
         rekeySingleNotePath(oldPath, newPath)
       }
     }
+    return Promise.resolve()
   },
   setDraggedPaths: (paths) => {
     draggedPaths.value = paths
   },
   canDropData: () => false,
-  dropData: async () => [],
-  showError: () => {},
+  dropData: () => Promise.resolve([]),
+  showError: () => undefined,
   getEntryIcon: (entry, isOpen) => {
+    if (entry === null) return FileText
     if (entry.isFolder) return isOpen ? FolderOpen : Folder
     if (entry.type === 'deck') return Layers
     if (entry.type === 'link') return Link
@@ -1575,7 +1606,7 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
   },
 })
 
-void (async () => {
+async function openDemoFolders(): Promise<void> {
   await fileTree.openFolder(ROOT)
   await fileTree.openFolder('physics')
   await fileTree.openFolder('computation')
@@ -1583,7 +1614,9 @@ void (async () => {
   await fileTree.openFolder('lectures')
   await fileTree.openFolder('decks')
   fileTree.selectPaths(['physics/Entropy.md'])
-})()
+}
+
+openDemoFolders().catch(logFailure)
 
 watch(fileTree.selectedPaths, (paths) => {
   const first = paths[0]
@@ -1632,15 +1665,15 @@ function getSiblingsOf(path: string): { path: string; through: string }[] {
 
 function buildVaultNeighbourhood(focusPath: string): Neighbourhood {
   const resolvedPath = notesByPath[focusPath] ? focusPath : 'physics/Entropy.md'
-  const focusNote = notesByPath[resolvedPath]!
+  const focusNote = getNoteOrEntropy(resolvedPath)
   const related: Neighbour[] = []
   const connections: Connection[] = []
   const seen = new Set<string>([resolvedPath])
 
   const pushNeighbour = (path: string, relation: PlexRelation, through = '') => {
-    if (seen.has(path) || !notesByPath[path]) return
+    const note = notesByPath[path]
+    if (seen.has(path) || !note) return
     seen.add(path)
-    const note = notesByPath[path]!
     const label =
       relation === 'parent' || relation === 'jump'
         ? (EDGE_LABELS[`${path}->${resolvedPath}`] ?? EDGE_LABELS[`${resolvedPath}->${path}`] ?? '')
@@ -1681,7 +1714,7 @@ function buildVaultNeighbourhood(focusPath: string): Neighbourhood {
 }
 
 const plexView = usePlexView({
-  neighbourhood: async (path: string) => buildVaultNeighbourhood(path),
+  neighbourhood: (path: string) => Promise.resolve(buildVaultNeighbourhood(path)),
 })
 
 function joinNotesInVault(
@@ -1712,7 +1745,7 @@ function createNoteInRelationInVault(
   fromPath: string,
   relation: PlexRelation,
 ): { path: string; title: string } {
-  const fromNote = notesByPath[fromPath] ?? notesByPath['physics/Entropy.md']!
+  const fromNote = getNoteOrEntropy(fromPath)
   const folder = fromNote.folder || 'physics'
   const cleanTitle = title.trim() || getNextUntitledTitle(folder)
   const path = folder ? `${folder}/${cleanTitle}.md` : `${cleanTitle}.md`
@@ -1730,28 +1763,29 @@ function createNoteInRelationInVault(
     fromNote.parents = [...fromNote.parents, path]
   }
 
-  void fileTree.refresh()
+  fileTree.refresh().catch(logFailure)
   if (plexView.here.value) {
-    void plexView.go(plexView.here.value)
+    plexView.go(plexView.here.value).catch(logFailure)
   }
   return { path, title: cleanTitle }
 }
 
 const plexState = createPlexTab(plexView, {
+  tabId: PLEX_TAB,
   editor: {
-    createRelated: async ({ from, role, title }) => {
+    createRelated: ({ from, role, title }) => {
       const relation: PlexRelation = role === 'parent' || role === 'jump' ? role : 'child'
       const created = createNoteInRelationInVault(title ?? '', from, relation)
-      return asValue(created.path)
+      return Promise.resolve(asValue(created.path))
     },
-    join: async (fromPath, toPath, side) => {
+    join: (fromPath, toPath, side) => {
       const relation: PlexRelation =
         side.role === 'parent' || side.role === 'jump' ? side.role : 'child'
-      return joinNotesInVault(fromPath, toPath, relation, side.label)
+      return Promise.resolve(joinNotesInVault(fromPath, toPath, relation, side.label)
         ? asValue(undefined)
-        : asFailure('notFound')
+        : asFailure('notFound'))
     },
-    getConnection: async (first, second, type = '') => {
+    getConnection: (first, second, type = '') => {
       const firstLabel = EDGE_LABELS[`${first}->${second}`]
       const secondLabel = EDGE_LABELS[`${second}->${first}`]
       const isFirstParent = getParentsOf(second).includes(first)
@@ -1760,7 +1794,7 @@ const plexState = createPlexTab(plexView, {
         (notesByPath[first]?.jumps ?? []).includes(second) ||
         (notesByPath[second]?.jumps ?? []).includes(first)
       const role = isFirstParent ? 'child' : isSecondParent ? 'parent' : isJump ? 'jump' : null
-      return asValue({
+      return Promise.resolve(asValue({
         first,
         second,
         role,
@@ -1770,13 +1804,13 @@ const plexState = createPlexTab(plexView, {
         secondSide: isSecondParent
           ? { label: secondLabel ?? '', marker: 'arrow', reason: '' }
           : null,
-      })
+      }))
     },
-    saveConnection: async (connection) => {
+    saveConnection: (connection) => {
       const { first, second } = connection
       const noteA = notesByPath[first]
       const noteB = notesByPath[second]
-      if (!noteA || !noteB) return asFailure('notFound')
+      if (!noteA || !noteB) return Promise.resolve(asFailure('notFound'))
       noteA.parents = noteA.parents.filter((p) => p !== second)
       noteA.jumps = noteA.jumps.filter((j) => j !== second)
       noteB.parents = noteB.parents.filter((p) => p !== first)
@@ -1790,19 +1824,19 @@ const plexState = createPlexTab(plexView, {
       } else if (connection.role === 'jump') {
         joinNotesInVault(first, second, 'jump', connection.firstSide?.label)
       }
-      return asValue(undefined)
+      return Promise.resolve(asValue(undefined))
     },
-    removeConnection: async (first, second) => {
+    removeConnection: (first, second) => {
       const noteA = notesByPath[first]
       const noteB = notesByPath[second]
-      if (!noteA || !noteB) return asFailure('notFound')
+      if (!noteA || !noteB) return Promise.resolve(asFailure('notFound'))
       noteA.parents = noteA.parents.filter((p) => p !== second)
       noteA.jumps = noteA.jumps.filter((j) => j !== second)
       noteB.parents = noteB.parents.filter((p) => p !== first)
       noteB.jumps = noteB.jumps.filter((j) => j !== first)
       delete EDGE_LABELS[`${first}->${second}`]
       delete EDGE_LABELS[`${second}->${first}`]
-      return asValue(undefined)
+      return Promise.resolve(asValue(undefined))
     },
   },
   isReady: ref(true),
@@ -1821,43 +1855,43 @@ const plexState = createPlexTab(plexView, {
     const tabId = openVaultFile(path, placement)
     if (options?.line !== undefined && tabId) {
       const line = options.line
-      void nextTick(() => {
+      nextTick(() => {
         editorRefs.get(tabId)?.reveal(line)
-      })
+      }).catch(logFailure)
     }
   },
   onSelectPath: (path, title) => {
     syncPathFromTab(PLEX_TAB, path, title ?? '')
   },
-  readHeadings: async (paths) => {
+  readHeadings: (paths) => {
     const map = new Map<string, readonly NoteHeading[]>()
     for (const p of paths) {
       const h = notesByPath[p]?.headings
       if (h) map.set(p, h)
     }
-    return map
+    return Promise.resolve(map)
   },
   getMenuEntries: () => PLEX_MENU,
-  listItems: async () => [],
-  runCommand: async (command, target) => {
+  listItems: () => Promise.resolve([]),
+  runCommand: (command, target) => {
     runVaultCommand(command, target.path, 'plex')
-    return ''
+    return Promise.resolve('')
   },
   getNoteIcon: (tabKind) => (tabKind === 'deck' ? Layers : FileText),
-  openingPath: ref('physics/Entropy.md'),
-  readOpeningPath: async () => 'physics/Entropy.md',
+  openingPath: ref(ENTROPY_PATH),
+  readOpeningPath: () => Promise.resolve(ENTROPY_PATH),
   dragged: draggedPaths,
-  showMessage: () => {},
+  showMessage: () => undefined,
   creatable: ['parent', 'child', 'jump'],
-  searchNames: async (query) => {
+  searchNames: (query) => {
     const q = query.trim().toLowerCase()
-    return Object.values(notesByPath)
+    return Promise.resolve(Object.values(notesByPath)
       .filter((n) => !q || n.title.toLowerCase().includes(q))
-      .map((n) => ({ path: n.path, title: n.title }))
+      .map((n) => ({ path: n.path, title: n.title })))
   },
 })
 
-void plexView.go('physics/Entropy.md')
+plexView.go('physics/Entropy.md').catch(logFailure)
 
 watch(
   () => plexView.here.value,
@@ -1922,13 +1956,13 @@ const AGENT_OPTIONS: readonly AgentModelOption[] = [
 ]
 
 /* ------------------------ PDF & Search / Palette -------------------------- */
-const PAPER = { wide: 612, high: 792 }
+const PAPER = { width: 612, height: 792 }
 const MARGIN = 84
 const FIRST = 132
 const LEADING = 27
 
 function getPdfPages(pdfPath: string) {
-  const doc = PDF_DOCS[pdfPath] ?? PDF_DOCS['reading/Boltzmann 1877.pdf']!
+  const doc = getPdfDoc(pdfPath)
   return Array.from({ length: doc.leaves }, () => PAPER)
 }
 
@@ -1937,7 +1971,7 @@ function escapeHtml(line: string): string {
 }
 
 function renderPdfPage(pdfPath: string, pageNum: number): string {
-  const doc = PDF_DOCS[pdfPath] ?? PDF_DOCS['reading/Boltzmann 1877.pdf']!
+  const doc = getPdfDoc(pdfPath)
   const leaf =
     (((pageNum - doc.firstPage) % doc.pages.length) + doc.pages.length) % doc.pages.length
   const lines = doc.pages[leaf] ?? []
@@ -1948,24 +1982,24 @@ function renderPdfPage(pdfPath: string, pageNum: number): string {
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escapeHtml(line)}</text>`
     })
     .join('')
-  const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${pageNum + 1}</text>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
+  const number = `<text x="${PAPER.width / 2}" y="${PAPER.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${pageNum + 1}</text>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.width}" height="${PAPER.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
 function overLines(from: number, to: number, ends: number) {
   return {
-    minX: (MARGIN - 4) / PAPER.wide,
-    maxX: (MARGIN + ends) / PAPER.wide,
-    minY: (FIRST + from * LEADING - 18) / PAPER.high,
-    maxY: (FIRST + to * LEADING + 6) / PAPER.high,
+    minX: (MARGIN - 4) / PAPER.width,
+    maxX: (MARGIN + ends) / PAPER.width,
+    minY: (FIRST + from * LEADING - 18) / PAPER.height,
+    maxY: (FIRST + to * LEADING + 6) / PAPER.height,
   }
 }
 
 const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
 function getHighlightsOn(pdfPath: string, pageIndex: number) {
-  const doc = PDF_DOCS[pdfPath] ?? PDF_DOCS['reading/Boltzmann 1877.pdf']!
+  const doc = getPdfDoc(pdfPath)
   return pageIndex === doc.firstPage ? HIGHLIGHTS : []
 }
 
@@ -2108,7 +2142,7 @@ const RAW_COMMAND_GROUPS: readonly {
       { id: DEMO_COMMAND.renameNote, title: 'Rename note' },
       { id: DEMO_COMMAND.askAgent, title: 'Ask agent about note' },
       { id: DEMO_COMMAND.copyNotePath, title: 'Copy note path' },
-      { id: DEMO_COMMAND.trashNote, title: 'Move note to trash' },
+      { id: DEMO_COMMAND.removeFile, title: 'Move note to trash' },
     ],
   },
   {
@@ -2204,7 +2238,7 @@ function getPaletteRowIcon(id: string): Component | null {
   if (activePanel.value === 'commands') {
     return COMMAND_ICONS[id] ?? null
   }
-  if (PDF_DOCS[id]) return BookOpen
+  if (PDF_BY_PATH.has(id)) return BookOpen
   if (id === RECORDING_PATH || id.endsWith('.mp3')) return AudioLines
   if (id === YOUTUBE_LINK_PATH) return Link
   if (id === DECK_PATH) return Layers
@@ -2222,18 +2256,18 @@ watch(
   agentRef,
   (val) => {
     if (val) {
-      void nextTick(() => {
+      nextTick(() => {
         resetAgentScrollToTop()
-      })
+      }).catch(logFailure)
     }
   },
   { immediate: true },
 )
 
 onMounted(() => {
-  void nextTick(() => {
+  nextTick(() => {
     resetAgentScrollToTop()
-  })
+  }).catch(logFailure)
 })
 
 onBeforeUnmount(() => {
@@ -2262,18 +2296,19 @@ function onWindowKeydown(event: KeyboardEvent) {
 }
 
 function onShowWorkspaceTab(tabId: string) {
-  void nextTick(() => {
+  nextTick(() => {
     editorRefs.get(tabId)?.measure()
     readerRefs.get(tabId)?.measure()
-  })
+  }).catch(logFailure)
 }
 
 function onActivateWorkspaceTab(tabId: string) {
   onShowWorkspaceTab(tabId)
   if (tabId.startsWith('note:')) {
     const path = noteTabPaths[tabId]
-    if (path && notesByPath[path]) {
-      syncPathFromTab(tabId, path, notesByPath[path]!.title)
+    const note = path ? notesByPath[path] : undefined
+    if (path && note) {
+      syncPathFromTab(tabId, path, note.title)
     }
   }
 }
@@ -2290,7 +2325,7 @@ function onTabContextMenu(tabId: string, pos: { x: number; y: number }) {
 }
 
 function onGoBookPage(pdfPath: string, targetPage: number) {
-  const doc = PDF_DOCS[pdfPath] ?? PDF_DOCS['reading/Boltzmann 1877.pdf']!
+  const doc = getPdfDoc(pdfPath)
   pdfPagesState[pdfPath] = Math.min(Math.max(targetPage, 0), doc.leaves - 1)
 }
 
@@ -2332,7 +2367,7 @@ function onSubmitAgent(prompt: string) {
   if (!trimmed || isAgentWorking.value) return
   asking.value = ''
   const activePath = plexView.here.value || 'physics/Entropy.md'
-  const activeNote = notesByPath[activePath] ?? notesByPath['physics/Entropy.md']!
+  const activeNote = getNoteOrEntropy(activePath)
   const turnBase = Date.now()
   turns.value = [
     ...turns.value,
@@ -2367,10 +2402,10 @@ function onPaletteChoose(itemId: string, actionId?: string) {
     pendingNaming.value = null
     if (!trimmed) return
     if (command === 'title') {
-      void filesState.rename(targetPath, trimmed)
+      filesState.rename(targetPath, trimmed).catch(logFailure)
     } else {
       const created = createNoteInRelationInVault(trimmed, targetPath, command)
-      void plexView.go(created.path)
+      plexView.go(created.path).catch(logFailure)
     }
     return
   }
@@ -2381,7 +2416,7 @@ function onPaletteChoose(itemId: string, actionId?: string) {
     return
   }
   if (actionId === 'travel' && notesByPath[itemId]) {
-    void plexView.go(itemId)
+    plexView.go(itemId).catch(logFailure)
     ensureToolTabOpen(PLEX_TAB, 'map')
     return
   }
@@ -2453,15 +2488,16 @@ function openVaultFile(path: string, placement: 'current' | 'split' = 'current')
   if (path === DECK_PATH) {
     return openContentTab(getDeckTabId(DECK_PATH), placement)
   }
-  if (PDF_DOCS[path]) {
+  if (PDF_BY_PATH.has(path)) {
     return openContentTab(getPdfTabId(path), placement)
   }
-  if (notesByPath[path]) {
+  const openedNote = notesByPath[path]
+  if (openedNote) {
     if (placement === 'current') {
       const existingAtPath = findNoteTabAt(path)
       if (existingAtPath) {
         const tabId = openContentTab(existingAtPath, 'current')
-        syncPathFromTab(tabId, path, notesByPath[path]!.title)
+        syncPathFromTab(tabId, path, openedNote.title)
         return tabId
       }
       const linkedNoteTab = openTabIds.value.find(
@@ -2470,12 +2506,12 @@ function openVaultFile(path: string, placement: 'current' | 'split' = 'current')
       if (linkedNoteTab) {
         navigateNoteTab(linkedNoteTab, path)
         const tabId = openContentTab(linkedNoteTab, 'current')
-        syncPathFromTab(tabId, path, notesByPath[path]!.title)
+        syncPathFromTab(tabId, path, openedNote.title)
         return tabId
       }
     }
     const tabId = openContentTab(createNoteTabForPath(path), placement)
-    syncPathFromTab(tabId, path, notesByPath[path]!.title)
+    syncPathFromTab(tabId, path, openedNote.title)
     return tabId
   }
   return null
@@ -2509,11 +2545,11 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
     openVaultFile(targetPath, 'split')
   } else if (command === DEMO_COMMAND.revealNote) {
     ensureToolTabOpen(FILES_TAB, 'main')
-    void fileTree.revealPath(targetPath)
+    fileTree.revealPath(targetPath).catch(logFailure)
     fileTree.selectPaths([targetPath])
   } else if (command === DEMO_COMMAND.showNoteInPlex) {
     if (notesByPath[targetPath]) {
-      void plexView.go(targetPath)
+      plexView.go(targetPath).catch(logFailure)
       ensureToolTabOpen(PLEX_TAB, 'map')
     }
   } else if (getNamingRole(command) !== null && command !== DEMO_COMMAND.renameNote) {
@@ -2525,10 +2561,10 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
       openNamingStep(role, targetPath)
     }
   } else if (command === DEMO_COMMAND.createNote) {
-    void createUntitledInVault('physics').then(async (path) => {
+    createUntitledInVault('physics').then(async (path) => {
       await fileTree.openFolder('physics')
       filesState.setRenamingPath(path)
-    })
+    }).catch(logFailure)
   } else if (command === DEMO_COMMAND.renameNote) {
     if (source === 'files') {
       if (notesByPath[targetPath]) {
@@ -2538,8 +2574,8 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
       openNamingStep('title', targetPath)
     }
   } else if (command === DEMO_COMMAND.copyNotePath) {
-    void navigator.clipboard?.writeText(targetPath).catch(() => {})
-  } else if (command === DEMO_COMMAND.trashNote) {
+    navigator.clipboard.writeText(targetPath).catch(logFailure)
+  } else if (command === DEMO_COMMAND.removeFile) {
     if (notesByPath[targetPath] && Object.keys(notesByPath).length > 1) {
       delete notesByPath[targetPath]
       for (const other of Object.values(notesByPath)) {
@@ -2551,20 +2587,20 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
           onCloseWorkspaceTab(tabId)
         }
       }
-      void fileTree.refresh()
+      fileTree.refresh().catch(logFailure)
       if (plexView.here.value === targetPath) {
         const fallback = Object.keys(notesByPath)[0] ?? 'physics/Entropy.md'
-        void plexView.go(fallback)
+        plexView.go(fallback).catch(logFailure)
       } else if (plexView.here.value) {
-        void plexView.go(plexView.here.value)
+        plexView.go(plexView.here.value).catch(logFailure)
       }
     }
   } else if (command === DEMO_COMMAND.askAgent) {
     ensureToolTabOpen(AGENT_TAB, 'aside')
     asking.value = `${targetPath} — `
-    void nextTick(() => {
+    nextTick(() => {
       agentRef.value?.focus()
-    })
+    }).catch(logFailure)
   } else if (command === DEMO_COMMAND.openPlex) {
     ensureToolTabOpen(PLEX_TAB, 'map')
   } else if (command === DEMO_COMMAND.openFiles) {
@@ -2615,13 +2651,14 @@ function getTabIcon(id: string): Component | null {
       <template #tab="{ id }">
         <PlexGraphView v-if="id === PLEX_TAB" :state="plexState" />
         <Editor
-          v-else-if="id.startsWith('note:') && noteTabPaths[id] && notesByPath[noteTabPaths[id]!]"
+          v-else-if="id.startsWith('note:') && findTabNote(id)"
           :ref="setEditorRef(id)"
-          v-model="notesByPath[noteTabPaths[id]!]!.body"
+          :model-value="findTabNote(id)?.body ?? ''"
+          @update:model-value="(body: string) => writeTabNoteBody(id, body)"
           @open="(address: string) => onOpenEditorLink(address, id)"
         />
         <Reader
-          v-else-if="id.startsWith('reader:pdf:') && PDF_DOCS[id.slice(11)]"
+          v-else-if="id.startsWith('reader:pdf:') && PDF_BY_PATH.has(id.slice(11))"
           :ref="setReaderRef(id)"
           class="h-full"
           :pages="getPdfPages(id.slice(11))"

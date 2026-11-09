@@ -172,7 +172,9 @@ function getPaneHeight(): number {
 function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000
-    void player.value.play()
+    player.value.play().catch((error: unknown) => {
+      console.error(error)
+    })
     return
   }
   seekFrame(frame.value?.contentWindow, props.embed, ms)
