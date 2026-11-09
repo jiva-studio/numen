@@ -4,7 +4,7 @@
   "version": "2026.11.1",
   "protocol": 1,
   "description": "Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions, chat and embeddings",
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
     "category": "connections",
     "connectionTypes": [
