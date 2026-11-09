@@ -37,7 +37,10 @@ export const separator = (index: number): SlotSeparator => ({
 /** A view that draws a box of a fixed size in pixels, which a story finds by `data-box`. */
 export const createBoxView = (id: string): FunctionalComponent =>
   markRaw(() =>
-    h('span', { 'data-box': id, style: 'display: inline-block; inline-size: 40px; block-size: 20px' }),
+    h('span', {
+      'data-box': id,
+      style: 'display: inline-block; inline-size: 40px; block-size: 20px',
+    }),
   )
 
 /** The scales, as [interface, text]: the designed size, each one larger, and both larger. */

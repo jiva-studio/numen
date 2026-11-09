@@ -130,7 +130,11 @@ describe('the popover of the bar chip', () => {
             {
               default: () => FACE,
               popover: () =>
-                h('button', { type: 'button', onClick: () => (isOpen.value = false) }, POPOVER_ACTION),
+                h(
+                  'button',
+                  { type: 'button', onClick: () => (isOpen.value = false) },
+                  POPOVER_ACTION,
+                ),
             },
           )
       },

@@ -95,7 +95,7 @@ const inBar = (place: 'top' | 'bottom') => () => ({
 })
 
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
-  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getByRole('button')
+  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getAllByRole('button')[0]!
 
 const openRelease = async (canvasElement: HTMLElement): Promise<HTMLElement> => {
   await userEvent.click(getChip(canvasElement))

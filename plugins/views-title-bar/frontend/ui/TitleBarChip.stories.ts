@@ -52,7 +52,9 @@ const sizeOf = (canvas: HTMLElement, place: string) => {
 export const KeepsTheSizeOfTheBareChipWhateverTheScale: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() =>
-      expect(canvasElement.querySelector('[data-title-bar] [data-chip="bar"] button')).not.toBeNull(),
+      expect(
+        canvasElement.querySelector('[data-title-bar] [data-chip="bar"] button'),
+      ).not.toBeNull(),
     )
     const found: { bar: ReturnType<typeof sizeOf>; bare: ReturnType<typeof sizeOf> }[] = []
     const style = document.documentElement.style

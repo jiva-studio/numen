@@ -25,7 +25,10 @@ const ORCHARD = { id: 'orchard', name: 'Orchard notes' }
 /** A view that draws a box of a fixed size in pixels, which a story finds by `data-box`. */
 const createBoxView = (id: string): FunctionalComponent =>
   markRaw(() =>
-    h('span', { 'data-box': id, style: 'display: inline-block; inline-size: 40px; block-size: 20px' }),
+    h('span', {
+      'data-box': id,
+      style: 'display: inline-block; inline-size: 40px; block-size: 20px',
+    }),
   )
 
 const BOXES: readonly SlotItem[] = [

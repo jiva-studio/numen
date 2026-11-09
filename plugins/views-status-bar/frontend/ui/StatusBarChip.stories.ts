@@ -46,7 +46,9 @@ export const KeepsTheSizeOfTheBareChipWhateverTheScale: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(
-        canvasElement.querySelector('[data-status-bar-slot="statusBar.right"] [data-chip="bar"] button'),
+        canvasElement.querySelector(
+          '[data-status-bar-slot="statusBar.right"] [data-chip="bar"] button',
+        ),
       ).not.toBeNull(),
     )
     const found = measureAtEveryScale(() => ({

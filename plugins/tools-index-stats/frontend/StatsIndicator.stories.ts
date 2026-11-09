@@ -180,9 +180,7 @@ export const KeepsItsSize: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const boxes = within(canvasElement).getAllByRole('button').map(
-      getBox,
-    )
+    const boxes = within(canvasElement).getAllByRole('button').map(getBox)
     await expect(boxes).toHaveLength(4)
     for (const box of boxes) await expect(box.height).toBe(20)
   },
@@ -225,7 +223,7 @@ const inBar = (place: 'top' | 'bottom') => () => ({
 })
 
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
-  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getByRole('button')
+  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getAllByRole('button')[0]!
 
 /** The chip is 20px high at every scale, and the view is exactly as wide and high as its chip. */
 export const KeepsItsSizeAndAddsNoSpaceWhateverTheScale: Story = {
