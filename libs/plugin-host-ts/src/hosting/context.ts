@@ -256,10 +256,20 @@ function guardServices(
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
+/** A view context that names a note to read, such as the one of the note editor. */
+function hasNotePath(context: unknown): boolean {
+  return typeof context === 'object' && context !== null && 'path' in context && !!context.path
+}
+
 type Track = (disposable: Disposable) => Disposable
 type RequirePermission = (permission: string, operation: string) => void
 
-function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
+function createRegistrations(
+  pluginId: string,
+  host: PluginContextHost,
+  add: Track,
+  requirePerm: RequirePermission,
+) {
   return {
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
@@ -271,6 +281,7 @@ function createRegistrations(pluginId: string, host: PluginContextHost, add: Tra
       add(host.registerAgentProvider(pluginId, reg)),
     registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
     mountView: (capability: string, element: HTMLElement, context: unknown) => {
+      if (hasNotePath(context)) requirePerm('vault:read', 'mountView')
       const view = host.mountView(capability, element, context)
       return { focus: () => view.focus(), ...add(view) }
     },
@@ -346,7 +357,7 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, add),
+    ...createRegistrations(pluginId, host, add, requirePerm),
     ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,
