@@ -7,7 +7,6 @@ import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
-import SecretsPage from './secrets/SecretsPage.vue'
 import ConnectionsPage from './connections/ConnectionsPage.vue'
 import { createManagedFromEntries } from '@/shared/pluginListing'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
@@ -68,11 +67,6 @@ function onBack(): void {
         <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
         <ConnectionsPage
           v-else-if="selectedPluginId === 'connections'"
-          :state="props.state"
-          @back="onBack"
-        />
-        <SecretsPage
-          v-else-if="selectedPluginId === 'secrets'"
           :state="props.state"
           @back="onBack"
         />

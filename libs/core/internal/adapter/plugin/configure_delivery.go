@@ -23,22 +23,6 @@ type configSnapshot struct {
 	endpoint   transport.Endpoint
 	configJSON string
 	values     map[string]string
-	getExtra   func() configureExtra
-}
-
-// configureExtra is the part of a Configure call that its owner adds to the settings.
-type configureExtra struct {
-	signature           string
-	isComplete          bool
-	isConfigureOptional bool
-	read                func(ctx context.Context) ([]*v1.ConfigureSecrets, error)
-}
-
-func (s configSnapshot) resolveExtra() configureExtra {
-	if s.getExtra == nil {
-		return configureExtra{isComplete: true, isConfigureOptional: true}
-	}
-	return s.getExtra()
 }
 
 type configureHost struct {
@@ -46,14 +30,14 @@ type configureHost struct {
 	listPluginIDs     func() []string
 }
 
-// configureDelivery sends Configure to the plugins: their settings, the performance profile and
-// what the owner of an extra adds. It remembers what each plugin was given last.
+// configureDelivery sends Configure to the plugins: their settings and the performance profile. It
+// remembers which plugins were given their configuration.
 type configureDelivery struct {
 	host                   configureHost
 	lock                   chan struct{}
 	mu                     sync.RWMutex
-	delivered              map[string]string
-	rejected               map[string]string
+	delivered              map[string]bool
+	rejected               map[string]bool
 	awaitingFirstConfigure map[string]bool
 	configWatchers         map[string]map[int]func()
 	nextWatcher            int
@@ -63,8 +47,8 @@ func newConfigureDelivery(host configureHost) *configureDelivery {
 	return &configureDelivery{
 		host:                   host,
 		lock:                   make(chan struct{}, 1),
-		delivered:              make(map[string]string),
-		rejected:               make(map[string]string),
+		delivered:              make(map[string]bool),
+		rejected:               make(map[string]bool),
 		awaitingFirstConfigure: make(map[string]bool),
 	}
 }
@@ -141,11 +125,10 @@ func (d *configureDelivery) refreshPlugin(ctx context.Context, pluginID string) 
 	if !isRunning {
 		return nil
 	}
-	extra := snapshot.resolveExtra()
-	if extra.isComplete && !d.isDue(pluginID, extra.signature) {
+	if !d.isDue(pluginID) {
 		return nil
 	}
-	return d.deliver(ctx, snapshot, extra)
+	return d.deliver(ctx, snapshot)
 }
 
 func (d *configureDelivery) configurePlugin(ctx context.Context, pluginID string) error {
@@ -153,51 +136,34 @@ func (d *configureDelivery) configurePlugin(ctx context.Context, pluginID string
 	if !isRunning || err != nil {
 		return err
 	}
-	return d.deliver(ctx, snapshot, snapshot.resolveExtra())
+	return d.deliver(ctx, snapshot)
 }
 
-func (d *configureDelivery) isDue(pluginID, signature string) bool {
+func (d *configureDelivery) isDue(pluginID string) bool {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	if d.awaitingFirstConfigure[pluginID] {
-		return false
-	}
-	if last, isDelivered := d.delivered[pluginID]; isDelivered && last == signature {
-		return false
-	}
-	last, isRejected := d.rejected[pluginID]
-	return !isRejected || last != signature
+	return !d.awaitingFirstConfigure[pluginID] && !d.delivered[pluginID] && !d.rejected[pluginID]
 }
 
-func (d *configureDelivery) deliver(ctx context.Context, snapshot configSnapshot, extra configureExtra) error {
-	var entries []*v1.ConfigureSecrets
-	var readErr error
-	if extra.read != nil {
-		entries, readErr = extra.read(ctx)
-	}
-	isConfigured, sendErr := d.sendConfigure(ctx, snapshot, entries, extra.isConfigureOptional)
-	d.recordOutcome(ctx, snapshot.pluginID, extra.signature, sendErr, readErr)
+func (d *configureDelivery) deliver(ctx context.Context, snapshot configSnapshot) error {
+	isConfigured, sendErr := d.sendConfigure(ctx, snapshot)
+	d.recordOutcome(ctx, snapshot.pluginID, sendErr)
 	if sendErr == nil && isConfigured {
 		d.runConfigWatchers(snapshot.pluginID)
 	}
-	return errors.Join(sendErr, readErr)
+	return sendErr
 }
 
-func (d *configureDelivery) recordOutcome(ctx context.Context, pluginID, signature string, sendErr, readErr error) {
+func (d *configureDelivery) recordOutcome(ctx context.Context, pluginID string, sendErr error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	delete(d.delivered, pluginID)
 	switch {
-	case sendErr == nil && readErr == nil:
-		d.delivered[pluginID] = signature
-		delete(d.rejected, pluginID)
 	case sendErr == nil:
-		delete(d.delivered, pluginID)
+		d.delivered[pluginID] = true
 		delete(d.rejected, pluginID)
-	case isCallerFailure(ctx, sendErr):
-		delete(d.delivered, pluginID)
-	default:
-		delete(d.delivered, pluginID)
-		d.rejected[pluginID] = signature
+	case !isCallerFailure(ctx, sendErr):
+		d.rejected[pluginID] = true
 	}
 }
 
@@ -209,9 +175,7 @@ func isCallerFailure(ctx context.Context, err error) bool {
 	return code == connect.CodeCanceled || code == connect.CodeDeadlineExceeded
 }
 
-func (d *configureDelivery) sendConfigure(
-	ctx context.Context, snapshot configSnapshot, entries []*v1.ConfigureSecrets, isConfigureOptional bool,
-) (bool, error) {
+func (d *configureDelivery) sendConfigure(ctx context.Context, snapshot configSnapshot) (bool, error) {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		transport.EndpointClient(snapshot.endpoint),
 		transport.GetBaseURL(snapshot.endpoint),
@@ -221,7 +185,6 @@ func (d *configureDelivery) sendConfigure(
 		PluginId:          snapshot.pluginID,
 		ConfigurationJson: snapshot.configJSON,
 		Values:            snapshot.values,
-		Secrets:           entries,
 	})
 	callCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
 	defer cancel()
@@ -230,7 +193,7 @@ func (d *configureDelivery) sendConfigure(
 		return true, nil
 	}
 	var connectErr *connect.Error
-	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && isConfigureOptional {
+	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
 		return false, nil
 	}
 	return false, fmt.Errorf("configure plugin %s: %s", snapshot.pluginID, getConfigureFailureText(err))

@@ -66,10 +66,6 @@ type (
 	PluginSearchFloor      = pluginport.PluginSearchFloor
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
 	PluginSimilaritySample = pluginport.PluginSimilaritySample
-	SecretDeclaration      = pluginport.SecretDeclaration
-	SecretSource           = pluginport.SecretSource
-	Secret                 = pluginport.Secret
-	DeclarationKey         = pluginport.DeclarationKey
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition
@@ -174,7 +170,6 @@ var (
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
 	ErrInvalidReader          = pluginport.ErrInvalidReader
 	ErrInvalidSettingsView    = pluginport.ErrInvalidSettingsView
-	ErrInvalidSecret          = pluginport.ErrInvalidSecret
 	ErrInvalidService         = pluginport.ErrInvalidService
 	ErrInvalidSetting         = pluginport.ErrInvalidSetting
 	ErrInvalidSettingKey      = pluginport.ErrInvalidSettingKey

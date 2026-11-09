@@ -105,7 +105,7 @@ func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo,
 	return engine.MockEmbedder{LogPath: s.mockLog}, nil
 }
 
-func (s *embeddingServer) updateConfig(values map[string]string, _ server.Secrets) {
+func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.applyProfileLocked(performance.Read(values))

@@ -17,7 +17,7 @@ import {
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { Installation } from '../../../types'
 import { createInstallation } from '@/testing/installation'
-import { click, dispose, findButton, root } from '@/testing/secretsDom'
+import { click, dispose, findButton, root } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 
 const type = (id: string, operations: readonly string[]): ConnectionTypeInfo => ({

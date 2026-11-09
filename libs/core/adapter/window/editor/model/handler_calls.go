@@ -47,6 +47,69 @@ func (h *Handler) Complete(
 	return connect.NewResponse(&v1.ModelServiceCompleteResponse{Text: result.Text}), nil
 }
 
+// Chat streams the next turn of a conversation through the rows of the plugin the request names. A turn the
+// core could not serve ends the stream with an event that holds the error code.
+func (h *Handler) Chat(
+	ctx context.Context, request *connect.Request[v1.ModelServiceChatRequest], stream *connect.ServerStream[v1.ModelServiceChatResponse],
+) error {
+	if err := refuseToken(request.Header()); err != nil {
+		return err
+	}
+	messages := make([]modelcallport.ChatMessage, len(request.Msg.GetMessages()))
+	for i, one := range request.Msg.GetMessages() {
+		calls := make([]modelcallport.ToolCall, len(one.GetToolCalls()))
+		for j, call := range one.GetToolCalls() {
+			calls[j] = modelcallport.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: call.GetArgumentsJson()}
+		}
+		messages[i] = modelcallport.ChatMessage{Role: one.GetRole(), Text: one.GetText(), ToolCalls: calls, ToolCallID: one.GetToolCallId()}
+	}
+	tools := make([]modelcallport.ToolDefinition, len(request.Msg.GetTools()))
+	for i, one := range request.Msg.GetTools() {
+		tools[i] = modelcallport.ToolDefinition{Name: one.GetName(), Description: one.GetDescription(), Parameters: one.GetParametersJson()}
+	}
+	err := h.calls.Chat(ctx, request.Msg.GetPluginId(), modelcallport.ChatRequest{
+		Messages: messages, Tools: tools, Temperature: request.Msg.Temperature, MaxTokens: int(request.Msg.GetMaxTokens()),
+	}, readPriority(request.Msg.GetPriority()), func(event modelcallport.ChatEvent) error {
+		return stream.Send(writeChatEvent(event))
+	})
+	if err == nil {
+		return nil
+	}
+	code, detail, failures, isServed := writeCallError(ctx, err)
+	if !isServed {
+		return newStatusError(ctx, err)
+	}
+	return stream.Send(&v1.ModelServiceChatResponse{Event: &v1.ModelServiceChatResponse_Failure{
+		Failure: &v1.ModelChatError{Error: code, Detail: detail, Failures: failures},
+	}})
+}
+
+func writeChatEvent(event modelcallport.ChatEvent) *v1.ModelServiceChatResponse {
+	switch {
+	case event.ToolCall != nil:
+		return &v1.ModelServiceChatResponse{Event: &v1.ModelServiceChatResponse_ToolCall{ToolCall: &v1.HostModelToolCall{
+			Id: event.ToolCall.ID, Name: event.ToolCall.Name, ArgumentsJson: event.ToolCall.Arguments,
+		}}}
+	case event.Finish != nil:
+		return &v1.ModelServiceChatResponse{Event: &v1.ModelServiceChatResponse_Finish{
+			Finish: &v1.HostModelChatFinish{Reason: writeChatFinishReason(*event.Finish)},
+		}}
+	}
+	return &v1.ModelServiceChatResponse{Event: &v1.ModelServiceChatResponse_TextDelta{TextDelta: event.TextDelta}}
+}
+
+func writeChatFinishReason(reason modelcallport.ChatFinishReason) v1.HostModelChatFinishReason {
+	switch reason {
+	case modelcallport.ChatFinishToolCalls:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS
+	case modelcallport.ChatFinishLength:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_LENGTH
+	case modelcallport.ChatFinishStop:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP
+	}
+	return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP
+}
+
 // Embed turns texts into vectors through the rows of the plugin the request names.
 func (h *Handler) Embed(
 	ctx context.Context, request *connect.Request[v1.ModelServiceEmbedRequest],
@@ -131,6 +194,10 @@ type noCalls struct{}
 
 func (noCalls) Complete(context.Context, string, modelcallport.CompleteRequest, modelcallport.Priority) (modelcallport.CompleteResult, error) {
 	return modelcallport.CompleteResult{}, modelcallport.ErrNoConnection
+}
+
+func (noCalls) Chat(context.Context, string, modelcallport.ChatRequest, modelcallport.Priority, func(modelcallport.ChatEvent) error) error {
+	return modelcallport.ErrNoConnection
 }
 
 func (noCalls) Embed(context.Context, string, []string, modelcallport.Priority) ([][]float32, error) {

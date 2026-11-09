@@ -27,7 +27,7 @@ func Mount(s *server.Server) error {
 		return srv.Close(context.Background())
 	})
 
-	s.SetConfigure(func(ctx context.Context, values map[string]string, _ server.Secrets) error {
+	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
 		if srv.aggregator.client == nil {
 			if endpoint, err := hostcall.FromVars(values); err == nil {
 				srv.aggregator.client = tools.NewClient(endpoint)

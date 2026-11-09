@@ -61,6 +61,11 @@ type ModelCalls interface {
 	// Complete asks the rows in order. It returns ErrNoConnection, *AllFailedError or *RejectedError where
 	// no row answers, and the error of the context when the call is cancelled.
 	Complete(ctx context.Context, callerPluginID string, request CompleteRequest, priority Priority) (CompleteResult, error)
+	// Chat asks the rows in order for the next turn of a conversation and sends its events to send as they
+	// arrive. A row that fails before its first event is set aside and the next row is asked; a row that
+	// fails after it ends the call with *AllFailedError naming that connection, and nothing is repeated.
+	// It returns the errors Complete does, and the error of send when send fails.
+	Chat(ctx context.Context, callerPluginID string, request ChatRequest, priority Priority, send func(ChatEvent) error) error
 	// Embed asks the rows in order and returns the vectors in the order of the texts. It returns the errors
 	// Complete does.
 	Embed(ctx context.Context, callerPluginID string, texts []string, priority Priority) ([][]float32, error)

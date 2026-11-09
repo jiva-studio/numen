@@ -16,6 +16,10 @@ service ProviderService {
   // Embed turns texts into vectors, in the order of the texts.
   rpc Embed(ProviderServiceEmbedRequest) returns (ProviderServiceEmbedResponse);
 
+  // Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. A
+  // failure ends the stream. One call is one turn and the history travels with it.
+  rpc Chat(ProviderServiceChatRequest) returns (stream ProviderServiceChatResponse);
+
   // ListModels lists the models of the connection that fit an operation.
   rpc ListModels(ProviderServiceListModelsRequest) returns (ProviderServiceListModelsResponse);
 
@@ -101,6 +105,63 @@ message ProviderServiceCompleteRequest {
 message ProviderServiceCompleteResponse {
   string text = 1;
   ProviderFailure failure = 2;
+}
+
+message ProviderChatMessage {
+  // role is system, user, assistant or tool.
+  string role = 1;
+  string text = 2;
+  // tool_calls are the calls an assistant message asked for.
+  repeated ProviderToolCall tool_calls = 3;
+  // tool_call_id is the call a tool message answers.
+  string tool_call_id = 4;
+}
+
+message ProviderToolDefinition {
+  string name = 1;
+  string description = 2;
+  // parameters_json is the JSON schema of the arguments.
+  string parameters_json = 3;
+}
+
+message ProviderToolCall {
+  string id = 1;
+  string name = 2;
+  // arguments_json is the arguments as one JSON object.
+  string arguments_json = 3;
+}
+
+// ProviderChatFinishReason is why a turn ended.
+enum ProviderChatFinishReason {
+  PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED = 0;
+  // PROVIDER_CHAT_FINISH_REASON_STOP is an answer the model finished.
+  PROVIDER_CHAT_FINISH_REASON_STOP = 1;
+  // PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS is a turn that asks for tool calls.
+  PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS = 2;
+  // PROVIDER_CHAT_FINISH_REASON_LENGTH is an answer cut off at the length limit.
+  PROVIDER_CHAT_FINISH_REASON_LENGTH = 3;
+}
+
+message ProviderChatFinish {
+  ProviderChatFinishReason reason = 1;
+}
+
+message ProviderServiceChatRequest {
+  ProviderCall call = 1;
+  repeated ProviderChatMessage messages = 2;
+  repeated ProviderToolDefinition tools = 3;
+  optional double temperature = 4;
+  int32 max_tokens = 5;
+}
+
+// ProviderServiceChatResponse is one event of a turn. A turn ends with a finish or a failure.
+message ProviderServiceChatResponse {
+  oneof event {
+    string text_delta = 1;
+    ProviderToolCall tool_call = 2;
+    ProviderChatFinish finish = 3;
+    ProviderFailure failure = 4;
+  }
 }
 
 message ProviderServiceEmbedRequest {

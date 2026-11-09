@@ -6,7 +6,6 @@ import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginInfo,
   PluginReader,
-  SecretDeclaration,
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
@@ -14,37 +13,6 @@ export type {
   PluginSettingsViewInfo,
 } from '@numen/plugin-manager'
 export type { PluginSettingType } from '@numen/core-client'
-
-/** One declaration of a plugin that may read a secret. */
-export interface DeclarationKey {
-  readonly pluginId: string
-  readonly name: string
-  readonly group: string
-}
-
-/** One secret as the window holds it. A value is never part of it. */
-export interface Secret {
-  readonly id: string
-  readonly name: string
-  readonly group: string
-  readonly allowed: readonly DeclarationKey[]
-  readonly hasValue?: boolean
-}
-
-/** The secrets of one group in priority order, as the core orders the page of secrets. */
-export interface SecretSection {
-  readonly group: string
-  readonly isAsked: boolean
-  readonly secrets: readonly Secret[]
-}
-
-/** The secrets the menu of one secret declaration of a plugin offers, in order. */
-export interface SecretMenu {
-  readonly pluginId: string
-  readonly name: string
-  readonly group: string
-  readonly secrets: readonly Secret[]
-}
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {
@@ -80,7 +48,4 @@ export interface Configuration {
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
-  readonly secretSections?: readonly SecretSection[] | undefined
-  readonly secretMenus?: readonly SecretMenu[] | undefined
-  readonly credentialsPath?: string | undefined
 }

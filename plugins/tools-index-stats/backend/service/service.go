@@ -95,7 +95,7 @@ func convertError(err error) error {
 
 func mount(s *server.Server, index Index, clk Clock, cpus int) error {
 	view := newStats(index, clk, cpus)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { view.configure(values) })
+	s.SetUpdateConfig(func(values map[string]string) { view.configure(values) })
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetStats, view.get)
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodGetStats are valid compile-time constants."

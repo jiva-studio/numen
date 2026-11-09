@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -18,6 +19,8 @@ const testToken = "plugin-token"
 
 func startPlugin(t *testing.T) string {
 	t.Helper()
+	t.Setenv(hostcall.HostPortEnv, "4000")
+	t.Setenv(hostcall.PluginTokenEnv, testToken)
 	stdin, hold := io.Pipe()
 	cleanup.CloseAfter(t, hold)
 	s := server.New(server.WithPort(0), server.WithToken(testToken), server.WithStdin(stdin), server.WithStdout(io.Discard), server.WithSignals())
@@ -52,42 +55,25 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	}
 }
 
-func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
-	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer host-key" {
-			http.Error(w, "no key", http.StatusUnauthorized)
-			return
-		}
-		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
-	}))
-	defer chat.Close()
+func TestConfigurePropagatesTheRowToTheAgent(t *testing.T) {
 	pos := startPlugin(t)
 
 	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
+		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
-		GetPrograms(t.Context(), nil)
+	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res; len(programs) != 1 || !programs[0].IsInstalled || len(programs[0].Models) != 2 {
+	if programs := res; len(programs) != 1 || !programs[0].IsInstalled || len(programs[0].Models) != 1 || programs[0].Models[0].Name != "m1" {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
 
-// The handler a host that links the plugin in serves hands Configure's base URL and key to the agent.
-func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
-	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer host-key" {
-			http.Error(w, "no key", http.StatusUnauthorized)
-			return
-		}
-		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
-	}))
-	defer chat.Close()
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken})
+// The handler a host that links the plugin in serves hands the rows Configure receives to the agent.
+func TestNewHandlerPropagatesTheRowToTheAgent(t *testing.T) {
+	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,89 +81,20 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	defer web.Close()
 
 	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
+		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
-		GetPrograms(t.Context(), nil)
+	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res; len(programs) != 1 || len(programs[0].Models) != 2 {
+	if programs := res; len(programs) != 1 || !programs[0].IsInstalled {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
 
-func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
-	var receivedBody map[string]any
-	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/chat/completions" {
-			decodeJSON(t, r.Body, &receivedBody)
-			encodeJSON(t, w, map[string]any{
-				"choices": []map[string]any{
-					{"message": map[string]any{"role": "assistant", "content": "hi"}},
-				},
-			})
-			return
-		}
-		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
-	}))
-	defer chat.Close()
-
-	s := &Server{Client: chat.Client()}
-	s.Configure(map[string]string{
-		"baseUrl":     chat.URL,
-		"temperature": "0.5",
-		"maxTokens":   "2048",
-	})
-	c := s.getChat()
-	_, _, err := c.send(t.Context(), "m1", effort{}, []message{{Role: "user", Content: new("hello")}}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if temp, ok := receivedBody["temperature"].(float64); !ok || temp != 0.5 {
-		t.Errorf("expected temperature 0.5, got %v", receivedBody["temperature"])
-	}
-	if maxT, ok := receivedBody["max_tokens"].(float64); !ok || int(maxT) != 2048 {
-		t.Errorf("expected max_tokens 2048, got %v", receivedBody["max_tokens"])
-	}
-}
-
-func hostKey() server.Secrets {
-	return server.Secrets{server.SecretAPIKey: {
-		{ID: "s00000001", Name: "Work", Group: "openrouter", Value: "host-key"},
-		{ID: "s00000002", Name: "Home", Group: "openrouter", Value: "other-key"},
-	}}
-}
-
-// The agent sends the first secret of the list and ignores the others; an empty list sends no key.
-func TestTheFirstSecretOfTheListIsTheKeySentToTheChatService(t *testing.T) {
-	var seen []string
-	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seen = append(seen, r.Header.Get("Authorization"))
-		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
-	}))
-	defer chat.Close()
-	pos := startPlugin(t)
-	client := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken))
-
-	if _, err := client.Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, hostKey()); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil); err != nil {
-		t.Fatal(err)
-	}
-	if len(seen) == 0 || seen[len(seen)-1] != "Bearer host-key" {
-		t.Errorf("the chat service was asked with %v, want the first secret", seen)
-	}
-
-	if _, err := client.Configure(t.Context(), map[string]string{"baseUrl": chat.URL}, server.Secrets{server.SecretAPIKey: {}}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil); err != nil {
-		t.Fatal(err)
-	}
-	if last := seen[len(seen)-1]; last == "Bearer host-key" || last == "Bearer other-key" {
-		t.Errorf("the chat service was asked with %q after an empty list", last)
+func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
+	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken}); err == nil {
+		t.Error("NewHandler accepted variables with no host port")
 	}
 }

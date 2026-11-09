@@ -38,6 +38,8 @@ const (
 	ProviderServiceCompleteProcedure = "/numen.v1.ProviderService/Complete"
 	// ProviderServiceEmbedProcedure is the fully-qualified name of the ProviderService's Embed RPC.
 	ProviderServiceEmbedProcedure = "/numen.v1.ProviderService/Embed"
+	// ProviderServiceChatProcedure is the fully-qualified name of the ProviderService's Chat RPC.
+	ProviderServiceChatProcedure = "/numen.v1.ProviderService/Chat"
 	// ProviderServiceListModelsProcedure is the fully-qualified name of the ProviderService's
 	// ListModels RPC.
 	ProviderServiceListModelsProcedure = "/numen.v1.ProviderService/ListModels"
@@ -67,6 +69,9 @@ type ProviderServiceClient interface {
 	Complete(context.Context, *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
 	Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error)
+	// Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. A
+	// failure ends the stream. One call is one turn and the history travels with it.
+	Chat(context.Context, *connect.Request[v1.ProviderServiceChatRequest]) (*connect.ServerStreamForClient[v1.ProviderServiceChatResponse], error)
 	// ListModels lists the models of the connection that fit an operation.
 	ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of the model of the call.
@@ -104,6 +109,12 @@ func NewProviderServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			httpClient,
 			baseURL+ProviderServiceEmbedProcedure,
 			connect.WithSchema(providerServiceMethods.ByName("Embed")),
+			connect.WithClientOptions(opts...),
+		),
+		chat: connect.NewClient[v1.ProviderServiceChatRequest, v1.ProviderServiceChatResponse](
+			httpClient,
+			baseURL+ProviderServiceChatProcedure,
+			connect.WithSchema(providerServiceMethods.ByName("Chat")),
 			connect.WithClientOptions(opts...),
 		),
 		listModels: connect.NewClient[v1.ProviderServiceListModelsRequest, v1.ProviderServiceListModelsResponse](
@@ -155,6 +166,7 @@ func NewProviderServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 type providerServiceClient struct {
 	complete            *connect.Client[v1.ProviderServiceCompleteRequest, v1.ProviderServiceCompleteResponse]
 	embed               *connect.Client[v1.ProviderServiceEmbedRequest, v1.ProviderServiceEmbedResponse]
+	chat                *connect.Client[v1.ProviderServiceChatRequest, v1.ProviderServiceChatResponse]
 	listModels          *connect.Client[v1.ProviderServiceListModelsRequest, v1.ProviderServiceListModelsResponse]
 	listReasoningLevels *connect.Client[v1.ProviderServiceListReasoningLevelsRequest, v1.ProviderServiceListReasoningLevelsResponse]
 	getModelProfile     *connect.Client[v1.ProviderServiceGetModelProfileRequest, v1.ProviderServiceGetModelProfileResponse]
@@ -172,6 +184,11 @@ func (c *providerServiceClient) Complete(ctx context.Context, req *connect.Reque
 // Embed calls numen.v1.ProviderService.Embed.
 func (c *providerServiceClient) Embed(ctx context.Context, req *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
 	return c.embed.CallUnary(ctx, req)
+}
+
+// Chat calls numen.v1.ProviderService.Chat.
+func (c *providerServiceClient) Chat(ctx context.Context, req *connect.Request[v1.ProviderServiceChatRequest]) (*connect.ServerStreamForClient[v1.ProviderServiceChatResponse], error) {
+	return c.chat.CallServerStream(ctx, req)
 }
 
 // ListModels calls numen.v1.ProviderService.ListModels.
@@ -215,6 +232,9 @@ type ProviderServiceHandler interface {
 	Complete(context.Context, *connect.Request[v1.ProviderServiceCompleteRequest]) (*connect.Response[v1.ProviderServiceCompleteResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
 	Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error)
+	// Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. A
+	// failure ends the stream. One call is one turn and the history travels with it.
+	Chat(context.Context, *connect.Request[v1.ProviderServiceChatRequest], *connect.ServerStream[v1.ProviderServiceChatResponse]) error
 	// ListModels lists the models of the connection that fit an operation.
 	ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error)
 	// ListReasoningLevels lists the reasoning levels of the model of the call.
@@ -248,6 +268,12 @@ func NewProviderServiceHandler(svc ProviderServiceHandler, opts ...connect.Handl
 		ProviderServiceEmbedProcedure,
 		svc.Embed,
 		connect.WithSchema(providerServiceMethods.ByName("Embed")),
+		connect.WithHandlerOptions(opts...),
+	)
+	providerServiceChatHandler := connect.NewServerStreamHandler(
+		ProviderServiceChatProcedure,
+		svc.Chat,
+		connect.WithSchema(providerServiceMethods.ByName("Chat")),
 		connect.WithHandlerOptions(opts...),
 	)
 	providerServiceListModelsHandler := connect.NewUnaryHandler(
@@ -298,6 +324,8 @@ func NewProviderServiceHandler(svc ProviderServiceHandler, opts ...connect.Handl
 			providerServiceCompleteHandler.ServeHTTP(w, r)
 		case ProviderServiceEmbedProcedure:
 			providerServiceEmbedHandler.ServeHTTP(w, r)
+		case ProviderServiceChatProcedure:
+			providerServiceChatHandler.ServeHTTP(w, r)
 		case ProviderServiceListModelsProcedure:
 			providerServiceListModelsHandler.ServeHTTP(w, r)
 		case ProviderServiceListReasoningLevelsProcedure:
@@ -327,6 +355,10 @@ func (UnimplementedProviderServiceHandler) Complete(context.Context, *connect.Re
 
 func (UnimplementedProviderServiceHandler) Embed(context.Context, *connect.Request[v1.ProviderServiceEmbedRequest]) (*connect.Response[v1.ProviderServiceEmbedResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.Embed is not implemented"))
+}
+
+func (UnimplementedProviderServiceHandler) Chat(context.Context, *connect.Request[v1.ProviderServiceChatRequest], *connect.ServerStream[v1.ProviderServiceChatResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderService.Chat is not implemented"))
 }
 
 func (UnimplementedProviderServiceHandler) ListModels(context.Context, *connect.Request[v1.ProviderServiceListModelsRequest]) (*connect.Response[v1.ProviderServiceListModelsResponse], error) {

@@ -1,45 +1,29 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
-  "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
+  "description": "Built-in AI assistant that chats through a connection to OpenRouter, OpenAI or an OpenAI-compatible server",
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": { "category": "agents" },
   "permissions": [
-    "network:outbound",
     "vault:read",
     "vault:write",
     "vault:manage",
     "window:focus",
     "index:read"
   ],
-  "secrets": [
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets the Numen Agent talk to the AI service you chose and answer on your behalf.",
-      "group": "openrouter"
-    }
-  ],
   "backend": { "entrypoint": "bin/agents-numen" },
   "services": ["numen.v1.AgentService"],
   "settings": [
     {
-      "key": "baseUrl",
-      "type": "string",
-      "title": "Chat API",
-      "description": "Base URL of an OpenAI-compatible chat API, such as https://openrouter.ai/api/v1 or http://localhost:11434/v1. Available models are fetched from <Chat API>/models.",
-      "default": "https://openrouter.ai/api/v1"
-    },
-    {
-      "key": "model",
-      "type": "string",
-      "title": "Model",
-      "description": "Model used when a task sets none",
-      "default": "openai/gpt-4o-mini",
-      "options": ["openai/gpt-4o-mini", "openai/gpt-4o", "google/gemini-2.5-flash"]
+      "key": "connections",
+      "type": "connections",
+      "title": "Connection",
+      "description": "The service the agent chats through, with its model and reasoning level.",
+      "operation": "chat",
+      "max": 1
     },
     {
       "key": "temperature",

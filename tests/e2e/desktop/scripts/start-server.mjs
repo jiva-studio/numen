@@ -6,7 +6,7 @@ import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
+import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
@@ -160,7 +160,7 @@ fs.mkdirSync(testHomeDir, { recursive: true })
 
 const standIns = await startStandIns()
 
-// The agent panel answers from numen's own agent over the stand-in chat API. The agents that
+// The agent panel answers from numen's own agent through a connection to the stand-in chat API. The agents that
 // run a program the machine has installed stay off: those programs reach their own services.
 const settingsDir =
   process.platform === 'darwin'
@@ -173,7 +173,18 @@ fs.writeFileSync(
     {
       v: 1,
       app: { agent: { use: 'numen' } },
-      'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+      connections: [
+        {
+          id: STAND_IN_CONNECTION,
+          type: 'md.numen.connections.llm/openai-compatible',
+          name: 'Stand-in',
+          revision: 1,
+          fields: { baseUrl: standIns.chatUrl },
+        },
+      ],
+      'md.numen.agents.numen': {
+        connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }],
+      },
       'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },

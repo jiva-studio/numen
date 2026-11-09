@@ -106,6 +106,9 @@ func tryRow[R, T any](
 			return rowOutcome[T]{err: ctxErr}
 		}
 		judged := readVerdict(resolved, err)
+		if judged.isCooling {
+			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
+		}
 		if judged.isSkipped || judged.err != nil {
 			return rowOutcome[T]{failure: judged.skip, err: judged.err}
 		}
@@ -151,13 +154,20 @@ type verdict struct {
 	err        error
 	reason     connectionport.FailureReason
 	retryAfter time.Duration
+	isCooling  bool
 }
 
 func readVerdict(resolved connection.Resolved, err error) verdict {
 	var unavailable *openError
 	var stopError *connectionport.StopError
 	var tryNext *connectionport.TryNextError
+	var consumer *consumerError
+	var midStream *midStreamError
 	switch {
+	case errors.As(err, &consumer):
+		return verdict{err: consumer.err}
+	case errors.As(err, &midStream):
+		return readMidStreamVerdict(resolved.Name, midStream.err)
 	case errors.Is(err, errQueueTimeout):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "busy")}
 	case errors.As(err, &unavailable):

@@ -13,6 +13,7 @@ type Recorded struct {
 	Address   string
 	Call      connectionport.ProviderCall
 	Request   connectionport.CompleteRequest
+	Chat      connectionport.ChatRequest
 }
 
 // Provider is a connectionport.Provider whose answers are scripted by the address of the connection.
@@ -22,6 +23,7 @@ type Provider struct {
 	queued    map[string][]error
 	always    map[string]error
 	blocked   map[string]chan struct{}
+	scripts   map[string]chatScript
 	recorded  []Recorded
 	entered   chan string
 	IsUnknown bool
@@ -30,7 +32,8 @@ type Provider struct {
 // NewProvider creates a provider that answers every call.
 func NewProvider() *Provider {
 	return &Provider{
-		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, entered: make(chan string, 256),
+		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]chatScript{},
+		entered: make(chan string, 256),
 	}
 }
 
@@ -74,12 +77,16 @@ func (p *Provider) CallsTo(address string) []Recorded {
 }
 
 func (p *Provider) receive(ctx context.Context, operation string, call connectionport.ProviderCall, request ...connectionport.CompleteRequest) error {
-	address := call.Fields["baseUrl"]
-	p.mu.Lock()
-	recorded := Recorded{Operation: operation, Address: address, Call: call}
+	recorded := Recorded{Operation: operation, Address: call.Fields["baseUrl"], Call: call}
 	if len(request) > 0 {
 		recorded.Request = request[0]
 	}
+	return p.record(ctx, recorded)
+}
+
+func (p *Provider) record(ctx context.Context, recorded Recorded) error {
+	address := recorded.Address
+	p.mu.Lock()
 	p.recorded = append(p.recorded, recorded)
 	block := p.blocked[address]
 	err := p.always[address]
@@ -160,6 +167,43 @@ func (p *Provider) ProbeEmbeddingWidth(ctx context.Context, call connectionport.
 		return 0, err
 	}
 	return 7, nil
+}
+
+type chatScript struct {
+	events []connectionport.ChatEvent
+	err    error
+}
+
+// ScriptChat makes the calls of Chat to the address send the events and then return err. A call with no
+// script sends "answer from <address>" and a finish of reason stop.
+func (p *Provider) ScriptChat(address string, err error, events ...connectionport.ChatEvent) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.scripts[address] = chatScript{events: events, err: err}
+}
+
+// Chat sends the events scripted for the address. A failure scripted with Fail or FailAlways is returned
+// before any event.
+func (p *Provider) Chat(
+	ctx context.Context, call connectionport.ProviderCall, request connectionport.ChatRequest, send func(connectionport.ChatEvent) error,
+) error {
+	address := call.Fields["baseUrl"]
+	if err := p.record(ctx, Recorded{Operation: "chat", Address: address, Call: call, Chat: request}); err != nil {
+		return err
+	}
+	p.mu.Lock()
+	script, isScripted := p.scripts[address]
+	p.mu.Unlock()
+	if !isScripted {
+		stop := connectionport.ChatFinishStop
+		script = chatScript{events: []connectionport.ChatEvent{{TextDelta: "answer from " + address}, {Finish: &stop}}}
+	}
+	for _, one := range script.events {
+		if err := send(one); err != nil {
+			return err
+		}
+	}
+	return script.err
 }
 
 // Entered receives the address of each call as the provider takes it.

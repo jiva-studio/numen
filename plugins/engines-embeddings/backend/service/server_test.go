@@ -63,7 +63,7 @@ func TestLifecycleConfigure(t *testing.T) {
 
 	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"model": "Xenova/bge-m3",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestModelDimensionResolutionAcrossLocalModels(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		emb.updateConfig(map[string]string{"source": "local", "model": tc.model}, nil)
+		emb.updateConfig(map[string]string{"source": "local", "model": tc.model})
 		info, err := emb.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatalf("%s: %v", tc.model, err)
@@ -176,7 +176,7 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 		{map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5 again"},
 	}
 	for _, step := range steps {
-		srv.updateConfig(step.values, nil)
+		srv.updateConfig(step.values)
 		info, err := srv.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatalf("%s: %v", step.description, err)
@@ -197,7 +197,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 		openedInfo = info
 		return engine.MockEmbedder{}, nil
 	}
-	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"})
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 	if srv.modelInfo.MinChunkLength != 40 {
 		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)
 	}
-	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"})
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -261,7 +261,7 @@ func TestRefreshModelInfoPreservesDimensionsEnvAndConcurrency(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.modelInfo.Concurrency = 7
 	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "777")
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	if srv.modelInfo.Dimensions != 777 {
 		t.Fatalf("Dimensions with env override = %d, want 777", srv.modelInfo.Dimensions)
 	}

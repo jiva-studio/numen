@@ -368,7 +368,7 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, agentSvc *agentServer) error {
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agentSvc.applyConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string) { agentSvc.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agentSvc, s.HandlerOptions()...))
 	connection.Mount(s, agentSvc.Provider())
 	s.OnClose(agentSvc.registry.Close)

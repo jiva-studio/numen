@@ -111,7 +111,7 @@ func getModelInfoOf(t *testing.T, srv *embeddingServer) embedding.ModelInfo {
 func TestAConnectionSourceReportsTheModelOfTheProfileBeforeAnyTextIsEmbedded(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	info := getModelInfoOf(t, srv)
 
@@ -129,13 +129,13 @@ func TestAConnectionSourceReportsTheModelOfTheProfileBeforeAnyTextIsEmbedded(t *
 func TestAnotherAddressOrWidthChangesTheModelReported(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	before := getModelInfoOf(t, srv)
 
 	moved := openAIProfile()
 	moved.Source = "md.numen.connections.llm/openai-compatible http://127.0.0.1:11434/v1"
 	host.setProfile(moved)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if after := getModelInfoOf(t, srv); after.From == before.From || after.Dimensions != before.Dimensions {
 		t.Errorf("another address: from %q to %q, width %d to %d", before.From, after.From, before.Dimensions, after.Dimensions)
 	}
@@ -143,7 +143,7 @@ func TestAnotherAddressOrWidthChangesTheModelReported(t *testing.T) {
 	narrow := moved
 	narrow.Dimensions = 768
 	host.setProfile(narrow)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if after := getModelInfoOf(t, srv); after.Dimensions != 768 {
 		t.Errorf("another width: %d, want 768", after.Dimensions)
 	}
@@ -157,8 +157,8 @@ func TestThePrefixesOfTheProfileChangeTheHandlingHash(t *testing.T) {
 	other := &hostModels{profile: prefixed}
 
 	first, second := newConnectionServer(t, unprefixed), newConnectionServer(t, other)
-	first.updateConfig(connectionValues(), nil)
-	second.updateConfig(connectionValues(), nil)
+	first.updateConfig(connectionValues())
+	second.updateConfig(connectionValues())
 
 	if a, b := getModelInfoOf(t, first).Handling, getModelInfoOf(t, second).Handling; a == b || b == "" {
 		t.Errorf("handling %q without prefixes and %q with them, want two different values", a, b)
@@ -170,7 +170,7 @@ func TestThePrefixesOfTheProfileChangeTheHandlingHash(t *testing.T) {
 func TestTheProfileIsReadOncePerConfiguration(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	for range 3 {
 		getModelInfoOf(t, srv)
@@ -178,7 +178,7 @@ func TestTheProfileIsReadOncePerConfiguration(t *testing.T) {
 	if got := host.countProfileCalls(); got != 1 {
 		t.Fatalf("the profile was asked for %d times, want 1", got)
 	}
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	getModelInfoOf(t, srv)
 	if got := host.countProfileCalls(); got != 2 {
 		t.Errorf("the profile was asked for %d times after a configuration, want 2", got)
@@ -189,7 +189,7 @@ func TestTheProfileIsReadOncePerConfiguration(t *testing.T) {
 func TestAProfileThatFailedIsAskedForAgain(t *testing.T) {
 	host := &hostModels{profile: openAIProfile(), profileErr: &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "OpenAI", Reason: "unreachable"}}}}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if _, err := srv.GetModelInfo(t.Context()); err == nil {
 		t.Fatal("no error while the connection is unreachable")
 	}
@@ -209,7 +209,7 @@ func TestTextsAreEmbeddedWithThePrefixAndThePriorityOfTheirRole(t *testing.T) {
 	profile.QueryPrefix, profile.DocumentPrefix = "query: ", "passage: "
 	host := &hostModels{profile: profile}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a", "b"}); err != nil {
 		t.Fatal(err)
@@ -233,7 +233,7 @@ func TestTextsAreEmbeddedWithThePrefixAndThePriorityOfTheirRole(t *testing.T) {
 func TestTheVectorsOfTheConnectionAreReturnedInTheOrderOfTheTexts(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a", "b", "c"})
 	if err != nil {
@@ -248,7 +248,7 @@ func TestTheVectorsOfTheConnectionAreReturnedInTheOrderOfTheTexts(t *testing.T) 
 func TestVectorsOfAnotherWidthThanTheProfileAreRefused(t *testing.T) {
 	host := &hostModels{profile: openAIProfile(), width: 8}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"})
 
@@ -273,7 +273,7 @@ func TestFailuresOfTheConnectionNameTheConnectionAndTheReason(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			host := &hostModels{profile: openAIProfile(), embedErr: tc.err}
 			srv := newConnectionServer(t, host)
-			srv.updateConfig(connectionValues(), nil)
+			srv.updateConfig(connectionValues())
 
 			_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"})
 
@@ -283,7 +283,7 @@ func TestFailuresOfTheConnectionNameTheConnectionAndTheReason(t *testing.T) {
 			host.mu.Lock()
 			host.profileErr = tc.err
 			host.mu.Unlock()
-			srv.updateConfig(connectionValues(), nil)
+			srv.updateConfig(connectionValues())
 			if _, err := srv.GetModelInfo(t.Context()); rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("model info err = %v, want FailedPrecondition naming %q", err, tc.want)
 			}
@@ -294,7 +294,7 @@ func TestFailuresOfTheConnectionNameTheConnectionAndTheReason(t *testing.T) {
 func TestACancelledCallKeepsItsContextError(t *testing.T) {
 	host := &hostModels{profile: openAIProfile(), embedErr: context.Canceled}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"})
 
@@ -307,7 +307,7 @@ func TestACancelledCallKeepsItsContextError(t *testing.T) {
 func TestAFreshInstallStaysOnTheLocalModel(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(map[string]string{}, nil)
+	srv.updateConfig(map[string]string{})
 
 	info := getModelInfoOf(t, srv)
 
@@ -324,15 +324,15 @@ func TestTheSourceSwitchesBetweenTheLocalModelAndTheConnection(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
 
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if info := getModelInfoOf(t, srv); info.Name != "text-embedding-3-small" {
 		t.Fatalf("connection: %s", info.Name)
 	}
-	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/bge-m3"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/bge-m3"})
 	if info := getModelInfoOf(t, srv); info.Name != "Xenova/bge-m3" || info.Dimensions != 1024 || info.From == openAIProfile().Source {
 		t.Errorf("local: %+v", info)
 	}
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if info := getModelInfoOf(t, srv); info.Name != "text-embedding-3-small" {
 		t.Errorf("connection again: %s", info.Name)
 	}
@@ -342,7 +342,7 @@ func TestTheSourceSwitchesBetweenTheLocalModelAndTheConnection(t *testing.T) {
 func TestTheRemovedProviderSettingIsIgnored(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(map[string]string{"provider": "openai", "baseUrl": "https://example.org/v1"}, nil)
+	srv.updateConfig(map[string]string{"provider": "openai", "baseUrl": "https://example.org/v1"})
 
 	info := getModelInfoOf(t, srv)
 
@@ -360,7 +360,7 @@ func TestTheEnvironmentNamesNoServiceAddress(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(map[string]string{}, nil)
+	srv.updateConfig(map[string]string{})
 
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
@@ -376,11 +376,11 @@ func TestTheMockModelServesTheLocalSourceOnly(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
 
-	srv.updateConfig(map[string]string{"source": "local"}, nil)
+	srv.updateConfig(map[string]string{"source": "local"})
 	if info := getModelInfoOf(t, srv); info.Name != "mock-embedding" {
 		t.Fatalf("local: %s", info.Name)
 	}
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 	if info := getModelInfoOf(t, srv); info.Name != "text-embedding-3-small" {
 		t.Errorf("connection: %s", info.Name)
 	}
@@ -389,7 +389,7 @@ func TestTheMockModelServesTheLocalSourceOnly(t *testing.T) {
 func TestAHostThatCannotBeReachedIsReportedWhenTheModelIsRead(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.newModels = func() (modelClient, error) { return nil, errors.New("no host") }
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	_, err := srv.GetModelInfo(t.Context())
 
@@ -407,7 +407,7 @@ func TestTheChunkSettingsApplyToTheConnection(t *testing.T) {
 	for k, v := range connectionValues() {
 		values[k] = v
 	}
-	srv.updateConfig(values, nil)
+	srv.updateConfig(values)
 
 	info := getModelInfoOf(t, srv)
 
@@ -425,7 +425,7 @@ func TestTheConnectionSourceNeverOpensTheLocalModel(t *testing.T) {
 		isOpened = true
 		return engine.MockEmbedder{}, nil
 	}
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
@@ -441,7 +441,7 @@ func TestTheConnectionSourceNeverOpensTheLocalModel(t *testing.T) {
 func TestAProfileThatArrivesAfterTheCallerStoppedWaitingIsUsedByTheNextCall(t *testing.T) {
 	host := &hostModels{profile: openAIProfile(), hold: make(chan struct{})}
 	srv := newConnectionServer(t, host)
-	srv.updateConfig(connectionValues(), nil)
+	srv.updateConfig(connectionValues())
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

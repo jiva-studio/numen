@@ -20,7 +20,6 @@ func readTestManifest(t *testing.T) Manifest {
 			{"id": "small-weights", "kind": "model"},
 			{"id": "large-weights", "kind": "model"}
 		],
-		"secrets": [{"name": "apiKey", "title": "API key", "when": {"setting": "provider", "is": ["remote"]}}],
 		"settings": [
 			{"key": "model", "type": "enum", "title": "Model", "default": "large", "options": [
 				{"value": "large", "title": "Large", "dependencies": ["large-weights"]},
@@ -129,10 +128,6 @@ func TestASettingWhoseConditionFailsIsLeftOut(t *testing.T) {
 	stored["provider"] = "remote"
 	if got := m.ResolveSettings(stored)["url"]; got != "https://mine.example.org" {
 		t.Errorf("url under the remote provider = %v", got)
-	}
-	secret := m.Secrets[0]
-	if m.IsSecretActive(secret, values) || !m.IsSecretActive(secret, m.ResolveSettings(stored)) {
-		t.Errorf("the key follows the provider wrongly")
 	}
 }
 
@@ -286,7 +281,6 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"blank entrypoint":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
 		"activation no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"]}`, ErrNoBackend},
 		"services no backend":      {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
-		"secrets no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"s","title":"S"}]}`, ErrNoBackend},
 		"runtime no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},
 		"invalid permission":       {`{"id":"a.b","name":"A","version":"1.0.0","permissions":["bad"]}`, ErrInvalidPermission},
 		"dep empty id":             {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"kind":"model"}]}`, ErrInvalidDependency},
@@ -295,10 +289,6 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"dep checksum no url":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
 		"dep http url":             {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
 		"dep bad checksum":         {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
-		"secret bad name":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"a/b","title":"T"}]}`, ErrInvalidSecret},
-		"secret duplicate":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"},{"name":"s","title":"T"}]}`, ErrInvalidSecret},
-		"secret is setting":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"}],"settings":[{"key":"s","type":"string","title":"S"}]}`, ErrInvalidSecret},
-		"secret bad when":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T","when":{"setting":"none","is":["x"]}}]}`, ErrInvalidSetting},
 		"service bad name":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["Bad"]}`, ErrInvalidService},
 		"service duplicate":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},

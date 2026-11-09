@@ -23,8 +23,6 @@ export const PLUGIN_WORDS = {
   pluginAvailable: 'This plugin is not installed.',
   pluginCatalogSource: (source: string) => `Offered by ${source}.`,
   noPlugins: 'No plugins installed.',
-  secrets: 'Secrets',
-  secretsDetail: 'API keys and tokens for plugins.',
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugin requests.',
   systemSettings: 'System',

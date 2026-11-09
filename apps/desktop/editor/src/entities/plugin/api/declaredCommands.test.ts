@@ -397,7 +397,6 @@ describe('useCatalogEntries', () => {
     description: '',
     isActive,
     capabilities: [],
-    secrets: [],
     hasFrontend: false,
     hasBackend: false,
     settings: [],

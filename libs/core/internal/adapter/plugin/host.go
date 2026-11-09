@@ -30,7 +30,6 @@ import (
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
@@ -98,8 +97,6 @@ type Host struct {
 	window                 pluginport.PluginWindow
 	vaultList              pluginport.PluginVaultList
 	search                 pluginport.PluginSearch
-	keyStore               keyStoreHolder
-	secrets                *secretDelivery
 	configure              *configureDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
@@ -157,7 +154,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
 	}
-	h.secrets = newSecretDelivery(&h.keyStore, h.reportError)
 	h.configure = newConfigureDelivery(configureHost{
 		getConfigSnapshot: h.getConfigSnapshot,
 		listPluginIDs:     h.listPluginIDs,
@@ -1211,11 +1207,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	if result == nil {
 		result = map[string]any{}
 	}
-	if p, ok := h.plugins[pluginID]; ok {
-		for _, name := range p.Manifest.GetSecretNames() {
-			delete(result, name)
-		}
-	}
 	return result
 }
 
@@ -1388,24 +1379,7 @@ func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) 
 		endpoint:   endpoint,
 		configJSON: cfgJSON,
 		values:     values,
-		getExtra: h.secrets.newExtra(
-			pluginID, h.listActiveDeclarationsLocked(pluginID, rawSettings), secret.ListAskedGroups(h.listDeclarationsLocked()),
-		),
 	}, true, nil
-}
-
-func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.SecretDeclaration {
-	p, ok := h.plugins[pluginID]
-	if !ok {
-		return nil
-	}
-	var active []manifest.SecretDeclaration
-	for _, declaration := range p.Manifest.Secrets {
-		if p.Manifest.IsSecretActive(declaration, values) {
-			active = append(active, declaration)
-		}
-	}
-	return active
 }
 
 func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
@@ -1463,7 +1437,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			Settings:      settings,
 			IsActive:      isActive,
 			Permissions:   p.Manifest.Permissions,
-			Secrets:       p.Manifest.Secrets,
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
 			HasBackend:    p.Manifest.HasBackend(),

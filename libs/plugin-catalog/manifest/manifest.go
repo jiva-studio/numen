@@ -3,11 +3,9 @@ package manifest
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"slices"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -82,7 +80,6 @@ var (
 	ErrInvalidSettingType     = errors.New("invalid setting type")
 	ErrEnumMissingOptions     = errors.New("enum setting must define options")
 	ErrRangeInvalidBounds     = errors.New("range min cannot exceed max")
-	ErrInvalidSecret          = errors.New("invalid secret")
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
 	ErrInvalidSetting         = errors.New("invalid setting")
 	ErrInvalidService         = errors.New("invalid service name")
@@ -102,10 +99,10 @@ const SettingEnabled = "enabled"
 func listReservedSettingKeys() []string { return []string{SettingEnabled} }
 
 var (
-	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
-	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
-	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
+	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
+	manifestNoteTypePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.
@@ -181,7 +178,6 @@ type Manifest struct {
 	Backend          Backend
 	Frontend         *Frontend
 	Settings         []Setting
-	Secrets          []SecretDeclaration
 	Services         []string
 	SettingsViews    []SettingsView
 	Contributes      Contributes
@@ -223,7 +219,6 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
-	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
@@ -253,7 +248,7 @@ func (m Manifest) listNoteTypeIssues() []error {
 	observed := map[string]bool{}
 	for _, declared := range m.Contributes.NoteTypes {
 		switch {
-		case !manifestSecretPattern.MatchString(declared.Type):
+		case !manifestNoteTypePattern.MatchString(declared.Type):
 			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
 		case observed[declared.Type]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
@@ -354,7 +349,6 @@ func (m Manifest) listBackendlessIssues() []error {
 	}{
 		{"activationEvents", len(m.ActivationEvents) > 0},
 		{"services", len(m.Services) > 0},
-		{"secrets", len(m.Secrets) > 0},
 		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},
 		{"contributes.triggers", len(m.Contributes.Triggers) > 0},
 		{"contributes.connectionTypes", len(m.Contributes.ConnectionTypes) > 0},
@@ -409,85 +403,6 @@ func (m Manifest) listActivationEventIssues() []error {
 		}
 	}
 	return issues
-}
-
-// maxSecretGroupLength is the longest group name of a secret declaration, in characters.
-const maxSecretGroupLength = 64
-
-func (m Manifest) listSecretIssues() []error {
-	var issues []error
-	for _, secret := range m.Secrets {
-		name := secret.Name
-		issues = append(issues, m.listConditionIssues("secret "+name, secret.When)...)
-		issues = append(issues, listSecretGroupIssues(secret)...)
-		switch {
-		case !manifestSecretPattern.MatchString(name):
-			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
-		case slices.Contains(listReservedSettingKeys(), name):
-			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
-		case slices.ContainsFunc(m.Settings, func(s Setting) bool { return s.Key == name }):
-			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
-		}
-	}
-	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
-}
-
-func listSecretGroupIssues(secret SecretDeclaration) []error {
-	group := secret.Group
-	if group == "" {
-		return nil
-	}
-	switch {
-	case strings.TrimSpace(group) != group:
-		return []error{fmt.Errorf("%w: group %q of %q has leading or trailing space", ErrInvalidSecret, group, secret.Name)}
-	case utf8.RuneCountInString(group) > maxSecretGroupLength:
-		return []error{fmt.Errorf("%w: group of %q is longer than %d characters", ErrInvalidSecret, secret.Name, maxSecretGroupLength)}
-	}
-	return nil
-}
-
-func listRepeatedSecretIssues(secrets []SecretDeclaration) []error {
-	var issues []error
-	byName := make(map[string][]SecretDeclaration, len(secrets))
-	for _, secret := range secrets {
-		byName[secret.Name] = append(byName[secret.Name], secret)
-	}
-	for _, name := range slices.Sorted(maps.Keys(byName)) {
-		declared := byName[name]
-		if len(declared) < 2 {
-			continue
-		}
-		if !isDisjoint(declared) {
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice without conditions on one setting that exclude each other", ErrInvalidSecret, name))
-			continue
-		}
-		groups := make(map[string]bool, len(declared))
-		for _, secret := range declared {
-			if groups[secret.Group] {
-				issues = append(issues, fmt.Errorf("%w: %q is declared twice for the group %q", ErrInvalidSecret, name, secret.Group))
-			}
-			groups[secret.Group] = true
-		}
-	}
-	return issues
-}
-
-func isDisjoint(declared []SecretDeclaration) bool {
-	values := make(map[string]bool)
-	for _, secret := range declared {
-		if secret.When == nil || secret.When.Setting != declared[0].When.Setting {
-			return false
-		}
-		for _, is := range secret.When.Is {
-			if values[is] {
-				return false
-			}
-		}
-		for _, is := range secret.When.Is {
-			values[is] = true
-		}
-	}
-	return true
 }
 
 func listManifestSettingIssues(settings []Setting) []error {

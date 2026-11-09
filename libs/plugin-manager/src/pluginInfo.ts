@@ -27,15 +27,6 @@ export interface PluginSettingOptionsBy {
   readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
 }
 
-/** A secret, such as an API key, that a plugin requests the host to store. */
-export interface SecretDeclaration {
-  readonly name: string
-  readonly title: string
-  readonly description: string
-  readonly group: string
-  readonly when?: PluginSettingCondition | undefined
-}
-
 /** Declarative setting schema and metadata exposed by a plugin. */
 export interface PluginSettingInfo {
   readonly key: string
@@ -79,7 +70,6 @@ export interface PluginInfo {
   readonly hasBackend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
-  readonly secrets: readonly SecretDeclaration[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
   readonly failure?: PluginFailure | undefined

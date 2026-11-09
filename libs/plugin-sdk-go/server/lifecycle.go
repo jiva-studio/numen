@@ -16,21 +16,21 @@ const statusOK = "ok"
 type LifecycleOption func(*LifecycleServer)
 
 // WithLifecycleConfigure sets the callback executed on Configure RPC.
-func WithLifecycleConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) LifecycleOption {
+func WithLifecycleConfigure(fn func(ctx context.Context, values map[string]string) error) LifecycleOption {
 	return func(s *LifecycleServer) {
 		s.onConfigure = fn
 	}
 }
 
 // WithLifecycleUpdateConfig adapts a configuration map updater to the Configure RPC.
-func WithLifecycleUpdateConfig(fn func(values map[string]string, secrets Secrets)) LifecycleOption {
+func WithLifecycleUpdateConfig(fn func(values map[string]string)) LifecycleOption {
 	return func(s *LifecycleServer) {
 		if fn == nil {
 			s.onConfigure = nil
 			return
 		}
-		s.onConfigure = func(_ context.Context, values map[string]string, secrets Secrets) error {
-			fn(values, secrets)
+		s.onConfigure = func(_ context.Context, values map[string]string) error {
+			fn(values)
 			return nil
 		}
 	}
@@ -51,7 +51,7 @@ type LifecycleServer struct {
 	shutdownOnce sync.Once
 	mu           sync.RWMutex
 	config       map[string]string
-	onConfigure  func(ctx context.Context, values map[string]string, secrets Secrets) error
+	onConfigure  func(ctx context.Context, values map[string]string) error
 	onShutdown   func() error
 }
 
@@ -76,7 +76,7 @@ func (s *LifecycleServer) shutdown() error {
 	return closeErr
 }
 
-func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]string, secrets Secrets) error {
+func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]string) error {
 	s.mu.Lock()
 	if s.config == nil {
 		s.config = make(map[string]string)
@@ -86,7 +86,7 @@ func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]s
 	s.mu.Unlock()
 
 	if callback != nil {
-		return callback(ctx, values, secrets)
+		return callback(ctx, values)
 	}
 	return nil
 }
@@ -104,16 +104,16 @@ func (s *LifecycleServer) ShutdownTrigger() <-chan struct{} {
 }
 
 // SetConfigure registers the callback invoked during Configure RPC calls.
-func (s *LifecycleServer) SetConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) {
+func (s *LifecycleServer) SetConfigure(fn func(ctx context.Context, values map[string]string) error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onConfigure = fn
 }
 
 // SetUpdateConfig registers a simplified configuration updater callback.
-func (s *LifecycleServer) SetUpdateConfig(fn func(values map[string]string, secrets Secrets)) {
-	s.SetConfigure(func(_ context.Context, values map[string]string, secrets Secrets) error {
-		fn(values, secrets)
+func (s *LifecycleServer) SetUpdateConfig(fn func(values map[string]string)) {
+	s.SetConfigure(func(_ context.Context, values map[string]string) error {
+		fn(values)
 		return nil
 	})
 }
@@ -140,9 +140,9 @@ func (s *LifecycleServer) CheckStatus(context.Context) (string, error) {
 	return statusOK, nil
 }
 
-// ApplyConfig stores the configuration values and runs the configure callback with the values and the secrets.
-func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]string, secrets Secrets) (bool, error) {
-	if err := s.configureWith(ctx, values, secrets); err != nil {
+// ApplyConfig stores the configuration values and runs the configure callback with the values.
+func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]string) (bool, error) {
+	if err := s.configureWith(ctx, values); err != nil {
 		return false, err
 	}
 	return true, nil

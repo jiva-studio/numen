@@ -106,7 +106,6 @@ export const WORDS = {
   on: 'On',
   off: 'Off',
   unturned: 'Setting not saved:',
-  secretFailed: 'The secret was not changed:',
   /** The connections to services and programs. */
   connectionsLoadFailed: 'The connections could not be read.',
   connectionFailure: (failure: { readonly errorCode: string; readonly detail: string }) => {

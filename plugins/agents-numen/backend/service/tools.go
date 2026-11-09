@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	neturl "net/url"
 	"slices"
@@ -13,10 +14,14 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 )
 
-// errPlainToken is a tool server the token would reach unencrypted.
-var errPlainToken = errors.New("the vault's tools are reached only over https, or over http on this machine")
+var (
+	// errPlainToken is a tool server the token would reach unencrypted.
+	errPlainToken = errors.New("the vault's tools are reached only over https, or over http on this machine")
+	errDowngrade  = errors.New("a redirect would send the token over plain http")
+)
 
 // emptySchema is the parameters of a tool whose server declares none.
 const emptySchema = `{"type":"object","properties":{}}`
@@ -25,7 +30,7 @@ const emptySchema = `{"type":"object","properties":{}}`
 // run may call. A toolbox with no session offers nothing.
 type toolbox struct {
 	session *sdk.ClientSession
-	tools   []functionTool
+	tools   []connection.ToolDefinition
 	meta    sdk.Meta
 }
 
@@ -77,28 +82,52 @@ func openToolbox(ctx context.Context, task *agentrun.Request) (*toolbox, error) 
 			return nil, errors.Join(fmt.Errorf("list the vault's tools: %w", err), session.Close())
 		}
 		if slices.Contains(named, tool.Name) {
-			box.tools = append(box.tools, readFunctionTool(tool))
+			box.tools = append(box.tools, readToolDefinition(tool))
 		}
 	}
 	return box, nil
 }
 
-func readFunctionTool(tool *sdk.Tool) functionTool {
-	var proposed functionTool
-	proposed.Type = "function"
-	proposed.Function.Name = tool.Name
-	proposed.Function.Description = tool.Description
-	proposed.Function.Parameters = json.RawMessage(emptySchema)
+func readToolDefinition(tool *sdk.Tool) connection.ToolDefinition {
+	proposed := connection.ToolDefinition{Name: tool.Name, Description: tool.Description, Parameters: json.RawMessage(emptySchema)}
 	if tool.InputSchema != nil {
 		if schema, err := json.Marshal(tool.InputSchema); err == nil {
-			proposed.Function.Parameters = schema
+			proposed.Parameters = schema
 		}
 	}
 	return proposed
 }
 
+func isLocalHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+func isPrivate(address *neturl.URL) bool {
+	if address.Scheme == "https" {
+		return true
+	}
+	if address.Scheme != "http" {
+		return false
+	}
+	return isLocalHost(address.Hostname())
+}
+
+func refuseDowngrade(req *http.Request, via []*http.Request) error {
+	if !isPrivate(req.URL) {
+		return errDowngrade
+	}
+	if len(via) >= 10 {
+		return errors.New("stopped after ten redirects")
+	}
+	return nil
+}
+
 func (b *toolbox) call(ctx context.Context, name, arguments string) string {
-	if b.session == nil || !slices.ContainsFunc(b.tools, func(t functionTool) bool { return t.Function.Name == name }) {
+	if b.session == nil || !slices.ContainsFunc(b.tools, func(t connection.ToolDefinition) bool { return t.Name == name }) {
 		return fmt.Sprintf("error: there is no tool %q", name)
 	}
 	args := json.RawMessage(arguments)

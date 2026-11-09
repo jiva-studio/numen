@@ -48,7 +48,7 @@ func TestMountAndConfigure(t *testing.T) {
 		"token":              "configured-token",
 		"NUMEN_HOST_PORT":    hostPort,
 		"NUMEN_PLUGIN_TOKEN": "plugin-token",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestMountFromEnv(t *testing.T) {
 	// ApplyConfig with an unreachable host port keeps the initial client created from env.
 	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
 		"NUMEN_HOST_PORT": "1",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}

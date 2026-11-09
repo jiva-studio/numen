@@ -14,7 +14,6 @@ export type {
   PluginFailure,
   PluginInfo,
   PluginReader,
-  SecretDeclaration,
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,

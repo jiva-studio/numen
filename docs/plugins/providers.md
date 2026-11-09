@@ -14,12 +14,15 @@ The manifest lists the types under `contributes.connectionTypes` (see [the manif
 | --------------- | ---------------------------------------- | ---------------------------------- |
 | `Completer`     | `Complete`                               | `complete`                         |
 | `Embedder`      | `Embed`                                  | `embed`                            |
+| `Chatter`       | `Chat`                                   | `chat`                             |
 | `ModelLister`   | `ListModels`, `ListReasoningLevels`      | the editor lists models and levels |
 | `ProfileReader` | `GetModelProfile`, `ProbeEmbeddingWidth` | `embed`                            |
 
 Every method receives a `Call`: the type, the fields that are not secret with the fixed values of the type, the secret fields, the model and the reasoning level. The core reads the secrets once for the call, from a snapshot of the connection, and refuses the call if the connection was edited meanwhile. `Secret` prints, logs and encodes without its value; read it from the `Value` field, send it to the service and keep it nowhere. The model is the name the person typed or chose: do not check it against the list of the service. `Embed` returns raw vectors, and the plugin that asks applies the prefixes of the profile.
 
 `GetModelProfile` returns `IsKnown: false` for a model it has no profile for, and the core then calls `ProbeEmbeddingWidth`, which embeds one short text and returns the width. `MaxTokens` is 0 when the limit is not known.
+
+`Chat` sends the events of one turn through the function `send`, in order: text deltas (never empty), the complete tool calls, then one `Finish` with the reason `FinishStop`, `FinishToolCalls` or `FinishLength`. A turn is one request to the service and the history travels with it; the messages have the roles system, user, assistant and tool, an assistant message carries its `ToolCalls`, and a tool message carries the `ToolCallID` it answers. The provider joins the pieces of a streamed tool call into one event, and reports `{}` for a call with no arguments. A failure before the first event lets the core try the next row; after the first event the core passes the failure to the plugin and tries no other row, so the provider ends a broken stream with a failure and never with a finish. The provider ends the request to the service when `ctx` ends.
 
 The calls `SubmitJob`, `GetJobStatus` and `FetchJobResult` are in the schema for deferred requests. The core does not call them, and the SDK does not serve them.
 
@@ -40,7 +43,7 @@ A provider checks the address it resolves to before it sends a key: the core che
 
 ## Ask for an operation
 
-A plugin that needs a model does not call a provider. `connection.NewClient`, `NewClientFromEnv` or `NewClientFromVars` returns a `Client` with `Complete`, `Embed` and `GetEmbeddingProfile`. The request names no connection, no model and no key: the core takes the connections from the rows in the settings of the plugin, in the order the person set, and a plugin cannot use a connection that is not in its rows. The errors are `connection.ErrNoConnection` (no row serves the operation), `*connection.AllFailedError` and `*connection.RejectedError`; use `errors.Is` and `errors.As`.
+A plugin that needs a model does not call a provider. `connection.NewClient`, `NewClientFromEnv` or `NewClientFromVars` returns a `Client` with `Complete`, `Embed`, `GetEmbeddingProfile` and `Chat`. `Chat` returns a `ChatStream`: call `Next` until it returns false, then read `Err`, which is nil after the finish, `ErrNoConnection`, `*AllFailedError` or `*RejectedError` where the core could not serve the turn, the error of the context, or `ErrStreamEnded`; a failure after the first event is an `*AllFailedError` with the one connection that failed. Close the stream when done. The request names no connection, no model and no key: the core takes the connections from the rows in the settings of the plugin, in the order the person set, and a plugin cannot use a connection that is not in its rows. The errors are `connection.ErrNoConnection` (no row serves the operation), `*connection.AllFailedError` and `*connection.RejectedError`; use `errors.Is` and `errors.As`.
 
 A plugin compiled into the core is called through the in-process pipe, as a plugin process is called over the loopback, and the contract names no transport.
 
@@ -54,7 +57,7 @@ A connection runs at most `parallelRequests` calls at once: the value stored on 
 
 ### From TypeScript
 
-A plugin view gets `context.models`, a `ModelHost` with `complete`, `embed` and `getEmbeddingProfile`. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.
+A plugin view gets `context.models`, a `ModelHost` with `complete`, `embed`, `getEmbeddingProfile` and `chat`, which is an async generator of the events of a turn that returns `null` after the finish and the `ModelError` otherwise. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.
 
 ## Agent programs as providers
 

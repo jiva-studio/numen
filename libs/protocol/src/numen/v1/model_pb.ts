@@ -6,7 +6,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { FloatVector } from "./embedding_pb.js";
 import { file_numen_v1_embedding } from "./embedding_pb.js";
-import type { Priority } from "./hostmodel_pb.js";
+import type { HostModelChatFinish, HostModelChatMessage, HostModelToolCall, HostModelToolDefinition, Priority } from "./hostmodel_pb.js";
 import { file_numen_v1_hostmodel } from "./hostmodel_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/model.proto.
  */
 export const file_numen_v1_model: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9tb2RlbC5wcm90bxIIbnVtZW4udjEiQAoPQ29ubmVjdGlvbk1vZGVsEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCm9wZXJhdGlvbnMYAyADKAkiOAoYQ29ubmVjdGlvblJlYXNvbmluZ0xldmVsEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJIj0KEUxpc3RNb2RlbHNSZXF1ZXN0EhUKDWNvbm5lY3Rpb25faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJIngKEkxpc3RNb2RlbHNSZXNwb25zZRIpCgZtb2RlbHMYASADKAsyGS5udW1lbi52MS5Db25uZWN0aW9uTW9kZWwSJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoaTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSFQoNY29ubmVjdGlvbl9pZBgBIAEoCRINCgVtb2RlbBgCIAEoCSKKAQobTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjIKBmxldmVscxgBIAMoCzIiLm51bWVuLnYxLkNvbm5lY3Rpb25SZWFzb25pbmdMZXZlbBInCgVlcnJvchgCIAEoDjIYLm51bWVuLnYxLk1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSI3CgxNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIqCgxNb2RlbE1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJIr4BChtNb2RlbFNlcnZpY2VDb21wbGV0ZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEigKCG1lc3NhZ2VzGAIgAygLMhYubnVtZW4udjEuTW9kZWxNZXNzYWdlEhgKC3RlbXBlcmF0dXJlGAMgASgBSACIAQESEgoKbWF4X3Rva2VucxgEIAEoBRIkCghwcmlvcml0eRgFIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Qg4KDF90ZW1wZXJhdHVyZSKPAQocTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIMCgR0ZXh0GAEgASgJEicKBWVycm9yGAIgASgOMhgubnVtZW4udjEuTW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEigKCGZhaWx1cmVzGAQgAygLMhYubnVtZW4udjEuTW9kZWxGYWlsdXJlImIKGE1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDQoFdGV4dHMYAiADKAkSJAoIcHJpb3JpdHkYAyABKA4yEi5udW1lbi52MS5Qcmlvcml0eSKmAQoZTW9kZWxTZXJ2aWNlRW1iZWRSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkSKAoIZmFpbHVyZXMYBCADKAsyFi5udW1lbi52MS5Nb2RlbEZhaWx1cmUiOwomTW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIpMCCidNb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVzcG9uc2USDQoFbW9kZWwYASABKAkSDgoGc291cmNlGAIgASgJEg8KB3Bvb2xpbmcYAyABKAkSFAoMcXVlcnlfcHJlZml4GAQgASgJEhcKD2RvY3VtZW50X3ByZWZpeBgFIAEoCRISCgpkaW1lbnNpb25zGAYgASgFEhIKCm1heF90b2tlbnMYByABKAUSJwoFZXJyb3IYCCABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYCSABKAkSKAoIZmFpbHVyZXMYCiADKAsyFi5udW1lbi52MS5Nb2RlbEZhaWx1cmUq4QEKDk1vZGVsRXJyb3JDb2RlEiAKHE1PREVMX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpNT0RFTF9FUlJPUl9DT0RFX05PVF9GT1VORBABEikKJU1PREVMX0VSUk9SX0NPREVfUFJPVklERVJfVU5BVkFJTEFCTEUQAhIiCh5NT0RFTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QAxIfChtNT0RFTF9FUlJPUl9DT0RFX0FMTF9GQUlMRUQQBBIdChlNT0RFTF9FUlJPUl9DT0RFX1JFSkVDVEVEEAUy5AMKDE1vZGVsU2VydmljZRJHCgpMaXN0TW9kZWxzEhsubnVtZW4udjEuTGlzdE1vZGVsc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0TW9kZWxzUmVzcG9uc2USYgoTTGlzdFJlYXNvbmluZ0xldmVscxIkLm51bWVuLnYxLkxpc3RSZWFzb25pbmdMZXZlbHNSZXF1ZXN0GiUubnVtZW4udjEuTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlElkKCENvbXBsZXRlEiUubnVtZW4udjEuTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiYubnVtZW4udjEuTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRJQCgVFbWJlZBIiLm51bWVuLnYxLk1vZGVsU2VydmljZUVtYmVkUmVxdWVzdBojLm51bWVuLnYxLk1vZGVsU2VydmljZUVtYmVkUmVzcG9uc2USegoTR2V0RW1iZWRkaW5nUHJvZmlsZRIwLm51bWVuLnYxLk1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0GjEubnVtZW4udjEuTW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding, file_numen_v1_hostmodel]);
+  fileDesc("ChRudW1lbi92MS9tb2RlbC5wcm90bxIIbnVtZW4udjEiQAoPQ29ubmVjdGlvbk1vZGVsEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCm9wZXJhdGlvbnMYAyADKAkiOAoYQ29ubmVjdGlvblJlYXNvbmluZ0xldmVsEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJIj0KEUxpc3RNb2RlbHNSZXF1ZXN0EhUKDWNvbm5lY3Rpb25faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJIngKEkxpc3RNb2RlbHNSZXNwb25zZRIpCgZtb2RlbHMYASADKAsyGS5udW1lbi52MS5Db25uZWN0aW9uTW9kZWwSJwoFZXJyb3IYAiABKA4yGC5udW1lbi52MS5Nb2RlbEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoaTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSFQoNY29ubmVjdGlvbl9pZBgBIAEoCRINCgVtb2RlbBgCIAEoCSKKAQobTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjIKBmxldmVscxgBIAMoCzIiLm51bWVuLnYxLkNvbm5lY3Rpb25SZWFzb25pbmdMZXZlbBInCgVlcnJvchgCIAEoDjIYLm51bWVuLnYxLk1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSI3CgxNb2RlbEZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIqCgxNb2RlbE1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJIr4BChtNb2RlbFNlcnZpY2VDb21wbGV0ZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEigKCG1lc3NhZ2VzGAIgAygLMhYubnVtZW4udjEuTW9kZWxNZXNzYWdlEhgKC3RlbXBlcmF0dXJlGAMgASgBSACIAQESEgoKbWF4X3Rva2VucxgEIAEoBRIkCghwcmlvcml0eRgFIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Qg4KDF90ZW1wZXJhdHVyZSKPAQocTW9kZWxTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIMCgR0ZXh0GAEgASgJEicKBWVycm9yGAIgASgOMhgubnVtZW4udjEuTW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEigKCGZhaWx1cmVzGAQgAygLMhYubnVtZW4udjEuTW9kZWxGYWlsdXJlIvQBChdNb2RlbFNlcnZpY2VDaGF0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSMAoIbWVzc2FnZXMYAiADKAsyHi5udW1lbi52MS5Ib3N0TW9kZWxDaGF0TWVzc2FnZRIwCgV0b29scxgDIAMoCzIhLm51bWVuLnYxLkhvc3RNb2RlbFRvb2xEZWZpbml0aW9uEhgKC3RlbXBlcmF0dXJlGAQgASgBSACIAQESEgoKbWF4X3Rva2VucxgFIAEoBRIkCghwcmlvcml0eRgGIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Qg4KDF90ZW1wZXJhdHVyZSJzCg5Nb2RlbENoYXRFcnJvchInCgVlcnJvchgBIAEoDjIYLm51bWVuLnYxLk1vZGVsRXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCRIoCghmYWlsdXJlcxgDIAMoCzIWLm51bWVuLnYxLk1vZGVsRmFpbHVyZSLJAQoYTW9kZWxTZXJ2aWNlQ2hhdFJlc3BvbnNlEhQKCnRleHRfZGVsdGEYASABKAlIABIwCgl0b29sX2NhbGwYAiABKAsyGy5udW1lbi52MS5Ib3N0TW9kZWxUb29sQ2FsbEgAEi8KBmZpbmlzaBgDIAEoCzIdLm51bWVuLnYxLkhvc3RNb2RlbENoYXRGaW5pc2hIABIrCgdmYWlsdXJlGAQgASgLMhgubnVtZW4udjEuTW9kZWxDaGF0RXJyb3JIAEIHCgVldmVudCJiChhNb2RlbFNlcnZpY2VFbWJlZFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg0KBXRleHRzGAIgAygJEiQKCHByaW9yaXR5GAMgASgOMhIubnVtZW4udjEuUHJpb3JpdHkipgEKGU1vZGVsU2VydmljZUVtYmVkUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yEicKBWVycm9yGAIgASgOMhgubnVtZW4udjEuTW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJEigKCGZhaWx1cmVzGAQgAygLMhYubnVtZW4udjEuTW9kZWxGYWlsdXJlIjsKJk1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSKTAgonTW9kZWxTZXJ2aWNlR2V0RW1iZWRkaW5nUHJvZmlsZVJlc3BvbnNlEg0KBW1vZGVsGAEgASgJEg4KBnNvdXJjZRgCIAEoCRIPCgdwb29saW5nGAMgASgJEhQKDHF1ZXJ5X3ByZWZpeBgEIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBSABKAkSEgoKZGltZW5zaW9ucxgGIAEoBRISCgptYXhfdG9rZW5zGAcgASgFEicKBWVycm9yGAggASgOMhgubnVtZW4udjEuTW9kZWxFcnJvckNvZGUSDgoGZGV0YWlsGAkgASgJEigKCGZhaWx1cmVzGAogAygLMhYubnVtZW4udjEuTW9kZWxGYWlsdXJlKuEBCg5Nb2RlbEVycm9yQ29kZRIgChxNT0RFTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASHgoaTU9ERUxfRVJST1JfQ09ERV9OT1RfRk9VTkQQARIpCiVNT0RFTF9FUlJPUl9DT0RFX1BST1ZJREVSX1VOQVZBSUxBQkxFEAISIgoeTU9ERUxfRVJST1JfQ09ERV9OT19DT05ORUNUSU9OEAMSHwobTU9ERUxfRVJST1JfQ09ERV9BTExfRkFJTEVEEAQSHQoZTU9ERUxfRVJST1JfQ09ERV9SRUpFQ1RFRBAFMrUECgxNb2RlbFNlcnZpY2USRwoKTGlzdE1vZGVscxIbLm51bWVuLnYxLkxpc3RNb2RlbHNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdE1vZGVsc1Jlc3BvbnNlEmIKE0xpc3RSZWFzb25pbmdMZXZlbHMSJC5udW1lbi52MS5MaXN0UmVhc29uaW5nTGV2ZWxzUmVxdWVzdBolLm51bWVuLnYxLkxpc3RSZWFzb25pbmdMZXZlbHNSZXNwb25zZRJZCghDb21wbGV0ZRIlLm51bWVuLnYxLk1vZGVsU2VydmljZUNvbXBsZXRlUmVxdWVzdBomLm51bWVuLnYxLk1vZGVsU2VydmljZUNvbXBsZXRlUmVzcG9uc2USTwoEQ2hhdBIhLm51bWVuLnYxLk1vZGVsU2VydmljZUNoYXRSZXF1ZXN0GiIubnVtZW4udjEuTW9kZWxTZXJ2aWNlQ2hhdFJlc3BvbnNlMAESUAoFRW1iZWQSIi5udW1lbi52MS5Nb2RlbFNlcnZpY2VFbWJlZFJlcXVlc3QaIy5udW1lbi52MS5Nb2RlbFNlcnZpY2VFbWJlZFJlc3BvbnNlEnoKE0dldEVtYmVkZGluZ1Byb2ZpbGUSMC5udW1lbi52MS5Nb2RlbFNlcnZpY2VHZXRFbWJlZGRpbmdQcm9maWxlUmVxdWVzdBoxLm51bWVuLnYxLk1vZGVsU2VydmljZUdldEVtYmVkZGluZ1Byb2ZpbGVSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding, file_numen_v1_hostmodel]);
 
 /**
  * @generated from message numen.v1.ConnectionModel
@@ -286,6 +286,123 @@ export const ModelServiceCompleteResponseSchema: GenMessage<ModelServiceComplete
   messageDesc(file_numen_v1_model, 9);
 
 /**
+ * @generated from message numen.v1.ModelServiceChatRequest
+ */
+export type ModelServiceChatRequest = Message<"numen.v1.ModelServiceChatRequest"> & {
+  /**
+   * plugin_id is the plugin whose rows serve the call.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: repeated numen.v1.HostModelChatMessage messages = 2;
+   */
+  messages: HostModelChatMessage[];
+
+  /**
+   * @generated from field: repeated numen.v1.HostModelToolDefinition tools = 3;
+   */
+  tools: HostModelToolDefinition[];
+
+  /**
+   * @generated from field: optional double temperature = 4;
+   */
+  temperature?: number | undefined;
+
+  /**
+   * @generated from field: int32 max_tokens = 5;
+   */
+  maxTokens: number;
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 6;
+   */
+  priority: Priority;
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceChatRequest.
+ * Use `create(ModelServiceChatRequestSchema)` to create a new message.
+ */
+export const ModelServiceChatRequestSchema: GenMessage<ModelServiceChatRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 10);
+
+/**
+ * ModelChatError is a turn that did not succeed. A failure after the first event is ALL_FAILED with the
+ * one connection that failed.
+ *
+ * @generated from message numen.v1.ModelChatError
+ */
+export type ModelChatError = Message<"numen.v1.ModelChatError"> & {
+  /**
+   * @generated from field: numen.v1.ModelErrorCode error = 1;
+   */
+  error: ModelErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+
+  /**
+   * @generated from field: repeated numen.v1.ModelFailure failures = 3;
+   */
+  failures: ModelFailure[];
+};
+
+/**
+ * Describes the message numen.v1.ModelChatError.
+ * Use `create(ModelChatErrorSchema)` to create a new message.
+ */
+export const ModelChatErrorSchema: GenMessage<ModelChatError> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 11);
+
+/**
+ * ModelServiceChatResponse is one event of a turn. A turn ends with a finish or an error.
+ *
+ * @generated from message numen.v1.ModelServiceChatResponse
+ */
+export type ModelServiceChatResponse = Message<"numen.v1.ModelServiceChatResponse"> & {
+  /**
+   * @generated from oneof numen.v1.ModelServiceChatResponse.event
+   */
+  event: {
+    /**
+     * @generated from field: string text_delta = 1;
+     */
+    value: string;
+    case: "textDelta";
+  } | {
+    /**
+     * @generated from field: numen.v1.HostModelToolCall tool_call = 2;
+     */
+    value: HostModelToolCall;
+    case: "toolCall";
+  } | {
+    /**
+     * @generated from field: numen.v1.HostModelChatFinish finish = 3;
+     */
+    value: HostModelChatFinish;
+    case: "finish";
+  } | {
+    /**
+     * @generated from field: numen.v1.ModelChatError failure = 4;
+     */
+    value: ModelChatError;
+    case: "failure";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message numen.v1.ModelServiceChatResponse.
+ * Use `create(ModelServiceChatResponseSchema)` to create a new message.
+ */
+export const ModelServiceChatResponseSchema: GenMessage<ModelServiceChatResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_model, 12);
+
+/**
  * @generated from message numen.v1.ModelServiceEmbedRequest
  */
 export type ModelServiceEmbedRequest = Message<"numen.v1.ModelServiceEmbedRequest"> & {
@@ -310,7 +427,7 @@ export type ModelServiceEmbedRequest = Message<"numen.v1.ModelServiceEmbedReques
  * Use `create(ModelServiceEmbedRequestSchema)` to create a new message.
  */
 export const ModelServiceEmbedRequestSchema: GenMessage<ModelServiceEmbedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_model, 10);
+  messageDesc(file_numen_v1_model, 13);
 
 /**
  * @generated from message numen.v1.ModelServiceEmbedResponse
@@ -342,7 +459,7 @@ export type ModelServiceEmbedResponse = Message<"numen.v1.ModelServiceEmbedRespo
  * Use `create(ModelServiceEmbedResponseSchema)` to create a new message.
  */
 export const ModelServiceEmbedResponseSchema: GenMessage<ModelServiceEmbedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_model, 11);
+  messageDesc(file_numen_v1_model, 14);
 
 /**
  * @generated from message numen.v1.ModelServiceGetEmbeddingProfileRequest
@@ -359,7 +476,7 @@ export type ModelServiceGetEmbeddingProfileRequest = Message<"numen.v1.ModelServ
  * Use `create(ModelServiceGetEmbeddingProfileRequestSchema)` to create a new message.
  */
 export const ModelServiceGetEmbeddingProfileRequestSchema: GenMessage<ModelServiceGetEmbeddingProfileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_model, 12);
+  messageDesc(file_numen_v1_model, 15);
 
 /**
  * @generated from message numen.v1.ModelServiceGetEmbeddingProfileResponse
@@ -425,7 +542,7 @@ export type ModelServiceGetEmbeddingProfileResponse = Message<"numen.v1.ModelSer
  * Use `create(ModelServiceGetEmbeddingProfileResponseSchema)` to create a new message.
  */
 export const ModelServiceGetEmbeddingProfileResponseSchema: GenMessage<ModelServiceGetEmbeddingProfileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_model, 13);
+  messageDesc(file_numen_v1_model, 16);
 
 /**
  * ModelErrorCode is the reason a served call did not succeed. The zero value is a call that succeeded.
@@ -519,6 +636,16 @@ export const ModelService: GenService<{
     methodKind: "unary";
     input: typeof ModelServiceCompleteRequestSchema;
     output: typeof ModelServiceCompleteResponseSchema;
+  },
+  /**
+   * Chat streams the next turn of a conversation through the rows of the plugin the request names.
+   *
+   * @generated from rpc numen.v1.ModelService.Chat
+   */
+  chat: {
+    methodKind: "server_streaming";
+    input: typeof ModelServiceChatRequestSchema;
+    output: typeof ModelServiceChatResponseSchema;
   },
   /**
    * Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.

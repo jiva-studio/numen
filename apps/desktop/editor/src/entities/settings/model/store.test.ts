@@ -104,7 +104,6 @@ describe('what remains at a setting', () => {
               description: 'A test plugin',
               isActive: true,
               capabilities: [],
-              secrets: [],
               hasFrontend: false,
               hasBackend: false,
               settings: [

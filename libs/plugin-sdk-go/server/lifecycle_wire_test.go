@@ -28,7 +28,7 @@ func TestPingResult_RoundTripsThroughTheWire(t *testing.T) {
 func TestLifecycleClient_CallsTheHandlerOverTheWire(t *testing.T) {
 	var configured map[string]string
 	shutdown := make(chan struct{})
-	life := NewLifecycleServer(shutdown, WithLifecycleUpdateConfig(func(values map[string]string, _ Secrets) { configured = values }))
+	life := NewLifecycleServer(shutdown, WithLifecycleUpdateConfig(func(values map[string]string) { configured = values }))
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: life}))
 	web := httptest.NewServer(mux)
@@ -39,7 +39,7 @@ func TestLifecycleClient_CallsTheHandlerOverTheWire(t *testing.T) {
 	if err != nil || ping.Status != "ok" || ping.Protocol != 1 {
 		t.Fatalf("Ping = %+v, %v", ping, err)
 	}
-	accepted, err := client.Configure(t.Context(), map[string]string{"model": "small"}, nil)
+	accepted, err := client.Configure(t.Context(), map[string]string{"model": "small"})
 	if err != nil || !accepted || configured["model"] != "small" {
 		t.Fatalf("Configure = %v, %v, configured %v", accepted, err, configured)
 	}
@@ -58,7 +58,7 @@ func TestLifecycleClient_PropagatesErrors(t *testing.T) {
 	wantConfErr := errors.New("configure failed")
 	life := NewLifecycleServer(
 		make(chan struct{}),
-		WithLifecycleConfigure(func(context.Context, map[string]string, Secrets) error {
+		WithLifecycleConfigure(func(context.Context, map[string]string) error {
 			return wantConfErr
 		}),
 		WithLifecycleShutdown(func() error {
@@ -75,7 +75,7 @@ func TestLifecycleClient_PropagatesErrors(t *testing.T) {
 	web := httptest.NewServer(mux)
 	client := NewLifecycleClient(web.Client(), web.URL)
 
-	if ok, err := client.Configure(t.Context(), map[string]string{"a": "b"}, nil); err == nil || ok {
+	if ok, err := client.Configure(t.Context(), map[string]string{"a": "b"}); err == nil || ok {
 		t.Fatalf("expected Configure error, got ok=%v err=%v", ok, err)
 	}
 	if ok, err := client.Shutdown(t.Context()); err == nil || ok || connect.CodeOf(err) != connect.CodeInternal {

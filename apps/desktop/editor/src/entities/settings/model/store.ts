@@ -6,14 +6,7 @@
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createRemoteValues } from '@numen/ui'
-import type {
-  Model,
-  PluginInfo,
-  PluginSettingInfo,
-  SecretMenu,
-  SecretSection,
-  SettingEdit,
-} from '../lib/configuration'
+import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 
@@ -32,9 +25,6 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
     readonly app?: readonly PluginSettingInfo[] | undefined
-    readonly secretSections?: readonly SecretSection[] | undefined
-    readonly secretMenus?: readonly SecretMenu[] | undefined
-    readonly credentialsPath?: string | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
@@ -123,9 +113,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
-  const secretSections = shallowRef<readonly SecretSection[]>([])
-  const secretMenus = shallowRef<readonly SecretMenu[]>([])
-  const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -143,9 +130,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
-      secretSections.value = answer.secretSections ?? []
-      secretMenus.value = answer.secretMenus ?? []
-      credentialsPath.value = answer.credentialsPath ?? ''
     })
   }
 
@@ -201,9 +185,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     models,
     plugins,
     app,
-    secretSections,
-    secretMenus,
-    credentialsPath,
     start,
     getSetting,
     getCommittedSetting,

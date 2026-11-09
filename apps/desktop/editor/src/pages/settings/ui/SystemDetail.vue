@@ -32,7 +32,6 @@ const owner = computed<PluginInfo>(() => ({
   description: '',
   isActive: true,
   capabilities: [],
-  secrets: [],
   hasFrontend: false,
   hasBackend: false,
   settings: installation.value.app?.value ?? [],

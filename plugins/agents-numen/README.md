@@ -1,20 +1,18 @@
 # Numen Agent
 
-Built-in AI assistant that connects directly to cloud services (OpenRouter, OpenAI) or local models on your computer (Ollama, LM Studio) without needing any extra software installed.
+Built-in AI assistant that chats through a connection to a cloud service (OpenRouter, OpenAI) or to a server on your computer (Ollama, LM Studio).
 
 <!-- more -->
 
 ## What You Can Do
 
-- **Chat and research immediately**: Enter an API key for OpenRouter or OpenAI—or point to a local model server like Ollama—and start chatting with your vault right away.
-- **Browse available models**: Automatically loads the list of models from your chosen service so you can search and pick the one you want, or type any model name yourself.
+- **Chat and research immediately**: Add a connection in Settings, choose it in the Connection setting of this plugin, and start chatting with your vault.
+- **Pick the model**: The row of the setting holds the connection, the model and the reasoning level. The models of the connection are listed, and you can type any model name yourself.
 - **Full vault access**: Can search your notes and books, follow links, and suggest edits in your workspace.
 
 ## Settings
 
-- **Chat API**: The web address of your AI service (`https://openrouter.ai/api/v1` by default, or a local address such as `http://localhost:11434/v1` for Ollama).
-- **API key**: Your personal access key for the service. It is not typed here: add it on the Secrets page of the settings, in the OpenRouter card, and choose this plugin in its Used by field.
-- **Model**: The default model to use for new conversations and background tasks.
+- **Connection**: One row with the connection to chat through, the model and the reasoning level. Only connections that support chat are offered. The address and the key belong to the connection.
 - **Temperature**: How creative or focused the replies should be (`0.0` is more focused, `1.0` is more creative).
 - **Max tokens**: The maximum length of each reply.
 - **Max steps**: How many requests to the model one task may make before it is stopped (25 by default).

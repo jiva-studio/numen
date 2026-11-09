@@ -39,6 +39,10 @@ func (noCalls) Complete(context.Context, string, modelcallport.CompleteRequest, 
 	return modelcallport.CompleteResult{}, modelcallport.ErrNoConnection
 }
 
+func (noCalls) Chat(context.Context, string, modelcallport.ChatRequest, modelcallport.Priority, func(modelcallport.ChatEvent) error) error {
+	return modelcallport.ErrNoConnection
+}
+
 func (noCalls) Embed(context.Context, string, []string, modelcallport.Priority) ([][]float32, error) {
 	return nil, modelcallport.ErrNoConnection
 }
@@ -69,6 +73,72 @@ func (e *modelEndpoint) Complete(
 		return connect.NewResponse(&v1.HostModelServiceCompleteResponse{Error: code, Detail: detail, Failures: failures}), nil
 	}
 	return connect.NewResponse(&v1.HostModelServiceCompleteResponse{Text: result.Text}), nil
+}
+
+// Chat streams the events of one turn. A turn the core could not serve ends the stream with an event that
+// holds the error code; any other failure is a status code.
+func (e *modelEndpoint) Chat(
+	ctx context.Context, request *connect.Request[v1.HostModelServiceChatRequest], stream *connect.ServerStream[v1.HostModelServiceChatResponse],
+) error {
+	pluginID, calls, err := e.begin(request.Header().Get("Authorization"))
+	if err != nil {
+		return err
+	}
+	err = calls.Chat(ctx, pluginID, readChatRequest(request.Msg), readPriority(request.Msg.GetPriority()), func(event modelcallport.ChatEvent) error {
+		return stream.Send(writeChatEvent(event))
+	})
+	if err == nil {
+		return nil
+	}
+	code, detail, failures, served := writeModelError(ctx, err)
+	if !served {
+		return readModelStatus(ctx, err)
+	}
+	return stream.Send(&v1.HostModelServiceChatResponse{Event: &v1.HostModelServiceChatResponse_Failure{
+		Failure: &v1.HostModelChatError{Error: code, Detail: detail, Failures: failures},
+	}})
+}
+
+func readChatRequest(request *v1.HostModelServiceChatRequest) modelcallport.ChatRequest {
+	messages := make([]modelcallport.ChatMessage, len(request.GetMessages()))
+	for i, one := range request.GetMessages() {
+		calls := make([]modelcallport.ToolCall, len(one.GetToolCalls()))
+		for j, call := range one.GetToolCalls() {
+			calls[j] = modelcallport.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: call.GetArgumentsJson()}
+		}
+		messages[i] = modelcallport.ChatMessage{Role: one.GetRole(), Text: one.GetText(), ToolCalls: calls, ToolCallID: one.GetToolCallId()}
+	}
+	tools := make([]modelcallport.ToolDefinition, len(request.GetTools()))
+	for i, one := range request.GetTools() {
+		tools[i] = modelcallport.ToolDefinition{Name: one.GetName(), Description: one.GetDescription(), Parameters: one.GetParametersJson()}
+	}
+	return modelcallport.ChatRequest{Messages: messages, Tools: tools, Temperature: request.Temperature, MaxTokens: int(request.GetMaxTokens())}
+}
+
+func writeChatEvent(event modelcallport.ChatEvent) *v1.HostModelServiceChatResponse {
+	switch {
+	case event.ToolCall != nil:
+		return &v1.HostModelServiceChatResponse{Event: &v1.HostModelServiceChatResponse_ToolCall{ToolCall: &v1.HostModelToolCall{
+			Id: event.ToolCall.ID, Name: event.ToolCall.Name, ArgumentsJson: event.ToolCall.Arguments,
+		}}}
+	case event.Finish != nil:
+		return &v1.HostModelServiceChatResponse{Event: &v1.HostModelServiceChatResponse_Finish{
+			Finish: &v1.HostModelChatFinish{Reason: writeChatFinishReason(*event.Finish)},
+		}}
+	}
+	return &v1.HostModelServiceChatResponse{Event: &v1.HostModelServiceChatResponse_TextDelta{TextDelta: event.TextDelta}}
+}
+
+func writeChatFinishReason(reason modelcallport.ChatFinishReason) v1.HostModelChatFinishReason {
+	switch reason {
+	case modelcallport.ChatFinishToolCalls:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS
+	case modelcallport.ChatFinishLength:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_LENGTH
+	case modelcallport.ChatFinishStop:
+		return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP
+	}
+	return v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP
 }
 
 func (e *modelEndpoint) Embed(

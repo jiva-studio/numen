@@ -98,8 +98,7 @@ const trimmedDetail = computed(() => props.detail.trim())
 }
 
 .settings__value :deep(.settings__choice),
-.settings__value :deep(.settings__text-input),
-.settings__value :deep(.settings__secret) {
+.settings__value :deep(.settings__text-input) {
   inline-size: var(--settings-choice);
   max-inline-size: 100%;
 }

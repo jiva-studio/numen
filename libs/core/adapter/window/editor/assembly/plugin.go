@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 )
@@ -33,8 +32,7 @@ type PluginCatalog = interface {
 	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)
 }
 
-type pluginSecretAssembly interface {
-	OpenSecrets() *secret.Secrets
+type pluginConnectionAssembly interface {
 	// OpenConnections is the use cases on the connections, and nil for an installation with no plugin host.
 	OpenConnections() *connection.Connections
 	GetPluginCommands() plugincommand.Commands
@@ -69,6 +67,6 @@ type PluginAssembly interface {
 	GetPluginDir(id string) (string, bool)
 	GetPluginServices() PluginServices
 	GetAgent() agentport.Agent
-	pluginSecretAssembly
+	pluginConnectionAssembly
 	pluginWorkAssembly
 }

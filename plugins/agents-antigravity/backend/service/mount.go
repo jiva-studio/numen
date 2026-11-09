@@ -13,7 +13,7 @@ func Mount(s *server.Server) error {
 	agent := new(agentServer)
 	agent.models = newModelCache(true)
 	s.OnClose(agent.Close)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string) { agent.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	connection.Mount(s, agent.Provider())
 	return nil

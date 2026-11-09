@@ -147,13 +147,10 @@ type PluginSettingDeclarer interface {
 	GetPluginSettingDeclarations(pluginID string) ([]PluginManifestSetting, bool)
 }
 
-type pluginSecretConfigurator interface {
-	SetKeyStore(store KeyStore)
-	SetSecretSource(source SecretSource)
-	// Refresh configures the running plugins whose list of secrets differs from the one they were
-	// last given, and the plugins named in forced.
+type pluginConfigRefresher interface {
+	// Refresh configures the running plugins that were not given their configuration yet, and the
+	// plugins named in forced.
 	Refresh(ctx context.Context, forced ...string) error
-	ListDeclarations() []DeclarationKey
 }
 
 type pluginSettingsPush interface {
@@ -164,7 +161,7 @@ type pluginSettingsPush interface {
 
 // PluginConfigurator manages configuration and settings for plugins.
 type PluginConfigurator interface {
-	pluginSecretConfigurator
+	pluginConfigRefresher
 	pluginSettingsPush
 	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error

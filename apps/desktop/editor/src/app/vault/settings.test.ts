@@ -9,16 +9,6 @@ import { settingsCore as core } from './settings'
 const request = vi.hoisted(() => ({
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
-  createSecret: vi.fn(),
-  renameSecret: vi.fn(),
-  writeSecret: vi.fn(),
-  deleteSecret: vi.fn(),
-  deleteSecretGroup: vi.fn(),
-  listSecretStates: vi.fn(),
-  moveSecret: vi.fn(),
-  renameSecretGroup: vi.fn(),
-  allowPluginSecret: vi.fn(),
-  denyPluginSecret: vi.fn(),
   retryPlugin: vi.fn(),
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
@@ -33,9 +23,6 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   models: [],
   plugins: [],
   app: [],
-  secretSections: [],
-  secretMenus: [],
-  credentialsPath: '',
   ...overrides,
 })
 
@@ -80,9 +67,6 @@ describe('every setting', () => {
       ],
       plugins: [],
       app: [],
-      secretSections: [],
-      secretMenus: [],
-      credentialsPath: '',
     })
   })
 
@@ -99,7 +83,6 @@ describe('every setting', () => {
               description: 'Sample plugin',
               isActive: true,
               capabilities: [AGENT_PROVIDER_CAPABILITY],
-              secrets: [{ name: 'apiKey', title: 'API key', description: '', group: 'openrouter' }],
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
@@ -153,15 +136,6 @@ describe('every setting', () => {
         description: 'Sample plugin',
         isActive: true,
         capabilities: [AGENT_PROVIDER_CAPABILITY],
-        secrets: [
-          {
-            name: 'apiKey',
-            title: 'API key',
-            description: '',
-            group: 'openrouter',
-            when: undefined,
-          },
-        ],
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
@@ -224,177 +198,6 @@ describe('every setting', () => {
   })
 })
 
-describe('the secrets', () => {
-  it('arrive as the sections the core ordered, with their permissions, the menus by id, and the fallback file path', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          secretSections: [
-            {
-              group: 'openrouter',
-              isAsked: true,
-              secrets: [
-                {
-                  id: 's0a1b2c3d',
-                  name: 'Work',
-                  group: 'openrouter',
-                  allowed: [
-                    { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', extra: 1 },
-                  ],
-                },
-              ],
-            },
-            {
-              group: 'work',
-              isAsked: false,
-              secrets: [{ id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }],
-            },
-          ],
-          secretMenus: [
-            {
-              pluginId: 'sample.plugin',
-              name: 'apiKey',
-              group: 'openrouter',
-              secretIds: ['s0a1b2c3d', 's0e5f6a7b'],
-            },
-          ],
-          credentialsPath: '/config/numen/credentials/credentials.json',
-        },
-      ),
-    )
-
-    const got = await core.getSettings()
-
-    const work = {
-      id: 's0a1b2c3d',
-      name: 'Work',
-      group: 'openrouter',
-      allowed: [{ pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' }],
-    }
-    const home = { id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }
-    expect(got.secretSections).toStrictEqual([
-      { group: 'openrouter', isAsked: true, secrets: [work] },
-      { group: 'work', isAsked: false, secrets: [home] },
-    ])
-    expect(got.secretMenus).toStrictEqual([
-      { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', secrets: [work, home] },
-    ])
-    expect(got.credentialsPath).toBe('/config/numen/credentials/credentials.json')
-  })
-
-  it('carry no value in what the window reads', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          secretSections: [
-            {
-              group: 'g',
-              isAsked: false,
-              secrets: [{ id: 's0a1b2c3d', name: 'Work', group: 'g', allowed: [] }],
-            },
-          ],
-        },
-      ),
-    )
-    expect(JSON.stringify(await core.getSettings())).not.toMatch(/value-typed-once/)
-  })
-
-  it('have their states read by a call of their own', async () => {
-    request.listSecretStates.mockResolvedValue({
-      states: [
-        { id: 's0a1b2c3d', hasValue: true },
-        { id: 's0e5f6a7b', hasValue: false },
-      ],
-    })
-    expect(await core.listSecretStates()).toStrictEqual(
-      new Map([
-        ['s0a1b2c3d', true],
-        ['s0e5f6a7b', false],
-      ]),
-    )
-  })
-})
-
-describe('an operation on a secret', () => {
-  const operations: readonly [string, () => Promise<unknown>, keyof typeof request, unknown][] = [
-    [
-      'createSecret',
-      () => core.createSecret('openrouter', 'Work', 'value-typed-once'),
-      'createSecret',
-      { group: 'openrouter', name: 'Work', value: 'value-typed-once' },
-    ],
-    [
-      'renameSecret',
-      () => core.renameSecret('s0a1b2c3d', 'Office'),
-      'renameSecret',
-      { id: 's0a1b2c3d', name: 'Office' },
-    ],
-    [
-      'writeSecret',
-      () => core.writeSecret('s0a1b2c3d', 'value-typed-once'),
-      'writeSecret',
-      { id: 's0a1b2c3d', value: 'value-typed-once' },
-    ],
-    ['deleteSecret', () => core.deleteSecret('s0a1b2c3d'), 'deleteSecret', { id: 's0a1b2c3d' }],
-    [
-      'deleteSecretGroup',
-      () => core.deleteSecretGroup('work'),
-      'deleteSecretGroup',
-      { group: 'work' },
-    ],
-    [
-      'moveSecret',
-      () => core.moveSecret('s0a1b2c3d', 's0e5f6a7b'),
-      'moveSecret',
-      { id: 's0a1b2c3d', beforeId: 's0e5f6a7b' },
-    ],
-    [
-      'moveSecret to the end',
-      () => core.moveSecret('s0a1b2c3d', ''),
-      'moveSecret',
-      { id: 's0a1b2c3d', beforeId: '' },
-    ],
-    [
-      'renameSecretGroup',
-      () => core.renameSecretGroup('work', 'office'),
-      'renameSecretGroup',
-      { group: 'work', name: 'office' },
-    ],
-    [
-      'allowPluginSecret',
-      () => core.allowPluginSecret('s0a1b2c3d', 'sample.plugin', 'apiKey', 'openrouter'),
-      'allowPluginSecret',
-      { secretId: 's0a1b2c3d', pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' },
-    ],
-    [
-      'denyPluginSecret',
-      () => core.denyPluginSecret('s0a1b2c3d', 'sample.plugin', 'apiKey', ''),
-      'denyPluginSecret',
-      { secretId: 's0a1b2c3d', pluginId: 'sample.plugin', name: 'apiKey', group: '' },
-    ],
-  ]
-
-  for (const [name, call, method, message] of operations) {
-    it(`${name} is sent to the vault with the ids and names given`, async () => {
-      request[method].mockResolvedValue({ id: 's0a1b2c3d' })
-      await call()
-      expect(request[method]).toHaveBeenLastCalledWith(message)
-    })
-  }
-
-  it('rejection reaches the caller', async () => {
-    request.createSecret.mockRejectedValue(new Error('no keychain'))
-    await expect(core.createSecret('g', 'n', 'k')).rejects.toThrow()
-  })
-
-  it('creating a secret resolves to the id the core made', async () => {
-    request.createSecret.mockResolvedValue({ id: 's0a1b2c3d' })
-    await expect(core.createSecret('g', 'n', 'k')).resolves.toBe('s0a1b2c3d')
-  })
-})
-
 describe('a plugin whose last start failed', () => {
   it('arrives with the reason and the time it was given up', async () => {
     request.getSettings.mockResolvedValue(
@@ -406,7 +209,6 @@ describe('a plugin whose last start failed', () => {
               id: 'sample.plugin',
               name: 'Sample',
               capabilities: [],
-              secrets: [],
               readers: [],
               settingsViews: [],
               settings: [],
@@ -481,7 +283,6 @@ describe('what the core resolved and declared', () => {
               description: '',
               isActive: true,
               capabilities: [],
-              secrets: [],
               hasFrontend: false,
               hasBackend: false,
               readers: [],

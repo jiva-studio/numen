@@ -2,7 +2,13 @@
  * The models and reasoning levels a connection offers, asked from the provider of its type.
  */
 import { createClient, type Client } from '@connectrpc/connect'
-import { ModelErrorCode, ModelService, Priority } from '@numen/protocol'
+import {
+  HostModelChatFinishReason,
+  ModelErrorCode,
+  ModelService,
+  Priority,
+  type ModelServiceChatResponse,
+} from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
 import { transport } from '../transport'
 
@@ -31,7 +37,7 @@ export interface ModelListFailure {
 /** The calls of ModelService the rows of a plugin page are filled from. */
 export type ModelRpc = Pick<
   Client<typeof ModelService>,
-  'listModels' | 'listReasoningLevels' | 'complete' | 'embed' | 'getEmbeddingProfile'
+  'listModels' | 'listReasoningLevels' | 'complete' | 'embed' | 'getEmbeddingProfile' | 'chat'
 >
 
 /** Whose action a call on a model serves. A call that names none is background. */
@@ -72,6 +78,48 @@ export interface ModelCompleteInput {
   readonly maxTokens?: number | undefined
 }
 
+/** A call of a tool the model asked for. `arguments` is one JSON object. */
+export interface ModelToolCall {
+  readonly id: string
+  readonly name: string
+  readonly arguments: string
+}
+
+/** A tool offered to the model. `parameters` is the JSON schema of the arguments. */
+export interface ModelToolDefinition {
+  readonly name: string
+  readonly description?: string | undefined
+  readonly parameters?: unknown
+}
+
+/**
+ * A message of a conversation. The role is system, user, assistant or tool. An assistant message carries
+ * the calls it asked for, and a tool message carries the id of the call it answers.
+ */
+export interface ModelChatMessage {
+  readonly role: string
+  readonly text: string
+  readonly toolCalls?: readonly ModelToolCall[] | undefined
+  readonly toolCallId?: string | undefined
+}
+
+/** One turn a plugin asks a model for. The history is in `messages`. */
+export interface ModelChatInput {
+  readonly messages: readonly ModelChatMessage[]
+  readonly tools?: readonly ModelToolDefinition[] | undefined
+  readonly temperature?: number | undefined
+  readonly maxTokens?: number | undefined
+}
+
+/** Why a turn ended. */
+export type ModelChatFinishReason = 'stop' | 'tool_calls' | 'length'
+
+/** One event of a turn: a piece of the answer, a complete call of a tool, or the end of the turn. */
+export type ModelChatEvent =
+  | { readonly textDelta: string }
+  | { readonly toolCall: ModelToolCall }
+  | { readonly finish: { readonly reason: ModelChatFinishReason } }
+
 /** The profile of the embedding model of the row that answered. `maxTokens` is 0 where unknown. */
 export interface ModelEmbeddingProfile {
   readonly model: string
@@ -107,6 +155,15 @@ export interface ModelClient {
     pluginId: string,
     options?: ModelCallOptions,
   ): Promise<Result<ModelEmbeddingProfile, ModelCallFailure>>
+  /**
+   * Streams the next turn of a conversation. The generator returns null after the finish and the failure
+   * the core serves otherwise, and throws where the stream ends before the turn did.
+   */
+  chat(
+    pluginId: string,
+    request: ModelChatInput,
+    options?: ModelCallOptions,
+  ): AsyncGenerator<ModelChatEvent, ModelCallFailure | null>
 }
 
 const readFailure = (code: ModelErrorCode, detail: string): ModelListFailure | undefined => {
@@ -152,11 +209,83 @@ const readRowFailures = (
 const writeCallOptions = (options: ModelCallOptions | undefined) =>
   options?.signal === undefined ? {} : { signal: options.signal }
 
+const readFinishReason = (reason: HostModelChatFinishReason): ModelChatFinishReason => {
+  switch (reason) {
+    case HostModelChatFinishReason.TOOL_CALLS:
+      return 'tool_calls'
+    case HostModelChatFinishReason.LENGTH:
+      return 'length'
+    case HostModelChatFinishReason.STOP:
+    case HostModelChatFinishReason.UNSPECIFIED:
+      return 'stop'
+  }
+}
+
+const writeChatRequest = (pluginId: string, request: ModelChatInput, options?: ModelCallOptions) => ({
+  pluginId,
+  messages: request.messages.map((one) => ({
+    role: one.role,
+    text: one.text,
+    toolCalls: (one.toolCalls ?? []).map((call) => ({
+      id: call.id,
+      name: call.name,
+      argumentsJson: call.arguments,
+    })),
+    toolCallId: one.toolCallId ?? '',
+  })),
+  tools: (request.tools ?? []).map((one) => ({
+    name: one.name,
+    description: one.description ?? '',
+    parametersJson: JSON.stringify(one.parameters ?? {}),
+  })),
+  ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
+  maxTokens: request.maxTokens ?? 0,
+  priority: writePriority(options?.priority),
+})
+
+async function* streamChat(
+  rpc: ModelRpc,
+  pluginId: string,
+  request: ModelChatInput,
+  options: ModelCallOptions | undefined,
+): AsyncGenerator<ModelChatEvent, ModelCallFailure | null> {
+  const stream = rpc.chat(writeChatRequest(pluginId, request, options), writeCallOptions(options))
+  for await (const answer of stream as AsyncIterable<ModelServiceChatResponse>) {
+    switch (answer.event.case) {
+      case 'textDelta':
+        yield { textDelta: answer.event.value }
+        break
+      case 'toolCall':
+        yield {
+          toolCall: {
+            id: answer.event.value.id,
+            name: answer.event.value.name,
+            arguments: answer.event.value.argumentsJson,
+          },
+        }
+        break
+      case 'finish':
+        yield { finish: { reason: readFinishReason(answer.event.value.reason) } }
+        return null
+      case 'failure': {
+        const failure = answer.event.value
+        const read = readCallFailure(failure.error, failure.detail, readRowFailures(failure.failures))
+        if (read) return read
+        throw new Error('ModelService ended a turn with a failure that holds no error')
+      }
+      case undefined:
+        break
+    }
+  }
+  throw new Error('ModelService ended the stream before the turn did')
+}
+
 const writePriority = (priority: ModelCallPriority | undefined): Priority =>
   priority === 'interactive' ? Priority.INTERACTIVE : Priority.BACKGROUND
 
 /** The lists asked through a ModelService client. */
 export const createModelClient = (rpc: ModelRpc): ModelClient => ({
+  chat: (pluginId, request, options) => streamChat(rpc, pluginId, request, options),
   listModels: async (connectionId, operation) => {
     const answer = await rpc.listModels({ connectionId, operation })
     const failure = readFailure(answer.error, answer.detail)

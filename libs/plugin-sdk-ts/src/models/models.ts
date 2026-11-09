@@ -70,6 +70,48 @@ export interface EmbeddingProfile {
   readonly maxTokens: number
 }
 
+// ToolCall is a call of a tool the model asked for. `arguments` is one JSON object.
+export interface ToolCall {
+  readonly id: string
+  readonly name: string
+  readonly arguments: string
+}
+
+// ToolDefinition is a tool offered to the model. `parameters` is the JSON schema of the arguments.
+export interface ToolDefinition {
+  readonly name: string
+  readonly description?: string
+  readonly parameters?: unknown
+}
+
+// ChatMessage is one message of a conversation. The role is system, user, assistant or tool. An
+// assistant message carries the calls it asked for, and a tool message carries the id of the call it
+// answers.
+export interface ChatMessage {
+  readonly role: string
+  readonly text: string
+  readonly toolCalls?: readonly ToolCall[]
+  readonly toolCallId?: string
+}
+
+// ChatRequest is one turn a plugin asks a model for. The history is in `messages`.
+export interface ChatRequest {
+  readonly messages: readonly ChatMessage[]
+  readonly tools?: readonly ToolDefinition[]
+  readonly temperature?: number
+  readonly maxTokens?: number
+}
+
+// ChatFinishReason is why a turn ended.
+export type ChatFinishReason = 'stop' | 'tool_calls' | 'length'
+
+// ChatEvent is one event of a turn: a piece of the answer, a complete call of a tool, or the end of the
+// turn, which is the last event.
+export type ChatEvent =
+  | { readonly textDelta: string }
+  | { readonly toolCall: ToolCall }
+  | { readonly finish: { readonly reason: ChatFinishReason } }
+
 // ModelHost asks the core to carry out operations for the plugin. The core takes the connections from
 // the rows of the settings of that plugin; a request names no connection and a result holds no key.
 // The calls, the fields and the errors are those of the Go client in `libs/plugin-sdk-go/connection`.
@@ -86,4 +128,12 @@ export interface ModelHost {
   getEmbeddingProfile(
     options?: Pick<ModelCallOptions, 'signal'>,
   ): Promise<Result<EmbeddingProfile, ModelError>>
+  // Asks the rows of the plugin, in order, for the next turn of a conversation and streams its events.
+  // The core goes to the next row only when a row fails before its first event. The generator returns
+  // null after the finish and the error of the model otherwise, with the text before the error already
+  // yielded.
+  chat(
+    request: ChatRequest,
+    options?: ModelCallOptions,
+  ): AsyncGenerator<ChatEvent, ModelError | null>
 }

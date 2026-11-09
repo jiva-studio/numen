@@ -11,16 +11,14 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-// Handler answers every setting read and written, and the secrets shared between plugins.
+// Handler answers every setting read and written.
 type Handler struct {
 	Get         *setting.Get
 	Write       *setting.Write
 	Watch       *setting.Watch
-	Secrets     *secret.Secrets
 	PluginRetry *setting.RetryPlugin
 	PluginData  PluginData
 	Vaults      VaultProvider
@@ -50,15 +48,6 @@ func (h *Handler) GetSettings(
 		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
-	}
-	if h.Secrets != nil {
-		listing, err := h.Secrets.List.Execute()
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		reply.SecretSections = newWireSecretSections(listing.Sections)
-		reply.SecretMenus = newWireSecretMenus(listing.Menus)
-		reply.CredentialsPath = listing.CredentialsPath
 	}
 	return connect.NewResponse(reply), nil
 }
@@ -135,7 +124,6 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			Settings:      newWirePluginSettings(one.Settings),
 			IsActive:      one.IsActive,
 			Permissions:   one.Permissions,
-			Secrets:       newWireSecrets(one.Secrets),
 			Failure:       newWirePluginFailure(one.Failure),
 			HasFrontend:   one.HasFrontend,
 			HasBackend:    one.HasBackend,
@@ -248,23 +236,6 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 		return nil
 	}
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
-}
-
-func newWireManifestCondition(target *setting.PluginSettingCondition) *v1.ManifestCondition {
-	if target == nil {
-		return nil
-	}
-	return &v1.ManifestCondition{Setting: target.Setting, Is: target.Is}
-}
-
-func newWireSecrets(target []setting.SecretDeclaration) []*v1.SecretDeclaration {
-	secrets := make([]*v1.SecretDeclaration, 0, len(target))
-	for _, one := range target {
-		secrets = append(secrets, &v1.SecretDeclaration{
-			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireManifestCondition(one.When), Group: one.Group,
-		})
-	}
-	return secrets
 }
 
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting

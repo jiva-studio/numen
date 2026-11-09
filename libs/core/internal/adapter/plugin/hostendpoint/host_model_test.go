@@ -35,6 +35,9 @@ type scriptedCalls struct {
 	texts    []string
 	priority connectionport.Priority
 	started  chan struct{}
+
+	events      []connectionport.ChatEvent
+	chatRequest connectionport.ChatRequest
 }
 
 func (s *scriptedCalls) record(ctx context.Context, caller string) error {
@@ -53,6 +56,18 @@ func (s *scriptedCalls) record(ctx context.Context, caller string) error {
 func (s *scriptedCalls) Complete(ctx context.Context, caller string, request connectionport.CompleteRequest, priority connectionport.Priority) (connectionport.CompleteResult, error) {
 	s.request, s.priority = request, priority
 	return s.complete, s.record(ctx, caller)
+}
+
+func (s *scriptedCalls) Chat(
+	ctx context.Context, caller string, request connectionport.ChatRequest, priority connectionport.Priority, send func(connectionport.ChatEvent) error,
+) error {
+	s.chatRequest, s.priority = request, priority
+	for _, one := range s.events {
+		if err := send(one); err != nil {
+			return err
+		}
+	}
+	return s.record(ctx, caller)
 }
 
 func (s *scriptedCalls) Embed(ctx context.Context, caller string, texts []string, priority connectionport.Priority) ([][]float32, error) {

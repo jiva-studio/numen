@@ -94,6 +94,7 @@ type Provider struct {
 	Embedder  Embedder
 	Models    ModelLister
 	Profiles  ProfileReader
+	Chatter   Chatter
 }
 
 // NewHandler creates the Connect-RPC handler for the roles of a Provider.

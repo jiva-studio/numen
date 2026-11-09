@@ -15,7 +15,7 @@ A plugin that needs a model service declares a setting of type `connections`. Th
 }
 ```
 
-`operation` is the operation the plugin asks for, a lowercase word such as `complete` or `embed`. `max` is the most rows the setting holds, a whole number of at least 1. The setting takes `when` as any setting does, so a plugin can show the rows only while another setting holds a given value. A plugin declares at most one `connections` setting for each operation, and the manifest check rejects a setting that declares a `default`, `options`, `optionsBy`, `optionsFrom`, `min`, `step`, `accept`, `multiple`, `preview` or `generate`, or an `operation` on a setting of another type. A plugin that has such a setting uses connections without a permission: the rows are the grant, and the core takes the connections only from the rows of the plugin that calls.
+`operation` is the operation the plugin asks for, a lowercase word such as `complete`, `chat` or `embed`. `max` is the most rows the setting holds, a whole number of at least 1. The setting takes `when` as any setting does, so a plugin can show the rows only while another setting holds a given value. A plugin declares at most one `connections` setting for each operation, and the manifest check rejects a setting that declares a `default`, `options`, `optionsBy`, `optionsFrom`, `min`, `step`, `accept`, `multiple`, `preview` or `generate`, or an `operation` on a setting of another type. A plugin that has such a setting uses connections without a permission: the rows are the grant, and the core takes the connections only from the rows of the plugin that calls.
 
 ## The stored value
 

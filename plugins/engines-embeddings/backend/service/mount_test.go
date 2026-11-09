@@ -20,7 +20,7 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 	token := hostcall.WithBearer("linked-token")
 
 	if _, err := server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
-		map[string]string{"source": "local", "model": "Xenova/bge-m3"}, nil); err != nil {
+		map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	info, err := embedding.NewClient(web.Client(), web.URL, token).GetModelInfo(t.Context())
@@ -40,7 +40,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		for range 200 {
-			srv.updateConfig(map[string]string{"model": "bge-m3"}, nil)
+			srv.updateConfig(map[string]string{"model": "bge-m3"})
 		}
 	}()
 

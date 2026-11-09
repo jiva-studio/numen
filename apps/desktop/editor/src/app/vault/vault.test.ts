@@ -141,8 +141,6 @@ describe('settings domain', () => {
       models: [],
       plugins: [],
       app: [],
-      secretSections: [],
-      secretMenus: [],
       credentialsPath: '',
       path: 'settings.json',
     })

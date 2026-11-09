@@ -675,6 +675,268 @@ func (x *ModelServiceCompleteResponse) GetFailures() []*ModelFailure {
 	return nil
 }
 
+type ModelServiceChatRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// plugin_id is the plugin whose rows serve the call.
+	PluginId      string                     `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Messages      []*HostModelChatMessage    `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
+	Tools         []*HostModelToolDefinition `protobuf:"bytes,3,rep,name=tools,proto3" json:"tools,omitempty"`
+	Temperature   *float64                   `protobuf:"fixed64,4,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	MaxTokens     int32                      `protobuf:"varint,5,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Priority      Priority                   `protobuf:"varint,6,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceChatRequest) Reset() {
+	*x = ModelServiceChatRequest{}
+	mi := &file_numen_v1_model_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceChatRequest) ProtoMessage() {}
+
+func (x *ModelServiceChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceChatRequest.ProtoReflect.Descriptor instead.
+func (*ModelServiceChatRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ModelServiceChatRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *ModelServiceChatRequest) GetMessages() []*HostModelChatMessage {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *ModelServiceChatRequest) GetTools() []*HostModelToolDefinition {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+func (x *ModelServiceChatRequest) GetTemperature() float64 {
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
+	}
+	return 0
+}
+
+func (x *ModelServiceChatRequest) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *ModelServiceChatRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
+}
+
+// ModelChatError is a turn that did not succeed. A failure after the first event is ALL_FAILED with the
+// one connection that failed.
+type ModelChatError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         ModelErrorCode         `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ModelErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*ModelFailure        `protobuf:"bytes,3,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelChatError) Reset() {
+	*x = ModelChatError{}
+	mi := &file_numen_v1_model_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelChatError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelChatError) ProtoMessage() {}
+
+func (x *ModelChatError) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelChatError.ProtoReflect.Descriptor instead.
+func (*ModelChatError) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ModelChatError) GetError() ModelErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ModelErrorCode_MODEL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ModelChatError) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *ModelChatError) GetFailures() []*ModelFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
+// ModelServiceChatResponse is one event of a turn. A turn ends with a finish or an error.
+type ModelServiceChatResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Event:
+	//
+	//	*ModelServiceChatResponse_TextDelta
+	//	*ModelServiceChatResponse_ToolCall
+	//	*ModelServiceChatResponse_Finish
+	//	*ModelServiceChatResponse_Failure
+	Event         isModelServiceChatResponse_Event `protobuf_oneof:"event"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelServiceChatResponse) Reset() {
+	*x = ModelServiceChatResponse{}
+	mi := &file_numen_v1_model_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelServiceChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelServiceChatResponse) ProtoMessage() {}
+
+func (x *ModelServiceChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_model_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelServiceChatResponse.ProtoReflect.Descriptor instead.
+func (*ModelServiceChatResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ModelServiceChatResponse) GetEvent() isModelServiceChatResponse_Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *ModelServiceChatResponse) GetTextDelta() string {
+	if x != nil {
+		if x, ok := x.Event.(*ModelServiceChatResponse_TextDelta); ok {
+			return x.TextDelta
+		}
+	}
+	return ""
+}
+
+func (x *ModelServiceChatResponse) GetToolCall() *HostModelToolCall {
+	if x != nil {
+		if x, ok := x.Event.(*ModelServiceChatResponse_ToolCall); ok {
+			return x.ToolCall
+		}
+	}
+	return nil
+}
+
+func (x *ModelServiceChatResponse) GetFinish() *HostModelChatFinish {
+	if x != nil {
+		if x, ok := x.Event.(*ModelServiceChatResponse_Finish); ok {
+			return x.Finish
+		}
+	}
+	return nil
+}
+
+func (x *ModelServiceChatResponse) GetFailure() *ModelChatError {
+	if x != nil {
+		if x, ok := x.Event.(*ModelServiceChatResponse_Failure); ok {
+			return x.Failure
+		}
+	}
+	return nil
+}
+
+type isModelServiceChatResponse_Event interface {
+	isModelServiceChatResponse_Event()
+}
+
+type ModelServiceChatResponse_TextDelta struct {
+	TextDelta string `protobuf:"bytes,1,opt,name=text_delta,json=textDelta,proto3,oneof"`
+}
+
+type ModelServiceChatResponse_ToolCall struct {
+	ToolCall *HostModelToolCall `protobuf:"bytes,2,opt,name=tool_call,json=toolCall,proto3,oneof"`
+}
+
+type ModelServiceChatResponse_Finish struct {
+	Finish *HostModelChatFinish `protobuf:"bytes,3,opt,name=finish,proto3,oneof"`
+}
+
+type ModelServiceChatResponse_Failure struct {
+	Failure *ModelChatError `protobuf:"bytes,4,opt,name=failure,proto3,oneof"`
+}
+
+func (*ModelServiceChatResponse_TextDelta) isModelServiceChatResponse_Event() {}
+
+func (*ModelServiceChatResponse_ToolCall) isModelServiceChatResponse_Event() {}
+
+func (*ModelServiceChatResponse_Finish) isModelServiceChatResponse_Event() {}
+
+func (*ModelServiceChatResponse_Failure) isModelServiceChatResponse_Event() {}
+
 type ModelServiceEmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
@@ -686,7 +948,7 @@ type ModelServiceEmbedRequest struct {
 
 func (x *ModelServiceEmbedRequest) Reset() {
 	*x = ModelServiceEmbedRequest{}
-	mi := &file_numen_v1_model_proto_msgTypes[10]
+	mi := &file_numen_v1_model_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -698,7 +960,7 @@ func (x *ModelServiceEmbedRequest) String() string {
 func (*ModelServiceEmbedRequest) ProtoMessage() {}
 
 func (x *ModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_model_proto_msgTypes[10]
+	mi := &file_numen_v1_model_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -711,7 +973,7 @@ func (x *ModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModelServiceEmbedRequest.ProtoReflect.Descriptor instead.
 func (*ModelServiceEmbedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_model_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ModelServiceEmbedRequest) GetPluginId() string {
@@ -747,7 +1009,7 @@ type ModelServiceEmbedResponse struct {
 
 func (x *ModelServiceEmbedResponse) Reset() {
 	*x = ModelServiceEmbedResponse{}
-	mi := &file_numen_v1_model_proto_msgTypes[11]
+	mi := &file_numen_v1_model_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -759,7 +1021,7 @@ func (x *ModelServiceEmbedResponse) String() string {
 func (*ModelServiceEmbedResponse) ProtoMessage() {}
 
 func (x *ModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_model_proto_msgTypes[11]
+	mi := &file_numen_v1_model_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +1034,7 @@ func (x *ModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModelServiceEmbedResponse.ProtoReflect.Descriptor instead.
 func (*ModelServiceEmbedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_model_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ModelServiceEmbedResponse) GetVectors() []*FloatVector {
@@ -812,7 +1074,7 @@ type ModelServiceGetEmbeddingProfileRequest struct {
 
 func (x *ModelServiceGetEmbeddingProfileRequest) Reset() {
 	*x = ModelServiceGetEmbeddingProfileRequest{}
-	mi := &file_numen_v1_model_proto_msgTypes[12]
+	mi := &file_numen_v1_model_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -824,7 +1086,7 @@ func (x *ModelServiceGetEmbeddingProfileRequest) String() string {
 func (*ModelServiceGetEmbeddingProfileRequest) ProtoMessage() {}
 
 func (x *ModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_model_proto_msgTypes[12]
+	mi := &file_numen_v1_model_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +1099,7 @@ func (x *ModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ModelServiceGetEmbeddingProfileRequest.ProtoReflect.Descriptor instead.
 func (*ModelServiceGetEmbeddingProfileRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_model_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ModelServiceGetEmbeddingProfileRequest) GetPluginId() string {
@@ -867,7 +1129,7 @@ type ModelServiceGetEmbeddingProfileResponse struct {
 
 func (x *ModelServiceGetEmbeddingProfileResponse) Reset() {
 	*x = ModelServiceGetEmbeddingProfileResponse{}
-	mi := &file_numen_v1_model_proto_msgTypes[13]
+	mi := &file_numen_v1_model_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +1141,7 @@ func (x *ModelServiceGetEmbeddingProfileResponse) String() string {
 func (*ModelServiceGetEmbeddingProfileResponse) ProtoMessage() {}
 
 func (x *ModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_model_proto_msgTypes[13]
+	mi := &file_numen_v1_model_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +1154,7 @@ func (x *ModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use ModelServiceGetEmbeddingProfileResponse.ProtoReflect.Descriptor instead.
 func (*ModelServiceGetEmbeddingProfileResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_model_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_model_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ModelServiceGetEmbeddingProfileResponse) GetModel() string {
@@ -1011,7 +1273,27 @@ const file_numen_v1_model_proto_rawDesc = "" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12.\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x122\n" +
-	"\bfailures\x18\x04 \x03(\v2\x16.numen.v1.ModelFailureR\bfailures\"}\n" +
+	"\bfailures\x18\x04 \x03(\v2\x16.numen.v1.ModelFailureR\bfailures\"\xb1\x02\n" +
+	"\x17ModelServiceChatRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12:\n" +
+	"\bmessages\x18\x02 \x03(\v2\x1e.numen.v1.HostModelChatMessageR\bmessages\x127\n" +
+	"\x05tools\x18\x03 \x03(\v2!.numen.v1.HostModelToolDefinitionR\x05tools\x12%\n" +
+	"\vtemperature\x18\x04 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x05 \x01(\x05R\tmaxTokens\x12.\n" +
+	"\bpriority\x18\x06 \x01(\x0e2\x12.numen.v1.PriorityR\bpriorityB\x0e\n" +
+	"\f_temperature\"\x8c\x01\n" +
+	"\x0eModelChatError\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x18.numen.v1.ModelErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x122\n" +
+	"\bfailures\x18\x03 \x03(\v2\x16.numen.v1.ModelFailureR\bfailures\"\xef\x01\n" +
+	"\x18ModelServiceChatResponse\x12\x1f\n" +
+	"\n" +
+	"text_delta\x18\x01 \x01(\tH\x00R\ttextDelta\x12:\n" +
+	"\ttool_call\x18\x02 \x01(\v2\x1b.numen.v1.HostModelToolCallH\x00R\btoolCall\x127\n" +
+	"\x06finish\x18\x03 \x01(\v2\x1d.numen.v1.HostModelChatFinishH\x00R\x06finish\x124\n" +
+	"\afailure\x18\x04 \x01(\v2\x18.numen.v1.ModelChatErrorH\x00R\afailureB\a\n" +
+	"\x05event\"}\n" +
 	"\x18ModelServiceEmbedRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x14\n" +
 	"\x05texts\x18\x02 \x03(\tR\x05texts\x12.\n" +
@@ -1044,12 +1326,13 @@ const file_numen_v1_model_proto_rawDesc = "" +
 	"%MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE\x10\x02\x12\"\n" +
 	"\x1eMODEL_ERROR_CODE_NO_CONNECTION\x10\x03\x12\x1f\n" +
 	"\x1bMODEL_ERROR_CODE_ALL_FAILED\x10\x04\x12\x1d\n" +
-	"\x19MODEL_ERROR_CODE_REJECTED\x10\x052\xe4\x03\n" +
+	"\x19MODEL_ERROR_CODE_REJECTED\x10\x052\xb5\x04\n" +
 	"\fModelService\x12G\n" +
 	"\n" +
 	"ListModels\x12\x1b.numen.v1.ListModelsRequest\x1a\x1c.numen.v1.ListModelsResponse\x12b\n" +
 	"\x13ListReasoningLevels\x12$.numen.v1.ListReasoningLevelsRequest\x1a%.numen.v1.ListReasoningLevelsResponse\x12Y\n" +
-	"\bComplete\x12%.numen.v1.ModelServiceCompleteRequest\x1a&.numen.v1.ModelServiceCompleteResponse\x12P\n" +
+	"\bComplete\x12%.numen.v1.ModelServiceCompleteRequest\x1a&.numen.v1.ModelServiceCompleteResponse\x12O\n" +
+	"\x04Chat\x12!.numen.v1.ModelServiceChatRequest\x1a\".numen.v1.ModelServiceChatResponse0\x01\x12P\n" +
 	"\x05Embed\x12\".numen.v1.ModelServiceEmbedRequest\x1a#.numen.v1.ModelServiceEmbedResponse\x12z\n" +
 	"\x13GetEmbeddingProfile\x120.numen.v1.ModelServiceGetEmbeddingProfileRequest\x1a1.numen.v1.ModelServiceGetEmbeddingProfileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -1066,7 +1349,7 @@ func file_numen_v1_model_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_model_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_numen_v1_model_proto_goTypes = []any{
 	(ModelErrorCode)(0),                             // 0: numen.v1.ModelErrorCode
 	(*ConnectionModel)(nil),                         // 1: numen.v1.ConnectionModel
@@ -1079,12 +1362,19 @@ var file_numen_v1_model_proto_goTypes = []any{
 	(*ModelMessage)(nil),                            // 8: numen.v1.ModelMessage
 	(*ModelServiceCompleteRequest)(nil),             // 9: numen.v1.ModelServiceCompleteRequest
 	(*ModelServiceCompleteResponse)(nil),            // 10: numen.v1.ModelServiceCompleteResponse
-	(*ModelServiceEmbedRequest)(nil),                // 11: numen.v1.ModelServiceEmbedRequest
-	(*ModelServiceEmbedResponse)(nil),               // 12: numen.v1.ModelServiceEmbedResponse
-	(*ModelServiceGetEmbeddingProfileRequest)(nil),  // 13: numen.v1.ModelServiceGetEmbeddingProfileRequest
-	(*ModelServiceGetEmbeddingProfileResponse)(nil), // 14: numen.v1.ModelServiceGetEmbeddingProfileResponse
-	(Priority)(0),                                   // 15: numen.v1.Priority
-	(*FloatVector)(nil),                             // 16: numen.v1.FloatVector
+	(*ModelServiceChatRequest)(nil),                 // 11: numen.v1.ModelServiceChatRequest
+	(*ModelChatError)(nil),                          // 12: numen.v1.ModelChatError
+	(*ModelServiceChatResponse)(nil),                // 13: numen.v1.ModelServiceChatResponse
+	(*ModelServiceEmbedRequest)(nil),                // 14: numen.v1.ModelServiceEmbedRequest
+	(*ModelServiceEmbedResponse)(nil),               // 15: numen.v1.ModelServiceEmbedResponse
+	(*ModelServiceGetEmbeddingProfileRequest)(nil),  // 16: numen.v1.ModelServiceGetEmbeddingProfileRequest
+	(*ModelServiceGetEmbeddingProfileResponse)(nil), // 17: numen.v1.ModelServiceGetEmbeddingProfileResponse
+	(Priority)(0),                                   // 18: numen.v1.Priority
+	(*HostModelChatMessage)(nil),                    // 19: numen.v1.HostModelChatMessage
+	(*HostModelToolDefinition)(nil),                 // 20: numen.v1.HostModelToolDefinition
+	(*HostModelToolCall)(nil),                       // 21: numen.v1.HostModelToolCall
+	(*HostModelChatFinish)(nil),                     // 22: numen.v1.HostModelChatFinish
+	(*FloatVector)(nil),                             // 23: numen.v1.FloatVector
 }
 var file_numen_v1_model_proto_depIdxs = []int32{
 	1,  // 0: numen.v1.ListModelsResponse.models:type_name -> numen.v1.ConnectionModel
@@ -1092,30 +1382,40 @@ var file_numen_v1_model_proto_depIdxs = []int32{
 	2,  // 2: numen.v1.ListReasoningLevelsResponse.levels:type_name -> numen.v1.ConnectionReasoningLevel
 	0,  // 3: numen.v1.ListReasoningLevelsResponse.error:type_name -> numen.v1.ModelErrorCode
 	8,  // 4: numen.v1.ModelServiceCompleteRequest.messages:type_name -> numen.v1.ModelMessage
-	15, // 5: numen.v1.ModelServiceCompleteRequest.priority:type_name -> numen.v1.Priority
+	18, // 5: numen.v1.ModelServiceCompleteRequest.priority:type_name -> numen.v1.Priority
 	0,  // 6: numen.v1.ModelServiceCompleteResponse.error:type_name -> numen.v1.ModelErrorCode
 	7,  // 7: numen.v1.ModelServiceCompleteResponse.failures:type_name -> numen.v1.ModelFailure
-	15, // 8: numen.v1.ModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
-	16, // 9: numen.v1.ModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
-	0,  // 10: numen.v1.ModelServiceEmbedResponse.error:type_name -> numen.v1.ModelErrorCode
-	7,  // 11: numen.v1.ModelServiceEmbedResponse.failures:type_name -> numen.v1.ModelFailure
-	0,  // 12: numen.v1.ModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.ModelErrorCode
-	7,  // 13: numen.v1.ModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.ModelFailure
-	3,  // 14: numen.v1.ModelService.ListModels:input_type -> numen.v1.ListModelsRequest
-	5,  // 15: numen.v1.ModelService.ListReasoningLevels:input_type -> numen.v1.ListReasoningLevelsRequest
-	9,  // 16: numen.v1.ModelService.Complete:input_type -> numen.v1.ModelServiceCompleteRequest
-	11, // 17: numen.v1.ModelService.Embed:input_type -> numen.v1.ModelServiceEmbedRequest
-	13, // 18: numen.v1.ModelService.GetEmbeddingProfile:input_type -> numen.v1.ModelServiceGetEmbeddingProfileRequest
-	4,  // 19: numen.v1.ModelService.ListModels:output_type -> numen.v1.ListModelsResponse
-	6,  // 20: numen.v1.ModelService.ListReasoningLevels:output_type -> numen.v1.ListReasoningLevelsResponse
-	10, // 21: numen.v1.ModelService.Complete:output_type -> numen.v1.ModelServiceCompleteResponse
-	12, // 22: numen.v1.ModelService.Embed:output_type -> numen.v1.ModelServiceEmbedResponse
-	14, // 23: numen.v1.ModelService.GetEmbeddingProfile:output_type -> numen.v1.ModelServiceGetEmbeddingProfileResponse
-	19, // [19:24] is the sub-list for method output_type
-	14, // [14:19] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	19, // 8: numen.v1.ModelServiceChatRequest.messages:type_name -> numen.v1.HostModelChatMessage
+	20, // 9: numen.v1.ModelServiceChatRequest.tools:type_name -> numen.v1.HostModelToolDefinition
+	18, // 10: numen.v1.ModelServiceChatRequest.priority:type_name -> numen.v1.Priority
+	0,  // 11: numen.v1.ModelChatError.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 12: numen.v1.ModelChatError.failures:type_name -> numen.v1.ModelFailure
+	21, // 13: numen.v1.ModelServiceChatResponse.tool_call:type_name -> numen.v1.HostModelToolCall
+	22, // 14: numen.v1.ModelServiceChatResponse.finish:type_name -> numen.v1.HostModelChatFinish
+	12, // 15: numen.v1.ModelServiceChatResponse.failure:type_name -> numen.v1.ModelChatError
+	18, // 16: numen.v1.ModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
+	23, // 17: numen.v1.ModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	0,  // 18: numen.v1.ModelServiceEmbedResponse.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 19: numen.v1.ModelServiceEmbedResponse.failures:type_name -> numen.v1.ModelFailure
+	0,  // 20: numen.v1.ModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.ModelErrorCode
+	7,  // 21: numen.v1.ModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.ModelFailure
+	3,  // 22: numen.v1.ModelService.ListModels:input_type -> numen.v1.ListModelsRequest
+	5,  // 23: numen.v1.ModelService.ListReasoningLevels:input_type -> numen.v1.ListReasoningLevelsRequest
+	9,  // 24: numen.v1.ModelService.Complete:input_type -> numen.v1.ModelServiceCompleteRequest
+	11, // 25: numen.v1.ModelService.Chat:input_type -> numen.v1.ModelServiceChatRequest
+	14, // 26: numen.v1.ModelService.Embed:input_type -> numen.v1.ModelServiceEmbedRequest
+	16, // 27: numen.v1.ModelService.GetEmbeddingProfile:input_type -> numen.v1.ModelServiceGetEmbeddingProfileRequest
+	4,  // 28: numen.v1.ModelService.ListModels:output_type -> numen.v1.ListModelsResponse
+	6,  // 29: numen.v1.ModelService.ListReasoningLevels:output_type -> numen.v1.ListReasoningLevelsResponse
+	10, // 30: numen.v1.ModelService.Complete:output_type -> numen.v1.ModelServiceCompleteResponse
+	13, // 31: numen.v1.ModelService.Chat:output_type -> numen.v1.ModelServiceChatResponse
+	15, // 32: numen.v1.ModelService.Embed:output_type -> numen.v1.ModelServiceEmbedResponse
+	17, // 33: numen.v1.ModelService.GetEmbeddingProfile:output_type -> numen.v1.ModelServiceGetEmbeddingProfileResponse
+	28, // [28:34] is the sub-list for method output_type
+	22, // [22:28] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_model_proto_init() }
@@ -1126,13 +1426,20 @@ func file_numen_v1_model_proto_init() {
 	file_numen_v1_embedding_proto_init()
 	file_numen_v1_hostmodel_proto_init()
 	file_numen_v1_model_proto_msgTypes[8].OneofWrappers = []any{}
+	file_numen_v1_model_proto_msgTypes[10].OneofWrappers = []any{}
+	file_numen_v1_model_proto_msgTypes[12].OneofWrappers = []any{
+		(*ModelServiceChatResponse_TextDelta)(nil),
+		(*ModelServiceChatResponse_ToolCall)(nil),
+		(*ModelServiceChatResponse_Finish)(nil),
+		(*ModelServiceChatResponse_Failure)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_model_proto_rawDesc), len(file_numen_v1_model_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

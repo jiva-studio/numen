@@ -3,9 +3,8 @@ package plugin
 import "context"
 
 // Refresh sends Configure to each running plugin whose delivery differs from the last one it was
-// given, and to each plugin in forced, and waits for every send. A secret operation calls it
-// after its change is committed. The error names each plugin whose send failed.
-// A plugin counts as given its delivery only after a send that read every value.
+// given, and to each plugin in forced, and waits for every send. An edit of a connection calls it
+// after the change is committed. The error names each plugin whose send failed.
 // If ctx ends or the call times out the plugin stays due; if the plugin answered with an error a plain refresh does not resend.
 func (h *Host) Refresh(ctx context.Context, forced ...string) error {
 	return h.configure.refresh(ctx, forced)

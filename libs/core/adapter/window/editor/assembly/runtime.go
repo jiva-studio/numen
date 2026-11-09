@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -63,7 +62,6 @@ type Runtime[H, V any] struct {
 	OpenGetSettingsFn        func() *settings.Get
 	OpenWriteSettingsFn      func() *settings.Write
 	OpenWatchSettingsFn      func() *settings.Watch
-	OpenSecretsFn            func() *secret.Secrets
 	OpenConnectionsFn        func() *connection.Connections
 	OpenModelListsFn         func() *modellist.Lists
 	OpenModelCallsFn         func() modelcallport.ModelCalls
@@ -119,7 +117,6 @@ func (e Runtime[H, V]) CloseIndex() error                            { return e.
 func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }
 func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
 func (e Runtime[H, V]) OpenWatchSettings() *settings.Watch           { return e.OpenWatchSettingsFn() }
-func (e Runtime[H, V]) OpenSecrets() *secret.Secrets                 { return e.OpenSecretsFn() }
 
 // OpenConnections is the use cases on the connections, nil where the assembly names none.
 func (e Runtime[H, V]) OpenConnections() *connection.Connections {

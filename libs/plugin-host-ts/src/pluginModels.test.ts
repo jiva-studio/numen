@@ -9,6 +9,9 @@ const createClient = (overrides: Partial<ModelClient> = {}): ModelClient =>
     complete: () => Promise.resolve({ ok: true, value: { text: 'fixed' } }),
     embed: () => Promise.resolve({ ok: true, value: { vectors: [[1, 2]] } }),
     getEmbeddingProfile: () => Promise.reject(new Error('not used')),
+    chat: () => {
+      throw new Error('not used')
+    },
     ...overrides,
   }) as unknown as ModelClient
 
@@ -174,5 +177,98 @@ describe('the model calls of a plugin', () => {
     )
 
     await expect(models.embed({ texts: ['a'] })).rejects.toThrow('transport down')
+  })
+})
+
+const drain = async (stream: AsyncGenerator<unknown, unknown>) => {
+  const events: unknown[] = []
+  for (;;) {
+    const next = await stream.next()
+    if (next.done === true) return { events, end: next.value }
+    events.push(next.value)
+  }
+}
+
+describe('the chat of a plugin', () => {
+  it('streams the events of the turn for the plugin and returns null at the end', async () => {
+    const requests: unknown[] = []
+    const models = createPluginModels(
+      createClient({
+        chat: async function* (pluginId, request, options) {
+          requests.push({ pluginId, request, options })
+          yield { textDelta: 'Hi' }
+          yield { finish: { reason: 'stop' } }
+          return null
+        },
+      }),
+      'md.numen.agents.numen',
+    )
+
+    const { events, end } = await drain(
+      models.chat({ messages: [{ role: 'user', text: 'u' }] }, { priority: 'interactive' }),
+    )
+
+    expect(events).toStrictEqual([{ textDelta: 'Hi' }, { finish: { reason: 'stop' } }])
+    expect(end).toBeNull()
+    expect(requests).toStrictEqual([
+      {
+        pluginId: 'md.numen.agents.numen',
+        request: { messages: [{ role: 'user', text: 'u' }] },
+        options: { priority: 'interactive' },
+      },
+    ])
+  })
+
+  it('returns the failure of the turn as the error of the model, after the text before it', async () => {
+    const rows = [{ connectionName: 'Ollama', reason: 'unreachable' }]
+    const models = createPluginModels(
+      createClient({
+        chat: async function* () {
+          yield { textDelta: 'partial' }
+          return { errorCode: 'all_failed', detail: 'Ollama: unreachable', failures: rows }
+        },
+      }),
+      'md.numen.agents.numen',
+    )
+
+    const { events, end } = await drain(models.chat({ messages: [] }))
+
+    expect(events).toStrictEqual([{ textDelta: 'partial' }])
+    expect(end).toStrictEqual({ error: 'all_failed', message: 'Ollama: unreachable', failures: rows })
+  })
+
+  it('returns a turn whose signal aborted as canceled', async () => {
+    const controller = new AbortController()
+    const models = createPluginModels(
+      createClient({
+        chat: async function* () {
+          yield { textDelta: 'partial' }
+          controller.abort()
+          throw new Error('aborted')
+        },
+      }),
+      'md.numen.agents.numen',
+    )
+
+    const { events, end } = await drain(
+      models.chat({ messages: [] }, { signal: controller.signal }),
+    )
+
+    expect(events).toStrictEqual([{ textDelta: 'partial' }])
+    expect(end).toStrictEqual({ error: 'canceled', message: 'aborted', failures: [] })
+  })
+
+  it('lets a failure that is not a cancellation throw', async () => {
+    const models = createPluginModels(
+      createClient({
+        chat: async function* () {
+          yield { textDelta: 'partial' }
+          throw new Error('transport down')
+        },
+      }),
+      'md.numen.agents.numen',
+    )
+
+    await expect(drain(models.chat({ messages: [] }))).rejects.toThrow('transport down')
   })
 })

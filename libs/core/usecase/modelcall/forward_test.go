@@ -35,3 +35,26 @@ func TestForwardedCallsWithNoCallsAnswerNoConnectionToEveryOperation(t *testing.
 		t.Errorf("errors = %v, %v", embedErr, profileErr)
 	}
 }
+
+func TestForwardedChatReachesTheCallsSetLaterAndFindsNoConnectionBefore(t *testing.T) {
+	s := newSetup(t, "chat")
+	var current connectionport.ModelCalls
+	forwarded := modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return current })
+	send := func(connectionport.ChatEvent) error { return nil }
+
+	before := forwarded.Chat(t.Context(), consumerID, connectionport.ChatRequest{}, connectionport.PriorityBackground, send)
+	current = s.calls
+	var text string
+	after := forwarded.Chat(t.Context(), consumerID, connectionport.ChatRequest{}, connectionport.PriorityBackground,
+		func(event connectionport.ChatEvent) error {
+			text += event.TextDelta
+			return nil
+		})
+
+	if !errors.Is(before, connectionport.ErrNoConnection) {
+		t.Errorf("before the calls are set: err = %v, want no connection", before)
+	}
+	if after != nil || text != "answer from "+addressOne {
+		t.Errorf("after the calls are set: %q, %v", text, after)
+	}
+}

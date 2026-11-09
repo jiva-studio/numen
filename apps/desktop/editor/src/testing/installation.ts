@@ -2,7 +2,7 @@ import { fn } from 'storybook/test'
 import { ref } from 'vue'
 import { asFailure, asValue } from '@numen/core-client'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/entities/settings'
+import type { Model } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
@@ -10,20 +10,6 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   getSetting: () => undefined,
   getModels: () => [],
   write: fn(),
-  secretSections: ref([]),
-  secretMenus: ref([]),
-  secretStates: ref(new Map()),
-  loadSecretStates: fn(() => Promise.resolve()),
-  credentialsPath: ref(''),
-  createSecret: fn(() => Promise.resolve('s00000001')),
-  renameSecret: fn(),
-  writeSecret: fn(),
-  deleteSecret: fn(),
-  deleteSecretGroup: fn(),
-  moveSecret: fn(),
-  renameSecretGroup: fn(),
-  allowPluginSecret: fn(),
-  denyPluginSecret: fn(),
   connections: ref([]),
   connectionTypes: ref([]),
   loadConnections: fn(() => Promise.resolve()),
@@ -36,43 +22,6 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   file: ref('/numen.json'),
   ...overrides,
 })
-
-/**
- * What the core answers for these plugins and secrets, in the order of its page: the groups the
- * plugins ask for by name, then the others by name; the menu of each declaration with its own
- * group first; the state of each value from `hasValue`. Test names stay in ASCII.
- */
-export const createSecretAnswer = (
-  plugins: readonly PluginInfo[],
-  secrets: readonly Secret[],
-): Pick<Installation, 'secretSections' | 'secretMenus' | 'secretStates'> => {
-  const declarations = plugins.flatMap((plugin) =>
-    plugin.secrets.map((one) => ({ pluginId: plugin.id, name: one.name, group: one.group })),
-  )
-  const askedGroups = [
-    ...new Set(declarations.map((one) => one.group).filter((one) => one !== '')),
-  ].sort()
-  const others = [
-    ...new Set(secrets.map((one) => one.group).filter((one) => !askedGroups.includes(one))),
-  ].sort()
-  const sections: SecretSection[] = [...askedGroups, ...others].map((group) => ({
-    group,
-    isAsked: askedGroups.includes(group),
-    secrets: secrets.filter((one) => one.group === group),
-  }))
-  const menus: SecretMenu[] = declarations.map((declaration) => ({
-    ...declaration,
-    secrets: [
-      ...sections.filter((one) => declaration.group !== '' && one.group === declaration.group),
-      ...sections.filter((one) => declaration.group === '' || one.group !== declaration.group),
-    ].flatMap((one) => one.secrets),
-  }))
-  return {
-    secretSections: ref(sections),
-    secretMenus: ref(menus),
-    secretStates: ref(new Map(secrets.map((one) => [one.id, one.hasValue ?? false]))),
-  }
-}
 
 /** A plugin the installation lists, with what a test cares about put over the defaults. */
 export const createPluginInfo = createMockPluginInfo

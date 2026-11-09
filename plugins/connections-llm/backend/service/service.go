@@ -20,6 +20,7 @@ const (
 	typeCompatible = "openai-compatible"
 
 	operationComplete = "complete"
+	operationChat     = "chat"
 	operationEmbed    = "embed"
 	operationList     = "list"
 
@@ -56,13 +57,13 @@ func New() *Service {
 
 // Provider returns the roles the service fills.
 func (s *Service) Provider() connection.Provider {
-	return connection.Provider{Completer: s, Embedder: s, Models: s, Profiles: s}
+	return connection.Provider{Completer: s, Chatter: s, Embedder: s, Models: s, Profiles: s}
 }
 
 // Mount serves the provider on the plugin server and takes the settings of the plugin from Configure.
 func Mount(srv *server.Server) error {
 	svc := New()
-	srv.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { svc.Configure(values) })
+	srv.SetUpdateConfig(func(values map[string]string) { svc.Configure(values) })
 	srv.OnClose(func() error {
 		svc.clients.close()
 		return nil

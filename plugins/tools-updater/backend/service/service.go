@@ -148,7 +148,7 @@ func newUpdate(update release.Update) *api.Update {
 
 func mount(s *server.Server, fetcher Fetcher) error {
 	u := newUpdater(fetcher)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { u.configure(values) })
+	s.SetUpdateConfig(func(values map[string]string) { u.configure(values) })
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodCheck, u.check)
 	server.Handle(a, api.MethodGetStatus, u.getStatus)

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/provider.proto.
  */
 export const file_numen_v1_provider: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEizAEKDFByb3ZpZGVyQ2FsbBIMCgR0eXBlGAEgASgJEjIKBmZpZWxkcxgCIAMoCzIiLm51bWVuLnYxLlByb3ZpZGVyQ2FsbC5GaWVsZHNFbnRyeRIpCgdzZWNyZXRzGAMgAygLMhgubnVtZW4udjEuUHJvdmlkZXJTZWNyZXQSDQoFbW9kZWwYBCABKAkSEQoJcmVhc29uaW5nGAUgASgJGi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMQoOUHJvdmlkZXJTZWNyZXQSCwoDa2V5GAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEihwEKD1Byb3ZpZGVyRmFpbHVyZRIrCgRraW5kGAEgASgOMh0ubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlS2luZBIvCgZyZWFzb24YAiABKA4yHy5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMiLQoPUHJvdmlkZXJNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKxAQoeUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSKwoIbWVzc2FnZXMYAiADKAsyGS5udW1lbi52MS5Qcm92aWRlck1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAyABKAFIAIgBARISCgptYXhfdG9rZW5zGAQgASgFQg4KDF90ZW1wZXJhdHVyZSJbCh9Qcm92aWRlclNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlEgwKBHRleHQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJSChtQcm92aWRlclNlcnZpY2VFbWJlZFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBINCgV0ZXh0cxgCIAMoCSJyChxQcm92aWRlclNlcnZpY2VFbWJlZFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvchIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIj4KDVByb3ZpZGVyTW9kZWwSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKb3BlcmF0aW9ucxgDIAMoCSJbCiBQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEhEKCW9wZXJhdGlvbhgCIAEoCSJ4CiFQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVzcG9uc2USJwoGbW9kZWxzGAEgAygLMhcubnVtZW4udjEuUHJvdmlkZXJNb2RlbBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIjYKFlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkiUQopUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCKKAQoqUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjAKBmxldmVscxgBIAMoCzIgLm51bWVuLnYxLlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJNCiVQcm92aWRlclNlcnZpY2VHZXRNb2RlbFByb2ZpbGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwi3gEKJlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlc3BvbnNlEhAKCGlzX2tub3duGAEgASgIEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEhQKDHF1ZXJ5X3ByZWZpeBgFIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBiABKAkSDgoGc291cmNlGAcgASgJEioKB2ZhaWx1cmUYCCABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiUQopUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCJsCipQcm92aWRlclNlcnZpY2VQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USEgoKZGltZW5zaW9ucxgBIAEoBRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlImsKH1Byb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIRCglvcGVyYXRpb24YAiABKAkSDwoHcmVxdWVzdBgDIAEoDCJeCiBQcm92aWRlclNlcnZpY2VTdWJtaXRKb2JSZXNwb25zZRIOCgZqb2JfaWQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJaCiJQcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSDgoGam9iX2lkGAIgASgJImEKI1Byb3ZpZGVyU2VydmljZUdldEpvYlN0YXR1c1Jlc3BvbnNlEg4KBnN0YXR1cxgBIAEoCRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIlwKJFByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEg4KBmpvYl9pZBgCIAEoCSJjCiVQcm92aWRlclNlcnZpY2VGZXRjaEpvYlJlc3VsdFJlc3BvbnNlEg4KBnJlc3VsdBgBIAEoDBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlKoABChNQcm92aWRlckZhaWx1cmVLaW5kEiUKIVBST1ZJREVSX0ZBSUxVUkVfS0lORF9VTlNQRUNJRklFRBAAEiIKHlBST1ZJREVSX0ZBSUxVUkVfS0lORF9UUllfTkVYVBABEh4KGlBST1ZJREVSX0ZBSUxVUkVfS0lORF9TVE9QEAIq3gIKFVByb3ZpZGVyRmFpbHVyZVJlYXNvbhInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlNQRUNJRklFRBAAEigKJFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX0tFWV9SRUpFQ1RFRBABEiwKKFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1BBWU1FTlRfUkVRVUlSRUQQAhIoCiRQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9SQVRFX0xJTUlURUQQAxInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlJFQUNIQUJMRRAEEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1RJTUVPVVQQBRInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9CQURfUkVRVUVTVBAGEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1VOS05PV04QBzLxBwoPUHJvdmlkZXJTZXJ2aWNlEl8KCENvbXBsZXRlEigubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GikubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRJWCgVFbWJlZBIlLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUVtYmVkUmVxdWVzdBomLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUVtYmVkUmVzcG9uc2USZQoKTGlzdE1vZGVscxIqLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUxpc3RNb2RlbHNSZXF1ZXN0GisubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlTGlzdE1vZGVsc1Jlc3BvbnNlEoABChNMaXN0UmVhc29uaW5nTGV2ZWxzEjMubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QaNC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VMaXN0UmVhc29uaW5nTGV2ZWxzUmVzcG9uc2USdAoPR2V0TW9kZWxQcm9maWxlEi8ubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlR2V0TW9kZWxQcm9maWxlUmVxdWVzdBowLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlc3BvbnNlEoABChNQcm9iZUVtYmVkZGluZ1dpZHRoEjMubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlcXVlc3QaNC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USYgoJU3VibWl0Sm9iEikubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlU3VibWl0Sm9iUmVxdWVzdBoqLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlc3BvbnNlEmsKDEdldEpvYlN0YXR1cxIsLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUdldEpvYlN0YXR1c1JlcXVlc3QaLS5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXNwb25zZRJxCg5GZXRjaEpvYlJlc3VsdBIuLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVxdWVzdBovLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding]);
+  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEizAEKDFByb3ZpZGVyQ2FsbBIMCgR0eXBlGAEgASgJEjIKBmZpZWxkcxgCIAMoCzIiLm51bWVuLnYxLlByb3ZpZGVyQ2FsbC5GaWVsZHNFbnRyeRIpCgdzZWNyZXRzGAMgAygLMhgubnVtZW4udjEuUHJvdmlkZXJTZWNyZXQSDQoFbW9kZWwYBCABKAkSEQoJcmVhc29uaW5nGAUgASgJGi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMQoOUHJvdmlkZXJTZWNyZXQSCwoDa2V5GAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEihwEKD1Byb3ZpZGVyRmFpbHVyZRIrCgRraW5kGAEgASgOMh0ubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlS2luZBIvCgZyZWFzb24YAiABKA4yHy5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMiLQoPUHJvdmlkZXJNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCSKxAQoeUHJvdmlkZXJTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSKwoIbWVzc2FnZXMYAiADKAsyGS5udW1lbi52MS5Qcm92aWRlck1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAyABKAFIAIgBARISCgptYXhfdG9rZW5zGAQgASgFQg4KDF90ZW1wZXJhdHVyZSJbCh9Qcm92aWRlclNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlEgwKBHRleHQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJ3ChNQcm92aWRlckNoYXRNZXNzYWdlEgwKBHJvbGUYASABKAkSDAoEdGV4dBgCIAEoCRIuCgp0b29sX2NhbGxzGAMgAygLMhoubnVtZW4udjEuUHJvdmlkZXJUb29sQ2FsbBIUCgx0b29sX2NhbGxfaWQYBCABKAkiVAoWUHJvdmlkZXJUb29sRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEhcKD3BhcmFtZXRlcnNfanNvbhgDIAEoCSJEChBQcm92aWRlclRvb2xDYWxsEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSFgoOYXJndW1lbnRzX2pzb24YAyABKAkiSAoSUHJvdmlkZXJDaGF0RmluaXNoEjIKBnJlYXNvbhgBIAEoDjIiLm51bWVuLnYxLlByb3ZpZGVyQ2hhdEZpbmlzaFJlYXNvbiLiAQoaUHJvdmlkZXJTZXJ2aWNlQ2hhdFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIvCghtZXNzYWdlcxgCIAMoCzIdLm51bWVuLnYxLlByb3ZpZGVyQ2hhdE1lc3NhZ2USLwoFdG9vbHMYAyADKAsyIC5udW1lbi52MS5Qcm92aWRlclRvb2xEZWZpbml0aW9uEhgKC3RlbXBlcmF0dXJlGAQgASgBSACIAQESEgoKbWF4X3Rva2VucxgFIAEoBUIOCgxfdGVtcGVyYXR1cmUiywEKG1Byb3ZpZGVyU2VydmljZUNoYXRSZXNwb25zZRIUCgp0ZXh0X2RlbHRhGAEgASgJSAASLwoJdG9vbF9jYWxsGAIgASgLMhoubnVtZW4udjEuUHJvdmlkZXJUb29sQ2FsbEgAEi4KBmZpbmlzaBgDIAEoCzIcLm51bWVuLnYxLlByb3ZpZGVyQ2hhdEZpbmlzaEgAEiwKB2ZhaWx1cmUYBCABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVIAEIHCgVldmVudCJSChtQcm92aWRlclNlcnZpY2VFbWJlZFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBINCgV0ZXh0cxgCIAMoCSJyChxQcm92aWRlclNlcnZpY2VFbWJlZFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvchIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIj4KDVByb3ZpZGVyTW9kZWwSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKb3BlcmF0aW9ucxgDIAMoCSJbCiBQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEhEKCW9wZXJhdGlvbhgCIAEoCSJ4CiFQcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVzcG9uc2USJwoGbW9kZWxzGAEgAygLMhcubnVtZW4udjEuUHJvdmlkZXJNb2RlbBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIjYKFlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkiUQopUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1JlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCKKAQoqUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEjAKBmxldmVscxgBIAMoCzIgLm51bWVuLnYxLlByb3ZpZGVyUmVhc29uaW5nTGV2ZWwSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJNCiVQcm92aWRlclNlcnZpY2VHZXRNb2RlbFByb2ZpbGVSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwi3gEKJlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlc3BvbnNlEhAKCGlzX2tub3duGAEgASgIEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEhQKDHF1ZXJ5X3ByZWZpeBgFIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBiABKAkSDgoGc291cmNlGAcgASgJEioKB2ZhaWx1cmUYCCABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmUiUQopUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbCJsCipQcm92aWRlclNlcnZpY2VQcm9iZUVtYmVkZGluZ1dpZHRoUmVzcG9uc2USEgoKZGltZW5zaW9ucxgBIAEoBRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlImsKH1Byb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlcXVlc3QSJAoEY2FsbBgBIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIRCglvcGVyYXRpb24YAiABKAkSDwoHcmVxdWVzdBgDIAEoDCJeCiBQcm92aWRlclNlcnZpY2VTdWJtaXRKb2JSZXNwb25zZRIOCgZqb2JfaWQYASABKAkSKgoHZmFpbHVyZRgCIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZSJaCiJQcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXF1ZXN0EiQKBGNhbGwYASABKAsyFi5udW1lbi52MS5Qcm92aWRlckNhbGwSDgoGam9iX2lkGAIgASgJImEKI1Byb3ZpZGVyU2VydmljZUdldEpvYlN0YXR1c1Jlc3BvbnNlEg4KBnN0YXR1cxgBIAEoCRIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlIlwKJFByb3ZpZGVyU2VydmljZUZldGNoSm9iUmVzdWx0UmVxdWVzdBIkCgRjYWxsGAEgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEg4KBmpvYl9pZBgCIAEoCSJjCiVQcm92aWRlclNlcnZpY2VGZXRjaEpvYlJlc3VsdFJlc3BvbnNlEg4KBnJlc3VsdBgBIAEoDBIqCgdmYWlsdXJlGAIgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlKoABChNQcm92aWRlckZhaWx1cmVLaW5kEiUKIVBST1ZJREVSX0ZBSUxVUkVfS0lORF9VTlNQRUNJRklFRBAAEiIKHlBST1ZJREVSX0ZBSUxVUkVfS0lORF9UUllfTkVYVBABEh4KGlBST1ZJREVSX0ZBSUxVUkVfS0lORF9TVE9QEAIq3gIKFVByb3ZpZGVyRmFpbHVyZVJlYXNvbhInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlNQRUNJRklFRBAAEigKJFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX0tFWV9SRUpFQ1RFRBABEiwKKFBST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1BBWU1FTlRfUkVRVUlSRUQQAhIoCiRQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9SQVRFX0xJTUlURUQQAxInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9VTlJFQUNIQUJMRRAEEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1RJTUVPVVQQBRInCiNQUk9WSURFUl9GQUlMVVJFX1JFQVNPTl9CQURfUkVRVUVTVBAGEiMKH1BST1ZJREVSX0ZBSUxVUkVfUkVBU09OX1VOS05PV04QByrBAQoYUHJvdmlkZXJDaGF0RmluaXNoUmVhc29uEisKJ1BST1ZJREVSX0NIQVRfRklOSVNIX1JFQVNPTl9VTlNQRUNJRklFRBAAEiQKIFBST1ZJREVSX0NIQVRfRklOSVNIX1JFQVNPTl9TVE9QEAESKgomUFJPVklERVJfQ0hBVF9GSU5JU0hfUkVBU09OX1RPT0xfQ0FMTFMQAhImCiJQUk9WSURFUl9DSEFUX0ZJTklTSF9SRUFTT05fTEVOR1RIEAMyyAgKD1Byb3ZpZGVyU2VydmljZRJfCghDb21wbGV0ZRIoLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNvbXBsZXRlUmVxdWVzdBopLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNvbXBsZXRlUmVzcG9uc2USVgoFRW1iZWQSJS5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VFbWJlZFJlcXVlc3QaJi5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VFbWJlZFJlc3BvbnNlElUKBENoYXQSJC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VDaGF0UmVxdWVzdBolLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNoYXRSZXNwb25zZTABEmUKCkxpc3RNb2RlbHMSKi5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VMaXN0TW9kZWxzUmVxdWVzdBorLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUxpc3RNb2RlbHNSZXNwb25zZRKAAQoTTGlzdFJlYXNvbmluZ0xldmVscxIzLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUxpc3RSZWFzb25pbmdMZXZlbHNSZXF1ZXN0GjQubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlTGlzdFJlYXNvbmluZ0xldmVsc1Jlc3BvbnNlEnQKD0dldE1vZGVsUHJvZmlsZRIvLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUdldE1vZGVsUHJvZmlsZVJlcXVlc3QaMC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VHZXRNb2RlbFByb2ZpbGVSZXNwb25zZRKAAQoTUHJvYmVFbWJlZGRpbmdXaWR0aBIzLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZVByb2JlRW1iZWRkaW5nV2lkdGhSZXF1ZXN0GjQubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlUHJvYmVFbWJlZGRpbmdXaWR0aFJlc3BvbnNlEmIKCVN1Ym1pdEpvYhIpLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZVN1Ym1pdEpvYlJlcXVlc3QaKi5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VTdWJtaXRKb2JSZXNwb25zZRJrCgxHZXRKb2JTdGF0dXMSLC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VHZXRKb2JTdGF0dXNSZXF1ZXN0Gi0ubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlR2V0Sm9iU3RhdHVzUmVzcG9uc2UScQoORmV0Y2hKb2JSZXN1bHQSLi5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VGZXRjaEpvYlJlc3VsdFJlcXVlc3QaLy5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VGZXRjaEpvYlJlc3VsdFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
 
 /**
  * ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -191,6 +191,199 @@ export const ProviderServiceCompleteResponseSchema: GenMessage<ProviderServiceCo
   messageDesc(file_numen_v1_provider, 5);
 
 /**
+ * @generated from message numen.v1.ProviderChatMessage
+ */
+export type ProviderChatMessage = Message<"numen.v1.ProviderChatMessage"> & {
+  /**
+   * role is system, user, assistant or tool.
+   *
+   * @generated from field: string role = 1;
+   */
+  role: string;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+
+  /**
+   * tool_calls are the calls an assistant message asked for.
+   *
+   * @generated from field: repeated numen.v1.ProviderToolCall tool_calls = 3;
+   */
+  toolCalls: ProviderToolCall[];
+
+  /**
+   * tool_call_id is the call a tool message answers.
+   *
+   * @generated from field: string tool_call_id = 4;
+   */
+  toolCallId: string;
+};
+
+/**
+ * Describes the message numen.v1.ProviderChatMessage.
+ * Use `create(ProviderChatMessageSchema)` to create a new message.
+ */
+export const ProviderChatMessageSchema: GenMessage<ProviderChatMessage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 6);
+
+/**
+ * @generated from message numen.v1.ProviderToolDefinition
+ */
+export type ProviderToolDefinition = Message<"numen.v1.ProviderToolDefinition"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string description = 2;
+   */
+  description: string;
+
+  /**
+   * parameters_json is the JSON schema of the arguments.
+   *
+   * @generated from field: string parameters_json = 3;
+   */
+  parametersJson: string;
+};
+
+/**
+ * Describes the message numen.v1.ProviderToolDefinition.
+ * Use `create(ProviderToolDefinitionSchema)` to create a new message.
+ */
+export const ProviderToolDefinitionSchema: GenMessage<ProviderToolDefinition> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 7);
+
+/**
+ * @generated from message numen.v1.ProviderToolCall
+ */
+export type ProviderToolCall = Message<"numen.v1.ProviderToolCall"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * arguments_json is the arguments as one JSON object.
+   *
+   * @generated from field: string arguments_json = 3;
+   */
+  argumentsJson: string;
+};
+
+/**
+ * Describes the message numen.v1.ProviderToolCall.
+ * Use `create(ProviderToolCallSchema)` to create a new message.
+ */
+export const ProviderToolCallSchema: GenMessage<ProviderToolCall> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 8);
+
+/**
+ * @generated from message numen.v1.ProviderChatFinish
+ */
+export type ProviderChatFinish = Message<"numen.v1.ProviderChatFinish"> & {
+  /**
+   * @generated from field: numen.v1.ProviderChatFinishReason reason = 1;
+   */
+  reason: ProviderChatFinishReason;
+};
+
+/**
+ * Describes the message numen.v1.ProviderChatFinish.
+ * Use `create(ProviderChatFinishSchema)` to create a new message.
+ */
+export const ProviderChatFinishSchema: GenMessage<ProviderChatFinish> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 9);
+
+/**
+ * @generated from message numen.v1.ProviderServiceChatRequest
+ */
+export type ProviderServiceChatRequest = Message<"numen.v1.ProviderServiceChatRequest"> & {
+  /**
+   * @generated from field: numen.v1.ProviderCall call = 1;
+   */
+  call?: ProviderCall | undefined;
+
+  /**
+   * @generated from field: repeated numen.v1.ProviderChatMessage messages = 2;
+   */
+  messages: ProviderChatMessage[];
+
+  /**
+   * @generated from field: repeated numen.v1.ProviderToolDefinition tools = 3;
+   */
+  tools: ProviderToolDefinition[];
+
+  /**
+   * @generated from field: optional double temperature = 4;
+   */
+  temperature?: number | undefined;
+
+  /**
+   * @generated from field: int32 max_tokens = 5;
+   */
+  maxTokens: number;
+};
+
+/**
+ * Describes the message numen.v1.ProviderServiceChatRequest.
+ * Use `create(ProviderServiceChatRequestSchema)` to create a new message.
+ */
+export const ProviderServiceChatRequestSchema: GenMessage<ProviderServiceChatRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 10);
+
+/**
+ * ProviderServiceChatResponse is one event of a turn. A turn ends with a finish or a failure.
+ *
+ * @generated from message numen.v1.ProviderServiceChatResponse
+ */
+export type ProviderServiceChatResponse = Message<"numen.v1.ProviderServiceChatResponse"> & {
+  /**
+   * @generated from oneof numen.v1.ProviderServiceChatResponse.event
+   */
+  event: {
+    /**
+     * @generated from field: string text_delta = 1;
+     */
+    value: string;
+    case: "textDelta";
+  } | {
+    /**
+     * @generated from field: numen.v1.ProviderToolCall tool_call = 2;
+     */
+    value: ProviderToolCall;
+    case: "toolCall";
+  } | {
+    /**
+     * @generated from field: numen.v1.ProviderChatFinish finish = 3;
+     */
+    value: ProviderChatFinish;
+    case: "finish";
+  } | {
+    /**
+     * @generated from field: numen.v1.ProviderFailure failure = 4;
+     */
+    value: ProviderFailure;
+    case: "failure";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message numen.v1.ProviderServiceChatResponse.
+ * Use `create(ProviderServiceChatResponseSchema)` to create a new message.
+ */
+export const ProviderServiceChatResponseSchema: GenMessage<ProviderServiceChatResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 11);
+
+/**
  * @generated from message numen.v1.ProviderServiceEmbedRequest
  */
 export type ProviderServiceEmbedRequest = Message<"numen.v1.ProviderServiceEmbedRequest"> & {
@@ -210,7 +403,7 @@ export type ProviderServiceEmbedRequest = Message<"numen.v1.ProviderServiceEmbed
  * Use `create(ProviderServiceEmbedRequestSchema)` to create a new message.
  */
 export const ProviderServiceEmbedRequestSchema: GenMessage<ProviderServiceEmbedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 6);
+  messageDesc(file_numen_v1_provider, 12);
 
 /**
  * @generated from message numen.v1.ProviderServiceEmbedResponse
@@ -232,7 +425,7 @@ export type ProviderServiceEmbedResponse = Message<"numen.v1.ProviderServiceEmbe
  * Use `create(ProviderServiceEmbedResponseSchema)` to create a new message.
  */
 export const ProviderServiceEmbedResponseSchema: GenMessage<ProviderServiceEmbedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 7);
+  messageDesc(file_numen_v1_provider, 13);
 
 /**
  * @generated from message numen.v1.ProviderModel
@@ -261,7 +454,7 @@ export type ProviderModel = Message<"numen.v1.ProviderModel"> & {
  * Use `create(ProviderModelSchema)` to create a new message.
  */
 export const ProviderModelSchema: GenMessage<ProviderModel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 8);
+  messageDesc(file_numen_v1_provider, 14);
 
 /**
  * @generated from message numen.v1.ProviderServiceListModelsRequest
@@ -283,7 +476,7 @@ export type ProviderServiceListModelsRequest = Message<"numen.v1.ProviderService
  * Use `create(ProviderServiceListModelsRequestSchema)` to create a new message.
  */
 export const ProviderServiceListModelsRequestSchema: GenMessage<ProviderServiceListModelsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 9);
+  messageDesc(file_numen_v1_provider, 15);
 
 /**
  * @generated from message numen.v1.ProviderServiceListModelsResponse
@@ -305,7 +498,7 @@ export type ProviderServiceListModelsResponse = Message<"numen.v1.ProviderServic
  * Use `create(ProviderServiceListModelsResponseSchema)` to create a new message.
  */
 export const ProviderServiceListModelsResponseSchema: GenMessage<ProviderServiceListModelsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 10);
+  messageDesc(file_numen_v1_provider, 16);
 
 /**
  * @generated from message numen.v1.ProviderReasoningLevel
@@ -327,7 +520,7 @@ export type ProviderReasoningLevel = Message<"numen.v1.ProviderReasoningLevel"> 
  * Use `create(ProviderReasoningLevelSchema)` to create a new message.
  */
 export const ProviderReasoningLevelSchema: GenMessage<ProviderReasoningLevel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 11);
+  messageDesc(file_numen_v1_provider, 17);
 
 /**
  * @generated from message numen.v1.ProviderServiceListReasoningLevelsRequest
@@ -344,7 +537,7 @@ export type ProviderServiceListReasoningLevelsRequest = Message<"numen.v1.Provid
  * Use `create(ProviderServiceListReasoningLevelsRequestSchema)` to create a new message.
  */
 export const ProviderServiceListReasoningLevelsRequestSchema: GenMessage<ProviderServiceListReasoningLevelsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 12);
+  messageDesc(file_numen_v1_provider, 18);
 
 /**
  * @generated from message numen.v1.ProviderServiceListReasoningLevelsResponse
@@ -366,7 +559,7 @@ export type ProviderServiceListReasoningLevelsResponse = Message<"numen.v1.Provi
  * Use `create(ProviderServiceListReasoningLevelsResponseSchema)` to create a new message.
  */
 export const ProviderServiceListReasoningLevelsResponseSchema: GenMessage<ProviderServiceListReasoningLevelsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 13);
+  messageDesc(file_numen_v1_provider, 19);
 
 /**
  * @generated from message numen.v1.ProviderServiceGetModelProfileRequest
@@ -383,7 +576,7 @@ export type ProviderServiceGetModelProfileRequest = Message<"numen.v1.ProviderSe
  * Use `create(ProviderServiceGetModelProfileRequestSchema)` to create a new message.
  */
 export const ProviderServiceGetModelProfileRequestSchema: GenMessage<ProviderServiceGetModelProfileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 14);
+  messageDesc(file_numen_v1_provider, 20);
 
 /**
  * @generated from message numen.v1.ProviderServiceGetModelProfileResponse
@@ -441,7 +634,7 @@ export type ProviderServiceGetModelProfileResponse = Message<"numen.v1.ProviderS
  * Use `create(ProviderServiceGetModelProfileResponseSchema)` to create a new message.
  */
 export const ProviderServiceGetModelProfileResponseSchema: GenMessage<ProviderServiceGetModelProfileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 15);
+  messageDesc(file_numen_v1_provider, 21);
 
 /**
  * @generated from message numen.v1.ProviderServiceProbeEmbeddingWidthRequest
@@ -458,7 +651,7 @@ export type ProviderServiceProbeEmbeddingWidthRequest = Message<"numen.v1.Provid
  * Use `create(ProviderServiceProbeEmbeddingWidthRequestSchema)` to create a new message.
  */
 export const ProviderServiceProbeEmbeddingWidthRequestSchema: GenMessage<ProviderServiceProbeEmbeddingWidthRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 16);
+  messageDesc(file_numen_v1_provider, 22);
 
 /**
  * @generated from message numen.v1.ProviderServiceProbeEmbeddingWidthResponse
@@ -480,7 +673,7 @@ export type ProviderServiceProbeEmbeddingWidthResponse = Message<"numen.v1.Provi
  * Use `create(ProviderServiceProbeEmbeddingWidthResponseSchema)` to create a new message.
  */
 export const ProviderServiceProbeEmbeddingWidthResponseSchema: GenMessage<ProviderServiceProbeEmbeddingWidthResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 17);
+  messageDesc(file_numen_v1_provider, 23);
 
 /**
  * @generated from message numen.v1.ProviderServiceSubmitJobRequest
@@ -507,7 +700,7 @@ export type ProviderServiceSubmitJobRequest = Message<"numen.v1.ProviderServiceS
  * Use `create(ProviderServiceSubmitJobRequestSchema)` to create a new message.
  */
 export const ProviderServiceSubmitJobRequestSchema: GenMessage<ProviderServiceSubmitJobRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 18);
+  messageDesc(file_numen_v1_provider, 24);
 
 /**
  * @generated from message numen.v1.ProviderServiceSubmitJobResponse
@@ -531,7 +724,7 @@ export type ProviderServiceSubmitJobResponse = Message<"numen.v1.ProviderService
  * Use `create(ProviderServiceSubmitJobResponseSchema)` to create a new message.
  */
 export const ProviderServiceSubmitJobResponseSchema: GenMessage<ProviderServiceSubmitJobResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 19);
+  messageDesc(file_numen_v1_provider, 25);
 
 /**
  * @generated from message numen.v1.ProviderServiceGetJobStatusRequest
@@ -553,7 +746,7 @@ export type ProviderServiceGetJobStatusRequest = Message<"numen.v1.ProviderServi
  * Use `create(ProviderServiceGetJobStatusRequestSchema)` to create a new message.
  */
 export const ProviderServiceGetJobStatusRequestSchema: GenMessage<ProviderServiceGetJobStatusRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 20);
+  messageDesc(file_numen_v1_provider, 26);
 
 /**
  * @generated from message numen.v1.ProviderServiceGetJobStatusResponse
@@ -575,7 +768,7 @@ export type ProviderServiceGetJobStatusResponse = Message<"numen.v1.ProviderServ
  * Use `create(ProviderServiceGetJobStatusResponseSchema)` to create a new message.
  */
 export const ProviderServiceGetJobStatusResponseSchema: GenMessage<ProviderServiceGetJobStatusResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 21);
+  messageDesc(file_numen_v1_provider, 27);
 
 /**
  * @generated from message numen.v1.ProviderServiceFetchJobResultRequest
@@ -597,7 +790,7 @@ export type ProviderServiceFetchJobResultRequest = Message<"numen.v1.ProviderSer
  * Use `create(ProviderServiceFetchJobResultRequestSchema)` to create a new message.
  */
 export const ProviderServiceFetchJobResultRequestSchema: GenMessage<ProviderServiceFetchJobResultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 22);
+  messageDesc(file_numen_v1_provider, 28);
 
 /**
  * @generated from message numen.v1.ProviderServiceFetchJobResultResponse
@@ -619,7 +812,7 @@ export type ProviderServiceFetchJobResultResponse = Message<"numen.v1.ProviderSe
  * Use `create(ProviderServiceFetchJobResultResponseSchema)` to create a new message.
  */
 export const ProviderServiceFetchJobResultResponseSchema: GenMessage<ProviderServiceFetchJobResultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 23);
+  messageDesc(file_numen_v1_provider, 29);
 
 /**
  * ProviderFailureKind is what the core does after a call fails.
@@ -708,6 +901,45 @@ export const ProviderFailureReasonSchema: GenEnum<ProviderFailureReason> = /*@__
   enumDesc(file_numen_v1_provider, 1);
 
 /**
+ * ProviderChatFinishReason is why a turn ended.
+ *
+ * @generated from enum numen.v1.ProviderChatFinishReason
+ */
+export enum ProviderChatFinishReason {
+  /**
+   * @generated from enum value: PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * PROVIDER_CHAT_FINISH_REASON_STOP is an answer the model finished.
+   *
+   * @generated from enum value: PROVIDER_CHAT_FINISH_REASON_STOP = 1;
+   */
+  STOP = 1,
+
+  /**
+   * PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS is a turn that asks for tool calls.
+   *
+   * @generated from enum value: PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS = 2;
+   */
+  TOOL_CALLS = 2,
+
+  /**
+   * PROVIDER_CHAT_FINISH_REASON_LENGTH is an answer cut off at the length limit.
+   *
+   * @generated from enum value: PROVIDER_CHAT_FINISH_REASON_LENGTH = 3;
+   */
+  LENGTH = 3,
+}
+
+/**
+ * Describes the enum numen.v1.ProviderChatFinishReason.
+ */
+export const ProviderChatFinishReasonSchema: GenEnum<ProviderChatFinishReason> = /*@__PURE__*/
+  enumDesc(file_numen_v1_provider, 2);
+
+/**
  * ProviderService is served by a plugin that provides connection types. The core calls it with the
  * fields of one connection for the length of one call. The provider keeps no state and no key between
  * calls.
@@ -734,6 +966,17 @@ export const ProviderService: GenService<{
     methodKind: "unary";
     input: typeof ProviderServiceEmbedRequestSchema;
     output: typeof ProviderServiceEmbedResponseSchema;
+  },
+  /**
+   * Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. A
+   * failure ends the stream. One call is one turn and the history travels with it.
+   *
+   * @generated from rpc numen.v1.ProviderService.Chat
+   */
+  chat: {
+    methodKind: "server_streaming";
+    input: typeof ProviderServiceChatRequestSchema;
+    output: typeof ProviderServiceChatResponseSchema;
   },
   /**
    * ListModels lists the models of the connection that fit an operation.

@@ -75,7 +75,7 @@ func TestManifestProvidesTheThreeTypesOfAnOpenAICompatibleService(t *testing.T) 
 	var ids []string
 	for _, one := range readManifest(t).Contributes.ConnectionTypes {
 		ids = append(ids, one.ID)
-		if !slices.Equal(one.Operations, []string{"complete", "embed"}) {
+		if !slices.Equal(one.Operations, []string{"complete", "embed", "chat"}) {
 			t.Errorf("type %s operations = %v", one.ID, one.Operations)
 		}
 	}

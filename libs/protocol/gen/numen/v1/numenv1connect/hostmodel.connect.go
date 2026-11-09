@@ -36,6 +36,8 @@ const (
 	// HostModelServiceCompleteProcedure is the fully-qualified name of the HostModelService's Complete
 	// RPC.
 	HostModelServiceCompleteProcedure = "/numen.v1.HostModelService/Complete"
+	// HostModelServiceChatProcedure is the fully-qualified name of the HostModelService's Chat RPC.
+	HostModelServiceChatProcedure = "/numen.v1.HostModelService/Chat"
 	// HostModelServiceEmbedProcedure is the fully-qualified name of the HostModelService's Embed RPC.
 	HostModelServiceEmbedProcedure = "/numen.v1.HostModelService/Embed"
 	// HostModelServiceGetEmbeddingProfileProcedure is the fully-qualified name of the
@@ -47,6 +49,10 @@ const (
 type HostModelServiceClient interface {
 	// Complete turns messages into the text of an answer.
 	Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error)
+	// Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. The
+	// core goes to the next row only when a row fails before its first event. One call is one turn and the
+	// history travels with it.
+	Chat(context.Context, *connect.Request[v1.HostModelServiceChatRequest]) (*connect.ServerStreamForClient[v1.HostModelServiceChatResponse], error)
 	// Embed turns texts into vectors, in the order of the texts.
 	Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
@@ -70,6 +76,12 @@ func NewHostModelServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostModelServiceMethods.ByName("Complete")),
 			connect.WithClientOptions(opts...),
 		),
+		chat: connect.NewClient[v1.HostModelServiceChatRequest, v1.HostModelServiceChatResponse](
+			httpClient,
+			baseURL+HostModelServiceChatProcedure,
+			connect.WithSchema(hostModelServiceMethods.ByName("Chat")),
+			connect.WithClientOptions(opts...),
+		),
 		embed: connect.NewClient[v1.HostModelServiceEmbedRequest, v1.HostModelServiceEmbedResponse](
 			httpClient,
 			baseURL+HostModelServiceEmbedProcedure,
@@ -88,6 +100,7 @@ func NewHostModelServiceClient(httpClient connect.HTTPClient, baseURL string, op
 // hostModelServiceClient implements HostModelServiceClient.
 type hostModelServiceClient struct {
 	complete            *connect.Client[v1.HostModelServiceCompleteRequest, v1.HostModelServiceCompleteResponse]
+	chat                *connect.Client[v1.HostModelServiceChatRequest, v1.HostModelServiceChatResponse]
 	embed               *connect.Client[v1.HostModelServiceEmbedRequest, v1.HostModelServiceEmbedResponse]
 	getEmbeddingProfile *connect.Client[v1.HostModelServiceGetEmbeddingProfileRequest, v1.HostModelServiceGetEmbeddingProfileResponse]
 }
@@ -95,6 +108,11 @@ type hostModelServiceClient struct {
 // Complete calls numen.v1.HostModelService.Complete.
 func (c *hostModelServiceClient) Complete(ctx context.Context, req *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	return c.complete.CallUnary(ctx, req)
+}
+
+// Chat calls numen.v1.HostModelService.Chat.
+func (c *hostModelServiceClient) Chat(ctx context.Context, req *connect.Request[v1.HostModelServiceChatRequest]) (*connect.ServerStreamForClient[v1.HostModelServiceChatResponse], error) {
+	return c.chat.CallServerStream(ctx, req)
 }
 
 // Embed calls numen.v1.HostModelService.Embed.
@@ -111,6 +129,10 @@ func (c *hostModelServiceClient) GetEmbeddingProfile(ctx context.Context, req *c
 type HostModelServiceHandler interface {
 	// Complete turns messages into the text of an answer.
 	Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error)
+	// Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. The
+	// core goes to the next row only when a row fails before its first event. One call is one turn and the
+	// history travels with it.
+	Chat(context.Context, *connect.Request[v1.HostModelServiceChatRequest], *connect.ServerStream[v1.HostModelServiceChatResponse]) error
 	// Embed turns texts into vectors, in the order of the texts.
 	Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row that answers.
@@ -130,6 +152,12 @@ func NewHostModelServiceHandler(svc HostModelServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostModelServiceMethods.ByName("Complete")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostModelServiceChatHandler := connect.NewServerStreamHandler(
+		HostModelServiceChatProcedure,
+		svc.Chat,
+		connect.WithSchema(hostModelServiceMethods.ByName("Chat")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostModelServiceEmbedHandler := connect.NewUnaryHandler(
 		HostModelServiceEmbedProcedure,
 		svc.Embed,
@@ -146,6 +174,8 @@ func NewHostModelServiceHandler(svc HostModelServiceHandler, opts ...connect.Han
 		switch r.URL.Path {
 		case HostModelServiceCompleteProcedure:
 			hostModelServiceCompleteHandler.ServeHTTP(w, r)
+		case HostModelServiceChatProcedure:
+			hostModelServiceChatHandler.ServeHTTP(w, r)
 		case HostModelServiceEmbedProcedure:
 			hostModelServiceEmbedHandler.ServeHTTP(w, r)
 		case HostModelServiceGetEmbeddingProfileProcedure:
@@ -161,6 +191,10 @@ type UnimplementedHostModelServiceHandler struct{}
 
 func (UnimplementedHostModelServiceHandler) Complete(context.Context, *connect.Request[v1.HostModelServiceCompleteRequest]) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostModelService.Complete is not implemented"))
+}
+
+func (UnimplementedHostModelServiceHandler) Chat(context.Context, *connect.Request[v1.HostModelServiceChatRequest], *connect.ServerStream[v1.HostModelServiceChatResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostModelService.Chat is not implemented"))
 }
 
 func (UnimplementedHostModelServiceHandler) Embed(context.Context, *connect.Request[v1.HostModelServiceEmbedRequest]) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
