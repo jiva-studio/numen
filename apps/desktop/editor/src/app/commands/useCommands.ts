@@ -27,6 +27,7 @@ import { createCommandDeps } from './commandDeps'
 import { COMMAND } from '@/shared/commandIds'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
+import { toRunTarget } from './runTarget'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import { syncKeybindings } from './syncKeybindings'
@@ -252,7 +253,7 @@ export function useCommands(options: CommandsDepsOptions) {
     options.readCommandNote ?? createCommandNoteReader(core),
     pluginHost,
     declaredCommands?.whenContext,
-    () => declaredCommands?.handlers.value,
+    () => declaredCommands?.contributions.handlers.value,
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
@@ -306,8 +307,8 @@ export function useCommands(options: CommandsDepsOptions) {
     } else runCommand(command, getTarget(), undefined, values)
   }
 
-  if (pluginHost && declaredCommands?.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.keybindings, options.rest.plugins)
+  if (pluginHost && declaredCommands?.contributions.keybindings) {
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
@@ -315,7 +316,7 @@ export function useCommands(options: CommandsDepsOptions) {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
-    if (pluginHost?.handleShortcut(event, getNote, getTarget(), runAppKey)) event.preventDefault()
+    if (pluginHost?.handleShortcut(event, getNote, toRunTarget(getTarget()), runAppKey)) event.preventDefault()
   }
 
   return {

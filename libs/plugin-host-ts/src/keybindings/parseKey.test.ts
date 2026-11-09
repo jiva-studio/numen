@@ -63,7 +63,7 @@ describe('parseKey', () => {
 describe('isKeyEvent', () => {
   const chord = parseKey('mod+p', false)!
 
-  it('is true for the code of the key with exactly the modifiers held', () => {
+  it('is true for the code and the same modifiers', () => {
     expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true }))).toBe(true)
   })
 
@@ -80,7 +80,7 @@ describe('isKeyEvent', () => {
     expect(isKeyEvent(chord, press({ key: 'з', ctrlKey: true }))).toBe(false)
   })
 
-  it('is false when a modifier is missing or one too many is held', () => {
+  it('is false with a missing or extra modifier', () => {
     expect(isKeyEvent(chord, press({ code: 'KeyP' }))).toBe(false)
     expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, shiftKey: true }))).toBe(false)
     expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, altKey: true }))).toBe(false)

@@ -34,7 +34,7 @@ describe('the focus in a field', () => {
     expect(isFieldFocused()).toBe(false)
   })
 
-  it('is not held where nothing has the focus', () => {
+  it('is false without focus', () => {
     document.body.innerHTML = '<input id="x">'
 
     expect(isFieldFocused()).toBe(false)

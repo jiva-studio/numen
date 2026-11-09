@@ -109,10 +109,10 @@ describe('the handlers for the plugin host', () => {
     const declared = useDeclaredCommands({
       list: async () => ({ commands: [], slots: [], handlers: [handler] }),
     })
-    expect(declared.handlers.value).toBeUndefined()
+    expect(declared.contributions.handlers.value).toBeUndefined()
 
     await declared.load()
 
-    expect(declared.handlers.value).toStrictEqual([handler])
+    expect(declared.contributions.handlers.value).toStrictEqual([handler])
   })
 })

@@ -76,12 +76,12 @@ describe('a letter typed into a field', () => {
   it('fires no bare key that guards itself with window.isFieldFocused being false', () => {
     const one = create([{ key: 'x', command: 'app:note.create', when: '!window.isFieldFocused' }])
     windowValues['window.isFieldFocused'] = true
-    const typed = press('KeyX')
+    const inField = press('KeyX')
 
-    one.onKeyDown(typed)
+    one.onKeyDown(inField)
 
     expect(h.startCommand).not.toHaveBeenCalled()
-    expect(typed.defaultPrevented).toBe(false)
+    expect(inField.defaultPrevented).toBe(false)
 
     windowValues['window.isFieldFocused'] = false
     const free = press('KeyX')

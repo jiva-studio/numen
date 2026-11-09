@@ -285,7 +285,7 @@ const createWindowHandlers = (
   itemLists: CommandItemLists,
 ) =>
   createBackendHandlers({
-    getHandlers: () => declaredCommands.handlers.value,
+    getHandlers: () => declaredCommands.contributions.handlers.value,
     list: itemLists.listItems,
     run: runDeclaredHandler,
     writeMessage,

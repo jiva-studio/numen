@@ -35,9 +35,7 @@
       { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 },
       { "slot": "plexGraph.context", "command": "note.ask", "group": "1-note", "order": 20 }
     ],
-    "keybindings": [
-      { "key": "mod+shift+a", "command": "chat.open" }
-    ]
+    "keybindings": [{ "key": "mod+shift+a", "command": "chat.open" }]
   },
   "permissions": ["vault:read"],
   "settings": [

@@ -355,5 +355,5 @@ test('the docs say how the title bar draws an entry', () => {
     .join('\n')
   assert.match(titleBar, /button/i, 'the section does not say an entry is a button')
   assert.match(titleBar, /vault is open/i, 'the section does not say when the buttons are shown')
-  assert.match(titleBar, /shortcut/i, 'the section does not say the shortcut is in the hover text')
+  assert.match(titleBar, /hover text.*\bkey\b/i, 'the section does not say the key is in the hover text')
 })

@@ -60,7 +60,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     whenReader: whenContext.whenReader,
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
-    getHandlerDeclarations: () => deps.declaredCommands.handlers.value,
+    getHandlerDeclarations: () => deps.declaredCommands.contributions.handlers.value,
     getEditorCommands: () => [
       ...(editorCommands ??= createCommands(words)),
       ...(deps.getAppCommands?.() ?? []),

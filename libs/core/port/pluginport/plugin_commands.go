@@ -60,8 +60,9 @@ func (e *CommandFailedError) Error() string {
 	return e.Message
 }
 
-// PluginCommands is the commands the plugins declare and the backends that run them.
-type PluginCommands interface {
+// PluginDeclarations is what the manifests of the enabled plugins declare, whether or not a plugin is
+// running.
+type PluginDeclarations interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListCommands() []PluginCommandEntry
@@ -75,6 +76,11 @@ type PluginCommands interface {
 	// plugins' ids and then of each manifest, each as a command under the full id of its shared
 	// command, with the handler's title and condition.
 	ListHandlers() []PluginCommandEntry
+}
+
+// PluginCommands is the commands the plugins declare and the backends that run them.
+type PluginCommands interface {
+	PluginDeclarations
 	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
 	// enabled has none.
 	GetParts(pluginID string) PluginParts

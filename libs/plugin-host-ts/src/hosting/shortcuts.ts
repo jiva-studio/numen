@@ -61,7 +61,12 @@ export function createShortcutHandler(parts: ShortcutParts) {
       return deps.whenReader.getCondition(command.declaration.when)?.evaluate(context) ?? false
     }
     const binding = keybindings.match(event, context, canRun)
-    if (!binding || getCommandOwner(binding.command) === APP_COMMAND_OWNER) return false
+    if (!binding) return false
+    if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) {
+      if (!runApp) return false
+      runApp(binding.command, binding.values)
+      return true
+    }
     const pluginId = available.get(binding.command)?.declaration.pluginId ?? binding.owner
     getNote()
       .then((note) => parts.executeCommand(binding.command, note, { values: binding.values }))

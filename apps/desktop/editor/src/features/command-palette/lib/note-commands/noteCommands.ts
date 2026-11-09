@@ -7,7 +7,7 @@ import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
-export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
+const createNoteOpenCommands = (words: Words): readonly Command[] => [
   {
     id: COMMAND.openFile,
     text: words.read,
@@ -47,6 +47,10 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     group: 'note',
     ...withWhen('target.isNote'),
   },
+]
+
+export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
+  ...createNoteOpenCommands(words),
   {
     id: COMMAND.createChildNote,
     text: words.child,

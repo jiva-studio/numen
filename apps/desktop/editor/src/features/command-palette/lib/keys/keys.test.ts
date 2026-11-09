@@ -73,16 +73,16 @@ describe('how a key a plugin declares is drawn', () => {
 describe('every key the application holds', () => {
   const APPLE = 'MacIntel'
   const OPENS_A_PALETTE = ['app:vault.search', 'app:commands.open']
-  const drawn = APP_KEYBINDINGS.filter((one) => !OPENS_A_PALETTE.includes(one.command))
+  const appKeys = APP_KEYBINDINGS.filter((one) => !OPENS_A_PALETTE.includes(one.command))
 
   it('names a row the palette has, unless it opens a palette', () => {
     const recognized = new Set(createCommands(words, APPLE).map((one) => one.id))
-    for (const one of drawn) expect(recognized.has(one.command)).toBe(true)
+    for (const one of appKeys) expect(recognized.has(one.command)).toBe(true)
   })
 
   it('is drawn on the row of the command it names', () => {
     const commands = createCommands(words, APPLE)
-    for (const one of drawn) {
+    for (const one of appKeys) {
       const row = commands.find((command) => command.id === one.command)
       expect(row?.keys).toEqual(findChordKeys(one.command, APPLE))
     }

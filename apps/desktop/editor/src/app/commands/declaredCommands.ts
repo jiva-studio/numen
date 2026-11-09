@@ -220,10 +220,11 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     whenContext,
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
-    /** The handlers of shared commands the enabled plugins declare; undefined until the first list. */
-    handlers: computed(() => declaredHandlers.value),
-    /** The keybindings the enabled plugins declare; undefined until the first list. */
-    keybindings: computed(() => declaredKeybindings.value),
+    /** The handlers of shared commands and the keybindings the enabled plugins declare; undefined until the first list. */
+    contributions: {
+      handlers: computed(() => declaredHandlers.value),
+      keybindings: computed(() => declaredKeybindings.value),
+    },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

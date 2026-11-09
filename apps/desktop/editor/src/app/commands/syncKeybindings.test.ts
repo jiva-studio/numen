@@ -27,7 +27,7 @@ const create = (list?: readonly DeclaredKeybinding[]) => {
 }
 
 describe('the keybindings of the plugins the core lists', () => {
-  it('are registered for each plugin before any plugin starts', async () => {
+  it('register for each plugin before it starts', async () => {
     const { host, keybindings } = create()
     expect(host.registerKeybindings).not.toHaveBeenCalled()
 
@@ -39,13 +39,13 @@ describe('the keybindings of the plugins the core lists', () => {
     expect(host.registerKeybindings).toHaveBeenCalledWith('org.example.tide', [TIDE_OPEN])
   })
 
-  it('are registered when the list is held already', () => {
+  it('are registered from a list present at the start', () => {
     const { host } = create([LEDGER_OPEN])
 
     expect(host.registerKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.ledger', [LEDGER_OPEN])
   })
 
-  it('are unregistered for a plugin the list no longer holds', async () => {
+  it('unregister for a plugin the list drops', async () => {
     const { host, keybindings } = create([LEDGER_OPEN, TIDE_OPEN])
 
     keybindings.value = [TIDE_OPEN]
@@ -54,7 +54,7 @@ describe('the keybindings of the plugins the core lists', () => {
     expect(host.unregisterKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.ledger')
   })
 
-  it('are registered again as a plugin starts or stops, which drops the keys of the plugin that stops', async () => {
+  it('register again when a plugin starts or stops', async () => {
     const { host, plugins } = create([LEDGER_OPEN])
     host.registerKeybindings.mockClear()
 
