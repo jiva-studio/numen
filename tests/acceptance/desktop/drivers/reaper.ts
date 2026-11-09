@@ -1,6 +1,7 @@
 /** The helper process that kills the servers and removes the folders of a worker that ended without cleaning up. */
 import { spawn, type ChildProcess } from 'node:child_process'
 import path from 'node:path'
+import type { Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../scripts/reap.mjs')
@@ -20,8 +21,9 @@ const getHelper = (): ChildProcess => {
   if (helper?.stdin?.writable) return helper
   const child = spawn(process.execPath, [SCRIPT], { stdio: ['pipe', 'ignore', 'ignore'], detached: true })
   child.unref()
-  child.stdin?.unref()
-  child.stdin?.on('error', () => undefined)
+  const stdin = child.stdin as (Writable & { unref?: () => void }) | null
+  stdin?.unref?.()
+  stdin?.on('error', () => undefined)
   helper = child
   return child
 }

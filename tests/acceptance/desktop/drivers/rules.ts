@@ -73,10 +73,11 @@ export const assertWorldApplication = (application: string, vaults: readonly str
 
 export type Application = 'editor' | 'flashcards'
 
-export const assertApplication = (name: string): asserts name is Application => {
+export const parseApplication = (name: string): Application => {
   if (name !== 'editor' && name !== 'flashcards') {
     throw new Error(`"${name}" is not an application: use "editor" or "flashcards"`)
   }
+  return name
 }
 
 const RATINGS = new Map([

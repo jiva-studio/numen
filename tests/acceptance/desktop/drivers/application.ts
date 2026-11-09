@@ -8,7 +8,7 @@ import {
 } from '../../../e2e/desktop/tests/support/workspace.js'
 import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
+import { parseApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 import { listVersions } from './text-versions.js'
 
@@ -24,8 +24,8 @@ const PLUGIN_START_LIMIT_MS = 35_000
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
 
-  async startApplication(name: string): Promise<void> {
-    assertApplication(name)
+  async startApplication(application: string): Promise<void> {
+    const name = parseApplication(application)
     if (this.scenario.hasWorld) await this.scenario.startWorld(name)
     const { page } = this.scenario
     if (name === 'flashcards') {

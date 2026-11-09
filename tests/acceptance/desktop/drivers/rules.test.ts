@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  assertApplication,
+  parseApplication,
   getRating,
   parseReviewScope,
   assertEntry,
@@ -104,17 +104,17 @@ describe('getPaletteField', () => {
   })
 })
 
-describe('assertApplication', () => {
-  it('passes the editor', () => {
-    expect(() => assertApplication('editor')).not.toThrow()
+describe('parseApplication', () => {
+  it('takes the editor', () => {
+    expect(parseApplication('editor')).toBe('editor')
   })
 
   it('accepts the flashcards window', () => {
-    expect(() => assertApplication('flashcards')).not.toThrow()
+    expect(parseApplication('flashcards')).toBe('flashcards')
   })
 
   it('throws for a word that is no application', () => {
-    expect(() => assertApplication('mail')).toThrow('"mail" is not an application')
+    expect(() => parseApplication('mail')).toThrow('"mail" is not an application')
   })
 })
 
