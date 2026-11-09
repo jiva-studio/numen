@@ -64,10 +64,10 @@ const deleteConnection = async (page: Page, id: string): Promise<void> => {
   await callRPC(page.request, 'ProviderConnectionService/DeleteProviderConnection', { id })
 }
 
-const proofreadTranscript = async (page: Page): Promise<void> => {
+const proofreadTranscript = async (page: Page, isTranscribed: boolean): Promise<void> => {
   await openWorkspace(page)
-  const tab = await openVaultFile(page, 'assets', 'lecture.wav')
-  await runCommand(page, 'Transcribe', /^Transcribe/)
+  const tab = await openVaultFile(page, 'assets', 'talk.mp3')
+  if (!isTranscribed) await runCommand(page, 'Transcribe', /^Transcribe/)
   await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible({ timeout: 30_000 })
   await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(current\)$/)
 }
@@ -101,7 +101,7 @@ test.describe('Proofreading through connections', () => {
     const first = await createConnection(page, 'Limited service', limited.address)
     try {
       await writeRows(page, [first])
-      await proofreadTranscript(page)
+      await proofreadTranscript(page, false)
 
       await page.locator('.tasks-status__trigger').click()
       await expect(
@@ -119,7 +119,7 @@ test.describe('Proofreading through connections', () => {
     const second = await createConnection(page, 'Working service', working.address)
     try {
       await writeRows(page, [first, second])
-      await proofreadTranscript(page)
+      await proofreadTranscript(page, true)
 
       await expect(async () => {
         await closePalette(page)
