@@ -137,6 +137,7 @@ const getWords = (pattern) =>
     pattern
       .toLowerCase()
       .replace(/\{vault\}/g, ' vault ')
+      .replace(/\{tab\}/g, ' tab ')
       .replace(/\{[^}]*\}/g, ' ')
       .split(/[^a-z]+/)
       .flatMap((word) => word.split('/'))
