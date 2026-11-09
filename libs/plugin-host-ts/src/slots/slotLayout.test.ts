@@ -1,15 +1,28 @@
 /** The layout of the slots: its keys, how a settings value is read, and what a drop writes. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
-import { SLOT, type SlotName } from '@numen/plugin-sdk'
+import type { SlotName } from '@numen/plugin-sdk'
 import { getLayoutKey, moveSlotEntry, readSlotLayout, type SlotLayout } from './slotLayout'
 
 const STATS = 'titleBar.status|org.example.reef/stats'
 const TASKS = 'titleBar.status|org.example.tide/status'
 const UPDATER = 'titleBar.status|org.example.harbor/update'
 
+const SLOT_NAMES: readonly SlotName[] = [
+  'titleBar',
+  'statusBar',
+  'titleBar.commands',
+  'titleBar.status',
+  'statusBar.left',
+  'statusBar.right',
+  'fileTree.context',
+  'tabStrip.context',
+  'plexGraph.context',
+  'palette.searchResult',
+]
+
 const drawnAs = (slots: Partial<Record<SlotName, readonly string[]>>) =>
   ({
-    ...Object.fromEntries(Object.values(SLOT).map((name) => [name, []])),
+    ...Object.fromEntries(SLOT_NAMES.map((name) => [name, []])),
     ...slots,
   }) as Record<SlotName, readonly string[]>
 
