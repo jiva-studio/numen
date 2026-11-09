@@ -180,7 +180,7 @@ describe('the commands as they open', () => {
         'app:file.remove',
         'app:file.copyPath',
       ],
-      window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
+      window: ['app:note.create', 'app:folder.create', 'app:tab.close', 'app:vault.search'],
       settings: ['app:settings.open'],
       vault: [
         'app:file.open#note',

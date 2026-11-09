@@ -47,11 +47,11 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds the tab kind, the vault and its four commands, and releases them all', () => {
+  it('holds the tab kind, the vault and its three commands, and releases them all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.subscriptions).toHaveLength(5)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)

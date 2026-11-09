@@ -139,6 +139,9 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     move: async (from, to) => {
       recorded.made.push(`move ${from} ${to}`)
     },
+    createFolder: async (path) => {
+      recorded.made.push(`createFolder ${path}`)
+    },
     createNote: record(NOTE_TYPE),
   }
 
