@@ -180,15 +180,15 @@ export class TabDriver {
     await expect(await this.getTab(kind, reference, name)).toHaveAttribute('aria-selected', 'true')
   }
 
-  async openAt(kind: TabKindChoice, reference: string, name: string, position: string, where: string): Promise<void> {
+  async openAt(kind: TabKindChoice, reference: string, name: string, at: { position: string; where: string }): Promise<void> {
     await this.scenario.ensureWorkspace()
     await this.requireKindIfNamed(kind, reference, name)
-    await openTabAt(this.scenario.page, await this.scenario.getPath(reference, name), position, where)
+    await openTabAt(this.scenario.page, await this.scenario.getPath(reference, name), at.position, at.where)
   }
 
-  async expectAt(kind: TabKindChoice, reference: string, name: string, position: string, where: string): Promise<void> {
+  async expectAt(kind: TabKindChoice, reference: string, name: string, at: { position: string; where: string }): Promise<void> {
     await this.requireKindIfNamed(kind, reference, name)
-    await expectTabAt(this.scenario.page, await this.scenario.getPath(reference, name), position, where)
+    await expectTabAt(this.scenario.page, await this.scenario.getPath(reference, name), at.position, at.where)
   }
 
   async expectHighlight(kind: TabKindChoice, reference: string, name: string, text?: string): Promise<void> {

@@ -11,15 +11,15 @@ Then('the {tab} {reference} {string} is active', async ({ person }, kind: TabKin
 
 Given(
   'the {tab} {reference} {string} is open at {position} {string}',
-  async ({ person }, kind: TabKindChoice, reference: string, name: string, position: string, where: string) => {
-    await person.tab.openAt(kind, reference, name, position, where)
+  async ({ person }, ...[kind, reference, name, position, where]: [TabKindChoice, string, string, string, string]) => {
+    await person.tab.openAt(kind, reference, name, { position, where })
   },
 )
 
 Then(
   'the {tab} {reference} {string} is at {position} {string}',
-  async ({ person }, kind: TabKindChoice, reference: string, name: string, position: string, where: string) => {
-    await person.tab.expectAt(kind, reference, name, position, where)
+  async ({ person }, ...[kind, reference, name, position, where]: [TabKindChoice, string, string, string, string]) => {
+    await person.tab.expectAt(kind, reference, name, { position, where })
   },
 )
 
