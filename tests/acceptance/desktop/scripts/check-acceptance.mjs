@@ -130,12 +130,13 @@ for (const definition of definitions) {
 
 // Near-duplicates: the same words, ignoring the parameters, articles, tenses and plurals. A setup
 // (Given), an action (When) and an outcome (Then) may share their words; two of one kind may not.
-const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'that', 'its', 'it', 'is', 'are', 'has', 'have', 'person', 'in', 'from'])
+const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'that', 'its', 'it', 'is', 'are', 'has', 'have', 'in', 'from'])
 const stem = (word) => word.replace(/(ing|ed|es|s|d)$/, '')
 const getWords = (pattern) =>
   new Set(
     pattern
       .toLowerCase()
+      .replace(/\{vault\}/g, ' vault ')
       .replace(/\{[^}]*\}/g, ' ')
       .split(/[^a-z]+/)
       .flatMap((word) => word.split('/'))
