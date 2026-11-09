@@ -65,25 +65,37 @@ test("an empty or missing rules object fails closed", () => {
   assert.deepEqual(findStrictRuleGaps(undefined), ["no resolved rules"]);
 });
 
-test("packages are derived from eslint configs and plugin package.json files", () => {
+test("packages are derived from eslint configs and package.json files", () => {
   const tracked = [
+    "package.json",
     "apps/mobile/eslint.config.js",
+    "apps/landing/eslint.config.js",
+    "apps/landing/package.json",
     "libs/ui/core/eslint.config.js",
+    "libs/protocol/package.json",
     "plugins/notes/eslint.config.js",
     "plugins/notes/package.json",
     "plugins/readers-pdf/package.json",
     "plugins/readers-pdf/frontend/index.ts",
     "plugins/.example/eslint.config.js",
+    "plugins/.example/package.json",
+    "plugins/.draft/package.json",
     "plugins/agents-claude/Makefile",
   ];
-  const packages = listLintedPackages(tracked, (dir) => ["plugins/notes", "plugins/readers-pdf"].includes(dir));
-  assert.deepEqual(packages, [
+  assert.deepEqual(listLintedPackages(tracked), [
+    { dir: "apps/landing", hasConfig: true },
     { dir: "apps/mobile", hasConfig: true },
+    { dir: "libs/protocol", hasConfig: false },
     { dir: "libs/ui/core", hasConfig: true },
     { dir: "plugins/.example", hasConfig: true },
     { dir: "plugins/notes", hasConfig: true },
     { dir: "plugins/readers-pdf", hasConfig: false },
   ]);
+});
+
+test("a package.json inside a configured directory is linted by that directory's config", () => {
+  const tracked = ["tools/eslint.config.mjs", "tools/lint-layers/package.json", "tools/lint-layers/check.mjs"];
+  assert.deepEqual(listLintedPackages(tracked), [{ dir: "tools", hasConfig: true }]);
 });
 
 test("the probes are the first source file and the first test file of the package", () => {
@@ -103,7 +115,7 @@ test("a script package is checked against the script rule set only", () => {
 });
 
 test("a config written as eslint.config.mjs makes its directory a linted package", () => {
-  assert.deepEqual(listLintedPackages(["tools/eslint.config.mjs", "tools/lint-layers/check.mjs"], () => false), [
+  assert.deepEqual(listLintedPackages(["tools/eslint.config.mjs", "tools/lint-layers/check.mjs"]), [
     { dir: "tools", hasConfig: true },
   ]);
 });

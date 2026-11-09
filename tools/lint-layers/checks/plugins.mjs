@@ -232,7 +232,9 @@ function findPluginConfigDrift() {
       }
     }
     const specifiers = getModuleSpecifiers(exampleEslint, exText)
-    if (specifiers.some((s) => s.startsWith('.') || s.startsWith('@numen/'))) {
+    // A relative import names a file beside the configuration, which every plugin copies with it.
+    const isBeside = (s) => path.dirname(path.resolve(path.dirname(exampleEslint), s)) === path.dirname(exampleEslint)
+    if (specifiers.some((s) => (s.startsWith('.') && !isBeside(s)) || s.startsWith('@numen/'))) {
       found.push({
         file: 'plugins/.example/eslint.config.js',
         line: 1,
@@ -313,6 +315,7 @@ function findPluginConfigDrift() {
     }
     if (fs.existsSync(path.join(pDir, 'package.json'))) {
       checkGoldenFile(plugin, 'eslint.config.js')
+      checkGoldenFile(plugin, 'numen-rules.mjs')
       checkGoldenFile(plugin, 'tsconfig.json')
     }
   }

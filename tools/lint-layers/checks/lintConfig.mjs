@@ -60,25 +60,26 @@ export function findStrictRuleGaps(rules, required = STRICT_RULES) {
 }
 
 /**
- * The packages that lint TypeScript: every directory holding an `eslint.config.js` or `eslint.config.mjs`, plus every
- * `plugins/<name>/` that has a `package.json` (a plugin without a config is a gap).
+ * The packages that lint: every directory holding an `eslint.config.js` or `eslint.config.mjs`, plus every
+ * directory holding a `package.json` that no such directory contains (a package without a config is a gap). The
+ * root `package.json` declares the npm workspace and holds no code; a template directory (a name starting with a
+ * dot) is a package only through its own config.
  *
  * @param {string[]} trackedFiles Repository-relative paths of the tracked files
- * @param {(dir: string) => boolean} hasPackageJson Whether a repository-relative directory holds a package.json
  * @returns {Array<{ dir: string, hasConfig: boolean }>}
  */
-export function listLintedPackages(trackedFiles, hasPackageJson) {
+export function listLintedPackages(trackedFiles) {
   const configured = new Set(
     trackedFiles.filter((file) => /^eslint\.config\.m?js$/.test(path.posix.basename(file))).map((file) => path.posix.dirname(file)),
   );
-  const plugins = new Set(
+  const isConfiguredWithin = (dir) => Array.from(configured).some((one) => dir === one || dir.startsWith(`${one}/`));
+  const manifests = new Set(
     trackedFiles
-      .map((file) => file.match(/^plugins\/([^/]+)\//)?.[1])
-      .filter((name) => name && !isTemplateDirectory(name))
-      .map((name) => `plugins/${name}`)
-      .filter(hasPackageJson),
+      .filter((file) => path.posix.basename(file) === "package.json")
+      .map((file) => path.posix.dirname(file))
+      .filter((dir) => dir !== "." && !dir.split("/").some(isTemplateDirectory) && !isConfiguredWithin(dir)),
   );
-  return Array.from(new Set([...configured, ...plugins]))
+  return Array.from(new Set([...configured, ...manifests]))
     .sort((a, b) => a.localeCompare(b))
     .map((dir) => ({ dir, hasConfig: configured.has(dir) }));
 }
@@ -138,21 +139,13 @@ function readResolvedRules(dir, file) {
   return JSON.parse(run.stdout).rules;
 }
 
-/**
- * The packages the check leaves out. apps/landing: the website is being rewritten by its owner and keeps the
- * lint configuration it had. Remove this entry when that is done.
- */
-const LEFT_OUT_PACKAGES = ["apps/landing"];
-
 /** The smallest number of linted packages the repository has; fewer means discovery broke. */
 const MINIMUM_PACKAGES = 16;
 
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
 export function verifyStrictLintRules() {
   const tracked = readTrackedFiles();
-  const packages = listLintedPackages(tracked, (dir) => fs.existsSync(path.join(REPO_ROOT, dir, "package.json"))).filter(
-    ({ dir }) => !LEFT_OUT_PACKAGES.includes(dir),
-  );
+  const packages = listLintedPackages(tracked);
   requireMatches("Linted packages", packages.length, MINIMUM_PACKAGES);
 
   const findings = [];

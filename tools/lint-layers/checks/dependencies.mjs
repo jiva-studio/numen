@@ -209,8 +209,8 @@ export function listCruiseRuns(root) {
   return runs.filter((run) => run.roots.length > 0)
 }
 
-/** The violations of one run as `{ file, line, symbol }`, and the number of modules it read. */
-function readCruiseRun(root, { roots, tsConfig }, config) {
+/** The report depcruise prints in JSON for one run: the modules with their resolved dependencies, and the violations. */
+function runCruise(root, { roots, tsConfig }, config) {
   const notFollowed = `^(?!(?:${roots.map(escapeRegExp).join('|')})/)|node_modules`
   const args = ['--config', config, '--output-type', 'json', '--do-not-follow', notFollowed]
   if (tsConfig) args.push('--ts-config', path.join(root, tsConfig))
@@ -220,12 +220,16 @@ function readCruiseRun(root, { roots, tsConfig }, config) {
     maxBuffer: 1 << 30,
   })
   if (run.error) throw run.error
-  let result
   try {
-    result = JSON.parse(run.stdout)
+    return JSON.parse(run.stdout)
   } catch {
     throw new Error(`depcruise ${roots.join(' ')} gave no report:\n${run.stderr}`)
   }
+}
+
+/** The violations of one run as `{ file, line, symbol }`, and the number of modules it read. */
+function readCruiseRun(root, run, config) {
+  const result = runCruise(root, run, config)
   const findings = result.summary.violations.map((violation) => ({
     file: violation.from,
     line: 1,
@@ -246,6 +250,16 @@ export function findDependencyViolations(root, config = CRUISE_CONFIG) {
     cruised += one.cruised
   }
   return { findings, cruised }
+}
+
+/**
+ * The resolved import graph of every source root of `root`: each module with the files and packages its imports
+ * resolve to, paths relative to `root`.
+ *
+ * @returns {Array<{ source: string, dependencies: Array<{ module: string, resolved: string, couldNotResolve: boolean }> }>}
+ */
+export function readModuleGraph(root, config = CRUISE_CONFIG) {
+  return listCruiseRuns(root).flatMap((run) => runCruise(root, run, config).modules)
 }
 
 export function verifyDependencyGraph() {

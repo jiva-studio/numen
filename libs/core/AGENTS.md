@@ -20,6 +20,10 @@ Each test verifies adherence to structural rules.
 | An adapter does not name the port it implements                               | `TestNoAdapterNamesThePortItSatisfies`             |
 | The composition root returns no adapter type                                  | `TestTheRootPassesOutNoAdapterTheCompilerContains` |
 | A package is imported under the name its layer gives it                       | `TestNoPackageIsImportedBelowItsLayer`             |
+| No package declares an alias of a type another package of the core declares   | `TestTheTypeCheckedWorkspaceObeysItsRules/NoCoreTypeIsReexported` |
+| An adapter that references a use case is driving, one with a type that implements a port is driven, and none is both | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/AnAdapterIsDrivingOrDrivenNotBoth` |
+| A driving adapter references no type, function, variable, constant or method declared under `port/`, aliases resolved | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/ADrivingAdapterReferencesNoPort` |
+| The composition root is the one package `container`; no package lies below it | `TestTheTypeCheckedWorkspaceObeysItsRules/TheCompositionRootIsOnePackage` |
 
 ## What the core may not do
 
@@ -40,6 +44,8 @@ outside `port/`.
 | Every type a port declares is named somewhere else | `TestEveryTypePortDeclaresIsNamedSomewhereElse` |
 | Every port method is called from outside `port/`   | `TestEveryPortMethodIsCalledSomewhereElse`      |
 | Every adapter serving the schema is a driving one  | `TestEveryAdapterServingTheSchemaIsDriving`     |
+| No function or method of a port calls a method of an interface value | `TestTheTypeCheckedWorkspaceObeysItsRules/APortDeclaresAndDoesNotOrchestrate` |
+| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in every module that configuration covers | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
 
 ## Names in the core
 
@@ -49,6 +55,7 @@ outside `port/`.
 | An instant is a `time.Time`                                                                   | `TestEveryInstantTheCoreCarriesIsATime`                                                    |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
 | The core starts no timer of the machine                                                       | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
+| A timer or a source of randomness is used only in a method of a type that implements a declared interface with that method, in every module of the workspace | `TestTheTypeCheckedWorkspaceObeysItsRules/TimersAndRandomnessAreReadOnlyInAPortImplementation` |
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 

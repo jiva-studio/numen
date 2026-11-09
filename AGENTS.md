@@ -434,3 +434,10 @@ The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture
 13. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
 14. Commit messages carry no `Co-Authored-By` line and no session trailer.
 15. Write comments and docs in plain technical English (§1, §13).
+16. A failing check is fixed in the code it reports. The check stays as it is, and the code changes until it passes:
+    - A type is named from the package that declares it, not from an alias package that re-exports it.
+    - An interface stays within the size limit with all its methods, embedded ones included.
+    - Every file and every package is linted and typechecked; a configuration excludes only build output.
+    - An exception list stays as it is; the code it would exempt is changed.
+    - Logic stays in the folder its layer gives it, where the checks walk.
+17. Every rule that a check enforces is stated in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) with the check's name; a rule with no check is a finding for the gatekeeper.
