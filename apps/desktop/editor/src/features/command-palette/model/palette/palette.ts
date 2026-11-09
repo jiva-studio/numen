@@ -135,11 +135,27 @@ interface PaletteCommandsDeps {
   readonly steps: ReturnType<typeof createPaletteSteps>
 }
 
+function isNameOmittable(command: Command, target: CommandTarget): boolean {
+  return command.canOmitNameOverFolder === true && target.isTargetNamed && target.isFolder
+}
+
 function createPaletteCommands(deps: PaletteCommandsDeps) {
   const openSteps = (): void => {
     if (deps.open.value) return
     deps.steps.reset()
     deps.open.value = true
+  }
+
+  const startArguments = (
+    command: Command,
+    target: CommandTarget,
+    values: Readonly<Record<string, string>>,
+  ): CommandInvocation | null => {
+    const promptIndex = findUnsuppliedPrompt(command, 0, values)
+    if (promptIndex < 0) return deps.invocation(command.id, target)
+    openSteps()
+    deps.steps.pushStep({ step: 'arguments', command, on: target, promptIndex, values })
+    return null
   }
 
   /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
@@ -152,18 +168,10 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
     const command = deps.byId.get(id)
     if (!command || !command.isAvailable(target, deps.runs)) return null
     if (!command.input) return deps.invocation(command.id, target)
-    if (command.input === 'arguments' && values) {
-      const promptIndex = findUnsuppliedPrompt(command, 0, values)
-      if (promptIndex < 0) return deps.invocation(command.id, target)
-      openSteps()
-      deps.steps.pushStep({ step: 'arguments', command, on: target, promptIndex, values })
-      return null
-    }
+    if (command.input === 'arguments' && values) return startArguments(command, target, values)
     const name = input?.trim() ?? ''
     if (command.input === 'name' && name !== '') return deps.invocation(command.id, target, name)
-    if (command.canOmitNameOverFolder && target.isTargetNamed && target.isFolder) {
-      return deps.invocation(command.id, target)
-    }
+    if (isNameOmittable(command, target)) return deps.invocation(command.id, target)
     openSteps()
     deps.steps.pushStep({ step: command.input, command, on: target })
     return null

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"net/url"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
@@ -59,11 +59,11 @@ func (e SlotEntry) getPlaced() (kind, id string) {
 }
 
 func (e SlotEntry) getValuesKey() string {
-	query := url.Values{}
-	for name, value := range e.Values {
-		query.Set(name, value)
+	parts := make([]string, 0, len(e.Values))
+	for _, name := range slices.Sorted(maps.Keys(e.Values)) {
+		parts = append(parts, strconv.Quote(name)+"="+strconv.Quote(e.Values[name]))
 	}
-	return query.Encode()
+	return strings.Join(parts, "&")
 }
 
 func (m Manifest) listSlotIssues() []error {

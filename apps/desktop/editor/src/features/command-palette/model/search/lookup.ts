@@ -205,6 +205,17 @@ export interface ResultChoice {
   readonly values?: Readonly<Record<string, string>>
 }
 
+function resolveNoteChoice(hit: SearchHit, action: string): ResultChoice {
+  const place = { path: hit.path, file: hit.path, title: hit.title }
+  const values = hit.actionValues?.[action]
+  return {
+    command: hit.actionCommands?.[action] ?? action,
+    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
+    input: '',
+    ...(values ? { values } : {}),
+  }
+}
+
 /**
  * The command an action of a hit runs, over what, with which input; null where the hit does not
  * carry the action. A note is the target by its path and a line, a file that is no note by its
@@ -232,12 +243,5 @@ export function resolveChoice(
       input: '',
     }
   }
-  const place = { path: hit.path, file: hit.path, title: hit.title }
-  const values = hit.actionValues?.[action]
-  return {
-    command: hit.actionCommands?.[action] ?? action,
-    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
-    input: '',
-    ...(values ? { values } : {}),
-  }
+  return resolveNoteChoice(hit, action)
 }
