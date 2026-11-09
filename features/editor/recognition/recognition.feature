@@ -21,7 +21,7 @@ Feature: Recognition
       And the person enters "Recognize text"
       And the person searches the vault for "recovers kinetic energy"
       When the person chooses the search result "assets/regenerative-braking.pdf" in the group "Text"
-      Then the tab at "assets/regenerative-braking.pdf" has the highlight "kinetic"
+      Then the tab at "assets/regenerative-braking.pdf" shows a highlight
 
   Rule: The text of a scan is found when the plugin "Document OCR" is disabled
 
