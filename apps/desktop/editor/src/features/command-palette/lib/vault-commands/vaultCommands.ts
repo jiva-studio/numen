@@ -1,7 +1,7 @@
 /**
  * The commands offered over the vaults an installation holds.
  */
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
@@ -9,9 +9,10 @@ import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: COMMAND.goToNote,
+    id: ROW.goToNote,
+    command: COMMAND.openFile,
     text: words.goto,
-    ...createRowKeys(COMMAND.goToNote, agent),
+    ...createRowKeys(ROW.goToNote, agent),
     group: 'vault',
     input: 'note',
     ...withWhen('window.isVaultReady'),

@@ -177,13 +177,13 @@ describe('the commands as they open', () => {
         'app:note.createParent',
         'app:note.createJump',
         'app:note.rename',
-        'app:note.remove',
-        'app:note.copyPath',
+        'app:file.remove',
+        'app:file.copyPath',
       ],
       window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
       settings: ['app:settings.open'],
       vault: [
-        'app:note.goTo',
+        'app:file.open#note',
         'app:vault.open',
         'app:vault.create',
         'app:vault.rename',
@@ -201,8 +201,8 @@ describe('the commands as they open', () => {
       items.find((item) => item.id === 'app:file.open')?.actions?.map((one) => one.id),
     ).toStrictEqual(['app:file.open', 'app:file.open#beside'])
     expect(
-      items.find((item) => item.id === 'app:note.remove')?.actions?.map((one) => one.id),
-    ).toStrictEqual(['app:note.remove', 'app:note.remove#permanent'])
+      items.find((item) => item.id === 'app:file.remove')?.actions?.map((one) => one.id),
+    ).toStrictEqual(['app:file.remove', 'app:file.remove#permanent'])
   })
 
   it('says which key reaches a command away from the palette', () => {
@@ -418,9 +418,9 @@ describe('removing a note', () => {
   it('is carried out the moment it is requested for, over the note in front', () => {
     const { commands } = createPalette()
 
-    const invocation = commands.startCommand('app:note.remove', front())
+    const invocation = commands.startCommand('app:file.remove', front())
 
-    expect(invocation?.id).toBe('app:note.remove')
+    expect(invocation?.id).toBe('app:file.remove')
     expect(invocation?.path).toBe('physics/Ontology.md')
   })
 
@@ -428,7 +428,7 @@ describe('removing a note', () => {
     const { commands } = createPalette()
     const others = ['physics/Heat.pdf']
 
-    expect(commands.startCommand('app:note.remove', front({ others }))?.others).toStrictEqual(
+    expect(commands.startCommand('app:file.remove', front({ others }))?.others).toStrictEqual(
       others,
     )
   })
@@ -437,13 +437,13 @@ describe('removing a note', () => {
     const { commands, openNote } = createPalette()
     openNote('physics/Ontology.md', 'active')
 
-    expect(commands.startCommand('app:note.remove', front())?.note).toBe('active')
+    expect(commands.startCommand('app:file.remove', front())?.note).toBe('active')
   })
 
   it('leaves the palette on the commands, having nothing to ask', () => {
     const { commands } = createPalette()
 
-    commands.startCommand('app:note.remove', front())
+    commands.startCommand('app:file.remove', front())
 
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
@@ -457,7 +457,7 @@ describe('removing a note', () => {
 describe('destroying a note', () => {
   it('waits for the name of the note, and is not reachable before it', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.remove#permanent', front())
+    commands.startCommand('app:file.remove#permanent', front())
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(chooseRow(commands)).toBeNull()
@@ -469,12 +469,12 @@ describe('destroying a note', () => {
 
   it('submits once the name of the note is what was typed', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.remove#permanent', front())
+    commands.startCommand('app:file.remove#permanent', front())
     commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(chooseRow(commands)).toMatchObject({
-      id: 'app:note.remove',
+      id: 'app:file.remove',
       values: { removal: 'permanent' },
     })
   })
@@ -498,7 +498,7 @@ describe('a note that moves under an open step', () => {
 
   it('is not destroyed by the name it had, and is by the name it has', () => {
     const { commands, moveNote } = createPalette()
-    commands.startCommand('app:note.remove#permanent', front())
+    commands.startCommand('app:file.remove#permanent', front())
     moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
@@ -539,21 +539,21 @@ describe('a command that was not offered over what it was requested over', () =>
   it('says the vault could not be opened', () => {
     const { commands } = createPalette({ isReady: false })
 
-    expect(commands.getObjection('app:note.remove', front({ isReady: false }))).toBe(words.noVault)
+    expect(commands.getObjection('app:file.remove', front({ isReady: false }))).toBe(words.noVault)
   })
 
   it('says nothing in front is a note', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.getObjection('app:note.remove', front({ kind: 'document', path: '', title: '' })),
+      commands.getObjection('app:file.remove', front({ kind: 'document', path: '', title: '' })),
     ).toBe(words.noNote)
   })
 
   it('says nothing at all about one that was taken up', () => {
     const { commands } = createPalette()
 
-    expect(commands.getObjection('app:note.remove', front())).toBe('')
+    expect(commands.getObjection('app:file.remove', front())).toBe('')
     expect(commands.getObjection('nothing of the sort', front())).toBe('')
   })
 })
@@ -565,7 +565,7 @@ describe('a command that asks for a note', () => {
       name('physics/Entropy.md', 'Entropy', 'What it counts'),
       name('Order.md', 'Order'),
     ])
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     await commands.setTyped('en')
 
@@ -578,11 +578,11 @@ describe('a command that asks for a note', () => {
 
   it('carries the note that was picked, not the one that was in front', async () => {
     const { commands } = createPalette({}, [name('physics/Entropy.md', 'Entropy')])
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     await commands.setTyped('en')
 
     expect(chooseRow(commands, 'physics/Entropy.md')).toStrictEqual({
-      id: 'app:note.goTo',
+      id: 'app:file.open',
       path: 'physics/Entropy.md',
       vault: { id: 'physics', name: 'Physics' },
       note: null,
@@ -611,7 +611,7 @@ describe('a command that asks for a note', () => {
       vi.fn(() => Promise.resolve()),
     )
     commands.setOpen(true)
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     await commands.setTyped('en')
 
@@ -801,7 +801,7 @@ describe('a command requested for from outside the palette', () => {
   it('carries out a command that needs nothing with no name', () => {
     const { commands } = createPalette()
 
-    expect(commands.startCommand('app:note.copyPath', front())?.name).toBe('')
+    expect(commands.startCommand('app:file.copyPath', front())?.name).toBe('')
   })
 
   it('starts from no step where the palette was shut with a step standing', () => {
@@ -828,7 +828,7 @@ describe('a command requested for from outside the palette', () => {
     const { commands } = createPalette()
     commands.setOpen(false)
 
-    expect(commands.startCommand('app:note.copyPath', front())?.id).toBe('app:note.copyPath')
+    expect(commands.startCommand('app:file.copyPath', front())?.id).toBe('app:file.copyPath')
     expect(commands.open.value).toBe(false)
   })
 })
@@ -839,7 +839,7 @@ describe('the commands over the vaults an installation holds', () => {
     const { commands } = createPalette({ vault: { id: '', name: '' } })
 
     expect(getItemIds(commands.groups).vault).toStrictEqual([
-      'app:note.goTo',
+      'app:file.open#note',
       'app:vault.open',
       'app:vault.create',
       'app:vault.remove',
@@ -1116,7 +1116,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('opens working at nothing and asking for a note', () => {
     const { commands } = createSlowPalette()
 
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     expect(describeGroup(commands.groups)).toStrictEqual({
       items: [],
@@ -1132,14 +1132,14 @@ describe('a step that asks for a note, as the vault answers', () => {
     await settle()
     commands.leaveStep()
 
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     expect(getEmptyMessage(commands.groups, 'picking')).toBe(words.typeNote)
   })
 
   it('is working while the vault has not answered', async () => {
     const { commands } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     commands.setTyped('en').catch(rethrow)
     await settle()
@@ -1153,7 +1153,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('stops working once the vault answers', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('en').catch(rethrow)
     await settle()
 
@@ -1169,7 +1169,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('asks about the words and not the spaces around them', async () => {
     const { commands, requests } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     commands.setTyped('  en  ').catch(rethrow)
     await settle()
@@ -1179,7 +1179,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('asks nothing once what was typed is taken back, and draws nothing found', async () => {
     const { commands, names, requests } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('en').catch(rethrow)
     await settle()
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
@@ -1198,7 +1198,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('asks nothing about a keystroke another one overtook while it waited', async () => {
     const { commands, holds, hold, requests } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     hold.isOn = true
 
     commands.setTyped('e').catch(rethrow)
@@ -1216,7 +1216,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('draws the answer to the question requested last, whatever lands after it', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('e').catch(rethrow)
     await settle()
     commands.setTyped('en').catch(rethrow)
@@ -1232,7 +1232,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('draws no failure of a superseded query', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('e').catch(rethrow)
     await settle()
     commands.setTyped('en').catch(rethrow)
@@ -1252,7 +1252,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('keeps working where only a superseded query has a result', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('e').catch(rethrow)
     await settle()
     commands.setTyped('en').catch(rethrow)
@@ -1266,7 +1266,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('holds nothing where the vault could not answer', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('en').catch(rethrow)
     await settle()
 
@@ -1282,7 +1282,7 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('says nothing of a failure while the next question is out', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('e').catch(rethrow)
     await settle()
     names[0]?.fail('no model is set')
@@ -1296,11 +1296,11 @@ describe('a step that asks for a note, as the vault answers', () => {
 
   it('draws no answer to a question requested at a step that was left', async () => {
     const { commands, names } = createSlowPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('en').catch(rethrow)
     await settle()
     commands.leaveStep()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
     await settle()
@@ -1311,7 +1311,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('knows no note of an answer that lands after the palette is put away', async () => {
     const { commands, names } = createSlowPalette()
     commands.setOpen(true)
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
     commands.setTyped('en').catch(rethrow)
     await settle()
 
@@ -1437,7 +1437,7 @@ describe('what a step draws', () => {
       name('physics/Heat.md', 'Heat', 'What it counts'),
       name('Untitled.md', ''),
     ])
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     await commands.setTyped('en')
 
@@ -1468,7 +1468,7 @@ describe('what a step draws', () => {
       name('physics/Entropy.md', 'Entropy', '', 'sample'),
       name('physics/Heat.md', 'Heat', '', 'form'),
     ])
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     await commands.setTyped('en')
 
@@ -1479,7 +1479,7 @@ describe('what a step draws', () => {
 
   it('asks for a note where only spaces are typed', async () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.goTo', front())
+    commands.startCommand('app:file.open#note', front())
 
     await commands.setTyped('   ')
 
@@ -1512,7 +1512,7 @@ describe('what a step draws', () => {
 
   it('takes the name typed back around spaces, under the one action that destroys', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.remove#permanent', front())
+    commands.startCommand('app:file.remove#permanent', front())
 
     commands.setTyped('  Ontology  ').catch(rethrow)
 
@@ -1785,7 +1785,7 @@ describe('a command started with the text typed for it', () => {
   it('leaves a command that needs no name as it was, with no name', () => {
     const { commands } = createPalette()
 
-    expect(commands.startCommand('app:note.copyPath', front(), 'Entropy')?.name).toBe('')
+    expect(commands.startCommand('app:file.copyPath', front(), 'Entropy')?.name).toBe('')
   })
 
   it('still opens the step of a command that asks for a choice', () => {

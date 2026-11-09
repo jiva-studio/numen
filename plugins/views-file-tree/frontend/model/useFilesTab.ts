@@ -11,7 +11,7 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { CREATE_NOTE, TRASH_NOTE } from '../lib/menu'
+import { CREATE_NOTE, TRASH_FILE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -196,7 +196,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
     const first = paths[0]
     if (first === undefined) return
     deps
-      .runCommand(TRASH_NOTE, getPathTarget(list, first, paths.slice(1)))
+      .runCommand(TRASH_FILE, getPathTarget(list, first, paths.slice(1)))
       .catch(createFailureReporter(deps))
   }
 

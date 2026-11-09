@@ -100,12 +100,12 @@ describe('the menu on a node', () => {
     ).toStrictEqual([
       ['app:file.open', '0-open'],
       ['graph.showNote', '1-note'],
-      ['app:note.copyPath', '2-file'],
+      ['app:file.copyPath', '2-file'],
       ['app:note.createChild', '3-plex'],
       ['app:note.createParent', '3-plex'],
       ['app:note.createJump', '3-plex'],
       ['app:note.rename', '3-plex'],
-      ['app:note.remove', '9-remove'],
+      ['app:file.remove', '9-remove'],
     ])
   })
 })

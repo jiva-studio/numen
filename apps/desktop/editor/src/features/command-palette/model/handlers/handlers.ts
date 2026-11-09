@@ -18,7 +18,6 @@ import {
   createNoteCommand,
   createFolderCommand,
   moveFileCommand,
-  navigateToPath,
   renameNoteCommand,
   flushTab,
 } from './noteHandlers'
@@ -49,18 +48,17 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.createNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: null, words }),
   [COMMAND.renameNote]: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  [COMMAND.removeNote]: (invocation, on, words) =>
+  [COMMAND.removeFile]: (invocation, on, words) =>
     removeFiles(invocation, on, {
       isPermanent: invocation.values?.[ARGUMENT.removal] === 'permanent',
       words,
     }),
-  [COMMAND.copyNotePath]: (invocation, on) => on.copyPath(invocation.path),
+  [COMMAND.copyFilePath]: (invocation, on) => on.copyPath(invocation.path),
   [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
   [COMMAND.moveFile]: (invocation, on, words) => moveFileCommand(invocation, on, words),
   [COMMAND.createFolder]: (invocation, on, words) => createFolderCommand(invocation, on, words),
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
-  [COMMAND.goToNote]: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   [COMMAND.openVault]: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   [COMMAND.createVault]: (_, on, words) => addVault(on, words),
   [COMMAND.renameVault]: (invocation, on, words) => renameVault(invocation, on, words),

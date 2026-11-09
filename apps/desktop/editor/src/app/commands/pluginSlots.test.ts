@@ -72,7 +72,7 @@ describe('the slot entries of the window', () => {
       {
         pluginId: 'app',
         slot: 'fileTree.context',
-        command: 'app:note.copyPath',
+        command: 'app:file.copyPath',
         group: '2-edit',
         order: 20,
         when: '!target.isRoot && !target.isMultiple',
@@ -84,7 +84,7 @@ describe('the slot entries of the window', () => {
         group: '3-text',
         order: 90,
       },
-      { pluginId: 'app', slot: 'fileTree.context', command: 'app:note.remove', group: '9-remove' },
+      { pluginId: 'app', slot: 'fileTree.context', command: 'app:file.remove', group: '9-remove' },
     ])
   })
 

@@ -23,9 +23,9 @@ describe('the commands over a note', () => {
       'app:note.createParent': 'name',
       'app:note.createJump': 'name',
       'app:note.rename': 'name',
-      'app:note.remove': undefined,
-      'app:note.remove#permanent': 'retypedName',
-      'app:note.copyPath': undefined,
+      'app:file.remove': undefined,
+      'app:file.remove#permanent': 'retypedName',
+      'app:file.copyPath': undefined,
     })
   })
 })
@@ -43,9 +43,9 @@ describe('the rows that run one command with an argument', () => {
   })
 
   it('remove the note to the trash or permanently by an argument of one command', () => {
-    expect(find('app:note.remove')).toMatchObject({ also: 'app:note.remove#permanent' })
-    expect(find('app:note.remove#permanent')).toMatchObject({
-      command: 'app:note.remove',
+    expect(find('app:file.remove')).toMatchObject({ also: 'app:file.remove#permanent' })
+    expect(find('app:file.remove#permanent')).toMatchObject({
+      command: 'app:file.remove',
       values: { removal: 'permanent' },
       input: 'retypedName',
     })

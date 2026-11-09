@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.13",
+  "version": "2026.11.14",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -62,7 +62,7 @@
       { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
       {
         "slot": "plexGraph.context",
-        "command": "app:note.copyPath",
+        "command": "app:file.copyPath",
         "group": "2-file",
         "order": 10
       },
@@ -85,7 +85,7 @@
         "order": 30
       },
       { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
-      { "slot": "plexGraph.context", "command": "app:note.remove", "group": "9-remove" }
+      { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

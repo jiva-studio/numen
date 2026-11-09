@@ -52,7 +52,7 @@ const NODE_MENU: readonly SlotItem[] = [
   { kind: 'separator', key: 'separator/1' },
   createEntry('org.example.sample:share.run', { icon: SHARE_ICON }),
   { kind: 'separator', key: 'separator/2' },
-  createEntry('app:note.remove'),
+  createEntry('app:file.remove'),
 ]
 
 const createDeps = (
@@ -231,7 +231,7 @@ describe('the menu on a node', () => {
     expect(one.state.menuItems.value.map((item) => [item.id, item.group])).toStrictEqual([
       ['org.example.sample/command/app:file.open', '0'],
       ['org.example.sample/command/org.example.sample:share.run', '1'],
-      ['org.example.sample/command/app:note.remove', '2'],
+      ['org.example.sample/command/app:file.remove', '2'],
     ])
     expect(one.menuTargets).toStrictEqual([
       { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '' },
@@ -262,7 +262,7 @@ describe('the menu on a node', () => {
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
     expect(one.state.getMenuIcon('org.example.sample/command/app:file.open')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('org.example.sample/command/app:note.remove')).toBeNull()
+    expect(one.state.getMenuIcon('org.example.sample/command/app:file.remove')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {
