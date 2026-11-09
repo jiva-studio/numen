@@ -40,6 +40,7 @@ export class Person {
 
   async removeNotes(): Promise<void> {
     this.web.removePageTexts()
+    await this.review.takeBackAnswer()
     await this.scenario.removeNotes()
   }
 }

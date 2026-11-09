@@ -23,6 +23,7 @@ const readAnswers = (): { rating?: number; undo?: string }[] => {
 
 export class ReviewDriver {
   private answersBefore = 0
+  private hasAnswered = false
 
   constructor(private readonly scenario: Scenario) {}
 
@@ -50,6 +51,7 @@ export class ReviewDriver {
   async answer(answer: string): Promise<void> {
     getRating(answer)
     this.answersBefore = readAnswers().length
+    this.hasAnswered = true
     await this.scenario.page.getByRole('button', { name: new RegExp(`\\b${answer}\\b`) }).click()
   }
 
@@ -57,6 +59,16 @@ export class ReviewDriver {
     const rating = getRating(answer)
     await expect.poll(() => readAnswers().length).toBe(this.answersBefore + 1)
     expect(readAnswers().at(-1)?.rating).toBe(rating)
+  }
+
+  /** Takes back the answer of the scenario, so the card is due again for the next one. */
+  async takeBackAnswer(): Promise<void> {
+    if (!this.hasAnswered) return
+    const undo = this.scenario.page.getByRole('button', { name: /Undo/ })
+    if (!(await undo.isEnabled().catch(() => false))) return
+    const count = readAnswers().length
+    await undo.click()
+    await expect.poll(() => readAnswers().length).toBe(count + 1)
   }
 
   async expectSessionHas(text: string): Promise<void> {
