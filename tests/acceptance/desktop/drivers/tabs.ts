@@ -110,7 +110,7 @@ export class TabDriver {
     await expectTabAt(this.scenario.page, await this.scenario.getPath(reference, name), position, where)
   }
 
-  async expectHighlight(reference: string, name: string, text: string): Promise<void> {
+  async expectHighlight(reference: string, name: string, text?: string): Promise<void> {
     await expectTabHighlight(this.scenario.page, await this.scenario.getPath(reference, name), text)
   }
 }

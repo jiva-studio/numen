@@ -27,7 +27,7 @@ Feature: Search
     Scenario: A passage of a PDF has the highlight
       When the person searches the vault for "shipping manifest"
       And the person chooses the search result "assets/flywheel.pdf" in the group "Text"
-      Then the tab at "assets/flywheel.pdf" has the highlight "shipping manifest"
+      Then the tab at "assets/flywheel.pdf" has a highlight
 
     Scenario: A passage of a book has the highlight
       When the person searches the vault for "reflowable epub reader"

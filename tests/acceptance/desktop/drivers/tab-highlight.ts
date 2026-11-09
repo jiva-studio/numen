@@ -1,6 +1,7 @@
 /**
  * The highlight a tab shows over the text a search found. A book lights the words; a PDF is
- * drawn as a picture, so its page can only show that a highlight lies on it.
+ * drawn as a picture and its backend turns text into rectangles only, so its page shows that a
+ * highlight lies on it but not what text is under it.
  */
 import { expect, type Locator, type Page } from 'playwright/test'
 import { getEscaped, getStem } from './rules.js'
@@ -10,11 +11,11 @@ const readLitText = (): string => {
   return ranges ? [...ranges].map((range) => range.toString()).join(' ') : ''
 }
 
-/** Checks that the tab of the file shows a highlight, and in a book that the highlight holds the text. */
-export const expectTabHighlight = async (page: Page, file: string, text: string): Promise<void> => {
+/** Checks that the tab of the file shows a highlight, and in a book that the highlight holds the given text. */
+export const expectTabHighlight = async (page: Page, file: string, text?: string): Promise<void> => {
   const panel: Locator = page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })
   await expect(panel).toBeVisible()
-  if (file.endsWith('.epub')) {
+  if (file.endsWith('.epub') && text !== undefined) {
     await expect(panel.locator('.book-tab')).toBeVisible()
     await expect.poll(() => page.evaluate(readLitText)).toContain(text)
   } else {
