@@ -1249,6 +1249,24 @@ describe('the trash emptied', () => {
     expect(one.notices).toStrictEqual([words.undeleted(2)])
     expect(one.severities).toStrictEqual(['error'])
   })
+
+  it('says as an error why the vault refused', async () => {
+    const one = window()
+    const failing: CommandDeps = {
+      ...one.on,
+      files: {
+        ...one.on.files,
+        emptyTrash: async () => {
+          throw new Error('trash is locked')
+        },
+      },
+    }
+
+    await carry(createInvocation('app:trash.empty', front()), failing)
+
+    expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
+    expect(one.severities).toStrictEqual(['error'])
+  })
 })
 
 describe('a file removed that no tab holds', () => {
@@ -1257,10 +1275,7 @@ describe('a file removed that no tab holds', () => {
 
     await carry(createInvocation('app:file.remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
-    expect(one.actions).toStrictEqual([
-      'remove physics/Heat.pdf',
-      'leave physics/Heat.pdf Root.md',
-    ])
+    expect(one.actions).toStrictEqual(['remove physics/Heat.pdf', 'leave physics/Heat.pdf Root.md'])
   })
 })
 

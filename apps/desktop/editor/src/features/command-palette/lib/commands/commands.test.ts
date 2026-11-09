@@ -43,6 +43,7 @@ describe('the commands over the vaults an installation holds', () => {
       'app:vault.rename',
       'app:vault.remove',
       'app:vault.erase',
+      'app:trash.empty',
     ])
   })
 })
