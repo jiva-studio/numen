@@ -351,6 +351,26 @@ describe('the command that makes a note, run over a folder', () => {
     expect(commands.startCommand('app:note.create', front({ isTargetNamed: true }))).toBeNull()
   })
 
+  it('starts the command that makes a folder without a name where a caller named the folder', () => {
+    const { commands } = createPalette()
+
+    const started = commands.startCommand('app:folder.create', folder({ isTargetNamed: true }))
+
+    expect(started).toMatchObject({
+      id: 'app:folder.create',
+      path: 'physics',
+      name: '',
+      isFolder: true,
+    })
+  })
+
+  it('asks for the path of a folder where no caller named the folder', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:folder.create', folder())).toBeNull()
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
+  })
+
   it('asks for a name in a command of another kind over a folder a caller named', () => {
     const { commands } = createPalette()
 

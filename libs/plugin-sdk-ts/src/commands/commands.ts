@@ -47,7 +47,7 @@ export interface CommandsHost {
   listItems(command: string, target?: CommandTarget): Promise<readonly CommandItem[]>
   // Runs the command of the full id over the target; with `itemId`, the id of the item picked. A
   // shared command without an item id runs its one handler whose condition holds over the target,
-  // and runs nothing where several or none do. Resolves with the path of the note the run made,
-  // empty where it made none.
+  // and runs nothing where several or none do. Resolves with the path of the note or folder the
+  // run made, empty where it made none.
   run(command: string, target?: CommandTarget, itemId?: string): Promise<string>
 }

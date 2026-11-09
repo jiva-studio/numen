@@ -82,7 +82,6 @@ describe('view-file-tree plugin', () => {
       'tree.open',
       'tree.revealNote',
       'tree.renameFile',
-      'tree.createFolder',
     ])
     await ctx.triggerCommand('tree.open')
     await ctx.triggerCommand('tree.revealNote', {
@@ -167,20 +166,17 @@ describe('view-file-tree plugin', () => {
     expect(state.renamingPath.value).toBeNull()
   })
 
-  it('makes a folder at the row the menu was opened on', async () => {
-    const { ctx, recorded, state } = await openTab()
-    state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
+  it('has no command to make a folder, which the Create folder entry runs through the window', async () => {
+    const { ctx, state } = await openTab()
+    ctx.commands.setResult('app:folder.create', 'New folder')
 
-    await ctx.triggerCommand('tree.createFolder', {
-      path: '',
-      title: '',
-      type: 'note',
-      isFolder: false,
-      others: [],
-      tab: '',
-    })
+    state.openMenu({ path: null, at: { x: 0, y: 0 } })
+    state.chooseMenuItem(NEW_MENU.entries[1]!.key)
+    await settle()
 
-    expect(recorded.made).toStrictEqual(['folder New folder'])
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('tree.createFolder')
+    expect(ctx.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:folder.create'])
+    expect(state.renamingPath.value).toBe('New folder')
   })
 
   it('has no command to make a note, which the New note entry runs through the window', async () => {

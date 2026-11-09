@@ -21,6 +21,7 @@ describe('the input a command of the palette asks for', () => {
     expect(getIdsAsking('name').sort()).toStrictEqual(
       [
         'app:note.create',
+        'app:folder.create',
         'app:note.createChild',
         'app:note.createParent',
         'app:note.createJump',

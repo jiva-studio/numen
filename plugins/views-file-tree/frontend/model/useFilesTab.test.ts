@@ -4,11 +4,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
-import { getFolderPath, ROOT, createFileTree } from './useFileTree'
+import { ROOT, createFileTree } from './useFileTree'
 import type { CommandTarget } from '@numen/plugin-sdk'
 import { NEW_MENU, ROW_MENU, TRASH } from '../fixtures/host'
 import { WORDS as words } from '../words'
-import { CREATE_NOTE } from '../lib/menu'
+import { CREATE_FOLDER, CREATE_NOTE } from '../lib/menu'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
@@ -76,23 +76,15 @@ const tab = (
       runs.push(menuTarget)
       isDone.push(describeRun(command, menuTarget))
       if (fails) throw new Error('the window is gone')
-      if (command !== CREATE_NOTE) return ''
-      return menuTarget.path === ROOT
-        ? 'Untitled note 1.md'
-        : `${menuTarget.path}/Untitled note 1.md`
+      const made = command === CREATE_FOLDER ? 'New folder' : 'Untitled note 1.md'
+      if (command !== CREATE_NOTE && command !== CREATE_FOLDER) return ''
+      return menuTarget.path === ROOT ? made : `${menuTarget.path}/${made}`
     },
     movePath: async (from, to) => {
       isDone.push(`moves ${from} ${to}`)
     },
     setDraggedPaths: (paths) => {
       isDone.push(`drags ${paths.join(' ') || '—'}`)
-    },
-    createFolder: async (path) => {
-      isDone.push(`makes ${path}`)
-      if (fails) return
-      const into = getFolderPath(path)
-      vault[into] = [...(vault[into] ?? []), folder(path)]
-      vault[path] = []
     },
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
@@ -372,7 +364,6 @@ describe('rows release', () => {
       runCommand: async () => '',
       movePath: async () => undefined,
       setDraggedPaths: () => undefined,
-      createFolder: async () => undefined,
       canDropData: () => false,
       dropData: async () => [],
       showError: () => undefined,
@@ -506,9 +497,7 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(NEW_MENU.entries[1]!.key)
 
-    expect(recorded).toStrictEqual([
-      'runs md.numen.views.file.tree:tree.createFolder physics physics',
-    ])
+    expect(recorded).toStrictEqual(['runs app:folder.create physics physics'])
   })
 
   it('runs the command over the root where the menu was requested off every row', async () => {
@@ -582,51 +571,39 @@ describe('an item chosen in the menu on a row', () => {
   })
 })
 
-describe('a folder or a note made at a row', () => {
-  const setUp = async (fails = false) => {
+describe('a folder made by the Create folder entry of the menu', () => {
+  const choose = async (path: string | null, fails = false) => {
     const pendingState = tab(fails)
     await pendingState.list.openFolder(ROOT)
+    pendingState.one.openMenu({ path, at: { x: 0, y: 0 } })
+    pendingState.one.chooseMenuItem(NEW_MENU.entries[1]!.key)
+    await settle()
     return pendingState
   }
 
-  it('makes a folder alongside the row, under a name nothing there carries', async () => {
-    const { recorded, one } = await setUp()
+  it('runs the command of the window over the folder and puts the path it answers in a field', async () => {
+    const { recorded, one } = await choose('physics')
 
-    await one.createFolder('Entropy.md')
-
-    expect(recorded).toStrictEqual(['makes New folder'])
+    expect(recorded).toStrictEqual(['runs app:folder.create physics physics'])
+    expect(one.renamingPath.value).toBe('physics/New folder')
   })
 
-  it('makes a folder inside the row where the row is a folder', async () => {
-    const { recorded, one } = await setUp()
+  it('opens the folder the new folder was made in', async () => {
+    const { list } = await choose('physics')
 
-    await one.createFolder('physics')
-
-    expect(recorded).toStrictEqual(['makes physics/New folder'])
+    expect(list.isFolderOpen('physics')).toBe(true)
   })
 
-  it('puts the name of a folder it made in a field', async () => {
-    const { one } = await setUp()
-
-    await one.createFolder('Entropy.md')
+  it('makes the folder at the root where the menu was requested off every row', async () => {
+    const { one } = await choose(null)
 
     expect(one.renamingPath.value).toBe('New folder')
   })
 
-  it('puts no name in a field where the folder failed', async () => {
-    const { one } = await setUp(true)
-
-    await one.createFolder('Entropy.md')
+  it('puts no name in a field where the run failed', async () => {
+    const { one } = await choose('physics', true)
 
     expect(one.renamingPath.value).toBeNull()
-  })
-
-  it('makes a folder at the root', async () => {
-    const { recorded, one } = await setUp()
-
-    await one.createFolder(null)
-
-    expect(recorded).toStrictEqual(['makes New folder'])
   })
 })
 
@@ -695,8 +672,9 @@ describe('a field already holding a name, and a file rejected', () => {
     const { one, list } = tab(true)
     await list.openFolder(ROOT)
     one.setRenamingPath('Cover.png')
-
-    await one.createFolder('Entropy.md')
+    one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
+    one.chooseMenuItem(NEW_MENU.entries[1]!.key)
+    await settle()
 
     expect(one.renamingPath.value).toBe('Cover.png')
   })

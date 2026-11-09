@@ -48,7 +48,6 @@ export function createFilesTabDeps(
       commands?.run(command, target, itemId) ?? Promise.resolve(''),
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
-    createFolder: (path) => files.createFolder(path),
     canDropData: (types) => drops?.canDrop(types) ?? false,
     dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
     showError: (text) => workspace.showError(text),

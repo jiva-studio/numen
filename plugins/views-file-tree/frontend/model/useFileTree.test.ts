@@ -7,7 +7,6 @@ import { watch } from 'vue'
 import type { Entry } from '../types'
 import type { ListingRow } from '../types'
 import {
-  generateUniqueName,
   getFolderPath,
   getParentFolders,
   resolveDropFolder,
@@ -73,20 +72,6 @@ describe('the folders above a path', () => {
 
   it('never name the path itself', () => {
     expect(getParentFolders('physics/heat')).not.toContain('physics/heat')
-  })
-})
-
-describe('a name nothing in a folder carries', () => {
-  it('is the word itself where nothing is called that', () => {
-    expect(generateUniqueName(['physics'], 'New folder')).toBe('New folder')
-  })
-
-  it('is the word and a count where it is taken', () => {
-    expect(generateUniqueName(['New folder'], 'New folder')).toBe('New folder 2')
-  })
-
-  it('counts past every one that is taken', () => {
-    expect(generateUniqueName(['New folder', 'New folder 2'], 'New folder')).toBe('New folder 3')
   })
 })
 
@@ -376,16 +361,6 @@ describe('a tab that has closed', () => {
     await pendingOpen
 
     expect(list.rows.value).toStrictEqual([])
-  })
-})
-
-describe('a name nothing in a folder is filed under', () => {
-  it('counts past what the folder already holds', async () => {
-    const { core } = vault({ [ROOT]: [folder('New folder')] })
-    const list = createFileTree(core)
-    await list.openFolder(ROOT)
-
-    expect(list.getUniqueNameInFolder(ROOT, 'New folder')).toBe('New folder 2')
   })
 })
 
