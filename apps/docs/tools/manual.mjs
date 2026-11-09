@@ -576,25 +576,6 @@ const keysOf = async (pkg, type, under, depth = 0, seen = new Set()) => {
   return out
 }
 
-/**
- * Which groups get a heading of their own.
- *
- * The ones at the top, except that a group holding nothing but groups hands
- * the heading to each of them: `indexing` is three sections and not one.
- */
-const sectioned = (keys) => {
-  const under = (path, depth) =>
-    keys.filter((key) => key.depth === depth && key.path.startsWith(`${path}.`))
-
-  const out = []
-  for (const key of keys.filter((one) => one.depth === 0 && one.group)) {
-    const children = under(key.path, 1)
-    if (children.length > 0 && children.every((child) => child.group)) out.push(...children)
-    else out.push(key)
-  }
-  return out
-}
-
 /** What a declared setting holds, in the words of a person writing it. */
 const kindOfDeclared = (one) => {
   if (one.type === 'boolean') return 'yes or no'
