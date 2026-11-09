@@ -75,3 +75,18 @@ func TestEmptyTrashReturnsTheWriterError(t *testing.T) {
 		t.Fatalf("want the writer error, got %v", err)
 	}
 }
+
+func TestEmptyTrashReturnsTheUndeletedPathsTogetherWithTheWriterError(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	broken := errors.New("the disk is gone")
+	writers := emptyingWriters{writer: emptyingWriter{undeleted: []string{".trash/Heat.md"}, err: broken, calls: &calls}}
+
+	got, err := note.NewEmptyTrash(writers).Execute(t.Context(), domain.Vault{})
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the writer error, got %v", err)
+	}
+	if !slices.Equal(got, []string{".trash/Heat.md"}) {
+		t.Errorf("undeleted: %v", got)
+	}
+}
