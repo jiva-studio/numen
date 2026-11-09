@@ -129,7 +129,7 @@ export const TheMenuOnARow: Story = {
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))
     const transcriptText = getMenuItems().map((one) => one.textContent?.trim())
-    await expect(transcriptText).toContain('Rename file')
+    await expect(transcriptText).toContain('Rename')
     await expect(transcriptText).toContain('Move to trash')
 
     // The whole of it is on the screen, on every side.

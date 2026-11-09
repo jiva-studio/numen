@@ -96,7 +96,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
 
       await getTab(page, 'Files').click()
       await getRow(page, before).click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Rename file', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
       await expect(getNameField(page)).toHaveValue('Sluice log.md')
       await getNameField(page).fill('Brine pump.md')
       await getNameField(page).press('Enter')
