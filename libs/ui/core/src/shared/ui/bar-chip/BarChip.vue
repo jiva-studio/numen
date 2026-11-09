@@ -8,6 +8,7 @@
 import { ref, useId, useSlots, watch } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
+import { useDialogName } from './useDialogName'
 
 const POPOVER_GAP = 4
 
@@ -28,10 +29,12 @@ const props = withDefaults(
 /* --------------------------------- State ---------------------------------- */
 const isOpen = defineModel<boolean>('open', { default: false })
 const slots = useSlots()
-const labelId = useId()
+const chipId = useId()
 const sideOffset = ref(POPOVER_GAP)
 
 /* --------------------------------- Hooks ---------------------------------- */
+useDialogName(chipId, () => isOpen.value && hasPopover() && props.popoverLabel !== undefined)
+
 watch(
   isOpen,
   (value) => {
@@ -47,7 +50,6 @@ function onUpdateOpen(value: boolean): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-// Read on every render: a slot given under a condition appears and goes without a reactive change.
 // The popover keeps POPOVER_GAP px from the edge of the bar, whatever the height of the chip:
 // floating-ui measures the offset from the chip, which sits in the middle of the bar.
 function getSideOffset(): number {
@@ -58,6 +60,7 @@ function getSideOffset(): number {
   return (barHeight - chipHeight) / 2 + POPOVER_GAP
 }
 
+// Read on every render: a slot given under a condition appears and goes without a reactive change.
 function hasPopover(): boolean {
   return slots.popover !== undefined
 }
@@ -87,11 +90,8 @@ function hasPopover(): boolean {
         :side-offset="sideOffset"
         avoid-collisions
         :aria-label="props.popoverLabel"
-        :aria-labelledby="props.popoverLabel === undefined ? undefined : labelId"
+        :data-bar-chip-popover="chipId"
       >
-        <span v-if="props.popoverLabel !== undefined" :id="labelId" class="bar-chip__label">{{
-          props.popoverLabel
-        }}</span>
         <slot name="popover" />
       </PopoverContent>
     </PopoverPortal>
@@ -151,15 +151,6 @@ function hasPopover(): boolean {
 </style>
 
 <style>
-.bar-chip__label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .bar-chip__popover {
   box-sizing: border-box;
   max-width: calc(100vw - 1rem);
