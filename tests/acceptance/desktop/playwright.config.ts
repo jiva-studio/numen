@@ -41,6 +41,6 @@ export default defineConfig({
   ...base,
   testDir,
   testMatch: undefined,
-  webServer: [base.webServer as NonNullable<typeof base.webServer> & object, flashcardsServer],
+  webServer: [...[base.webServer ?? []].flat(), flashcardsServer],
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 })

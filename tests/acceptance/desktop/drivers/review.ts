@@ -5,7 +5,6 @@ import { expect } from 'playwright/test'
 import { getEscaped, getRating, parseReviewScope } from './rules.js'
 import type { Scenario } from './scenario.js'
 
-/** The folder the review of the flashcards plugin writes its answers to. */
 const getAnswerFolder = (): string =>
   path.join(process.env['NUMEN_FLASHCARDS_VAULT'] ?? '', '.numen', 'md.numen.views.flashcards.studio')
 

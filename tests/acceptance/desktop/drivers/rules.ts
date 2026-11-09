@@ -67,11 +67,16 @@ export const assertApplication = (name: string): void => {
   }
 }
 
-const RATINGS: Record<string, number> = { Again: 1, Hard: 2, Good: 3, Easy: 4 }
+const RATINGS = new Map([
+  ['Again', 1],
+  ['Hard', 2],
+  ['Good', 3],
+  ['Easy', 4],
+])
 
 /** The number the review log writes for an answer. */
 export const getRating = (answer: string): number => {
-  const rating = RATINGS[answer]
+  const rating = RATINGS.get(answer)
   if (rating === undefined) throw new Error(`"${answer}" is not an answer: use Again, Hard, Good or Easy`)
   return rating
 }
