@@ -27,6 +27,7 @@ export class Scenario {
   private world: World | undefined
   private server: Server | undefined
   private application: Application | undefined
+  private isRestarted = false
   private browser: Browser | undefined
   private currentPage: Page
 
@@ -71,6 +72,7 @@ export class Scenario {
     const vaults = world.getVaults()
     if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
     assertWorldApplication(application, vaults, this.application)
+    this.isRestarted = this.server !== undefined
     if (this.server === undefined) {
       this.server = await Server.start({
         application,
@@ -134,7 +136,8 @@ export class Scenario {
     assertWorldApplication('editor', world.getVaults(), this.application)
     await this.page.goto('/')
     await waitForWindow(this.page)
-    if (world.hasNotes()) await expect(getGraph(this.page)).toBeVisible()
+    // Only the first start opens the plex of a note: a restart opens the tabs the person left.
+    if (!this.isRestarted && world.hasNotes()) await expect(getGraph(this.page)).toBeVisible()
     this.hasWorkspace = true
   }
 
