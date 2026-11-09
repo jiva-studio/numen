@@ -249,9 +249,7 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, echo string
 		return
 	}
 	if script.IsBroken {
-		if conn, _, err := controller.Hijack(); err == nil {
-			_ = conn.Close()
-		}
+		closeConnection(controller)
 		return
 	}
 	if n := len(script.Chunks); n == 0 || script.Chunks[n-1] != "[DONE]" {
@@ -336,4 +334,14 @@ func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabelled, 
 		data[i] = entry
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "data": data})
+}
+
+func closeConnection(controller *http.ResponseController) {
+	conn, _, err := controller.Hijack()
+	if err != nil {
+		return
+	}
+	if err := conn.Close(); err != nil {
+		return
+	}
 }
