@@ -4,7 +4,7 @@ When('the person recognizes the text of the file at {string}', async ({ person }
   await person.text.recognize(filePath)
 })
 
-When('the person proofreads the recognized text of the file at {string}', async ({ person }, filePath: string) => {
+When('the person proofreads the recognition of the file at {string}', async ({ person }, filePath: string) => {
   await person.text.proofread(filePath, 'recognized text')
 })
 

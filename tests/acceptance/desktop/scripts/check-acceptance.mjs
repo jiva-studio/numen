@@ -30,7 +30,7 @@ const PENDING = new Set([
   '{vault} has the following presets:',
   'the person switches to the vault {string}',
   'the person recognizes the text of the file at {string}',
-  'the person proofreads the recognized text of the file at {string}',
+  'the person proofreads the recognition of the file at {string}',
   'the person transcribes the recording at {string}',
   'the person proofreads the transcript of the recording at {string}',
   'the person imports the link {string}',

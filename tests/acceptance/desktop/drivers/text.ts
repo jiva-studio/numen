@@ -1,7 +1,7 @@
 /** The person at the text of a file or a link: making it, proofreading it, downloading it, deleting it. */
 import { expect } from 'playwright/test'
 import type { ApplicationDriver } from './application.js'
-import { ANY_TAB, getAddressTitle, getCurrentVersionLabel, type TextKind } from './rules.js'
+import { getAddressTitle, getCurrentVersionLabel, type TextKind } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
 import { hasMadeText, hasVersions } from './text-versions.js'
@@ -15,7 +15,6 @@ const DOWNLOAD_CAPTIONS = 'Download captions'
 const DOWNLOAD_MEDIA = 'Download media'
 const VIDEO = 'Video'
 const DELETE_TEXT = 'Delete text'
-const ADDRESS_REFERENCE = 'for the web address'
 
 export class TextDriver {
   constructor(
@@ -49,9 +48,9 @@ export class TextDriver {
   }
 
   async downloadText(address: string): Promise<void> {
-    await this.showLink(address)
+    const notePath = await this.showLink(address)
     await this.application.runCommand(DOWNLOAD_CAPTIONS)
-    await this.expectVersions(address)
+    await this.expectVersions(notePath)
   }
 
   async downloadVideo(address: string): Promise<void> {
@@ -66,8 +65,10 @@ export class TextDriver {
     await this.application.pickItem(getCurrentVersionLabel('article'))
   }
 
-  private async showLink(address: string): Promise<void> {
-    await this.tab.activate(ANY_TAB, ADDRESS_REFERENCE, address)
+  private async showLink(address: string): Promise<string> {
+    const notePath = `${getAddressTitle(address)}.md`
+    await this.tab.showFile(notePath)
+    return notePath
   }
 
   private async expectMadeText(filePath: string): Promise<void> {
@@ -75,9 +76,8 @@ export class TextDriver {
     await expect.poll(() => hasMadeText(request, filePath)).toBe(true)
   }
 
-  private async expectVersions(address: string): Promise<void> {
+  private async expectVersions(notePath: string): Promise<void> {
     const { request } = this.scenario.page
-    const notePath = await this.scenario.getPath('titled', getAddressTitle(address))
     await expect.poll(() => hasVersions(request, notePath)).toBe(true)
   }
 }
