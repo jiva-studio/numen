@@ -273,13 +273,25 @@ func (s *Server) writeChunks(w http.ResponseWriter, r *http.Request, controller 
 }
 
 func echoChunks(echo string) []string {
-	first, second := echo[:len(echo)/2], echo[len(echo)/2:]
+	runes := []rune(echo)
 	return []string{
-		`{"choices":[{"index":0,"delta":{"role":"assistant","content":"` + first + `"}}]}`,
-		`{"choices":[{"index":0,"delta":{"content":"` + second + `"}}]}`,
-		`{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+		encodeDelta(map[string]any{"role": "assistant", "content": string(runes[:len(runes)/2])}, ""),
+		encodeDelta(map[string]any{"content": string(runes[len(runes)/2:])}, ""),
+		encodeDelta(map[string]any{}, "stop"),
 		"[DONE]",
 	}
+}
+
+func encodeDelta(delta map[string]any, finishReason string) string {
+	choice := map[string]any{"index": 0, "delta": delta}
+	if finishReason != "" {
+		choice["finish_reason"] = finishReason
+	}
+	encoded, err := json.Marshal(map[string]any{"choices": []any{choice}})
+	if err != nil {
+		return "{}"
+	}
+	return string(encoded)
 }
 
 type embeddingsRequest struct {
