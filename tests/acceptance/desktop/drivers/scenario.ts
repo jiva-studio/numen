@@ -93,6 +93,8 @@ export class Scenario {
       ignoreHTTPSErrors: true,
       viewport: this.viewport,
     })
+    // A link without a copy embeds the player of the site, which a run offline does not reach.
+    await context.route(/youtube-nocookie\.com/, (route) => route.abort())
     this.currentPage = await context.newPage()
     this.hasWorkspace = false
   }
