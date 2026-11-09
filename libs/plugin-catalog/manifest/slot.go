@@ -64,9 +64,7 @@ func (m Manifest) listSlotIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
 		}
 		observed[key] = true
-		if err := kinds.add(entry.Slot, kind, id); err != nil {
-			issues = append(issues, err)
-		}
+		issues = append(issues, kinds.add(entry.Slot, kind, id)...)
 		if entry.Submenu != "" && submenus[entry.Submenu] {
 			issues = append(issues, fmt.Errorf("%w: submenu %q is declared twice", ErrInvalidSlotEntry, entry.Submenu))
 		}
@@ -141,7 +139,7 @@ func (c Contributes) hasSlotViews() bool {
 // key of an entry is made of the slot, the plugin and the id, whatever the kind.
 type slotKinds map[struct{ slot, id string }]string
 
-func (k slotKinds) add(slot, kind, id string) error {
+func (k slotKinds) add(slot, kind, id string) []error {
 	if kind != "command" && kind != "view" {
 		return nil
 	}
@@ -152,7 +150,7 @@ func (k slotKinds) add(slot, kind, id string) error {
 		return nil
 	}
 	if first != kind {
-		return fmt.Errorf("%w: view and command %q share one key in %q", ErrInvalidSlotEntry, id, slot)
+		return []error{fmt.Errorf("%w: view and command %q share one key in %q", ErrInvalidSlotEntry, id, slot)}
 	}
 	return nil
 }
