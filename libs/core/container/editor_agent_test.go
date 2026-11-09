@@ -1,11 +1,16 @@
 package container_test
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
 // The window requests its agent on every call, so a conversation started through one call ends on the
@@ -40,4 +45,60 @@ func TestEditorSettingsShareAgentRouter(t *testing.T) {
 	if got := len(one.getCommands()); got != listedBefore {
 		t.Errorf("GetAgentPrograms called %d times after settings, want %d", got, listedBefore)
 	}
+}
+
+// When the first read of the settings returns before a slow agent provider lists its programs,
+// watching the settings reports a change as soon as the listing finishes, and the next read
+// includes the listed programs.
+func TestEditorSettings_ReportsLatePrograms(t *testing.T) {
+	host, one, _ := twoProviders(t)
+	release := make(chan struct{})
+	one.gate = release
+	settingsFile := filepath.Join(t.TempDir(), "numen.json")
+	if err := os.WriteFile(settingsFile, []byte(`{}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	assembly := container.NewEditorAssembly(
+		container.NewConfig(container.Config{PluginHost: host, SettingsPath: settingsFile}),
+		nil,
+		nil,
+	)
+
+	changes, stop := assembly.OpenWatchSettings().Execute()
+	defer stop()
+	first, err := assembly.OpenGetSettings().Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := listAgentProgramNames(first.Models); !slices.Equal(got, []string{""}) {
+		t.Fatalf("first read programs = %q, want [\"\"] before slow listing ends", got)
+	}
+
+	close(release)
+	select {
+	case batch := <-changes:
+		if len(batch) == 0 || !slices.Equal(batch[0].Path, []string{"app", "agent", "use"}) {
+			t.Fatalf("watch settings delivered %+v, want app.agent.use", batch)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("watch settings did not report when the slow program listing ended")
+	}
+
+	second, err := assembly.OpenGetSettings().Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := listAgentProgramNames(second.Models); !slices.Equal(got, []string{"alpha", "beta", ""}) {
+		t.Fatalf("second read programs = %q, want [\"alpha\" \"beta\" \"\"]", got)
+	}
+}
+
+func listAgentProgramNames(models []settingsport.Model) []string {
+	var names []string
+	for _, one := range models {
+		if strings.Join(one.Path, ".") == "app.agent.use" {
+			names = append(names, one.Name)
+		}
+	}
+	return names
 }
