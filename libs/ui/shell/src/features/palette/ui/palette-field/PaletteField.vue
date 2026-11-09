@@ -11,16 +11,9 @@
 import { useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
 import { listId, optionId } from '../../lib/place'
+import type { PaletteFieldProps } from './PaletteField.types'
 
-defineProps<{
-  uid: string
-  here: number
-  isExpanded: boolean
-  placeholder: string
-  name: string
-  crumb: string
-  isBusy?: boolean
-}>()
+defineProps<PaletteFieldProps>()
 
 const searchQuery = defineModel<string>({ required: true })
 
