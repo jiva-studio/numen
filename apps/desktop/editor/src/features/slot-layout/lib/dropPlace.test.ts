@@ -8,7 +8,10 @@ const BOXES = [
 
 describe('the place of a drop in a slot', () => {
   it('is before the entry whose midpoint lies right of the pointer', () => {
-    expect(findDropPlace(BOXES, 120, 100)).toStrictEqual({ before: 'org.example.reef/stats', x: 100 })
+    expect(findDropPlace(BOXES, 120, 100)).toStrictEqual({
+      before: 'org.example.reef/stats',
+      x: 100,
+    })
     expect(findDropPlace(BOXES, 160, 100)).toStrictEqual({
       before: 'org.example.tide/status',
       x: 184,

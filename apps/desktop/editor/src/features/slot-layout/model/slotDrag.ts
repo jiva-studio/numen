@@ -4,7 +4,7 @@
  * move changes in one write. Every other press is left to the page.
  */
 import { computed, onScopeDispose, shallowRef, type ComputedRef, type Ref } from 'vue'
-import { browserClock, usePressDrag, type Clock, type Position } from '@numen/ui'
+import { browserClock, measureRect, usePressDrag, type Clock, type Position } from '@numen/ui'
 import {
   BAR_SLOTS,
   SLOT_ATTRIBUTE,
@@ -68,14 +68,17 @@ const findBarSlot = (element: Element | null): { element: Element; slot: BarSlot
 
 const getEntryLabel = (element: Element, key: string): string => {
   const named = element.hasAttribute('aria-label') ? element : element.querySelector('[aria-label]')
-  const label = named?.getAttribute('aria-label') ?? element.textContent ?? ''
+  const label = named?.getAttribute('aria-label') ?? element.textContent
   return label.trim() || key
 }
 
 const hasDragModifier = (event: PointerEvent, isMac: boolean): boolean =>
   isMac ? event.metaKey : event.ctrlKey
 
-type LayoutDeps = Pick<SlotDragDeps, 'findLayoutKey' | 'listLayoutKeys' | 'getLayout' | 'writeLayout'>
+type LayoutDeps = Pick<
+  SlotDragDeps,
+  'findLayoutKey' | 'listLayoutKeys' | 'getLayout' | 'writeLayout'
+>
 
 const findPressedEntry = (target: EventTarget | null, deps: LayoutDeps): PressedEntry | null => {
   if (!(target instanceof Element)) return null
@@ -90,7 +93,7 @@ const listEntryBoxes = (slotElement: Element, dragged: string, deps: LayoutDeps)
   [...slotElement.querySelectorAll(`[${SLOT_ENTRY_ATTRIBUTE}]`)].flatMap((element) => {
     const key = deps.findLayoutKey(element.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '')
     if (key === undefined || key === dragged) return []
-    const box = element.getBoundingClientRect()
+    const box = measureRect(element)
     return [{ key, left: box.left, right: box.right }]
   })
 
@@ -102,7 +105,7 @@ const findDropTarget = (
 ): SlotDropTarget | null => {
   const bar = findBarSlot(document.elementFromPoint(point.x, point.y))
   if (!bar) return null
-  const box = bar.element.getBoundingClientRect()
+  const box = measureRect(bar.element)
   const place = findDropPlace(listEntryBoxes(bar.element, entry.key, deps), point.x, box.left)
   return {
     slot: bar.slot,
@@ -170,7 +173,12 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
   const clicks = createClickBlocker()
   const endDrag = (): void => root.removeAttribute(DRAGGING_ATTRIBUTE)
 
-  const { dragging, at: dropTarget, position, startPress } = usePressDrag<PressedEntry, SlotDropTarget>({
+  const {
+    dragging,
+    at: dropTarget,
+    position,
+    startPress,
+  } = usePressDrag<PressedEntry, SlotDropTarget>({
     getThreshold: () => DRAG_THRESHOLD,
     getClock: () => deps.getClock?.() ?? browserClock,
     getDropTargetAt: (entry, point) =>
