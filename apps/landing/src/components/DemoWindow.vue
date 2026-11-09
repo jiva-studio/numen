@@ -1290,7 +1290,7 @@ const NEW_SUBMENU: SlotItem = {
   title: 'New',
   icon: Plus,
   entries: [
-    createMenuCommand(DEMO_COMMAND.createNote, 'New note'),
+    createMenuCommand(DEMO_COMMAND.createNote, 'Create note'),
     createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
   ],
 }
