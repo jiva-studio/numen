@@ -9,6 +9,7 @@ import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } 
 import type { Manifest } from '@numen/core-client'
 import {
   createAppInfo,
+  createPluginAgent,
   createExternalOpener,
   createPluginNotices,
   createSlotRegistry,
@@ -222,7 +223,7 @@ export function createShellHost(
       closeTab: (id) => closeTab(id),
       hasPermission: (permission) => manifest?.permissions.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
-      ...(agent ? { agent } : {}),
+      ...(agent ? { agent: createPluginAgent(agent, { pluginId, manifest }) } : {}),
       ...getFilledServices(services),
     }
     contexts.set(pluginId, context)
