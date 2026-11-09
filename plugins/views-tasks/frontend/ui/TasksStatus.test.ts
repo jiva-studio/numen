@@ -28,6 +28,7 @@ describe('TasksStatus', () => {
     })
 
     const trigger = wrapper.find('button')
+    expect(trigger.classes()).toContain('bar-chip--alarm')
     expect(trigger.attributes('aria-label')).toBe('1 failed')
     wrapper.unmount()
   })

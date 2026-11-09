@@ -2,7 +2,7 @@
 /**
  * The title bar indicator of a new release, and the popover with its details.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { BarChip } from '@numen/ui'
 import type { Update } from './api/updater'
 import { getTooltip } from './model/tooltip'
@@ -27,6 +27,15 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
+
+/* -------------------------------- Watchers -------------------------------- */
+// A later announcement starts closed, not open as the last one was left.
+watch(
+  () => props.update,
+  (update) => {
+    if (update === null) isOpen.value = false
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
