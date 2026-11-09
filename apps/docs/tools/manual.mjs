@@ -107,6 +107,11 @@ const readCommandIds = async () => {
     ),
   )
   if (ids.size === 0) die('commandIds.ts no longer names its commands')
+  const rows = source.matchAll(/^\s*([A-Za-z]+):\s*`\$\{COMMAND\.([A-Za-z]+)\}(#[a-z]+)`/gm)
+  for (const [, name, command, argument] of rows) {
+    const id = ids.get(command)
+    if (id) ids.set(name, `${id}${argument}`)
+  }
   return ids
 }
 
@@ -185,7 +190,7 @@ const keyboard = async () => {
  * this cannot find an id in stops the build.
  */
 const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
-  const found = [...text.matchAll(/\bid:\s*COMMAND\.([A-Za-z]+)/g)]
+  const found = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
   if (found.length !== entries) {
     die(`${path} lists ${entries} commands and this reads ${found.length}`)
   }
