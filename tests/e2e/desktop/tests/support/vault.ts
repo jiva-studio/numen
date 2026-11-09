@@ -121,12 +121,22 @@ export const listFiles = async (request: APIRequestContext, folder = ''): Promis
 export const listFilePaths = async (request: APIRequestContext, folder = ''): Promise<string[]> =>
   (await listFiles(request, folder)).filter((one) => !one.isFolder).map((one) => one.path)
 
-/** Removes a note file and the copy it leaves in the trash, and does nothing when it is already gone. */
+/**
+ * Removes a note file and the copy it leaves in the trash, and does nothing when it is already
+ * gone. It throws when the core refused the removal or the trashed copy could not be deleted.
+ */
 export const destroyNote = async (request: APIRequestContext, notePath: string): Promise<void> => {
   const answer = await callRPC(request, 'FileService/RemoveFile', { path: notePath })
+  const error = answer['error']
+  if (error && error !== 'ERROR_CODE_NOT_FOUND') {
+    throw new Error(`RemoveFile ${notePath} refused: ${JSON.stringify(answer)}`)
+  }
   const trashed = answer['trashed']
-  if (typeof trashed === 'string' && trashed) {
-    fs.rmSync(path.join(getVaultPath(), trashed), { force: true })
+  if (typeof trashed !== 'string' || !trashed) return
+  try {
+    fs.rmSync(path.join(getVaultPath(), trashed), { recursive: true, force: true })
+  } catch (failure) {
+    throw new Error(`the trashed copy ${trashed} of ${notePath} stayed: ${String(failure)}`)
   }
 }
 

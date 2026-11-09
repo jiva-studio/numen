@@ -17,12 +17,23 @@ export const createNoteWithBody = async (
   return path
 }
 
-/** Takes the notes off the disk, ignoring what is not there. A test cleans up with it. */
+/**
+ * Takes the notes and their trashed copies off the disk, ignoring what is not there. A test
+ * cleans up with it. It tries every note and throws once at the end for the ones that failed.
+ */
 export const destroyNotes = async (
   request: APIRequestContext,
   paths: readonly string[],
 ): Promise<void> => {
-  for (const path of paths) await destroyNote(request, path)
+  const failures: string[] = []
+  for (const path of paths) {
+    try {
+      await destroyNote(request, path)
+    } catch (failure) {
+      failures.push(String(failure))
+    }
+  }
+  if (failures.length > 0) throw new Error(failures.join('\n'))
 }
 
 /** Makes an empty folder at the path. */
