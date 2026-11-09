@@ -56,5 +56,5 @@ Feature: Import link
 
     Scenario: The video note opens from the file tree
       Given the application "editor" starts
-      When the person opens the note of the link "https://youtu.be/mill01"
+      When the person opens the note of the link "https://youtu.be/mill01" in the file tree
       Then the Media tab for the web address "https://youtu.be/mill01" has "The mill pond fills behind the gate."
