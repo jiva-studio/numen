@@ -47,6 +47,8 @@ const (
 	FileServiceMoveFileProcedure = "/numen.v1.FileService/MoveFile"
 	// FileServiceRemoveFileProcedure is the fully-qualified name of the FileService's RemoveFile RPC.
 	FileServiceRemoveFileProcedure = "/numen.v1.FileService/RemoveFile"
+	// FileServiceEmptyTrashProcedure is the fully-qualified name of the FileService's EmptyTrash RPC.
+	FileServiceEmptyTrashProcedure = "/numen.v1.FileService/EmptyTrash"
 	// FileServiceCreateFolderProcedure is the fully-qualified name of the FileService's CreateFolder
 	// RPC.
 	FileServiceCreateFolderProcedure = "/numen.v1.FileService/CreateFolder"
@@ -70,6 +72,10 @@ type FileServiceClient interface {
 	// be brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
 	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
+	// EmptyTrash deletes everything the vault's trash holds. Nothing brings it
+	// back. An entry that cannot be deleted is named in the answer and does not
+	// stop the others.
+	EmptyTrash(context.Context, *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 }
@@ -109,6 +115,12 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(fileServiceMethods.ByName("RemoveFile")),
 			connect.WithClientOptions(opts...),
 		),
+		emptyTrash: connect.NewClient[v1.EmptyTrashRequest, v1.EmptyTrashResponse](
+			httpClient,
+			baseURL+FileServiceEmptyTrashProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("EmptyTrash")),
+			connect.WithClientOptions(opts...),
+		),
 		createFolder: connect.NewClient[v1.CreateFolderRequest, v1.CreateFolderResponse](
 			httpClient,
 			baseURL+FileServiceCreateFolderProcedure,
@@ -124,6 +136,7 @@ type fileServiceClient struct {
 	listFileKinds *connect.Client[v1.ListFileKindsRequest, v1.ListFileKindsResponse]
 	moveFile      *connect.Client[v1.MoveFileRequest, v1.MoveFileResponse]
 	removeFile    *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
+	emptyTrash    *connect.Client[v1.EmptyTrashRequest, v1.EmptyTrashResponse]
 	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
 }
 
@@ -145,6 +158,11 @@ func (c *fileServiceClient) MoveFile(ctx context.Context, req *connect.Request[v
 // RemoveFile calls numen.v1.FileService.RemoveFile.
 func (c *fileServiceClient) RemoveFile(ctx context.Context, req *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error) {
 	return c.removeFile.CallUnary(ctx, req)
+}
+
+// EmptyTrash calls numen.v1.FileService.EmptyTrash.
+func (c *fileServiceClient) EmptyTrash(ctx context.Context, req *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error) {
+	return c.emptyTrash.CallUnary(ctx, req)
 }
 
 // CreateFolder calls numen.v1.FileService.CreateFolder.
@@ -170,6 +188,10 @@ type FileServiceHandler interface {
 	// be brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
 	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
+	// EmptyTrash deletes everything the vault's trash holds. Nothing brings it
+	// back. An entry that cannot be deleted is named in the answer and does not
+	// stop the others.
+	EmptyTrash(context.Context, *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 }
@@ -205,6 +227,12 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(fileServiceMethods.ByName("RemoveFile")),
 		connect.WithHandlerOptions(opts...),
 	)
+	fileServiceEmptyTrashHandler := connect.NewUnaryHandler(
+		FileServiceEmptyTrashProcedure,
+		svc.EmptyTrash,
+		connect.WithSchema(fileServiceMethods.ByName("EmptyTrash")),
+		connect.WithHandlerOptions(opts...),
+	)
 	fileServiceCreateFolderHandler := connect.NewUnaryHandler(
 		FileServiceCreateFolderProcedure,
 		svc.CreateFolder,
@@ -221,6 +249,8 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 			fileServiceMoveFileHandler.ServeHTTP(w, r)
 		case FileServiceRemoveFileProcedure:
 			fileServiceRemoveFileHandler.ServeHTTP(w, r)
+		case FileServiceEmptyTrashProcedure:
+			fileServiceEmptyTrashHandler.ServeHTTP(w, r)
 		case FileServiceCreateFolderProcedure:
 			fileServiceCreateFolderHandler.ServeHTTP(w, r)
 		default:
@@ -246,6 +276,10 @@ func (UnimplementedFileServiceHandler) MoveFile(context.Context, *connect.Reques
 
 func (UnimplementedFileServiceHandler) RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.RemoveFile is not implemented"))
+}
+
+func (UnimplementedFileServiceHandler) EmptyTrash(context.Context, *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.EmptyTrash is not implemented"))
 }
 
 func (UnimplementedFileServiceHandler) CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
