@@ -10,9 +10,9 @@ Feature: Proofreading
       Given the vault "Test" contains the file at "assets/pumped-storage.pdf"
       And the person opens the file at "assets/pumped-storage.pdf"
       And the person runs the command "Create text"
-      And the person enters "Recognize text"
+      And the person picks "Recognize text"
       When the person runs the command "Proofread text"
-      And the person enters "Recognized text (current)"
+      And the person picks "Recognized text (current)"
       And the person searches the vault for "proofread"
       Then the search has the result "assets/pumped-storage.pdf" in the group "Text"
 
@@ -20,9 +20,9 @@ Feature: Proofreading
       Given the vault "Test" contains the file at "assets/pumped-storage.pdf"
       And the person opens the file at "assets/pumped-storage.pdf"
       And the person runs the command "Create text"
-      And the person enters "Recognize text"
+      And the person picks "Recognize text"
       When the person runs the command "Proofread text"
-      And the person enters "Recognized text (current)"
+      And the person picks "Recognized text (current)"
       And the person searches the vault for "upper reservoir"
       Then the search has the result "assets/pumped-storage.pdf" in the group "Text"
 
@@ -33,7 +33,7 @@ Feature: Proofreading
       And the person opens the file at "assets/lecture.wav"
       And the person runs the command "Transcribe"
       When the person runs the command "Proofread text"
-      And the person enters "Transcript (current)"
+      And the person picks "Transcript (current)"
       Then the tab at "assets/lecture.wav" has "[proofread]"
 
     Scenario: The proofread transcript of a recording is found by search
@@ -41,6 +41,6 @@ Feature: Proofreading
       And the person opens the file at "assets/lecture.wav"
       And the person runs the command "Transcribe"
       When the person runs the command "Proofread text"
-      And the person enters "Transcript (current)"
+      And the person picks "Transcript (current)"
       And the person searches the vault for "proofread"
       Then the search has the result "assets/lecture.wav" in the group "Text"

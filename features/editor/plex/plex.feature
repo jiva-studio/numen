@@ -9,9 +9,9 @@ Feature: Plex
 
     Scenario: A child note is linked to the note in front
       When the person runs the command "Create child note"
-      And the person enters "Tributary"
+      And the person names it "Tributary"
       And the person runs the command "Show note in plex" on the tab titled "Entropy"
-      Then the vault "Test" has the note titled "Tributary"
+      Then the vault "Test" contains the note titled "Tributary"
       And the note titled "Entropy" links to the note titled "Tributary"
       And the plex has the note titled "Tributary" as the "child"
 
@@ -32,7 +32,7 @@ Feature: Plex
 
     Scenario: A note found by its title is the focus of the plex
       When the person runs the command "Go to note"
-      And the person enters "Entropy"
+      And the person picks "Entropy"
       And the person runs the command "Show note in plex"
       Then the plex has the note titled "Entropy" as the "focus"
 
@@ -42,7 +42,7 @@ Feature: Plex
         | notes/Weir notes.md | Water over the weir. |
       And the person opens the note titled "Weir notes"
       And the person runs the command "Link with tab" on the tab titled "Thermodynamics"
-      And the person enters "Weir notes"
+      And the person picks "Weir notes"
       When the person clicks the note titled "Entropy" in the plex
       Then the tab at "notes/Entropy.md" is active
       And the tab titled "Weir notes" is not open

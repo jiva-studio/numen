@@ -61,6 +61,46 @@ const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'it
 /** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, a note found by words, or a text. */
 export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
 
+export type PaletteAction = 'name' | 'pick' | 'type'
+
+const ACTION_FIELDS: Record<PaletteAction, readonly PaletteField[]> = {
+  name: ['name'],
+  pick: ['item', 'note'],
+  type: ['text'],
+}
+
+const ACTION_WORDS: Record<PaletteAction, string> = {
+  name: 'names it',
+  pick: 'picks',
+  type: 'types',
+}
+
+const FIELD_ASKS: Record<PaletteField, string> = {
+  name: 'a name',
+  item: 'an item to pick',
+  note: 'an item to pick',
+  text: 'a text',
+}
+
+/** Fails when the palette asks for another kind of input than the step gives, so a step cannot do the work of another. */
+export const assertPaletteField = (action: PaletteAction, kind: PaletteField): void => {
+  if (!ACTION_FIELDS[action].includes(kind)) {
+    throw new Error(`the person ${ACTION_WORDS[action]} here, but the palette asks for ${FIELD_ASKS[kind]}: use the step that matches`)
+  }
+}
+
+/** The kinds of text a file or a link has, as the product titles its versions. */
+export type TextKind = 'recognized text' | 'transcript' | 'article'
+
+const TEXT_KIND_TITLES: Record<TextKind, string> = {
+  'recognized text': 'Recognized text',
+  transcript: 'Transcript',
+  article: 'Article',
+}
+
+/** The title the product gives the live version of a kind of text in the list it offers. */
+export const getCurrentVersionLabel = (kind: TextKind): string => `${TEXT_KIND_TITLES[kind]} (current)`
+
 /** The application a world runs: the server of a world runs one, and the flashcards window opens one vault. */
 export const assertWorldApplication = (application: string, vaults: readonly string[], running: string | undefined): void => {
   if (running !== undefined && running !== application) {
@@ -97,11 +137,6 @@ export const getRating = (answer: string): number => {
 export const parseReviewScope = (scope: string): 'vault' | 'deck' => {
   if (scope !== 'vault' && scope !== 'deck') throw new Error(`"${scope}" is not reviewed: use "vault" or "deck"`)
   return scope
-}
-
-export const parseCount = (text: string): number => {
-  if (!/^\d+$/.test(text)) throw new Error(`"${text}" is not a number`)
-  return Number(text)
 }
 
 export const readNoteType = (content: string): string => {

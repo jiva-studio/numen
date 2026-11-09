@@ -24,7 +24,7 @@ Feature: File tree
     Scenario: A folder is made in a folder
       Given the vault "Test" contains the folder at "Saltworks"
       When the person runs the command "Create folder" on the folder at "Saltworks"
-      And the person enters "Brine tanks"
+      And the person names it "Brine tanks"
       Then the vault "Test" contains the folder at "Saltworks/Brine tanks"
 
     Scenario: A note is renamed and its tab follows
@@ -33,7 +33,7 @@ Feature: File tree
         | notes/Brine pump.md | The pump runs at night. |
       And the person opens the note titled "Brine pump"
       When the person runs the command "Rename file" on the file at "notes/Brine pump.md"
-      And the person enters "Brine pumps.md"
+      And the person names it "Brine pumps.md"
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open
 

@@ -2,7 +2,7 @@ Feature: Link notes
   A note links to another note by its title.
 
   Background:
-    Given the vault "Test" has the note at "notes/Entropy.md"
+    Given the vault "Test" contains the note at "notes/Entropy.md"
 
   Scenario: A link is written with a completion
     Given the vault has the following:

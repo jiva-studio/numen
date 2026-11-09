@@ -163,6 +163,11 @@ export class TabDriver {
     await expect.poll(() => this.isFileOpened(filePath)).toBe(true)
   }
 
+  async showFile(filePath: string): Promise<void> {
+    await this.scenario.ensureWorkspace()
+    if (!(await this.isFileOpened(filePath))) await this.openFile(filePath)
+  }
+
   async playRecording(kind: TabKindChoice, reference: string, name: string): Promise<void> {
     await this.requireKindIfNamed(kind, reference, name)
     await this.getPanel(reference, name).getByRole('button', { name: /^Play/ }).click()

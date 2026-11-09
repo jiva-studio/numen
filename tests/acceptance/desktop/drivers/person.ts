@@ -14,6 +14,7 @@ import { PluginDriver } from './plugins.js'
 import { Scenario } from './scenario.js'
 import { SearchDriver } from './search.js'
 import { TabDriver } from './tabs.js'
+import { TextDriver } from './text.js'
 import { VaultDriver } from './vault.js'
 import { WebDriver } from './web.js'
 
@@ -26,6 +27,7 @@ export class Person {
   readonly plex: PlexDriver
   readonly plugin: PluginDriver
   readonly web: WebDriver
+  readonly text: TextDriver
   readonly review: ReviewDriver
   readonly vault: VaultDriver
   private readonly scenario: Scenario
@@ -40,6 +42,7 @@ export class Person {
     this.plex = new PlexDriver(this.scenario)
     this.plugin = new PluginDriver(this.scenario)
     this.web = new WebDriver(this.scenario)
+    this.text = new TextDriver(this.scenario, this.application, this.tab)
     this.review = new ReviewDriver(this.scenario)
     this.vault = new VaultDriver(this.scenario)
   }

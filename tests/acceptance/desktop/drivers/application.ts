@@ -1,23 +1,29 @@
 /** The person at the application as a whole: starting it, running a command, looking at the vault. */
 import fs from 'node:fs'
 import path from 'node:path'
-import { expect } from 'playwright/test'
+import { expect, type Locator } from 'playwright/test'
 import {
   getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
 import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { parseApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
+import {
+  assertPaletteField,
+  getEscaped,
+  getPaletteField,
+  parseApplication,
+  readNoteType,
+  type PaletteAction,
+  type PaletteField,
+} from './rules.js'
 import type { Scenario } from './scenario.js'
-import { listVersions } from './text-versions.js'
+import { hasMadeText } from './text-versions.js'
 
 const COMMAND_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
 const DELETE_TEXT_ID = 'app:version.delete'
 const PROOFREAD_TEXT = 'Proofread text'
-/** The title of the version a file has before any plugin makes text of it. */
-const TEXT_LAYER = 'Text layer'
 /** A plugin may take this long to start before the first command of it answers. */
 const PLUGIN_START_LIMIT_MS = 35_000
 
@@ -63,7 +69,7 @@ export class ApplicationDriver {
       .toBe(true)
   }
 
-  async enter(value: string): Promise<void> {
+  async enterName(value: string): Promise<void> {
     const { page } = this.scenario
     const treeField = page.getByRole('tree').getByRole('textbox')
     await expect(treeField.or(page.locator('[data-palette="crumb"]'))).toBeVisible()
@@ -73,32 +79,56 @@ export class ApplicationDriver {
       await expect(treeField).toBeHidden()
       return
     }
+    const field = await this.readPaletteInput('name')
+    await this.scenario.claimTitle(value)
+    await field.fill(value)
+    await expect(page.getByRole('option', { selected: true })).toContainText(value)
+    await page.keyboard.press('Enter')
+    await expect(field).toBeHidden()
+  }
+
+  async pickItem(value: string): Promise<void> {
+    const { page } = this.scenario
     const field = getPaletteInput(page)
-    // The palette that took the command asks for its input once its placeholder is no longer the command prompt.
-    await expect(field).not.toHaveAttribute('placeholder', COMMAND_PLACEHOLDER)
-    const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
+    const kind = await this.readPaletteKind(field)
+    assertPaletteField('pick', kind)
+    const name = new RegExp(`^${getEscaped(value)}$`)
     if (kind === 'item') {
-      await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
-    } else if (kind === 'note') {
+      await page.getByRole('option', { name }).click()
+    } else {
       await field.fill(value)
-      const name = new RegExp(`^${getEscaped(value)}$`)
       await page
         .getByRole('option')
         .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
         .first()
         .click()
-    } else {
-      if (kind === 'name') await this.scenario.claimTitle(value)
-      await field.fill(value)
-      if (kind === 'name') await expect(page.getByRole('option', { selected: true })).toContainText(value)
-      await page.keyboard.press('Enter')
     }
     await expect(field).toBeHidden()
   }
 
-  async expectVaultHasNote(vaultName: string, reference: string, name: string): Promise<void> {
+  async enterText(value: string): Promise<void> {
+    const { page } = this.scenario
+    const field = await this.readPaletteInput('type')
+    await field.fill(value)
+    await page.keyboard.press('Enter')
+    await expect(field).toBeHidden()
+  }
+
+  private async readPaletteInput(action: PaletteAction): Promise<Locator> {
+    const field = getPaletteInput(this.scenario.page)
+    assertPaletteField(action, await this.readPaletteKind(field))
+    return field
+  }
+
+  private async readPaletteKind(field: Locator): Promise<PaletteField> {
+    // The palette that took the command asks for its input once its placeholder is no longer the command prompt.
+    await expect(field).not.toHaveAttribute('placeholder', COMMAND_PLACEHOLDER)
+    return getPaletteField((await field.getAttribute('placeholder')) ?? '')
+  }
+
+  async expectVaultContainsNote(vaultName: string, reference: string, name: string): Promise<void> {
     if (this.scenario.hasWorld) this.scenario.getVault(vaultName)
-    else this.scenario.setVault(vaultName)
+    else this.scenario.checkSharedVault(vaultName)
     if (reference === 'titled') {
       await expect.poll(() => this.findNote(name)).not.toBe('')
       this.scenario.rememberNote(name, await this.findNote(name))
@@ -109,9 +139,8 @@ export class ApplicationDriver {
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
-  async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
-    if (!this.scenario.hasWorld) this.scenario.setVault(vaultName)
-    const expected = parseCount(count)
+  async expectNoteCount(type: string, vaultName: string, expected: number): Promise<void> {
+    if (!this.scenario.hasWorld) this.scenario.checkSharedVault(vaultName)
     const folder = this.scenario.hasWorld
       ? this.scenario.getWorld().getFolder(this.scenario.getVault(vaultName))
       : getVaultPath()
@@ -120,9 +149,7 @@ export class ApplicationDriver {
 
   private async expectActiveFileHasMadeText(): Promise<void> {
     const { request } = this.scenario.page
-    await expect
-      .poll(async () => (await listVersions(request, await readActivePath(request))).some((one) => !one.title.startsWith(TEXT_LAYER)))
-      .toBe(true)
+    await expect.poll(async () => hasMadeText(request, await readActivePath(request))).toBe(true)
   }
 
   private async expectOpenTabHasText(): Promise<void> {

@@ -10,8 +10,9 @@ import {
   getAncestors,
   getStem,
   getTitlePattern,
+  assertPaletteField,
+  getCurrentVersionLabel,
   getPaletteField,
-  parseCount,
   parseReference,
   parsePlace,
   parseTabKind,
@@ -104,6 +105,29 @@ describe('getPaletteField', () => {
   })
 })
 
+describe('assertPaletteField', () => {
+  it('lets a name go to a name, a pick to a list or a note search, a text to a text', () => {
+    expect(() => assertPaletteField('name', 'name')).not.toThrow()
+    expect(() => assertPaletteField('pick', 'item')).not.toThrow()
+    expect(() => assertPaletteField('pick', 'note')).not.toThrow()
+    expect(() => assertPaletteField('type', 'text')).not.toThrow()
+  })
+
+  it('names the step that does not match the palette', () => {
+    expect(() => assertPaletteField('type', 'item')).toThrow('the person types here, but the palette asks for an item to pick')
+    expect(() => assertPaletteField('pick', 'name')).toThrow('the person picks here, but the palette asks for a name')
+    expect(() => assertPaletteField('name', 'text')).toThrow('the person names it here, but the palette asks for a text')
+  })
+})
+
+describe('getCurrentVersionLabel', () => {
+  it('gives the title the product shows for the live version of each kind of text', () => {
+    expect(getCurrentVersionLabel('recognized text')).toBe('Recognized text (current)')
+    expect(getCurrentVersionLabel('transcript')).toBe('Transcript (current)')
+    expect(getCurrentVersionLabel('article')).toBe('Article (current)')
+  })
+})
+
 describe('parseApplication', () => {
   it('takes the editor', () => {
     expect(parseApplication('editor')).toBe('editor')
@@ -115,16 +139,6 @@ describe('parseApplication', () => {
 
   it('throws for a word that is no application', () => {
     expect(() => parseApplication('mail')).toThrow('"mail" is not an application')
-  })
-})
-
-describe('parseCount', () => {
-  it('reads digits as a number', () => {
-    expect(parseCount('12')).toBe(12)
-  })
-
-  it('throws for other text', () => {
-    expect(() => parseCount('two')).toThrow('"two" is not a number')
   })
 })
 
