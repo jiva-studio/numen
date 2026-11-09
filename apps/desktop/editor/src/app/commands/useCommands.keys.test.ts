@@ -7,12 +7,14 @@ const h = vi.hoisted(() => ({
   startCommand: vi.fn(),
   setCommandsOpen: vi.fn(),
   setSearchOpen: vi.fn(),
+  runInvocation: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: {},
   findShortcutKeys: () => undefined,
-  runInvocation: vi.fn(() => Promise.resolve()),
+  runInvocation: h.runInvocation,
+  createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
   registerCommand: vi.fn(),
   useSearch: () => ({ setOpen: h.setSearchOpen, open: { value: false } }),
   useCommandPalette: () => ({
@@ -28,7 +30,14 @@ const target = { path: 'Tides.md', title: 'Tides', isFolder: false, others: [], 
 
 const windowValues = { 'window.isFieldFocused': false, 'window.isPaletteOpen': false }
 
-const create = (keybindings: readonly { key: string; command: string; when?: string }[]) => {
+const create = (
+  keybindings: readonly {
+    key: string
+    command: string
+    when?: string
+    values?: Record<string, string>
+  }[],
+) => {
   const pluginHost = createPluginHost({
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -143,5 +152,29 @@ describe('the default of a key press', () => {
     expect(shifted.defaultPrevented).toBe(false)
     expect(h.setSearchOpen).toHaveBeenCalledWith(true)
     expect(h.setCommandsOpen).toHaveBeenCalledWith(true)
+  })
+})
+
+describe('a key bound to a command of the application with values', () => {
+  it('runs the command over the front target with the values, offered or not', () => {
+    const one = create([
+      {
+        key: 'mod+shift+p',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        when: 'target.isNote',
+      },
+    ])
+    const event = press('KeyP', { ctrlKey: true, shiftKey: true })
+
+    one.onKeyDown(event)
+
+    expect(h.runInvocation.mock.calls[0]?.[0]).toEqual({
+      id: 'app:file.reveal',
+      path: 'Tides.md',
+      values: { kind: 'plex' },
+    })
+    expect(h.startCommand).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(true)
   })
 })

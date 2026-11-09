@@ -296,6 +296,18 @@ export function useCommands(options: CommandsDepsOptions) {
       choice.values,
     )
 
+  /**
+   * Runs a command of the application over the front target with the values of its keybinding. The
+   * command is not asked whether it is offered: the reveal of a note is offered only as the rows that
+   * carry its values, and the condition of the key was judged when the key matched.
+   */
+  const runKeyWithValues = (command: string, values: Values): void => {
+    const invocation = withValues(createInvocation(command, getTarget()), values)
+    runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), (error) =>
+      writeMessage(formatErrorMessage(error), 'error'),
+    )
+  }
+
   /** Runs the command of the application a key is bound to, with the values of the keybinding. */
   const runAppKey = (command: string, values: Values): void => {
     if (command === COMMAND.searchVault) {
@@ -304,7 +316,8 @@ export function useCommands(options: CommandsDepsOptions) {
     } else if (command === COMMAND.openCommands) {
       palette.setOpen(false)
       commands.setOpen(!commands.open.value)
-    } else runCommand(command, getTarget(), undefined, values)
+    } else if (Object.keys(values).length > 0) runKeyWithValues(command, values)
+    else runCommand(command, getTarget())
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {

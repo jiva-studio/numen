@@ -22,6 +22,7 @@ vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
+  createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
   registerCommand: h.registerCommand,
   useSearch: () => {
     return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
@@ -266,14 +267,15 @@ describe('a key press', () => {
   })
 
   it('runs the command of the application with the values of the keybinding', () => {
-    h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup(false, createHost({ command: 'app:file.open', values: { placement: 'split' } }))
 
     one.onKeyDown(keyEvent('g'))
 
-    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:file.open', target, undefined, {
-      placement: 'split',
+    expect(h.runInvocation.mock.calls[0]?.[0]).toMatchObject({
+      id: 'app:file.open',
+      values: { placement: 'split' },
     })
+    expect(h.startCommand).not.toHaveBeenCalled()
   })
 
   it('prevents nothing and runs nothing where no keybinding matched', () => {
