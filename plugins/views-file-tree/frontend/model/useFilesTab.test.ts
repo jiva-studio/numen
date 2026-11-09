@@ -506,7 +506,7 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(COPY_PATH.key)
 
-    expect(recorded).toStrictEqual(['runs app:note.copyPath physics/Kelvin.md Kelvin.md'])
+    expect(recorded).toStrictEqual(['runs app:file.copyPath physics/Kelvin.md Kelvin.md'])
   })
 
   it('runs the command of an entry inside a submenu', async () => {
