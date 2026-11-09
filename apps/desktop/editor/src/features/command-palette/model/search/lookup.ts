@@ -55,6 +55,8 @@ export interface SearchHit {
   tabKind?: string
   selector: Selector | null
   isCreation?: boolean
+  actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
+  actionCommands?: Readonly<Record<string, string>>
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -67,16 +69,40 @@ type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 
 function createNoteActions(
   openText: string,
-  menu: readonly PaletteAction[],
-): { actions: readonly PaletteAction[]; actionIds: readonly string[] } {
+  entries: readonly SlotItem[],
+): {
+  actions: readonly PaletteAction[]
+  actionIds: readonly string[]
+  valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
+} {
+  const commands = entries
+    .filter((one) => one.kind === 'command')
+    .map((one) => ({ one, id: getActionId(one.command, one.values) }))
+  const menu = commands.map(({ one, id }) => ({ id, text: one.title }))
   const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
-  return { actions, actionIds: actions.map((one) => one.id) }
+  const withValues = commands.flatMap(({ one, id }) =>
+    one.values && Object.keys(one.values).length > 0 ? [[id, one.values] as const] : [],
+  )
+  const otherIds = commands.filter(({ one, id }) => id !== one.command)
+  return {
+    actions,
+    actionIds: actions.map((one) => one.id),
+    valuesOfHit: {
+      ...(withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {}),
+      ...(otherIds.length > 0
+        ? { actionCommands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
+        : {}),
+    },
+  }
 }
 
-function createMenuActions(entries: readonly SlotItem[]): readonly PaletteAction[] {
-  return entries.flatMap((one) =>
-    one.kind === 'command' ? [{ id: one.command, text: one.title }] : [],
+function getActionId(command: string, values: Readonly<Record<string, string>> | undefined) {
+  const names = Object.keys(values ?? {}).sort()
+  if (!values || names.length === 0) return command
+  const pairs = names.map(
+    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values[name] ?? '')}`,
   )
+  return `${command}?${pairs.join('&')}`
 }
 
 /**
@@ -88,9 +114,8 @@ export function createNameItem(
   words: Words,
   entries: readonly SlotItem[] = [],
 ): SearchRow {
-  const menu = createMenuActions(entries)
-  const atHeading = createNoteActions(words.readAt, menu)
-  const byName = createNoteActions(words.read, menu)
+  const atHeading = createNoteActions(words.readAt, entries)
+  const byName = createNoteActions(words.read, entries)
   return one.heading
     ? {
         item: {
@@ -107,6 +132,7 @@ export function createNameItem(
           start: 0,
           length: 0,
           actionIds: atHeading.actionIds,
+          ...atHeading.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -126,6 +152,7 @@ export function createNameItem(
           start: 0,
           length: 0,
           actionIds: byName.actionIds,
+          ...byName.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -139,7 +166,7 @@ export function createPassageItem(
   words: Words,
   entries: readonly SlotItem[] = [],
 ): SearchRow {
-  const note = createNoteActions(words.read, createMenuActions(entries))
+  const note = createNoteActions(words.read, entries)
   const document = [{ id: ROW.openDocument, text: words.readDocument }]
   return {
     item: {
@@ -156,6 +183,7 @@ export function createPassageItem(
       start: one.start,
       length: one.length,
       actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
+      ...(one.isNote ? note.valuesOfHit : {}),
       type: one.isNote ? one.type : null,
       ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
       selector: one.isNote ? null : one.selector,
@@ -174,6 +202,18 @@ export interface ResultChoice {
     readonly selector?: Selector
   } | null
   readonly input: string
+  readonly values?: Readonly<Record<string, string>>
+}
+
+function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
+  const place = { path: result.path, file: result.path, title: result.title }
+  const values = result.actionValues?.[action]
+  return {
+    command: result.actionCommands?.[action] ?? action,
+    over: result.line >= 0 ? { ...place, line: result.line } : place,
+    input: '',
+    ...(values ? { values } : {}),
+  }
 }
 
 /**
@@ -182,31 +222,26 @@ export interface ResultChoice {
  * file and selector, and the row that creates a note by the window and the words typed.
  */
 export function resolveChoice(
-  hit: SearchHit | undefined,
+  result: SearchHit | undefined,
   action: string,
   typed = '',
 ): ResultChoice | null {
-  if (!hit || !hit.actionIds.includes(action)) return null
-  if (hit.isCreation) {
+  if (!result || !result.actionIds.includes(action)) return null
+  if (result.isCreation) {
     return {
       command: action,
       over: null,
       input: typed.trim(),
     }
   }
-  if (hit.type === null) {
+  if (result.type === null) {
     if (action !== ROW.openDocument) return null
-    const place = { path: '', file: hit.path, title: hit.title }
+    const place = { path: '', file: result.path, title: result.title }
     return {
       command: action,
-      over: hit.selector ? { ...place, selector: hit.selector } : place,
+      over: result.selector ? { ...place, selector: result.selector } : place,
       input: '',
     }
   }
-  const place = { path: hit.path, file: hit.path, title: hit.title }
-  return {
-    command: action,
-    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
-    input: '',
-  }
+  return resolveNoteChoice(result, action)
 }

@@ -658,3 +658,84 @@ describe('the layout of the slots', () => {
     ])
   })
 })
+
+describe('the values of an entry', () => {
+  it('stay on the command item it draws', () => {
+    const { registry } = setup([
+      {
+        pluginId: LEDGER,
+        slot: 'titleBar.commands',
+        command: 'ledger.open',
+        values: { book: 'main' },
+      },
+      { pluginId: HARBOR, slot: 'titleBar.commands', command: 'harbor.open' },
+    ])
+
+    const items = registry.getEntries('titleBar.commands')
+
+    expect(
+      items.find((one) => one.key === `${LEDGER}/command/${LEDGER}:ledger.open?book=main`),
+    ).toMatchObject({
+      values: { book: 'main' },
+    })
+    expect(
+      items.find((one) => one.key === `${HARBOR}/command/${HARBOR}:harbor.open`),
+    ).not.toHaveProperty('values')
+  })
+})
+
+describe('the entries of one command with different values', () => {
+  it('are drawn as items with different keys, and the same values draw one item', () => {
+    const { registry } = setup([
+      {
+        pluginId: LEDGER,
+        slot: 'titleBar.commands',
+        command: 'ledger.open',
+        values: { book: 'main' },
+        order: 1,
+      },
+      {
+        pluginId: LEDGER,
+        slot: 'titleBar.commands',
+        command: 'ledger.open',
+        values: { book: 'spare' },
+        order: 2,
+      },
+      {
+        pluginId: LEDGER,
+        slot: 'titleBar.commands',
+        command: 'ledger.open',
+        values: { book: 'spare' },
+        order: 3,
+      },
+    ])
+
+    const items = registry.getEntries('titleBar.commands')
+
+    expect(items.map((one) => one.key)).toStrictEqual([
+      `${LEDGER}/command/${LEDGER}:ledger.open?book=main`,
+      `${LEDGER}/command/${LEDGER}:ledger.open?book=spare`,
+    ])
+  })
+})
+
+describe('the look of a command entry', () => {
+  it('is the title and icon of the entry where it has them, and the look of the command otherwise', () => {
+    const icon = { name: 'pin' }
+    const { registry } = setup([
+      {
+        pluginId: LEDGER,
+        slot: 'titleBar.commands',
+        command: 'ledger.open',
+        title: 'Pinned',
+        icon,
+      },
+      { pluginId: HARBOR, slot: 'titleBar.commands', command: 'harbor.open' },
+    ])
+
+    const [harbor, ledger] = registry.getEntries('titleBar.commands')
+
+    expect(ledger).toMatchObject({ title: 'Pinned', icon })
+    expect(harbor).toMatchObject({ title: 'Open harbor' })
+  })
+})

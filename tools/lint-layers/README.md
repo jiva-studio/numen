@@ -45,6 +45,7 @@ Every check below derives its subject from the repository (the manifests, `go.wo
 - `no-suppressions`: no `nolint`, `eslint-disable`, `eslint-enable`, `@ts-expect-error`, `@ts-ignore` or `@ts-nocheck` comment; no `exclusions`, `exclude-functions`, `exclude-rules`, `exclude-dirs`, `exclude-files` key in a golangci configuration; no source file named in an eslint `ignores` or `files` entry; no array of repository files, in a constant or inline, in a script of `tools/lint-layers` or `stylelint.config.mjs`. Generated code is detected by its `Code generated ... DO NOT EDIT` header and is not read. It reads comments with `typescript` and `@vue/compiler-sfc`, which `package.json` declares.
 - `every-path-has-a-layer`: every Go module and npm package is under `libs`, `plugins`, `apps` or an auxiliary root (`tools`, `tests`, `docs`); no file is directly in a layer root; every plugin directory has a `manifest.json`.
 - `workspace-lists-every-module`: `go.work` uses exactly the directories that hold a `go.mod`.
+- `json-keys-camelcase`: every JSON key in a plugin manifest (including JSON schemas), API fixture and TypeScript JSON type is `camelCase`.
 - Before a verifier that runs `golangci-lint` starts, the linter must be built with a Go no older than the `go` line of `go.work`.
 
 The checks are tested with violation fixtures: `npm test` in this directory.

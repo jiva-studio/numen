@@ -51,6 +51,7 @@ const createWindow = (
       rename: unused,
       remove: unused,
       move: unused,
+      listNames: unused,
       createFolder: unused,
     },
     vaults: {

@@ -18,6 +18,14 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     canOmitNameOverFolder: true,
     ...withWhen('window.isVaultReady'),
   },
+  {
+    id: COMMAND.createFolder,
+    text: words.newFolder,
+    group: 'window',
+    input: 'name',
+    canOmitNameOverFolder: true,
+    ...withWhen('window.isVaultReady'),
+  },
 ]
 
 export const createWindowNavigationCommands = (words: Words, agent: string): readonly Command[] => [

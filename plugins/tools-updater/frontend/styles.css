@@ -1,62 +1,9 @@
 /* Updater plugin styles */
-.update-indicator {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
-}
-
-/* The chip: flat, with a ground and no border. Height, text size and padding are the same in the
-   three title bar chips; only the width follows the content. */
-.update-indicator__trigger {
-  --chip-height: 20px;
-  --chip-text: 12px;
-  --chip-pad: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  height: var(--chip-height);
-  padding: 0 var(--chip-pad);
-  background: var(--numen-accent);
-  border: none;
-  border-radius: var(--numen-radius);
-  outline: none;
-  color: var(--numen-accent-ink);
-  font: inherit;
-  font-size: var(--chip-text);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-button.update-indicator__trigger {
-  cursor: pointer;
-}
-
-button.update-indicator__trigger:hover,
-button.update-indicator__trigger[aria-expanded='true'] {
-  filter: brightness(1.08);
-}
-
-/* The panel of the Background tasks popover: raised ground, rule border, panel radius and shadow. */
 .update-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
   display: flex;
   flex-direction: column;
   width: 20rem;
   max-width: calc(100vw - 1rem);
-  background: var(--numen-raised);
-  color: var(--numen-ink);
-  border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
-  box-shadow: var(--numen-panel-shadow);
-  overflow: hidden;
-  z-index: 50;
 }
 
 .update-popover__header {

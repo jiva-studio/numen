@@ -10,6 +10,16 @@ export const compareText = (a: string, b: string): number => {
   return a < b ? -1 : 1
 }
 
+/** The values of a command entry as `?name=value` pairs sorted by name; empty where there are none. */
+export const getValuesKey = (values: DeclaredSlotEntry['values']): string => {
+  const names = Object.keys(values ?? {}).sort(compareText)
+  if (names.length === 0) return ''
+  const pairs = names.map(
+    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values?.[name] ?? '')}`,
+  )
+  return `?${pairs.join('&')}`
+}
+
 /** An entry with the item it draws, in the order a slot sorts them. */
 export interface Placed {
   readonly entry: DeclaredSlotEntry
@@ -35,14 +45,17 @@ const compareGroups = (a: string, b: string): number => {
 export const compareInSlot = (a: Placed, b: Placed): number =>
   compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
 
+const getRunKey = (placed: Placed): string =>
+  `${placed.item.kind === 'command' ? placed.item.command : ''}${getValuesKey(placed.entry.values)}`
+
 export function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   const first = new Map<string, Placed>()
   for (const one of placed) {
     if (one.item.kind !== 'command') continue
-    const current = first.get(one.item.command)
-    if (current === undefined || compareInSlot(one, current) < 0) first.set(one.item.command, one)
+    const current = first.get(getRunKey(one))
+    if (current === undefined || compareInSlot(one, current) < 0) first.set(getRunKey(one), one)
   }
-  return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
+  return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
 }
 
 /**

@@ -32,3 +32,22 @@ export const SHARED_COMMANDS: readonly SharedCommand[] = [
   // Deletes the downloaded media of a link note.
   { id: 'app:link.deleteMedia', title: 'Delete media', arguments: [] },
 ]
+
+/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */
+export interface AppCommandArgument {
+  readonly name: string
+  readonly title: string
+  readonly type: string
+  readonly options: readonly string[]
+}
+
+// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only
+// for these arguments and these values.
+export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {
+  'app:file.open': [
+    { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
+  ],
+  'app:file.remove': [
+    { name: 'removal', title: 'Removal', type: 'enum', options: ['trash', 'permanent'] },
+  ],
+}

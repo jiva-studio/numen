@@ -180,7 +180,7 @@ describe('the commands as they open', () => {
         'app:file.remove',
         'app:file.copyPath',
       ],
-      window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
+      window: ['app:note.create', 'app:folder.create', 'app:tab.close', 'app:vault.search'],
       settings: ['app:settings.open'],
       vault: [
         'app:file.open#note',
@@ -349,6 +349,26 @@ describe('the command that makes a note, run over a folder', () => {
     const { commands } = createPalette()
 
     expect(commands.startCommand('app:note.create', front({ isTargetNamed: true }))).toBeNull()
+  })
+
+  it('starts the command that makes a folder without a name where a caller named the folder', () => {
+    const { commands } = createPalette()
+
+    const started = commands.startCommand('app:folder.create', folder({ isTargetNamed: true }))
+
+    expect(started).toMatchObject({
+      id: 'app:folder.create',
+      path: 'physics',
+      name: '',
+      isFolder: true,
+    })
+  })
+
+  it('asks for the path of a folder where no caller named the folder', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:folder.create', folder())).toBeNull()
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
   })
 
   it('asks for a name in a command of another kind over a folder a caller named', () => {
@@ -1664,6 +1684,45 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     const result = chooseRow(commands)
     expect(result?.id).toBe('org.example.sample:args.run')
     expect(result?.values).toStrictEqual({ topic: 'Quantum' })
+  })
+
+  it('asks only for the arguments the caller did not supply and keeps the supplied ones', () => {
+    const commands = useCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      getExtraCommands: () => [
+        {
+          id: 'org.example.sample:args.run',
+          text: 'With args',
+          group: 'window',
+          input: 'arguments',
+          prompts: [
+            { name: 'topic', title: 'Topic title', isRequired: true },
+            { name: 'detail', title: 'Detail title', isRequired: true },
+          ],
+          isAvailable: () => true,
+        },
+      ],
+    })
+
+    const all = commands.startCommand('org.example.sample:args.run', front(), undefined, {
+      topic: 'Quantum',
+      detail: 'Spin',
+    })
+    expect(all?.id).toBe('org.example.sample:args.run')
+
+    commands.startCommand('org.example.sample:args.run', front(), undefined, { detail: 'Spin' })
+    expect(commands.placeholder.value).toBe('Topic title')
+    commands.setTyped('Quantum').catch(rethrow)
+    const result = chooseRow(commands)
+    expect(result?.values).toStrictEqual({ detail: 'Spin', topic: 'Quantum' })
   })
 
   it('toggles search and command palettes via keyboard shortcuts', () => {

@@ -60,7 +60,7 @@ describe('the index stats frontend', () => {
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(get).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('.index-stats__trigger').text()).toMatch(/^⬡12.480$/)
+    expect(wrapper.find('button').text()).toMatch(/^⬡12.480$/)
   })
 
   it('draws the new count when the next ask returns one', async () => {
@@ -69,7 +69,7 @@ describe('the index stats frontend', () => {
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(waits.map((one) => one.delayMs)).toEqual([2000])
-    expect(wrapper.find('.index-stats').exists()).toBe(true)
+    expect(wrapper.find('button').exists()).toBe(true)
   })
 
   it('stops asking with the plugin', async () => {

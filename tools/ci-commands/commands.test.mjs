@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import test from 'node:test'
-import { ReadError, getPluginCommands } from './commands.mjs'
+import { ReadError, getPluginCommands, readWords } from './commands.mjs'
 
 const writePlugin = async (root, name, manifest, frontend) => {
   await mkdir(join(root, name, 'frontend'), { recursive: true })
@@ -260,4 +260,31 @@ test('a registration in a file other than index.ts is read', () =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
         message: 'tools-pipe registers pipe.blow, which its manifest does not declare',
       }),
+  ))
+
+test('readWords reads string literals, template functions and imported WORDS from the syntax tree', () =>
+  withPlugins(
+    async (root) => {
+      await writeFile(
+        join(root, 'other.ts'),
+        "export const WORDS = {\n  open: 'Open note',\n} as const\n",
+      )
+    },
+    async (at) => {
+      const source = [
+        "import { WORDS as other } from './other'",
+        "const EARLIER = { find: 'Wrong' }",
+        'export const WORDS = {',
+        "  find: 'Search the vault',",
+        '  commandRan: (title: string) => `${title}: done`,',
+        '  delegated: other.open,',
+        '}',
+      ].join('\n')
+      assert.equal(await readWords(source, 'find', at), 'Search the vault')
+      assert.equal(await readWords(source, 'commandRan', at), '*title*: done')
+      assert.equal(await readWords(source, 'delegated', at), 'Open note')
+      await assert.rejects(readWords(source, 'missing', at), {
+        message: "the words say nothing under 'missing'",
+      })
+    },
   ))

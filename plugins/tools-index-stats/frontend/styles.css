@@ -1,42 +1,9 @@
 /* Index stats plugin styles */
-.index-stats {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
-}
-
-/* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
-   same in the three title bar chips; only the width follows the content. */
-.index-stats__trigger {
-  --chip-height: 20px;
-  --chip-text: 12px;
-  --chip-pad: 8px;
-  --chip-mark: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--chip-pad) / 2);
-  box-sizing: border-box;
-  height: var(--chip-height);
-  padding: 0 var(--chip-pad);
-  background: var(--numen-surface);
-  border: none;
-  border-radius: var(--numen-radius);
-  outline: none;
-  color: var(--numen-ink);
-  font: inherit;
-  font-size: var(--chip-text);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  cursor: pointer;
-}
-
 .index-stats__icon {
   flex: none;
-  width: var(--chip-mark);
+  width: var(--numen-chip-mark);
   color: var(--numen-hushed);
-  font-size: var(--chip-mark);
+  font-size: var(--numen-chip-mark);
   text-align: center;
 }
 
@@ -46,27 +13,12 @@
   white-space: nowrap;
 }
 
-.index-stats__trigger:hover,
-.index-stats__trigger[aria-expanded='true'] {
-  background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
-}
-
 .index-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
   display: flex;
   flex-direction: column;
   width: 24rem;
   max-width: calc(100vw - 1rem);
   max-height: 28rem;
-  background: var(--numen-raised);
-  color: var(--numen-ink);
-  border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
-  box-shadow: var(--numen-panel-shadow);
-  overflow: hidden;
-  z-index: 50;
 }
 
 .index-popover__header {

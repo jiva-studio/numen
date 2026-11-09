@@ -86,8 +86,8 @@ func settle(t *testing.T, bridge *Embedder, mock *mockEmbeddingServer, readsBefo
 	plugintest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
 		return mock.getModelCalls.Load() != readsBefore
 	})
-	bridge.changeMu.Lock()
-	defer bridge.changeMu.Unlock()
+	bridge.announceMu.Lock()
+	defer bridge.announceMu.Unlock()
 }
 
 // A model the plugin reports differently after a setting of its own is announced.

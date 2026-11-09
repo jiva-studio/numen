@@ -29,7 +29,7 @@ const taskList = computed(() => orderTasks(props.tasks))
 </script>
 
 <template>
-  <div class="task-popover" role="dialog" aria-modal="false" :aria-label="words.title">
+  <div class="task-popover">
     <div class="task-popover__header">
       <span class="task-popover__title">{{ words.title }}</span>
       <Button
@@ -69,12 +69,6 @@ const taskList = computed(() => orderTasks(props.tasks))
   width: 24rem;
   max-width: calc(100vw - 1rem);
   max-height: 22rem;
-  background: var(--numen-raised);
-  color: var(--numen-ink);
-  border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
-  box-shadow: var(--numen-panel-shadow);
-  overflow: hidden;
 }
 
 .task-popover__header {

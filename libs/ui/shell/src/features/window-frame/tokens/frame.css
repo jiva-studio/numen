@@ -1,12 +1,4 @@
 /*
- * The height of a title bar, `TITLE_BAR_HEIGHT` of `lib/sizes.ts` and `BarHeight` of
- * `apps/desktop/internal/frame`.
- */
-:root {
-  --numen-title-bar-height: 32px;
-}
-
-/*
  * The corner radius and the top edge of the window; `useWindowFrame` sets both on the root once the
  * platform is known. Both are zero where the window has neither.
  */

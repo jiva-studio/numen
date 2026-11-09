@@ -101,6 +101,23 @@ describe('the menu of a row', () => {
     ])
   })
 
+  it('runs the command of an entry with the values of the entry', async () => {
+    const { host, commands } = createHost()
+
+    await createFilesTabDeps(host, 'files').runCommand('app:file.open', rowTarget, undefined, {
+      placement: 'split',
+    })
+
+    expect(commands.getRuns()).toStrictEqual([
+      {
+        command: 'app:file.open',
+        target: rowTarget,
+        itemId: undefined,
+        values: { placement: 'split' },
+      },
+    ])
+  })
+
   it('is empty, and runs nothing, in a window that offers no slots and no commands', async () => {
     const { host } = createHost()
     const { slots: _slots, commands: _commands, ...withoutSlots } = host
@@ -121,14 +138,13 @@ describe('the menu of a row', () => {
 })
 
 describe('what else a files tab asks of the window', () => {
-  it('makes and moves through the files of the vault', async () => {
+  it('moves through the files of the vault', async () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     await deps.movePath('a.md', 'dir/a.md')
-    await deps.createFolder('dir')
 
-    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir'])
+    expect(recorded.made).toStrictEqual(['move a.md dir/a.md'])
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {

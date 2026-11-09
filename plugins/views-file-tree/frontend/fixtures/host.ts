@@ -47,7 +47,7 @@ const RENAME_ENTRY = command(TREE, 'tree.renameFile', 'Rename')
 const COPY_PATH = command('app', 'file.copyPath', 'Copy path')
 export const TRASH = command('app', 'file.remove', 'Move to trash')
 const NEW_NOTE_ENTRY = command('app', 'note.create', 'Create note')
-const NEW_FOLDER_ENTRY = command(TREE, 'tree.createFolder', 'Create folder')
+const NEW_FOLDER_ENTRY = command('app', 'folder.create', 'Create folder')
 export const ASK = command(CHAT, 'note.ask', 'Ask about the note')
 
 export const NEW_MENU: SlotSubmenu = {
@@ -140,7 +140,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       recorded.made.push(`move ${from} ${to}`)
     },
     createFolder: async (path) => {
-      recorded.made.push(`folder ${path}`)
+      recorded.made.push(`createFolder ${path}`)
     },
     createNote: record(NOTE_TYPE),
   }

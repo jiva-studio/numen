@@ -82,7 +82,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await waitForPassage(page, 'The water is low at dawn', `assets/${name}`)
     await page.keyboard.press('Escape')
     await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^\d+ of \d+$/)
-    await page.locator('.tasks-status__trigger').click()
+    await page.locator('[data-tasks-status] button').click()
     await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
     await page.keyboard.press('Escape')
   })

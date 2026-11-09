@@ -21,7 +21,7 @@ import { getTargetValues } from '../when/targetValues'
 import type { WhenValues } from '../when/when'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
 import { findLayoutPlaces, getLayoutKey, type SlotLayout } from './slotLayout'
-import { compareText, layOut, sortPlaced, type Placed } from './slotOrder'
+import { compareText, getValuesKey, layOut, sortPlaced, type Placed } from './slotOrder'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -35,6 +35,7 @@ export interface DeclaredSlotEntry {
   readonly group?: string | undefined
   readonly order?: number | undefined
   readonly when?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 /** How a command available in a slot is drawn. */
@@ -151,7 +152,7 @@ function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): De
 }
 
 const getCommandItemKey = (entry: DeclaredSlotEntry, command: string): string =>
-  `${entry.pluginId}/command/${command}`
+  `${entry.pluginId}/command/${command}${getValuesKey(entry.values)}`
 
 const getViewItemKey = (entry: DeclaredSlotEntry, view: string): string =>
   `${entry.pluginId}/view/${view}`
@@ -169,15 +170,17 @@ function toCommandItem(
   look: SlotCommandLook | undefined,
 ): SlotItem | undefined {
   if (!look) return undefined
+  const icon = entry.icon ?? look.icon
   return {
     kind: 'command',
     key: getCommandItemKey(entry, command),
     pluginId: entry.pluginId,
     command,
-    title: look.title,
-    ...(look.icon === undefined ? {} : { icon: look.icon }),
+    title: entry.title || look.title,
+    ...(icon === undefined ? {} : { icon }),
     shortcut: look.shortcut ?? '',
     hasItems: look.hasItems ?? false,
+    ...(entry.values && Object.keys(entry.values).length > 0 ? { values: entry.values } : {}),
   }
 }
 
@@ -335,5 +338,6 @@ export function readManifestSlotEntries(
     ...(one.group ? { group: one.group } : {}),
     ...(one.order === undefined ? {} : { order: one.order }),
     ...(one.when ? { when: one.when } : {}),
+    ...(Object.keys(one.values).length > 0 ? { values: one.values } : {}),
   }))
 }

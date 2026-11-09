@@ -120,12 +120,13 @@ function createPaletteItems(
     ],
     pluginHost,
     getTarget: options.getTarget,
-    runApp: async (id, target, itemId) => {
-      await runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps())
+    runApp: async (id, target, itemId, values) => {
+      const invocation = withValues(createInvocation(id, target, itemId), values)
+      await runInvocationToEnd(invocation, getCommandDeps())
     },
-    runPlugin: async (id, target, itemId) => {
+    runPlugin: async (id, target, itemId, values) => {
       const note = await getCommandNote(target)
-      await pluginHost?.executeCommand(id, note, { itemId, isAwaited: true })
+      await pluginHost?.executeCommand(id, note, { itemId, ...getValues(values), isAwaited: true })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)
@@ -133,6 +134,19 @@ function createPaletteItems(
     },
   })
 }
+
+type Values = Readonly<Record<string, string>>
+
+const getValues = (values: Values | undefined): { values?: Values } =>
+  values && Object.keys(values).length > 0 ? { values } : {}
+
+const withValues = (
+  invocation: CommandInvocation,
+  values: Values | undefined,
+): CommandInvocation => ({
+  ...invocation,
+  ...getValues(values),
+})
 
 async function runInvocationToEnd(
   invocation: CommandInvocation,
@@ -161,14 +175,15 @@ interface CommandRunnerParts {
 /** How a command is run: with the text typed for it, and whether its caller awaits it. */
 interface RunWay {
   readonly input?: string | undefined
+  readonly values?: Values | undefined
   readonly isAwaited: boolean
 }
 
 /**
  * The two runs of a command of the window. The run of the palette and the shortcuts writes its
  * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
- * writes nothing: it settles when the run ends with the path of the note it made, empty where it
- * made none, and rejects with its error.
+ * writes nothing: it settles when the run ends with the path of the note or folder it made, empty
+ * where it made none, and rejects with its error.
  */
 export function createCommandRunner(parts: CommandRunnerParts) {
   const { commands, palette, pluginHost, getCommandNote } = parts
@@ -177,21 +192,23 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
     if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
       commands.setOpen(false)
-      return getCommandNote(target).then((note) =>
-        way.isAwaited
-          ? pluginHost.executeCommand(id, note, { isAwaited: true })
-          : pluginHost.executeCommand(id, note),
-      )
+      return getCommandNote(target).then((note) => {
+        const run = { ...getValues(way.values), ...(way.isAwaited ? { isAwaited: true } : {}) }
+        return Object.keys(run).length > 0
+          ? pluginHost.executeCommand(id, note, run)
+          : pluginHost.executeCommand(id, note)
+      })
     }
-    const invocation =
-      way.input === undefined
+    const { values } = getValues(way.values)
+    const invocation = values
+      ? commands.startCommand(id, target, way.input, values)
+      : way.input === undefined
         ? commands.startCommand(id, target)
         : commands.startCommand(id, target, way.input)
     if (invocation) {
       const deps = parts.getCommandDeps()
-      return way.isAwaited
-        ? runInvocationToEnd(invocation, deps)
-        : runInvocation(invocation, deps, ANSWER_WORDS)
+      const run = withValues(invocation, way.values)
+      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps, ANSWER_WORDS)
     }
     if (commands.open.value) {
       palette.setOpen(false)
@@ -201,13 +218,17 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 
   return {
-    runCommand: (id: string, target: CommandTarget, input?: string): void => {
-      const run = startRun(id, target, { input, isAwaited: false })
+    runCommand: (id: string, target: CommandTarget, input?: string, values?: Values): void => {
+      const run = startRun(id, target, { input, values, isAwaited: false })
       if (typeof run === 'string') parts.writeMessage(run, 'error')
       else runInBackground(run, (error) => parts.writeMessage(formatErrorMessage(error), 'error'))
     },
-    runCommandToEnd: async (id: string, target: CommandTarget): Promise<string> => {
-      const run = startRun(id, target, { isAwaited: true })
+    runCommandToEnd: async (
+      id: string,
+      target: CommandTarget,
+      values?: Values,
+    ): Promise<string> => {
+      const run = startRun(id, target, { values, isAwaited: true })
       if (typeof run === 'string') throw new Error(run)
       const made = await run
       return typeof made === 'string' ? made : ''
@@ -271,6 +292,7 @@ export function useCommands(options: CommandsDepsOptions) {
       choice.command,
       choice.over ? { ...getTarget(), ...toResultTarget(choice.over) } : getTarget(),
       choice.input || undefined,
+      choice.values,
     )
 
   const onKeyDown = (event: KeyboardEvent) => {

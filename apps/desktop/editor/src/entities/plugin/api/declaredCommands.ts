@@ -38,6 +38,7 @@ interface WireSlotEntry {
         readonly group: string
         readonly order?: number | undefined
         readonly when: string
+        readonly values?: Readonly<Record<string, string>> | undefined
       }
     | undefined
 }
@@ -67,6 +68,7 @@ export interface DeclaredSlot {
   readonly group?: string
   readonly order?: number
   readonly when?: string
+  readonly values?: Readonly<Record<string, string>>
 }
 
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
@@ -134,6 +136,9 @@ const readArrangement = (entry: WireSlotEntry['entry']) => ({
   ...(entry?.group ? { group: entry.group } : {}),
   ...(entry?.order === undefined ? {} : { order: entry.order }),
   ...(entry?.when ? { when: entry.when } : {}),
+  ...(entry && entry.values && Object.keys(entry.values).length > 0
+    ? { values: { ...entry.values } }
+    : {}),
 })
 
 const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {

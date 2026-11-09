@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { findPluginEntryViolations, readPluginPackageExports } from './plugins.mjs'
+import {
+  findPluginEntryViolations,
+  parseEnabledGoLinters,
+  readPluginPackageExports,
+} from './plugins.mjs'
 
 const EXPORTS = {
   '@numen/plugin-sdk': {
@@ -71,4 +75,9 @@ test('the exports of the plugin packages of this repository are read', () => {
   const read = readPluginPackageExports()
   assert.ok('.' in read['@numen/plugin-sdk'])
   assert.ok('.' in read['@numen/ui'])
+})
+
+test('enabled Go linters are read from the YAML structure', () => {
+  const yaml = 'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
+  assert.deepEqual(parseEnabledGoLinters(yaml), ['errcheck', 'govet'])
 })

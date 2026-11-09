@@ -11,7 +11,7 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { CREATE_NOTE, TRASH_FILE } from '../lib/menu'
+import { CREATE_FOLDER, CREATE_NOTE, TRASH_FILE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -28,18 +28,6 @@ export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
 
 const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
   deps.showError(formatErrorMessage(error))
-}
-
-function createFileCreation(
-  list: FileTree,
-  deps: FilesTabDeps,
-  renamingPath: ReturnType<typeof ref<string | null>>,
-) {
-  const createFolder = async (path: string | null) => {
-    const createdItem = await create.createFolder(list, deps, path)
-    if (createdItem) renamingPath.value = createdItem
-  }
-  return { createFolder }
 }
 
 function createFileMoves(list: FileTree, deps: FilesTabDeps) {
@@ -98,6 +86,8 @@ const getMenuTarget = (
         overPaths.filter((one) => one !== path),
       )
 
+const CREATED_COMMANDS: ReadonlySet<string> = new Set([CREATE_NOTE, CREATE_FOLDER])
+
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: words.loadingItems }
 
@@ -146,9 +136,9 @@ function useFileMenu(
     const choice = slotMenu.pick(id)
     if (!choice) return
     deps
-      .runCommand(choice.command, choice.target.target, choice.itemId)
+      .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
       .then((made) =>
-        choice.command === CREATE_NOTE && made
+        CREATED_COMMANDS.has(choice.command) && made
           ? showCreated(choice.target.target.path, made)
           : undefined,
       )
@@ -218,7 +208,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   }
 
   const actions = createFileActions(list, deps)
-  const creators = createFileCreation(list, deps, renamingPath)
   const { move } = createFileMoves(list, deps)
   const fileMenu = useFileMenu(list, deps, async (folder, path) => {
     await list.openFolder(folder)
@@ -243,7 +232,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     select: (paths) => list.selectPaths(paths),
     move,
     drop: () => deps.setDraggedPaths([]),
-    createFolder: creators.createFolder,
     canDropData: (types) => deps.canDropData(types),
     dropData: async (data) => {
       const folder = create.getFolderFor(list, list.selectedPaths.value[0] ?? null)

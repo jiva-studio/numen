@@ -10,7 +10,7 @@ import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { waitForCurrentVectors } from '../../support/index-stats.js'
 
-const getItem = (page: Page): Locator => page.locator('.index-stats__trigger')
+const getItem = (page: Page): Locator => page.locator('button:has(.index-stats__figure)')
 
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''

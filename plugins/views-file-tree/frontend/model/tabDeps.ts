@@ -44,11 +44,10 @@ export function createFilesTabDeps(
     },
     getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
     listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
-    runCommand: (command, target, itemId) =>
-      commands?.run(command, target, itemId) ?? Promise.resolve(''),
+    runCommand: (command, target, itemId, values) =>
+      commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
-    createFolder: (path) => files.createFolder(path),
     canDropData: (types) => drops?.canDrop(types) ?? false,
     dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
     showError: (text) => workspace.showError(text),

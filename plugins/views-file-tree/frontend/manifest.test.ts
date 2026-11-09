@@ -62,7 +62,7 @@ describe('the menu of a row', () => {
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.createFolder',
+        command: 'app:folder.create',
         group: '0-tree',
         order: 20,
         when: 'target.isFolder',
@@ -84,11 +84,7 @@ describe('the menu of a row', () => {
       icon: 'pencil',
     })
     expect(getCommand('tree.createNote')).toBeUndefined()
-    expect(getCommand('tree.createFolder')).toStrictEqual({
-      id: 'tree.createFolder',
-      title: 'Create folder',
-      icon: 'folder-plus',
-    })
+    expect(getCommand('tree.createFolder')).toBeUndefined()
   })
 })
 

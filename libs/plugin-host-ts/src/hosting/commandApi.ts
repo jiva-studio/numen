@@ -42,7 +42,7 @@ export function createCommandApi(deps: HostDeps, registry: HostRegistry) {
         return []
       }
     },
-    /** Runs the command with the item picked; a shared command's handler gets the values of its arguments too. */
+    /** Runs the command with the item picked; the handler gets the values of its arguments. */
     executeCommand: async (
       id: string,
       note: CommandNote,
@@ -58,7 +58,7 @@ export function createCommandApi(deps: HostDeps, registry: HostRegistry) {
         entry = registry.commands.value.get(id)
       }
       if (!entry) return false
-      await runCommand(deps, entry, { note, itemId, isAwaited: run.isAwaited })
+      await runCommand(deps, entry, { note, itemId, values: run.values, isAwaited: run.isAwaited })
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {

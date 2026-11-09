@@ -49,7 +49,7 @@ function onDismiss() {
 </script>
 
 <template>
-  <div class="update-popover" role="dialog" aria-modal="false" :aria-label="words.title">
+  <div class="update-popover" data-update-popover>
     <header class="update-popover__header">
       <span class="update-popover__title">{{ words.title }}</span>
       <Button
