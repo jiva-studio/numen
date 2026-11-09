@@ -1,0 +1,55 @@
+# The target layout
+
+The tree below is the target of `libs/core`, `libs/notes` and the Go side of `apps/desktop`. A new package goes where the tree says; a package that sits elsewhere in main moves here when it is touched for another reason.
+
+```text
+libs/notes/                      the domain; imports nothing of this repository and does no I/O
+├── domain/                      entities, value objects, identifiers, refusals, rules over values
+├── markdown/                    reading and editing the text of a note's file
+├── edit/                        edit operations over a note's text
+├── textfile/                    the format of a text version's file
+└── ulid/                        the identifiers of notes; time and entropy come in as arguments
+
+libs/core/                       the hexagon
+├── port/<name>port/             the interfaces use cases require from several use case packages, and the types they exchange
+├── usecase/<noun>/              one scenario per file, with its request and result types and the interfaces only it consumes
+├── adapter/
+│   ├── cli/                     driving: the command line; parses arguments, calls use cases, prints
+│   ├── window/                  driving: the window's services; maps requests to use cases and results to the wire
+│   ├── index/                   driven: the SQLite index; stores and reads, never cuts or ranks
+│   └── settings/                driven: the settings file, its lock and its on-disk layout
+├── internal/
+│   ├── adapter/
+│   │   ├── filesystem/          driven: vault reader, writer, watcher, identity files
+│   │   ├── clock/               driven: the machine clock and a settable clock for tests
+│   │   ├── trash/               driven: the operating system's trash
+│   │   ├── plugin/              the plugin adapter: host* packages drive the core, *bridge packages are driven by it
+│   │   ├── theme/               driving: the stylesheet catalogue a window asks for
+│   │   └── (one folder per other technology: provision, models, onnxruntime, appstate, sharedmimeinfo)
+│   ├── adapterlib/              code several adapters share and that is not a port (retry, watchhub, wire)
+│   ├── chunking, vector, text   pure helpers of the core that no application names
+│   └── testsupport/, testonly/  helpers for tests
+└── container/                   the composition root: one package, wiring only
+
+apps/desktop/                    thin shells
+├── cmd/<binary>/                main: flags, then app.Run
+├── app/                         the window application: options, toolkit, menus, quit, wiring of the toolkit to the container
+└── internal/                    pieces only this application uses (keychain, platform paths, shutdown, version)
+```
+
+## What each folder may import
+
+- `libs/notes/*` imports the standard library and its own siblings only, along the edges its layer test lists.
+- `port/*` imports `libs/notes/domain` and the standard library.
+- `usecase/*` imports `port`, `libs/notes` and the use cases `useCaseEdges` lists.
+- A driven adapter imports `port`, `libs/notes` and its technology; it imports no other adapter.
+- A driving adapter imports `usecase`, `libs/notes` and the generated protocol; it imports nothing under `port/`.
+- `container` imports everything and returns no adapter type.
+- `apps/desktop` imports `container`, the toolkit and the types `container` hands out.
+
+## Where a type is declared
+
+- A fact about notes, vaults, links, cards or text, or a value both a use case and a port exchange: `libs/notes/domain`.
+- The vocabulary of a port that a domain type does not hold (a stored vector, a plugin manifest entry): the port package that owns it.
+- The request and result of one scenario: its use case package.
+- A shape that exists only to cross a wire: the generated protocol, mapped in the driving adapter.
