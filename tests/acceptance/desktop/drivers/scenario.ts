@@ -25,7 +25,7 @@ export class Scenario {
     this.hasWorkspace = true
   }
 
-  /** The paths of the files and folders of the vault below `folder`, a folder after what it holds. */
+  /** The paths of the files and folders of the vault below `folder`; the contents of a folder come before the folder. */
   async listEntries(folder = ''): Promise<string[]> {
     const entries = await listFiles(this.page.request, folder)
     const nested = await Promise.all(entries.filter((one) => one.isFolder).map((one) => this.listEntries(one.path)))

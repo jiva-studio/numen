@@ -30,6 +30,7 @@ export class SearchDriver {
   }
 
   private async waitForResult(text: string, group: string): Promise<Locator> {
+    // A new file is found once indexed, so the words are typed again until the result shows.
     const results = this.getResults(text, group)
     await expect(async () => {
       await this.type()

@@ -172,11 +172,12 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
       return
     }
     const saved = await readSavedTabs()
+    // The pane of a tab comes from its registered kind, so tabs are placed once the plugins of the
+    // kinds have started or failed.
+    await deps.pluginLoader.waitForTabPlugins()
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
-      // A new vault places its tabs once the plugins of its tabs have started or failed.
-      await deps.pluginLoader.waitForTabPlugins()
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
