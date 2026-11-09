@@ -68,7 +68,7 @@ const getShade = (colour: string): { shade: number; alpha: number } => {
 const openAndMeasure: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
-  const popover = await canvas.findByRole('dialog', { name: 'Index stats' })
+  const popover = await within(document.body).findByRole('dialog', { name: 'Index stats' })
   const bar = canvasElement.querySelector('header') as HTMLElement
 
   await waitFor(() => {
@@ -93,7 +93,7 @@ export const Light: Story = {
   globals: { theme: 'light' },
   play: async (context) => {
     await openAndMeasure(context)
-    const popover = within(context.canvasElement).getByRole('dialog')
+    const popover = within(document.body).getByRole('dialog')
     await expect(getShade(getComputedStyle(popover).backgroundColor).shade).toBeGreaterThan(384)
   },
 }
@@ -105,7 +105,7 @@ export const Dark: Story = {
     await openAndMeasure(context)
     const root = context.canvasElement.ownerDocument.documentElement
     await expect(getComputedStyle(root).colorScheme).toBe('dark')
-    const popover = within(context.canvasElement).getByRole('dialog')
+    const popover = within(document.body).getByRole('dialog')
     await expect(getShade(getComputedStyle(popover).backgroundColor).shade).toBeLessThan(384)
     await expect(getShade(getComputedStyle(popover).color).shade).toBeGreaterThan(384)
   },
@@ -119,7 +119,7 @@ export const Embedded: Story = {
     const trigger = await canvas.findByRole('button', { name: /13,100/ })
     await expect(trigger.textContent?.trim()).toBe('⬡13,100')
     await userEvent.click(trigger)
-    const popover = await canvas.findByRole('dialog')
+    const popover = await within(document.body).findByRole('dialog')
     await expect(within(popover).queryByText('Embedding speed')).toBeNull()
   },
 }
@@ -180,10 +180,98 @@ export const KeepsItsSize: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(
+    const boxes = within(canvasElement).getAllByRole('button').map(
       getBox,
     )
     await expect(boxes).toHaveLength(4)
     for (const box of boxes) await expect(box.height).toBe(20)
+  },
+}
+
+/** The scales, as [interface, text]: the designed size, each one larger, and both larger. */
+const SCALES: readonly (readonly [string, string])[] = [
+  ['1', '1'],
+  ['2', '1'],
+  ['1', '2'],
+  ['2', '2'],
+]
+
+const measureAtEveryScale = <T>(measure: () => T): T[] => {
+  const style = document.documentElement.style
+  const found: T[] = []
+  try {
+    for (const [interfaceScale, textScale] of SCALES) {
+      style.setProperty('--numen-interface-scale', interfaceScale)
+      style.setProperty('--numen-text-scale', textScale)
+      found.push(measure())
+    }
+  } finally {
+    style.removeProperty('--numen-interface-scale')
+    style.removeProperty('--numen-text-scale')
+  }
+  return found
+}
+
+/** The view as a bar draws it, with nothing around it, at the top or the bottom of the window. */
+const inBar = (place: 'top' | 'bottom') => () => ({
+  components: { StatsIndicator },
+  setup: () => ({ EMBEDDING }),
+  template: `
+    <div class="numen" style="block-size: 100vh; background: var(--numen-surface); color: var(--numen-ink); font-family: var(--numen-font-sans)">
+      <div data-view style="position: fixed; ${place}: 6px; right: 320px; display: inline-flex; align-items: center">
+        <StatsIndicator :stats="EMBEDDING" phase="ready" locale="en-US" />
+      </div>
+    </div>`,
+})
+
+const getChip = (canvasElement: HTMLElement): HTMLElement =>
+  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getByRole('button')
+
+/** The chip is 20px high at every scale, and the view is exactly as wide and high as its chip. */
+export const KeepsItsSizeAndAddsNoSpaceWhateverTheScale: Story = {
+  render: inBar('top'),
+  play: async ({ canvasElement }) => {
+    const view = canvasElement.querySelector<HTMLElement>('[data-view]')!
+    const found = measureAtEveryScale(() => {
+      const chip = getChip(canvasElement).getBoundingClientRect()
+      const box = view.getBoundingClientRect()
+      return { chip: [chip.width, chip.height], view: [box.width, box.height] }
+    })
+    for (const one of found) {
+      await expect(one.chip[1]).toBe(20)
+      await expect(one.view).toStrictEqual(one.chip)
+      await expect(one).toStrictEqual(found[0])
+    }
+  },
+}
+
+/** The close button of the dialog closes it, and a resize of the window keeps it open. */
+export const ClosesFromItsButtonAndStaysOpenOnAResize: Story = {
+  render: inBar('top'),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(getChip(canvasElement))
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Index stats' })
+    window.dispatchEvent(new Event('resize'))
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    await expect(within(document.body).queryByRole('dialog')).not.toBeNull()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close index stats' }))
+    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
+    await expect(getChip(canvasElement).getAttribute('aria-expanded')).toBe('false')
+  },
+}
+
+/** In a bar at the bottom of the window the dialog opens above the chip, inside the window. */
+export const OpensTheDialogAboveAChipAtTheBottom: Story = {
+  render: inBar('bottom'),
+  play: async ({ canvasElement }) => {
+    const chip = getChip(canvasElement)
+    await userEvent.click(chip)
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Index stats' })
+    await waitFor(() =>
+      expect(dialog.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        chip.getBoundingClientRect().top,
+      ),
+    )
+    await expect(dialog.getBoundingClientRect().top).toBeGreaterThanOrEqual(0)
   },
 }

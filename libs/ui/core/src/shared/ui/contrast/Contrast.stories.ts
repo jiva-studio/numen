@@ -14,6 +14,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import { Plus } from '@lucide/vue'
+import { BarChip } from '../bar-chip'
+import type { BarChipTone } from '../bar-chip'
 import { Button } from '../button'
 import type { ButtonVariants } from '../button'
 import { Menu } from '../menu'
@@ -294,5 +296,53 @@ export const MenuDark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     await playMenus(canvasElement)
+  },
+}
+
+/* --------------------------------- Bar chip -------------------------------- */
+
+const CHIP_TONES: readonly BarChipTone[] = ['neutral', 'accent', 'alarm']
+
+const barChips = () => ({
+  components: { BarChip },
+  setup: () => ({ CHIP_TONES }),
+  template: frame(`
+    <div style="display:flex;gap:16px;align-items:center;padding:8px;background:var(--numen-titlebar)">
+      <template v-for="tone in CHIP_TONES" :key="tone">
+        <BarChip v-for="state in ['rest', 'hover']" :key="state" :tone="tone"
+          :label="[tone, state].join('|')">3 of 7</BarChip>
+      </template>
+    </div>
+    <div style="display:flex;gap:96px;align-items:center;padding:8px;background:var(--numen-titlebar)">
+      <BarChip v-for="tone in CHIP_TONES" :key="tone" :tone="tone" :open="true"
+        :label="[tone, 'open'].join('|')" popover-label="Tide details">
+        3 of 7
+        <template #popover><p style="margin:0;padding:8px">High water at 14:20</p></template>
+      </BarChip>
+    </div>`),
+})
+
+async function playBarChips(canvasElement: HTMLElement): Promise<void> {
+  const chips = Array.from(canvasElement.querySelectorAll<HTMLElement>('button[aria-label*="|"]'))
+  await expect(chips.length).toBe(CHIP_TONES.length * 3)
+  for (const chip of chips) {
+    const [tone = '', state = ''] = (chip.getAttribute('aria-label') ?? '').split('|')
+    await putInState(chip, state)
+    await expectText(chip, 'bar chip', `${tone}, ${state}`)
+    if (state === 'hover') await userEvent.unhover(chip)
+  }
+}
+
+export const BarChipLight: Story = {
+  render: barChips,
+  play: async ({ canvasElement }) => playBarChips(canvasElement),
+}
+
+export const BarChipDark: Story = {
+  render: barChips,
+  globals: DARK,
+  play: async ({ canvasElement }) => {
+    await expectDark(canvasElement)
+    await playBarChips(canvasElement)
   },
 }
