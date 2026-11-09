@@ -134,6 +134,20 @@ describe('a run with the item picked', () => {
   })
 })
 
+describe('a run with the item picked and values', () => {
+  it('gives the values to the run of a command of the window and to the run of a plugin command', async () => {
+    const { items, runApp, runPlugin } = setup()
+
+    await items.runWithItem(MOVE.id, OVER_TAB, 'w2', { keep: 'yes' })
+    await items.runWithItem('org.example.tide:chart.move', OVER_TAB, 'w2', { keep: 'yes' })
+
+    expect(runApp).toHaveBeenCalledWith(MOVE.id, expect.anything(), 'w2', { keep: 'yes' })
+    expect(runPlugin).toHaveBeenCalledWith('org.example.tide:chart.move', OVER_TAB, 'w2', {
+      keep: 'yes',
+    })
+  })
+})
+
 describe('the target the items of a plugin command are read over', () => {
   it('carries the note type and the properties the window reads for its file', async () => {
     const pluginHost = {

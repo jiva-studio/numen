@@ -524,7 +524,11 @@ type ManifestSlotEntry struct {
 	// when is a condition over the target of the place, such as "isFolder && !isMultiple": the keys
 	// isRoot, isFolder and isMultiple combined with &&, || and ! and parentheses. The entry is left out
 	// while it is false. Empty is always true.
-	When          string `protobuf:"bytes,9,opt,name=when,proto3" json:"when,omitempty"`
+	When string `protobuf:"bytes,9,opt,name=when,proto3" json:"when,omitempty"`
+	// values are the values of the arguments of the command by argument name, as text, in the form a
+	// run of a command takes. The host passes them when the entry is chosen. Only a command entry
+	// holds them.
+	Values        map[string]string `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -633,6 +637,13 @@ func (x *ManifestSlotEntry) GetWhen() string {
 		return x.When
 	}
 	return ""
+}
+
+func (x *ManifestSlotEntry) GetValues() map[string]string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
 }
 
 type isManifestSlotEntry_Placed interface {
@@ -1963,7 +1974,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x1a\n" +
 	"\bprotocol\x18\x03 \x01(\tR\bprotocol\x12!\n" +
-	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"\xf8\x01\n" +
+	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"\xf4\x02\n" +
 	"\x11ManifestSlotEntry\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x1a\n" +
 	"\acommand\x18\x02 \x01(\tH\x00R\acommand\x12\x14\n" +
@@ -1973,7 +1984,12 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04icon\x18\x06 \x01(\tR\x04icon\x12\x14\n" +
 	"\x05group\x18\a \x01(\tR\x05group\x12\x19\n" +
 	"\x05order\x18\b \x01(\x05H\x01R\x05order\x88\x01\x01\x12\x12\n" +
-	"\x04when\x18\t \x01(\tR\x04whenB\b\n" +
+	"\x04when\x18\t \x01(\tR\x04when\x12?\n" +
+	"\x06values\x18\n" +
+	" \x03(\v2'.numen.v1.ManifestSlotEntry.ValuesEntryR\x06values\x1a9\n" +
+	"\vValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
 	"\x06placedB\b\n" +
 	"\x06_order\"U\n" +
 	"\x0fManifestHandler\x12\x18\n" +
@@ -2099,7 +2115,7 @@ func file_numen_v1_manifest_proto_rawDescGZIP() []byte {
 	return file_numen_v1_manifest_proto_rawDescData
 }
 
-var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_manifest_proto_goTypes = []any{
 	(*Manifest)(nil),                // 0: numen.v1.Manifest
 	(*ManifestContributes)(nil),     // 1: numen.v1.ManifestContributes
@@ -2123,10 +2139,11 @@ var file_numen_v1_manifest_proto_goTypes = []any{
 	(*ManifestCommand)(nil),         // 19: numen.v1.ManifestCommand
 	(*ManifestReader)(nil),          // 20: numen.v1.ManifestReader
 	(*ManifestSettingsView)(nil),    // 21: numen.v1.ManifestSettingsView
-	nil,                             // 22: numen.v1.ManifestDependency.MetadataEntry
-	nil,                             // 23: numen.v1.ManifestOptionsBy.OptionsEntry
-	(*structpb.Value)(nil),          // 24: google.protobuf.Value
-	(*structpb.ListValue)(nil),      // 25: google.protobuf.ListValue
+	nil,                             // 22: numen.v1.ManifestSlotEntry.ValuesEntry
+	nil,                             // 23: numen.v1.ManifestDependency.MetadataEntry
+	nil,                             // 24: numen.v1.ManifestOptionsBy.OptionsEntry
+	(*structpb.Value)(nil),          // 25: google.protobuf.Value
+	(*structpb.ListValue)(nil),      // 26: google.protobuf.ListValue
 }
 var file_numen_v1_manifest_proto_depIdxs = []int32{
 	9,  // 0: numen.v1.Manifest.dependencies:type_name -> numen.v1.ManifestDependency
@@ -2146,21 +2163,22 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	6,  // 14: numen.v1.ManifestContributes.triggers:type_name -> numen.v1.ManifestTrigger
 	2,  // 15: numen.v1.ManifestContributes.text_kinds:type_name -> numen.v1.ManifestTextKind
 	3,  // 16: numen.v1.ManifestContributes.listeners:type_name -> numen.v1.ManifestListener
-	22, // 17: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
-	23, // 18: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
-	24, // 19: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
-	25, // 20: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
-	13, // 21: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
-	14, // 22: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	14, // 23: numen.v1.SecretDeclaration.when:type_name -> numen.v1.ManifestCondition
-	25, // 24: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
-	18, // 25: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
-	25, // 26: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	22, // 17: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
+	23, // 18: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
+	24, // 19: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
+	25, // 20: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
+	26, // 21: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
+	13, // 22: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
+	14, // 23: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
+	14, // 24: numen.v1.SecretDeclaration.when:type_name -> numen.v1.ManifestCondition
+	26, // 25: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
+	18, // 26: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
+	26, // 27: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_manifest_proto_init() }
@@ -2181,7 +2199,7 @@ func file_numen_v1_manifest_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_manifest_proto_rawDesc), len(file_numen_v1_manifest_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

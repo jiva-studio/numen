@@ -102,6 +102,18 @@ describe('mock plugin context', () => {
     )
   })
 
+  it('gives a triggered command the item id and the values, empty by default', async () => {
+    const ctx = createMockPluginContext()
+    const handler = vi.fn()
+    ctx.registerCommand({ id: 'cmd.run', handler })
+
+    await ctx.triggerCommand('cmd.run', undefined, 'w2', { window: 'north' })
+    await ctx.triggerCommand('cmd.run')
+
+    expect(handler.mock.calls[0]?.slice(1)).toStrictEqual(['w2', { window: 'north' }])
+    expect(handler.mock.calls[1]?.slice(1)).toStrictEqual([undefined, {}])
+  })
+
   it('manages agent provider registrations', () => {
     const ctx = createMockPluginContext()
     const d = ctx.registerAgentProvider({

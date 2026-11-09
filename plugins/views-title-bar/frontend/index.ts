@@ -57,9 +57,16 @@ export function createTitleBarView(context: PluginContext) {
               listItems: (command: string) =>
                 context.commands?.listItems(command) ?? Promise.resolve([]),
               reportError,
-              onRunCommand: (command: string, itemId?: string) => {
+              onRunCommand: (
+                command: string,
+                itemId?: string,
+                values?: Readonly<Record<string, string>>,
+              ) => {
                 if (context.commands) {
-                  runInBackground(context.commands.run(command, undefined, itemId), reportError)
+                  runInBackground(
+                    context.commands.run(command, undefined, itemId, values),
+                    reportError,
+                  )
                 }
               },
               onSwitchVault: (id: string) => {

@@ -6,6 +6,7 @@ import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type {
+  Command,
   CommandInvocation,
   CommandTarget,
   NoteLookup,
@@ -109,14 +110,28 @@ function resolveConfirmationAction(
     : null
 }
 
+/** The index of the first prompt from `from` on whose argument has no value yet, or -1. */
+export function findUnsuppliedPrompt(
+  command: Pick<Command, 'prompts'>,
+  from: number,
+  values: Readonly<Record<string, string>>,
+): number {
+  const prompts = command.prompts ?? []
+  for (let index = from; index < prompts.length; index += 1) {
+    const name = prompts[index]?.name
+    if (name !== undefined && !(name in values)) return index
+  }
+  return -1
+}
+
 function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): CommandInvocation | null {
   const prompt = getPrompt(step)
   if (!prompt) return null
   const value = deps.text.value.trim()
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
-  const promptIndex = (step.promptIndex ?? 0) + 1
-  if (promptIndex < (step.command.prompts?.length ?? 0)) {
+  const promptIndex = findUnsuppliedPrompt(step.command, (step.promptIndex ?? 0) + 1, values)
+  if (promptIndex >= 0) {
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }

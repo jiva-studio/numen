@@ -36,6 +36,7 @@ type Embedder struct {
 	concurrency int
 	floorHint   float64
 
+	announceMu  sync.Mutex
 	changeMu    sync.Mutex
 	announced   embeddingport.EmbeddingModel
 	listeners   []func()
@@ -209,6 +210,8 @@ func (b *Embedder) reportReadError(err error) {
 }
 
 func (b *Embedder) announceModelChange() {
+	b.announceMu.Lock()
+	defer b.announceMu.Unlock()
 	for _, fn := range b.readModelChange() {
 		fn()
 	}
