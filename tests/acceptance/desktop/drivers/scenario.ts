@@ -54,10 +54,10 @@ export class Scenario {
   /** Starts the server of the world on its first vault, or starts it again over the same state, and opens a window on it. */
   async startWorld(): Promise<void> {
     const world = this.getWorld()
-    const [first] = world.getVaults()
-    if (first === undefined) throw new Error('the world has no vault: begin with the empty vault "Name"')
+    const vaults = world.getVaults()
+    if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
     if (this.server === undefined) {
-      this.server = await Server.start(world.getFolder(first))
+      this.server = await Server.start(world.getFolder(vaults[0]))
     } else {
       await this.server.restart()
     }

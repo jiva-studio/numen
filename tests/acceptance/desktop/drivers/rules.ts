@@ -115,7 +115,8 @@ export const DEFAULT_VAULT = 'default'
 export const parseVaultName = (text: string): string => {
   const match = /^the vault(?: "([^"]+)")?$/.exec(text)
   if (!match) throw new Error(`"${text}" does not name a vault: write the vault or the vault "Name"`)
-  return match[1] ?? DEFAULT_VAULT
+  const name = match[1] as string | undefined
+  return name ?? DEFAULT_VAULT
 }
 
 /** The vault of a world a step means: the one it names, or the only one when it names none. */
