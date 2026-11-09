@@ -106,6 +106,7 @@ func run(cfg container.Config, debug debugOptions) error {
 		return err
 	}
 	cfg.SetPluginVault(lent)
+	cfg.SetModelCalls(logNotices{out: os.Stderr})
 
 	target := shutdown.NewSequence(
 		stop,
