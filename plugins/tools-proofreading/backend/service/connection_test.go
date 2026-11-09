@@ -45,7 +45,8 @@ func TestProofreadNamesEveryConnectionThatFailedInTheTask(t *testing.T) {
 
 	_, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 
-	if _, isAllFailed := errors.AsType[*connection.AllFailedError](err); !isAllFailed {
+	all, isAllFailed := errors.AsType[*connection.AllFailedError](err)
+	if !isAllFailed || len(all.Failures) != 2 {
 		t.Fatalf("got %v, want every connection failed", err)
 	}
 	tasks := s.queue.ListTasks()
