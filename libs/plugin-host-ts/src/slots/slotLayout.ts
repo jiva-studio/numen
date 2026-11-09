@@ -60,14 +60,13 @@ const insertBefore = (
  */
 function mergeStoredKeys(
   stored: readonly string[],
-  drawn: readonly string[],
   next: readonly string[],
-  moved: string,
+  isDrawn: (key: string) => boolean,
 ): string[] {
   const list = [...next]
   let front = 0
   stored.forEach((key, index) => {
-    if (key === moved || drawn.includes(key) || list.includes(key)) return
+    if (isDrawn(key) || list.includes(key)) return
     const previous = stored
       .slice(0, index)
       .reverse()
@@ -99,7 +98,11 @@ export function moveSlotEntry(
   for (const slot of BAR_SLOTS) {
     const next = orders[slot]
     if (next === undefined) continue
-    const list = mergeStoredKeys(layout[slot] ?? [], drawn[slot], next, key)
+    const list = mergeStoredKeys(
+      layout[slot] ?? [],
+      next,
+      (one) => one === key || drawn[slot].includes(one),
+    )
     if (!isSameList(list, layout[slot])) change[slot] = list
   }
   return change

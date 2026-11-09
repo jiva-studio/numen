@@ -8,7 +8,6 @@
  */
 import { computed, watch } from 'vue'
 import {
-  BAR_SLOTS,
   SLOT,
   type BarSlotName,
   type Disposable,
@@ -22,7 +21,9 @@ import { formatCommandId } from '../commandId'
 import { getTargetValues } from '../when/targetValues'
 import type { WhenValues } from '../when/when'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
-import { getLayoutKey, isBarSlot, type SlotLayout } from './slotLayout'
+import { isBarSlot, type SlotLayout } from './slotLayout'
+import { createBarSlots } from './barSlots'
+import { compareText, layOut, type Placed } from './slotOrder'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -69,115 +70,8 @@ export interface SlotRegistry extends SlotHost {
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
 
-const compareText = (a: string, b: string): number => {
-  if (a === b) return 0
-  return a < b ? -1 : 1
-}
-
-/** An entry with the item it draws, in the order a slot sorts them. */
-interface Placed {
-  readonly entry: DeclaredSlotEntry
-  readonly item: SlotItem
-}
-
-const compareInGroup = (a: Placed, b: Placed): number => {
-  if (a.entry.order !== b.entry.order) {
-    if (a.entry.order === undefined) return 1
-    if (b.entry.order === undefined) return -1
-    return a.entry.order - b.entry.order
-  }
-  return compareText(a.entry.pluginId, b.entry.pluginId) || compareText(a.item.key, b.item.key)
-}
-
-const compareGroups = (a: string, b: string): number => {
-  if (a === b) return 0
-  if (a === '') return 1
-  if (b === '') return -1
-  return compareText(a, b)
-}
-
-const compareInSlot = (a: Placed, b: Placed): number =>
-  compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
-
-function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
-  const first = new Map<string, Placed>()
-  for (const one of placed) {
-    if (one.item.kind !== 'command') continue
-    const current = first.get(one.item.command)
-    if (current === undefined || compareInSlot(one, current) < 0) first.set(one.item.command, one)
-  }
-  return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
-}
-
 const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
   command.includes(':') ? command : formatCommandId(entry.pluginId, command)
-
-function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
-  const groups = new Map<string, Placed[]>()
-  for (const one of keepFirstOfEachCommand(placed)) {
-    const name = one.entry.group ?? ''
-    groups.set(name, [...(groups.get(name) ?? []), one])
-  }
-  const items: SlotItem[] = []
-  for (const name of [...groups.keys()].sort(compareGroups)) {
-    if (items.length > 0) items.push({ kind: 'separator', key: `${slot}/separator/${name}` })
-    items.push(...(groups.get(name) ?? []).sort(compareInGroup).map((one) => one.item))
-  }
-  return items
-}
-
-/**
- * The items of a bar slot: the entries its layout lists, in the order of their first place in the
- * list, then the entries placed there that no bar slot lists, by group, order and plugin id. A
- * separator is drawn between two neighbours of different groups.
- */
-function layOutBar(
-  slot: BarSlotName,
-  placed: readonly Placed[],
-  getLayoutIndex: (entry: DeclaredSlotEntry) => number | undefined,
-): SlotItem[] {
-  const inLayout: { readonly one: Placed; readonly index: number }[] = []
-  const outsideLayout: Placed[] = []
-  for (const one of keepFirstOfEachCommand(placed)) {
-    const index = getLayoutIndex(one.entry)
-    if (index === undefined) outsideLayout.push(one)
-    else inLayout.push({ one, index })
-  }
-  const ordered = [
-    ...inLayout
-      .sort((a, b) => a.index - b.index || compareInSlot(a.one, b.one))
-      .map(({ one }) => one),
-    ...outsideLayout.sort(compareInSlot),
-  ]
-  const items: SlotItem[] = []
-  let separators = 0
-  ordered.forEach((one, index) => {
-    const previous = ordered[index - 1]
-    if (previous && (previous.entry.group ?? '') !== (one.entry.group ?? '')) {
-      items.push({ kind: 'separator', key: `${slot}/separator/${separators}` })
-      separators += 1
-    }
-    items.push(one.item)
-  })
-  return items
-}
-
-/** Where a key of the layout is: the first bar slot that lists it, and its index in that list. */
-interface LayoutPlace {
-  readonly slot: BarSlotName
-  readonly index: number
-}
-
-/** The place of each key in the layout, by the first bar slot that lists it and its first index there. */
-function findLayoutPlaces(layout: SlotLayout): ReadonlyMap<string, LayoutPlace> {
-  const places = new Map<string, LayoutPlace>()
-  for (const slot of BAR_SLOTS) {
-    ;(layout[slot] ?? []).forEach((key, index) => {
-      if (!places.has(key)) places.set(key, { slot, index })
-    })
-  }
-  return places
-}
 
 function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
   const owners = new Map<string, DeclaredSlotEntry>()
@@ -360,37 +254,15 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
     return toSubmenuItem(entry, submenu, resolve(submenu, target))
   }
 
-  const layoutPlaces = computed(() => findLayoutPlaces(deps.getLayout?.() ?? {}))
-
-  /** The layout key of each item key an entry of a bar slot is drawn under. */
-  const layoutKeys = computed(() => {
-    const keys = new Map<string, string>()
-    for (const entry of declared.value.entries) {
-      const itemKey = getItemKey(entry)
-      const layoutKey = getLayoutKey(entry)
-      if (isBarSlot(entry.slot) && itemKey && layoutKey) keys.set(itemKey, layoutKey)
-    }
-    return keys
+  const bars = createBarSlots({
+    getEntries: () => declared.value.entries,
+    getLayout: () => deps.getLayout?.(),
+    getItemKey,
+    toItem,
   })
 
-  const resolveBar = (place: BarSlotName, target: CommandTarget | undefined): SlotItem[] => {
-    const places = layoutPlaces.value
-    const findPlace = (entry: DeclaredSlotEntry) => {
-      const key = getLayoutKey(entry)
-      return key === undefined ? undefined : places.get(key)
-    }
-    const items: Placed[] = []
-    for (const entry of declared.value.entries) {
-      if (!isBarSlot(entry.slot)) continue
-      if ((findPlace(entry)?.slot ?? entry.slot) !== place) continue
-      const item = toItem(entry, target)
-      if (item) items.push({ entry, item })
-    }
-    return layOutBar(place, items, (entry) => findPlace(entry)?.index)
-  }
-
   const resolve = (place: string, target: CommandTarget | undefined): SlotItem[] => {
-    if (isBarSlot(place)) return resolveBar(place, target)
+    if (isBarSlot(place)) return bars.resolveBar(place, target)
     const items: Placed[] = []
     for (const entry of declared.value.entries) {
       if (entry.slot !== place) continue
@@ -402,9 +274,9 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
 
   return {
     getEntries: (slot: SlotPlace, target?: CommandTarget) => resolve(slot, target),
-    findLayoutKey: (itemKey) => layoutKeys.value.get(itemKey),
+    findLayoutKey: bars.findLayoutKey,
     listLayoutKeys: (slot) =>
-      resolve(slot, undefined).flatMap((item) => layoutKeys.value.get(item.key) ?? []),
+      resolve(slot, undefined).flatMap((item) => bars.findLayoutKey(item.key) ?? []),
     watchEntries: (slot, handler, target): Disposable => {
       const stop = watch(() => resolve(slot, target), handler, { immediate: true })
       return { dispose: stop }
