@@ -7,7 +7,12 @@ const TASKS = 'org.example.tide/status'
 const UPDATER = 'org.example.harbor/update'
 
 const drawnAs = (
-  slots: Partial<Record<'titleBar.commands' | 'titleBar.status' | 'statusBar.left' | 'statusBar.right', readonly string[]>>,
+  slots: Partial<
+    Record<
+      'titleBar.commands' | 'titleBar.status' | 'statusBar.left' | 'statusBar.right',
+      readonly string[]
+    >
+  >,
 ) => ({
   'titleBar.commands': [],
   'titleBar.status': [],
@@ -19,7 +24,11 @@ const drawnAs = (
 describe('the layout key of an entry', () => {
   it('is the plugin and the command as the manifest writes it', () => {
     expect(
-      getLayoutKey({ pluginId: 'org.example.tide', slot: 'titleBar.commands', command: 'tide.open' }),
+      getLayoutKey({
+        pluginId: 'org.example.tide',
+        slot: 'titleBar.commands',
+        command: 'tide.open',
+      }),
     ).toBe('org.example.tide/tide.open')
     expect(
       getLayoutKey({

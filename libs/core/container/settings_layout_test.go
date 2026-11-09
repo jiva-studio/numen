@@ -19,12 +19,12 @@ const (
 	layoutUpdater = "org.example.harbor/update"
 )
 
-var layoutSlotsPath = []string{"app", "layout", "slots"}
+func layoutSlotsPath() []string { return []string{"app", "layout", "slots"} }
 
 func writeLayoutSlots(cfg container.Config, lists map[string]string) error {
 	var written []settingsport.Setting
 	for _, slot := range slices.Sorted(maps.Keys(lists)) {
-		written = append(written, settingsport.Setting{Path: append(slices.Clone(layoutSlotsPath), slot), JSON: lists[slot]})
+		written = append(written, settingsport.Setting{Path: append(layoutSlotsPath(), slot), JSON: lists[slot]})
 	}
 	return cfg.GetSettingsWriter()(written)
 }
@@ -46,8 +46,8 @@ func decodeLayoutSlots(t *testing.T, content string) map[string][]string {
 
 func decodeSlotsChange(t *testing.T, batch []settingsport.Setting) map[string][]string {
 	t.Helper()
-	if len(batch) != 1 || !slices.Equal(batch[0].Path, layoutSlotsPath) {
-		t.Fatalf("the change is %v, want one change of %v", batch, layoutSlotsPath)
+	if len(batch) != 1 || !slices.Equal(batch[0].Path, layoutSlotsPath()) {
+		t.Fatalf("the change is %v, want one change of %v", batch, layoutSlotsPath())
 	}
 	var slots map[string][]string
 	if err := json.Unmarshal([]byte(batch[0].JSON), &slots); err != nil {

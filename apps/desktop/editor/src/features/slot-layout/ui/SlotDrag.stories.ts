@@ -10,7 +10,10 @@ import { createSlotDrag } from '../model/slotDrag'
 
 const STATS = { item: 'org.example.reef/view/stats', layout: 'org.example.reef/stats' }
 const TASKS = { item: 'org.example.tide/view/status', layout: 'org.example.tide/status' }
-const CLOCK = { item: 'org.example.harbor/command/org.example.harbor:clock.open', layout: 'org.example.harbor/clock.open' }
+const CLOCK = {
+  item: 'org.example.harbor/command/org.example.harbor:clock.open',
+  layout: 'org.example.harbor/clock.open',
+}
 
 const LAYOUT_KEYS: Readonly<Record<string, string>> = {
   [STATS.item]: STATS.layout,
@@ -32,7 +35,12 @@ const drawEntry = (key: string, name: string, onRun: Run) =>
   h('div', { 'data-numen-slot-entry': key, style: 'display: flex' }, [
     h(
       'button',
-      { type: 'button', 'data-entry': name, style: 'inline-size: 80px; block-size: 24px', onClick: () => onRun(name) },
+      {
+        type: 'button',
+        'data-entry': name,
+        style: 'inline-size: 80px; block-size: 24px',
+        onClick: () => onRun(name),
+      },
       name,
     ),
   ])
@@ -54,22 +62,35 @@ const Bars = defineComponent({
     })
     const row = 'display: flex; align-items: center; gap: 4px; block-size: 32px'
     return () =>
-      h('div', { style: 'display: flex; flex-direction: column; gap: 24px; inline-size: 600px; padding: 16px' }, [
-        h('header', { style: row }, [
-          h('div', { 'data-numen-slot': 'titleBar.commands', style: `${row}; min-inline-size: 40px` }),
-          h('div', { 'data-numen-slot': 'titleBar.status', style: row }, [
-            drawEntry(STATS.item, 'stats', props.onRun),
-            drawEntry(TASKS.item, 'tasks', props.onRun),
+      h(
+        'div',
+        {
+          style:
+            'display: flex; flex-direction: column; gap: 24px; inline-size: 600px; padding: 16px',
+        },
+        [
+          h('header', { style: row }, [
+            h('div', {
+              'data-numen-slot': 'titleBar.commands',
+              style: `${row}; min-inline-size: 40px`,
+            }),
+            h('div', { 'data-numen-slot': 'titleBar.status', style: row }, [
+              drawEntry(STATS.item, 'stats', props.onRun),
+              drawEntry(TASKS.item, 'tasks', props.onRun),
+            ]),
           ]),
-        ]),
-        h('main', { 'data-outside': '', style: 'block-size: 120px' }, 'The editor'),
-        h('footer', { style: `${row}; justify-content: space-between` }, [
-          h('div', { 'data-numen-slot': 'statusBar.left', style: `${row}; min-inline-size: 120px` }),
-          h('div', { 'data-numen-slot': 'statusBar.right', style: row }, [
-            drawEntry(CLOCK.item, 'clock', props.onRun),
+          h('main', { 'data-outside': '', style: 'block-size: 120px' }, 'The editor'),
+          h('footer', { style: `${row}; justify-content: space-between` }, [
+            h('div', {
+              'data-numen-slot': 'statusBar.left',
+              style: `${row}; min-inline-size: 120px`,
+            }),
+            h('div', { 'data-numen-slot': 'statusBar.right', style: row }, [
+              drawEntry(CLOCK.item, 'clock', props.onRun),
+            ]),
           ]),
-        ]),
-      ])
+        ],
+      )
   },
 })
 
@@ -130,7 +151,11 @@ const sendPointer = (type: string, at: Point, keys: Keys): PointerEvent => {
 const moveTo = (from: Point, to: Point, keys: Keys): void => {
   for (let step = 1; step <= 6; step++) {
     const part = step / 6
-    sendPointer('pointermove', { x: from.x + (to.x - from.x) * part, y: from.y + (to.y - from.y) * part }, keys)
+    sendPointer(
+      'pointermove',
+      { x: from.x + (to.x - from.x) * part, y: from.y + (to.y - from.y) * part },
+      keys,
+    )
   }
 }
 
@@ -181,7 +206,11 @@ export const CtrlDragReordersASlot: Story = {
 /** On Linux the Meta key starts no drag: the press is the entry's own. */
 export const MetaDragOnLinuxIsAPress: Story = {
   play: async ({ canvasElement, args }) => {
-    const down = dragTo(getEntry(canvasElement, 'tasks'), getLeftQuarter(getEntry(canvasElement, 'stats')), META)
+    const down = dragTo(
+      getEntry(canvasElement, 'tasks'),
+      getLeftQuarter(getEntry(canvasElement, 'stats')),
+      META,
+    )
     await settle()
 
     await expect(down.defaultPrevented).toBe(false)
@@ -264,7 +293,9 @@ export const EscapeCancelsADrag: Story = {
     sendPointer('pointerdown', from, CTRL)
     moveTo(from, to, CTRL)
     await expect(isDragging()).toBe(true)
-    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    )
     await waitFor(() => expect(isDragging()).toBe(false))
     sendPointer('pointerup', to, CTRL)
     await settle()
@@ -294,7 +325,11 @@ export const DropOutsideTheBarsWritesNothing: Story = {
 /** A drop on an empty slot moves the entry there, and the one write holds both lists. */
 export const DropOnAnEmptySlot: Story = {
   play: async ({ canvasElement, args }) => {
-    dragTo(getEntry(canvasElement, 'tasks'), getCenter(getPart(canvasElement, '[data-numen-slot="statusBar.left"]')), CTRL)
+    dragTo(
+      getEntry(canvasElement, 'tasks'),
+      getCenter(getPart(canvasElement, '[data-numen-slot="statusBar.left"]')),
+      CTRL,
+    )
 
     await waitFor(() => expect(args.writeLayout).toHaveBeenCalledTimes(1))
     await expect(args.writeLayout).toHaveBeenCalledWith({
@@ -325,7 +360,10 @@ export const DropBeforeAnEntryOfAnotherSlot: Story = {
 export const FailedWriteEndsTheDrag: Story = {
   args: { writeLayout: fn(() => new Promise<void>((done) => requestAnimationFrame(() => done()))) },
   play: async ({ canvasElement, args }) => {
-    const order = () => [...canvasElement.querySelectorAll('[data-entry]')].map((one) => one.getAttribute('data-entry'))
+    const order = () =>
+      [...canvasElement.querySelectorAll('[data-entry]')].map((one) =>
+        one.getAttribute('data-entry'),
+      )
 
     dragTo(getEntry(canvasElement, 'tasks'), getLeftQuarter(getEntry(canvasElement, 'stats')), CTRL)
     await waitFor(() => expect(args.writeLayout).toHaveBeenCalledTimes(1))

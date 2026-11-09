@@ -521,13 +521,15 @@ describe('the layout of the bar slots', () => {
       slot: 'statusBar.left',
       view,
     })
-    const { registry } = setupWithLayout(
-      [UPDATER, left(LEDGER, 'words'), left(REEF, 'clock')],
-      {
-        'statusBar.right': [`${LEDGER}/words`, `${REEF}/clock`, `${LEDGER}/words`, `${HARBOR}/update`],
-        'titleBar.status': [`${HARBOR}/update`],
-      },
-    )
+    const { registry } = setupWithLayout([UPDATER, left(LEDGER, 'words'), left(REEF, 'clock')], {
+      'statusBar.right': [
+        `${LEDGER}/words`,
+        `${REEF}/clock`,
+        `${LEDGER}/words`,
+        `${HARBOR}/update`,
+      ],
+      'titleBar.status': [`${HARBOR}/update`],
+    })
 
     expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view update'])
     expect(describeSlot(registry.getEntries('statusBar.right'))).toStrictEqual([
