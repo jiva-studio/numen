@@ -78,3 +78,7 @@ Then(
     await person.tab.expectHighlight(kind, reference, name, text)
   },
 )
+
+When('the person opens the {tab} {reference} {string}', async ({ person }, kind: TabKindChoice, reference: string, name: string) => {
+  await person.tab.activate(kind, reference, name)
+})

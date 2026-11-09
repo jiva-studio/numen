@@ -105,6 +105,7 @@ describe('getPaletteField', () => {
     expect(getPaletteField('Name')).toBe('name')
     expect(getPaletteField('Search')).toBe('item')
     expect(getPaletteField('Search notes')).toBe('note')
+    expect(getPaletteField('Search vaults')).toBe('vault')
   })
 
   it('reads any other placeholder as a text', () => {
@@ -117,6 +118,7 @@ describe('assertPaletteField', () => {
     expect(() => assertPaletteField('name', 'name')).not.toThrow()
     expect(() => assertPaletteField('pick', 'item')).not.toThrow()
     expect(() => assertPaletteField('pick', 'note')).not.toThrow()
+    expect(() => assertPaletteField('pick', 'vault')).not.toThrow()
     expect(() => assertPaletteField('type', 'text')).not.toThrow()
   })
 

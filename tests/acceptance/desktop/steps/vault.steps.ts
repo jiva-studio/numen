@@ -24,3 +24,11 @@ Then('{vault} does not contain the file at {string}', async ({ person }, vault: 
 When('the person switches to the vault {string}', async ({ person }, name: string) => {
   await person.vault.switchTo(name)
 })
+
+Given('the list of vaults has {vault}', async ({ person }, vault: string) => {
+  await person.vault.addToList(vault)
+})
+
+Then('the window has the vault {string}', async ({ person }, name: string) => {
+  await person.vault.expectWindowShows(name)
+})
