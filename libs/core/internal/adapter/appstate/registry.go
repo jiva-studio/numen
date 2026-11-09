@@ -117,7 +117,14 @@ func (r *VaultRegistry) List() ([]domain.Vault, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
-	return f.Vaults, err
+	if err != nil {
+		return nil, err
+	}
+	vaults := make([]domain.Vault, len(f.Vaults))
+	for i, v := range f.Vaults {
+		vaults[i] = domain.Vault(v)
+	}
+	return vaults, nil
 }
 
 // Save records a vault. Saving the same identity again updates its path, which
@@ -132,11 +139,11 @@ func (r *VaultRegistry) Save(v domain.Vault) error {
 	}
 	for i := range f.Vaults {
 		if f.Vaults[i].ID == v.ID {
-			f.Vaults[i] = v
+			f.Vaults[i] = vaultEntry(v)
 			return r.save(f)
 		}
 	}
-	f.Vaults = append(f.Vaults, v)
+	f.Vaults = append(f.Vaults, vaultEntry(v))
 	return r.save(f)
 }
 
@@ -149,7 +156,7 @@ func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	pos := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
+	pos := slices.IndexFunc(f.Vaults, func(v vaultEntry) bool { return v.ID == id })
 	if pos < 0 {
 		return nil
 	}
@@ -168,7 +175,7 @@ func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
+	if !slices.ContainsFunc(f.Vaults, func(v vaultEntry) bool { return v.ID == id }) {
 		return fmt.Errorf("no vault on the list has the identity %s", id)
 	}
 	if f.LastID == id {
@@ -189,7 +196,7 @@ func (r *VaultRegistry) GetLastVault() (domain.Vault, bool, error) {
 	}
 	for _, v := range f.Vaults {
 		if v.ID == f.LastID && f.LastID != "" {
-			return v, true, nil
+			return domain.Vault(v), true, nil
 		}
 	}
 	return domain.Vault{}, false, nil
@@ -214,7 +221,7 @@ func (r *VaultRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error)
 	}
 	for _, v := range f.Vaults {
 		if string(v.ID) == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
-			return v, true, nil
+			return domain.Vault(v), true, nil
 		}
 	}
 	return domain.Vault{}, false, nil

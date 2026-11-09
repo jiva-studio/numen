@@ -283,6 +283,93 @@ export function verifyWorkspaceListsEveryModule() {
   failOnFindings("go.work disagrees with the modules", findWorkspaceGaps(fs.readFileSync(path.join(REPO_ROOT, "go.work"), "utf8"), moduleDirs));
 }
 
+/* -------------------------------- JSON keys ------------------------------- */
+
+function isCamelCaseKey(name) {
+  return /^[a-z][a-zA-Z0-9]*$/.test(name);
+}
+
+function isSnakeCaseKey(name) {
+  return /^[A-Za-z0-9]+_[A-Za-z0-9_]+$/.test(name);
+}
+
+function isRpcMethodSignature(node, ts) {
+  if (!node.type || !ts.isTypeLiteralNode(node.type)) return false;
+  const names = node.type.members
+    .filter((member) => ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name))
+    .map((member) => member.name.text);
+  return names.includes("request") && names.includes("response");
+}
+
+function findJsonObjectKeyViolations(file, text) {
+  const found = [];
+  const visit = (value) => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    for (const [key, child] of Object.entries(value)) {
+      if (!isCamelCaseKey(key)) found.push({ file, line: 1, symbol: `JSON key ${JSON.stringify(key)}` });
+      visit(child);
+    }
+  };
+  visit(JSON.parse(text));
+  return found;
+}
+
+function findScriptJsonKeyViolations(file, text, lineOffset = 0) {
+  const ts = require("typescript");
+  const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, kind);
+  const isApiFile = /(^|\/)api(\/|\.ts$)/.test(file);
+  const found = [];
+  const checkProperty = (node) => {
+    const name = node.name && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) ? node.name.text : "";
+    if (!name) return;
+    const isInvalid = isSnakeCaseKey(name) || (isApiFile && !isRpcMethodSignature(node, ts) && !isCamelCaseKey(name));
+    if (!isInvalid) return;
+    const line = sourceFile.getLineAndCharacterOfPosition(node.name.getStart(sourceFile)).line + 1 + lineOffset;
+    found.push({ file, line, symbol: `JSON property ${JSON.stringify(name)}` });
+  };
+  const visit = (node) => {
+    if (ts.isPropertySignature(node)) checkProperty(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
+/**
+ * Every non-camelCase JSON key in project manifests, API fixtures, and TypeScript JSON shapes.
+ */
+export function findNonCamelCaseJsonKeys(sources) {
+  const found = [];
+  for (const { file, text } of sources) {
+    if (isGenerated(text)) continue;
+    if (file.endsWith(".json")) {
+      found.push(...findJsonObjectKeyViolations(file, text));
+    } else if (file.endsWith(".vue")) {
+      const { parse } = require("@vue/compiler-sfc");
+      const { descriptor } = parse(text);
+      for (const block of [descriptor.script, descriptor.scriptSetup].filter(Boolean)) {
+        found.push(...findScriptJsonKeyViolations(file.replace(/\.vue$/, ".ts"), block.content, block.loc.start.line - 1));
+      }
+    } else if (/\.(ts|tsx)$/.test(file)) {
+      found.push(...findScriptJsonKeyViolations(file, text));
+    }
+  }
+  return found;
+}
+
+const PROJECT_JSON_OR_TS = /(\/manifest\.json|\/testdata\/api\/[^/]+\.json|\.(ts|tsx|vue))$/;
+
+export function verifyJsonKeysAreCamelCase() {
+  const sources = readTrackedSources(LAYER_ROOTS, (file) => PROJECT_JSON_OR_TS.test(file) && !file.includes("node_modules/"));
+  requireMatches("manifests and TypeScript sources read for JSON keys", sources.length, 500);
+  failOnFindings("Non-camelCase JSON keys", findNonCamelCaseJsonKeys(sources));
+}
+
 export const DISCIPLINE_VERIFIERS = [
   {
     id: "plugins-isolation-capture",
@@ -318,5 +405,12 @@ export const DISCIPLINE_VERIFIERS = [
     module: "quality",
     name: "go.work Lists Every Module That Has a go.mod",
     run: verifyWorkspaceListsEveryModule,
+  },
+  {
+    id: "json-keys-camelcase",
+    scope: "libs",
+    module: "quality",
+    name: "JSON Keys Are camelCase (manifest schemas, API fixtures, and TypeScript JSON types)",
+    run: verifyJsonKeysAreCamelCase,
   },
 ];

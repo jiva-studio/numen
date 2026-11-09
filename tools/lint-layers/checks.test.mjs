@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  findNonCamelCaseJsonKeys,
   findPluginCrossings,
   findPluginSchemas,
   findSuppressions,
@@ -162,6 +163,33 @@ describe("the version of the linter", () => {
   it("accepts a linter built with the same or a newer Go", () => {
     assert.equal(getLinterBuildGap(report("1.26.9"), "1.26.9"), "");
     assert.equal(getLinterBuildGap(report("1.27.0"), "1.26.9"), "");
+  });
+});
+
+describe("the camelCase JSON keys", () => {
+  it("rejects a snake_case key in a manifest JSON schema and accepts camelCase", () => {
+    const badManifest = JSON.stringify({
+      id: "md.numen.example",
+      settings: {
+        schema: {
+          type: "object",
+          properties: {
+            maxTokens: { type: "number" },
+            chunk_tokens: { type: "number" },
+          },
+        },
+      },
+    });
+    const findings = findNonCamelCaseJsonKeys([{ file: "plugins/example/manifest.json", text: badManifest }]);
+    assert.deepEqual(findings.map((one) => one.symbol), ['JSON key "chunk_tokens"']);
+  });
+  it("rejects a snake_case or PascalCase property in a TypeScript JSON shape and accepts RPC method entries", () => {
+    const source = [
+      "export interface StatsOut { totalCount: number; max_side: number; Answered: number }",
+      "export type Methods = { GetStats: { request: Record<string, never>; response: StatsOut } }",
+    ].join("\n");
+    const findings = findNonCamelCaseJsonKeys([{ file: "plugins/example/frontend/api/stats.ts", text: source }]);
+    assert.deepEqual(findings.map((one) => one.symbol), ['JSON property "max_side"', 'JSON property "Answered"']);
   });
 });
 

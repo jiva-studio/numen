@@ -39,7 +39,7 @@ type LayoutModel struct {
 type DetectModel struct {
 	Name    string  `json:"name"`
 	Path    string  `json:"path"`
-	MaxSide int     `json:"max_side"`
+	MaxSide int     `json:"maxSide"`
 	Expand  int     `json:"expand"`
 	Minimum float32 `json:"minimum"`
 }

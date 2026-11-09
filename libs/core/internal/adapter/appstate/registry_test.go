@@ -247,17 +247,16 @@ func TestFileIsReadableByAHuman(t *testing.T) {
 		t.Fatal(err)
 	}
 	var parsed struct {
-		V      int `json:"v"`
-		Vaults []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-			Path string `json:"path"`
-		} `json:"vaults"`
+		V      int                 `json:"v"`
+		Vaults []map[string]string `json:"vaults"`
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {
 		t.Fatalf("not valid JSON: %v", err)
 	}
-	if parsed.V != 1 || len(parsed.Vaults) != 1 {
+	if parsed.V != 1 || len(parsed.Vaults) != 1 ||
+		parsed.Vaults[0]["id"] != "01AAA" ||
+		parsed.Vaults[0]["name"] != "personal" ||
+		parsed.Vaults[0]["path"] != "/notes" {
 		t.Errorf("unexpected shape: %s", raw)
 	}
 }
