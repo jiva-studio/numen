@@ -531,6 +531,8 @@ const numenPlugin = {
         messages: {
           tooManyReturnedProperties:
             'Composable "{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables.',
+          spreadInReturn:
+            'Composable "{{name}}" spreads an object into what it returns, which hides how many properties it returns. Name each property.',
         },
         schema: [
           {
@@ -546,15 +548,32 @@ const numenPlugin = {
         const max = context.options[0]?.max ?? 8
 
         // Check if file is a composable file (e.g. use*.ts) or function is use*
-        function checkReturnObject(node, fnName) {
+        // The object literal a returned expression is: the literal itself, or the literal a returned
+        // identifier is declared with.
+        function getReturnedObject(argument) {
+          if (argument?.type === 'ObjectExpression') return argument
+          if (argument?.type !== 'Identifier') return null
+          for (let scope = context.sourceCode.getScope(argument); scope; scope = scope.upper) {
+            const variable = scope.set.get(argument.name)
+            if (!variable) continue
+            const declarator = variable.defs[0]?.node
+            return declarator?.type === 'VariableDeclarator' && declarator.init?.type === 'ObjectExpression'
+              ? declarator.init
+              : null
+          }
+          return null
+        }
+
+        function checkReturnObject(argument, fnName) {
           if (!fnName || !/^use[A-Z]/.test(fnName)) return
+          const node = getReturnedObject(argument)
+          if (!node) return
           let count = 0
           for (const prop of node.properties) {
             if (prop.type === 'Property') {
               count++
             } else if (prop.type === 'SpreadElement') {
-              // Spreading another object/state counts as multiple properties (at least 2)
-              count += 2
+              context.report({ node: prop, messageId: 'spreadInReturn', data: { name: fnName } })
             }
           }
           if (count > max) {
@@ -575,7 +594,7 @@ const numenPlugin = {
             for (const stmt of body.body) {
               if (
                 stmt.type === 'ReturnStatement' &&
-                stmt.argument?.type === 'ObjectExpression'
+                stmt.argument
               ) {
                 checkReturnObject(stmt.argument, fnName)
               }
@@ -597,7 +616,7 @@ const numenPlugin = {
                 for (const stmt of init.body.body) {
                   if (
                     stmt.type === 'ReturnStatement' &&
-                    stmt.argument?.type === 'ObjectExpression'
+                    stmt.argument
                   ) {
                     checkReturnObject(stmt.argument, fnName)
                   }

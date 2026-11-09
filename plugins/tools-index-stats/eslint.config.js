@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
+import numen from './numen-rules.mjs'
 
 const contract = ['plugin-sdk', 'ui']
 
@@ -126,18 +127,17 @@ export default [
           patterns: [
             { group: ['@vue/*'], message: 'lib/ is pure TypeScript and must not depend on @vue/*' },
             {
-              group: [
-                '../ui/*',
-                '../ui/**',
-                './ui/*',
-                '../model/*',
-                '../model/**',
-                './model/*',
-                '../api/*',
-                '../api/**',
-                './api/*',
-              ],
+              group: ['ui', 'model', 'api'].flatMap((segment) => [
+                `./**/${segment}`,
+                `./**/${segment}/**`,
+                `../**/${segment}`,
+                `../**/${segment}/**`,
+              ]),
               message: 'lib/ is the lowest segment and cannot import from api/, model/, or ui/',
+            },
+            {
+              group: ['**/*.vue'],
+              message: 'lib/ is pure TypeScript and imports no component',
             },
           ],
         },
@@ -233,6 +233,15 @@ export default [
             '.vue components must not access navigator directly — delegate to a composable or port',
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.vue'],
+    plugins: { numen },
+    rules: {
+      'numen/max-inline-props': ['error', { max: 6 }],
+      'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
+      'numen/max-script-lines': ['error', { max: 100 }],
     },
   },
   {

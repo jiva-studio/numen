@@ -100,20 +100,23 @@ func isClockReader(object types.Object) bool {
 	return ok && sig.Recv() == nil
 }
 
-// clockWalk collects the clock reads of one package.
-type clockWalk struct {
-	pkg       *packages.Package
-	ports     []*types.Interface
-	enclosing []bool
-	reads     []clockRead
-	visited   map[string]bool
+// machineWalk collects the references of one package to what reads the machine: the clock, a timer or a
+// source of randomness. A reference is sanctioned when the function declaration that directly encloses it,
+// not through a closure, is one the rule accepts.
+type machineWalk struct {
+	pkg          *packages.Package
+	isRead       func(types.Object) bool
+	isSanctioned func(*ast.FuncDecl, *types.Info) bool
+	enclosing    []bool
+	reads        []clockRead
+	visited      map[string]bool
 }
 
-func (w *clockWalk) visit(node ast.Node) bool {
+func (w *machineWalk) visit(node ast.Node) bool {
 	switch current := node.(type) {
 	case *ast.FuncDecl:
 		if current.Body != nil {
-			w.descend(current.Body, isClockMethod(current, w.pkg.TypesInfo, w.ports))
+			w.descend(current.Body, w.isSanctioned(current, w.pkg.TypesInfo))
 		}
 		return false
 	case *ast.FuncLit:
@@ -121,7 +124,7 @@ func (w *clockWalk) visit(node ast.Node) bool {
 		return false
 	case *ast.Ident:
 		object := w.pkg.TypesInfo.Uses[current]
-		if object == nil || !isClockReader(object) {
+		if object == nil || !w.isRead(object) {
 			return true
 		}
 		position := w.pkg.Fset.Position(current.Pos())
@@ -131,15 +134,15 @@ func (w *clockWalk) visit(node ast.Node) bool {
 		w.visited[position.String()] = true
 		w.reads = append(w.reads, clockRead{
 			position:     filepath.ToSlash(position.Filename) + ":" + strconv.Itoa(position.Line),
-			name:         "time." + object.Name(),
+			name:         object.Pkg().Path() + "." + object.Name(),
 			isSanctioned: len(w.enclosing) > 0 && w.enclosing[len(w.enclosing)-1],
 		})
 	}
 	return true
 }
 
-func (w *clockWalk) descend(body *ast.BlockStmt, isClock bool) {
-	w.enclosing = append(w.enclosing, isClock)
+func (w *machineWalk) descend(body *ast.BlockStmt, isSanctioned bool) {
+	w.enclosing = append(w.enclosing, isSanctioned)
 	ast.Inspect(body, func(inner ast.Node) bool {
 		if inner == nil {
 			return true
@@ -149,15 +152,14 @@ func (w *clockWalk) descend(body *ast.BlockStmt, isClock bool) {
 	w.enclosing = w.enclosing[:len(w.enclosing)-1]
 }
 
-func getMachineClockReads(pkgs []*packages.Package) []clockRead {
-	ports := getClockPorts(pkgs)
+func getMachineReads(pkgs []*packages.Package, isRead func(types.Object) bool, isSanctioned func(*ast.FuncDecl, *types.Info) bool) []clockRead {
 	visited := map[string]bool{}
 	var reads []clockRead
 	for _, pkg := range pkgs {
 		if pkg.TypesInfo == nil {
 			continue
 		}
-		walk := &clockWalk{pkg: pkg, ports: ports, enclosing: nil, reads: nil, visited: visited}
+		walk := &machineWalk{pkg: pkg, isRead: isRead, isSanctioned: isSanctioned, enclosing: nil, reads: nil, visited: visited}
 		for _, file := range pkg.Syntax {
 			if ast.IsGenerated(file) {
 				continue
@@ -174,6 +176,14 @@ func getMachineClockReads(pkgs []*packages.Package) []clockRead {
 	slices.SortFunc(reads, func(a, b clockRead) int { return strings.Compare(a.position, b.position) })
 	return reads
 }
+
+func getMachineClockReads(pkgs []*packages.Package) []clockRead {
+	ports := getClockPorts(pkgs)
+	return getMachineReads(pkgs, isClockReader, func(decl *ast.FuncDecl, info *types.Info) bool {
+		return isClockMethod(decl, info, ports)
+	})
+}
+
 
 func loadPackages(t *testing.T, dir string, env []string, patterns ...string) []*packages.Package {
 	t.Helper()

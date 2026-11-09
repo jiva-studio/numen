@@ -33,6 +33,10 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkMachineClockIsReadOnlyByAClockPortImplementation(t, workspace)
 	})
+	t.Run("TimersAndRandomnessAreReadOnlyInAPortImplementation", func(t *testing.T) {
+		t.Parallel()
+		checkTimersAndRandomnessAreReadOnlyInAPortImplementation(t, workspace)
+	})
 	t.Run("TheSDKNamesNoProtocolType", func(t *testing.T) {
 		t.Parallel()
 		checkSDKNamesNoProtocolType(t, workspace)
@@ -40,6 +44,22 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 	t.Run("ProjectJSONKeysAreCamelCase", func(t *testing.T) {
 		t.Parallel()
 		checkProjectJSONKeysAreCamelCase(t, workspace)
+	})
+	t.Run("NoCoreTypeIsReexported", func(t *testing.T) {
+		t.Parallel()
+		checkNoCoreTypeIsReexported(t, workspace)
+	})
+	t.Run("InterfaceSizeCountsTheWholeMethodSet", func(t *testing.T) {
+		t.Parallel()
+		checkInterfaceSizeCountsTheWholeMethodSet(t, workspace)
+	})
+	t.Run("APortDeclaresAndDoesNotOrchestrate", func(t *testing.T) {
+		t.Parallel()
+		checkPortDeclaresAndDoesNotOrchestrate(t, workspace)
+	})
+	t.Run("TheCompositionRootIsOnePackage", func(t *testing.T) {
+		t.Parallel()
+		checkCompositionRootIsOnePackage(t, workspace)
 	})
 }
 

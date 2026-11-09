@@ -91,7 +91,7 @@ In anything pure — `domain/`, the model and arithmetic modules beside a compon
 - **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected as a clock the caller supplies, and the module that wraps the real one is the only place they appear. A test must be able to control the time.
   - In Go the rule is structural. `TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo has no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `go-structure`), which `make check_gate` runs whenever a Go file changes.
   - In TypeScript the rule is structural. `no-restricted-syntax` in `tools/lint-layers/base-eslint.mjs` (`createClockSelectors`) bans `Date.now()` and `new Date()` with no arguments in every package, except inside the declaration of the function `getNow` in `libs/ui/core/src/shared/lib/dom.ts`. `performance.now()` is banned the same way, except inside the declaration of `getMonotonicNow` in `libs/ui/core/src/shared/lib/time/clock.ts`. In every `lib/` and `domain/` segment `createPureSegmentConfig` also bans `setTimeout` and `setInterval`; a stateful `model/` module that debounces or polls is not a pure segment and may schedule. Other code takes the time from `getNow` (exported by `@numen/ui`) or from an injected clock, and tests control it with fake timers. `tools/lint-layers/clock.test.mjs` proves a stray `Date.now()` fails and `getNow` passes.
-- **Randomness is a port.** `math/rand` and `Math.random()` are passed in or seeded.
+- **Timers and randomness are ports.** A timer (`time.After`, `time.AfterFunc`, `time.NewTimer`, `time.NewTicker`, `time.Tick`, `time.Sleep`, `setTimeout`, `setInterval`) and a source of randomness (`crypto/rand`, `math/rand`, `math/rand/v2`, `Math.random()`) are passed in or seeded. In Go, `TestTheTypeCheckedWorkspaceObeysItsRules/TimersAndRandomnessAreReadOnlyInAPortImplementation` (`libs/core/container/timer_random_port_test.go`) loads every module of `go.work`, tests included, and fails on a reference to one of them outside the body of a method of a type that implements an interface the workspace declares in non-test code, the method being one of that interface. A closure inside such a method does not count as the method.
 - **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
 - **No error is swallowed.** An empty `catch {}`, a discarded `_ = fn()` and a floating `void promise` are all forbidden. An error is handled, returned or wrapped.
 
@@ -117,7 +117,7 @@ Cyclomatic complexity, nesting depth and function length are rules. Go, TypeScri
 | Function length in statements       | 50      | `funlen` `statements`          | `max-statements`                                         |
 | Parameters of a function            | 6       | revive `argument-limit`        | `max-params`                                             |
 
-A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets parameters 4, below the table; the Go configuration also runs `gocognit` (15), `nestif` (3) and `maintidx`. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns. Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
+A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets parameters 4, below the table; the Go configuration also runs `gocognit` (15), `nestif` (3) and `maintidx`. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns, counted through a returned variable, with no spread in the returned object (`numen/max-composable-return-properties`, tested in `tools/lint-layers/composable.test.mjs`). Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
 
 File length and import counts have no limit. A file is split when it holds a second responsibility: a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. A folder that collects a kind rather than a thing is a finding: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
 
@@ -147,12 +147,14 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `ui-lint`: `npm run lint` passes in `libs/ui/core`.
 - `shell-lint`: `npm run lint` passes in `libs/ui/shell`.
 - `plugin-host-lint`: `npm run lint` passes in `libs/plugin-host-ts`.
-- `strict-lint-rules`: every package resolves `no-void`, `no-empty`, `no-empty-function`, `no-floating-promises` and `no-misused-promises`.
+- `strict-lint-rules`: every package resolves `no-void`, `no-empty`, `no-empty-function`, `no-floating-promises` and `no-misused-promises`. A package is a directory with an ESLint config or a `package.json`; none is left out.
+- `typecheck-covers-sources`: no `exclude` entry of a `tsconfig*.json` names a tracked file. Only build output, which is not tracked, is excluded.
 - `no-suppressions`: §9.
 - `every-path-has-a-layer`: fails on a module that is in no layer.
 - `workspace-lists-every-module`: `go.work` lists every `go.mod`.
 - `json-keys-camelcase`: every JSON key in a plugin manifest, API fixture and TypeScript JSON type is `camelCase`.
-- `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`.
+- `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
+- `plugins-frontend` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/lint-layers/checks/pluginConfig.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
 - `plugins-independence`: the plugin tests of `libs/core/container` apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
 - `plugins-leakage`: manifest schema and static non-leakage.
@@ -160,6 +162,9 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `plugins-frontend`: no `@/**` and no `@plugins/**` in a plugin frontend.
 - `plugins-isolation-capture`: a file under `plugins/(X)/` references no other plugin.
 - `plugins-hold-no-schema`: no `.proto` file under `plugins/(*)/`.
+- `no-component-below-ui`: no `.vue` file of a library, a window or a plugin frontend lies in a `lib`, `api` or `model` segment.
+- `core-client-only-in-api`: a window imports `@numen/core-client` only from an `api` segment and from its entry `src/main.ts`.
+- `shared-serves-several-slices`: a shipped file of a window's `shared` layer is imported, directly or through other shared files, from more than one slice; a file one slice uses belongs in that slice.
 - `desktop-editor-fsd`: the FSD layer hierarchy of the editor (§4).
 - `desktop-flashcards-fsd`: the FSD layer hierarchy of the flashcards window (§4).
 

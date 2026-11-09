@@ -202,32 +202,6 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 	}
 }
 
-// TestNoDrivingAdapterImportsAPortDirectly verifies that no driving adapter in libs/core or apps/desktop imports a port.
-func TestNoDrivingAdapterImportsAPortDirectly(t *testing.T) {
-	roots := []string{"../adapter/cli", "../adapter/window", "../internal/adapter/plugin", "../internal/adapter/theme", "../../../apps/desktop"}
-	for _, root := range roots {
-		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-				return err
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
-			if err != nil {
-				return err
-			}
-			for _, imp := range file.Imports {
-				val := strings.Trim(imp.Path.Value, `"`)
-				if strings.HasPrefix(val, module+"port/") || val == module+"port" {
-					t.Errorf("%s imports %s: driving adapter must depend on usecase, not port", path, val)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
 	got := getUncovered([]string{"**/adapter/window/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {

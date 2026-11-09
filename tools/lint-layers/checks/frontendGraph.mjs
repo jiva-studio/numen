@@ -1,0 +1,175 @@
+import fs from "node:fs";
+import path from "node:path";
+import { listPackages, readModuleGraph } from "./dependencies.mjs";
+import { REPO_ROOT, failOnFindings, requireMatches } from "./helpers.mjs";
+
+/** The segments of a slice from the lowest. */
+const SEGMENTS = ["lib", "api", "model", "ui"];
+
+/** The layers of a window that are cut into slices; `app` and the entry are one unit each. */
+const SLICED_LAYERS = ["pages", "features", "entities"];
+
+/** The package every window reaches the core through. */
+const CORE_CLIENT = "@numen/core-client";
+
+/** Whether a file is a test or a story, which exercises the code from outside and is not shipped. */
+export function isNotShipped(file) {
+  return /\.(test|spec|stories)\.ts$/.test(file) || file.split("/").includes("testing") || file.split("/").includes("testdata");
+}
+
+/** The segment a file belongs to: the nearest folder above it named after a segment, or undefined. */
+export function getSegment(file) {
+  return path.posix.dirname(file).split("/").filter((name) => SEGMENTS.includes(name)).at(-1);
+}
+
+/** The local files a module's imports resolve to. */
+function listLocalTargets(one) {
+  return (one.dependencies ?? []).filter((dep) => !dep.couldNotResolve && dep.resolved && !dep.resolved.split("/").includes("node_modules"));
+}
+
+/**
+ * The components (`.vue` files) of the cruised source roots whose segment is `lib`, `api` or `model`: a component
+ * belongs in a `ui` segment.
+ *
+ * @param {Array<{ source: string }>} modules The resolved import graph
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findComponentsBelowUi(modules) {
+  const components = [...new Set(modules.map((one) => one.source))].filter((file) => file.endsWith(".vue") && !file.split("/").includes("node_modules"));
+  const findings = components
+    .filter((file) => ["lib", "api", "model"].includes(getSegment(file)))
+    .map((file) => ({ file, line: 1, symbol: `a component in a ${getSegment(file)} segment` }));
+  return { findings, read: components.length };
+}
+
+/**
+ * The shipped files under a window's `src` that import `@numen/core-client` and are neither in an `api` segment nor
+ * the entry `src/main.ts`.
+ */
+export function findCoreClientOutsideApi(modules, sourceRoots) {
+  const findings = [];
+  for (const one of modules) {
+    const root = sourceRoots.find((dir) => one.source.startsWith(`${dir}/`));
+    if (!root || isNotShipped(one.source) || one.source === `${root}/main.ts` || getSegment(one.source) === "api") continue;
+    for (const dep of one.dependencies ?? []) {
+      if (dep.module === CORE_CLIENT || dep.module.startsWith(`${CORE_CLIENT}/`)) {
+        findings.push({ file: one.source, line: 1, symbol: `imports ${dep.module} from the ${one.source.slice(root.length + 1).split("/")[0]} layer` });
+      }
+    }
+  }
+  return findings;
+}
+
+/** The slice a file of a window belongs to: `layer/slice` on a sliced layer, the layer otherwise. */
+export function getSliceOf(file, sourceRoot) {
+  const [layer, slice] = file.slice(sourceRoot.length + 1).split("/");
+  return SLICED_LAYERS.includes(layer) && slice ? `${layer}/${slice}` : layer;
+}
+
+/**
+ * The shipped files of a window's `shared` layer that serve one slice only. A shared file's consumers are the
+ * slices of the files outside `shared` that import it, and the consumers of the shared files that import it.
+ *
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findSharedServingOneSlice(modules, sourceRoot) {
+  const shared = `${sourceRoot}/shared/`;
+  const importers = new Map();
+  for (const one of modules) {
+    if (!one.source.startsWith(`${sourceRoot}/`) || isNotShipped(one.source)) continue;
+    for (const dep of listLocalTargets(one)) {
+      if (!dep.resolved.startsWith(shared)) continue;
+      if (!importers.has(dep.resolved)) importers.set(dep.resolved, new Set());
+      importers.get(dep.resolved).add(one.source);
+    }
+  }
+  const consumers = new Map();
+  const getConsumers = (file, visiting) => {
+    if (consumers.has(file)) return consumers.get(file);
+    const found = new Set();
+    for (const importer of importers.get(file) ?? []) {
+      if (!importer.startsWith(shared)) found.add(getSliceOf(importer, sourceRoot));
+      else if (!visiting.has(importer)) for (const one of getConsumers(importer, new Set([...visiting, importer]))) found.add(one);
+    }
+    if (visiting.size === 1) consumers.set(file, found);
+    return found;
+  };
+  const findings = [];
+  const files = modules.map((one) => one.source).filter((file) => file.startsWith(shared) && !isNotShipped(file));
+  for (const file of files) {
+    const slices = getConsumers(file, new Set([file]));
+    if (slices.size === 1) findings.push({ file, line: 1, symbol: `serves only ${[...slices][0]}; it belongs in that slice` });
+  }
+  return { findings, read: files.length };
+}
+
+/**
+ * The source roots of the windows: the applications that declare `@numen/core-client` and are cut into layers, with an
+ * entry `src/main.ts` and an `app` layer.
+ */
+function listWindows(root) {
+  return listPackages(root)
+    .filter((one) => one.kind === "application")
+    .filter((one) => {
+      const manifest = JSON.parse(fs.readFileSync(path.join(root, one.dir, "package.json"), "utf8"));
+      return Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).includes(CORE_CLIENT);
+    })
+    .map((one) => path.posix.join(one.dir, "src"))
+    .filter((dir) => fs.existsSync(path.join(root, dir, "main.ts")) && fs.existsSync(path.join(root, dir, "app")));
+}
+
+let graph;
+function getGraph() {
+  graph ??= readModuleGraph(REPO_ROOT);
+  return graph;
+}
+
+export function verifyNoComponentBelowUi() {
+  const { findings, read } = findComponentsBelowUi(getGraph());
+  requireMatches("Components cruised", read, 200);
+  failOnFindings("A component lies in a lib, api or model segment", findings);
+}
+
+export function verifyCoreClientOnlyInApi() {
+  const roots = listWindows(REPO_ROOT);
+  requireMatches("Windows", roots.length, 2);
+  const importing = getGraph().filter((one) => (one.dependencies ?? []).some((dep) => dep.module === CORE_CLIENT || dep.module.startsWith(`${CORE_CLIENT}/`)));
+  requireMatches("Files importing @numen/core-client", importing.length, 2);
+  failOnFindings("A window imports @numen/core-client outside an api segment and its entry", findCoreClientOutsideApi(getGraph(), roots));
+}
+
+export function verifySharedServesSeveralSlices() {
+  const findings = [];
+  let read = 0;
+  for (const root of listWindows(REPO_ROOT).filter((dir) => fs.existsSync(path.join(REPO_ROOT, dir, "shared")))) {
+    const one = findSharedServingOneSlice(getGraph(), root);
+    findings.push(...one.findings);
+    read += one.read;
+  }
+  requireMatches("Shared files of the windows", read, 20);
+  failOnFindings("A shared file serves one slice", findings);
+}
+
+export const FRONTEND_GRAPH_VERIFIERS = [
+  {
+    id: "no-component-below-ui",
+    scope: "libs",
+    module: "boundary",
+    name: "No Component (.vue) Lies in a lib, api or model Segment of a Library, Window or Plugin Frontend",
+    run: verifyNoComponentBelowUi,
+  },
+  {
+    id: "core-client-only-in-api",
+    scope: "apps",
+    module: "boundary",
+    name: "A Window Imports @numen/core-client Only From an api Segment and Its Entry",
+    run: verifyCoreClientOnlyInApi,
+  },
+  {
+    id: "shared-serves-several-slices",
+    scope: "apps",
+    module: "boundary",
+    name: "A Shared File of a Window Is Imported From More Than One Slice",
+    run: verifySharedServesSeveralSlices,
+  },
+];

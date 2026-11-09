@@ -104,6 +104,16 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 - **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers are stored in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
 
+### Checks are passed by changing the code
+
+A change that makes a check pass without fixing what it reports is a finding. Look in the diff for:
+
+- a package of type aliases (`type T = otherpkg.T`) that re-exports types of another package;
+- an interface split into embedded pieces, each under the size limit, that together exceed it;
+- a file or a package added to an `exclude`, `ignores` or similar entry of a lint or `tsconfig` configuration;
+- a name, path or file added to a list of exceptions in a check;
+- logic moved into a folder a check does not walk, such as a sub-package of `container/`.
+
 ---
 
 ## What not to report
