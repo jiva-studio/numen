@@ -86,6 +86,11 @@ export class ApplicationDriver {
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
+  async expectVaultHasFile(vaultName: string, file: string): Promise<void> {
+    this.scenario.setVault(vaultName)
+    await expect.poll(() => this.listEntries(file)).toContain(file)
+  }
+
   async expectVaultHasFolder(vaultName: string, folder: string): Promise<void> {
     this.scenario.setVault(vaultName)
     await expect.poll(() => this.listEntries(folder)).toContain(folder)

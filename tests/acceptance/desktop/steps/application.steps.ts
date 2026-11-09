@@ -23,6 +23,10 @@ Then(
   },
 )
 
+Given('the vault {string} has the file at {string}', async ({ person }, vault: string, file: string) => {
+  await person.application.expectVaultHasFile(vault, file)
+})
+
 Given('the vault {string} has the folder at {string}', async ({ person }, vault: string, folder: string) => {
   await person.application.expectVaultHasFolder(vault, folder)
 })
