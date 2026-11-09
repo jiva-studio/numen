@@ -13,7 +13,19 @@ Given('{vault} has the folder at {string}', ({ person }, vault: string, folder: 
 })
 
 Given('{vault} has the PDF at {string}', ({ person }, vault: string, filePath: string) => {
-  person.vault.copyPdf(vault, filePath)
+  person.vault.copySample(vault, 'PDF', filePath)
+})
+
+Given('{vault} has the EPUB at {string}', ({ person }, vault: string, filePath: string) => {
+  person.vault.copySample(vault, 'EPUB', filePath)
+})
+
+Given('{vault} has the recording at {string}', ({ person }, vault: string, filePath: string) => {
+  person.vault.copySample(vault, 'recording', filePath)
+})
+
+Given('{vault} has the image at {string}', ({ person }, vault: string, filePath: string) => {
+  person.vault.copySample(vault, 'image', filePath)
 })
 
 Given('{vault} contains the {entry} at {string}', async ({ person }, vault: string, entry: string, entryPath: string) => {

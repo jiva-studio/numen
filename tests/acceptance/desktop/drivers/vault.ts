@@ -2,6 +2,7 @@
 import { expect } from 'playwright/test'
 import { createNote, listFilePaths, listFiles, writeNote as writeBody } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertEntry, getNoteFile } from './rules.js'
+import type { SampleKind } from '../support/samples.js'
 import type { Scenario } from './scenario.js'
 
 export class VaultDriver {
@@ -31,8 +32,8 @@ export class VaultDriver {
     this.scenario.getWorld().makeFolder(this.scenario.getVault(vault), folder)
   }
 
-  copyPdf(vault: string, filePath: string): void {
-    this.scenario.getWorld().copyPdf(this.scenario.getVault(vault), filePath)
+  copySample(vault: string, kind: SampleKind, filePath: string): void {
+    this.scenario.getWorld().copySample(this.scenario.getVault(vault), kind, filePath)
   }
 
   async expectContains(vault: string, entry: string, entryPath: string): Promise<void> {

@@ -120,7 +120,7 @@ describe('World', () => {
     const world = create()
     world.addVault('Test')
     world.makeFolder('Test', 'daily/2026')
-    world.copyPdf('Test', 'assets/shore.pdf')
+    world.copySample('Test', 'PDF', 'assets/shore.pdf')
     expect(world.getEntryKind('Test', 'daily/2026')).toBe('folder')
     expect(world.getEntryKind('Test', 'assets/shore.pdf')).toBe('file')
     expect(world.getEntryKind('Test', 'assets/other.pdf')).toBeUndefined()
@@ -129,7 +129,19 @@ describe('World', () => {
   it('has no sample for a PDF the library does not know', () => {
     const world = create()
     world.addVault('Test')
-    expect(() => world.copyPdf('Test', 'assets/unknown.pdf')).toThrow('there is no sample PDF "unknown.pdf"')
+    expect(() => world.copySample('Test', 'PDF', 'assets/unknown.pdf')).toThrow('there is no sample PDF "unknown.pdf"')
+  })
+
+  it('copies a book, a recording and an image, and makes a file the samples generate', () => {
+    const world = create()
+    world.addVault('Test')
+    world.copySample('Test', 'EPUB', 'assets/ledger.epub')
+    world.copySample('Test', 'recording', 'assets/talk.mp3')
+    world.copySample('Test', 'recording', 'assets/sample.wav')
+    world.copySample('Test', 'image', 'assets/llama.png')
+    for (const file of ['ledger.epub', 'talk.mp3', 'sample.wav', 'llama.png']) {
+      expect(world.getEntryKind('Test', `assets/${file}`)).toBe('file')
+    }
   })
 
   it('keeps every vault apart', () => {

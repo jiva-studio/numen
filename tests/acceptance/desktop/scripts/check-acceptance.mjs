@@ -26,6 +26,9 @@ const SIMILAR = 0.5
 const PENDING = new Set([
   '{vault} has the folder at {string}',
   '{vault} has the PDF at {string}',
+  '{vault} has the EPUB at {string}',
+  '{vault} has the recording at {string}',
+  '{vault} has the image at {string}',
 ])
 
 const walk = (dir, ext) =>
