@@ -6,14 +6,24 @@ import {
   getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
+import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertApplication, assertEntry, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 
-/** A text made by a plugin may take this long before the commands that work on it are listed. */
-const TEXT_LIMIT_MS = 90_000
-const DELETE_TEXT = 'Delete text'
-const DELETE_TEXT_ID = 'app:version.delete'
+/** A plugin may take this long to start before the first command of it answers. */
+const PLUGIN_START_LIMIT_MS = 35_000
+
+interface PluginCommand {
+  pluginId?: string
+  command: string
+}
+
+/** The commands that work on the text of the open file, and the command whose items must list a text first. */
+const TEXT_COMMANDS: Record<string, PluginCommand> = {
+  'Delete text': { command: 'app:version.delete' },
+  'Proofread text': { pluginId: 'md.numen.tools.proofreading', command: 'proofreading.create' },
+}
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -37,20 +47,18 @@ export class ApplicationDriver {
     const command = page
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
-    if (label === DELETE_TEXT) await this.expectOpenTabHasText()
+    if (label in TEXT_COMMANDS) await this.expectOpenTabHasText(TEXT_COMMANDS[label] as PluginCommand)
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
-    // A command that works on a text is listed once the file has one, so the label is typed again until it shows.
-    let isRetry = false
-    await expect(async () => {
-      if (isRetry) await field.fill('')
-      isRetry = true
-      await field.fill(label)
-      await expect(command).toHaveAttribute('data-here', 'true', { timeout: 3_000 })
-    }).toPass({ timeout: TEXT_LIMIT_MS })
+    await field.fill(label)
+    await expect(command).toHaveAttribute('data-here', 'true')
     await page.keyboard.press('Enter')
     const crumb = page.locator('[data-palette="crumb"]')
-    await expect.poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label)).toBe(true)
+    await expect
+      .poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label), {
+        timeout: PLUGIN_START_LIMIT_MS,
+      })
+      .toBe(true)
   }
 
   async enter(value: string): Promise<void> {
@@ -120,16 +128,14 @@ export class ApplicationDriver {
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
   }
 
-  private async expectOpenTabHasText(): Promise<void> {
+  private async expectOpenTabHasText(textCommand: PluginCommand): Promise<void> {
     const { page } = this.scenario
-    const closeButton = page.getByRole('tab', { selected: true }).getByRole('button').first()
-    const title = ((await closeButton.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
-    const notePath = await this.findNote(title)
     await expect
       .poll(async () => {
+        const notePath = await readActivePath(page.request)
         const answer = await callRPC(page.request, 'CommandService/ListCommandItems', {
           path: notePath,
-          commands: [{ command: DELETE_TEXT_ID }],
+          commands: [{ ...(textCommand.pluginId ? { pluginId: textCommand.pluginId } : {}), command: textCommand.command }],
         })
         const [list] = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
         return list?.items?.length ?? 0
