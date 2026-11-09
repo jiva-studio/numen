@@ -63,3 +63,10 @@ When('the person plays the recording in the tab {reference} {string}', async ({ 
 Then('the recording in the tab {reference} {string} is playing', async ({ person }, reference: string, name: string) => {
   await person.tab.expectPlaying(reference, name)
 })
+
+Then(
+  'the tab {reference} {string} has the highlight {string}',
+  async ({ person }, reference: string, name: string, text: string) => {
+    await person.tab.expectHighlight(reference, name, text)
+  },
+)

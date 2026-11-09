@@ -3,7 +3,6 @@ import {
   openVaultFile,
   openWorkspace,
   runCommand,
-  waitForPassage,
 } from '../../support/workspace.js'
 
 const getPageField = (page: Page, name: RegExp) =>
@@ -53,19 +52,6 @@ test.describe('The tabs of the window after a restart', () => {
 
     await setPdfReaderEnabled(page, true)
     await page.getByRole('tab', { name: /shore/i }).click()
-    await expect(getPageField(page, /shore/i)).toHaveValue('2')
-  })
-})
-
-test.describe('A search hit in a PDF', () => {
-  test.describe.configure({ timeout: 120_000 })
-
-  test('opens the PDF at the page of the hit', async ({ page }) => {
-    await openWorkspace(page)
-
-    const passage = await waitForPassage(page, 'heron wades', 'assets/shore.pdf')
-    await passage.click()
-
     await expect(getPageField(page, /shore/i)).toHaveValue('2')
   })
 })

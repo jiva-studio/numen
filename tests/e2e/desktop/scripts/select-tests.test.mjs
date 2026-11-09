@@ -25,9 +25,9 @@ await test('a change to a spec folder selects that folder', () => {
   assert.equal(
     getScope([
       'tests/e2e/desktop/tests/plugins/system/settings.spec.ts',
-      'plugins/engines-embeddings/backend/main.go',
+      'plugins/tools-updater/backend/main.go',
     ]),
-    'engines.embeddings system',
+    'system tools.updater',
   )
 })
 

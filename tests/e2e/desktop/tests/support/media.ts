@@ -97,7 +97,6 @@ export const getStandInsOrigin = async (request: APIRequestContext): Promise<str
   return new URL(endpoint).origin
 }
 
-// The file `scripts/start-server.mjs` reads the texts of web pages from, named by the server's port.
 const getPageTextsFile = (): string =>
   path.join(os.tmpdir(), `numen-e2e-page-texts-${process.env.NUMEN_TEST_PORT ?? '3456'}.json`)
 
@@ -116,6 +115,6 @@ export const writePageText = (address: string, text: string): void => {
 
 /** Makes the page stand-in answer the address with its own page again. */
 export const removePageText = (address: string): void => {
-  const { [address]: _removed, ...kept } = readPageTexts()
-  fs.writeFileSync(getPageTextsFile(), JSON.stringify(kept))
+  const { [address]: _removed, ...remaining } = readPageTexts()
+  fs.writeFileSync(getPageTextsFile(), JSON.stringify(remaining))
 }

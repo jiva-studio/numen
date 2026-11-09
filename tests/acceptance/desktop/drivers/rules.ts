@@ -37,9 +37,21 @@ export const assertPosition = (kind: TabKind, position: string, file: string): v
 }
 
 export const parseTime = (time: string): number => {
-  const hit = /^(\d+):([0-5]\d)$/.exec(time)
-  if (!hit) throw new Error(`"${time}" is not a time: write minutes and seconds, like "2:00"`)
-  return Number(hit[1]) * 60 + Number(hit[2])
+  const match = /^(\d+):([0-5]\d)$/.exec(time)
+  if (!match) throw new Error(`"${time}" is not a time: write minutes and seconds, like "2:00"`)
+  return Number(match[1]) * 60 + Number(match[2])
+}
+
+export const assertEntry = (entry: string, path: string, isFolder: boolean): void => {
+  if (entry !== 'file' && entry !== 'folder') throw new Error(`"${entry}" is not a file or a folder`)
+  if ((entry === 'folder') !== isFolder) {
+    throw new Error(`"${path}" is a ${isFolder ? 'folder' : 'file'}, not a ${entry}`)
+  }
+}
+
+export const getAncestors = (entryPath: string): string[] => {
+  const parts = entryPath.split('/').slice(0, -1)
+  return parts.map((_, index) => parts.slice(0, index + 1).join('/'))
 }
 
 export type PaletteField = 'name' | 'item' | 'note' | 'text'
@@ -61,8 +73,8 @@ export const parseCount = (text: string): number => {
 
 export const readNoteType = (content: string): string => {
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)
-  const hit = /^type:\s*(\S+)\s*$/m.exec(frontmatter?.[1] ?? '')
-  return (hit?.[1] ?? '').replace(/^["']|["']$/g, '')
+  const match = /^type:\s*(\S+)\s*$/m.exec(frontmatter?.[1] ?? '')
+  return (match?.[1] ?? '').replace(/^["']|["']$/g, '')
 }
 
 export const pickByTitle = (title: string, paths: readonly string[]): string => {

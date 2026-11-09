@@ -110,6 +110,7 @@ fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HE
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.epub'), 'INVALID_EPUB_ZIP')
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.mp3'), Buffer.alloc(512))
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.flac'), Buffer.alloc(512))
+fs.mkdirSync(path.join(tmpVault, 'Saltworks'))
 fs.writeFileSync(
   path.join(tmpVault, 'notes', 'plain.md'),
   'Plain text file opened via markdown editor plugin.',

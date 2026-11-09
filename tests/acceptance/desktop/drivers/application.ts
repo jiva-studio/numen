@@ -45,7 +45,14 @@ export class ApplicationDriver {
 
   async enter(value: string): Promise<void> {
     const { page } = this.scenario
-    await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
+    const treeField = page.getByRole('tree').getByRole('textbox')
+    await expect(treeField.or(page.locator('[data-palette="crumb"]'))).toBeVisible()
+    if (await treeField.isVisible()) {
+      await treeField.fill(value)
+      await treeField.press('Enter')
+      await expect(treeField).toBeHidden()
+      return
+    }
     const field = getPaletteInput(page)
     const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
     if (kind === 'item') {
@@ -79,6 +86,21 @@ export class ApplicationDriver {
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
+  async expectVaultHasFolder(vaultName: string, folder: string): Promise<void> {
+    this.scenario.setVault(vaultName)
+    await expect.poll(() => this.listEntries(folder)).toContain(folder)
+  }
+
+  async expectVaultDoesNotHaveFile(vaultName: string, file: string): Promise<void> {
+    this.scenario.setVault(vaultName)
+    await expect.poll(() => this.listEntries(file)).not.toContain(file)
+  }
+
+  private async listEntries(entryPath: string): Promise<string[]> {
+    const parent = entryPath.split('/').slice(0, -1).join('/')
+    return (await listFiles(this.scenario.page.request, parent)).map((one) => one.path)
+  }
+
   async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
     this.scenario.setVault(vaultName)
     const expected = parseCount(count)
@@ -87,8 +109,8 @@ export class ApplicationDriver {
 
   private async expectOpenTabHasText(): Promise<void> {
     const { page } = this.scenario
-    const closer = page.getByRole('tab', { selected: true }).getByRole('button').first()
-    const title = ((await closer.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
+    const closeButton = page.getByRole('tab', { selected: true }).getByRole('button').first()
+    const title = ((await closeButton.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
     const notePath = await this.findNote(title)
     await expect
       .poll(async () => {

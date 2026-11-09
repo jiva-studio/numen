@@ -6,6 +6,7 @@ import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 describe('the palette entry of a command a plugin declares with a Shift shortcut', () => {
   it('is drawn with the keystroke holding Shift that the manifest names', () => {
     const host = {
+      hasCommandItems: () => false,
       getPaletteCommands: () => [
         { id: 'md.agent:chat.open', title: 'Open agent chat', shortcut: 'mod+shift+a' },
         { id: 'md.graph:graph.open', title: 'Open plex graph', shortcut: 'mod+shift+x' },
