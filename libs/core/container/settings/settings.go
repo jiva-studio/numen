@@ -674,8 +674,6 @@ func (c Config) handleError(err error) {
 	}
 }
 
-// addStoredContent adds the JSON a store writes under the key when the store holds entries. A
-// failure to write is returned, and errors.Join leaves out a nil.
 func addStoredContent(values settingevents.Values, key string, isHeld bool, write func() (string, error)) error {
 	if !isHeld {
 		return nil
