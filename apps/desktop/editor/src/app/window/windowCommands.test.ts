@@ -79,9 +79,9 @@ describe('the commands of the window', () => {
       tab: '',
     }
 
-    await commands.run('app:note.trash', target)
+    await commands.run('app:note.remove', target)
 
-    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('app:note.trash', {
+    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('app:note.remove', {
       ...FRONT,
       path: 'reef/Coral.md',
       file: 'reef/Coral.md',

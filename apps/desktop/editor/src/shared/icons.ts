@@ -8,7 +8,7 @@
 import type { Component } from 'vue'
 import { createNamedIcon } from '@numen/ui'
 import { getCommandOwner } from '@numen/plugin-host'
-import { COMMAND, SETTING_COMMAND_PREFIX } from './commandIds'
+import { COMMAND, ROW, SETTING_COMMAND_PREFIX } from './commandIds'
 import {
   AppWindow,
   ArrowRightLeft,
@@ -44,16 +44,16 @@ import {
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
-  [COMMAND.openNote, FileText],
-  [COMMAND.openFile, File],
-  [COMMAND.openNoteBeside, FileText],
+  [COMMAND.openFile, FileText],
+  [ROW.openDocument, File],
+  [ROW.openNoteBeside, FileText],
   [COMMAND.createChildNote, CornerDownRight],
   [COMMAND.createParentNote, CornerLeftUp],
   [COMMAND.createJumpNote, ArrowRightLeft],
   [COMMAND.renameNote, Type],
   [COMMAND.copyNotePath, Copy],
-  [COMMAND.trashNote, Trash2],
-  [COMMAND.deleteNote, Trash2],
+  [COMMAND.removeNote, Trash2],
+  [ROW.destroyNote, Trash2],
   [COMMAND.deleteText, FileX],
   [COMMAND.detachTab, ExternalLink],
   [COMMAND.unlinkTab, Link2Off],

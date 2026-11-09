@@ -65,7 +65,7 @@ describe('the commands as the words typed leave them', () => {
 
   it('lights nothing where nothing is typed', () => {
     const readItem = getNoteGroup(view, front(), '')?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem).toBeDefined()
@@ -76,7 +76,7 @@ describe('the commands as the words typed leave them', () => {
     const word = words.read.toLowerCase().slice(0, 3)
 
     const readItem = getNoteGroup(view, front(), word)?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem?.at).toStrictEqual([{ start: 0, end: 3 }])
@@ -84,7 +84,7 @@ describe('the commands as the words typed leave them', () => {
 
   it('lights the words typed where they match inside the text of a command', () => {
     const readItem = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem?.at).toStrictEqual([{ start: 1, end: 3 }])
@@ -99,7 +99,7 @@ describe('the commands as the words typed leave them', () => {
 
     const ids = getNoteGroup(view, front(), `   ${word}  `)?.items.map((item) => item.id)
 
-    expect(ids).toContain('app:note.open')
+    expect(ids).toContain('app:file.open')
   })
 })
 
@@ -312,7 +312,7 @@ describe('findRowIcon', () => {
 
 describe('the icon of the command that opens a document', () => {
   it('is the file icon the row of a document is drawn with', () => {
-    expect(findIcon('app:file.open')).toBe(File)
+    expect(findIcon('app:file.open#document')).toBe(File)
   })
 
   it('is the icon of the command the row of a document offers', () => {
@@ -321,7 +321,7 @@ describe('the icon of the command that opens a document', () => {
 
     expect(
       findRowIcon(
-        'app:file.open',
+        'app:file.open#document',
         commands as unknown as Commands,
         search as unknown as SearchState,
       ),

@@ -1,7 +1,7 @@
 /**
  * The commands offered over the window: what it opens, and how it is drawn.
  */
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
@@ -28,7 +28,8 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
     ...withWhen('window.isTabOpen'),
   },
   {
-    id: COMMAND.openFile,
+    id: ROW.openDocument,
+    command: COMMAND.openFile,
     text: words.readDocument,
     group: 'file',
     ...withWhen('target.isFile && !window.isTabOpen'),

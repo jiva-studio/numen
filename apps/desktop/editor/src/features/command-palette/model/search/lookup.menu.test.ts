@@ -1,6 +1,6 @@
 /** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import type { SlotCommand } from '@numen/plugin-host'
 import {
   createNameItem,
@@ -52,7 +52,7 @@ const OTHER = entry(`${ATLAS}:other.run`, 'Another')
 const ENTRIES = [SHOW, OTHER]
 
 /** The first action of a note is the id of the editor command that opens it, and an entry is the id of its command. */
-const openId = COMMAND.openNote
+const openId = COMMAND.openFile
 const showId = SHOW.command
 const otherId = OTHER.command
 
@@ -166,8 +166,8 @@ describe('a passage found in a file that is no note', () => {
       ENTRIES,
     )
 
-    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: 'Open the document' }])
-    expect(row.hit.actionIds).toStrictEqual([COMMAND.openFile])
+    expect(row.item.actions).toStrictEqual([{ id: ROW.openDocument, text: 'Open the document' }])
+    expect(row.hit.actionIds).toStrictEqual([ROW.openDocument])
   })
 })
 
@@ -190,7 +190,7 @@ describe('the command an action of a result runs', () => {
       title: '',
       line: -1,
       type: null,
-      actionIds: [COMMAND.openFile],
+      actionIds: [ROW.openDocument],
       selector: { page: 3 },
       ...overrides,
     })
@@ -205,7 +205,7 @@ describe('the command an action of a result runs', () => {
 
   it('is the command that opens the note, over the note of the hit', () => {
     expect(resolveChoice(createHit(), openId)).toStrictEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral', line: 3 },
       input: '',
     })
@@ -218,15 +218,15 @@ describe('the command an action of a result runs', () => {
   })
 
   it('is the command that opens a document, over its file and the selector of the hit', () => {
-    expect(resolveChoice(createDocument(), COMMAND.openFile)).toStrictEqual({
-      command: 'app:file.open',
+    expect(resolveChoice(createDocument(), ROW.openDocument)).toStrictEqual({
+      command: 'app:file.open#document',
       over: { path: '', file: 'library/a.bin', title: '', selector: { page: 3 } },
       input: '',
     })
   })
 
   it('is the command that opens a document, over the file alone where the hit has no selector', () => {
-    const place = resolveChoice(createDocument({ selector: null }), COMMAND.openFile)?.over
+    const place = resolveChoice(createDocument({ selector: null }), ROW.openDocument)?.over
 
     expect(place).toStrictEqual({ path: '', file: 'library/a.bin', title: '' })
   })
@@ -239,7 +239,7 @@ describe('the command an action of a result runs', () => {
 
   it('is none for an entry of the menu over a hit in a file that is no note', () => {
     expect(
-      resolveChoice(createDocument({ actionIds: [COMMAND.openFile, showId] }), showId),
+      resolveChoice(createDocument({ actionIds: [ROW.openDocument, showId] }), showId),
     ).toBeNull()
   })
 

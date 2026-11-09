@@ -70,7 +70,7 @@ describe('the answers of a step', () => {
 
   it.each([
     ['a name to type', 'app:note.rename'],
-    ['the name to type again', 'app:note.delete'],
+    ['the name to type again', 'app:note.remove#permanent'],
     ['a choice from a list', 'setting:app:appearance.theme'],
   ])('are not named in a row of %s', (_what, id) => {
     const commands = createPalette()

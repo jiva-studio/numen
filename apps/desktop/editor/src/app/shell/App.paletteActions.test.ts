@@ -83,7 +83,7 @@ describe('the row of a passage of a document, chosen on the window', () => {
       .flatMap((one) => one.items)
       .flatMap((one) => one.actions ?? [])
     expect(actions.length).toBeGreaterThan(0)
-    expect(actions.map((one) => one.id)).toStrictEqual(actions.map(() => 'app:file.open'))
+    expect(actions.map((one) => one.id)).toStrictEqual(actions.map(() => 'app:file.open#document'))
   })
 
   it('closes the search once and writes no message on the choice of that command', async () => {

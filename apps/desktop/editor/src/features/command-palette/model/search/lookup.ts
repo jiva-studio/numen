@@ -4,7 +4,7 @@
 import type { PaletteItem } from '@numen/shell'
 import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
 
@@ -69,7 +69,7 @@ function createNoteActions(
   openText: string,
   menu: readonly PaletteAction[],
 ): { actions: readonly PaletteAction[]; actionIds: readonly string[] } {
-  const actions = [{ id: COMMAND.openNote, text: openText }, ...menu]
+  const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
   return { actions, actionIds: actions.map((one) => one.id) }
 }
 
@@ -140,7 +140,7 @@ export function createPassageItem(
   entries: readonly SlotItem[] = [],
 ): SearchRow {
   const note = createNoteActions(words.read, createMenuActions(entries))
-  const document = [{ id: COMMAND.openFile, text: words.readDocument }]
+  const document = [{ id: ROW.openDocument, text: words.readDocument }]
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
@@ -195,7 +195,7 @@ export function resolveChoice(
     }
   }
   if (hit.type === null) {
-    if (action !== COMMAND.openFile) return null
+    if (action !== ROW.openDocument) return null
     const place = { path: '', file: hit.path, title: hit.title }
     return {
       command: action,
