@@ -5,7 +5,14 @@
  * drags the window.
  */
 import type { Component } from 'vue'
-import type { AppInfo, CommandItem, SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import {
+  SLOT_ATTRIBUTE,
+  SLOT_ENTRY_ATTRIBUTE,
+  type AppInfo,
+  type CommandItem,
+  type SlotCommand,
+  type SlotItem,
+} from '@numen/plugin-sdk'
 import { formatShortcut } from '../lib/shortcut'
 import { formatTooltip } from '../lib/title'
 import TitleBarMenuButton from './TitleBarMenuButton.vue'
@@ -38,10 +45,20 @@ function getTooltip(entry: SlotCommand): string {
 function isDrawn(entry: SlotItem): boolean {
   return !props.hidden.has(props.getKey(entry))
 }
+
+/** The attribute the window finds a command or a view by when it drags the entries of the bars. */
+function markEntry(entry: SlotItem): Record<string, string> {
+  return { [SLOT_ENTRY_ATTRIBUTE]: entry.key }
+}
 </script>
 
 <template>
-  <div class="title-bar__slot" :data-title-bar-slot="name">
+  <div
+    class="title-bar__slot"
+    :class="{ 'title-bar__slot--empty': entries.length === 0 }"
+    :data-title-bar-slot="name"
+    v-bind="{ [SLOT_ATTRIBUTE]: name }"
+  >
     <template v-for="entry in entries" :key="getKey(entry)">
       <template v-if="isDrawn(entry)">
         <span
@@ -63,6 +80,7 @@ function isDrawn(entry: SlotItem): boolean {
           :report-error="reportError"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-command="entry.command"
+          v-bind="markEntry(entry)"
           @run-command="onRunCommand"
         />
         <button
@@ -72,6 +90,7 @@ function isDrawn(entry: SlotItem): boolean {
           :class="{ 'title-bar__button--text': entry.icon === undefined }"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-command="entry.command"
+          v-bind="markEntry(entry)"
           data-title-bar-focusable
           :aria-label="entry.title"
           :title="getTooltip(entry)"
@@ -97,6 +116,7 @@ function isDrawn(entry: SlotItem): boolean {
           class="title-bar__view"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-view="entry.key"
+          v-bind="markEntry(entry)"
           style="--wails-draggable: no-drag"
         >
           <component :is="entry.component as Component" />

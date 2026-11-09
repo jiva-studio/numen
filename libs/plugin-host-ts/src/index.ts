@@ -62,8 +62,17 @@ export {
   readManifestSlotEntries,
   type DeclaredSlotEntry,
   type SlotCommandLook,
+  type SlotRegistry,
   type SlotRegistryDeps,
 } from './slots/slotRegistry'
+export {
+  isBarSlot,
+  moveSlotEntry,
+  readSlotLayout,
+  type SlotLayout,
+  type SlotLayoutChange,
+  type SlotMove,
+} from './slots/slotLayout'
 export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
 export { getTargetValues } from './when/targetValues'
 export { createWhenReader, type WhenReader } from './when/whenReader'

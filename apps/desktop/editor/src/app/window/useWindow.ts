@@ -44,6 +44,7 @@ import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { createVersionCommands } from '../commands/versionCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
+import { createSlotDrag } from '@/features/slot-layout'
 import { createBackendHandlers } from '../commands/backendHandlers'
 import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
@@ -393,7 +394,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginServices,
     pluginNotices,
     pluginNotes,
-    slotWindowValues: slots.windowValues,
+    windowSlots: slots,
     appCommands,
     itemLists,
   }
@@ -478,6 +479,7 @@ function initWindowServices(
     getPlatform: () => base.frame.platform.value,
   })
   settingsHolder.current = settings
+  base.windowSlots.layout.setSettings(settings.rest)
 
   ctx.vaults = useVaults({
     core,
@@ -501,7 +503,7 @@ function initWindowKindsAndCommands(
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
   base.appCommands.current = () => getAppCommandList(ctx)
-  base.slotWindowValues.current = () => {
+  base.windowSlots.windowValues.current = () => {
     const inFront = getTarget()
     return {
       'window.isVaultOpen': inFront.vault.id !== '',
@@ -790,6 +792,16 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
+/** The Cmd/Ctrl+drag of the bar entries, over the slots of the plugin host and the layout in the settings. */
+const createWindowSlotDrag = (base: WindowCore) =>
+  createSlotDrag({
+    isMac: () => base.frame.platform.value === 'darwin',
+    findLayoutKey: (itemKey) => base.pluginHost.slots.findLayoutKey(itemKey),
+    listLayoutKeys: (slot) => base.pluginHost.slots.listLayoutKeys(slot),
+    getLayout: base.windowSlots.layout.getLayout,
+    writeLayout: base.windowSlots.layout.writeLayout,
+  })
+
 const getPluginViews = (pluginHost: PluginHost) => ({
   titleBarView: pluginHost.getSlotView(SLOT.titleBar),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
@@ -880,6 +892,7 @@ export const useWindow = () => {
     tabLinks: base.tabLinks,
     ...createWindowFrameServices(base, ctx, { getTarget }),
     isHighlighted,
+    slotDrag: createWindowSlotDrag(base),
     ...moves,
   }
   return api

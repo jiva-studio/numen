@@ -24,6 +24,7 @@ type File struct {
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
+	Layout      Layout               `json:"layout"`
 	Plugins     map[string]map[string]any
 	Secrets     []pluginport.Secret
 	Notices     []string
@@ -36,6 +37,7 @@ type appObject struct {
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
+	Layout      Layout               `json:"layout"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -48,7 +50,11 @@ type appSections struct {
 	AI          *AI                   `json:"ai"`
 }
 
-func isOutsideDeclaration(section string) bool { return section == "agent" || section == "ai" }
+// isOutsideDeclaration is whether a section of the owner app is checked by its own reader, not by
+// app.json, and is not shown on the settings page.
+func isOutsideDeclaration(section string) bool {
+	return section == "agent" || section == "ai" || section == keyLayout
+}
 
 // keyVersion is the key of the version of the file.
 const keyVersion = "v"
@@ -84,7 +90,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
+		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI, f.Layout}},
 	}
 	if len(f.Secrets) > 0 {
 		members = append(members, struct {
@@ -175,7 +181,10 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", OwnerApp+"."+path))
 	}
 	for section := range app {
-		if isOutsideDeclaration(section) {
+		switch {
+		case section == keyLayout:
+			f.Layout = f.readLayout(app[section])
+		case isOutsideDeclaration(section):
 			valid[section] = app[section]
 		}
 	}

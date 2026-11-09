@@ -50,6 +50,7 @@ export interface PluginSupportDeps {
     | 'findSlotCommand'
     | 'reportSlotIssue'
     | 'getSlotWhenValues'
+    | 'getSlotLayout'
     | 'getWindowValues'
     | 'getContentTypes'
   >

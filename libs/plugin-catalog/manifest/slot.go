@@ -74,7 +74,7 @@ func (m Manifest) listSlotIssues() []error {
 			windowViews[entry.Slot] = true
 		}
 	}
-	return issues
+	return append(issues, listBarIssues(m.Contributes.Slots)...)
 }
 
 func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
@@ -131,4 +131,42 @@ func (c Contributes) hasSlotViews() bool {
 		}
 	}
 	return false
+}
+
+// barEntries are the commands and views a manifest places in the bar slots. The user's layout names
+// a bar entry by <plugin id>/<id>, so one id is placed in one bar slot only, and as a view or as a
+// command, not both.
+type barEntries struct {
+	// slots maps kind and id, joined by a space, to the first bar slot that holds them.
+	slots map[string]string
+	// kinds maps an id to the kind it was first placed as.
+	kinds map[string]string
+}
+
+func listBarIssues(entries []SlotEntry) []error {
+	bar := barEntries{slots: map[string]string{}, kinds: map[string]string{}}
+	var issues []error
+	for _, entry := range entries {
+		kind, id := entry.getPlaced()
+		if (kind == "command" || kind == "view") && IsBarSlot(entry.Slot) {
+			issues = append(issues, bar.add(entry.Slot, kind, id)...)
+		}
+	}
+	return issues
+}
+
+func (b barEntries) add(slot, kind, id string) []error {
+	var issues []error
+	entryKey := kind + " " + id
+	if first, found := b.slots[entryKey]; !found {
+		b.slots[entryKey] = slot
+	} else if first != slot {
+		issues = append(issues, fmt.Errorf("%w: %s %q is placed in the bar slots %q and %q", ErrInvalidSlotEntry, kind, id, first, slot))
+	}
+	if first, found := b.kinds[id]; !found {
+		b.kinds[id] = kind
+	} else if first != kind {
+		issues = append(issues, fmt.Errorf("%w: view and command %q share one key in the bar slots", ErrInvalidSlotEntry, id))
+	}
+	return issues
 }

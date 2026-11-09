@@ -3,10 +3,13 @@
  * `@numen/core-client` and the plugins it hosts through this package, never through the SDK itself.
  */
 export {
+  BAR_SLOTS,
   CONVERSATION,
   NOTE_TYPE,
   SHARED_COMMANDS,
   SLOT,
+  SLOT_ATTRIBUTE,
+  SLOT_ENTRY_ATTRIBUTE,
   VAULT_SUMMARY,
   createMockAgentHost,
   createSlotMenu,
@@ -24,6 +27,7 @@ export type {
   BackgroundTask,
   BackgroundTaskHost,
   Backlink,
+  BarSlotName,
   BufferHost,
   CommandItem,
   SlotMenu,

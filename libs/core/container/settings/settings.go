@@ -31,6 +31,12 @@ import (
 // AgentAt is the key of the agent section in the settings file.
 const AgentAt = "agent"
 
+// layoutAt and layoutSlotsAt are the path of the bar layout under the owner app.
+const (
+	layoutAt      = "layout"
+	layoutSlotsAt = "slots"
+)
+
 // Settings is the file that configures this installation: one object whose
 // fields are its sections, in file order. The settings adapter owns the file
 // and the window sections; each adapter defines the shape of its own section,
@@ -343,6 +349,9 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 		if value, found := target.GetValue(path...); found {
 			add(path, value)
 		}
+	}
+	if len(target.Layout.Slots) > 0 {
+		add([]string{settingsadapter.OwnerApp, layoutAt, layoutSlotsAt}, target.Layout.Slots)
 	}
 	for _, plugin := range c.Plugins()() {
 		listPluginValues(target, plugin, add, values)

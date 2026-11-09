@@ -37,6 +37,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
+import type { SlotLayout } from '../slots/slotLayout'
 import type { WhenValues } from '../when/when'
 import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
@@ -171,6 +172,7 @@ export interface PluginHostDeps {
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
+  readonly getSlotLayout?: () => SlotLayout | undefined
   readonly reportSlotIssue?: (
     pluginId: string,
     message: string,

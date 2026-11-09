@@ -2,11 +2,15 @@
  * The slots of a window as their owners read them: the entries the enabled plugins place with
  * `contributes.slots`, resolved into what a slot draws. Groups sort alphanumerically with the entries
  * of no group last, entries sort by order and then plugin id, and a separator divides two
- * groups that draw anything. A submenu holds the entries that name it as their slot.
+ * groups that draw anything. A submenu holds the entries that name it as their slot. A bar slot
+ * draws first the commands and views the user's layout lists for it, in that order, and a separator
+ * between two neighbours of different groups.
  */
 import { computed, watch } from 'vue'
 import {
+  BAR_SLOTS,
   SLOT,
+  type BarSlotName,
   type Disposable,
   type SlotHost,
   type SlotItem,
@@ -18,6 +22,7 @@ import { formatCommandId } from '../commandId'
 import { getTargetValues } from '../when/targetValues'
 import type { WhenValues } from '../when/when'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
+import { getLayoutKey, isBarSlot, type SlotLayout } from './slotLayout'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -51,6 +56,15 @@ export interface SlotRegistryDeps {
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly whenReader?: WhenReader
+  readonly getLayout?: () => SlotLayout | undefined
+}
+
+/** The slots of the window with the lookups the drag of the bar entries needs. */
+export interface SlotRegistry extends SlotHost {
+  /** The layout key of a drawn item, by its `SlotItem.key`; undefined for a separator, a submenu or an unknown key. */
+  findLayoutKey(itemKey: string): string | undefined
+  /** The layout keys of the commands and views drawn in a bar slot, in drawing order. */
+  listLayoutKeys(slot: BarSlotName): readonly string[]
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
@@ -110,6 +124,59 @@ function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
     items.push(...(groups.get(name) ?? []).sort(compareInGroup).map((one) => one.item))
   }
   return items
+}
+
+/**
+ * The items of a bar slot: the entries its layout lists, in the order of their first place in the
+ * list, then the entries placed there that no bar slot lists, by group, order and plugin id. A
+ * separator is drawn between two neighbours of different groups.
+ */
+function layOutBar(
+  slot: BarSlotName,
+  placed: readonly Placed[],
+  getLayoutIndex: (entry: DeclaredSlotEntry) => number | undefined,
+): SlotItem[] {
+  const inLayout: { readonly one: Placed; readonly index: number }[] = []
+  const outsideLayout: Placed[] = []
+  for (const one of keepFirstOfEachCommand(placed)) {
+    const index = getLayoutIndex(one.entry)
+    if (index === undefined) outsideLayout.push(one)
+    else inLayout.push({ one, index })
+  }
+  const ordered = [
+    ...inLayout
+      .sort((a, b) => a.index - b.index || compareInSlot(a.one, b.one))
+      .map(({ one }) => one),
+    ...outsideLayout.sort(compareInSlot),
+  ]
+  const items: SlotItem[] = []
+  let separators = 0
+  ordered.forEach((one, index) => {
+    const previous = ordered[index - 1]
+    if (previous && (previous.entry.group ?? '') !== (one.entry.group ?? '')) {
+      items.push({ kind: 'separator', key: `${slot}/separator/${separators}` })
+      separators += 1
+    }
+    items.push(one.item)
+  })
+  return items
+}
+
+/** Where a key of the layout is: the first bar slot that lists it, and its index in that list. */
+interface LayoutPlace {
+  readonly slot: BarSlotName
+  readonly index: number
+}
+
+/** The place of each key in the layout, by the first bar slot that lists it and its first index there. */
+function findLayoutPlaces(layout: SlotLayout): ReadonlyMap<string, LayoutPlace> {
+  const places = new Map<string, LayoutPlace>()
+  for (const slot of BAR_SLOTS) {
+    ;(layout[slot] ?? []).forEach((key, index) => {
+      if (!places.has(key)) places.set(key, { slot, index })
+    })
+  }
+  return places
 }
 
 function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
@@ -188,6 +255,19 @@ function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): De
   return { entries, owners, inCycle: new Set(cycles.flat()) }
 }
 
+const getCommandItemKey = (entry: DeclaredSlotEntry, command: string): string =>
+  `${entry.pluginId}/command/${command}`
+
+const getViewItemKey = (entry: DeclaredSlotEntry, view: string): string =>
+  `${entry.pluginId}/view/${view}`
+
+/** The item key an entry of a bar slot is drawn under; undefined for a submenu. */
+function getItemKey(entry: DeclaredSlotEntry): string | undefined {
+  if (entry.command) return getCommandItemKey(entry, getFullCommand(entry, entry.command))
+  if (entry.view) return getViewItemKey(entry, entry.view)
+  return undefined
+}
+
 function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
@@ -196,7 +276,7 @@ function toCommandItem(
   if (!look) return undefined
   return {
     kind: 'command',
-    key: `${entry.pluginId}/command/${command}`,
+    key: getCommandItemKey(entry, command),
     pluginId: entry.pluginId,
     command,
     title: look.title,
@@ -214,7 +294,7 @@ function toViewItem(
   if (component === undefined) return undefined
   return {
     kind: 'view',
-    key: `${entry.pluginId}/view/${view}`,
+    key: getViewItemKey(entry, view),
     pluginId: entry.pluginId,
     view,
     component,
@@ -238,7 +318,7 @@ function toSubmenuItem(
   }
 }
 
-export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
+export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
   const reported = new Set<string>()
   const report: Report = (pluginId, message, severity) => {
     const key = `${pluginId}\n${message}`
@@ -280,7 +360,37 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     return toSubmenuItem(entry, submenu, resolve(submenu, target))
   }
 
+  const layoutPlaces = computed(() => findLayoutPlaces(deps.getLayout?.() ?? {}))
+
+  /** The layout key of each item key an entry of a bar slot is drawn under. */
+  const layoutKeys = computed(() => {
+    const keys = new Map<string, string>()
+    for (const entry of declared.value.entries) {
+      const itemKey = getItemKey(entry)
+      const layoutKey = getLayoutKey(entry)
+      if (isBarSlot(entry.slot) && itemKey && layoutKey) keys.set(itemKey, layoutKey)
+    }
+    return keys
+  })
+
+  const resolveBar = (place: BarSlotName, target: CommandTarget | undefined): SlotItem[] => {
+    const places = layoutPlaces.value
+    const findPlace = (entry: DeclaredSlotEntry) => {
+      const key = getLayoutKey(entry)
+      return key === undefined ? undefined : places.get(key)
+    }
+    const items: Placed[] = []
+    for (const entry of declared.value.entries) {
+      if (!isBarSlot(entry.slot)) continue
+      if ((findPlace(entry)?.slot ?? entry.slot) !== place) continue
+      const item = toItem(entry, target)
+      if (item) items.push({ entry, item })
+    }
+    return layOutBar(place, items, (entry) => findPlace(entry)?.index)
+  }
+
   const resolve = (place: string, target: CommandTarget | undefined): SlotItem[] => {
+    if (isBarSlot(place)) return resolveBar(place, target)
     const items: Placed[] = []
     for (const entry of declared.value.entries) {
       if (entry.slot !== place) continue
@@ -292,6 +402,9 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
 
   return {
     getEntries: (slot: SlotPlace, target?: CommandTarget) => resolve(slot, target),
+    findLayoutKey: (itemKey) => layoutKeys.value.get(itemKey),
+    listLayoutKeys: (slot) =>
+      resolve(slot, undefined).flatMap((item) => layoutKeys.value.get(item.key) ?? []),
     watchEntries: (slot, handler, target): Disposable => {
       const stop = watch(() => resolve(slot, target), handler, { immediate: true })
       return { dispose: stop }

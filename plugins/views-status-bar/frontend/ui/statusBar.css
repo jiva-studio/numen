@@ -22,6 +22,17 @@
   margin-inline-start: auto;
 }
 
+/* While the window drags a bar entry, an empty slot keeps the room of one chip to take the drop. */
+:root[data-numen-slot-dragging] .status-bar__slot--empty {
+  min-inline-size: 2rem;
+}
+
+.status-bar__view {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
 .status-bar__gap {
   inline-size: 0.5rem;
 }

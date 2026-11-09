@@ -7,8 +7,14 @@ import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
 import type { CommandTarget } from '../commands/commands'
 
-export { SLOT, type SlotName } from './slotNames'
+export { SLOT, BAR_SLOTS, type SlotName, type BarSlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'
+
+// SLOT_ATTRIBUTE names the element that draws a bar slot; its value is the slot name.
+// SLOT_ENTRY_ATTRIBUTE names the element of one command or view of a bar slot; its value is
+// SlotItem.key. The window finds the entries it drags by them.
+export const SLOT_ATTRIBUTE = 'data-numen-slot'
+export const SLOT_ENTRY_ATTRIBUTE = 'data-numen-slot-entry'
 
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.
 export type SlotPlace = SlotName | (string & {})

@@ -53,7 +53,7 @@ type Registries func(name string) ([]string, bool)
 // The first path element is the owner and the rest is the key path under it.
 // It checks the declared key, the type of the value, enum membership and range
 // bounds for every owner. The keys `agent` and `ai` of the owner app are
-// outside the check.
+// outside the check, and `layout` is checked by checkLayoutWrite.
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {
@@ -77,6 +77,9 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 
 func getSettingName(owner string, key []string, value any) (string, error) {
 	if owner == OwnerApp {
+		if key[0] == keyLayout {
+			return "", checkLayoutWrite(key[1:], value)
+		}
 		if isOutsideDeclaration(key[0]) {
 			return "", nil
 		}

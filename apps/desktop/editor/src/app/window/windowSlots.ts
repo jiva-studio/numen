@@ -15,6 +15,7 @@ import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'
 import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
 import { getPaletteId } from '../commands/declaredCommands'
+import { createWindowSlotLayout } from './windowSlotLayout'
 
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<
@@ -33,6 +34,7 @@ type WindowHostDeps = Required<
     | 'findSlotCommand'
     | 'reportSlotIssue'
     | 'getSlotWhenValues'
+    | 'getSlotLayout'
     | 'getWindowValues'
     | 'getContentTypes'
     | 'whenReader'
@@ -40,6 +42,7 @@ type WindowHostDeps = Required<
 >
 
 export function createWindowSlots(deps: WindowSlotsDeps) {
+  const layout = createWindowSlotLayout()
   let editorCommands: readonly Command[] | undefined
   /** The window variables of when, and the settings as config; set once the window can say what is in front. */
   const windowValues: { current?: () => WhenValues } = {}
@@ -77,9 +80,10 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     findSlotCommand: findCommand,
     reportSlotIssue: deps.writeIssue,
     getSlotWhenValues: getWhenValues,
+    getSlotLayout: layout.getLayout,
     getWindowValues,
     getContentTypes: whenContext.getContentTypes,
     whenReader: whenContext.whenReader,
   }
-  return { hostDeps, windowValues }
+  return { hostDeps, windowValues, layout }
 }

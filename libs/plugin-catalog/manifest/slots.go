@@ -48,3 +48,11 @@ func IsSlot(name string) bool {
 func IsWindowSlot(name string) bool {
 	return name == SlotTitleBar || name == SlotStatusBar
 }
+
+// BarSlots are the slots of the two bars, whose entries the user arranges, in the order slots.json lists them.
+var BarSlots = []string{SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight}
+
+// IsBarSlot reports whether the slot is one of the two bars, whose entries the user arranges.
+func IsBarSlot(name string) bool {
+	return name == SlotTitleBarCommands || name == SlotTitleBarStatus || name == SlotStatusBarLeft || name == SlotStatusBarRight
+}

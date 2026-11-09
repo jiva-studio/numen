@@ -301,6 +301,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+    ...(deps.getSlotLayout ? { getLayout: deps.getSlotLayout } : {}),
     whenReader,
   })
   contextHost.getSlots = () => slots

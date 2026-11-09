@@ -10,6 +10,9 @@ import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
 import { useSlotMenu, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import { WORDS } from '../lib/entries'
 
+// The attributes a row gives the button, such as the mark the window drags it by, go on the button.
+defineOptions({ inheritAttrs: false })
+
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
@@ -79,6 +82,7 @@ function getIcon(id: string): Component | undefined {
 
 <template>
   <button
+    v-bind="$attrs"
     ref="button"
     type="button"
     class="status-bar__entry"

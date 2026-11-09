@@ -26,3 +26,14 @@ export const SLOT = {
 
 // SlotName is a slot of a window.
 export type SlotName = (typeof SLOT)[keyof typeof SLOT]
+
+// BAR_SLOTS are the slots of the two bars, whose entries the user arranges, in the order slots.json lists them.
+export const BAR_SLOTS = [
+  SLOT.titleBarCommands,
+  SLOT.titleBarStatus,
+  SLOT.statusBarLeft,
+  SLOT.statusBarRight,
+] as const
+
+// BarSlotName is a slot of one of the two bars.
+export type BarSlotName = (typeof BAR_SLOTS)[number]
