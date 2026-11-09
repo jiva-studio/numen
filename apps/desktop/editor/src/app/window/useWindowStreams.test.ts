@@ -61,7 +61,12 @@ describe('following the vault', () => {
       core: {
         ...setup().core,
         watchVaultChanges: () =>
-          yielding(openingMessage, { paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
+          yielding(openingMessage, {
+            paths: [],
+            shouldReload: false,
+            renamed: [],
+            versionPaths: ['talks/a.mp3'],
+          }),
       },
     })
 
