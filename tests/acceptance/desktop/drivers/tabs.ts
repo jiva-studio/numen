@@ -91,6 +91,7 @@ export class TabDriver {
 
   async openFile(filePath: string): Promise<void> {
     await this.scenario.ensureWorkspace()
+    this.scenario.rememberFile(filePath)
     await (await revealTreeRow(this.scenario.page, filePath)).press('Enter')
   }
 
