@@ -89,6 +89,19 @@ func (m Manifest) listSlotIssues() []error {
 	return issues
 }
 
+func listSlotCommandIssues(entry SlotEntry, declared map[string]Command) []error {
+	var issues []error
+	command, isDeclared := declared[entry.Command]
+	if !isDeclared && !fullCommandIDPattern.MatchString(entry.Command) {
+		issues = append(issues, fmt.Errorf("%w: command %q is neither declared by the manifest nor the full id of a command", ErrInvalidSlotEntry, entry.Command))
+	}
+	issues = append(issues, listSlotLookIssues(entry)...)
+	if isDeclared {
+		return append(issues, listSlotValueIssues(entry, command)...)
+	}
+	return append(issues, listForeignValueIssues(entry)...)
+}
+
 func listSlotEntryIssues(entry SlotEntry, declared map[string]Command) []error {
 	var issues []error
 	if strings.TrimSpace(entry.Slot) == "" {
@@ -104,16 +117,7 @@ func listSlotEntryIssues(entry SlotEntry, declared map[string]Command) []error {
 	}
 	switch {
 	case entry.Command != "":
-		command, isDeclared := declared[entry.Command]
-		if !isDeclared && !fullCommandIDPattern.MatchString(entry.Command) {
-			issues = append(issues, fmt.Errorf("%w: command %q is neither declared by the manifest nor the full id of a command", ErrInvalidSlotEntry, entry.Command))
-		}
-		issues = append(issues, listSlotLookIssues(entry)...)
-		if isDeclared {
-			issues = append(issues, listSlotValueIssues(entry, command)...)
-		} else {
-			issues = append(issues, listForeignValueIssues(entry)...)
-		}
+		issues = append(issues, listSlotCommandIssues(entry, declared)...)
 	case entry.View != "":
 		issues = append(issues, listUnplacedValuesIssues(entry, "view", entry.View)...)
 		if !tabKindPattern.MatchString(entry.View) {
