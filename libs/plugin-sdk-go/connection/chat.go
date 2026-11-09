@@ -92,10 +92,10 @@ type ChatRequest struct {
 
 // ChatStream is the events of one turn. A reader calls Next until it returns false and then reads Err.
 type ChatStream struct {
-	stream *connect.ServerStreamForClient[v1.HostModelServiceChatResponse]
-	ctx    context.Context
-	err    error
-	isDone bool
+	stream     *connect.ServerStreamForClient[v1.HostModelServiceChatResponse]
+	contextErr func() error
+	err        error
+	isDone     bool
 }
 
 // Chat asks the rows of the plugin, in order, for the next turn of a conversation. The core goes to the
@@ -123,7 +123,7 @@ func (c *Client) Chat(ctx context.Context, request ChatRequest) (*ChatStream, er
 		}
 		return nil, fmt.Errorf("connection: chat: %w", err)
 	}
-	return &ChatStream{stream: stream, ctx: ctx}, nil
+	return &ChatStream{stream: stream, contextErr: ctx.Err}, nil
 }
 
 // Next returns the next event. It returns false at the end of the turn and on an error; Err tells which.
@@ -164,7 +164,7 @@ func (s *ChatStream) Close() error { return s.stream.Close() }
 
 func (s *ChatStream) readEnd() error {
 	if err := s.stream.Err(); err != nil {
-		if ctxErr := s.ctx.Err(); ctxErr != nil {
+		if ctxErr := s.contextErr(); ctxErr != nil {
 			return ctxErr
 		}
 		return fmt.Errorf("connection: chat: %w", err)

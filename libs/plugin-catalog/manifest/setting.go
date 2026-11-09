@@ -52,24 +52,6 @@ type Condition struct {
 	Is      []string
 }
 
-// SecretDeclaration is a secret declared by a plugin in its manifest.
-type SecretDeclaration struct {
-	Name        string
-	Title       string
-	Description string
-	When        *Condition
-	Group       string
-}
-
-// GetSecretNames returns the names of the secrets the plugin declares.
-func (m Manifest) GetSecretNames() []string {
-	names := make([]string, 0, len(m.Secrets))
-	for _, secret := range m.Secrets {
-		names = append(names, secret.Name)
-	}
-	return names
-}
-
 // GetSetting returns the declaration of the setting with the key.
 func (m Manifest) GetSetting(key string) (Setting, bool) {
 	for _, s := range m.Settings {
@@ -180,12 +162,6 @@ func (s Setting) hasOptionInAnyGroup(value string) bool {
 func (m Manifest) IsSettingShown(s Setting, resolved map[string]any) bool {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return m.isActive(s.When, resolved, 0)
-}
-
-// IsSecretActive reports whether the secret is handed to the plugin under the values in force.
-func (m Manifest) IsSecretActive(secret SecretDeclaration, values map[string]any) bool {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
-	return m.isActive(secret.When, values, 0)
 }
 
 func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bool {

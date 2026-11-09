@@ -5,7 +5,7 @@ import "testing"
 // A running plugin receives the profile in its Configure call, and a change of the profile pushes
 // a new call without a restart.
 func TestAChangeOfTheProfileReachesARunningPlugin(t *testing.T) {
-	host, probe := newSecretHost(t, nil)
+	host, probe := newConfiguredHost(t)
 
 	host.SetPerformanceProfile(t.Context(), "eco")
 	if got := probe.last(t).GetValues()["host.performanceProfile"]; got != "eco" {
@@ -20,7 +20,7 @@ func TestAChangeOfTheProfileReachesARunningPlugin(t *testing.T) {
 
 // The same profile again calls no plugin.
 func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
-	host, probe := newSecretHost(t, nil)
+	host, probe := newConfiguredHost(t)
 	host.SetPerformanceProfile(t.Context(), "eco")
 	calls := len(probe.calls)
 
@@ -32,10 +32,10 @@ func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 
 // A plugin that starts later receives the profile in its first Configure call.
 func TestAPluginConfiguredLaterReceivesTheProfile(t *testing.T) {
-	host, probe := newSecretHost(t, nil)
+	host, probe := newConfiguredHost(t)
 	host.performance = "eco"
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if got := probe.last(t).GetValues()["host.performanceProfile"]; got != "eco" {

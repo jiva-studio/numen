@@ -30,7 +30,7 @@ func newAgentServer(lookPath func(string) (string, error)) *agentServer {
 }
 
 func mount(s *server.Server, agent *agentServer) error {
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string) { agent.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	connection.Mount(s, agent.Provider())
 	return nil

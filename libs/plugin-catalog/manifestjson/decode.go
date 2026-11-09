@@ -130,7 +130,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Backend:          newBackend(wire.GetBackend()),
 		Frontend:         newFrontend(wire.GetFrontend()),
 		Settings:         settings,
-		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
@@ -219,20 +218,6 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			ChecksumSHA256: one.GetChecksumSha256(),
 			Metadata:       one.GetMetadata(),
 			PluginDir:      "",
-		})
-	}
-	return out
-}
-
-func newSecrets(wire []*v1.SecretDeclaration) []manifest.SecretDeclaration {
-	var out []manifest.SecretDeclaration
-	for _, one := range wire {
-		out = append(out, manifest.SecretDeclaration{
-			Name:        one.GetName(),
-			Title:       one.GetTitle(),
-			Description: one.GetDescription(),
-			When:        newCondition(one.GetWhen()),
-			Group:       one.GetGroup(),
 		})
 	}
 	return out

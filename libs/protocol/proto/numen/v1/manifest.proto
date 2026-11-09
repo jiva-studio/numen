@@ -30,7 +30,6 @@ message Manifest {
   ManifestBackend backend = 13;
   ManifestFrontend frontend = 14;
   repeated ManifestSetting settings = 15;
-  repeated SecretDeclaration secrets = 16;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
   // contributes is what the plugin adds to the application, known before its
@@ -292,17 +291,6 @@ message ManifestSetting {
   // operation is the operation a setting of type connections needs of each connection, such as
   // "complete". max is the number of rows.
   string operation = 21;
-}
-
-// SecretDeclaration is a secret, such as an API key, that a plugin asks the host to store.
-message SecretDeclaration {
-  string name = 1;
-  string title = 2;
-  string description = 3;
-  ManifestCondition when = 4;
-  // group is where the person finds the secrets for this declaration. It is a hint and not a limit.
-  // Optional; when set it is non-empty, trimmed and at most 64 characters.
-  string group = 5;
 }
 
 message ManifestNoteType {

@@ -14,11 +14,11 @@ func waitForCount(t *testing.T, got *atomic.Int32, want int32) {
 
 // A function registered for a plugin runs each time the plugin has been given its configuration.
 func TestAWatcherRunsWhenThePluginIsConfigured(t *testing.T) {
-	host, _ := newSecretHost(t, nil)
+	host, _ := newConfiguredHost(t)
 	var runs atomic.Int32
-	host.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
+	host.WatchPluginConfig(configuredPluginID, func() { runs.Add(1) })
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), configuredPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -27,12 +27,12 @@ func TestAWatcherRunsWhenThePluginIsConfigured(t *testing.T) {
 
 // A function registered for one plugin does not run when another plugin is configured.
 func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
-	host, _ := newSecretHost(t, nil)
+	host, _ := newConfiguredHost(t)
 	var runs, others atomic.Int32
 	host.WatchPluginConfig("md.numen.other", func() { runs.Add(1) })
-	host.WatchPluginConfig(secretPluginID, func() { others.Add(1) })
+	host.WatchPluginConfig(configuredPluginID, func() { others.Add(1) })
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), configuredPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,13 +44,13 @@ func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
 
 // A stopped watcher runs no more.
 func TestAStoppedWatcherRunsNoMore(t *testing.T) {
-	host, _ := newSecretHost(t, nil)
+	host, _ := newConfiguredHost(t)
 	var stopped, remaining atomic.Int32
-	stop := host.WatchPluginConfig(secretPluginID, func() { stopped.Add(1) })
-	host.WatchPluginConfig(secretPluginID, func() { remaining.Add(1) })
+	stop := host.WatchPluginConfig(configuredPluginID, func() { stopped.Add(1) })
+	host.WatchPluginConfig(configuredPluginID, func() { remaining.Add(1) })
 	stop()
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), configuredPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,18 +58,4 @@ func TestAStoppedWatcherRunsNoMore(t *testing.T) {
 	if got := stopped.Load(); got != 0 {
 		t.Errorf("a stopped watcher ran %d times", got)
 	}
-}
-
-// A secret handed to the plugin is a configuration of it.
-func TestAWatcherRunsWhenASecretIsHandedToThePlugin(t *testing.T) {
-	host, _ := newSecretHost(t, newKeys(map[string]string{}))
-	var runs atomic.Int32
-	host.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
-
-	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	waitForCount(t, &runs, 1)
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
@@ -51,13 +50,11 @@ type Config struct {
 	Watches                   *vaultwatch.Hub
 	SettingsFiles             *settingsadapter.Files
 	SettingEvents             *settingevents.Events
-	SecretGate                *secret.Gate
 	SubscribedHosts           *sync.Map
 	PluginChanges             *pluginchanges.Signals
 	ErrorHandler              func(error)
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentport.AgentProgram
-	SetSecretSource           func()
 }
 
 // DefaultSettings returns the settings of an unconfigured installation.
@@ -106,9 +103,7 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 	if c.PluginHost != nil {
 		target.DropInvalidConnections()
 		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
-		target.DropInvalidSecrets(c.IsSecretDeclared)
 	} else {
-		target.DropInvalidSecrets(func(pluginport.DeclarationKey) bool { return true })
 		target.DropInvalidConnections()
 	}
 	return target, nil
@@ -152,10 +147,6 @@ func (c Config) ConfigurePluginHost(s Settings) {
 			},
 		})
 	})
-	c.PluginHost.SetKeyStore(c.KeyStore)
-	if c.SetSecretSource != nil {
-		c.SetSecretSource()
-	}
 	c.SubscribeHost()
 }
 
@@ -352,8 +343,6 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 // stored value for it is enabled.
 const hostFieldEnabled = "enabled"
 
-const settingKeySecrets = "secrets"
-
 const settingKeyConnections = "connections"
 
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
@@ -375,14 +364,6 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 	}
 	for _, plugin := range c.Plugins()() {
 		listPluginValues(target, plugin, add, values)
-	}
-	if len(target.Secrets) > 0 {
-		content, err := target.WriteSecretsJSON()
-		if err != nil {
-			failures = append(failures, err)
-		} else {
-			values[settingevents.JoinPath([]string{settingKeySecrets})] = content
-		}
 	}
 	if len(target.Connections) > 0 {
 		content, err := target.WriteConnectionsJSON()
@@ -467,15 +448,6 @@ func (c Config) UnsubscribeHost() {
 	<-one.ended
 }
 
-// RefreshPluginSecrets refreshes the plugin host under the secret gate.
-func (c Config) RefreshPluginSecrets(ctx context.Context) error {
-	if err := c.SecretGate.Enter(ctx); err != nil {
-		return err
-	}
-	defer c.SecretGate.Leave()
-	return c.PluginHost.Refresh(ctx)
-}
-
 // NotifyHost forwards a batch of changed settings to the plugin host.
 func (c Config) NotifyHost(batch []settingsport.Setting) {
 	NotifyPluginSettings(c.PluginHost, batch, c.handleError)
@@ -483,12 +455,6 @@ func (c Config) NotifyHost(batch []settingsport.Setting) {
 		defer c.PluginChanges.Signal()
 	}
 	for _, one := range batch {
-		if slices.Equal(one.Path, []string{settingKeySecrets}) {
-			if err := c.RefreshPluginSecrets(context.Background()); err != nil {
-				c.handleError(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
-			}
-			continue
-		}
 		if !slices.Equal(one.Path, []string{settingsadapter.OwnerApp, "performance", "profile"}) {
 			continue
 		}
@@ -499,11 +465,6 @@ func (c Config) NotifyHost(batch []settingsport.Setting) {
 		}
 		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, c.Hardware).Profile)
 	}
-}
-
-// IsSecretDeclared reports whether the plugin host declares permission.
-func (c Config) IsSecretDeclared(permission pluginport.DeclarationKey) bool {
-	return slices.Contains(c.PluginHost.ListDeclarations(), permission)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.

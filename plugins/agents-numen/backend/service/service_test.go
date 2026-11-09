@@ -59,7 +59,7 @@ func TestConfigurePropagatesTheRowToTheAgent(t *testing.T) {
 	pos := startPlugin(t)
 
 	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}, nil); err != nil {
+		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)
@@ -81,7 +81,7 @@ func TestNewHandlerPropagatesTheRowToTheAgent(t *testing.T) {
 	defer web.Close()
 
 	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}, nil); err != nil {
+		Configure(t.Context(), map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)

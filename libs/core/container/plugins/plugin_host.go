@@ -2,8 +2,6 @@ package plugins
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -12,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
@@ -30,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
@@ -351,57 +347,6 @@ func (c Config) EmitPluginEvent(event string) {
 		var emitter pluginport.PluginEventEmitter = c.PluginHost
 		emitter.EmitEvent(event)
 	}
-}
-
-// credentialsLocator is a key store that keeps its values in a file when the machine has no keychain.
-type credentialsLocator interface {
-	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
-	// system keychain is in use.
-	GetCredentialsPath(ctx context.Context) string
-}
-
-// OpenSecretLedger opens the secret ledger backed by the settings file.
-func (c Config) OpenSecretLedger() *settingsadapter.SecretLedger {
-	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
-}
-
-// OpenSecrets returns the use cases on the secrets shared between plugins.
-func (c Config) OpenSecrets() *secret.Secrets {
-	var plugins pluginport.SecretPlugins = secret.NoPlugins{}
-	if c.PluginHost != nil {
-		plugins = c.PluginHost
-	}
-	return secret.NewSecrets(c.OpenSecretLedger(), c.KeyStore, plugins, NewSecretID, c.GetCredentialsPath, c.SecretGate)
-}
-
-// GetCredentialsPath returns the credentials file path when the key store uses a file.
-func (c Config) GetCredentialsPath() string {
-	locator, isLocator := c.KeyStore.(credentialsLocator)
-	if !isLocator {
-		return ""
-	}
-	return locator.GetCredentialsPath(context.Background())
-}
-
-// NewSecretID generates a random identifier for a stored secret.
-func NewSecretID() (string, error) {
-	var random [4]byte
-	if _, err := rand.Read(random[:]); err != nil {
-		return "", fmt.Errorf("read random bytes for the id of a secret: %w", err)
-	}
-	return "s" + hex.EncodeToString(random[:]), nil
-}
-
-// SetSecretSource configures the secret ledger and pruner on the plugin host.
-func (c Config) SetSecretSource() {
-	if c.PluginHost == nil {
-		return
-	}
-	ledger := c.OpenSecretLedger()
-	c.PluginHost.SetSecretSource(pluginport.SecretSource{
-		List:  ledger.GetSecrets,
-		Prune: c.OpenSecrets().Prune.Execute,
-	})
 }
 
 func (c Config) signalPluginChanges() {

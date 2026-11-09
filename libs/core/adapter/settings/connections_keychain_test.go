@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -112,28 +111,5 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 	entry, err := keys.GetKey(t.Context(), "connection/"+created.ID+"/apiKey")
 	if err != nil || !strings.HasSuffix(entry, ":"+key+"-renewed") {
 		t.Errorf("key store entry = %q, %v", entry, err)
-	}
-}
-
-func TestTheKeyStoreNamesOfConnectionsAndSecretsNeverCollide(t *testing.T) {
-	secretIDs := []string{"s0a1b2c3d", "sffffffff", "s00000000"}
-	connectionIDs := []string{"c0a1b2c3d", "cffffffff", "c00000000"}
-	names := map[string]bool{}
-	for _, id := range secretIDs {
-		names[secret.GetEntryName(id)] = true
-	}
-	for _, id := range connectionIDs {
-		for _, field := range []string{"apiKey", "key", ""} {
-			name := connection.GetEntryName(id, field)
-			if names[name] {
-				t.Errorf("the name %q is used for a secret and a connection", name)
-			}
-			if !strings.HasPrefix(name, "connection/") || strings.HasPrefix(secret.GetEntryName(id), "connection/") {
-				t.Errorf("name = %q", name)
-			}
-		}
-	}
-	if secret.GetEntryName("connection/c0a1b2c3d/apiKey") == connection.GetEntryName("c0a1b2c3d", "apiKey") {
-		t.Error("a secret id can build the name of a connection entry")
 	}
 }

@@ -90,7 +90,7 @@ func (r *openRecord) openedCount() int {
 
 func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -106,13 +106,13 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 // threads closes, and the next batch opens one with the new threads.
 func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"})
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	first := record.opened[0]
 
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -132,11 +132,11 @@ func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	values := map[string]string{performance.ConfigKey: "eco"}
-	srv.updateConfig(values, nil)
+	srv.updateConfig(values)
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
-	srv.updateConfig(values, nil)
+	srv.updateConfig(values)
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "source": "local"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "source": "local"})
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -163,17 +163,17 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	t.Cleanup(func() { runtime.GOMAXPROCS(prevProcs) })
 
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
 	if len(record.nices) != 1 || record.nices[0] != 10 {
 		t.Fatalf("nices on first balanced config = %v, want [10]", record.nices)
 	}
 
-	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
 	if len(record.nices) != 1 {
 		t.Fatalf("nices on repeated balanced config = %v, want [10]", record.nices)
 	}
 
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
 	if len(record.nices) != 2 || record.nices[1] != 19 {
 		t.Fatalf("nices on eco config = %v, want [10 19]", record.nices)
 	}

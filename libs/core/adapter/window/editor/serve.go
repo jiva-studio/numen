@@ -345,7 +345,6 @@ func (o *Installation) wireUseCases() {
 	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
 	services.Settings.Watch = made.OpenWatchSettings()
-	services.Settings.Secrets = made.OpenSecrets()
 	if connections := made.OpenConnections(); connections != nil {
 		services.Connection = connection.NewHandler(connections)
 	}

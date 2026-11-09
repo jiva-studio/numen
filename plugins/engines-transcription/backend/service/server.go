@@ -142,7 +142,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { model.updateConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string) { model.updateConfig(values) })
 	commands, err := newCommands(transcriber)
 	if err != nil {
 		return err

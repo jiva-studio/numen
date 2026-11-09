@@ -17,13 +17,13 @@ func TestTwoStoresOnOneFileKeepEveryEntryBothWrite(t *testing.T) {
 		group.Add(2)
 		go func() {
 			defer group.Done()
-			if err := editor.SetKey(t.Context(), fmt.Sprintf("secret/a%07d", i), "value-a"); err != nil {
+			if err := editor.SetKey(t.Context(), fmt.Sprintf("connection/ca%07d/apiKey", i), "value-a"); err != nil {
 				t.Error(err)
 			}
 		}()
 		go func() {
 			defer group.Done()
-			if err := flashcards.SetKey(t.Context(), fmt.Sprintf("secret/b%07d", i), "value-b"); err != nil {
+			if err := flashcards.SetKey(t.Context(), fmt.Sprintf("connection/cb%07d/apiKey", i), "value-b"); err != nil {
 				t.Error(err)
 			}
 		}()

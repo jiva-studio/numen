@@ -288,7 +288,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("tok"))
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": script}, nil); err != nil {
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": script}); err != nil {
 		t.Fatal(err)
 	}
 

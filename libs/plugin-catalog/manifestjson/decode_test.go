@@ -193,7 +193,6 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
 		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"],"frontend":{}}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
-		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, manifest.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, manifest.ErrInvalidPermission},
@@ -287,35 +286,6 @@ func TestManifestRejectsAICompletePermission(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
 	if !errors.Is(err, manifest.ErrInvalidPermission) {
 		t.Errorf("error = %v, want invalid permission", err)
-	}
-}
-
-// A secret is a plain name, declared once, and not also a setting.
-func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
-	for _, one := range []struct {
-		name    string
-		secrets string
-		wrong   bool
-	}{
-		{"none", ``, false},
-		{"one", `"secrets":[{"name":"apiKey","title":"API key"}]`, false},
-		{"two", `"secrets":[{"name":"apiKey","title":"API key"},{"name":"org_id-2","title":"Organization"}]`, false},
-		{"empty name", `"secrets":[{"name":"","title":"T"}]`, true},
-		{"slash", `"secrets":[{"name":"a/b","title":"T"}]`, true},
-		{"space", `"secrets":[{"name":"api key","title":"T"}]`, true},
-		{"twice", `"secrets":[{"name":"apiKey","title":"T"},{"name":"apiKey","title":"T"}]`, true},
-		{"also a setting", `"secrets":[{"name":"model","title":"T"}],"settings":[{"key":"model","type":"string","title":"Model"}]`, true},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			text := `{"id":"a.b","name":"A","version":"1.0.0"`
-			if one.secrets != "" {
-				text += "," + one.secrets
-			}
-			_, err := manifestjson.Read(strings.NewReader(text + "}"))
-			if one.wrong != errors.Is(err, manifest.ErrInvalidSecret) {
-				t.Errorf("error = %v, want invalid secret: %v", err, one.wrong)
-			}
-		})
 	}
 }
 

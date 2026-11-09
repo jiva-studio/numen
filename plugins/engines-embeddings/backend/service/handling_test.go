@@ -43,7 +43,7 @@ func newRecordingServer(t *testing.T) (*embeddingServer, *[]string) {
 
 func TestALocalModelReadsDocumentsAndQueriesWithTheirOwnPrefix(t *testing.T) {
 	srv, texts := newRecordingServer(t)
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a note", "another"}); err != nil {
 		t.Fatal(err)
@@ -64,7 +64,7 @@ func TestAModelWithAQueryPrefixNeverRunsAQueryWithoutIt(t *testing.T) {
 	}
 	for _, p := range profiles.GetCurated() {
 		srv, texts := newRecordingServer(t)
-		srv.updateConfig(map[string]string{"source": "local", "model": p.ID}, nil)
+		srv.updateConfig(map[string]string{"source": "local", "model": p.ID})
 		if _, err := srv.EmbedTexts(t.Context(), embedding.RoleQuery, []string{"question"}); err != nil {
 			t.Fatalf("%s: %v", p.ID, err)
 		}
@@ -76,7 +76,7 @@ func TestAModelWithAQueryPrefixNeverRunsAQueryWithoutIt(t *testing.T) {
 
 func TestAnUnsetRoleIsADocument(t *testing.T) {
 	srv, texts := newRecordingServer(t)
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	var role embedding.Role
 	if _, err := srv.EmbedTexts(t.Context(), role, []string{"text"}); err != nil {
 		t.Fatal(err)
@@ -93,7 +93,7 @@ func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testi
 	handling := func(values map[string]string) string {
 		t.Helper()
 		values["source"], values["model"] = "local", engine.DefaultModel
-		srv.updateConfig(values, nil)
+		srv.updateConfig(values)
 		info, err := srv.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatal(err)
@@ -134,15 +134,15 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 		return engine.MockEmbedder{}, nil
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	embedText(t.Context(), t, srv)
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	embedText(t.Context(), t, srv)
 	if openCount != 1 {
 		t.Fatalf("an unchanged profile opened the model %d times", openCount)
 	}
 	writeFile(t, filepath.Join(dir, "e5.json"), `{"id":"Xenova/multilingual-e5-small","documentPrefix":"doc: "}`)
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	embedText(t.Context(), t, srv)
 	if openCount != 2 {
 		t.Errorf("a changed profile opened the model %d times in all, want 2", openCount)
@@ -155,7 +155,7 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv.profilesDir = dir
 	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","queryPrefix":"Q: "}`)
 	writeFile(t, filepath.Join(dir, "broken.json"), `{"id":`)
-	srv.updateConfig(map[string]string{"source": "local", "model": "owner/mine"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "owner/mine"})
 
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
@@ -170,7 +170,7 @@ func TestTheModelOfAUserProfileThatWasRemovedFailsWithAClearError(t *testing.T) 
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
 	srv.profilesDir = dir
-	srv.updateConfig(map[string]string{"source": "local", "model": "owner/gone"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "owner/gone"})
 	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
 	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), dir) {
 		t.Errorf("error = %v, want FailedPrecondition that names %s", err, dir)
@@ -183,7 +183,7 @@ func TestTheEnvironmentOverridesTheChosenProfile(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_POOLING", "last")
 	t.Setenv("NUMEN_EMBEDDING_FILE", "model_other.onnx")
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel})
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)

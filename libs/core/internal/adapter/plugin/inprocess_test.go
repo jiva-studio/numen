@@ -48,7 +48,6 @@ func newBuiltInManifest(id string, runtimes ...string) []byte {
 		"targets": ["desktop.editor"],
 		"permissions": [],
 		%s
-		"secrets": [{"name": "apiKey", "title": "API key"}],
 		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
 	}`, id, declared)
@@ -183,11 +182,9 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	}
 }
 
-// Configure calls the built-in plugin's own lifecycle service with its settings and secrets.
-func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
+// Configure calls the built-in plugin's own lifecycle service with its settings.
+func TestABuiltInPluginIsConfiguredWithItsSettings(t *testing.T) {
 	host := newBuiltInHost(t)
-	host.SetKeyStore(newKeys(map[string]string{"secret/s0a1b2c3d": fromKeychain}))
-	host.SetSecretSource(allowOne(firstBuiltInID))
 	host.SetSettings(map[string]map[string]any{firstBuiltInID: {"model": "large-model"}})
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
@@ -198,9 +195,6 @@ func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
 	call := backend.probe.last(t)
 	if call.GetValues()["model"] != "large-model" {
 		t.Errorf("Configure values = %v", call.GetValues())
-	}
-	if got := call.GetSecrets(); len(got) != 1 || got[0].GetValues()[0].GetValue() != fromKeychain {
-		t.Errorf("Configure secrets = %v, want the allowed secret", got)
 	}
 }
 

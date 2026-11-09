@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
@@ -200,11 +199,6 @@ func (c Config) GetFrontendPluginIDs() []string {
 // SetPluginWindow sets the window exposed to plugins.
 func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
 	c.plugins().SetPluginWindow(window)
-}
-
-// OpenSecrets returns the use cases on the secrets shared between plugins.
-func (c Config) OpenSecrets() *secret.Secrets {
-	return c.plugins().OpenSecrets()
 }
 
 // AgentProvider runs tasks on the programs the plugins with the agent provider capability run.

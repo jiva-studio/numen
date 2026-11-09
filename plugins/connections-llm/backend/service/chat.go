@@ -64,29 +64,27 @@ func (s *Service) Chat(ctx context.Context, call connection.Call, request connec
 	}) {
 		return connection.NewStopError(connection.ReasonBadRequest)
 	}
-	body := newStreamBody(call, request)
-	response, stream, err := s.openStream(ctx, call, body)
+	response, requestCtx, cancel, err := s.openStream(ctx, call, newStreamBody(call, request))
 	if err != nil {
 		return err
 	}
-	defer stream.close()
+	defer cancel()
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		return mapStatus(response)
 	}
-	err = readChatStream(bufio.NewReader(response.Body), stream.touch, send)
+	err = readChatStream(requestCtx, bufio.NewReader(response.Body), s.getLimit(call, operationChat), send)
 	if err != nil {
 		var sendError *sendFailure
+		var failure *streamFailure
 		switch {
 		case errors.As(err, &sendError):
 			return sendError.err
 		case ctx.Err() != nil:
 			return ctx.Err()
-		case errors.Is(context.Cause(stream.ctx), context.DeadlineExceeded):
+		case errors.Is(err, errSilent):
 			return connection.NewTryNextError(connection.ReasonTimeout, 0)
-		}
-		var failure *streamFailure
-		if errors.As(err, &failure) {
+		case errors.As(err, &failure):
 			return failure.err
 		}
 		return connection.NewTryNextError(connection.ReasonUnreachable, 0)
@@ -128,57 +126,57 @@ func newStreamBody(call connection.Call, request connection.ProviderChatRequest)
 	return body
 }
 
-// idleLimit is the request of a stream: it is cancelled with context.DeadlineExceeded as its cause when
-// the service stays silent for the limit.
-type idleLimit struct {
-	ctx    context.Context
-	cancel context.CancelCauseFunc
-	timer  *time.Timer
-	wait   time.Duration
-}
-
-func newIdleLimit(parent context.Context, wait time.Duration) *idleLimit {
-	ctx, cancel := context.WithCancelCause(parent)
-	return &idleLimit{ctx: ctx, cancel: cancel, wait: wait, timer: time.AfterFunc(wait, func() { cancel(context.DeadlineExceeded) })}
-}
-
-func (l *idleLimit) touch() { l.timer.Reset(l.wait) }
-
-func (l *idleLimit) close() {
-	l.timer.Stop()
-	l.cancel(context.Canceled)
-}
-
-func (s *Service) openStream(ctx context.Context, call connection.Call, body streamBody) (*http.Response, *idleLimit, error) {
+// openStream sends the request and returns the response with the context that ends the request and
+// the function that cancels it. The caller closes the body and cancels the request.
+func (s *Service) openStream(
+	ctx context.Context, call connection.Call, body streamBody,
+) (*http.Response, context.Context, context.CancelFunc, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if !isKnownType(call.Type) {
-		return nil, nil, connection.NewStopError(connection.ReasonBadRequest)
+		return nil, nil, nil, connection.NewStopError(connection.ReasonBadRequest)
 	}
 	key := call.Secrets[secretAPIKey].Value
 	base, err := parseAddress(call.Fields[fieldBaseURL], key != "")
 	if err != nil {
-		return nil, nil, connection.NewStopError(connection.ReasonBadRequest)
+		return nil, nil, nil, connection.NewStopError(connection.ReasonBadRequest)
 	}
 	isLoopbackRequired := base.Scheme == schemeHTTP && key != ""
-	stream := newIdleLimit(ctx, s.getLimit(call, operationChat))
-	limited := context.WithValue(stream.ctx, loopbackOnlyKey{}, isLoopbackRequired)
+	requestCtx, cancel := context.WithCancel(ctx)
+	limited := context.WithValue(requestCtx, loopbackOnlyKey{}, isLoopbackRequired)
 	request, err := newRequest(limited, endpoint{operationChat, http.MethodPost, "/chat/completions"}, base, key, body)
 	if err != nil {
-		stream.close()
-		return nil, nil, connection.NewStopError(connection.ReasonUnknown)
+		cancel()
+		return nil, nil, nil, connection.NewStopError(connection.ReasonUnknown)
 	}
-	response, err := s.clients.get(isLoopbackRequired).Do(request)
-	if err != nil {
-		defer stream.close()
-		if errors.Is(context.Cause(stream.ctx), context.DeadlineExceeded) && ctx.Err() == nil {
-			return nil, nil, connection.NewTryNextError(connection.ReasonTimeout, 0)
+	opening, stopOpening := context.WithTimeout(ctx, s.getLimit(call, operationChat))
+	defer stopOpening()
+	opened := make(chan struct {
+		response *http.Response
+		err      error
+	}, 1)
+	go func() {
+		response, err := s.clients.get(isLoopbackRequired).Do(request)
+		opened <- struct {
+			response *http.Response
+			err      error
+		}{response, err}
+	}()
+	select {
+	case answer := <-opened:
+		if answer.err != nil {
+			cancel()
+			return nil, nil, nil, classifyTransportError(ctx, limited, answer.err)
 		}
-		return nil, nil, classifyTransportError(ctx, limited, err)
+		return answer.response, requestCtx, cancel, nil
+	case <-opening.Done():
+		cancel()
+		if ctx.Err() != nil {
+			return nil, nil, nil, ctx.Err()
+		}
+		return nil, nil, nil, connection.NewTryNextError(connection.ReasonTimeout, 0)
 	}
-	stream.touch()
-	return response, stream, nil
 }
 
 // sendFailure is a send that failed: the receiver of the events is gone.
@@ -224,16 +222,43 @@ type streamChunk struct {
 const maxStreamedCalls = 128
 
 type chatReader struct {
-	send    func(connection.ChatEvent) error
-	calls   []connection.ToolCall
-	finish  string
-	isOpen  bool
-	isDone  bool
-	touched func()
+	send   func(connection.ChatEvent) error
+	calls  []connection.ToolCall
+	finish string
+	isOpen bool
+	isDone bool
 }
 
-func readChatStream(reader *bufio.Reader, touch func(), send func(connection.ChatEvent) error) error {
-	state := &chatReader{send: send, touched: touch}
+// errSilent is a service that sent nothing for as long as the limit of the request.
+var errSilent = errors.New("the service stayed silent")
+
+type streamLine struct {
+	raw []byte
+	err error
+}
+
+// readLines reads the lines of the stream in the background until the stream ends, fails or ctx ends.
+func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
+	lines := make(chan streamLine)
+	go func() {
+		defer close(lines)
+		for {
+			raw, err := reader.ReadBytes('\n')
+			select {
+			case lines <- streamLine{raw: raw, err: err}:
+			case <-ctx.Done():
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	return lines
+}
+
+func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(connection.ChatEvent) error) error {
+	state := &chatReader{send: send}
 	if isWholeReply(reader) {
 		answer, err := io.ReadAll(reader)
 		if err != nil {
@@ -241,28 +266,38 @@ func readChatStream(reader *bufio.Reader, touch func(), send func(connection.Cha
 		}
 		return state.read(answer)
 	}
+	lines := readLines(ctx, reader)
 	var data bytes.Buffer
 	for !state.isDone {
-		raw, readErr := reader.ReadBytes('\n')
-		touch()
-		line := bytes.TrimRight(raw, "\r\n")
+		waiting, stop := context.WithTimeout(ctx, wait)
+		var one streamLine
+		select {
+		case one = <-lines:
+			stop()
+		case <-waiting.Done():
+			stop()
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			return errSilent
+		}
+		line := bytes.TrimRight(one.raw, "\r\n")
 		if field, ok := bytes.CutPrefix(line, []byte("data:")); ok {
 			if data.Len() > 0 {
 				data.WriteByte('\n')
 			}
 			data.Write(bytes.TrimPrefix(field, []byte(" ")))
 		}
-		if len(line) == 0 || readErr != nil {
-			err := state.flush(&data)
-			if err != nil {
+		if len(line) == 0 || one.err != nil {
+			if err := state.flush(&data); err != nil {
 				return err
 			}
 		}
-		if readErr != nil && !state.isDone {
-			if errors.Is(readErr, io.EOF) {
+		if one.err != nil && !state.isDone {
+			if errors.Is(one.err, io.EOF) {
 				return errStreamEnded
 			}
-			return readErr
+			return one.err
 		}
 	}
 	return nil

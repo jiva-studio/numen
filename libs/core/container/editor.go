@@ -67,7 +67,6 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		},
 		OpenWriteSettingsFn:    cfg.settings().OpenWriteSettings,
 		OpenWatchSettingsFn:    cfg.settings().OpenWatchSettings,
-		OpenSecretsFn:          cfg.OpenSecrets,
 		OpenConnectionsFn:      cfg.OpenConnections,
 		OpenModelListsFn:       cfg.OpenModelLists,
 		OpenModelCallsFn:       cfg.OpenModelCalls,

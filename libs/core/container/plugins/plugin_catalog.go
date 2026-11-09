@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
@@ -29,7 +28,6 @@ type Config struct {
 	PluginDirs            []string
 	KeyStore              pluginport.KeyStore
 	SettingsFiles         *settingsadapter.Files
-	SecretGate            *secret.Gate
 	Programs              *settingsadapter.ProgramList
 	VaultReaders          vaultport.VaultReaders
 	VaultWriters          vaultport.VaultWriters

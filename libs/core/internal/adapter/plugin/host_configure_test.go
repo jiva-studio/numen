@@ -2,33 +2,21 @@ package plugin
 
 import "testing"
 
-func newPlainHost(t *testing.T) (*Host, *configured) {
-	t.Helper()
-	host, probe := newSecretHost(t, nil)
-	plugin := host.plugins[secretPluginID]
-	plugin.Manifest.Secrets = nil
-	host.plugins[secretPluginID] = plugin
-	return host, probe
-}
+func TestAPluginReceivesConfigureWithItsSettings(t *testing.T) {
+	host, probe := newConfiguredHost(t)
 
-func TestAPluginWithoutSecretsReceivesConfigureWithItsSettings(t *testing.T) {
-	host, probe := newPlainHost(t)
-
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
 	if call.GetValues()["model"] != "sonnet" {
 		t.Errorf("values = %v, want the default of the model setting", call.GetValues())
 	}
-	if len(call.GetSecrets()) != 0 {
-		t.Errorf("secrets = %v, want none", call.GetSecrets())
-	}
 }
 
-func TestARefreshConfiguresAPluginWithoutSecretsOnlyWhenForced(t *testing.T) {
-	host, probe := newPlainHost(t)
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+func TestARefreshConfiguresAPluginOnlyWhenForced(t *testing.T) {
+	host, probe := newConfiguredHost(t)
+	if err := host.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	calls := probe.count()
@@ -40,7 +28,7 @@ func TestARefreshConfiguresAPluginWithoutSecretsOnlyWhenForced(t *testing.T) {
 		t.Errorf("%d Configure calls after a plain refresh, want %d", probe.count(), calls)
 	}
 
-	if err := host.Refresh(t.Context(), secretPluginID); err != nil {
+	if err := host.Refresh(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 {
@@ -48,10 +36,10 @@ func TestARefreshConfiguresAPluginWithoutSecretsOnlyWhenForced(t *testing.T) {
 	}
 }
 
-func TestAChangeOfASettingReachesAPluginWithoutSecrets(t *testing.T) {
-	host, probe := newPlainHost(t)
+func TestAChangeOfASettingReachesAPlugin(t *testing.T) {
+	host, probe := newConfiguredHost(t)
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), configuredPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 	if got := probe.last(t).GetValues()["model"]; got != "opus" {
@@ -59,13 +47,13 @@ func TestAChangeOfASettingReachesAPluginWithoutSecrets(t *testing.T) {
 	}
 }
 
-func TestAWatcherRunsWhenAPluginWithoutSecretsIsConfigured(t *testing.T) {
-	host, _ := newPlainHost(t)
+func TestAWatcherRunsWhenAPluginIsConfigured(t *testing.T) {
+	host, _ := newConfiguredHost(t)
 	ran := make(chan struct{}, 1)
-	stop := host.WatchPluginConfig(secretPluginID, func() { ran <- struct{}{} })
+	stop := host.WatchPluginConfig(configuredPluginID, func() { ran <- struct{}{} })
 	defer stop()
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	<-ran

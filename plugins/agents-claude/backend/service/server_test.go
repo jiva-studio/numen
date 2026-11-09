@@ -45,7 +45,7 @@ func writeScript(t *testing.T, name, body string) string {
 func TestLifecycleServer(t *testing.T) {
 	agentSvc := &agentServer{}
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"}, func(s *server.Server) error {
-		s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
+		s.SetConfigure(func(_ context.Context, values map[string]string) error {
 			agentSvc.applyConfig(values)
 			return nil
 		})
@@ -69,7 +69,7 @@ func TestLifecycleServer(t *testing.T) {
 		t.Errorf("unexpected status: %s", ping.Status)
 	}
 
-	if _, err = client.Configure(ctx, map[string]string{"model": "m1"}, nil); err != nil {
+	if _, err = client.Configure(ctx, map[string]string{"model": "m1"}); err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
 	if agentSvc.defaultModel != "m1" {

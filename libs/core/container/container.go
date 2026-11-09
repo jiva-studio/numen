@@ -31,7 +31,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/modellist"
-	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 )
@@ -88,7 +87,6 @@ type Resources struct {
 	watches         *vaultwatch.Hub
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
-	secretGate      *secret.Gate
 	pluginChanges   *pluginchanges.Signals
 	subscribedHosts sync.Map
 }
@@ -101,7 +99,6 @@ func NewResources() *Resources {
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
 		pluginChanges: &pluginchanges.Signals{},
-		secretGate:    secret.NewGate(),
 	}
 }
 
@@ -121,7 +118,7 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &pluginchanges.Signals{}}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, pluginChanges: &pluginchanges.Signals{}}
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -179,13 +176,11 @@ func (c Config) settings() settingswiring.Config {
 		Watches:          res.watches,
 		SettingsFiles:    res.settingsFiles,
 		SettingEvents:    res.settingEvents,
-		SecretGate:       res.secretGate,
 		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
 		ErrorHandler:     c.handleError,
 		AgentProvider:    c.AgentProvider,
 		GetAgentPrograms: c.plugins().GetAgentPrograms,
-		SetSecretSource:  c.plugins().SetSecretSource,
 	}
 }
 
@@ -308,7 +303,6 @@ func (c Config) plugins() pluginswiring.Config {
 		PluginDirs:            c.PluginDirs,
 		KeyStore:              c.KeyStore,
 		SettingsFiles:         res.settingsFiles,
-		SecretGate:            res.secretGate,
 		PluginChanges:         res.pluginChanges,
 		TextVersions:          c.TextVersions,
 		ListAppSettings:       s.ListAppSettings,

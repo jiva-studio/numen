@@ -84,7 +84,7 @@ func newSettings() *settings {
 	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
-func (s *settings) updateConfig(values map[string]string, _ server.Secrets) {
+func (s *settings) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	applyIntConfig(values, "batchSize", &s.cfg.batchSize, 1)
@@ -188,7 +188,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	}
 	config := newSettings()
 	if len(vars) > 0 {
-		config.updateConfig(vars, nil)
+		config.updateConfig(vars)
 	}
 	run := newProofreading(h, getProofreadKinds(), newAskModel(complete), config.getConfig)
 	commands, err := newCommands(run)

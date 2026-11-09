@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -25,7 +24,6 @@ type File struct {
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
 	Plugins     map[string]map[string]any
-	Secrets     []pluginport.Secret
 	Connections []connectionport.Connection
 	Notices     []string
 }
@@ -73,7 +71,7 @@ func (f *File) WriteJSON() (string, error) {
 	return string(content), nil
 }
 
-// MarshalJSON writes the version, the object of the owner app, the secrets and the connections when there are any, and
+// MarshalJSON writes the version, the object of the owner app, the connections when there are any, and
 // the object of each plugin by id.
 func (f *File) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
@@ -84,12 +82,6 @@ func (f *File) MarshalJSON() ([]byte, error) {
 	}{
 		{keyVersion, f.Version},
 		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance}},
-	}
-	if len(f.Secrets) > 0 {
-		members = append(members, struct {
-			key   string
-			value any
-		}{keySecrets, newSecretEntries(f.Secrets)})
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -146,8 +138,6 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 			hasInterfaceScale = has
 		case keyConnections:
 			f.readConnections(root[key])
-		case keySecrets:
-			f.readSecrets(root[key])
 		default:
 			f.readPlugin(key, root[key])
 		}

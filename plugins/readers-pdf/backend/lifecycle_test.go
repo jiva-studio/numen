@@ -12,7 +12,7 @@ func TestLifecycleConfigure(t *testing.T) {
 
 	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"zoom": "1.5",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}

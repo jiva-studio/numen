@@ -22,7 +22,6 @@ type (
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
 	PluginReader           = manifest.Reader
-	SecretDeclaration      = manifest.SecretDeclaration
 	PluginSettingsView     = manifest.SettingsView
 	PluginSettingCondition = manifest.Condition
 	PluginSettingOption    = manifest.SettingOption
@@ -80,7 +79,6 @@ var (
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
 	ErrInvalidReader          = manifest.ErrInvalidReader
-	ErrInvalidSecret          = manifest.ErrInvalidSecret
 	ErrInvalidService         = manifest.ErrInvalidService
 	ErrInvalidSetting         = manifest.ErrInvalidSetting
 	ErrInvalidSettingKey      = manifest.ErrInvalidSettingKey

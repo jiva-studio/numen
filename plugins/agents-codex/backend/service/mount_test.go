@@ -38,7 +38,7 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 		t.Skip("sh not found")
 	}
 	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("tok"))
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": "  " + shPath + "  "}, nil); err != nil {
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": "  " + shPath + "  "}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	state, err = client.GetState(t.Context())

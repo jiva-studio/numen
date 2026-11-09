@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/manifest.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
@@ -31,28 +30,7 @@ message ShutdownResponse {
 message ConfigureRequest {
   string plugin_id = 1;
   string configuration_json = 2;
-  // values no longer carries secrets.
   map<string, string> values = 3;
-  // secrets holds one entry for each active secret declaration of the plugin.
-  repeated ConfigureSecrets secrets = 4;
-}
-
-// ConfigureSecrets is what one active declaration of the plugin receives.
-message ConfigureSecrets {
-  // The name of the declaration.
-  string name = 1;
-  // The group of the declaration, empty for none.
-  string group = 3;
-  // The allowed secrets in delivery order. Empty means no secret.
-  repeated SecretValue values = 2;
-}
-
-// SecretValue is one allowed secret with its value. Values are delivered here and nowhere else.
-message SecretValue {
-  string id = 1;
-  string name = 2;
-  string group = 3;
-  string value = 4 [debug_redact = true];
 }
 
 message ConfigureResponse {
@@ -142,8 +120,6 @@ message PluginInfo {
   bool is_active = 7;
   // The permissions the manifest declares.
   repeated string permissions = 8;
-  // The secrets the manifest declares.
-  repeated SecretDeclaration secrets = 9;
   // Set while the last start of the plugin failed, until a start succeeds.
   PluginFailure failure = 10;
   // Whether the plugin declares a frontend bundle a window loads.

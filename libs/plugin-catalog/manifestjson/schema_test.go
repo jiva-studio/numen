@@ -35,7 +35,6 @@ const everyFieldManifest = `{
 		{"key": "token", "type": "string", "title": "Token", "generate": "token"},
 		{"key": "rows", "type": "connections", "title": "Rows", "operation": "complete", "max": 2}
 	],
-	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "group": "openrouter", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
