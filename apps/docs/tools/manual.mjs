@@ -214,9 +214,44 @@ const readCommands = async (ids) => {
     const specifier = imports.get(fn)
     if (!specifier) die(`table.ts calls '${fn}' without importing it`)
     const path = new URL(`${specifier}.ts`, at)
-    const part = declaring(await readFile(path, 'utf8'), fn, `${specifier} no longer lists ${fn}`)
-    rows.push(...rowsOf(part, ids, specifier))
+    const whole = await readFile(path, 'utf8')
+    const part = declaring(whole, fn, `${specifier} no longer lists ${fn}`)
+    rows.push(...rowsWithin(whole, part, ids, specifier))
   }
+  return rows
+}
+
+/**
+ * The rows of one list, in its order, with the rows of every list it spreads from
+ * the same file standing where the spread stands: createNoteCommands draws the open and
+ * show commands from a helper of its own.
+ */
+const rowsWithin = (whole, part, ids, path, seen = new Set()) => {
+  const spreads = [...part.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].filter((one) =>
+    new RegExp(`^(?:export )?const ${one[1]} =`, 'm').test(whole),
+  )
+  if (spreads.length === 0) return rowsOf(part, ids, path)
+  const rows = []
+  const take = (text) => {
+    const own = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
+    own.forEach((one, i) => {
+      rows.push({
+        id: getCommandId(ids, one[1]),
+        said: text.slice(one.index, own[i + 1]?.index ?? text.length),
+      })
+    })
+  }
+  let from = 0
+  for (const spread of spreads) {
+    if (seen.has(spread[1])) die(`${path} spreads ${spread[1]} into itself`)
+    take(part.text.slice(from, spread.index))
+    const at = whole.search(new RegExp(`^(?:export )?const ${spread[1]} =`, 'm'))
+    const inner = listed(whole, at)
+    if (!inner) die(`${path} no longer lists ${spread[1]}`)
+    rows.push(...rowsWithin(whole, inner, ids, path, new Set([...seen, spread[1]])))
+    from = spread.index
+  }
+  take(part.text.slice(from))
   return rows
 }
 

@@ -18,6 +18,7 @@ A command gets a key if it is used often and leaves nothing to undo. No command 
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>N</kbd> | Create vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> | Go to note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>C</kbd> | Create child note |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>W</kbd> | Close tab |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> | Close tab |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> | Search the vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> | Commands |
