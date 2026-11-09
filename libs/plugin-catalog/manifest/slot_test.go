@@ -96,3 +96,102 @@ func TestTheSameCommandMayGoIntoTwoSlots(t *testing.T) {
 		t.Errorf("error = %v, want none", err)
 	}
 }
+
+const valuesManifestHead = `{"id":"org.example.ledger","name":"Ledger","version":"1.0.0","frontend":{},"contributes":{
+	"commands":[
+		{"id":"ledger.open","title":"Open","arguments":[{"name":"book","title":"Book","type":"string"}]},
+		{"id":"ledger.sum","title":"Sum"}
+	],"slots":`
+
+func readValueSlots(slots string) (manifest.Manifest, error) {
+	return manifestjson.Read(strings.NewReader(valuesManifestHead + slots + `}}`))
+}
+
+func TestSlotEntryValuesAreDecoded(t *testing.T) {
+	parsed, err := readValueSlots(`[
+		{"slot":"titleBar.commands","command":"ledger.open","values":{"book":"main"}},
+		{"slot":"fileTree.context","command":"ledger.open"},
+		{"slot":"palette.searchResult","command":"app:file.open","values":{"showing":"split"}}
+	]`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	slots := parsed.Contributes.Slots
+	if got := slots[0].Values; len(got) != 1 || got["book"] != "main" {
+		t.Errorf("the values came out as %v", got)
+	}
+	if len(slots[1].Values) != 0 {
+		t.Errorf("an entry without values came out with %v", slots[1].Values)
+	}
+	if got := slots[2].Values; got["showing"] != "split" {
+		t.Errorf("the values of a command of the application came out as %v", got)
+	}
+}
+
+func TestASlotEntryWithValuesThatBreakARuleIsAnInvalidSlotEntry(t *testing.T) {
+	cases := map[string]string{
+		"an argument the command does not declare": `[{"slot":"titleBar.commands","command":"ledger.open","values":{"shelf":"1"}}]`,
+		"values for a command without arguments":   `[{"slot":"titleBar.commands","command":"ledger.sum","values":{"book":"main"}}]`,
+		"values on a view":                         `[{"slot":"titleBar.status","view":"balance","values":{"book":"main"}}]`,
+		"values on a submenu":                      `[{"slot":"fileTree.context","submenu":"ledger.new","title":"New","values":{"book":"main"}}]`,
+	}
+	for name, slots := range cases {
+		_, err := readValueSlots(slots)
+
+		if !errors.Is(err, manifest.ErrInvalidSlotEntry) {
+			t.Errorf("%s: error = %v, want an invalid slot entry", name, err)
+		}
+	}
+}
+
+func TestSlotEntryValueAsNumberIsRefused(t *testing.T) {
+	_, err := readValueSlots(`[{"slot":"titleBar.commands","command":"ledger.open","values":{"book":1}}]`)
+
+	if err == nil {
+		t.Error("no error")
+	}
+}
+
+func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
+	valid := []string{
+		`[{"slot":"titleBar.commands","command":"app:file.open","values":{"showing":"split"}}]`,
+		`[{"slot":"titleBar.commands","command":"app:file.remove","values":{"removal":"trash"}}]`,
+		`[{"slot":"titleBar.commands","command":"app:link.import","values":{"address":"https://example.org"}}]`,
+		`[{"slot":"titleBar.commands","command":"org.example.harbor:harbor.open","values":{"any":"thing"}}]`,
+	}
+	for _, slots := range valid {
+		if _, err := readValueSlots(slots); err != nil {
+			t.Errorf("%s: %v", slots, err)
+		}
+	}
+	invalid := map[string]string{
+		"an argument the command does not take":  `[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"split"}}]`,
+		"a value the argument does not allow":    `[{"slot":"titleBar.commands","command":"app:file.open","values":{"showing":"aside"}}]`,
+		"values for a command without arguments": `[{"slot":"titleBar.commands","command":"app:settings.open","values":{"showing":"split"}}]`,
+	}
+	for name, slots := range invalid {
+		if _, err := readValueSlots(slots); !errors.Is(err, manifest.ErrInvalidSlotEntry) {
+			t.Errorf("%s: error = %v, want an invalid slot entry", name, err)
+		}
+	}
+}
+
+func TestACommandEntryMayCarryATitleAndAnIcon(t *testing.T) {
+	parsed, err := readValueSlots(`[{"slot":"titleBar.commands","command":"ledger.sum","title":"Add up","icon":"calculator"}]`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if one := parsed.Contributes.Slots[0]; one.Title != "Add up" || one.Icon != "calculator" {
+		t.Errorf("the entry came out as %+v", one)
+	}
+	for _, slots := range []string{
+		`[{"slot":"titleBar.commands","command":"ledger.sum","title":"  "}]`,
+		`[{"slot":"titleBar.commands","command":"ledger.sum","icon":"Calculator"}]`,
+	} {
+		if _, err := readValueSlots(slots); !errors.Is(err, manifest.ErrInvalidSlotEntry) {
+			t.Errorf("%s: error = %v, want an invalid slot entry", slots, err)
+		}
+	}
+}

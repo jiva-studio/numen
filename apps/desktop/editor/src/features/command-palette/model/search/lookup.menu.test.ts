@@ -247,3 +247,26 @@ describe('the command an action of a result runs', () => {
     expect(resolveChoice(createDocument({ actionIds: ['note'] }), 'note')).toBeNull()
   })
 })
+
+describe('an entry that holds values', () => {
+  const WITH_VALUES = entry(`${ATLAS}:graph.show`, 'Show', { values: { where: 'plex' } })
+
+  it('gives the values to the choice of its action, and none to the choice of another', () => {
+    const row = createNameItem(createName(), WORDS, [WITH_VALUES, OTHER])
+
+    expect(resolveChoice(row.hit, WITH_VALUES.command)?.values).toStrictEqual({ where: 'plex' })
+    expect(resolveChoice(row.hit, OTHER.command)).not.toHaveProperty('values')
+  })
+
+  it('gives the values to the choice on a passage of a note', () => {
+    const row = createPassageItem('text', createPassage(), WORDS, [WITH_VALUES])
+
+    expect(resolveChoice(row.hit, WITH_VALUES.command)?.values).toStrictEqual({ where: 'plex' })
+  })
+
+  it('leaves the hit without values where no entry holds any', () => {
+    const row = createNameItem(createName(), WORDS, ENTRIES)
+
+    expect(row.hit).not.toHaveProperty('actionValues')
+  })
+})

@@ -55,6 +55,7 @@ export interface SearchHit {
   tabKind?: string
   selector: Selector | null
   isCreation?: boolean
+  actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -67,16 +68,23 @@ type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 
 function createNoteActions(
   openText: string,
-  menu: readonly PaletteAction[],
-): { actions: readonly PaletteAction[]; actionIds: readonly string[] } {
+  entries: readonly SlotItem[],
+): {
+  actions: readonly PaletteAction[]
+  actionIds: readonly string[]
+  valuesOfHit: Pick<SearchHit, 'actionValues'>
+} {
+  const commands = entries.filter((one) => one.kind === 'command')
+  const menu = commands.map((one) => ({ id: one.command, text: one.title }))
   const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
-  return { actions, actionIds: actions.map((one) => one.id) }
-}
-
-function createMenuActions(entries: readonly SlotItem[]): readonly PaletteAction[] {
-  return entries.flatMap((one) =>
-    one.kind === 'command' ? [{ id: one.command, text: one.title }] : [],
+  const withValues = commands.flatMap((one) =>
+    one.values && Object.keys(one.values).length > 0 ? [[one.command, one.values] as const] : [],
   )
+  return {
+    actions,
+    actionIds: actions.map((one) => one.id),
+    valuesOfHit: withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {},
+  }
 }
 
 /**
@@ -88,9 +96,8 @@ export function createNameItem(
   words: Words,
   entries: readonly SlotItem[] = [],
 ): SearchRow {
-  const menu = createMenuActions(entries)
-  const atHeading = createNoteActions(words.readAt, menu)
-  const byName = createNoteActions(words.read, menu)
+  const atHeading = createNoteActions(words.readAt, entries)
+  const byName = createNoteActions(words.read, entries)
   return one.heading
     ? {
         item: {
@@ -107,6 +114,7 @@ export function createNameItem(
           start: 0,
           length: 0,
           actionIds: atHeading.actionIds,
+          ...atHeading.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -126,6 +134,7 @@ export function createNameItem(
           start: 0,
           length: 0,
           actionIds: byName.actionIds,
+          ...byName.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -139,7 +148,7 @@ export function createPassageItem(
   words: Words,
   entries: readonly SlotItem[] = [],
 ): SearchRow {
-  const note = createNoteActions(words.read, createMenuActions(entries))
+  const note = createNoteActions(words.read, entries)
   const document = [{ id: ROW.openDocument, text: words.readDocument }]
   return {
     item: {
@@ -156,6 +165,7 @@ export function createPassageItem(
       start: one.start,
       length: one.length,
       actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
+      ...(one.isNote ? note.valuesOfHit : {}),
       type: one.isNote ? one.type : null,
       ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
       selector: one.isNote ? null : one.selector,
@@ -174,6 +184,7 @@ export interface ResultChoice {
     readonly selector?: Selector
   } | null
   readonly input: string
+  readonly values?: Readonly<Record<string, string>>
 }
 
 /**
@@ -204,9 +215,11 @@ export function resolveChoice(
     }
   }
   const place = { path: hit.path, file: hit.path, title: hit.title }
+  const values = hit.actionValues?.[action]
   return {
     command: action,
     over: hit.line >= 0 ? { ...place, line: hit.line } : place,
     input: '',
+    ...(values ? { values } : {}),
   }
 }

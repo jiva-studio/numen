@@ -23,3 +23,19 @@ func GetSharedCommandArguments(id string) []CommandArgument {
 	}
 	return nil
 }
+
+// GetWindowCommandArguments returns the arguments the command of the window of the full id takes,
+// as commands.json declares them, and false for a command that is not listed there.
+func GetWindowCommandArguments(id string) ([]WindowCommandArgument, bool) {
+	switch id {
+	case "app:file.open":
+		return []WindowCommandArgument{
+			{Name: "showing", Values: []string{"current", "split"}},
+		}, true
+	case "app:file.remove":
+		return []WindowCommandArgument{
+			{Name: "removal", Values: []string{"trash", "permanent"}},
+		}, true
+	}
+	return nil, false
+}

@@ -93,6 +93,52 @@ describe('the slot entries the plugins declare', () => {
   })
 })
 
+describe('the values of a slot entry', () => {
+  it('are read with the entry, and absent where the entry holds none', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.commands',
+            placed: { case: 'command', value: 'app:file.open' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+            values: { showing: 'split' },
+          },
+        },
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.commands',
+            placed: { case: 'command', value: 'ledger.sum' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+            values: {},
+          },
+        },
+      ],
+    })
+
+    const { slots } = await listDeclaredCommands()
+
+    expect(slots).toStrictEqual([
+      {
+        pluginId: 'org.example.ledger',
+        slot: 'titleBar.commands',
+        command: 'app:file.open',
+        values: { showing: 'split' },
+      },
+      { pluginId: 'org.example.ledger', slot: 'titleBar.commands', command: 'ledger.sum' },
+    ])
+  })
+})
+
 describe('the commands the plugins declare', () => {
   it('are read with their arguments in order', async () => {
     request.listCommands.mockResolvedValue({

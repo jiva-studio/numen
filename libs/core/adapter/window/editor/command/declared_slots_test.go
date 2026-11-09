@@ -20,7 +20,7 @@ func (menuPlacingPlugins) ListSlots() []plugincommand.SlotEntry {
 	order, zero := 10, 0
 	return []plugincommand.SlotEntry{
 		{PluginID: "md.numen.cards", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "deck.create", Group: "new", Order: &order}},
-		{PluginID: "md.numen.cards", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "app:note.create", Order: &zero}},
+		{PluginID: "md.numen.cards", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "app:note.create", Order: &zero, Values: map[string]string{"where": "plex"}}},
 		{PluginID: "md.numen.down", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "down.run"}},
 		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "tree.revealNote", Group: "navigate"}},
 	}
@@ -57,6 +57,12 @@ func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifest
 	}
 	if create.GetPluginId() != "md.numen.cards" || create.GetEntry().GetCommand() != "app:note.create" || create.GetEntry().GetGroup() != "" {
 		t.Errorf("the second entry came out as %v", create)
+	}
+	if got := create.GetEntry().GetValues(); len(got) != 1 || got["where"] != "plex" {
+		t.Errorf("the values of the second entry came out as %v", got)
+	}
+	if len(deck.GetEntry().GetValues()) != 0 {
+		t.Errorf("an entry without values came out with %v", deck.GetEntry().GetValues())
 	}
 	if create.GetEntry().Order == nil || create.GetEntry().GetOrder() != 0 {
 		t.Errorf("an order of zero came out as %v, and must differ from no order", create)

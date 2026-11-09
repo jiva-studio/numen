@@ -128,11 +128,12 @@ func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.Plug
 
 func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
 	entry := &v1.ManifestSlotEntry{
-		Slot:  one.Entry.Slot,
-		Title: one.Entry.Title,
-		Icon:  one.Entry.Icon,
-		Group: one.Entry.Group,
-		When:  one.Entry.When,
+		Slot:   one.Entry.Slot,
+		Title:  one.Entry.Title,
+		Icon:   one.Entry.Icon,
+		Group:  one.Entry.Group,
+		When:   one.Entry.When,
+		Values: one.Entry.Values,
 	}
 	switch {
 	case one.Entry.Command != "":

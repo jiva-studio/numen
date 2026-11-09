@@ -32,3 +32,16 @@ export const SHARED_COMMANDS: readonly SharedCommand[] = [
   // Deletes the downloaded media of a link note.
   { id: 'app:link.deleteMedia', title: 'Delete media', arguments: [] },
 ]
+
+/** One argument of a command of the window and the values it allows. */
+export interface WindowCommandArgument {
+  readonly name: string
+  readonly values: readonly string[]
+}
+
+// WINDOW_COMMANDS are the commands of the window that take arguments. A slot entry passes values only
+// for these arguments and these values.
+export const WINDOW_COMMANDS: Readonly<Record<string, readonly WindowCommandArgument[]>> = {
+  'app:file.open': [{ name: 'showing', values: ['current', 'split'] }],
+  'app:file.remove': [{ name: 'removal', values: ['trash', 'permanent'] }],
+}
