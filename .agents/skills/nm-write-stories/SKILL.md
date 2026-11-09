@@ -172,7 +172,6 @@ Each follows the target.
 
 These places do not follow the target and are not models.
 
-- `Sizing.stories.ts`, `Window.stories.ts` (in `shared/tokens/`), `Contrast.stories.ts`, `TreeContrast.stories.ts`, `WorkspaceTabContrast.stories.ts` and the `accentCheck` hook in both `preview.ts` files test sizes and contrast ratios. These stories and the hook are deleted; the decision is against such tests.
 - `Switch.stories.ts` (`BusyUntilTheAnswer`, `TheThumbSlidesAndTheTrackFills`, `Dark`) measures the thumb position per frame, a fill colour and a lightness. Behavior is the `aria-checked` change and the busy state.
 - 12 story files read `getComputedStyle` or `.style` (`checks.md`).
 - `Menu.types.ts:16` takes `clock?: () => number`; the target is `Clock`.

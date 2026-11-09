@@ -4,7 +4,6 @@ import { configure } from 'storybook/test'
 // draws the components, so it is judged by what they are judged by.
 import { reachCheck, type Proof } from '../../../../ui/components/.storybook/check'
 import { toolbar } from '../../../../ui/components/.storybook/toolbar'
-import { accentCheck } from '../../../../ui/components/.storybook/contrastBrowser'
 import '@numen/ui/styles.css'
 import 'virtual:plugin-utilities.css'
 import './preview.css'
@@ -31,7 +30,7 @@ const preview: Preview = {
     },
   },
   ...toolbar,
-  afterEach: [reachCheck(PROOF), accentCheck],
+  afterEach: reachCheck(PROOF),
 }
 
 export default preview

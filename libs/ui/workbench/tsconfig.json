@@ -17,8 +17,6 @@
     "*.config.ts",
     "../components/.storybook/browser.ts",
     "../components/.storybook/check.ts",
-    "../components/.storybook/contrast.ts",
-    "../components/.storybook/contrastBrowser.ts",
     "../components/.storybook/keyboard.ts",
     "../components/.storybook/reach.ts",
     "../components/.storybook/toolbar.ts"
