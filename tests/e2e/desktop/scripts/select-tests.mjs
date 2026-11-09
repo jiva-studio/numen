@@ -51,13 +51,12 @@ export const PLUGIN_TESTS = {
   'views-agent-chat': ['agents.chat'],
   'engines-ocr': [
     'scenarios/ocr-disabled.spec.ts',
-    'scenarios/proofreading.spec.ts',
     'scenarios/recognition.spec.ts',
   ],
-  'engines-transcription': ['scenarios/proofreading.spec.ts', 'scenarios/recording.spec.ts'],
+  'engines-transcription': ['scenarios/recording.spec.ts'],
   'readers-pdf': ['scenarios/ocr-disabled.spec.ts', 'scenarios/recognition.spec.ts'],
   'tools-media-importer': [ACCEPTANCE],
-  'tools-proofreading': ['scenarios/proofreading.spec.ts'],
+  'tools-proofreading': [ACCEPTANCE],
   'views-media-viewer': ['scenarios/recording.spec.ts'],
 }
 

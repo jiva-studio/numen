@@ -7,7 +7,7 @@ import {
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
+import { assertApplication, assertEntry, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const DELETE_TEXT = 'Delete text'
@@ -86,9 +86,12 @@ export class ApplicationDriver {
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
-  async expectVaultHasFolder(vaultName: string, folder: string): Promise<void> {
+  async expectVaultHasEntry(vaultName: string, entry: string, entryPath: string): Promise<void> {
     this.scenario.setVault(vaultName)
-    await expect.poll(() => this.listEntries(folder)).toContain(folder)
+    await expect.poll(() => this.listEntries(entryPath)).toContain(entryPath)
+    const parent = entryPath.split('/').slice(0, -1).join('/')
+    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
+    assertEntry(entry, entryPath, found?.isFolder ?? false)
   }
 
   async expectVaultDoesNotHaveFile(vaultName: string, file: string): Promise<void> {

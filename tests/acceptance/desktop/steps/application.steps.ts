@@ -23,9 +23,12 @@ Then(
   },
 )
 
-Given('the vault {string} has the folder at {string}', async ({ person }, vault: string, folder: string) => {
-  await person.application.expectVaultHasFolder(vault, folder)
-})
+Given(
+  'the vault {string} has the {entry} at {string}',
+  async ({ person }, vault: string, entry: string, entryPath: string) => {
+    await person.application.expectVaultHasEntry(vault, entry, entryPath)
+  },
+)
 
 Then('the vault {string} does not have the file at {string}', async ({ person }, vault: string, file: string) => {
   await person.application.expectVaultDoesNotHaveFile(vault, file)
