@@ -24,6 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -46,7 +48,7 @@ func (c vaultListCallers) CheckPluginPermission(pluginID, permission string) err
 		return err
 	}
 	if !slices.Contains(c.granted, permission) {
-		return pluginport.ErrPermissionDenied
+		return plugin.ErrPermissionDenied
 	}
 	return nil
 }
@@ -110,7 +112,7 @@ func (a *fakeNoteVault) MoveNote(_ context.Context, from, to string) (domain.Mov
 		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrNotExist)
 	}
 	if _, found := a.files[to]; found {
-		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrAlreadyExists)
+		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultdomain.ErrAlreadyExists)
 	}
 	a.files[to] = a.files[from]
 	delete(a.files, from)
@@ -495,7 +497,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 		"last vault":      {err: vaults.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
 		"current vault":   {err: vaults.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
 		"no such vault":   {err: vaults.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
-		"unsaved changes": {err: pluginport.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
+		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {
 			list := newRecordingList()
@@ -598,7 +600,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 		want v1.HostVaultErrorCode
 	}{
 		"invalid name":   {err: note.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
-		"already exists": {err: vaultport.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
 		"not found":      {err: vaultport.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
 		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 	} {
@@ -722,14 +724,14 @@ type escapingPathVault struct{ *fakeNoteVault }
 
 func (o escapingPathVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	if strings.HasPrefix(from, "../") {
-		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrOutside)
+		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultdomain.ErrOutside)
 	}
 	return o.fakeNoteVault.MoveNote(ctx, from, to)
 }
 
 func (o escapingPathVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	if strings.HasPrefix(target, "../") {
-		return "", nil, fmt.Errorf("remove %s: %w", target, vaultport.ErrOutside)
+		return "", nil, fmt.Errorf("remove %s: %w", target, vaultdomain.ErrOutside)
 	}
 	return o.fakeNoteVault.RemoveNote(ctx, target)
 }

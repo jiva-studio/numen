@@ -5,6 +5,7 @@ package trash
 import (
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"io/fs"
 	"net/url"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"strconv"
 	"syscall"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // suffix is the extension of the info file that records where a trashed folder
@@ -106,7 +105,7 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 	}
 	mine := filepath.Join(top, ".Trash-"+strconv.Itoa(uid))
 	if err := os.MkdirAll(mine, 0o700); err != nil {
-		return "", fmt.Errorf("%s: %w", top, machineport.ErrNoTrash)
+		return "", fmt.Errorf("%s: %w", top, machine.ErrNoTrash)
 	}
 	return mine, nil
 }

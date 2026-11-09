@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"golang.org/x/sys/windows"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func acquireFileLock(path string) (func() error, error) {
@@ -33,7 +32,7 @@ func acquireFileLock(path string) (func() error, error) {
 	if err := windows.LockFileEx(handle, flags, 0, 1, 0, &region); err != nil {
 		file.Close()
 		if errors.Is(err, windows.ERROR_LOCK_VIOLATION) || errors.Is(err, windows.ERROR_IO_PENDING) {
-			return nil, fmt.Errorf("%s: %w", path, vaultport.ErrClaimed)
+			return nil, fmt.Errorf("%s: %w", path, vault.ErrClaimed)
 		}
 		return nil, err
 	}

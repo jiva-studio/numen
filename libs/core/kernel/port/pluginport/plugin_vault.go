@@ -2,7 +2,6 @@ package pluginport
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -15,7 +14,7 @@ type PluginStoreFile struct {
 }
 
 // PluginStore is one plugin's own folder in a vault's store, `.numen/<plugin id>/`. A name is a file
-// directly in that folder; one that holds a slash or begins with a dot gets vaultport.ErrOutside.
+// directly in that folder; one that holds a slash or begins with a dot gets vault.ErrOutside.
 type pluginStoreMutator interface {
 	Append(ctx context.Context, name string, content []byte) error
 	Write(ctx context.Context, name string, content []byte) error
@@ -102,7 +101,7 @@ type pluginVaultFileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	// ReadRange reads at most length bytes of a file from start as text, truncated at whole
-	// characters. A range that is not UTF-8 returns ErrNotText; a folder or a path not in the vault
+	// characters. A range that is not UTF-8 returns plugin.ErrNotText; a folder or a path not in the vault
 	// returns fs.ErrNotExist.
 	ReadRange(ctx context.Context, path string, start, length int) (PluginFileRange, error)
 }
@@ -187,9 +186,6 @@ type PluginVault interface {
 	PluginVaultStore
 	PluginVaultLifecycle
 }
-
-// ErrNotText is returned by a ranged read of bytes that are not UTF-8.
-var ErrNotText = errors.New("the file is not text")
 
 // PluginFileRange is a ranged read of a file: the text, its start in the file, and the file stat of
 // the file it was read from.

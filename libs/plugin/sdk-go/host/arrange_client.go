@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 var _ VaultList = (*Client)(nil)

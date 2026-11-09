@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // Setting is one field of the file and its position in it, the first element being the owner:
@@ -53,7 +52,7 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 		}
 
 		if err := readBack(raw, settings, into); err != nil {
-			return fmt.Errorf("%s: %w: %w", path, settingsport.ErrNotASetting, err)
+			return fmt.Errorf("%s: %w: %w", path, settingsdomain.ErrNotASetting, err)
 		}
 		return writeFileAtomically(path, raw)
 	})

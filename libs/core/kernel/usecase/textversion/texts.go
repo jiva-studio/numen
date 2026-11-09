@@ -8,10 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
-// GetLiveText is the text of the file's live version, or textport.ErrNoText.
+// GetLiveText is the text of the file's live version, or textdomain.ErrNoText.
 func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, contentHash string) (domain.VersionText, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
@@ -22,14 +23,14 @@ func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, conten
 		return domain.VersionText{}, err
 	}
 	if !ok {
-		return domain.VersionText{}, fmt.Errorf("%w: %s has no live version", textport.ErrNoText, path)
+		return domain.VersionText{}, fmt.Errorf("%w: %s has no live version", textdomain.ErrNoText, path)
 	}
 	return u.readText(ctx, v, live)
 }
 
 // GetVersionText is the text of one version, live or not, whether or not the
 // plugin that made it is enabled. A version the file has not, or whose file
-// changed since it was recorded, is textport.ErrNoText.
+// changed since it was recorded, is textdomain.ErrNoText.
 func (u *Versions) GetVersionText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
@@ -37,7 +38,7 @@ func (u *Versions) GetVersionText(ctx context.Context, v domain.Vault, path stri
 	}
 	i := indexOf(versions, id)
 	if i < 0 {
-		return domain.VersionText{}, fmt.Errorf("%w: version %s of %s", textport.ErrNoText, id, path)
+		return domain.VersionText{}, fmt.Errorf("%w: version %s of %s", textdomain.ErrNoText, id, path)
 	}
 	return u.readText(ctx, v, versions[i])
 }
@@ -58,7 +59,7 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 	if cursor != "" {
 		n, err := strconv.Atoi(cursor)
 		if err != nil || n < 0 {
-			return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
+			return TextPage{}, fmt.Errorf("%w: cursor %q", textdomain.ErrNoText, cursor)
 		}
 		start = n
 	}
@@ -68,7 +69,7 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 	}
 	segments := version.GetSegments()
 	if start > len(segments) {
-		return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
+		return TextPage{}, fmt.Errorf("%w: cursor %q", textdomain.ErrNoText, cursor)
 	}
 	end := min(start+pageSize, len(segments))
 	page := TextPage{Segments: segments[start:end]}
@@ -115,7 +116,7 @@ func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.
 		return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, err)
 	}
 	if file.TextHash != version.TextHash {
-		return domain.VersionText{}, fmt.Errorf("%w: the file of %s of %s changed", textport.ErrNoText, version.GetID(), version.Path)
+		return domain.VersionText{}, fmt.Errorf("%w: the file of %s of %s changed", textdomain.ErrNoText, version.GetID(), version.Path)
 	}
 	return domain.NewVersionText(version, file.Segments), nil
 }
@@ -136,7 +137,7 @@ func (t vaultTexts) FindLiveVersion(ctx context.Context, path, contentHash strin
 		return "", err
 	}
 	if listing.Live == "" {
-		return "", fmt.Errorf("%w: %s has no live version", textport.ErrNoText, path)
+		return "", fmt.Errorf("%w: %s has no live version", textdomain.ErrNoText, path)
 	}
 	return listing.Live, nil
 }

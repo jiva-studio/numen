@@ -2,6 +2,7 @@
 package plugincontract
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -163,8 +164,8 @@ var (
 	ErrEmptySettingKey        = pluginport.ErrEmptySettingKey
 	ErrEmptySettingTitle      = pluginport.ErrEmptySettingTitle
 	ErrEmptyVersion           = pluginport.ErrEmptyVersion
-	ErrEmbeddingFailed        = pluginport.ErrEmbeddingFailed
-	ErrInvalidQuery           = pluginport.ErrInvalidQuery
+	ErrEmbeddingFailed        = plugin.ErrEmbeddingFailed
+	ErrInvalidQuery           = plugin.ErrInvalidQuery
 	ErrEnumMissingOptions     = pluginport.ErrEnumMissingOptions
 	ErrInvalidActivationEvent = pluginport.ErrInvalidActivationEvent
 	ErrInvalidBackend         = pluginport.ErrInvalidBackend
@@ -173,7 +174,7 @@ var (
 	ErrInvalidCommandArgument = pluginport.ErrInvalidCommandArgument
 	ErrInvalidDependency      = pluginport.ErrInvalidDependency
 	ErrInvalidFrame           = pluginport.ErrInvalidFrame
-	ErrInvalidFloor           = pluginport.ErrInvalidFloor
+	ErrInvalidFloor           = plugin.ErrInvalidFloor
 	ErrInvalidID              = pluginport.ErrInvalidID
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
@@ -185,21 +186,21 @@ var (
 	ErrInvalidSettingKey      = pluginport.ErrInvalidSettingKey
 	ErrInvalidSettingType     = pluginport.ErrInvalidSettingType
 	ErrInvalidVersion         = pluginport.ErrInvalidVersion
-	ErrLimitExceeded          = pluginport.ErrLimitExceeded
+	ErrLimitExceeded          = plugin.ErrLimitExceeded
 	ErrNoBackend              = pluginport.ErrNoBackend
-	ErrNoModel                = pluginport.ErrNoModel
-	ErrNoKey                  = pluginport.ErrNoKey
-	ErrNoKeyStore             = pluginport.ErrNoKeyStore
-	ErrNoProvisioner          = pluginport.ErrNoProvisioner
-	ErrNoWindow               = pluginport.ErrNoWindow
-	ErrNotText                = pluginport.ErrNotText
-	ErrUnsavedChanges         = pluginport.ErrUnsavedChanges
-	ErrInvalidFocus           = pluginport.ErrInvalidFocus
-	ErrTabNotShown            = pluginport.ErrTabNotShown
-	ErrPathTraversal          = pluginport.ErrPathTraversal
-	ErrPermissionDenied       = pluginport.ErrPermissionDenied
+	ErrNoModel                = plugin.ErrNoModel
+	ErrNoKey                  = plugin.ErrNoKey
+	ErrNoKeyStore             = plugin.ErrNoKeyStore
+	ErrNoProvisioner          = plugin.ErrNoProvisioner
+	ErrNoWindow               = plugin.ErrNoWindow
+	ErrNotText                = plugin.ErrNotText
+	ErrUnsavedChanges         = plugin.ErrUnsavedChanges
+	ErrInvalidFocus           = plugin.ErrInvalidFocus
+	ErrTabNotShown            = plugin.ErrTabNotShown
+	ErrPathTraversal          = plugin.ErrPathTraversal
+	ErrPermissionDenied       = plugin.ErrPermissionDenied
 	ErrRangeInvalidBounds     = pluginport.ErrRangeInvalidBounds
-	ErrRecipeMismatch         = pluginport.ErrRecipeMismatch
+	ErrRecipeMismatch         = plugin.ErrRecipeMismatch
 	ErrReservedSettingKey     = pluginport.ErrReservedSettingKey
 	ErrUnavailable            = pluginport.ErrUnavailable
 	ErrUnsupportedProtocol    = pluginport.ErrUnsupportedProtocol

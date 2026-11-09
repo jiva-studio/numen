@@ -2,6 +2,7 @@ package container
 
 import (
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -35,8 +36,16 @@ func getWiringPackages(pkgs []*packages.Package, roots []string) ([]finding, boo
 
 func checkNoWiringPackageExistsOutsideTheContainer(t *testing.T, workspace workspacePackages) {
 	t.Helper()
+	root, err := filepath.Abs(repoRootDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var pkgs []*packages.Package
 	for _, dir := range listWorkspaceModules(t) {
+		// A plugin names its own packages after its own domain: the container of an EPUB file is not wiring.
+		if rel, err := filepath.Rel(root, dir); err != nil || isWithin(filepath.ToSlash(rel), "plugins") {
+			continue
+		}
 		pkgs = append(pkgs, listProductionPackages(workspace.listModule(t, dir))...)
 	}
 	found, isRootRead := getWiringPackages(pkgs, []string{coreImportPath + "/container"})

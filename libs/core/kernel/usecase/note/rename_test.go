@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func (c changing) rename() note.Rename {
@@ -297,7 +297,7 @@ func TestRename_RejectsExistingTarget(t *testing.T) {
 	})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if renamed.Path != "Old.md" {
@@ -618,7 +618,7 @@ func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "rust.md", "Rust")
 
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v (%+v)", err, renamed)
 	}
 	if body := c.read(t, "rust.md"); body != old {

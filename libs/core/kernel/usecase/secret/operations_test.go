@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
@@ -49,14 +50,14 @@ func (k keys) GetKey(_ context.Context, name string) (string, error) {
 	if value, found := k[name]; found {
 		return value, nil
 	}
-	return "", pluginport.ErrNoKey
+	return "", plugin.ErrNoKey
 }
 
 func (k keys) SetKey(_ context.Context, name, value string) error { k[name] = value; return nil }
 
 func (k keys) DeleteKey(_ context.Context, name string) error {
 	if _, found := k[name]; !found {
-		return pluginport.ErrNoKey
+		return plugin.ErrNoKey
 	}
 	delete(k, name)
 	return nil

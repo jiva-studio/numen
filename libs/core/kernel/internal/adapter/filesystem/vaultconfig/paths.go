@@ -7,12 +7,13 @@ import (
 	"runtime"
 	"strings"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // ErrOutside is the core's sentinel, so a caller that never names this package
 // still recognizes it.
-var ErrOutside = vaultport.ErrOutside
+var ErrOutside = vaultdomain.ErrOutside
 
 // ErrNotANote is returned for a path inside the vault that the vault does not hold
 // as a note: an attachment, a folder where a tool keeps its state, or anything the

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -17,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // filing is a scanned vault whose files can be moved about, with the index kept
@@ -250,7 +249,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "archive/physics")
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vaultdomain.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if moved.IsMoved {

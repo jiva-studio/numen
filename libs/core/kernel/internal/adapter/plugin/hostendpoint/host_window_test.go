@@ -21,6 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -240,7 +241,7 @@ func TestHostWindowRejectsEveryCallWithoutThePermission(t *testing.T) {
 func TestHostWindowWithoutAWindowReturnsNoWindow(t *testing.T) {
 	for name, window := range map[string]pluginport.PluginWindow{
 		"no window bound":                 nil,
-		"a window that reports no window": &recordingWindow{err: fmt.Errorf("focus: %w", pluginport.ErrNoWindow)},
+		"a window that reports no window": &recordingWindow{err: fmt.Errorf("focus: %w", plugin.ErrNoWindow)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			client, _ := newWindowClient(t, window, "token-a")
@@ -275,7 +276,7 @@ func TestHostWindowReturnsNotFoundForPathNotInVault(t *testing.T) {
 }
 
 func TestHostWindowReturnsUseCaseRejectionAsInvalidArgument(t *testing.T) {
-	window := &recordingWindow{err: fmt.Errorf("highlight at most 8 places of one document: %w", pluginport.ErrInvalidFocus)}
+	window := &recordingWindow{err: fmt.Errorf("highlight at most 8 places of one document: %w", plugin.ErrInvalidFocus)}
 	client, _ := newWindowClient(t, window, "token-a")
 	ctx := t.Context()
 

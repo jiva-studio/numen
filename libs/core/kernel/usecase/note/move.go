@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -106,7 +107,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, err
 	}
 	if err := writer.Move(ctx, from, to); err != nil {
-		if errors.Is(err, vaultport.ErrAlreadyExists) {
+		if errors.Is(err, vault.ErrAlreadyExists) {
 			return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", to, from), err)
 		}
 		return res, mapMissingNote(err)

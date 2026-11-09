@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -366,7 +367,7 @@ func (u Index) statIfOutdated(
 	switch {
 	case err == nil && string(live) == source.Producer:
 		return domain.FileStat{}, false, nil
-	case err != nil && !errors.Is(err, textport.ErrNoText):
+	case err != nil && !errors.Is(err, text.ErrNoText):
 		return domain.FileStat{}, false, fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
 	ref, err := on.files.StatFile(ctx, source.Path)
@@ -530,7 +531,7 @@ func (u Index) source(
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
+		if ref.Kind == domain.KindNote && errors.Is(err, text.ErrNoText) {
 			return u.dropVersionOfNote(ctx, v, path)
 		}
 		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
@@ -563,7 +564,7 @@ func (u Index) saveWithoutText(
 	res *IndexResult,
 ) error {
 	res.Unreadable++
-	if !errors.Is(readErr, textport.ErrNoText) {
+	if !errors.Is(readErr, text.ErrNoText) {
 		u.reportError(readErr)
 	}
 	if err := u.sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: source}); err != nil {
@@ -664,15 +665,15 @@ func (t noTexts) GetContentHash(ctx context.Context, path string) (_ string, err
 }
 
 func (noTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
-	return "", textport.ErrNoText
+	return "", text.ErrNoText
 }
 
 func (noTexts) GetLiveText(context.Context, string, string) (domain.VersionText, error) {
-	return domain.VersionText{}, textport.ErrNoText
+	return domain.VersionText{}, text.ErrNoText
 }
 
 func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (domain.VersionText, error) {
-	return domain.VersionText{}, textport.ErrNoText
+	return domain.VersionText{}, text.ErrNoText
 }
 
 func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }

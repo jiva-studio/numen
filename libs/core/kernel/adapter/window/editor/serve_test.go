@@ -35,9 +35,9 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -695,7 +695,7 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    vaults.ErrShowing,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  vaults.ErrUnknown,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machineport.ErrNoTrash,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machine.ErrNoTrash,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    errAnswerPending,
 	}, func(err error) v1.VaultsErrorCode {
 		reason, _ := vaultsErrorCodeBy(err)

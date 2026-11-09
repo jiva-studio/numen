@@ -2,7 +2,6 @@ package pluginport
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,12 +11,6 @@ import (
 var (
 	// ErrUnavailable means whatever answers cannot be reached right now.
 	ErrUnavailable = domain.ErrUnavailable
-
-	// ErrPathTraversal is returned when a path escapes the active vault boundary.
-	ErrPathTraversal = errors.New("path traversal outside active vault is prohibited")
-
-	// ErrPermissionDenied is returned when a plugin lacks the required permission.
-	ErrPermissionDenied = errors.New("plugin permission denied")
 )
 
 // UnavailableReason is why no plugin answers.

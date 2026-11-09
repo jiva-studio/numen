@@ -2,7 +2,6 @@ package vaultport
 
 import (
 	"context"
-	"errors"
 	"io"
 	pathpkg "path"
 	"strings"
@@ -24,11 +23,6 @@ var ErrNotExist = edit.ErrNotExist
 
 // ErrExist is what a path that already holds a file gets when a write requires an unoccupied path.
 var ErrExist = edit.ErrExist
-
-// ErrOutside is what a path that does not stay in the vault gets. It is not
-// "no note": a caller asking for something outside has made a mistake worth
-// being notified of, and "no such note" would hide it.
-var ErrOutside = errors.New("the path is outside the vault")
 
 // IsNoNote reports whether an error means there is no note at the path: nothing
 // exists there, or the file there is one the vault ignores.
@@ -52,7 +46,7 @@ type VaultReader interface {
 	// then files, each by name compared without regard to case, and that is
 	// the order to draw them in.
 	//
-	// ErrOutside for a path that leaves the vault, fs.ErrNotExist for a folder
+	// vault.ErrOutside for a path that leaves the vault, fs.ErrNotExist for a folder
 	// that is not there and for a path that holds a file.
 	List(ctx context.Context, folder string) ([]domain.Entry, error)
 	// Read returns the bytes of one file, addressed by a path a walk reported.

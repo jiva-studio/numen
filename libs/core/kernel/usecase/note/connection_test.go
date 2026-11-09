@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -472,7 +473,7 @@ func TestCreatingInARelationWithATitleDoesNotRetry(t *testing.T) {
 		From: "Heat.md", Role: domain.RoleJump, Title: "Work",
 	})
 
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("err = %v, want ErrAlreadyExists", err)
 	}
 }

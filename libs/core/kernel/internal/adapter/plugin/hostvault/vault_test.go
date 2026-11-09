@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -105,7 +106,7 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
 		t.Errorf("a created file indexed %v", indexed)
 	}
-	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {

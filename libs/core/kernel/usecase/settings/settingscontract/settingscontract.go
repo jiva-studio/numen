@@ -1,7 +1,10 @@
 // Package settingscontract re-exports the settings port contract.
 package settingscontract
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+)
 
 type (
 	Model    = settingsport.Model
@@ -16,5 +19,5 @@ const (
 )
 
 var (
-	ErrNotASetting = settingsport.ErrNotASetting
+	ErrNotASetting = settings.ErrNotASetting
 )

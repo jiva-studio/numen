@@ -2,14 +2,9 @@ package pluginport
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// ErrUnsavedChanges is returned by OpenVault while the window prompts the user about unsaved
-// changes. The window keeps its vault.
-var ErrUnsavedChanges = errors.New("the window has unsaved changes and is prompting the user; retry after the prompt closes")
 
 // PluginVaultList is the installation's list of vaults and the vault the window shows, changed by
 // the plugins that have vault:manage. The window provides it; a host with no window has
@@ -21,7 +16,7 @@ type PluginVaultList interface {
 	// RemoveVault removes the vault from the list and from the index. The folder stays.
 	RemoveVault(ctx context.Context, id domain.VaultID) error
 	// OpenVault shows the vault in the window and returns once the window shows it. A rejected open
-	// returns ErrUnsavedChanges, ErrUnavailable, or an unknown-vault error.
+	// returns plugin.ErrUnsavedChanges, ErrUnavailable, or an unknown-vault error.
 	OpenVault(ctx context.Context, id domain.VaultID) error
 	// IsMissing reports whether the vault's folder is missing.
 	IsMissing(v domain.Vault) bool

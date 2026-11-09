@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -430,7 +431,7 @@ func (s sourceTexts) getText(ctx context.Context, path, version string) (string,
 		return "", nil, errUnreadable
 	}
 	doc, err := s.texts.GetVersionText(ctx, path, domain.TextVersionID(version))
-	if errors.Is(err, textport.ErrNoText) {
+	if errors.Is(err, textdomain.ErrNoText) {
 		return "", nil, errUnreadable
 	}
 	if err != nil {

@@ -1,6 +1,7 @@
 package settings
 
 import (
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
@@ -41,4 +42,4 @@ const PluginNotInstalled = pluginport.PluginNotInstalled
 
 // ErrNotASetting is a value the settings cannot be read out of again. Nothing is
 // written, and the value is the caller's to correct.
-var ErrNotASetting = settingsport.ErrNotASetting
+var ErrNotASetting = settingsdomain.ErrNotASetting

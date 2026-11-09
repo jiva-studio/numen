@@ -1,11 +1,12 @@
 package trash
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // ErrNoTrash is the core's sentinel, under the name this package answers by.
-var ErrNoTrash = machineport.ErrNoTrash
+var ErrNoTrash = machine.ErrNoTrash
 
 // Trash is this machine's trash.
 type Trash struct {

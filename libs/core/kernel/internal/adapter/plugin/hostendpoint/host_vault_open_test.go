@@ -17,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -34,7 +35,7 @@ func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint,
 
 func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 	list := newRecordingList()
-	unsaved := fmt.Errorf("open vault v2: %w", pluginport.ErrUnsavedChanges)
+	unsaved := fmt.Errorf("open vault v2: %w", plugin.ErrUnsavedChanges)
 	list.err = unsaved
 	endpoint, client := openListEndpoint(t, list)
 	t.Cleanup(func() {

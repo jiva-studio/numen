@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -32,7 +33,7 @@ func (t vaultBookTexts) read(ctx context.Context, path string) (domain.VersionTe
 	}
 	parts, err := indexfake.ReadBookSegments(raw)
 	if err != nil {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, text.ErrNoText
 	}
 	hash := domain.HashContent(raw)
 	version := domain.TextVersion{Path: path, PluginID: "test.books", Key: hash[:8], Kind: "book-text", InputHash: hash}
@@ -47,7 +48,7 @@ func (t vaultBookTexts) FindLiveVersion(ctx context.Context, path, contentHash s
 func (t vaultBookTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
 	if err == nil && doc.Version().InputHash != contentHash {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, text.ErrNoText
 	}
 	return doc, err
 }
@@ -55,7 +56,7 @@ func (t vaultBookTexts) GetLiveText(ctx context.Context, path, contentHash strin
 func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
 	if err == nil && doc.Version().GetID() != id {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, text.ErrNoText
 	}
 	return doc, err
 }

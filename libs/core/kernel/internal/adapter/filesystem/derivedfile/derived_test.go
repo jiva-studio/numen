@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // testArea is the one folder of the service folder the stores of these tests answer for.
@@ -321,7 +321,7 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "area/abc.txt"); !errors.Is(err, vaultport.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "area/abc.txt"); !errors.Is(err, vault.ErrClaimed) {
 		t.Errorf("claiming a held name gave %v, want port.ErrClaimed", err)
 	}
 
@@ -418,7 +418,7 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 		t.Fatalf("the child never took the claim: %v", response.Err())
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "area/held.txt"); !errors.Is(err, vaultport.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "area/held.txt"); !errors.Is(err, vault.ErrClaimed) {
 		t.Errorf("claiming a name another process holds gave %v, want port.ErrClaimed", err)
 	}
 }

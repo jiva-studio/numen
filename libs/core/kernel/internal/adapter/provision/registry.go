@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -102,7 +103,7 @@ func (r *Registry) Provision(
 ) (pluginport.ResolvedDependency, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("%w: %s %s", pluginport.ErrNoProvisioner, req.Kind, req.ID)
+		return pluginport.ResolvedDependency{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
 	}
 	r.Register(req)
 	return r.flights.do(ctx, getFlightKey(req), onProgress, func(runCtx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
@@ -143,7 +144,7 @@ func (r *Registry) run(
 func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
-		return pluginport.DependencyStatus{}, fmt.Errorf("%w: %s %s", pluginport.ErrNoProvisioner, req.Kind, req.ID)
+		return pluginport.DependencyStatus{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
 	}
 	if r.flights.isRunning(getFlightKey(req)) {
 		r.mu.Lock()

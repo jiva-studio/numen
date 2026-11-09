@@ -1,7 +1,10 @@
 // Package sourcecontract re-exports the source port contract.
 package sourcecontract
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+)
 
 type (
 	ImportedFile     = sourceport.ImportedFile
@@ -13,5 +16,5 @@ type (
 )
 
 var (
-	ErrNotADocument = sourceport.ErrNotADocument
+	ErrNotADocument = source.ErrNotADocument
 )

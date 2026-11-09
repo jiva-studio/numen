@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -184,7 +185,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 		*tr.moves = append(*tr.moves, to)
 		switch {
 		case len(*tr.moves) < 4:
-			return vaultport.ErrAlreadyExists
+			return vault.ErrAlreadyExists
 		case len(*tr.moves) < 150:
 			return nil
 		}
@@ -211,7 +212,7 @@ func TestRemove_FullTrashFailsAfter100Names(t *testing.T) {
 	tr := newTrashing()
 	tr.writers.writer.move = func(_, to string) error {
 		*tr.moves = append(*tr.moves, to)
-		return vaultport.ErrAlreadyExists
+		return vault.ErrAlreadyExists
 	}
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")

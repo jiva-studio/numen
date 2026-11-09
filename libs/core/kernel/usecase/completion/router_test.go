@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	completiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
@@ -191,7 +192,7 @@ func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 		"only system":  {Messages: []completionport.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []completionport.Message{{Role: "tool", Text: "why?"}}},
 	} {
-		if _, err := router.Complete(t.Context(), "plugin.a", question); !errors.Is(err, completionport.ErrInvalidQuestion) {
+		if _, err := router.Complete(t.Context(), "plugin.a", question); !errors.Is(err, completiondomain.ErrInvalidQuestion) {
 			t.Errorf("%s: error = %v, want port.ErrInvalidQuestion", name, err)
 		}
 	}

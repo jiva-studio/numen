@@ -2,7 +2,6 @@ package pluginport
 
 import (
 	"context"
-	"errors"
 )
 
 // DependencyState is the install state of a dependency on this machine.
@@ -15,9 +14,6 @@ const (
 	DependencyStateReady        DependencyState = "ready"
 	DependencyStateFailed       DependencyState = "failed"
 )
-
-// ErrNoProvisioner is a requirement that no provisioner can make ready.
-var ErrNoProvisioner = errors.New("no provisioner for the dependency")
 
 // ResolvedDependency is the install location of a ready dependency and how a process uses it.
 type ResolvedDependency struct {

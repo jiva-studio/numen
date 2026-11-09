@@ -15,6 +15,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
@@ -49,7 +51,7 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	c.checked = append(c.checked, pluginID+" "+permission)
 	c.mu.Unlock()
 	if !c.allowed[pluginID] {
-		return pluginport.ErrPermissionDenied
+		return plugin.ErrPermissionDenied
 	}
 	return nil
 }
@@ -214,7 +216,7 @@ func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 		want   v1.CompletionErrorCode
 		detail string
 	}{
-		{"no route", fmt.Errorf("%w: the program %q is not installed", completionport.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, `the program "p" is not installed`},
+		{"no route", fmt.Errorf("%w: the program %q is not installed", completion.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, `the program "p" is not installed`},
 		{"unreachable", fmt.Errorf("agent: %w", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "agent: unavailable"},
 		{"stopped", fmt.Errorf("%w: the agent stopped: bad model", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "the agent stopped: bad model"},
 	} {
@@ -338,7 +340,7 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 // A question nothing can answer is an invalid argument, not an error.
 func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
 	target := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) {
-		return "", fmt.Errorf("%w: no message", completionport.ErrInvalidQuestion)
+		return "", fmt.Errorf("%w: no message", completion.ErrInvalidQuestion)
 	}))
 	_, err := newHostClient(t, target, "token-a").Complete(t.Context(), newHostQuestion())
 	if got := readCode(t, err); got != connect.CodeInvalidArgument {

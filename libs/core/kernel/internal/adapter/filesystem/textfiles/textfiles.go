@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/textfile"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -38,7 +39,7 @@ func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (textpor
 	}
 	raw, err := store.Read(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
-		return textport.TextFile{}, fmt.Errorf("%w: %s/%s", textport.ErrNoText, pluginID, name)
+		return textport.TextFile{}, fmt.Errorf("%w: %s/%s", text.ErrNoText, pluginID, name)
 	}
 	if err != nil {
 		return textport.TextFile{}, err

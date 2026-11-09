@@ -1,15 +1,8 @@
 package settingsport
 
 import (
-	"errors"
-
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// ErrNotASetting is a value the settings cannot be read out of again: one that
-// is not JSON, one of the wrong shape, or a number past what its setting goes
-// to. Nothing is written, and the value is the caller's to correct.
-var ErrNotASetting = errors.New("the settings cannot be read out of that value")
 
 // Setting is one setting of the file in which this installation is configured,
 // with its value.

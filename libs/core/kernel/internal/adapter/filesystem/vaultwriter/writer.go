@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -110,7 +111,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 	// A folder does not go inside itself: the destination is a place the folder
 	// itself holds.
 	if strings.HasPrefix(target, source+string(filepath.Separator)) {
-		return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
+		return fmt.Errorf("move %s to %s: %w", from, to, vault.ErrAlreadyExists)
 	}
 	root, arrives, err := w.openRoot(target)
 	if err != nil {
@@ -175,7 +176,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 	defer closeAndJoin(&err, root)
 	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
-		return fmt.Errorf("make %s: %w", path, vaultport.ErrAlreadyExists)
+		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
 	case err != nil && !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
@@ -351,7 +352,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 
 	file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, newFileMode)
 	if errors.Is(err, fs.ErrExist) {
-		return fmt.Errorf("create %s: %w", path, vaultport.ErrAlreadyExists)
+		return fmt.Errorf("create %s: %w", path, vault.ErrAlreadyExists)
 	}
 	if err != nil {
 		return err
@@ -388,7 +389,7 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	defer closeAndJoin(&err, root)
 	switch _, err := root.Lstat(name); {
 	case err == nil:
-		return fmt.Errorf("bring %s: %w", path, vaultport.ErrAlreadyExists)
+		return fmt.Errorf("bring %s: %w", path, vault.ErrAlreadyExists)
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
@@ -467,7 +468,7 @@ func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
 		return err
 	}
 	if !os.SameFile(here, there) {
-		return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
+		return fmt.Errorf("move %s to %s: %w", from, to, vault.ErrAlreadyExists)
 	}
 	return nil
 }

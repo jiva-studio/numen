@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -98,7 +99,7 @@ type VersionPut struct {
 // hash of its bytes. A replaced version keeps the time it was first made.
 func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params VersionPut) (domain.TextVersion, error) {
 	if !u.plugins.IsEnabled(pluginID) {
-		return domain.TextVersion{}, fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
+		return domain.TextVersion{}, fmt.Errorf("%w: %s", text.ErrNotTextPlugin, pluginID)
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source,
@@ -127,7 +128,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	}
 	file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
 	if err != nil {
-		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", textport.ErrInvalidVersion, version.File, version.PluginID, err)
+		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", text.ErrInvalidVersion, version.File, version.PluginID, err)
 	}
 	version.TextHash = file.TextHash
 	version.CreateTime = u.clock.Now()
@@ -144,7 +145,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 func checkVersionFields(version domain.TextVersion) error {
 	if version.Path == "" || version.Key == "" || version.Kind == "" || version.File == "" {
 		return fmt.Errorf("%w: path %q, key %q, kind %q, file %q",
-			textport.ErrInvalidVersion, version.Path, version.Key, version.Kind, version.File)
+			text.ErrInvalidVersion, version.Path, version.Key, version.Kind, version.File)
 	}
 	return nil
 }
@@ -152,10 +153,10 @@ func checkVersionFields(version domain.TextVersion) error {
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
 	if version.IsFromProperty() && (version.Source != "" || version.InputHash != "") {
 		return fmt.Errorf("%w: a version made from the property %s of %s has another source",
-			textport.ErrInvalidVersion, version.SourceProperty.Key, version.Path)
+			text.ErrInvalidVersion, version.SourceProperty.Key, version.Path)
 	}
 	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
-		return fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
+		return fmt.Errorf("%w: %s is no other version of %s", text.ErrInvalidVersion, version.Source, version.Path)
 	}
 	return nil
 }
@@ -183,7 +184,7 @@ func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path strin
 	}
 	index := indexOf(versions, id)
 	if index < 0 {
-		return fmt.Errorf("%w: %s has no version %s", textport.ErrInvalidVersion, path, id)
+		return fmt.Errorf("%w: %s has no version %s", text.ErrInvalidVersion, path, id)
 	}
 	version := versions[index]
 	repo, err := u.repos.Open(v)
@@ -306,7 +307,7 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 	}
 	i := indexOf(versions, edit.Source)
 	if i < 0 {
-		return domain.TextVersion{}, fmt.Errorf("%w: version %s of %s", textport.ErrNoText, edit.Source, edit.Path)
+		return domain.TextVersion{}, fmt.Errorf("%w: version %s of %s", text.ErrNoText, edit.Source, edit.Path)
 	}
 	source := versions[i]
 	files, err := u.files.Open(v)

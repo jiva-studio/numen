@@ -2,8 +2,6 @@ package completionport
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -11,14 +9,6 @@ import (
 var (
 	// ErrUnavailable means whatever answers cannot be reached right now.
 	ErrUnavailable = domain.ErrUnavailable
-
-	// ErrNoRoute means no agent answers the question: the program the settings
-	// name is not installed or no plugin lists it, or no program is installed at
-	// all. It is an unavailability: the question has nowhere to go.
-	ErrNoRoute = fmt.Errorf("%w: no agent answers the question", ErrUnavailable)
-
-	// ErrInvalidQuestion means the question holds nothing an agent can answer.
-	ErrInvalidQuestion = errors.New("invalid question")
 )
 
 // Question is what a plugin sends to a model.
@@ -37,7 +27,7 @@ type Message struct {
 // of the settings.
 type Completer interface {
 	// Complete answers the question of the plugin with the given id. A question
-	// no agent answers fails with ErrNoRoute, and an unreachable agent with
+	// no agent answers fails with completion.ErrNoRoute, and an unreachable agent with
 	// ErrUnavailable.
 	Complete(ctx context.Context, pluginID string, question Question) (string, error)
 }

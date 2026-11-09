@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
@@ -95,7 +96,7 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 	}
 
 	none, _ := serveCompletions(t, host, `{"app": {"agent": {"use": ""}}}`)
-	if _, err := none.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
+	if _, err := none.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completion.ErrNoRoute) {
 		t.Errorf("with no agent named, error = %v, want port.ErrNoRoute", err)
 	}
 }
@@ -109,7 +110,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 		`{"app": {"ai": {"default": {"agent": "beta"}}}}`,
 	} {
 		completer, _ := serveCompletions(t, host, content)
-		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
+		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completion.ErrNoRoute) {
 			t.Errorf("%s: error = %v, want port.ErrNoRoute", content, err)
 		}
 	}
@@ -119,7 +120,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 
 	empty := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
 	completer, _ := serveCompletions(t, empty, `{}`)
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completion.ErrNoRoute) {
 		t.Errorf("without a provider, error = %v, want port.ErrNoRoute", err)
 	}
 }
@@ -140,7 +141,7 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, path := serveCompletions(t, host, `{"app": {"ai": {"default": {"agent": "ghost"}}}}`)
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completion.ErrNoRoute) {
 		t.Fatalf("with a default that is not there: error = %v, want port.ErrNoRoute", err)
 	}
 

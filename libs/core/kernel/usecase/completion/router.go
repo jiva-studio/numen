@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	completiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
@@ -98,11 +99,11 @@ func newTask(question completionport.Question) (agentport.Task, error) {
 		case "", "user", "assistant":
 			turns = append(turns, message)
 		default:
-			return agentport.Task{}, fmt.Errorf("%w: unknown role %q", completionport.ErrInvalidQuestion, message.Role)
+			return agentport.Task{}, fmt.Errorf("%w: unknown role %q", completiondomain.ErrInvalidQuestion, message.Role)
 		}
 	}
 	if len(turns) == 0 {
-		return agentport.Task{}, fmt.Errorf("%w: %w", completionport.ErrInvalidQuestion, errNoMessage)
+		return agentport.Task{}, fmt.Errorf("%w: %w", completiondomain.ErrInvalidQuestion, errNoMessage)
 	}
 	return agentport.Task{Question: writePrompt(turns), Instructions: strings.Join(system, "\n\n")}, nil
 }

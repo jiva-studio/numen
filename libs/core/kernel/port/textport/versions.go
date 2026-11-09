@@ -55,7 +55,7 @@ type TextFile struct {
 
 // TextFiles is the version files in the plugin folders of one vault's store.
 type TextFiles interface {
-	// ReadTextFile reads a file of a plugin's folder, or returns ErrNoText where it is not there.
+	// ReadTextFile reads a file of a plugin's folder, or returns text.ErrNoText where it is not there.
 	ReadTextFile(ctx context.Context, pluginID, name string) (TextFile, error)
 	// WriteTextFile writes the segments as a file of a plugin's folder and
 	// returns the hash of its bytes. The file is replaced atomically.

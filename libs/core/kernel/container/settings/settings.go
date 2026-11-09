@@ -16,6 +16,7 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
@@ -523,12 +524,12 @@ func (c Config) WriteSettings(entries []settingsport.Setting) error {
 	for _, one := range entries {
 		var value json.RawMessage
 		if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
-			return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
+			return fmt.Errorf("%w: %w", settingsdomain.ErrNotASetting, err)
 		}
 		target = append(target, settingsadapter.Setting{At: one.Path, Written: value})
 	}
 	if err := c.CheckWrites(entries); err != nil {
-		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
+		return fmt.Errorf("%w: %w", settingsdomain.ErrNotASetting, err)
 	}
 	path, err := c.SettingsFile()
 	if err != nil {

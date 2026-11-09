@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -81,7 +82,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		source = ByFilename
 		return errFilenameNamesIt
 	})
-	if errors.Is(err, vaultport.ErrAlreadyExists) {
+	if errors.Is(err, vault.ErrAlreadyExists) {
 		return RenameResult{Path: path, Title: title, By: source},
 			domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
 	}
@@ -99,7 +100,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}
-	if source == ByFilename && errors.Is(err, vaultport.ErrAlreadyExists) {
+	if source == ByFilename && errors.Is(err, vault.ErrAlreadyExists) {
 		// A note whose title is stored in its filename was not written before the move, so it is unchanged.
 		return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
 	}

@@ -1,7 +1,10 @@
 // Package textcontract re-exports the text port contract.
 package textcontract
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+)
 
 type (
 	ContentHash         = textport.ContentHash
@@ -19,7 +22,7 @@ type (
 )
 
 var (
-	ErrInvalidVersion = textport.ErrInvalidVersion
-	ErrNoText         = textport.ErrNoText
-	ErrNotTextPlugin  = textport.ErrNotTextPlugin
+	ErrInvalidVersion = text.ErrInvalidVersion
+	ErrNoText         = text.ErrNoText
+	ErrNotTextPlugin  = text.ErrNotTextPlugin
 )

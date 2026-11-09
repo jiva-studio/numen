@@ -20,8 +20,8 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -490,7 +490,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 // TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing.
 func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f := onAList(t)
-	f.bin.refuse(machineport.ErrNoTrash)
+	f.bin.refuse(machine.ErrNoTrash)
 
 	out, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
@@ -601,7 +601,7 @@ func TestChooseFolder_ReturnsChosenPath(t *testing.T) {
 // a time.
 func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
-	f.dialog.fails = machineport.ErrChoosing
+	f.dialog.fails = machine.ErrChoosing
 
 	_, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {

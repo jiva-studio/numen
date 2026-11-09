@@ -6,9 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // The bytes of a book in these tests: the mark, the title, and the parts, each
@@ -35,7 +34,7 @@ type BookText struct {
 // words. It reads nothing else.
 func ReadBook(raw []byte) (BookText, error) {
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return BookText{}, sourceport.ErrNotADocument
+		return BookText{}, source.ErrNotADocument
 	}
 	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
 	var out BookText

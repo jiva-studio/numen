@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 func folder(t *testing.T, name string) string {
@@ -159,8 +159,8 @@ func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 		}
 	})
 
-	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, machineport.ErrNoTrash) {
-		t.Errorf("a volume root that takes no trash gave %v, want %v", err, machineport.ErrNoTrash)
+	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, machine.ErrNoTrash) {
+		t.Errorf("a volume root that takes no trash gave %v, want %v", err, machine.ErrNoTrash)
 	}
 }
 
@@ -181,8 +181,8 @@ func TestNowhereToInsertIt(t *testing.T) {
 
 	// The user has no trash, so the volume's own trash is the only candidate, and
 	// its root rejects one.
-	if err := moveToUserOrVolumeTrash(pos, "", getDeletedOn()); !errors.Is(err, machineport.ErrNoTrash) {
-		t.Errorf("trashing %s gave %v, want %v", pos, err, machineport.ErrNoTrash)
+	if err := moveToUserOrVolumeTrash(pos, "", getDeletedOn()); !errors.Is(err, machine.ErrNoTrash) {
+		t.Errorf("trashing %s gave %v, want %v", pos, err, machine.ErrNoTrash)
 	}
 	if _, err := os.Lstat(filepath.Join(pos, "note.md")); err != nil {
 		t.Errorf("%s did not stay where it was: %v", pos, err)

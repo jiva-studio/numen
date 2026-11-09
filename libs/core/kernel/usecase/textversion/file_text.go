@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // FileText is the live text of a vault file and the user's edits of it, for the
@@ -33,7 +32,7 @@ func (u *FileText) ReadLiveText(ctx context.Context, v domain.Vault, path string
 		return domain.VersionText{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
 	text, err := u.versions.GetLiveText(ctx, v, path, contentHash)
-	if errors.Is(err, textport.ErrNoText) {
+	if errors.Is(err, textdomain.ErrNoText) {
 		return domain.VersionText{}, false, nil
 	}
 	if err != nil {

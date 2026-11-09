@@ -19,6 +19,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -118,7 +119,7 @@ func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string)
 	t.Helper()
 	select {
 	case err := <-openResult:
-		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
+		if !errors.Is(err, plugin.ErrUnsavedChanges) {
 			t.Errorf("%s returned %v, want ErrUnsavedChanges", action, err)
 		} else if !strings.Contains(err.Error(), unsavedChangesText) {
 			t.Errorf("%s returned %q, want it to contain %q", action, err, unsavedChangesText)
@@ -232,7 +233,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	list := editor.NewPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(ctx, list, f.second.ID):
-		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
+		if !errors.Is(err, plugin.ErrUnsavedChanges) {
 			t.Errorf("the plugin's open during the close prompt returned %v, want ErrUnsavedChanges", err)
 		}
 	case <-time.After(immediateBound):
@@ -327,7 +328,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	second := callOpenVault(t.Context(), list, f.second.ID)
 	select {
 	case err := <-second:
-		if errors.Is(err, pluginport.ErrUnsavedChanges) {
+		if errors.Is(err, plugin.ErrUnsavedChanges) {
 			t.Errorf("the second open returned ErrUnsavedChanges while the first one waited for a page with nothing to save: %v", err)
 		}
 		close(release)

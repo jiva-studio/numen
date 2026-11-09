@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -49,7 +50,7 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 		return domain.NewVersionText(version, splitAt(documentText, []int{0, 11}, nil)), nil
 	}
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, textdomain.ErrNoText
 	}
 	text := string(raw[len(bookMark):])
 	var starts []int
@@ -88,7 +89,7 @@ func (t vaultTexts) FindLiveVersion(ctx context.Context, path, contentHash strin
 func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
 	if err == nil && doc.Version().InputHash != contentHash {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, textdomain.ErrNoText
 	}
 	return doc, err
 }
@@ -96,7 +97,7 @@ func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (
 func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
 	if err == nil && doc.Version().GetID() != id {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, textdomain.ErrNoText
 	}
 	return doc, err
 }

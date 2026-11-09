@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hosttext"
@@ -171,7 +172,7 @@ func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) 
 func TestListVersionsReturnsTheReaderFailure(t *testing.T) {
 	var opened []domain.VaultID
 	texts := newTexts(t, openFailure{opened: &opened}, &mapsVersions{})
-	if _, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1"}, "talk.mp3"); err == nil || errors.Is(err, textport.ErrNoText) {
+	if _, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1"}, "talk.mp3"); err == nil || errors.Is(err, text.ErrNoText) {
 		t.Fatalf("got %v, want the reader's failure", err)
 	}
 }
@@ -234,7 +235,7 @@ func TestListVersionsReturnsAFailureOfTheIndexAsItIs(t *testing.T) {
 	texts := newTexts(t, &mapsVault{}, repo)
 
 	_, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
-	if !errors.Is(err, failure) || errors.Is(err, textport.ErrNoText) {
+	if !errors.Is(err, failure) || errors.Is(err, text.ErrNoText) {
 		t.Fatalf("got %v, want the index's failure, not ErrNoText", err)
 	}
 }

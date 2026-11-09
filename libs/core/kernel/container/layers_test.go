@@ -1147,6 +1147,10 @@ func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 			t.Fatalf("%s: %v", item, err)
 		}
 	}
+	// getPackageDir reads "domain" as the notes domain; the domain packages of the core are read here.
+	if _, err := os.Stat(filepath.Join("..", "domain")); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func getInstants(file *ast.File) []identity {

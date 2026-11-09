@@ -22,6 +22,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -31,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -1205,7 +1205,7 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.CheckPluginPermission("md.numen.b", manifest.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
+	if err := host.CheckPluginPermission("md.numen.b", manifest.PermissionAIComplete); !errors.Is(err, plugindomain.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
 	if err := host.CheckPluginPermission("md.numen.a", manifest.PermissionAIComplete); err != nil {

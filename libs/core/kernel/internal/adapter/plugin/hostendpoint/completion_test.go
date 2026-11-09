@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
@@ -30,7 +31,7 @@ func TestCompletion_ErrorResponseCarriesCode(t *testing.T) {
 		err  error
 		want v1.CompletionErrorCode
 	}{
-		{completionport.ErrNoRoute, v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE},
+		{completion.ErrNoRoute, v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE},
 		{fmt.Errorf("%w: down", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
 	} {
 		if got, isRefusal := writeRefusal(tc.err); !isRefusal || got != tc.want {

@@ -17,6 +17,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -151,7 +152,7 @@ func TestCreate_RejectsExistingNote(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vaultdomain.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 }

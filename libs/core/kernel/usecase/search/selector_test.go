@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
@@ -26,7 +27,7 @@ func (t versionTexts) GetLiveText(context.Context, string, string) (domain.Versi
 
 func (t versionTexts) GetVersionText(_ context.Context, _ string, id domain.TextVersionID) (domain.VersionText, error) {
 	if id != t.text.Version().GetID() {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, textdomain.ErrNoText
 	}
 	return t.text, nil
 }

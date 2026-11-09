@@ -4,17 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%w: numen.json: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
+		return fmt.Errorf("%w: numen.json: %s", settingsdomain.ErrNotASetting, describeErrorLocation(err))
 	}
 	if whole == nil {
-		return fmt.Errorf("%w: numen.json: the file is not a JSON object", settingsport.ErrNotASetting)
+		return fmt.Errorf("%w: numen.json: the file is not a JSON object", settingsdomain.ErrNotASetting)
 	}
 	return nil
 }

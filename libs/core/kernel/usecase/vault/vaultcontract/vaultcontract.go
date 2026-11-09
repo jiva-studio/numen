@@ -3,6 +3,7 @@ package vaultcontract
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -20,13 +21,13 @@ type (
 )
 
 var (
-	ErrAlreadyExists   = vaultport.ErrAlreadyExists
-	ErrClaimed         = vaultport.ErrClaimed
+	ErrAlreadyExists   = vault.ErrAlreadyExists
+	ErrClaimed         = vault.ErrClaimed
 	ErrExist           = vaultport.ErrExist
-	ErrLockedByAnother = vaultport.ErrLockedByAnother
+	ErrLockedByAnother = vault.ErrLockedByAnother
 	ErrNotANote        = vaultport.ErrNotANote
 	ErrNotExist        = vaultport.ErrNotExist
-	ErrOutside         = vaultport.ErrOutside
+	ErrOutside         = vault.ErrOutside
 	ErrStale           = vaultport.ErrStale
 )
 

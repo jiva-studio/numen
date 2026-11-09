@@ -22,14 +22,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 const (
@@ -84,7 +83,7 @@ func (k *secretKeys) GetKey(_ context.Context, name string) (string, error) {
 	if value, found := k.items[name]; found {
 		return value, nil
 	}
-	return "", pluginport.ErrNoKey
+	return "", plugindomain.ErrNoKey
 }
 
 func (k *secretKeys) SetKey(_ context.Context, name, value string) error {
@@ -101,7 +100,7 @@ func (k *secretKeys) DeleteKey(_ context.Context, name string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if _, found := k.items[name]; !found {
-		return pluginport.ErrNoKey
+		return plugindomain.ErrNoKey
 	}
 	delete(k.items, name)
 	return nil

@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
@@ -91,7 +91,7 @@ func TestNonObjectJSONFileIsRejectedWithTheBytePosition(t *testing.T) {
 			t.Errorf("%s: said %v, want %q in it", body, err, want)
 		}
 	}
-	if _, err := openAt(write(t, `null`)); !errors.Is(err, settingsport.ErrNotASetting) {
+	if _, err := openAt(write(t, `null`)); !errors.Is(err, settingsdomain.ErrNotASetting) {
 		t.Errorf("null: said %v, want a value that is not a setting", err)
 	}
 }

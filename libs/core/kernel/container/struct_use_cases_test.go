@@ -57,16 +57,16 @@ func getCrowdedStructs(pkgs []*packages.Package, limit int) ([]finding, structUs
 					return true
 				}
 				count.structs++
-				held := 0
+				inStruct := 0
 				for field := range shape.Fields() {
 					if isUseCaseType(field.Type()) {
-						held++
+						inStruct++
 					}
 				}
-				count.useCases += held
-				if held > limit {
+				count.useCases += inStruct
+				if inStruct > limit {
 					found = append(found, newFinding(pkg.Fset, spec.Name.Pos(),
-						pkg.Types.Name()+"."+object.Name()+" holds "+strconv.Itoa(held)+" use cases"))
+						pkg.Types.Name()+"."+object.Name()+" holds "+strconv.Itoa(inStruct)+" use cases"))
 				}
 				return true
 			})

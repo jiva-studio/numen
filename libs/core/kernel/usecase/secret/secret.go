@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -80,7 +81,7 @@ func newNotFoundError(id string) error { return fmt.Errorf("%w: %s", ErrNotFound
 
 func (o operation) setValue(ctx context.Context, id, value string) error {
 	if o.keys == nil {
-		return fmt.Errorf("%w: %w", ErrKeyStore, pluginport.ErrNoKeyStore)
+		return fmt.Errorf("%w: %w", ErrKeyStore, plugin.ErrNoKeyStore)
 	}
 	if err := o.keys.SetKey(ctx, GetEntryName(id), value); err != nil {
 		return fmt.Errorf("%w: store the value of %s: %w", ErrKeyStore, id, err)
@@ -92,7 +93,7 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	if o.keys == nil {
 		return nil
 	}
-	if err := o.keys.DeleteKey(ctx, GetEntryName(id)); err != nil && !errors.Is(err, pluginport.ErrNoKey) {
+	if err := o.keys.DeleteKey(ctx, GetEntryName(id)); err != nil && !errors.Is(err, plugin.ErrNoKey) {
 		return fmt.Errorf("%w: delete the value of %s: %w", ErrKeyStore, id, err)
 	}
 	return nil

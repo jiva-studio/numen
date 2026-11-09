@@ -10,11 +10,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func isolate(t *testing.T) {
@@ -300,7 +299,7 @@ func TestAMachineWithNowhereToInsertItReturnsHowToForgetTheVault(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")
 	s.addVault("other")
-	s.trash(machineport.ErrNoTrash)
+	s.trash(machine.ErrNoTrash)
 
 	_, err := s.run("vault", "erase", "kept", "--yes")
 	if err == nil || !strings.HasSuffix(err.Error(), " — take it off the list with: numen-cli vault remove kept") {

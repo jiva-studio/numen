@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -178,7 +179,7 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}
 	if !errors.As(err, new(*json.SyntaxError)) {
