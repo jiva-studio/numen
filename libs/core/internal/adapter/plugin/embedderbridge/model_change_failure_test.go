@@ -116,3 +116,32 @@ func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 		t.Errorf("a successful read reported %v", <-reports)
 	}
 }
+
+// A read that succeeds after a failed one is reported with no error, so what showed the failure can clear it.
+func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
+	host, bridge, mock, _ := openConfigurable(t)
+	reports := failureReports(bridge)
+	reads := mock.getModelCalls.Load()
+	mock.failRead.Store(true)
+	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 128); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+	<-reports
+
+	reads = mock.getModelCalls.Load()
+	mock.failRead.Store(false)
+	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 256); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
+	select {
+	case err := <-reports:
+		if err != nil {
+			t.Errorf("the successful read was reported with the error %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("the successful read was not reported")
+	}
+}

@@ -41,12 +41,17 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 // readingTheModel is the ID of the task that reports a read of the embedding model that failed.
 const readingTheModel = "read embedding model"
 
-// NewModelReadReporter returns a callback that records an embedding model read failure in tasks.
+// NewModelReadReporter returns a callback that records an embedding model read failure in tasks, and removes
+// the record when a later read succeeds.
 func NewModelReadReporter(tasks *run.Tasks) func(error) {
 	if tasks == nil {
 		return nil
 	}
 	return func(err error) {
+		if err == nil {
+			tasks.Remove(readingTheModel)
+			return
+		}
 		tasks.Set(run.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
 	}
 }

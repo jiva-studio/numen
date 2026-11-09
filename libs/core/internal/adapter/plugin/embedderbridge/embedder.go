@@ -194,8 +194,9 @@ func (b *Embedder) OnModelChange(fn func()) {
 	b.listeners = append(b.listeners, fn)
 }
 
-// OnModelReadError registers fn to receive the error of a read of the model that follows a configuration of the plugin and fails.
-// The model and the listeners stay as they were, and the next read that succeeds announces the change.
+// OnModelReadError registers fn to receive the outcome of a read of the model that follows a configuration of the plugin:
+// the error of a read that fails, and nil for a read that succeeds. After a failed read the model and the listeners stay as
+// they were, and the next read that succeeds announces the change.
 func (b *Embedder) OnModelReadError(fn func(error)) {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
@@ -232,6 +233,7 @@ func (b *Embedder) readModelChange() []func() {
 	b.mu.Lock()
 	b.model, b.concurrency, b.floorHint = model, concurrency, floorHint
 	b.mu.Unlock()
+	b.reportReadError(nil)
 	if model == b.announced {
 		return nil
 	}
