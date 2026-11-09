@@ -232,17 +232,24 @@ describe('the services a plugin context is given', () => {
     ...overrides,
   })
 
-  it('are the window and the notes the host has made by the time the plugin activates', () => {
+  it('are the window and the notes the host has made by the time the plugin activates', async () => {
     const workspace = { name: 'workspace' } as unknown as NonNullable<PluginContext['workspace']>
-    const notes = { name: 'notes' } as unknown as NonNullable<PluginContext['notes']>
+    const read = vi.fn(async () => ({ body: 'Pruning notes.' }))
+    const notes = { read } as unknown as NonNullable<PluginContext['notes']>
     const host = createPluginHost(
       createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
     )
 
-    const context = host.createContext('md.numen.sample')
+    const context = host.createContext(
+      'md.numen.sample',
+      createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
+    )
 
     expect(context.workspace).toMatchObject(workspace)
-    expect(context.notes).toMatchObject(notes)
+    await expect(context.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
+      body: 'Pruning notes.',
+    })
+    expect(read).toHaveBeenCalledWith('Orchard/Pruning.md')
   })
 
   it('are absent where the host offers none', () => {
