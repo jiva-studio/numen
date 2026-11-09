@@ -325,11 +325,11 @@ describe('the actions that create a note, in a search', () => {
   })
 
   it('is offered as soon as a row is there, while the other groups are still working', async () => {
-    const held: SearchDeps = {
+    const searchDeps: SearchDeps = {
       names: async () => [nameMatch],
       search: () => new Promise(() => undefined),
     }
-    const palette = useSearch(held, WORDS, { wait: now, getTarget: () => front() })
+    const palette = useSearch(searchDeps, WORDS, { wait: now, getTarget: () => front() })
 
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()

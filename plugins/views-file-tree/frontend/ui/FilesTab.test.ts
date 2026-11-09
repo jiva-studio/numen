@@ -354,13 +354,13 @@ describe('the empty message of the tab', () => {
 
   it('is absent while the first listing is still loading', async () => {
     const { tree, window } = mountOver(() => new Promise(() => undefined))
-    void tree.openFolder(ROOT)
+    tree.openFolder(ROOT).catch(() => undefined)
     await settle()
 
     expect(window.text()).not.toContain('No files in this vault')
   })
 
-  it('shows the entries once the first listing has come back', async () => {
+  it('shows the entries once the first listing is returned', async () => {
     let resolve: (entries: readonly Entry[]) => void = () => undefined
     const { tree, window } = mountOver(() => new Promise((isDone) => (resolve = isDone)))
     const opening = tree.openFolder(ROOT)
@@ -372,7 +372,7 @@ describe('the empty message of the tab', () => {
     expect(window.text()).not.toContain('No files in this vault')
   })
 
-  it('shows once the first listing has come back with no entries', async () => {
+  it('shows once the first listing is returned with no entries', async () => {
     const { tree, window } = mountOver(async () => [])
     await tree.openFolder(ROOT)
     await settle()

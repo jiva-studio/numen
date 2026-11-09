@@ -330,7 +330,7 @@ describe('the empty state of the search', () => {
   it('shows the typed words and the icon when nothing is found', async () => {
     const one = await mountField({}, '  oo  ', true)
 
-    expect(one.field.get('[data-palette="nothing-text"]').text()).toBe('Nothing found for “oo”')
+    expect(one.field.get('[data-palette="nothing-text"]').text()).toBe('No results for “oo”')
     expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(true)
   })
 

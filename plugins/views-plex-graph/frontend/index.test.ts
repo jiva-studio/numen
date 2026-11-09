@@ -19,7 +19,7 @@ const createContext = () => {
 
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
-  const opened: (readonly [string, string])[] = []
+  const tabOpens: (readonly [string, string])[] = []
   const tabs: { kind: string; state: unknown }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
@@ -28,14 +28,14 @@ const createWindow = () => {
       await registration.navigate?.(last.state, path, '')
       return kind
     }
-    opened.push([kind, path])
+    tabOpens.push([kind, path])
     tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
     return kind
   }
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { opened, tabs, navigateTab, bind }
+  return { tabOpens, tabs, navigateTab, bind }
 }
 
 describe('view-plex-graph plugin', () => {
@@ -98,7 +98,7 @@ describe('view-plex-graph plugin', () => {
       tab: '',
     })
 
-    expect(strip.opened).toStrictEqual([[PLEX, '']])
+    expect(strip.tabOpens).toStrictEqual([[PLEX, '']])
     expect(strip.tabs).toHaveLength(1)
   })
 
@@ -147,10 +147,10 @@ describe('view-plex-graph plugin', () => {
 
     })
 
-    expect(strip.opened).toStrictEqual([[PLEX, 'Other.md']])
+    expect(strip.tabOpens).toStrictEqual([[PLEX, 'Other.md']])
   })
 
-  it('keeps the note a plex stands on when no note is active', async () => {
+  it('keeps its note without an active note', async () => {
     const { ctx, strip } = createWindowContext()
     await ctx.triggerCommand('graph.open', {
       path: 'Other.md',

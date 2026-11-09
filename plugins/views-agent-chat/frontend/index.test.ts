@@ -16,7 +16,7 @@ const createContext = () => {
 
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
-  const opened: (readonly [string, string])[] = []
+  const tabOpens: (readonly [string, string])[] = []
   const tabs: { kind: string; state: unknown }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
@@ -25,14 +25,14 @@ const createWindow = () => {
       await registration.navigate?.(last.state, path, '')
       return kind
     }
-    opened.push([kind, path])
+    tabOpens.push([kind, path])
     tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
     return kind
   }
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { opened, tabs, navigateTab, bind }
+  return { tabOpens, tabs, navigateTab, bind }
 }
 
 describe('view-agent-chat plugin', () => {
@@ -114,7 +114,7 @@ describe('view-agent-chat plugin', () => {
       tab: '',
     })
 
-    expect(strip.opened).toStrictEqual([[AGENT, '']])
+    expect(strip.tabOpens).toStrictEqual([[AGENT, '']])
     expect(strip.tabs).toHaveLength(1)
   })
 
@@ -144,7 +144,7 @@ describe('view-agent-chat plugin', () => {
       tab: '',
     })
 
-    expect(strip.opened).toStrictEqual([[AGENT, '']])
+    expect(strip.tabOpens).toStrictEqual([[AGENT, '']])
     expect(recorded.questions).toStrictEqual(['One.md — '])
   })
 

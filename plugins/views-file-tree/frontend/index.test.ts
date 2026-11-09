@@ -29,7 +29,7 @@ const createContext = () => {
 
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
-  const opened: (readonly [string, string])[] = []
+  const tabOpens: (readonly [string, string])[] = []
   const tabs: { kind: string; state: unknown }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
@@ -38,14 +38,14 @@ const createWindow = () => {
       await registration.navigate?.(last.state, path, '')
       return kind
     }
-    opened.push([kind, path])
+    tabOpens.push([kind, path])
     tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
     return kind
   }
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { opened, tabs, navigateTab, bind }
+  return { tabOpens, tabs, navigateTab, bind }
 }
 
 const openTab = async () => {
@@ -117,7 +117,7 @@ describe('view-file-tree plugin', () => {
       tab: '',
     })
 
-    expect(strip.opened).toStrictEqual([[FILES, '']])
+    expect(strip.tabOpens).toStrictEqual([[FILES, '']])
     expect(strip.tabs).toHaveLength(1)
   })
 
@@ -166,7 +166,7 @@ describe('view-file-tree plugin', () => {
     })
     await settle()
 
-    expect(strip.opened).toStrictEqual([[FILES, 'A.md']])
+    expect(strip.tabOpens).toStrictEqual([[FILES, 'A.md']])
     const state = strip.tabs[0]!.state as FilesTabState
     expect(state.list.selectedPaths.value).toStrictEqual(['A.md'])
   })
