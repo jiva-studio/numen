@@ -29,8 +29,8 @@ export class SearchDriver {
     return this.scenario.page.getByRole('group', { name: group }).getByRole('option').filter({ hasText: text })
   }
 
-  /** Types the words again until the search has the result: a new file is found once indexed. */
   private async waitForResult(text: string, group: string): Promise<Locator> {
+    // A new file is found once indexed, so the words are typed again until the result shows.
     const results = this.getResults(text, group)
     await expect(async () => {
       await this.type()
