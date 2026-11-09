@@ -359,7 +359,7 @@ func (t *Profiles) GetLocal(id string) (Profile, error) {
 	p, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]
 	if !ok {
 		return Profile{}, fmt.Errorf("%w %q: add a profile for it as a .json file in %s, or choose one of %s",
-			ErrNoProfile, id, t.getUserFolder(), strings.Join(t.getLocalIDs(), ", "))
+			ErrNoProfile, id, t.getUserFolder(), strings.Join(t.order, ", "))
 	}
 	return cloneProfile(p), nil
 }
@@ -375,14 +375,6 @@ func (t *Profiles) getUserFolder() string {
 		return "the " + ProfilesFolder + " folder of the plugin data directory"
 	}
 	return t.userHome
-}
-
-func (t *Profiles) getLocalIDs() []string {
-	var ids []string
-	for _, id := range t.order {
-		ids = append(ids, id)
-	}
-	return ids
 }
 
 // GetCurated returns the profiles the settings list, in table order.

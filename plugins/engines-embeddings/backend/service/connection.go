@@ -48,7 +48,7 @@ const profileFetchLimit = time.Minute
 // profileFetch is one read of the profile. It runs on its own, so a caller that stops waiting leaves it
 // running for the next call.
 type profileFetch struct {
-	done    chan struct{}
+	finished    chan struct{}
 	cancel  context.CancelFunc
 	profile connection.EmbeddingProfile
 	err     error
@@ -71,17 +71,17 @@ func (s *embeddingServer) getConnectionProfile(ctx context.Context) (connection.
 		return connection.EmbeddingProfile{}, nil, rpcerror.New(rpcerror.FailedPrecondition, err)
 	}
 	s.mu.Lock()
-	if known := s.connectionProfile; known != nil {
+	if cached := s.connectionProfile; cached != nil {
 		s.mu.Unlock()
-		return *known, models, nil
+		return *cached, models, nil
 	}
 	fetch := s.fetch
 	if fetch == nil {
-		fetch = s.startFetchLocked(models)
+		fetch = s.startFetchLocked(ctx, models)
 	}
 	s.mu.Unlock()
 	select {
-	case <-fetch.done:
+	case <-fetch.finished:
 		if fetch.err != nil {
 			return connection.EmbeddingProfile{}, nil, readConnectionError(fetch.err)
 		}
@@ -91,9 +91,9 @@ func (s *embeddingServer) getConnectionProfile(ctx context.Context) (connection.
 	}
 }
 
-func (s *embeddingServer) startFetchLocked(models modelClient) *profileFetch {
-	ctx, cancel := context.WithTimeout(context.Background(), profileFetchLimit)
-	fetch := &profileFetch{done: make(chan struct{}), cancel: cancel}
+func (s *embeddingServer) startFetchLocked(caller context.Context, models modelClient) *profileFetch {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(caller), profileFetchLimit)
+	fetch := &profileFetch{finished: make(chan struct{}), cancel: cancel}
 	s.fetch = fetch
 	go func() {
 		defer cancel()
@@ -107,7 +107,7 @@ func (s *embeddingServer) startFetchLocked(models modelClient) *profileFetch {
 				s.connectionProfile = &profile
 			}
 		}
-		close(fetch.done)
+		close(fetch.finished)
 	}()
 	return fetch
 }

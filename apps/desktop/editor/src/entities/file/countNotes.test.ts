@@ -20,15 +20,15 @@ const tree = new Map<string, readonly Entry[]>([
 
 describe('counting the notes of the vault', () => {
   it('counts the notes of every folder below the root and not the other files', async () => {
-    const asked: string[] = []
+    const listed: string[] = []
 
     const count = await countNotes((path) => {
-      asked.push(path)
+      listed.push(path)
       return Promise.resolve(tree.get(path) ?? [])
     })
 
     expect(count).toBe(4)
-    expect(asked.toSorted()).toStrictEqual(['', 'notes', 'notes/deep'])
+    expect(listed.toSorted()).toStrictEqual(['', 'notes', 'notes/deep'])
   })
 
   it('counts nothing for an empty vault', async () => {

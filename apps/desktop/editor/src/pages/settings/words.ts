@@ -116,7 +116,7 @@ export const WORDS = {
   connectionRowsModelPlaceholder: 'Choose or type a model',
   connectionRowsReasoning: 'Reasoning',
   connectionRowsDefault: 'Default',
-  connectionRowsIndexAsking: (count: number | undefined, name: string) =>
+  connectionRowsIndexQuestion: (count: number | undefined, name: string) =>
     count === undefined
       ? `This indexes your notes through ${name}. It may cost money.`
       : `This indexes ${count} ${count === 1 ? 'note' : 'notes'} through ${name}. It may cost money.`,

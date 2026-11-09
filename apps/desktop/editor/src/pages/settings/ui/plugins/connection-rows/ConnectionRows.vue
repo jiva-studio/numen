@@ -43,7 +43,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
-const asking = ref<{ readonly rows: readonly StoredRow[]; readonly text: string } | undefined>()
+const question = ref<{ readonly rows: readonly StoredRow[]; readonly text: string } | undefined>()
 const { drafts, write, reset, add, remove, update, move } = useRowDrafts({
   getValue: () => props.value,
   onChange: (rows) => void onRowsChange(rows),
@@ -104,17 +104,17 @@ async function onRowsChange(rows: readonly StoredRow[]): Promise<void> {
     return
   }
   const name = connections.value.find((one) => one.id === rows[0]?.connection)?.name ?? ''
-  asking.value = { rows, text: words.connectionRowsIndexAsking(await countNotes(), name) }
+  question.value = { rows, text: words.connectionRowsIndexQuestion(await countNotes(), name) }
 }
 
 function onConfirmIndex(): void {
-  const rows = asking.value?.rows
-  asking.value = undefined
+  const rows = question.value?.rows
+  question.value = undefined
   if (rows) emit('change', rows)
 }
 
 function onCancelIndex(): void {
-  asking.value = undefined
+  question.value = undefined
   reset()
 }
 
@@ -185,8 +185,8 @@ function getReason(row: RowDraft): string {
     <p class="sr-only" role="status" aria-live="assertive">{{ announcement }}</p>
 
     <ConfirmDialog
-      v-if="asking"
-      :text="asking.text"
+      v-if="question"
+      :text="question.text"
       :label="words.connectionRowsIndexLabel"
       :confirm-text="words.connectionRowsIndexConfirm"
       :cancel-text="words.connectionCancel"

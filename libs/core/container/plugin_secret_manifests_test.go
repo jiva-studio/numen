@@ -24,7 +24,7 @@ func secretGroups(t *testing.T, pluginID string) []string {
 }
 
 func TestThePluginsThatCallARemoteServiceDeclareOneKeyForEachProviderGroup(t *testing.T) {
-	for _, id := range []string{"md.numen.engines.embeddings", "md.numen.tools.proofreading"} {
+	for _, id := range []string{"md.numen.tools.proofreading"} {
 		t.Run(id, func(t *testing.T) {
 			groups := secretGroups(t, id)
 			slices.Sort(groups)
@@ -32,6 +32,12 @@ func TestThePluginsThatCallARemoteServiceDeclareOneKeyForEachProviderGroup(t *te
 				t.Errorf("apiKey groups = %q, want %q", groups, want)
 			}
 		})
+	}
+}
+
+func TestTheEmbeddingsPluginDeclaresNoKey(t *testing.T) {
+	if groups := secretGroups(t, "md.numen.engines.embeddings"); len(groups) != 0 {
+		t.Errorf("apiKey groups = %q, want none: a connection holds the key", groups)
 	}
 }
 
