@@ -54,7 +54,12 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
   getMountedViews(): MockMountedView[]
-  triggerCommand(commandId: string, note?: CommandNote): Promise<void>
+  triggerCommand(
+    commandId: string,
+    note?: CommandNote,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): Promise<void>
   setSetting<T = unknown>(key: string, value: T): void
   dispose(): void
 }
@@ -322,12 +327,17 @@ export function createMockPluginContext(
       return [...mounted]
     },
 
-    async triggerCommand(commandId: string, note?: CommandNote): Promise<void> {
+    async triggerCommand(
+      commandId: string,
+      note?: CommandNote,
+      itemId?: string,
+      values: Readonly<Record<string, string>> = {},
+    ): Promise<void> {
       const cmd = commands.find((c) => c.id === commandId)
       if (!cmd) {
         throw new Error(`Command not registered: ${commandId}`)
       }
-      await cmd.handler(note ?? { ...EMPTY_NOTE })
+      await cmd.handler(note ?? { ...EMPTY_NOTE }, itemId, values)
     },
 
     dispose(): void {
