@@ -107,11 +107,14 @@ test.describe('Proofreading through connections', () => {
       await proofreadTranscript(page, false)
 
       await page.locator('.tasks-status__trigger').click()
+      const failures = page.locator('.task-popover .task-item--failed')
       await expect(
-        page
-          .locator('.task-popover .task-item')
+        failures
+          .filter({ hasText: 'Proofreading talk.mp3' })
           .filter({ hasText: 'Limited service: rate limited' }),
       ).toHaveCount(1, { timeout: 60_000 })
+      const dismiss = failures.getByRole('button', { name: 'Dismiss' })
+      while ((await dismiss.count()) > 0) await dismiss.first().click()
       await page.keyboard.press('Escape')
 
       await writeRows(page, [first, second])
