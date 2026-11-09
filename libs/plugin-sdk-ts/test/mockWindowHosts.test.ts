@@ -64,6 +64,14 @@ describe('the commands of a mock context', () => {
     ])
   })
 
+  it('resolve a run with the path a test sets for the command, and an empty path for any other', async () => {
+    const ctx = createMockPluginContext()
+    ctx.commands.setResult('app:note.create', 'Untitled note 1.md')
+
+    expect(await ctx.commands.run('app:note.create', TARGET)).toBe('Untitled note 1.md')
+    expect(await ctx.commands.run('app:note.open', TARGET)).toBe('')
+  })
+
   it('hand a watcher the ids a test sets, at once and on every change', () => {
     const ctx = createMockPluginContext()
     const handler = vi.fn()

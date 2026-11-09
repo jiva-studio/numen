@@ -92,10 +92,10 @@ describe('the menu of a row of the file tree', () => {
 })
 
 describe('the menu on a node', () => {
-  it('is the slot plexGraph.context, filled with the commands of the window over a note, and no new note', () => {
+  it('is the slot plexGraph.context, filled with the commands of the window over a note, and no new note on a node', () => {
     expect(
       (manifest.contributes.slots ?? [])
-        .filter((one) => one.slot === 'plexGraph.context' && one.command !== 'graph.createNote')
+        .filter((one) => one.slot === 'plexGraph.context' && one.command !== 'app:note.create')
         .map((one) => [one.command, one.group]),
     ).toStrictEqual([
       ['app:file.open', '0-open'],
@@ -113,29 +113,23 @@ describe('the menu on a node', () => {
 describe('the menu of a place with no node', () => {
   const getCanvasEntries = () =>
     (manifest.contributes.slots ?? []).filter(
-      (one) => one.slot === 'plexGraph.context' && one.command === 'graph.createNote',
+      (one) => one.slot === 'plexGraph.context' && one.command === 'app:note.create',
     )
 
-  it('declares the command that makes a note with a title of its own', () => {
-    expect(
-      manifest.contributes.commands.find((one) => one.id === 'graph.createNote'),
-    ).toMatchObject({ title: 'New note' })
+  it('declares no command of its own to make a note', () => {
+    expect(manifest.contributes.commands.map((one) => one.id)).not.toContain('graph.createNote')
   })
 
-  it('offers the command over the root target alone, in the menu and in every other place', () => {
-    expect(manifest.contributes.commands.find((one) => one.id === 'graph.createNote')?.when).toBe(
-      'target.isRoot',
-    )
-    expect(getCanvasEntries()).toHaveLength(1)
-    expect(getCanvasEntries()[0]).toMatchObject({ when: 'target.isRoot' })
-  })
-
-  it('places the command in no slot other than the menu of the canvas', () => {
-    expect(
-      (manifest.contributes.slots ?? [])
-        .filter((one) => one.command === 'graph.createNote')
-        .map((one) => one.slot),
-    ).toStrictEqual(['plexGraph.context'])
+  it('offers the command of the window to make a note over a folder alone, in the group of new rows', () => {
+    expect(getCanvasEntries()).toStrictEqual([
+      {
+        slot: 'plexGraph.context',
+        command: 'app:note.create',
+        group: '0-new',
+        order: 10,
+        when: 'target.isFolder',
+      },
+    ])
   })
 })
 

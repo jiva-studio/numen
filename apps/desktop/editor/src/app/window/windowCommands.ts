@@ -11,7 +11,7 @@ import { getNamedTarget, toRunTarget } from '../commands/runTarget'
 interface WindowCommandsDeps {
   readonly getAppIds: () => readonly string[]
   readonly getPluginIds: () => readonly string[]
-  readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<void>
+  readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<string>
   readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
   readonly runWithItem: (id: string, target: RunTarget, itemId: string) => Promise<void>
   readonly getTarget: () => CommandTarget
@@ -29,8 +29,9 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
     run: async (id, target, itemId) => {
       const runTarget = getRunTarget(target)
-      if (itemId === undefined) await deps.runCommandToEnd(id, runTarget)
-      else await deps.runWithItem(id, toRunTarget(runTarget), itemId)
+      if (itemId === undefined) return deps.runCommandToEnd(id, runTarget)
+      await deps.runWithItem(id, toRunTarget(runTarget), itemId)
+      return ''
     },
   }
 }

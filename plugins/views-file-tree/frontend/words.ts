@@ -8,7 +8,7 @@ export const WORDS = {
   /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',
   new: 'New',
-  newNote: 'New note',
+  newNote: 'Create note',
   newFolder: 'New folder',
   /** The row of a submenu of items while they are read. */
   loadingItems: 'Loading…',

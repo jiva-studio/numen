@@ -107,7 +107,7 @@ describe('the menu of a row', () => {
     const deps = createFilesTabDeps(withoutSlots, 'files')
 
     expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])
-    await expect(deps.runCommand('app:note.remove', rowTarget)).resolves.toBeUndefined()
+    await expect(deps.runCommand('app:note.remove', rowTarget)).resolves.toBe('')
   })
 
   it('reads the entries of no slot but the menu of the file tree', () => {
@@ -127,9 +127,8 @@ describe('what else a files tab asks of the window', () => {
 
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
-    expect(await deps.createNote('dir/')).toBe('dir/note')
 
-    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
+    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir'])
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {

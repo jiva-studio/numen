@@ -103,8 +103,9 @@ export interface VaultFilesDeps {
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { core, making, getTarget, commandDeps } = deps
-  const run = (id: string, target: CommandTarget, name: string) =>
-    runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
+  const run = async (id: string, target: CommandTarget, name: string): Promise<void> => {
+    await runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
+  }
   return {
     list: (folder) => core.list(folder),
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),

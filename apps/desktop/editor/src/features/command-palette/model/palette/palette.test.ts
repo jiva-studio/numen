@@ -321,6 +321,43 @@ describe('a command that needs nothing', () => {
   })
 })
 
+describe('the command that makes a note, run over a folder', () => {
+  const folder = (override: Partial<CommandTarget> = {}) =>
+    front({ path: 'physics', file: 'physics', isFolder: true, kind: null, ...override })
+
+  it('starts without a name where a caller named the folder', () => {
+    const { commands } = createPalette()
+
+    const started = commands.startCommand('app:note.create', folder({ isTargetNamed: true }))
+
+    expect(started).toMatchObject({
+      id: 'app:note.create',
+      path: 'physics',
+      name: '',
+      isFolder: true,
+    })
+  })
+
+  it('asks for a name where no caller named the folder', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.create', folder())).toBeNull()
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
+  })
+
+  it('asks for a name over a note a caller named', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.create', front({ isTargetNamed: true }))).toBeNull()
+  })
+
+  it('asks for a name in a command of another kind over a folder a caller named', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.rename', folder({ isTargetNamed: true }))).toBeNull()
+  })
+})
+
 describe('a command that asks for a name', () => {
   it('relies on a step of its own, and says which step it is', () => {
     const { commands } = createPalette()

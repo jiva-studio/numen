@@ -15,6 +15,7 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     group: 'window',
     iconName: 'file-plus',
     input: 'name',
+    canOmitNameOverFolder: true,
     ...withWhen('window.isVaultReady'),
   },
 ]
