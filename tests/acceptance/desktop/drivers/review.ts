@@ -25,7 +25,6 @@ export class ReviewDriver {
 
   constructor(private readonly scenario: Scenario) {}
 
-  /** The answers written in the vault of the window: the vault of the world, or the vault of the run. */
   private readAnswers(): { rating?: number; undo?: string }[] {
     const vaults = this.scenario.hasWorld ? this.scenario.getWorld().getVaults() : []
     const folder = vaults.length > 0 ? this.scenario.getWorld().getFolder(vaults[0]) : (process.env['NUMEN_FLASHCARDS_VAULT'] ?? '')

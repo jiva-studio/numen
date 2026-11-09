@@ -88,8 +88,8 @@ export class VaultDriver {
     const vault = this.scenario.getVault(name)
     const folder = this.scenario.getWorld().getFolder(vault)
     const { page } = this.scenario
-    const listed = (await listVaults(page.request)).find((one) => one.path === folder)
-    await openVault(page.request, (listed ?? (await addVault(page.request, folder, vault))).id)
+    const known = (await listVaults(page.request)).find((one) => one.path === folder)
+    await openVault(page.request, (known ?? (await addVault(page.request, folder, vault))).id)
     await expect(page.locator('[data-title]')).toContainText(vault)
   }
 

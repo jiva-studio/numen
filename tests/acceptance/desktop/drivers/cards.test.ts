@@ -64,7 +64,7 @@ describe('the text of a card model', () => {
     expect(text).toContain('## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n**Range:** {{Ареал обитания}}\n')
   })
 
-  it('gives its fields back', () => {
+  it('reads the fields it wrote', () => {
     expect(readCardModelFields(text)).toEqual(['Name', 'Ареал обитания'])
   })
 

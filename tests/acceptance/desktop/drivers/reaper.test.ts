@@ -24,23 +24,23 @@ describe('createReaperLine', () => {
 describe('the reaper script', () => {
   const run = async (lines: string[]): Promise<void> => {
     const reaper = spawn(process.execPath, [SCRIPT], { stdio: ['pipe', 'ignore', 'ignore'] })
-    const done = ended(reaper)
+    const exit = ended(reaper)
     reaper.stdin.end(lines.join(''))
-    await done
+    await exit
   }
 
-  it('ends the process and removes the folder that are held when the worker ends', async () => {
+  it('kills the processes and removes the folders named in hold lines when its input ends', async () => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-reaper-test-'))
     fs.writeFileSync(path.join(folder, 'file'), 'x')
     const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })
-    const gone = ended(child)
+    const exit = ended(child)
     await run([createReaperLine('hold', 'pid', child.pid ?? 0), createReaperLine('hold', 'dir', folder)])
-    await gone
+    await exit
     expect(fs.existsSync(folder)).toBe(false)
     expect(child.signalCode).toBe('SIGKILL')
   })
 
-  it('leaves alone what the worker freed', async () => {
+  it('leaves alone the processes and folders that free lines name', async () => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-reaper-test-'))
     const child = spawn(process.execPath, ['-e', 'process.stdin.resume()'], { stdio: ['pipe', 'ignore', 'ignore'] })
     await run([

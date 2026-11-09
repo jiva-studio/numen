@@ -31,7 +31,7 @@ const quote = (text: string): string => (/^[\w][\w ]*$/u.test(text) ? text : JSO
 
 const assertHeader = (rows: readonly string[][], header: readonly string[], what: string): string[][] => {
   const [first, ...body] = rows
-  if (first === undefined || first.join('|') !== header.join('|')) {
+  if (rows.length === 0 || first.join('|') !== header.join('|')) {
     throw new Error(`${what} is a table with the header ${header.map((one) => `"${one}"`).join(', ')}`)
   }
   if (body.length === 0) throw new Error(`${what} has no row`)
@@ -72,7 +72,7 @@ export const createDeckText = (title: string): string => `---\ntype: deck\ntitle
 /** The id the nth card of a deck has: ten letters no other card of the deck repeats. */
 export const createCardId = (deck: string, index: number): string => {
   const digest = createHash('sha1').update(`${deck}:${index}`).digest()
-  return Array.from({ length: CARD_ID_LENGTH }, (_, at) => CARD_ID_LETTERS[digest[at] % CARD_ID_LETTERS.length]).join('')
+  return Array.from({ length: CARD_ID_LENGTH }, (_, position) => CARD_ID_LETTERS[digest[position] % CARD_ID_LETTERS.length]).join('')
 }
 
 export const countCards = (deckText: string): number => deckText.match(CARD_HEADING)?.length ?? 0
@@ -113,9 +113,8 @@ const parseShare = (value: string): string => {
 const parseChoice =
   (choices: Record<string, string>) =>
   (value: string): string => {
-    const choice = choices[value]
-    if (choice === undefined) throw new Error(`"${value}" is not one of ${Object.keys(choices).join(', ')}`)
-    return choice
+    if (!Object.hasOwn(choices, value)) throw new Error(`"${value}" is not one of ${Object.keys(choices).join(', ')}`)
+    return choices[value]
   }
 
 /** The settings of a preset by the name its tab gives them (the labels of the preset frontend), with the key of the frontmatter. */
@@ -136,10 +135,10 @@ const PRESET_SETTINGS: Readonly<Record<string, PresetSetting>> = {
 export const parsePresetSettings = (rows: readonly string[][]): [string, string][] => {
   const settings = assertHeader(rows, ['Setting', 'Value'], 'the settings of a preset')
   return settings.map(([name, value]) => {
-    const setting = PRESET_SETTINGS[name]
-    if (setting === undefined) {
+    if (!Object.hasOwn(PRESET_SETTINGS, name)) {
       throw new Error(`"${name}" is not a setting of a preset: use ${Object.keys(PRESET_SETTINGS).join(', ')}`)
     }
+    const setting = PRESET_SETTINGS[name]
     try {
       return [setting.key, setting.parse(value)]
     } catch (error) {

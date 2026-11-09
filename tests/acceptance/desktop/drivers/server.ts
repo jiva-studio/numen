@@ -59,10 +59,14 @@ const startPageProxy = async (readPageText: (address: string) => string | undefi
 
 export interface ServerOptions {
   readonly application: Application
-  /** The folder of the vault the server opens. */
   readonly vault: string
-  /** The text the page of an address of numen.dev has, if the scenario gave it one. */
   readonly readPageText: (address: string) => string | undefined
+}
+
+interface Services {
+  readonly standIns: { close: () => void; chatUrl: string; updateUrl: string }
+  readonly proxy: http.Server
+  readonly mcpPort: number
 }
 
 export class Server {
@@ -71,12 +75,9 @@ export class Server {
   private publicKeyHash = ''
 
   private constructor(
-    private readonly application: Application,
-    private readonly vault: string,
+    private readonly options: ServerOptions,
     private readonly state: string,
-    private readonly standIns: { close: () => void },
-    private readonly proxy: http.Server,
-    private readonly mcpPort: number,
+    private readonly services: Services,
   ) {}
 
   /** Starts the binary of the application with the vault of the options as the vault it opens. */
@@ -85,7 +86,7 @@ export class Server {
     holdForRemoval('dir', state)
     const standIns = await startStandIns()
     const proxy = await startPageProxy(options.readPageText)
-    const server = new Server(options.application, options.vault, state, standIns, proxy, await getFreePort())
+    const server = new Server(options, state, { standIns, proxy, mcpPort: await getFreePort() })
     try {
       for (const name of STATE_FOLDERS) fs.mkdirSync(path.join(state, name))
       server.writeSettings(standIns)
@@ -121,16 +122,16 @@ export class Server {
     try {
       await this.end()
     } finally {
-      this.standIns.close()
-      this.proxy.close()
+      this.services.standIns.close()
+      this.services.proxy.close()
       fs.rmSync(this.state, { recursive: true, force: true })
       freeFromRemoval('dir', this.state)
     }
   }
 
   private getStartFlags(isFirst: boolean): string[] {
-    if (this.application === 'flashcards') return [`-debug-vault=${this.vault}`]
-    return isFirst ? [`-vault=${this.vault}`, '-debug-mock-ml'] : ['-debug-mock-ml']
+    if (this.options.application === 'flashcards') return [`-debug-vault=${this.options.vault}`]
+    return isFirst ? [`-vault=${this.options.vault}`, '-debug-mock-ml'] : ['-debug-mock-ml']
   }
 
   private writeSettings(standIns: { chatUrl: string; updateUrl: string }): void {
@@ -148,10 +149,10 @@ export class Server {
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
-      ...(this.application === 'editor'
+      ...(this.options.application === 'editor'
         ? {
             'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
-            'md.numen.agents.mcp.server': { port: this.mcpPort },
+            'md.numen.agents.mcp.server': { port: this.services.mcpPort },
           }
         : {}),
     }
@@ -161,12 +162,12 @@ export class Server {
   private async launch(flags: readonly string[]): Promise<void> {
     const certificate = path.join(this.state, 'cert.pem')
     const log = fs.openSync(path.join(this.state, 'server.log'), 'a')
-    const proxyAddress = this.proxy.address() as net.AddressInfo
+    const proxyAddress = this.services.proxy.address() as net.AddressInfo
     const editorEnv =
-      this.application === 'editor'
+      this.options.application === 'editor'
         ? { NUMEN_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
         : {}
-    const child = spawn(BINARIES[this.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
+    const child = spawn(BINARIES[this.options.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
       stdio: ['ignore', 'pipe', log],
       env: {
         ...process.env,

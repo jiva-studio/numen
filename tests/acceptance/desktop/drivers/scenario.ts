@@ -130,7 +130,6 @@ export class Scenario {
     this.hasWorkspace = true
   }
 
-  /** Loads the window of the world's editor, starting the editor first if the scenario has not. The tabs a restart saved stay. */
   private async openWorldWindow(world: World): Promise<void> {
     if (this.server === undefined) await this.startWorld('editor')
     assertWorldApplication('editor', world.getVaults(), this.application)
