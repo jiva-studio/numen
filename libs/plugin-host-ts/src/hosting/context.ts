@@ -2,7 +2,6 @@
  * Host implementation of PluginContext conforming to @numen/plugin-sdk.
  */
 import type {
-  AgentHost,
   AgentProviderRegistration,
   BufferHost,
   CommandRegistration,
@@ -23,6 +22,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
+import { guardAgent } from './agentGuard'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -39,12 +39,12 @@ function trackSubscription(subscriptions: Disposable[], disposable: Disposable):
   }
 }
 
-interface PermissionTarget {
+export interface PermissionTarget {
   readonly pluginId: string
   readonly manifest?: Manifest | { permissions?: readonly string[] } | undefined
 }
 
-function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
+export function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
   if (!(target.manifest?.permissions?.includes(permission) ?? false)) {
     throw new Error(
       `Plugin "${target.pluginId}" lacks required permission "${permission}" for ${operation}`,
@@ -169,46 +169,6 @@ function guardTexts(
       return texts.createEdit(path, sourceVersionId, segments)
     },
   }
-}
-
-const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
-
-function guardAgent(
-  agent: AgentHost,
-  requirePerm: (permission: string, operation: string) => void,
-): AgentHost {
-  return {
-    ...agent,
-    getSetting: (path) => (isAgentPath(path) ? agent.getSetting(path) : undefined),
-    writeSetting: async (path, value) => {
-      if (!isAgentPath(path)) {
-        throw new Error(
-          `agent.writeSetting is limited to the agent settings, not "${path.join('.')}"`,
-        )
-      }
-      await agent.writeSetting(path, value)
-    },
-    getModelsAt: (path) => (isAgentPath(path) ? agent.getModelsAt(path) : []),
-    ask: (query) => {
-      requirePerm('vault:read', 'agent.ask')
-      return agent.ask(query)
-    },
-    finish: (conversation) => {
-      requirePerm('vault:read', 'agent.finish')
-      return agent.finish(conversation)
-    },
-    resolveLinks: (text, vault) => {
-      requirePerm('vault:read', 'agent.resolveLinks')
-      return agent.resolveLinks(text, vault)
-    },
-  }
-}
-
-/** The agent of a plugin, whose calls need the permissions the manifest of the plugin declares. */
-export function createPluginAgent(agent: AgentHost, target: PermissionTarget): AgentHost {
-  return guardAgent(agent, (permission, operation) =>
-    checkPermission(target, permission, operation),
-  )
 }
 
 function guardBuffers(
