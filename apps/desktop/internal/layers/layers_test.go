@@ -16,7 +16,7 @@ import (
 )
 
 // core is what every package of the core is named under.
-const core = "github.com/jiva-studio/numen/libs/core/"
+const core = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/apps/"

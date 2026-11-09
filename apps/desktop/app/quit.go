@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 )
 
 // visibility is the window going out of sight and returning to it. Hiding

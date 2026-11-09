@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
 // defaultModelName is the model name that selects the program's own default model.

@@ -6,8 +6,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
 // defaultTurns is how many requests to the model one task may make where the task names no limit.

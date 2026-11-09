@@ -1,7 +1,7 @@
 /** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
 import { COMMAND, ROW } from '@/shared/commandIds'
-import type { SlotCommand } from '@numen/plugin-host'
+import type { SlotCommand } from '@numen/plugin-loader'
 import {
   createNameItem,
   createPassageItem,

@@ -10,14 +10,14 @@
 import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import { createWindowAliases } from '@numen/shell/vite'
+import { createWindowAliases } from '@numen/workbench/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
-import { getStoryBrowser } from '../../../libs/ui/core/.storybook/browser'
+import { getStoryBrowser } from '../../../libs/ui/components/.storybook/browser'
 
 const alias = createWindowAliases(import.meta.url, {
-  '@numen/core-client/testing': '../../../libs/core-client/src/testing/index.ts',
-  '@numen/plugin-manager/testing': '../../../libs/plugin-manager/src/testing/index.ts',
-  '@numen/plugin-manager': '../../../libs/plugin-manager/src/index.ts',
+  '@numen/core-client/testing': '../../../libs/core/client/src/testing/index.ts',
+  '@numen/plugin-manager/testing': '../../../libs/plugin/manager/src/testing/index.ts',
+  '@numen/plugin-manager': '../../../libs/plugin/manager/src/index.ts',
 })
 
 export default defineConfig({

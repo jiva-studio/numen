@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // defaultFloor is the floor shown where the installation has no model to take one from. The host

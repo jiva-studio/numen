@@ -11,7 +11,7 @@ import {
   getWhenValues,
   type DeclaredSlotEntry,
   type PluginHost,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { createCommands, runSupport, type CommandTarget } from '@/features/command-palette'
 import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
 import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'

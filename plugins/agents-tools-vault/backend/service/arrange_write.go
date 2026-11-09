@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 // FileMove is the move of a note's file and the links the host rewrote for it.

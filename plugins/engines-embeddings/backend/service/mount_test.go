@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // The handler of a host that links the plugin in embeds with the base URL and

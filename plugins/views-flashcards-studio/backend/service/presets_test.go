@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"os"
 	"path/filepath"
 	"slices"

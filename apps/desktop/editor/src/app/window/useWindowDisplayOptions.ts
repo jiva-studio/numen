@@ -1,5 +1,5 @@
 import { formatErrorMessage } from '@numen/core-client'
-import type { VaultChangeEvent } from '@numen/plugin-host'
+import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { CommandTarget } from '@/features/command-palette'

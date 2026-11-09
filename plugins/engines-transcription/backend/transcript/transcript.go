@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // Cue is one stretch of speech: the words, and the milliseconds of the recording it spans.

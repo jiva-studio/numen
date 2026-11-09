@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/plugincli"
-	"github.com/jiva-studio/numen/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 )
 
 func main() {

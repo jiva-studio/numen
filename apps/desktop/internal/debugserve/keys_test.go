@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 func TestKeyStoreReturnsTheKeySetByName(t *testing.T) {

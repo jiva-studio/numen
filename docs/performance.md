@@ -7,7 +7,7 @@ The load test reports numbers and does not assert on them. It runs on any laptop
 ## Running it
 
 ```
-cd libs/core
+cd libs/core/kernel
 go test ./usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
 go test ./usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
@@ -1090,7 +1090,7 @@ The sweep times one `Run` of each ONNX session the application opens — the Par
 A model is recognised by the inputs and outputs it declares and not by its name: a PaddleOCR file with one image input and a rank-4 heat map as output is detection, one with rank-3 scores over the characters is recognition, and one with `im_shape` and `image` inputs is the layout model, which the sweep does not time. The thread counts are 1, 2, 4, half the physical cores, the physical cores and the logical cores of the machine the sweep runs on. The compute units (`ALL`, `CPUAndNeuralEngine`, `CPUAndGPU`, `CPUOnly`) are swept for CoreML only; `SessionSettings.ComputeUnits` leaves the default at `ALL`.
 
 ```
-cd libs/core
+cd libs/core/kernel
 internal/adapterlib/onnxruntime/bench-sweep.sh <output dir> [max load]
 benchstat <output dir>/cpu_default_t1.txt <output dir>/cpu_default_t8.txt
 ```

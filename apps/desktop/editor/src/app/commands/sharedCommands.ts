@@ -7,7 +7,7 @@ import {
   SHARED_COMMANDS,
   type HandlerDeclaration,
   type PluginPaletteCommand,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { Command, CommandPrompt, CommandTarget } from '@/features/command-palette'
 
 const isOverFile = (target: CommandTarget): boolean =>

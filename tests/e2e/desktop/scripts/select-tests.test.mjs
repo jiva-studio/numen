@@ -33,7 +33,7 @@ await test('a change to a spec folder selects that folder', () => {
 
 await test('a change to the window, the support code or the lock file selects every test', () => {
   for (const file of [
-    'libs/core/usecase/note/create.go',
+    'libs/core/kernel/usecase/note/create.go',
     'apps/desktop/editor/src/main.ts',
     'tests/e2e/desktop/tests/support/workspace.ts',
     'tests/e2e/desktop/playwright.config.ts',
@@ -54,14 +54,14 @@ await test('a change outside the desktop window, or to its documentation, select
       'apps/mobile/src/main.ts',
       'docs/index.md',
       'plugins/notes/README.md',
-      'libs/core/usecase/note/create_test.go',
+      'libs/core/kernel/usecase/note/create_test.go',
       'apps/desktop/editor/src/main.test.ts',
-      'libs/ui/core/src/Button.stories.ts',
+      'libs/ui/components/src/Button.stories.ts',
       'plugins/notes/frontend/Note.test.ts',
       'plugins/.golangci.yml',
       'apps/desktop/editor/eslint.config.js',
       'apps/desktop/editor/vitest.config.ts',
-      'libs/ui/core/.storybook/main.ts',
+      'libs/ui/components/.storybook/main.ts',
       'tests/e2e/desktop/scripts/select-tests.test.mjs',
     ]),
     'none',

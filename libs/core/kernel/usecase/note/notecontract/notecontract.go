@@ -1,0 +1,11 @@
+// Package notecontract re-exports the note port contract.
+package notecontract
+
+import "github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+
+type (
+	ConnectionOperations = noteport.ConnectionOperations
+	LinkQueries          = noteport.LinkQueries
+	NoteQueries          = noteport.NoteQueries
+	NoteRepository       = noteport.NoteRepository
+)

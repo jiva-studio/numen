@@ -7,7 +7,7 @@
  * file state.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-host'
+import type { Selector } from '@numen/plugin-loader'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
 

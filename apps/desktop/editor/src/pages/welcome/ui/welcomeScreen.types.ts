@@ -1,5 +1,5 @@
-import type { WelcomeAction } from '@numen/shell'
-import type { Tab } from '@numen/shell'
+import type { WelcomeAction } from '@numen/workbench'
+import type { Tab } from '@numen/workbench'
 import type { CommandDeps, Commands, CommandTarget, SearchState } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
 

@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
 func grantModel(t *testing.T) (shared, model string) {

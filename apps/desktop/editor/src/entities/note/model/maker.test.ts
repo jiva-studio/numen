@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { asFailure, asValue } from '@numen/core-client'
-import type { RelatedNoteRequest, RelationError } from '@numen/plugin-host'
+import type { RelatedNoteRequest, RelationError } from '@numen/plugin-loader'
 
 import { createNoteWriter, type NoteMaker } from './maker'
 import { getNoteIcon, registerTabKindIcon } from './icons'

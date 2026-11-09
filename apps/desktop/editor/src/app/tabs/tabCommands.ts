@@ -2,7 +2,7 @@
  * The commands of the window over a tab: detach it, unlink it, move it to another window and link
  * it with another tab. Moving and linking offer one item per window and per tab.
  */
-import type { CommandItem } from '@numen/plugin-host'
+import type { CommandItem } from '@numen/plugin-loader'
 import {
   registerCommand,
   type Command,

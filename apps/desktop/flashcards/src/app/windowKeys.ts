@@ -2,7 +2,7 @@
  * What a keystroke does in the window: the current tab handles it when one is
  * open, and on the list of vaults a letter opens the vault at that position.
  */
-import { getVaultForKey, type VaultRow } from '@numen/shell'
+import { getVaultForKey, type VaultRow } from '@numen/workbench'
 import type { WindowTab } from './host'
 
 export interface WindowKeysDeps {

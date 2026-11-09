@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
 
 func getTestWords() map[string]toolcall.Declaration {

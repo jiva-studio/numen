@@ -3,7 +3,7 @@
  * the files made and moved, and the icons the window draws commands and entries with.
  */
 import type { Component } from 'vue'
-import type { VaultFiles, WorkspaceHost } from '@numen/plugin-host'
+import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
 import { getKnownErrorCode, asFailure } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'

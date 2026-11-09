@@ -6,7 +6,7 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
-import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-host'
+import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
 import { declared, mockVaultState, pendingStream } from './answers'
 import type * as SettingsModule from '@/entities/settings'
 import type * as DeclaredCommandsModule from '@/entities/plugin/api/declaredCommands'

@@ -135,11 +135,11 @@ export function createCruiseConfig(root, matrix = PACKAGE_DEPENDENCIES) {
       ...packages.flatMap((one) => createPackageRules(one, packages, matrix)),
       ...createSegmentRules(),
       {
-        name: 'plugin-host-reaches-only-vue-vite-and-cel',
+        name: 'plugin-loader-reaches-only-vue-vite-and-cel',
         comment:
           'of third-party code the plugin host knows Vue, its build helper Vite and the CEL evaluator of when conditions; its tests are not shipped',
         severity: 'error',
-        from: { path: '^libs/plugin-host-ts/src/', pathNot: NOT_SHIPPED },
+        from: { path: '^libs/plugin/loader/src/', pathNot: NOT_SHIPPED },
         to: {
           path: '(^|/)node_modules/',
           pathNot: '(^|/)node_modules/(vue|@vue/[^/]+|vite|@bufbuild/cel)/',

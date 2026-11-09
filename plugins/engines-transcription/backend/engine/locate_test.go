@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {

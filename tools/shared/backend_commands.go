@@ -1,6 +1,6 @@
 // Command backend_commands reads Go source files with go/ast and prints the command ids registered
 // on a command.Registry as JSON. It reads file paths from standard input, one per line: the first
-// line is libs/plugin-sdk-go/command/shared_commands.go, and the remaining lines are the plugin
+// line is libs/plugin/sdk-go/command/shared_commands.go, and the remaining lines are the plugin
 // backend Go files.
 package main
 

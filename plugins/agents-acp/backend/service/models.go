@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
 // acpListLimit is how long an agent has to open the session its models are read from.

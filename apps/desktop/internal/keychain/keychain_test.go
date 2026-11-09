@@ -9,7 +9,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // A key stored is read back, replaced by the next one stored under its name,

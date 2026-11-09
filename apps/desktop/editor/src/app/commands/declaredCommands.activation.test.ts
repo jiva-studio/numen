@@ -3,7 +3,7 @@
  * host must not report a command as missing from a read taken while its plugin starts.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost, createPluginLoader, type PluginHost } from '@numen/plugin-host'
+import { createPluginHost, createPluginLoader, type PluginHost } from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 

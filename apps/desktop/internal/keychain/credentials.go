@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // The fallback file is a flat JSON object keyed by the same entry names as the keychain.

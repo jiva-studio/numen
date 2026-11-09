@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // ProgramName is the identifier a task uses to select the agent, and the key of its settings section.

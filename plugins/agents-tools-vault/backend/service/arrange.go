@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"golang.org/x/text/unicode/norm"
 )
 

@@ -1,6 +1,6 @@
 # mobile
 
-A phone showing one vault. The core is the one the window uses: `gomobile` binds it as an Android library, the application starts it on the loopback address, and the page calls it using the schema in `libs/protocol`.
+A phone showing one vault. The core is the one the window uses: `gomobile` binds it as an Android library, the application starts it on the loopback address, and the page calls it using the schema in `libs/core/protocol`.
 
 ## What is here
 
@@ -21,7 +21,7 @@ make run                       # binds, builds, installs, opens
 
 ## What runs on a phone and what does not
 
-The whole of `libs/core` compiles for `android/arm64` with the NDK, OCR included. Nothing is cut for this build.
+The whole of `libs/core/kernel` compiles for `android/arm64` with the NDK, OCR included. Nothing is cut for this build.
 
 `modernc.org/libc` on `android/amd64` — an emulator — calls `lstat`, `open`, `unlink` and similar system calls directly, and Android's seccomp filter kills a process that does. On `arm64` the same library goes through the `*at` forms and is fine, so a phone is not affected. `go.work` at the root of this tree points at a patched copy for the emulator; a build for a phone needs neither.
 

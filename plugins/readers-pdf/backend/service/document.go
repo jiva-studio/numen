@@ -9,11 +9,11 @@ import (
 
 	"github.com/tetratelabs/wazero"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )

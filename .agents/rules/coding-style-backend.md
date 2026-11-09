@@ -1,26 +1,26 @@
 # Backend (Go) Coding Style & Guidelines
 
-The standards for Go code in numen: `libs/core`, `libs/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
+The standards for Go code in numen: `libs/core/kernel`, `libs/core/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
 
 ---
 
 ## 1. Module structure
 
 ```text
-libs/core/            # the hexagon — its own module
+libs/core/kernel/            # the hexagon — its own module
 ├── port/             # the interfaces use cases require
 ├── usecase/          # one business scenario each
 ├── adapter/          # cli, index, settings, window
 ├── container/        # the composition root
 └── internal/         # not nameable from outside the module
-libs/notes/           # the domain: entities, value objects, identifiers, invariants
-libs/protocol/        # generated from the schema — never hand-edited
+libs/note/           # the domain: entities, value objects, identifiers, invariants
+libs/core/protocol/        # generated from the schema — never hand-edited
 apps/desktop/         # the window's host: cmd/ and internal/
 ```
 
 `go.work` joins the modules for development. Each module is built and tested from its own directory.
 
-**Identifiers live in `libs/notes/domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
+**Identifiers live in `libs/note/domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
 
 ---
 
@@ -107,9 +107,9 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 Per module, from its own directory:
 
 ```bash
-cd libs/core     && gofmt -l . && go vet ./... && go test ./...
+cd libs/core/kernel     && gofmt -l . && go vet ./... && go test ./...
 cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./...
-cd libs/protocol && buf lint && npm run generate
+cd libs/core/protocol && buf lint && npm run generate
 ```
 
 - The schema is never hand-edited. Change the `.proto`, run `make generate`, commit what comes out; `make generate-check` fails when the two drift.

@@ -6,7 +6,7 @@
  * how what it has to say becomes one line.
  */
 import type { Movement } from '@/entities/file'
-import type { ConnectionRole } from '@numen/plugin-host'
+import type { ConnectionRole } from '@numen/plugin-loader'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { Vaults } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'

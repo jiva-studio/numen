@@ -17,10 +17,10 @@
 #   revert    reverts a previous commit
 #
 # --- scopes -------------------------------------------------------------
-#   desktop   apps/desktop              core    libs/core
-#   mobile    apps/mobile               domain  libs/core/domain
-#   landing   apps/landing              ui      libs/ui/core
-#   protocol  libs/protocol             sdk     libs/plugin-sdk-ts
+#   desktop   apps/desktop              core    libs/core/kernel
+#   mobile    apps/mobile               domain  libs/core/kernel/domain
+#   landing   apps/landing              ui      libs/ui/components
+#   protocol  libs/core/protocol        sdk     libs/plugin/sdk-ts
 #   docs      everything else in docs/  vault   vault format / parser
 #   ci  deps  repo
 #

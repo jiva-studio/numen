@@ -42,25 +42,25 @@ go_rules: &go_rules
   - .github/actions/install-golangci-lint/**
   - .github/actions/govulncheck/**
 protocol_lib: &protocol_lib
-  - libs/protocol/**
+  - libs/core/protocol/**
 notes_lib: &notes_lib
-  - libs/notes/**
+  - libs/note/**
 core_lib: &core_lib
-  - libs/core/**
-  - libs/plugin-catalog/**
+  - libs/core/kernel/**
+  - libs/plugin/catalog/**
 sdk_go_lib: &sdk_go_lib
-  - libs/plugin-sdk-go/**
+  - libs/plugin/sdk-go/**
 sdk_ts_lib: &sdk_ts_lib
-  - libs/plugin-sdk-ts/**
+  - libs/plugin/sdk-ts/**
 ui_lib: &ui_lib
-  - libs/ui/core/**
+  - libs/ui/components/**
 shell_lib: &shell_lib
-  - libs/ui/shell/**
+  - libs/ui/workbench/**
 client_lib: &client_lib
-  - libs/core-client/**
+  - libs/core/client/**
 host_lib: &host_lib
-  - libs/plugin-host-ts/**
-  - libs/plugin-manager/**
+  - libs/plugin/loader/**
+  - libs/plugin/manager/**
 
 # What every Go module of the window and the phone builds on.
 go_base: &go_base
@@ -215,10 +215,10 @@ docs_sources: &docs_sources
   - apps/docs/**
   - apps/desktop/editor/src/**
   - apps/desktop/cmd/numen/**
-  - libs/core/adapter/cli/**
-  - libs/core/adapter/settings/**
-  - libs/core/container/**
-  - libs/core/usecase/completion/**
+  - libs/core/kernel/adapter/cli/**
+  - libs/core/kernel/adapter/settings/**
+  - libs/core/kernel/container/**
+  - libs/core/kernel/usecase/completion/**
   - plugins/*/manifest.json
   - plugins/*/frontend/**
   - tools/ci-commands/**
@@ -235,8 +235,8 @@ references:
   - *node_lock
   - *docs_sources
   - .github/workflows/checks.yml
-  - libs/ui/core/src/**
-  - libs/ui/shell/src/**
+  - libs/ui/components/src/**
+  - libs/ui/workbench/src/**
   - apps/desktop/flashcards/src/**
   - plugins/themes-presets/themes/**
   - tools/ci-stories/**

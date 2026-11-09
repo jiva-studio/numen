@@ -11,8 +11,8 @@ import {
   usePluginStyles,
   type PluginLoaderDeps,
   type LinkClient,
-} from '@numen/plugin-host'
-import { useWindowFrame, type VaultRow, type WindowFrame } from '@numen/shell'
+} from '@numen/plugin-loader'
+import { useWindowFrame, type VaultRow, type WindowFrame } from '@numen/workbench'
 import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'

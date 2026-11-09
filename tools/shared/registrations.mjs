@@ -16,7 +16,7 @@ export const UNREADABLE_FIELD = '<unreadable>'
 
 const SHARED_DIR = fileURLToPath(new URL('.', import.meta.url))
 const COMMAND_CONSTANTS_FILE = fileURLToPath(
-  new URL('../../libs/plugin-sdk-go/command/shared_commands.go', import.meta.url),
+  new URL('../../libs/plugin/sdk-go/command/shared_commands.go', import.meta.url),
 )
 
 const unwrap = (node) =>

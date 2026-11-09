@@ -1,0 +1,338 @@
+package models
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+)
+
+func getRealClock() clock.System { return clock.System{} }
+
+func TestReserveQuota_RejectsOverCommit(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(EnvQuota, "100")
+
+	first, err := Reserve(t.Context(), getRealClock(), root, 60, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Room != 60 {
+		t.Fatalf("room = %d, want 60", first.Room)
+	}
+	if _, err := Reserve(t.Context(), getRealClock(), root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
+		t.Fatalf("second reservation error = %v", err)
+	}
+	release(t, first)
+	again, err := Reserve(t.Context(), getRealClock(), root, 60, "")
+	if err != nil {
+		t.Fatalf("after release: %v", err)
+	}
+	release(t, again)
+}
+
+func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(EnvQuota, "100")
+	if err := os.WriteFile(filepath.Join(root, "member"), make([]byte, 40), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	claim, err := Reserve(t.Context(), getRealClock(), root, -1, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release(t, claim)
+	if claim.Room != 60 {
+		t.Fatalf("room = %d, want 60", claim.Room)
+	}
+}
+
+func TestReserveQuotaReportsAFolderItCannotCreate(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Reserve(t.Context(), getRealClock(), filepath.Join(blocker, "models"), 1, ""); err == nil {
+		t.Fatal("reservation succeeded under a regular file")
+	}
+}
+
+func TestLockQuotaWaitsForTheHolder(t *testing.T) {
+	root := t.TempDir()
+	unlock, err := lockQuota(t.Context(), getRealClock(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, stop := context.WithTimeout(t.Context(), 150*time.Millisecond)
+	defer stop()
+	if _, err := lockQuota(ctx, getRealClock(), root); err == nil {
+		t.Fatal("lock was taken twice")
+	}
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
+	again, err := lockQuota(t.Context(), getRealClock(), root)
+	if err != nil {
+		t.Fatalf("after unlock: %v", err)
+	}
+	if err := again(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLockQuotaBreaksAStaleLock(t *testing.T) {
+	root := t.TempDir()
+	lock := filepath.Join(root, lockName)
+	if err := os.Mkdir(lock, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := getRealClock().Now().Add(-2 * staleLock)
+	if err := os.Chtimes(lock, old, old); err != nil {
+		t.Fatal(err)
+	}
+	unlock, err := lockQuota(t.Context(), getRealClock(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lockQuota(t.Context(), getRealClock(), filepath.Join(blocker, "models")); err == nil {
+		t.Fatal("lock was taken under a file")
+	}
+}
+
+func TestReservationPreservesItselfAlive(t *testing.T) {
+	root := t.TempDir()
+	claim, err := reserve(t.Context(), getRealClock(), root, 10, "", 10*time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release(t, claim)
+	old := getRealClock().Now().Add(-time.Hour)
+	if err := os.Chtimes(claim.file, old, old); err != nil {
+		t.Fatal(err)
+	}
+	deadline := getRealClock().Now().Add(5 * time.Second)
+	for {
+		info, err := os.Stat(claim.file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if getRealClock().Now().Sub(info.ModTime()) < time.Minute {
+			return
+		}
+		if getRealClock().Now().After(deadline) {
+			t.Fatal("reservation was not kept alive")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestReservationReleaseIsIdempotentAndRemovesTheFile(t *testing.T) {
+	root := t.TempDir()
+	claim, err := Reserve(t.Context(), getRealClock(), root, 10, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	release(t, claim)
+	release(t, claim)
+	if _, err := os.Stat(claim.file); !os.IsNotExist(err) {
+		t.Fatalf("reservation file remains: %v", err)
+	}
+}
+
+func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(EnvQuota, "100")
+	part := filepath.Join(root, "m.part-1")
+	if err := os.WriteFile(part, make([]byte, 40), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	claim, err := Reserve(t.Context(), getRealClock(), root, 50, part)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release(t, claim)
+	used, err := GetUsage(getRealClock(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := int64(40 + len("50\n"+part) + 10); used != want {
+		t.Fatalf("GetUsage() = %d, want %d", used, want)
+	}
+}
+
+func TestIsOffline(t *testing.T) {
+	tests := []struct {
+		value string
+		want  bool
+	}{
+		{"", false}, {"0", false}, {"no", false}, {"1", true}, {"true", true}, {" TRUE ", true}, {"yes", true}, {"on", true},
+	}
+	for _, tc := range tests {
+		t.Setenv(EnvOffline, tc.value)
+		if got := IsOffline(); got != tc.want {
+			t.Errorf("%s=%q: IsOffline() = %v, want %v", EnvOffline, tc.value, got, tc.want)
+		}
+	}
+}
+
+func TestGetQuota(t *testing.T) {
+	tests := []struct {
+		value string
+		want  int64
+	}{
+		{"", DefaultQuota}, {"x", DefaultQuota}, {"0", DefaultQuota}, {"-5", DefaultQuota}, {"1024", 1024}, {" 2048 ", 2048},
+	}
+	for _, tc := range tests {
+		t.Setenv(EnvQuota, tc.value)
+		if got := GetQuota(); got != tc.want {
+			t.Errorf("%s=%q: GetQuota() = %d, want %d", EnvQuota, tc.value, got, tc.want)
+		}
+	}
+}
+
+func TestGetUsageSumsNestedFiles(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "a"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, size := range map[string]int{"one": 3, "a/two": 5} {
+		if err := os.WriteFile(filepath.Join(dir, name), make([]byte, size), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, err := GetUsage(getRealClock(), dir); err != nil || got != 8 {
+		t.Fatalf("GetUsage() = %d, %v, want 8", got, err)
+	}
+	if got, err := GetUsage(getRealClock(), filepath.Join(dir, "missing")); err != nil || got != 0 {
+		t.Fatalf("GetUsage(missing) = %d, %v, want 0", got, err)
+	}
+}
+
+func TestGetUsageCountsWhatALiveReservationHasNotSaved(t *testing.T) {
+	dir := t.TempDir()
+	part := filepath.Join(dir, "m.part-1")
+	if err := os.WriteFile(part, make([]byte, 30), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reservation := "100\n" + part
+	if err := os.WriteFile(filepath.Join(dir, "reservation-1"+reserveSuffix), []byte(reservation), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := GetUsage(getRealClock(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := int64(30 + len(reservation) + 70); got != want {
+		t.Fatalf("GetUsage() = %d, want %d", got, want)
+	}
+}
+
+func TestGetUsageIgnoresWhatAStaleReservationPromised(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "m.part-1"+reserveSuffix)
+	if err := os.WriteFile(file, []byte("100"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	old := getRealClock().Now().Add(-2 * staleReservation)
+	if err := os.Chtimes(file, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := GetUsage(getRealClock(), dir); err != nil || got != 3 {
+		t.Fatalf("GetUsage() = %d, %v, want 3", got, err)
+	}
+}
+
+func TestGetUsageIgnoresAReservationThatIsNotANumber(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "m.part-1"+reserveSuffix), []byte("many"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := GetUsage(getRealClock(), dir); err != nil || got != 4 {
+		t.Fatalf("GetUsage() = %d, %v, want 4", got, err)
+	}
+}
+
+func TestGetUsageReportsAFolderItCannotRead(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("folder permissions do not stop this user")
+	}
+	dir := t.TempDir()
+	locked := filepath.Join(dir, "locked")
+	if err := os.MkdirAll(locked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chmod(locked, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
+	if _, err := GetUsage(getRealClock(), dir); err == nil {
+		t.Fatal("an unreadable folder was counted as empty")
+	}
+	if err := CheckQuota(getRealClock(), dir, 1); err == nil {
+		t.Fatal("CheckQuota passed over an unreadable folder")
+	}
+}
+
+func TestCheckQuota(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "f"), make([]byte, 6), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvQuota, "10")
+	if err := CheckQuota(getRealClock(), dir, 4); err != nil {
+		t.Fatalf("10 of 10 bytes: %v", err)
+	}
+	if err := CheckQuota(getRealClock(), dir, 5); err == nil {
+		t.Fatal("11 of 10 bytes passed")
+	}
+}
+
+func TestResolvePathFollowsALinkInTheExistingPart(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("links need privileges on windows")
+	}
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(base, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if got := resolvePath(filepath.Join(link, "new", "deeper")); got != filepath.Join(target, "new", "deeper") {
+		t.Fatalf("resolvePath() = %q", got)
+	}
+	if got := resolvePath(link); got != target {
+		t.Fatalf("resolvePath(link) = %q", got)
+	}
+}
+
+func release(t *testing.T, claim *Reservation) {
+	t.Helper()
+	if err := claim.Release(); err != nil {
+		t.Error(err)
+	}
+}

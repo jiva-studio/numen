@@ -57,14 +57,14 @@ flowchart TD
 
 From the touched module:
 
-**Go modules (`libs/core`, `apps`):**
+**Go modules (`libs/core/kernel`, `apps`):**
 ```bash
 go vet ./...
 go test ./...
-go test ./container/...        # in libs/core (architecture check)
+go test ./container/...        # in libs/core/kernel (architecture check)
 ```
 
-**Frontend modules (`apps/desktop/*`, `libs/ui/core`):**
+**Frontend modules (`apps/desktop/*`, `libs/ui/components`):**
 ```bash
 npm run lint
 npm run typecheck
@@ -72,7 +72,7 @@ npm run test:unit
 npm run format:check   # a change that is not Prettier-clean is rejected
 ```
 
-*(Note: If touching `@numen/ui`, run `npm run build` in `libs/ui/core` before running desktop window suites).*
+*(Note: If touching `@numen/ui`, run `npm run build` in `libs/ui/components` before running desktop window suites).*
 
 ---
 

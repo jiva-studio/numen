@@ -16,7 +16,7 @@ import {
   type TranscriptOptions,
 } from '@plugins/views-media-viewer/frontend/model/transcript'
 import type { Player } from '@plugins/views-media-viewer/frontend/model/player'
-import type { ReaderTabState, Selector } from '@numen/plugin-host'
+import type { ReaderTabState, Selector } from '@numen/plugin-loader'
 import type { Recordings, TextRange } from '@plugins/views-media-viewer/frontend/types'
 import {
   createTimeSelector,

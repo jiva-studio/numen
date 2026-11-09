@@ -6,7 +6,7 @@
  * changes under an open step is rendered as it is. Nothing here makes decisions
  * or calls the application: `palette.ts` holds the steps and does that.
  */
-import type { PaletteGroup, PaletteItem } from '@numen/shell'
+import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import { getGroupCommands } from '../../lib/commands/commands'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandGroup, CommandTarget } from '../../types'

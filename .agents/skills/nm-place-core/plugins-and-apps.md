@@ -2,7 +2,7 @@
 
 ## The plugin adapter
 
-`libs/core/internal/adapter/plugin` and its packages connect the core to plugin processes. They are two kinds of adapter, told apart by the package name.
+`libs/core/kernel/internal/adapter/plugin` and its packages connect the core to plugin processes. They are two kinds of adapter, told apart by the package name.
 
 - A package starting with `host` handles the calls a plugin makes to the core (`hostendpoint`, `hosttext`, `hostvault`, `hostsearch`). It is a driving adapter: it checks the plugin's permission, maps the call to the arguments of a use case, calls the use case and maps the result back. It references no type under `port/`.
 - A package ending in `bridge` calls a plugin for the core (`agentbridge`, `textbridge`, `themebridge`, `commandbridge`). It is a driven adapter: it implements a port a use case declared, sends the call over the transport and maps the plugin's answer to the port's types.
@@ -19,6 +19,6 @@ A new host call: add the method on the matching `host*` package, add or reuse th
 
 - An application builds a `container.Config`, asks `container` for the created use cases and adapters, and routes requests to them. It holds no scenario and no rule about notes.
 - A driven adapter an application owns (the folder dialog of the toolkit, the keychain) is its own package with one role. It implements a port and does not call a use case.
-- A window's Go side serves the generated services by mapping requests to use cases; the mapping lives in the driving adapter of `libs/core/adapter/window`, and the application mounts it.
+- A window's Go side serves the generated services by mapping requests to use cases; the mapping lives in the driving adapter of `libs/core/kernel/adapter/window`, and the application mounts it.
 - Which plugins a window loads is decided by the target the binary names (`desktop.editor`, `desktop.flashcards`) and by the manifests; the application names no plugin.
 - The flashcards binary differs from the editor by its target and its window; it shares the container and every use case.

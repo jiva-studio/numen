@@ -5,8 +5,8 @@
  * renders in its settled state and can be captured as a screenshot.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { WorkspaceLayout, pane } from '@numen/shell'
-import type { Tab, Workspace } from '@numen/shell'
+import { WorkspaceLayout, pane } from '@numen/workbench'
+import type { Tab, Workspace } from '@numen/workbench'
 import { ref, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'

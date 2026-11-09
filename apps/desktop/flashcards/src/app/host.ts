@@ -28,10 +28,10 @@ import {
   type CommandsHost,
   type VaultsHost,
   type WindowHost,
-} from '@numen/plugin-host'
-import { createNoticeQueue } from '@numen/shell'
+} from '@numen/plugin-loader'
+import { createNoticeQueue } from '@numen/workbench'
 import { createNamedIcon } from '@numen/ui'
-import type { WindowPlatform } from '@numen/shell'
+import type { WindowPlatform } from '@numen/workbench'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'

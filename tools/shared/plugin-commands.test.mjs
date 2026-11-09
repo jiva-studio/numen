@@ -202,7 +202,7 @@ test('findPluginCommandMismatches reports a backend command registration missing
         backend: {
           'commands.go': [
             'package service',
-            'import "github.com/jiva-studio/numen/libs/plugin-sdk-go/command"',
+            'import "github.com/jiva-studio/numen/libs/plugin/sdk-go/command"',
             'func newCommands() *command.Registry {',
             '\tcommands := command.New()',
             '\t_ = commands.Add("sample.run", nil)',

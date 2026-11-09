@@ -7,12 +7,12 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 // schemaCase is a schema the host lists for a tool, used as both its input and its output schema,
 // and what an MCP client is given for each. The same table is in
-// libs/core/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go: both readers declare a
+// libs/core/kernel/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go: both readers declare a
 // tool identically.
 type schemaCase struct {
 	name            string
@@ -105,7 +105,7 @@ func TestTheMCPServerDeclaresTheSchemasOfATool(t *testing.T) {
 
 // hintCase is a tool whose hints say otherwise than its effect, step and required permissions, and
 // the annotations an MCP client is given. The same table is in
-// libs/core/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go.
+// libs/core/kernel/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go.
 type hintCase struct {
 	name                                         string
 	effect                                       tools.Effect

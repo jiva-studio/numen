@@ -8,8 +8,8 @@ import type {
   HandlerDeclaration,
   PluginHost,
   PluginPaletteCommand,
-} from '@numen/plugin-host'
-import type { WelcomeAction } from '@numen/shell'
+} from '@numen/plugin-loader'
+import type { WelcomeAction } from '@numen/workbench'
 import {
   findShortcutKeys,
   registerCommand,

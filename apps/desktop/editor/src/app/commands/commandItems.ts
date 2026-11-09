@@ -7,7 +7,7 @@ import {
   type CommandItem,
   type CommandTarget as RunTarget,
   type PluginHost,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { Command, CommandTarget } from '@/features/command-palette'
 import { getNamedTarget } from './runTarget'
 

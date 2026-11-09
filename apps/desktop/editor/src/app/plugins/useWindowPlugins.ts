@@ -14,12 +14,12 @@ import {
   type CommandDeclaration,
   type PluginHostDeps,
   type PluginLoader,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
-import type { NoticeQueue } from '@numen/shell'
+import type { NoticeQueue } from '@numen/workbench'
 import type { useSettings } from '../window/useSettings'
-import type { WindowPlatform } from '@numen/shell'
+import type { WindowPlatform } from '@numen/workbench'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {

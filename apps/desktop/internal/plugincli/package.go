@@ -11,8 +11,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
 // Package bundles the files a plugin ships (manifest.json, bin, dist and the theme stylesheets the

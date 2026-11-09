@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { FileText, SlidersHorizontal } from '@lucide/vue'
-import { getPanes } from '@numen/shell'
+import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from './icons'
 import { NOTE, SETTINGS, createWorkspace, generateId } from './workspace'
 

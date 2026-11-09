@@ -16,22 +16,27 @@ import {
  * The Go libraries and the libraries each one may depend on.
  *
  * A library is a directory under `libs/` that holds a `go.mod`, and it belongs to the family named by
- * its first directory under `libs/`: `libs/plugin-sdk-go/host` is of the family `plugin-sdk-go`. The
+ * its first directory under `libs/`, or its first two where `libs/core` and `libs/plugin` nest several libraries:
+ * `libs/plugin/sdk-go/host` is of the family `plugin/sdk-go`. The
  * modules of one family may depend on each other. A dependency between two families is allowed only
  * where the matrix lists it, and a family the matrix does not list fails: a new library states its
  * place before it builds.
  */
 export const LIBRARY_DEPENDENCIES = {
-  notes: [],
-  protocol: [],
-  "plugin-catalog": ["notes", "protocol"],
-  "plugin-sdk-go": ["notes", "protocol"],
-  core: ["notes", "plugin-catalog", "protocol"],
+  note: [],
+  "core/protocol": [],
+  "plugin/catalog": ["note", "core/protocol"],
+  "plugin/sdk-go": ["note", "core/protocol"],
+  "core/kernel": ["note", "plugin/catalog", "core/protocol"],
 };
 
-/** The family of a library directory such as `libs/plugin-sdk-go/host`. */
+/** The directories under `libs/` that hold several libraries, one per subdirectory. */
+const NESTED_FAMILIES = new Set(["core", "plugin"]);
+
+/** The family of a library directory such as `libs/plugin/sdk-go/host`, which is `plugin/sdk-go`. */
 export function getFamily(dir) {
-  return dir.split("/")[1];
+  const [, first, second] = dir.split("/");
+  return NESTED_FAMILIES.has(first) ? `${first}/${second}` : first;
 }
 
 /**
@@ -136,11 +141,11 @@ export function verifyLibraryMatrix() {
  */
 export const PACKAGE_DEPENDENCIES = {
   "@numen/ui": [],
-  "@numen/shell": ["@numen/ui"],
+  "@numen/workbench": ["@numen/ui"],
   "@numen/protocol": [],
   "@numen/core-client": ["@numen/protocol"],
   "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
-  "@numen/plugin-host": ["@numen/plugin-sdk", "@numen/core-client"],
+  "@numen/plugin-loader": ["@numen/plugin-sdk", "@numen/core-client"],
   "@numen/plugin-manager": ["@numen/ui"],
 };
 

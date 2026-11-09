@@ -36,7 +36,7 @@ is mapped field by field into the window's own type. A fault is converted to tex
 ## Build the UI library before the window suites
 
 A window imports `@numen/ui` from its **build**. Run `npm run build` in
-`libs/ui/core` before either window's suite, or it fails on
+`libs/ui/components` before either window's suite, or it fails on
 `Cannot find module '@numen/ui'` — and a stale build is worse, because it
 compiles and renders the old output.
 

@@ -6,9 +6,9 @@
  */
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
-import '@numen/shell/styles.css'
-import { Palette } from '@numen/shell'
-import { SlotViewHost } from '@numen/plugin-host'
+import '@numen/workbench/styles.css'
+import { Palette } from '@numen/workbench'
+import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'

@@ -96,7 +96,7 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template",
-		"github.com/jiva-studio/numen/libs/notes/domain",
+		"github.com/jiva-studio/numen/libs/note/domain",
 	} {
 		if logs(to) {
 			violations = append(violations, to)

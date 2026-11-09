@@ -77,15 +77,15 @@ describe("the rule on a border and a radius", () => {
 
 describe("the token files", () => {
   it("are the stylesheets in a tokens directory", () => {
-    assert.ok(isTokenFile("libs/ui/core/src/shared/tokens/tokens.css"));
-    assert.equal(isTokenFile("libs/ui/core/src/tokens.css"), false);
-    assert.equal(isTokenFile("libs/ui/core/src/tokens/index.ts"), false);
+    assert.ok(isTokenFile("libs/ui/components/src/shared/tokens/tokens.css"));
+    assert.equal(isTokenFile("libs/ui/components/src/tokens.css"), false);
+    assert.equal(isTokenFile("libs/ui/components/src/tokens/index.ts"), false);
   });
   it("declare the custom properties with the token prefix", () => {
     assert.deepEqual([...readDeclaredTokens(":root { --numen-ink: #000; --local: 1px; }\n.a { --numen-rule: #111; }")], ["--numen-ink", "--numen-rule"]);
   });
   it("of this repository declare the tokens the components use", () => {
-    const declared = readDeclaredTokens(fs.readFileSync(path.join(REPO_ROOT, "libs/ui/core/src/shared/tokens/tokens.css"), "utf8"));
+    const declared = readDeclaredTokens(fs.readFileSync(path.join(REPO_ROOT, "libs/ui/components/src/shared/tokens/tokens.css"), "utf8"));
     assert.ok(declared.has("--numen-ink"));
   });
 });

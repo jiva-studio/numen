@@ -16,7 +16,7 @@ import type {
   VaultsHost,
   WindowHost,
   WorkspaceHost,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
@@ -27,7 +27,7 @@ import type { FilePort } from '@/app/ports/files'
 import type { useSettings } from '../window/useSettings'
 import { createIconHost, type IconHostDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
-import type { NoteBuffer } from '@numen/plugin-host'
+import type { NoteBuffer } from '@numen/plugin-loader'
 
 /** The window and the notes a plugin is given, once the window has made them. */
 export interface PluginServices {

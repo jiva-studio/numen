@@ -95,7 +95,7 @@ export function createOwnImportConfig({ layer, patterns, group, message, outside
 }
 
 /**
- * The layer blocks of a component library (`libs/ui/core`, `libs/ui/shell`):
+ * The layer blocks of a component library (`libs/ui/components`, `libs/ui/workbench`):
  * the layers, the imports `domainImports` bans, and a slice of `features`
  * reaching no other slice. `outsideLayers` are the files that stand outside.
  */

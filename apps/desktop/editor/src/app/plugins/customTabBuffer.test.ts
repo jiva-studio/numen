@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { openNotes, type Notes } from '@/entities/note'
-import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-host'
+import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
 
 const statFile = (body: string): string => `at:${body}`
 

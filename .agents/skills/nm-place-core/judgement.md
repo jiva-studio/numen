@@ -2,7 +2,7 @@
 
 ## Is this rule in the domain or in a use case
 
-- A rule that can be decided from values the caller already holds (a connection has two distinct notes, a role has an inverse, a name folds to a filename) is the domain's. It is a method on the value, or a function in the package that defines the subject. `libs/notes/domain` holds what is true of a note; `markdown` holds the rules of the file's format.
+- A rule that can be decided from values the caller already holds (a connection has two distinct notes, a role has an inverse, a name folds to a filename) is the domain's. It is a method on the value, or a function in the package that defines the subject. `libs/note/domain` holds what is true of a note; `markdown` holds the rules of the file's format.
 - A rule that needs stored data is split: the deciding part is a domain function that takes the data as a parameter (a value or a function that answers a question), and the use case reads the data through a port and passes it.
 - A step that orders several ports, handles their failures or reports progress is a use case. Test: if the step names a port, it is a use case.
 - A choice among sources (stored value, then hint, then default) is a use case, because the sources are ports.
@@ -17,7 +17,7 @@
 
 ## Where a shared type lives
 
-- A fact about notes, vaults, links, cards or text: `libs/notes/domain`.
+- A fact about notes, vaults, links, cards or text: `libs/note/domain`.
 - The vocabulary of a port that no domain type holds: the port package that owns it, and only use cases and adapters of that port name it.
 - The request and result of one scenario: its use case package.
 - A type that appears in a driving adapter's signature but is declared under `port/` is moved: it is a result of a scenario and lives in the use case package, or it is a domain fact and lives in the domain.
@@ -32,7 +32,7 @@
 
 ## Settings
 
-- The meaning and limits of a setting (a scale between two bounds, a model name, a floor above zero) are values with their checks in `libs/notes/domain` or in the settings use cases.
+- The meaning and limits of a setting (a scale between two bounds, a model name, a floor above zero) are values with their checks in `libs/note/domain` or in the settings use cases.
 - Reading, writing, watching and applying settings are use cases over the settings ports (`settingsport`), which hold the file's content as `Setting` values.
 - The file's layout, locking, merge with the defaults and the declared schema are the settings adapter's.
 - The consumer of a setting is handed the value, or a function that returns the current value, by `container`. No consumer opens the file, and `container` computes no setting.

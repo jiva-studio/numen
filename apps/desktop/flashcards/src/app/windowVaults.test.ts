@@ -4,8 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import type { VaultsState } from '@numen/plugin-host'
-import type { VaultRow } from '@numen/shell'
+import type { VaultsState } from '@numen/plugin-loader'
+import type { VaultRow } from '@numen/workbench'
 import { createWindowVaults } from './windowVaults'
 
 const ROWS: readonly VaultRow[] = [

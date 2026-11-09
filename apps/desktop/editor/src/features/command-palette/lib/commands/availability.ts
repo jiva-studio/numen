@@ -2,7 +2,7 @@
  * When a command of the application is offered, and when it is not: its when condition over the
  * values of the palette.
  */
-import { parseWhen } from '@numen/plugin-host'
+import { parseWhen } from '@numen/plugin-loader'
 import { getPaletteValues } from '@/shared/paletteValues'
 import type { CommandTarget } from '../../types'
 

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/tetratelabs/wazero"
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/resample"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/signal"

@@ -8,7 +8,7 @@ import {
   type WhenCondition,
   type WhenReader,
   type WhenSettings,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { CommandTarget } from '@/features/command-palette'
 import { getPaletteValues } from '@/shared/paletteValues'
 

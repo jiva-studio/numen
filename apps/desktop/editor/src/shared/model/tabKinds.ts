@@ -1,7 +1,7 @@
 /** What the window holds of its tabs. The kinds themselves belong to the plugin host. */
-import type { AnyTabKind } from '@numen/plugin-host'
+import type { AnyTabKind } from '@numen/plugin-loader'
 
-export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from '@numen/plugin-host'
+export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from '@numen/plugin-loader'
 
 /** What one tab is: its kind, and what that kind gave it to hold. */
 export interface WindowTab {

@@ -1,0 +1,283 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/embedding.proto";
+import "numen/v1/search.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// HostSearchService is the search index and the search floor of a vault, as a
+// plugin reads and sets them. The host identifies the plugin by its token.
+// GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
+// GetBestSimilarity and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
+// search:policy.
+//
+// Numen-Vault works the vault of that identity; without it a call works the
+// vault the host is showing.
+//
+// The host keeps one effective floor for each pair of vault and recipe and
+// applies it to every search by meaning: a floor the query names outranks the
+// effective floor, which outranks the hint of the embedding model, which
+// outranks the default floor. A call that names a recipe other than the one of
+// the model in use is answered with RECIPE_MISMATCH.
+service HostSearchService {
+  // GetEmbeddingState is the model in use and how far the vault is embedded
+  // under it. The answer is computed from the index at each call, so a plugin
+  // that starts after the vectors exist reads the same state as one that was
+  // running when they were made.
+  rpc GetEmbeddingState(GetEmbeddingStateRequest) returns (GetEmbeddingStateResponse);
+
+  // GetIndexStats is what the index of the vault holds: its vectors, chunks and
+  // sources, the sources and chunks by file extension, and the size on disk of
+  // the index. Counts are read at most once a second, and the sizes at most
+  // once every 30 seconds.
+  rpc GetIndexStats(GetIndexStatsRequest) returns (GetIndexStatsResponse);
+
+  // EmbedTexts embeds texts with the model in use. At most 256 texts of at most
+  // 8192 bytes each are embedded in one call.
+  rpc EmbedTexts(EmbedTextsRequest) returns (EmbedTextsResponse);
+
+  // SampleSimilarities is the cosine similarity of each query vector with the
+  // small chunks of the vault that carry a vector under the recipe and belong
+  // to a source other than the one the query names. The host takes at most 500
+  // small chunks, in the order of their content hashes, so one index yields
+  // one sample. At most 256 queries are sampled in one call.
+  rpc SampleSimilarities(SampleSimilaritiesRequest) returns (SampleSimilaritiesResponse);
+
+  // GetBestSimilarity is the cosine similarity of the passage of the vault
+  // nearest a vector under the recipe, and zero when the vault has none.
+  rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
+
+  // SearchPassages returns passages matching the query, from the index of every
+  // source and every text version: by keywords, and by embedding when the
+  // installation has an embedding model. It is the search the window runs, with
+  // the window's similarity threshold.
+  rpc SearchPassages(HostSearchServiceSearchPassagesRequest) returns (HostSearchServiceSearchPassagesResponse);
+
+  // GetSearchFloor is the floor a search by meaning applies to the vault under
+  // the recipe, and where it comes from.
+  rpc GetSearchFloor(GetSearchFloorRequest) returns (GetSearchFloorResponse);
+
+  // SetSearchFloor stores the effective floor of the vault under the recipe. A
+  // floor of zero removes the stored floor. Setting the floor that is stored
+  // changes nothing.
+  rpc SetSearchFloor(SetSearchFloorRequest) returns (SetSearchFloorResponse);
+}
+
+// HostSearchErrorCode is why a call on the search index was refused. The zero
+// value means it was not.
+enum HostSearchErrorCode {
+  HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The host is showing no vault.
+  HOST_SEARCH_ERROR_CODE_NO_VAULT = 1;
+
+  // The installation has no embedding model.
+  HOST_SEARCH_ERROR_CODE_NO_MODEL = 2;
+
+  // The recipe is not the one of the model in use.
+  HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH = 3;
+
+  // The floor is not a cosine similarity above zero and at most one.
+  HOST_SEARCH_ERROR_CODE_INVALID_FLOOR = 4;
+
+  // The call names more texts, or longer ones, than one call embeds.
+  HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED = 5;
+
+  // The embedding model could not answer.
+  HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
+
+  // A query vector has a dimension count other than the one of the vectors in the index.
+  HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
+}
+
+// SearchFloorSource is where the floor a search applies comes from.
+enum SearchFloorSource {
+  SEARCH_FLOOR_SOURCE_UNSPECIFIED = 0;
+
+  // A plugin stored the floor for the vault and the recipe.
+  SEARCH_FLOOR_SOURCE_STORED = 1;
+
+  // The starting floor the plugin of the embedding model reports.
+  SEARCH_FLOOR_SOURCE_MODEL_HINT = 2;
+
+  // No other source answered.
+  SEARCH_FLOOR_SOURCE_DEFAULT = 3;
+}
+
+message GetEmbeddingStateRequest {}
+
+message GetEmbeddingStateResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe of the model in use. Every vector the host returns, and every
+  // floor it stores, is kept under it.
+  string recipe = 2;
+
+  // The name of the model in use.
+  string model = 3;
+
+  // The starting floor the plugin of the model reports, zero when it has none.
+  double floor_hint = 4;
+
+  // How many chunks of the vault can carry a vector, and how many of them do
+  // under the recipe.
+  int64 chunk_count = 5;
+  int64 embedded_count = 6;
+
+  // Whether the vault holds chunks and every one of them carries a vector.
+  bool is_ready = 7;
+}
+
+message GetIndexStatsRequest {}
+
+// ExtensionStats is the sources of one file extension and the chunks they hold.
+message ExtensionStats {
+  // The extension in lower case, without the dot. Empty for a file with none.
+  string extension = 1;
+
+  // How many sources have the extension.
+  int64 source_count = 2;
+
+  // How many chunks that can carry a vector belong to those sources.
+  int64 chunk_count = 3;
+}
+
+message GetIndexStatsResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe, the name and the dimension count of the model in use.
+  string recipe = 2;
+  string model = 3;
+  int64 dimensions = 4;
+
+  // How many chunks of the vault can carry a vector, and how many of them do
+  // under the recipe.
+  int64 chunk_count = 5;
+  int64 vector_count = 6;
+
+  // How many sources, notes and files, the vault holds.
+  int64 source_count = 7;
+
+  // The sources and chunks by extension, the most sources first.
+  repeated ExtensionStats extensions = 8;
+
+  // The size of the index database on disk, and of the tables that hold
+  // vectors, in bytes. Both are read at most once every 30 seconds.
+  int64 database_bytes = 9;
+  int64 vector_bytes = 10;
+}
+
+message EmbedTextsRequest {
+  repeated string texts = 1;
+}
+
+message EmbedTextsResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe of the model that made the vectors.
+  string recipe = 2;
+
+  // One vector per text, in the order the texts arrived.
+  repeated FloatVector vectors = 3;
+}
+
+message SimilarityQuery {
+  // The embedding of the query under the recipe.
+  FloatVector vector = 1;
+
+  // The path of the note the query was made from, relative to the vault. The
+  // passages of that note are left out of the sample of the query. An empty
+  // path leaves out none.
+  string path = 2;
+}
+
+message SampleSimilaritiesRequest {
+  string recipe = 1;
+  repeated SimilarityQuery queries = 2;
+}
+
+message SimilarityRow {
+  // The similarity of the query with each sampled passage, in the order of the
+  // passages. A query with no vector, or whose note is the only source, has none.
+  repeated double values = 1;
+}
+
+message SampleSimilaritiesResponse {
+  HostSearchErrorCode error = 1;
+
+  // How many passages the host sampled, and how many sources they come from.
+  int32 passage_count = 2;
+  int32 source_count = 3;
+
+  // One row per query, in the order the queries arrived.
+  repeated SimilarityRow rows = 4;
+}
+
+message GetBestSimilarityRequest {
+  string recipe = 1;
+  repeated float query = 2;
+}
+
+message GetBestSimilarityResponse {
+  HostSearchErrorCode error = 1;
+  double similarity = 2;
+}
+
+message GetSearchFloorRequest {
+  string recipe = 1;
+}
+
+message GetSearchFloorResponse {
+  HostSearchErrorCode error = 1;
+
+  // The floor a search applies when its query names none.
+  double floor = 2;
+
+  SearchFloorSource source = 3;
+
+  // The floor a plugin stored, zero when none is stored.
+  double stored_floor = 4;
+
+  // The starting floor of the model, zero when it has none.
+  double hint_floor = 5;
+
+  // The floor that applies when nothing else answers.
+  double default_floor = 6;
+}
+
+message SetSearchFloorRequest {
+  string recipe = 1;
+
+  // The floor in cosine similarity above zero and at most one, or zero to
+  // remove the stored floor.
+  double floor = 2;
+}
+
+message SetSearchFloorResponse {
+  HostSearchErrorCode error = 1;
+}
+
+message HostSearchServiceSearchPassagesRequest {
+  string query = 1;
+
+  // Maximum passages to return. Zero means the number the host chooses.
+  int32 limit = 2;
+
+  // The kinds of source to search, "note" or "file". Empty means every kind.
+  repeated string kinds = 3;
+
+  // Limits the search to the sources whose path starts with it, relative to the
+  // vault, in either Unicode form (NFC or NFD). The index applies it, so the
+  // limit counts passages under the prefix.
+  // Empty means the whole vault.
+  string path_prefix = 4;
+}
+
+message HostSearchServiceSearchPassagesResponse {
+  HostSearchErrorCode error = 1;
+
+  // Matching passages, best first, at most three of one source.
+  repeated Passage passages = 2;
+}

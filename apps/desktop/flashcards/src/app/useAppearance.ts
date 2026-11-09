@@ -5,7 +5,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createFollower } from '@numen/ui'
-import type { NoticeQueue } from '@numen/shell'
+import type { NoticeQueue } from '@numen/workbench'
 import { pluginService } from '@/shared/clients'
 import { createAppearance, type ThemeClient } from './appearance'
 import { themeClient } from './themeClient'

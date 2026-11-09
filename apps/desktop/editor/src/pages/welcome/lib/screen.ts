@@ -5,7 +5,7 @@
  * window on a vault, or on none, presents to the user.
  */
 import type { PaletteKeys } from '@numen/ui'
-import type { VaultRow, WelcomeAction } from '@numen/shell'
+import type { VaultRow, WelcomeAction } from '@numen/workbench'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
 import { COMMAND, COMMANDS_ROW } from '@/shared/commandIds'

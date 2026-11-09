@@ -11,7 +11,7 @@ A machine that read a page and a machine that transcribed an hour both produce t
 | a recognition, or a PDF's own text layer | positioned: parts in rectangles on pages    | one part, a printed line or a block | a page at a time              |
 | a transcript                             | timed: parts between moments of a recording | one cue                             | a window of batches at a time |
 
-A recognition is described in [Recognising a document](recognising.md). A transcript, and how a moment in it is named, are described in [Transcribing](transcribing.md). A text version, and which one is live, are described in the plan's section B in `resources/plans/plugins.md` and `libs/core/usecase/textversion`.
+A recognition is described in [Recognising a document](recognising.md). A transcript, and how a moment in it is named, are described in [Transcribing](transcribing.md). A text version, and which one is live, are described in the plan's section B in `resources/plans/plugins.md` and `libs/core/kernel/usecase/textversion`.
 
 ## The model is never shown a coordinate
 

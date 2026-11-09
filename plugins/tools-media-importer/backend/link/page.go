@@ -5,7 +5,7 @@ import (
 	"context"
 	"html/template"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 

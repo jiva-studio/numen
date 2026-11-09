@@ -20,13 +20,13 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/shell"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
-	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
+	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 const appName = "numen-flashcards"

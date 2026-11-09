@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {

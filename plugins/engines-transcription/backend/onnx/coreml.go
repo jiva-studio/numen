@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/shared"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/shared"
 )
 
 // coreMLFolder is the folder of the shared directory that holds the compiled CoreML models.

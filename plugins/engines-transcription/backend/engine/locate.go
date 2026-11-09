@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )

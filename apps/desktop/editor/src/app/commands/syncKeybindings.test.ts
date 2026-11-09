@@ -1,7 +1,7 @@
 /** The keybindings the core lists reach the keys of the plugin host as the list changes. All names are invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { createPluginHost, getWhenValues } from '@numen/plugin-host'
+import { createPluginHost, getWhenValues } from '@numen/plugin-loader'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 import { syncKeybindings } from './syncKeybindings'
 

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
 )
 
 func TestGetPluginsDirs(t *testing.T) {

@@ -2,7 +2,7 @@ module github.com/jiva-studio/numen/plugins/tools-updater
 
 go 1.26.10
 
-require github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
+require github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 
 require (
 	connectrpc.com/connect v1.21.1 // indirect

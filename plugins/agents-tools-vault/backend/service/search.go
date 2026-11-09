@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 // NoteSearchInput is the input of the note_search tool.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 // serverName is what the run's tools are served to the agent under.

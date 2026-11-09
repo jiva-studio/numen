@@ -1,4 +1,4 @@
-// The browser commands the shared story setup registers (libs/ui/core/.storybook/browser.ts),
+// The browser commands the shared story setup registers (libs/ui/components/.storybook/browser.ts),
 // declared for plugin stories that call them.
 export {}
 

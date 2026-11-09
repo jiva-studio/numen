@@ -10,7 +10,7 @@ import {
   type PluginHost,
   type PluginLoader,
   type SlotHost,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -24,7 +24,7 @@ import {
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createNoticeQueue, getTabPaneRect, useWindowFrame } from '@numen/shell'
+import { createNoticeQueue, getTabPaneRect, useWindowFrame } from '@numen/workbench'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'

@@ -6,7 +6,7 @@ import {
   type SlotCommand,
   type SlotHost,
   type CommandTarget as RunTarget,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { CommandTarget, ResultChoice } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 

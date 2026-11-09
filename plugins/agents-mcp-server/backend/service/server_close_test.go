@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
 
 // gatedDeadlineContext holds the first Deadline call until release is closed. Close calls Deadline

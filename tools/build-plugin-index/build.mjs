@@ -16,7 +16,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { toJson } from '@bufbuild/protobuf'
-import { ManifestSchema } from '../../libs/protocol/src/numen/v1/manifest_pb.ts'
+import { ManifestSchema } from '../../libs/core/protocol/src/numen/v1/manifest_pb.ts'
 import { PLUGINS_DIR, readPluginManifests } from '../shared/manifests.mjs'
 
 /** The name of the index file; the application reads the same name. */

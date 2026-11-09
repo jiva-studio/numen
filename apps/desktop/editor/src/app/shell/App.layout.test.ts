@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { WelcomePage } from '@numen/shell'
-import { WorkspaceLayout, getPanes, type TabMenu, type Workspace } from '@numen/shell'
+import { WelcomePage } from '@numen/workbench'
+import { WorkspaceLayout, getPanes, type TabMenu, type Workspace } from '@numen/workbench'
 import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {

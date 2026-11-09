@@ -3,9 +3,9 @@
  * The vaults of the installation to choose from, on the screen both windows open on, with what the
  * plugins say beside each one.
  */
-import { VAULT_SUMMARY, type MountedView as Mounted } from '@numen/plugin-host'
+import { VAULT_SUMMARY, type MountedView as Mounted } from '@numen/plugin-loader'
 import { Spinner } from '@numen/ui'
-import { WelcomePage, type VaultRow } from '@numen/shell'
+import { WelcomePage, type VaultRow } from '@numen/workbench'
 import { VERSION } from '@/shared/version'
 import { WORDS } from '@/shared/words'
 import MountedView from './MountedView.vue'

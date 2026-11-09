@@ -10,7 +10,7 @@ test("only the plugin SDK and the core client may declare the schema", () => {
 
 test("a declaration of the schema by a package other than the two clients is reported with the field", () => {
   const found = findProtocolDeclarations([
-    manifest("libs/plugin-sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" } }),
+    manifest("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" } }),
     manifest("apps/mobile/package.json", "@numen/mobile", { devDependencies: { "@numen/protocol": "*" } }),
   ]);
   assert.equal(found.length, 1);
@@ -18,9 +18,9 @@ test("a declaration of the schema by a package other than the two clients is rep
   assert.match(found[0].symbol, /@numen\/mobile declares @numen\/protocol in devDependencies/);
 });
 
-const CLIENT = manifest("libs/core-client/package.json", "@numen/core-client", { private: true, dependencies: { "@numen/protocol": "*" } });
-const SDK = manifest("libs/plugin-sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" }, devDependencies: { "@numen/core-client": "*" } });
-const PROTOCOL = manifest("libs/protocol/package.json", "@numen/protocol");
+const CLIENT = manifest("libs/core/client/package.json", "@numen/core-client", { private: true, dependencies: { "@numen/protocol": "*" } });
+const SDK = manifest("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" }, devDependencies: { "@numen/core-client": "*" } });
+const PROTOCOL = manifest("libs/core/protocol/package.json", "@numen/protocol");
 const PLUGIN = manifest("plugins/a/package.json", "@numen/a", { dependencies: { "@numen/plugin-sdk": "*" } });
 
 test("the packages plugins rely on are what they declare and what that brings when installed", () => {

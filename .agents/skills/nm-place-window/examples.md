@@ -1,6 +1,6 @@
 # Worked examples
 
-Each example shows the target shape and cites code in `apps/desktop` or `libs/ui/shell` that already has it. Paths are relative to the repository root. A difference between the cited file and the target is stated, and the example is the target.
+Each example shows the target shape and cites code in `apps/desktop` or `libs/ui/workbench` that already has it. Paths are relative to the repository root. A difference between the cited file and the target is stated, and the example is the target.
 
 ## A call to the core is an `api` file that maps into the slice's type
 
@@ -68,7 +68,7 @@ A scenario like this is a feature because it is something a person resolves, and
 
 ## Wiring is `app`: adapt a slice's state to a host contract
 
-`apps/desktop/flashcards/src/app/windowVaults.ts`: `createWindowVaults(deps)` (line 15) turns the list of vaults, the vault of the shown tab and the function that opens a tab into the plugin host's `VaultsHost`. It holds no rule of its own; it connects three lower things to a contract of `@numen/plugin-host`. That is what `app` holds.
+`apps/desktop/flashcards/src/app/windowVaults.ts`: `createWindowVaults(deps)` (line 15) turns the list of vaults, the vault of the shown tab and the function that opens a tab into the plugin host's `VaultsHost`. It holds no rule of its own; it connects three lower things to a contract of `@numen/plugin-loader`. That is what `app` holds.
 
 `windowVaults.test.ts` calls it with real reactive refs and checks the state a plugin reads and the tab it opens; a spy is only on `openTab`, the edge.
 
@@ -76,8 +76,8 @@ The same section of the target flashcards tree puts the vault list in `entities/
 
 ## The shape of a slice with a public file and few segments
 
-`libs/ui/shell/src/features/notices/` is a feature with `lib/` (types, a tally) and `model/` (the queue and its test) and an `index.ts` that exports the creator functions and the types a window needs. It has no `ui/` because it draws nothing, and no `api/` because it calls nothing. A window slice has only the segments it needs.
+`libs/ui/workbench/src/features/notices/` is a feature with `lib/` (types, a tally) and `model/` (the queue and its test) and an `index.ts` that exports the creator functions and the types a window needs. It has no `ui/` because it draws nothing, and no `api/` because it calls nothing. A window slice has only the segments it needs.
 
 ## What a plugin-facing window part looks like
 
-`apps/desktop/flashcards/src/app/` today holds `host.ts` (the plugin host for the target `desktop.flashcards`), `windowVaults.ts`, `windowCommands.ts` (a `CommandsHost` that lists no command) and `agent.ts`. Each implements one contract of `@numen/plugin-host` for this window, and none holds a card rule: study, scheduling and card drawing are in `plugins/views-flashcards-studio` and the core. In the target, files that hold a scenario or a thing (the appearance commands, the task stream, the vault list) leave `app/` for their slices, and what remains in `app/plugins/` is the contracts.
+`apps/desktop/flashcards/src/app/` today holds `host.ts` (the plugin host for the target `desktop.flashcards`), `windowVaults.ts`, `windowCommands.ts` (a `CommandsHost` that lists no command) and `agent.ts`. Each implements one contract of `@numen/plugin-loader` for this window, and none holds a card rule: study, scheduling and card drawing are in `plugins/views-flashcards-studio` and the core. In the target, files that hold a scenario or a thing (the appearance commands, the task stream, the vault list) leave `app/` for their slices, and what remains in `app/plugins/` is the contracts.

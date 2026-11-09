@@ -1,7 +1,7 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import { formatFingerprint } from '@numen/plugin-host'
+import { formatFingerprint } from '@numen/plugin-loader'
 import {
   findErrorCode,
   isStaleAnswer,

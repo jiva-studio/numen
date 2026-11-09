@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // cfiSelector locates a segment in a book: CFI is an EPUB Canonical Fragment Identifier.

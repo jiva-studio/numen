@@ -2,7 +2,7 @@
  * The ids of the commands the editor itself provides. Each is filed under the owner `app`, as
  * `app:<object>.<action>`; the commands of plugins are filed under the id of their plugin.
  */
-import { APP_COMMAND_OWNER, formatCommandId } from '@numen/plugin-host'
+import { APP_COMMAND_OWNER, formatCommandId } from '@numen/plugin-loader'
 
 const formatAppCommandId = (id: string): string => formatCommandId(APP_COMMAND_OWNER, id)
 

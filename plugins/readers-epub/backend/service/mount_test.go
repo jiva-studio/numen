@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 func codeOf(err error) server.ErrorCode {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 )
 
 // folderDialog is the system folder dialog, opened by the toolkit that owns the

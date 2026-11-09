@@ -146,7 +146,7 @@ The memory limit is a soft limit on the memory the Go runtime manages, set once 
 
 ### Plugin background work
 
-The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin-sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the three is refused when it is written, and ignored with a notice when the file holds it.
+The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin/sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the three is refused when it is written, and ignored with a notice when the file holds it.
 
 The Vector Embeddings plugin sizes the local model by it while it indexes the vault. The threads are the intra-op threads of the model and the workers that tokenize; the texts are the most texts in one pass. An `NUMEN_ONNX_THREADS` in the environment of the plugin wins over the threads of the profile.
 

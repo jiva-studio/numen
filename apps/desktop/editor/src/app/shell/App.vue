@@ -6,12 +6,12 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { WorkspaceLayout } from '@numen/shell'
-import { SlotViewHost } from '@numen/plugin-host'
+import { WorkspaceLayout } from '@numen/workbench'
+import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
 import { formatErrorMessage } from '@numen/core-client'
 import '@numen/ui/styles.css'
-import '@numen/shell/styles.css'
+import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'

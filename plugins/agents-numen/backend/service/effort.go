@@ -3,7 +3,7 @@ package service
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 )
 
 // The fields through which a chat API takes the depth of reasoning of a model: the one of OpenAI, and

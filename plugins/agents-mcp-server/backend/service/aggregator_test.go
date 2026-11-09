@@ -13,8 +13,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 type fakeToolClient struct {

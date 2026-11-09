@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@numen/core-client': fileURLToPath(
-        new URL('../../libs/core-client/src/index.ts', import.meta.url),
+        new URL('../../libs/core/client/src/index.ts', import.meta.url),
       ),
     },
   },

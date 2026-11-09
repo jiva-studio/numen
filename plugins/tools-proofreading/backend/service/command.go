@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 func newProofreadCommand(proofreading *Proofreading) command.Run {

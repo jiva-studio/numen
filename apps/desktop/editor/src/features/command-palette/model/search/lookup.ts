@@ -1,8 +1,8 @@
 /**
  * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
-import type { PaletteItem } from '@numen/shell'
-import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { PaletteItem } from '@numen/workbench'
+import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
 import { COMMAND, ROW } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'

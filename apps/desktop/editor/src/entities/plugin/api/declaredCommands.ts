@@ -9,7 +9,7 @@ import {
   type CommandItem,
   type HandlerDeclaration,
   type WhenReader,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {

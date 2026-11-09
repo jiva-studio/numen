@@ -5,7 +5,7 @@
  * the status bar's list, titled with its text; an information notice is dropped.
  */
 import { computed, type ComputedRef } from 'vue'
-import type { Notice, NoticeQueue } from '@numen/shell'
+import type { Notice, NoticeQueue } from '@numen/workbench'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import { WORDS as words } from '@/shared/words'

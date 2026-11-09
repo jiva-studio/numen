@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/clock"
 )
 

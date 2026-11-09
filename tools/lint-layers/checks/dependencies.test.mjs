@@ -9,12 +9,12 @@ const json = (value) => JSON.stringify(value);
 
 /** A repository in the layout of this one: libraries, a window and two plugins, with one violation of each rule. */
 const FILES = {
-  "libs/protocol/package.json": json({ name: "@numen/protocol" }),
-  "libs/protocol/src/index.ts": "export const message = 1\n",
-  "libs/plugin-sdk-ts/package.json": json({ name: "@numen/plugin-sdk" }),
-  "libs/plugin-sdk-ts/src/index.ts": "export const sdk = 1\n",
-  "libs/ui/core/package.json": json({ name: "@numen/ui" }),
-  "libs/ui/core/src/index.ts": "export const button = 1\n",
+  "libs/core/protocol/package.json": json({ name: "@numen/protocol" }),
+  "libs/core/protocol/src/index.ts": "export const message = 1\n",
+  "libs/plugin/sdk-ts/package.json": json({ name: "@numen/plugin-sdk" }),
+  "libs/plugin/sdk-ts/src/index.ts": "export const sdk = 1\n",
+  "libs/ui/components/package.json": json({ name: "@numen/ui" }),
+  "libs/ui/components/src/index.ts": "export const button = 1\n",
   "plugins/alpha/package.json": json({ name: "@numen/alpha" }),
   "plugins/alpha/frontend/index.ts": [
     "import { sdk } from '@numen/plugin-sdk'",
@@ -79,9 +79,9 @@ describe("the dependency graph over a repository with a violation of each rule",
 
 describe("the packages a package may depend on", () => {
   const packages = [
-    { dir: "libs/protocol", name: "@numen/protocol", kind: "library" },
-    { dir: "libs/plugin-sdk-ts", name: "@numen/plugin-sdk", kind: "library" },
-    { dir: "libs/core-client", name: "@numen/core-client", kind: "library" },
+    { dir: "libs/core/protocol", name: "@numen/protocol", kind: "library" },
+    { dir: "libs/plugin/sdk-ts", name: "@numen/plugin-sdk", kind: "library" },
+    { dir: "libs/core/client", name: "@numen/core-client", kind: "library" },
     { dir: "apps/window", name: "@numen/window", kind: "application" },
     { dir: "plugins/alpha", name: "@numen/alpha", kind: "plugin" },
   ];

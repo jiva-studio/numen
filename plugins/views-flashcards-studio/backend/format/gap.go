@@ -3,7 +3,7 @@ package format
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 )
 
 func formatSection(value string, last bool) string {

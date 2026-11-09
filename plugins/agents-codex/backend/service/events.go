@@ -3,8 +3,8 @@ package service
 import (
 	"encoding/json"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
 func newEventHandler(r *reader) func(map[string]any) {

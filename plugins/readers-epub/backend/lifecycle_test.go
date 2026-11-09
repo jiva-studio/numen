@@ -4,7 +4,7 @@ package main
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 func TestLifecycleConfigure(t *testing.T) {

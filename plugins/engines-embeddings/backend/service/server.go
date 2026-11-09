@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )

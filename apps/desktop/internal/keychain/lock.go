@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 )
 
 // lockSuffix is added to the name of the credentials file to name the file its writers lock, which

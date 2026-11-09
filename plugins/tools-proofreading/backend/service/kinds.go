@@ -1,6 +1,6 @@
 package service
 
-import "github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+import "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 
 // proofreadingKind is the kind of the text versions the plugin writes, a kind of its own, so that
 // the condition of proofreading.delete in manifest.json names them and no version of another plugin.

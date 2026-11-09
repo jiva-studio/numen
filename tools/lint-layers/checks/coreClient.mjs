@@ -116,7 +116,7 @@ export const CORE_CLIENT_VERIFIERS = [
     id: "core-client-private",
     scope: "libs",
     module: "boundary",
-    name: "Core Client Is Private (libs/core-client is \"private\": true and is not among the packages plugins rely on)",
+    name: "Core Client Is Private (libs/core/client is \"private\": true and is not among the packages plugins rely on)",
     run: verifyCoreClientIsPrivate,
   },
 ];

@@ -1,7 +1,7 @@
 /**
  * Vault domain conversions between schema representations and window models.
  */
-import type { TallyUnit } from '@numen/shell'
+import type { TallyUnit } from '@numen/workbench'
 import {
   FLUSH_RESULT,
   getNames,

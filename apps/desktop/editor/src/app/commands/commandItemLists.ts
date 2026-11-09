@@ -3,7 +3,7 @@
  * commands requested over one file together are read in one request, after the one read of the kind
  * of the file requested with them. Every menu open reads its lists again.
  */
-import type { CommandItem } from '@numen/plugin-host'
+import type { CommandItem } from '@numen/plugin-loader'
 import type { ItemListAnswer, ItemListRequest } from '@/entities/plugin'
 import type { FileKind } from '@/shared/model/fileTypes'
 

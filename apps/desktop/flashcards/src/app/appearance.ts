@@ -11,7 +11,7 @@ import {
   type ThemeModeCode,
   type ThemeOriginCode,
 } from '@numen/core-client'
-import type { PaletteGroup, PaletteItem } from '@numen/shell'
+import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import { WORDS } from '@/shared/words'
 
 /** Which half of a `light-dark()` pair every token is read as. */

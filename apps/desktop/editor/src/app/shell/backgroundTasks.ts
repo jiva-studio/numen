@@ -3,7 +3,7 @@
  * plugins, and the notices of the window and its plugins as failed tasks.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-host'
+import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
 import type { Task } from '@/shared/notices/task'
 
 /** The settings action of a failed task: the words of its link and the plugin it opens. */

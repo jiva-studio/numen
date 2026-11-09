@@ -6,7 +6,7 @@
  * Nothing here makes decisions or calls the application: `palette.ts` holds the
  * steps and does that.
  */
-import type { PaletteGroup, PaletteItem } from '@numen/shell'
+import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { StepRow } from '../../types'

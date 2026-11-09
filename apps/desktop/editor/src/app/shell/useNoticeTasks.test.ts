@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { createNoticeQueue } from '@numen/shell'
+import { createNoticeQueue } from '@numen/workbench'
 import { createMessageLog } from '@/shared/notices/messages'
 import { useNoticeTasks } from './useNoticeTasks'
 

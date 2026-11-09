@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PluginHost } from '@numen/plugin-host'
+import type { PluginHost } from '@numen/plugin-loader'
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'

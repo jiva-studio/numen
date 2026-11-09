@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/packagecache"
 )
 
 // IsDev reports whether plugins are discovered from development directories: NUMEN_DEV is 1 or true.

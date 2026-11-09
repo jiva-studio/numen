@@ -2,7 +2,7 @@
  * The keys drawn beside a command: those of the application come from its keybindings, those of a
  * plugin from the key the host holds for its command. Control and Command are equivalent.
  */
-import { APP_KEYBINDINGS } from '@numen/plugin-host'
+import { APP_KEYBINDINGS } from '@numen/plugin-loader'
 import { keyChord, type PaletteKeys } from '@numen/ui'
 
 /** The keys that hold the window's modifier in a key a plugin declares, such as `mod+shift+x`. */

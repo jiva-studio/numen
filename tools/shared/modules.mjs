@@ -36,21 +36,21 @@ const createModule = (name, at, reads, book, says) => ({
 export const modules = [
   createModule(
     '@numen/ui',
-    'libs/ui/core',
+    'libs/ui/components',
     'src/index.ts',
     'ui',
     'The shared components. Reaches nothing of ours.',
   ),
   createModule(
-    '@numen/shell',
-    'libs/ui/shell',
+    '@numen/workbench',
+    'libs/ui/workbench',
     'src/index.ts',
     'shell',
     'The chrome of the desktop windows: reaches the components.',
   ),
   createModule(
     '@numen/plugin-sdk',
-    'libs/plugin-sdk-ts',
+    'libs/plugin/sdk-ts',
     'src/index.ts',
     'ui',
     "The plugin contract and what a window's ports are answered with.",
@@ -84,7 +84,7 @@ export const modules = [
  * package no one notices is uncovered.
  */
 export const elsewhere = {
-  'libs/protocol': 'the schema, generated from the .proto and hand-written nowhere',
+  'libs/core/protocol': 'the schema, generated from the .proto and hand-written nowhere',
   'apps/docs': 'an Astro site: pages and prose, and no application of ours',
   'apps/landing': 'the same',
 }

@@ -12,7 +12,7 @@ import {
   type HandlerDeclaration,
   type WhenReader,
   type WhenSettings,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import {
   registerCommand,
   type Command,

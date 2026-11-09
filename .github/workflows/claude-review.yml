@@ -106,7 +106,7 @@ jobs:
       - if: env.MODE == 'full'
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/core/go.mod
+          go-version-file: libs/core/kernel/go.mod
           cache-key: core-test-plain
 
       - if: env.MODE == 'full'

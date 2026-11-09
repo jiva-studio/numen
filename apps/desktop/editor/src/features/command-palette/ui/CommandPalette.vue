@@ -8,7 +8,7 @@
  */
 import { computed } from 'vue'
 import { Search } from '@lucide/vue'
-import { Palette, type ActionWords } from '@numen/shell'
+import { Palette, type ActionWords } from '@numen/workbench'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '../types'

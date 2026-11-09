@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { openExternalUrl } from '@numen/plugin-host'
+import { openExternalUrl } from '@numen/plugin-loader'
 import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
 import App from './app/shell/App.vue'
 

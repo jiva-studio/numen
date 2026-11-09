@@ -2,7 +2,7 @@
  * The commands the flashcards window gives its plugins: none. The window registers no command of its
  * own and binds none a plugin registers, so a place that draws a command shows none here.
  */
-import type { CommandsHost } from '@numen/plugin-host'
+import type { CommandsHost } from '@numen/plugin-loader'
 
 const NO_IDS: readonly string[] = []
 

@@ -6,7 +6,7 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { CommandItem, Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-loader'
 import type { PaletteKeys } from '@numen/ui'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'

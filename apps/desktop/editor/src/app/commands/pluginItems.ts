@@ -6,7 +6,7 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-host'
+import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
 import type { Command, CommandTarget, PaletteLists, RunSupport } from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'

@@ -4,7 +4,7 @@
  * rejects with its error, so the plugin that runs it shows the error and the window writes none.
  */
 import { computed, watch } from 'vue'
-import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/features/command-palette'
 import { getNamedTarget, toRunTarget } from '../commands/runTarget'
 

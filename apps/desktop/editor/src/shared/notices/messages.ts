@@ -6,7 +6,7 @@
  * are rendered.
  */
 import { shallowRef, type Ref } from 'vue'
-import type { Severity, MessageWriter } from '@numen/plugin-host'
+import type { Severity, MessageWriter } from '@numen/plugin-loader'
 
 export type { Severity, MessageWriter }
 

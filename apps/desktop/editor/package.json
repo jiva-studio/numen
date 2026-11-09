@@ -17,9 +17,9 @@
   "dependencies": {
     "@lucide/vue": "^1.66.0",
     "@numen/core-client": "*",
-    "@numen/plugin-host": "*",
+    "@numen/plugin-loader": "*",
     "@numen/plugin-manager": "*",
-    "@numen/shell": "*",
+    "@numen/workbench": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44"
   },

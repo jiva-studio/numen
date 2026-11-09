@@ -51,7 +51,7 @@ import {
   openTabAdjacent,
   pane,
   paneById,
-} from '@numen/ui-shell'
+} from '@numen/workbench'
 import type {
   ActionWords,
   PaletteAction,
@@ -59,7 +59,7 @@ import type {
   PaletteItem,
   Tab,
   Workspace as State,
-} from '@numen/ui-shell'
+} from '@numen/workbench'
 import { asFailure, asValue } from '@numen/core-client'
 import {
   NOTE_TYPE,
@@ -70,7 +70,7 @@ import {
   type SlotSeparator,
   type CommandTarget as RowTarget,
   type VaultEntry,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import {
   FilesTab,
   ROOT,
@@ -117,7 +117,7 @@ import {
 } from '@editor-features/tab-linking'
 
 import '@numen/ui/styles.css'
-import '@numen/ui-shell/styles.css'
+import '@numen/workbench/styles.css'
 
 /* --------------------------------- State ---------------------------------- */
 const FILES_TAB = 'files'

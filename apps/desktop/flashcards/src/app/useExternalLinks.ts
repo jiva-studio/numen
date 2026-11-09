@@ -4,9 +4,9 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { openExternalUrl } from '@numen/plugin-host'
+import { openExternalUrl } from '@numen/plugin-loader'
 import { interceptExternalLinks } from '@numen/ui'
-import type { NoticeQueue } from '@numen/shell'
+import type { NoticeQueue } from '@numen/workbench'
 import { WINDOW_SOURCE } from './useWindowTasks'
 
 export function useExternalLinks(notices: NoticeQueue) {

@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // DebugOptions holds test settings for debug builds.

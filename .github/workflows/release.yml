@@ -201,7 +201,7 @@ jobs:
           # The window is built from both modules.
           cache-dependency-path: |
             apps/desktop/go.sum
-            libs/core/go.sum
+            libs/core/kernel/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -607,7 +607,7 @@ jobs:
           # The window is built from both modules.
           cache-dependency-path: |
             apps/desktop/go.sum
-            libs/core/go.sum
+            libs/core/kernel/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -731,7 +731,7 @@ jobs:
           # The window is built from both modules.
           cache-dependency-path: |
             apps/desktop/go.sum
-            libs/core/go.sum
+            libs/core/kernel/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

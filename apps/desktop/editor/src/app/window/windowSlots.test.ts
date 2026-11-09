@@ -10,7 +10,7 @@ import {
   createSlotRegistry,
   type PluginHost,
   type SlotItem,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/features/command-palette'
 import { createWindowSlots } from './windowSlots'

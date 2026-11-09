@@ -21,7 +21,7 @@ import {
   requireMatches,
 } from './helpers.mjs'
 
-const CORE_MODULE = `${GO_MODULE_ROOT}libs/core`
+const CORE_MODULE = `${GO_MODULE_ROOT}libs/core/kernel`
 
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, 'plugins')
@@ -248,7 +248,7 @@ function findPluginConfigDrift() {
   const pluginNames = listPluginNames(pluginsDir)
   const goConfigCopies = [
     'plugins/.example',
-    'libs/plugin-sdk-go',
+    'libs/plugin/sdk-go',
     ...pluginNames
       .filter((name) => fs.existsSync(path.join(pluginsDir, name, 'go.mod')))
       .map((name) => `plugins/${name}`),
@@ -384,7 +384,7 @@ export const PLUGIN_VERIFIERS = [
     coveredBy: 'go-structure',
     run: () => {
       writePluginIndex()
-      exec('go test -v ./container -run "Plugin"', path.join(MODULES_DIR, 'libs/core'))
+      exec('go test -v ./container -run "Plugin"', path.join(MODULES_DIR, 'libs/core/kernel'))
     },
   },
   {

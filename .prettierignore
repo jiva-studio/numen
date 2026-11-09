@@ -1,10 +1,10 @@
-libs/protocol/src/
-libs/protocol/gen/
+libs/core/protocol/src/
+libs/core/protocol/gen/
 **/dist/**
 **/coverage/**
 **/storybook-static/**
 **/testdata/**
 **/.tmp/**
 **/node_modules/**
-libs/core/adapter/window/*/pages/app/
+libs/core/kernel/adapter/window/*/pages/app/
 plugins/*/frontend/gen/

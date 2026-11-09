@@ -14,8 +14,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 func failWithDialog(cfg container.Config, why error) error {

@@ -3,7 +3,7 @@
  * a target is over that target alone, its file the path it names; a run that names none, as from a
  * bar, is over the tab in front.
  */
-import type { CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/features/command-palette'
 
 /** The target of the tab in front, replaced by what the run names, if it names a target. */

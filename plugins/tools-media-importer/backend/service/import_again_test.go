@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
 func runImport(t *testing.T, commands *command.Registry, address string) command.Result {

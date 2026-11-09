@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // debugOptions are the settings of a test run of a debug build.

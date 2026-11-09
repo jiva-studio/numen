@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 func getVault(files host.Vault, header http.Header) host.Vault {

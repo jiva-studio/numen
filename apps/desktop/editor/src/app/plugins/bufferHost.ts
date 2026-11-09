@@ -1,7 +1,7 @@
 /**
  * The files open in a plugin's tabs, as a plugin is given the means to see them written out.
  */
-import type { BufferHost, FileBuffers } from '@numen/plugin-host'
+import type { BufferHost, FileBuffers } from '@numen/plugin-loader'
 import { raiseConflicts, type createFileFlush, type Notes } from '@/features/file-conflict'
 
 function hasNoteConflicts(buffers: FileBuffers): buffers is FileBuffers & Notes {

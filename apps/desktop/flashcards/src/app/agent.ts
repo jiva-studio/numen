@@ -10,7 +10,7 @@ import {
   type AgentClient,
   type LinkClient,
   type AgentHost,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { WORDS } from '@/shared/words'
 
 /** The part of the agent service that the window uses. */

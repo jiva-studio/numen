@@ -9,11 +9,11 @@
   },
   "ignoreWorkspaces": [
     ".",
-    "libs/protocol",
+    "libs/core/protocol",
     "tools/*"
   ],
   "workspaces": {
-    "libs/ui/core": {
+    "libs/ui/components": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
@@ -25,7 +25,7 @@
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/ui/shell": {
+    "libs/ui/workbench": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
@@ -37,7 +37,7 @@
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/core-client": {
+    "libs/core/client": {
       "entry": [
         "src/**/*.test.ts"
       ],
@@ -45,7 +45,7 @@
         "src/**/*.ts"
       ]
     },
-    "libs/plugin-host-ts": {
+    "libs/plugin/loader": {
       "entry": [
         "src/**/*.test.ts"
       ],
@@ -53,7 +53,7 @@
         "src/**/*.ts"
       ]
     },
-    "libs/plugin-manager": {
+    "libs/plugin/manager": {
       "entry": [
         "src/**/*.test.ts"
       ],
@@ -61,7 +61,7 @@
         "src/**/*.{ts,vue}"
       ]
     },
-    "libs/plugin-sdk-ts": {
+    "libs/plugin/sdk-ts": {
       "entry": [
         "src/**/*.test.ts",
         "test/**/*.test.ts",
@@ -134,11 +134,11 @@
         "@plugins/*": [
           "../../plugins/*"
         ],
-        "@numen/ui-shell": [
-          "../../libs/ui/shell/src/index.ts"
+        "@numen/workbench": [
+          "../../libs/ui/workbench/src/index.ts"
         ],
-        "@numen/ui-shell/styles.css": [
-          "../../libs/ui/shell/src/styles.css"
+        "@numen/workbench/styles.css": [
+          "../../libs/ui/workbench/src/styles.css"
         ]
       }
     },

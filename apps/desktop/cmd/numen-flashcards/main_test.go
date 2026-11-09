@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/shell"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func getNotes() map[string]string {

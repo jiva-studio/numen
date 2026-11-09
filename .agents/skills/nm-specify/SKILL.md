@@ -33,8 +33,8 @@ flowchart TD
 
 Before proposing new files, types, or methods, search the codebase:
 
-1. Search existing domain models, ports, and DTOs across `libs/core` and `apps/desktop`.
-2. Check existing composables, components, and utilities in `libs/ui/core`.
+1. Search existing domain models, ports, and DTOs across `libs/core/kernel` and `apps/desktop`.
+2. Check existing composables, components, and utilities in `libs/ui/components`.
 3. Check `AGENTS.md` and the rules in `.agents/rules/` governing the touched area.
 
 ---
@@ -60,7 +60,7 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 
 | Package / Path        | File                                | Action (Create/Modify) | Downstream Consumers                   |
 | :-------------------- | :---------------------------------- | :--------------------- | :------------------------------------- |
-| `libs/core`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
+| `libs/core/kernel`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
 | `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create                 | `pages/DeckPage.vue`                   |
 
 ## 3. Negative Invariants (Architectural Prohibitions)

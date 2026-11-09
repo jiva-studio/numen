@@ -9,7 +9,7 @@ import {
   type PluginHost,
   type PluginHostDeps,
   type WhenValues,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { createCommands, type Command } from '@/features/command-palette'
 import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'

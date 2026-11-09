@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"

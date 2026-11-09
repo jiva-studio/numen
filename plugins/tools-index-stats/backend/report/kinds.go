@@ -3,7 +3,7 @@
 package report
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
 )
 

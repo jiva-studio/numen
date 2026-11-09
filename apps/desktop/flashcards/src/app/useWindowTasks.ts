@@ -6,7 +6,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createFollower } from '@numen/ui'
-import type { NoticeQueue } from '@numen/shell'
+import type { NoticeQueue } from '@numen/workbench'
 import { windowService } from '@/shared/clients'
 import { TARGET } from './host'
 

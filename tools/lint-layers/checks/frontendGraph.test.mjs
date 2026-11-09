@@ -26,7 +26,7 @@ describe("the component placement rule", () => {
     const modules = [
       moduleOf(`${PLUGIN}/deck/lib/Badge.vue`),
       moduleOf(`${PLUGIN}/deck/model/Pane.vue`),
-      moduleOf(`libs/ui/core/src/shared/api/Probe.vue`),
+      moduleOf(`libs/ui/components/src/shared/api/Probe.vue`),
       moduleOf(`${PLUGIN}/deck/ui/Deck.vue`),
       moduleOf(`${PLUGIN}/deck/ui/Deck.vue`),
       moduleOf(`${PLUGIN}/DocumentTab.vue`),
@@ -39,7 +39,7 @@ describe("the component placement rule", () => {
       [
         `${PLUGIN}/deck/lib/Badge.vue a component in a lib segment`,
         `${PLUGIN}/deck/model/Pane.vue a component in a model segment`,
-        `libs/ui/core/src/shared/api/Probe.vue a component in a api segment`,
+        `libs/ui/components/src/shared/api/Probe.vue a component in a api segment`,
       ],
     );
     assert.equal(read, 5);
@@ -51,12 +51,12 @@ const WINDOW = "apps/desktop/editor/src";
 describe("the core client rule of windows", () => {
   it("passes the entry and an api segment, and fails every other layer", () => {
     const modules = [
-      moduleOf(`${WINDOW}/main.ts`, { "@numen/core-client": "libs/core-client/src/index.ts" }),
-      moduleOf(`${WINDOW}/entities/note/api/notes.ts`, { "@numen/core-client": "libs/core-client/src/index.ts" }),
-      moduleOf(`${WINDOW}/features/tree/model/tree.ts`, { "@numen/core-client": "libs/core-client/src/index.ts" }),
-      moduleOf(`${WINDOW}/shared/lib/client.ts`, { "@numen/core-client/errors": "libs/core-client/src/errors.ts" }),
-      moduleOf(`${WINDOW}/pages/home/ui/Home.vue`, { "@numen/ui": "libs/ui/core/src/index.ts" }),
-      moduleOf(`${WINDOW}/app/app.test.ts`, { "@numen/core-client": "libs/core-client/src/index.ts" }),
+      moduleOf(`${WINDOW}/main.ts`, { "@numen/core-client": "libs/core/client/src/index.ts" }),
+      moduleOf(`${WINDOW}/entities/note/api/notes.ts`, { "@numen/core-client": "libs/core/client/src/index.ts" }),
+      moduleOf(`${WINDOW}/features/tree/model/tree.ts`, { "@numen/core-client": "libs/core/client/src/index.ts" }),
+      moduleOf(`${WINDOW}/shared/lib/client.ts`, { "@numen/core-client/errors": "libs/core/client/src/errors.ts" }),
+      moduleOf(`${WINDOW}/pages/home/ui/Home.vue`, { "@numen/ui": "libs/ui/components/src/index.ts" }),
+      moduleOf(`${WINDOW}/app/app.test.ts`, { "@numen/core-client": "libs/core/client/src/index.ts" }),
     ];
     assert.deepEqual(findCoreClientOutsideApi(modules, [WINDOW]), [
       { file: `${WINDOW}/features/tree/model/tree.ts`, line: 1, symbol: "imports @numen/core-client from the features layer" },

@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {

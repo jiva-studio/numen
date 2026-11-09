@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // What stopped the application is reported in a window, with the state of the

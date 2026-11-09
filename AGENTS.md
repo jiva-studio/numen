@@ -9,17 +9,17 @@ Gemini, or any other) must follow them.
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
-- **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui/core`, `libs/protocol`, `apps/desktop`.
+- **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/ui/components`, `libs/core/protocol`, `apps/desktop`.
 - **Placement skills**: the next section.
 
 ## Placement skills
 
 Before adding or moving code, load the skill of the area. Each says which layer, slice or package the code goes to and how it is shaped; the rules it rests on are in `.agents/rules/`.
 
-- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core`, `libs/notes`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
+- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core/kernel`, `libs/note`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
 - [`nm-place-window`](.agents/skills/nm-place-window/SKILL.md): `apps/desktop/editor`, `apps/desktop/flashcards` and the other windows under `apps/`. FSD layers, slices, segments.
-- [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md): `plugins/`, `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/plugin-host-ts`. Manifest, backend packages, frontend slices, what is copied and what is in the SDK.
-- [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core-client`, `libs/protocol`, `libs/plugin-manager`, `libs/plugin-host-ts`. Which library shared code belongs to, or whether it stays in a window or a plugin.
+- [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md): `plugins/`, `libs/plugin/sdk-go`, `libs/plugin/sdk-ts`, `libs/plugin/loader`. Manifest, backend packages, frontend slices, what is copied and what is in the SDK.
+- [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core/client`, `libs/core/protocol`, `libs/plugin/manager`, `libs/plugin/loader`. Which library shared code belongs to, or whether it stays in a window or a plugin.
 
 A red check is fixed in the code. Never loosen the check, add an exclusion or move code to a place the check does not look at (rule 11 of section 15, and §9 and §10 of the architecture rules).
 
@@ -384,13 +384,13 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
 - **The windows import `@numen/ui` from its build.** Run `npm run build` in
-  `libs/ui/core` before the suites in `apps/desktop/editor` and
+  `libs/ui/components` before the suites in `apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
   `@numen/protocol` to whatever branch that checkout has checked out.** A
   generated symbol missing there is that, not the branch under test. Install
   for real when the answer matters.
-- **`npm test` in `libs/ui/core` starts both story instances at once**, and
+- **`npm test` in `libs/ui/components` starts both story instances at once**, and
   the run fails before any test executes. Take them one at a time:
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,

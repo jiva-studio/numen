@@ -46,7 +46,7 @@
         lib.removePrefix prefix (lib.findFirst (lib.hasPrefix prefix) "" (map lib.trim (readLines file)));
 
       # The versions CI runs. Go and Node are read from go.work and
-      # .node-version, the Go plugins from the tool block of libs/protocol/go.mod;
+      # .node-version, the Go plugins from the tool block of libs/core/protocol/go.mod;
       # golangci-lint and buf are also named in .github/workflows, and
       # golangci-lint in tools/lint-layers/checks/tools.mjs.
       versions = {
@@ -54,8 +54,8 @@
         node = lib.trim (builtins.readFile ./.node-version);
         golangci-lint = "2.14.0";
         buf = "1.72.0";
-        protoc-gen-go = findVersion ./libs/protocol/go.mod "google.golang.org/protobuf v";
-        protoc-gen-connect-go = findVersion ./libs/protocol/go.mod "connectrpc.com/connect v";
+        protoc-gen-go = findVersion ./libs/core/protocol/go.mod "google.golang.org/protobuf v";
+        protoc-gen-connect-go = findVersion ./libs/core/protocol/go.mod "connectrpc.com/connect v";
       };
 
       # Fails evaluation when a tool is not at the version CI runs.
@@ -120,7 +120,7 @@
       };
 
       # protoc-gen-es is the one in node_modules, at the version of package-lock.json;
-      # libs/protocol/buf.gen.yaml runs it from there. The flake a release hands
+      # libs/core/protocol/buf.gen.yaml runs it from there. The flake a release hands
       # out (release.yml) carries no go.work, and so no devShell.
       devShells = lib.optionalAttrs (builtins.pathExists ./go.work) (
         lib.genAttrs devSystems (

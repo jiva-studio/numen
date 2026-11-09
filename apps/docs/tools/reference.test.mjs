@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 const MANUAL = join(ROOT, 'apps/docs/tools/manual.mjs')
 const REFERENCE = join(ROOT, 'apps/docs/src/content/docs/reference.md')
-const APP_JSON = join(ROOT, 'libs/core/adapter/settings/app.json')
+const APP_JSON = join(ROOT, 'libs/core/kernel/adapter/settings/app.json')
 const PLUGINS = join(ROOT, 'plugins')
 
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'))

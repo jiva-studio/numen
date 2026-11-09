@@ -8,7 +8,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { getVaultForKey, WelcomePage } from '@numen/shell'
+import { getVaultForKey, WelcomePage } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
 import {
   runInvocation,

@@ -7,7 +7,7 @@
  */
 import type { Component } from 'vue'
 import { createNamedIcon } from '@numen/ui'
-import { getCommandOwner } from '@numen/plugin-host'
+import { getCommandOwner } from '@numen/plugin-loader'
 import { COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './commandIds'
 import {
   AppWindow,

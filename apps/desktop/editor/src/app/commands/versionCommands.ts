@@ -2,7 +2,7 @@
  * The command of the window over the text versions of a file: Delete text, which offers every version
  * of the file the core lists and has the core delete the one picked. The core serves it with no plugin.
  */
-import type { CommandItem } from '@numen/plugin-host'
+import type { CommandItem } from '@numen/plugin-loader'
 import {
   registerCommand,
   type Command,

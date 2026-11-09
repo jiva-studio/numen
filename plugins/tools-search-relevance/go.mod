@@ -3,8 +3,8 @@ module github.com/jiva-studio/numen/plugins/tools-search-relevance
 go 1.26.10
 
 require (
-	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0
 )
 
 require (

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
 )
 
 // MockMark is appended by the mock proofreader to the end of every line in the prompt.

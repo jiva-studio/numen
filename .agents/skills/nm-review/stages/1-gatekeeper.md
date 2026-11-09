@@ -21,7 +21,7 @@ make lib_core_lint lib_core_test
 make lib_protocol_lint lib_protocol_test lib_protocol_generate_check
 
 # For UI changes (@numen/ui):
-make lib_ui_lint lib_ui_test
+make lib_ui_components_lint lib_ui_components_test
 
 # For desktop changes:
 make app_desktop_lint app_desktop_test
@@ -83,7 +83,7 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 
 ### Vue and TypeScript — the library and the windows
 
-- **`@numen/ui` does not depend on the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain brings the dependency back through test code. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/core`; never back, never sideways.
+- **`@numen/ui` does not depend on the domain.** No component, story or fixture in `libs/ui/components` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain brings the dependency back through test code. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/components`; never back, never sideways.
 - **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` that reads `window` or `Date.now`.
 - **Time and platform capabilities are ports**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a default that uses the browser API.
 - **A concept is declared once.** The type union, the layout, the wording and the colour of a role or a variant all read from one declaration.

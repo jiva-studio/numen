@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {

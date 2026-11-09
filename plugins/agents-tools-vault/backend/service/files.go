@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 // fileReadMost is the maximum number of bytes one file_read returns, the maximum the host reads at once.

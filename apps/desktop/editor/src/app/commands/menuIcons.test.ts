@@ -1,6 +1,6 @@
 /** Every row the application and the shared commands place in a menu is drawn with an icon. */
 import { describe, expect, it } from 'vitest'
-import { SHARED_COMMANDS } from '@numen/plugin-host'
+import { SHARED_COMMANDS } from '@numen/plugin-loader'
 import { findIcon } from '@/shared/icons'
 import { APP_SLOT_ENTRIES } from './appPlacements'
 

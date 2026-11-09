@@ -5,7 +5,7 @@ go 1.26.10
 require (
 	github.com/getcharzp/onnxruntime_purego v1.25.0
 	github.com/gomlx/go-huggingface v0.4.3
-	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 )
 
 require (

@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/plugins/tools-proofreading
 go 1.26.10
 
 require (
-	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 	golang.org/x/text v0.43.0
 )
 
@@ -13,6 +13,6 @@ require (
 )
 
 require (
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0
 	google.golang.org/protobuf v1.36.12 // indirect
 )

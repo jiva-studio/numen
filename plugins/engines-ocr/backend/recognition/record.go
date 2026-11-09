@@ -11,8 +11,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // record is the progress of a recognition that has not ended, kept in the plugin's folder of the

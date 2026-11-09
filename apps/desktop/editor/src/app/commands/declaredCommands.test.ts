@@ -3,7 +3,7 @@
  * one as the palette carries it out.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createWhenReader } from '@numen/plugin-host'
+import { createWhenReader } from '@numen/plugin-loader'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'

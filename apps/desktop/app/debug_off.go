@@ -7,8 +7,8 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // DebugOptions holds test settings for debug builds.

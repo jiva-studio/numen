@@ -10,7 +10,7 @@ import {
   type SlotHost,
   type SlotItem,
   type CommandTarget as RunTarget,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { getTabFileTarget, useTabMenu, useWindowTabMenu, type NoteKind } from './useTabMenu'
 
 const ATLAS = 'org.example.atlas'

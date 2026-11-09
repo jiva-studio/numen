@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@numen/core-client": "*",
-    "@numen/plugin-host": "*",
-    "@numen/shell": "*",
+    "@numen/plugin-loader": "*",
+    "@numen/workbench": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44"
   },

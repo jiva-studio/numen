@@ -3,7 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-host'
+import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import {
   runInvocation,

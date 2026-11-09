@@ -3,7 +3,7 @@
  * the fault guarded against: the keybindings of the application are read to bind and to draw.
  */
 import { describe, expect, it } from 'vitest'
-import { APP_KEYBINDINGS } from '@numen/plugin-host'
+import { APP_KEYBINDINGS } from '@numen/plugin-loader'
 import { createCommands } from '../commands/commands'
 import { WORDS as words } from '@/shared/words'
 import { createRowKeys, findChordKeys, findShortcutKeys } from './keys'

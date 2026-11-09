@@ -5,8 +5,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import type { BackgroundTask, PluginHost } from '@numen/plugin-host'
-import { WorkspaceLayout } from '@numen/shell'
+import type { BackgroundTask, PluginHost } from '@numen/plugin-loader'
+import { WorkspaceLayout } from '@numen/workbench'
 import { mountWindow, settle, vaultState } from '@/testing/window'
 import type * as UseWindowPluginsModule from '../plugins/useWindowPlugins'
 

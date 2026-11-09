@@ -12,9 +12,9 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/plugintest"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.

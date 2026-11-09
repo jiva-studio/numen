@@ -1,7 +1,7 @@
 // Package bind exposes the core to the mobile platform.
 //
 // One call starts a server on the loopback interface and returns its listening
-// port. All requests to it follow the schema in libs/protocol, the same
+// port. All requests to it follow the schema in libs/core/protocol, the same
 // schema the desktop window uses.
 package bind
 
@@ -19,10 +19,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // Core holds the one server the platform starts. Starting again while active

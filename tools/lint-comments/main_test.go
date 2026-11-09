@@ -7,7 +7,7 @@ import (
 
 func TestCheckReportsFieldComments(t *testing.T) {
 	src := "package p\n\ntype T struct {\n\t// Name is the name.\n\tName string\n\tsize int // in bytes\n\tplain bool\n}\n"
-	findings, fixed, err := Check("libs/core/p/p.go", []byte(src))
+	findings, fixed, err := Check("libs/core/kernel/p/p.go", []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {

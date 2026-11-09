@@ -29,15 +29,13 @@ export const ALLOWED_BASE_SCOPES = new Set([
   // Core packages & layers
   'core',
   'domain',
-  'notes',
+  'note',
   'ui',
   'wire',
   'protocol',
   'sdk',
   'plugin-sdk',
-  'plugin-sdk-go',
-  'plugin-sdk-ts',
-  'plugin-host',
+  'plugin-loader',
   'core-client',
 
   // Apps
@@ -92,6 +90,8 @@ export function getDynamicScopes(repoRoot) {
     { dir: 'plugins', isPlugin: true },
     { dir: 'apps' },
     { dir: 'libs' },
+    { dir: 'libs/core' },
+    { dir: 'libs/plugin' },
     { dir: 'libs/ui' },
     { dir: 'tools' },
   ]

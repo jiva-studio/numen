@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AskAgentResponse } from '@numen/core-client'
-import type { LinkClient } from '@numen/plugin-host'
+import type { LinkClient } from '@numen/plugin-loader'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { WORDS } from '@/shared/words'
 

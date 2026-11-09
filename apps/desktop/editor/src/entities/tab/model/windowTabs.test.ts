@@ -6,8 +6,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
-import { openTab, getPanes, paneById } from '@numen/shell'
-import type { Workspace } from '@numen/shell'
+import { openTab, getPanes, paneById } from '@numen/workbench'
+import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from './kinds'
 import { fileOpeners } from './openers'

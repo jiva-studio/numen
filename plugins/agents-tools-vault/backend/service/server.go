@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // Mount registers the vault tools on s, working the vault through the host the environment names.

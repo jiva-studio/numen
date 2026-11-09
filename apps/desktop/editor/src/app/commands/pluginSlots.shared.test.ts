@@ -6,7 +6,7 @@ import {
   getTargetValues,
   type CommandTarget,
   type SlotItem,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import { createSlotCommandFinder, readSlotEntries } from './pluginSlots'
 
 const PAGES = 'org.example.pages'

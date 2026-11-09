@@ -4,7 +4,7 @@
  */
 import { computed, watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import type { VaultsHost, VaultsState } from '@numen/plugin-host'
+import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
 import {
   ANSWER_WORDS,
   createInvocation,

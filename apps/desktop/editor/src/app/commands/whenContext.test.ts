@@ -1,6 +1,6 @@
 /** The when conditions of the plugins' commands over what is in front of the palette. Every plugin is invented. */
 import { describe, expect, it } from 'vitest'
-import { createWhenReader } from '@numen/plugin-host'
+import { createWhenReader } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/features/command-palette'
 import { createWhenAvailability, getWhenGroup, hasNoteVariable } from './whenContext'
 

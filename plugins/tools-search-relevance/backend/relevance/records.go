@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 
 // Record is what the plugin keeps for one vault under one recipe: the floor a person set, if any, and

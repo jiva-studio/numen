@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 )
 
 func newCommands(texts *TextServer) (*command.Registry, error) {

@@ -31,7 +31,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 
 ## Libraries and styles
 
-- `package-matrix` and the library ESLint configs: `libs/ui/core` importing `@numen/protocol`, a wire type, a domain type or anything under `apps/**`.
+- `package-matrix` and the library ESLint configs: `libs/ui/components` importing `@numen/protocol`, a wire type, a domain type or anything under `apps/**`.
 - `styles-use-tokens` (stylelint): a color literal, a `--numen-` declaration outside the token and theme files, a `var()` fallback, an undeclared token.
 - `plugins-frontend`: `@/**` or `@plugins/**` imported by a plugin frontend.
 

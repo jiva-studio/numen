@@ -3,7 +3,7 @@
  * agent's steps as they happen. The port is `AgentPort`, and the plugin SDK
  * defines what the steps mean.
  */
-import { createAgentPort } from '@numen/plugin-host'
+import { createAgentPort } from '@numen/plugin-loader'
 import { agentService } from '@/shared/clients'
 
 export const agentPort = createAgentPort(agentService)

@@ -4,11 +4,11 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, shallowRef } from 'vue'
-import { WorkspaceLayout } from '@numen/shell'
-import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-host'
+import { WorkspaceLayout } from '@numen/workbench'
+import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
 import { COMMAND } from '@/shared/commandIds'
-import type * as ShellModule from '@numen/shell'
+import type * as ShellModule from '@numen/workbench'
 import type * as UseWindowPluginsModule from '../plugins/useWindowPlugins'
 
 const frame = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ const frame = vi.hoisted(() => ({
   toggleMaximizeWindow: vi.fn(async () => undefined),
 }))
 
-vi.mock('@numen/shell', async (importOriginal) => {
+vi.mock('@numen/workbench', async (importOriginal) => {
   const { computed } = await import('vue')
   const shell = await importOriginal<typeof ShellModule>()
   const { MAC_BUTTONS_INSET } = shell

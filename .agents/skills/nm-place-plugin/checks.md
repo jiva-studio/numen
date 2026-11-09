@@ -4,7 +4,7 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 
 ## Dependencies of a plugin
 
-- `go.mod` of a plugin (`plugins-independence`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules and third-party code; it names no `libs/notes`, `libs/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
+- `go.mod` of a plugin (`plugins-independence`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules and third-party code; it names no `libs/note`, `libs/core/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
 - The import graph of the plugins on fourteen platform targets (`plugins-independence`): a plugin reaches no other plugin, no core package, no application.
 - `plugins-isolation-capture`: a file under `plugins/<name>/` references no other plugin.
 - `package.json` of a plugin (`package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`): it declares no `@numen/protocol` and no `@numen/core-client`, and among the packages of this repository only `@numen/plugin-sdk` and `@numen/ui`.
@@ -18,7 +18,7 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 
 - `plugins-leakage`: the manifest schema, and static non-leakage of the core into plugins.
 - `json-keys-camelcase`: every JSON key of a manifest, fixture and JSON type is camelCase.
-- Manifest tests of `libs/core/container`: every manifest passes the validator; a plugin that registers tabs declares them; no wildcard activation event; every setting declared is read by the plugin; every plugin has a README; the plugin names follow the naming rule; the core names no plugin id.
+- Manifest tests of `libs/core/kernel/container`: every manifest passes the validator; a plugin that registers tabs declares them; no wildcard activation event; every setting declared is read by the plugin; every plugin has a README; the plugin names follow the naming rule; the core names no plugin id.
 - `host_permission_test.go`: the host refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
 
 ## Tooling configuration

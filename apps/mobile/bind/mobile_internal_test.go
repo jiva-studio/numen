@@ -23,7 +23,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 func startIn(t *testing.T, core *Core, dir string) int {

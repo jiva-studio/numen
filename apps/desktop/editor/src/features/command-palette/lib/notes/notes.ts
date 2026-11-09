@@ -3,7 +3,7 @@
  * An identity is resolved by the store holding it, and an identity no store holds
  * resolves to nothing.
  */
-import type { Selector } from '@numen/plugin-host'
+import type { Selector } from '@numen/plugin-loader'
 import type { CommandPlace, Notes, Store } from '../../types'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */

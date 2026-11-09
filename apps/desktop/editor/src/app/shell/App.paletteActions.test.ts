@@ -5,7 +5,7 @@
  * that makes the note under the words typed.
  */
 import { describe, expect, it } from 'vitest'
-import { Palette, type PaletteGroup } from '@numen/shell'
+import { Palette, type PaletteGroup } from '@numen/workbench'
 import {
   DEBOUNCE,
   mountWindowWithPalette,

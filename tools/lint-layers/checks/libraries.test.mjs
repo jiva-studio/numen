@@ -10,13 +10,13 @@ const library = (dir, references = []) => ({
   references: references.map((value, index) => ({ file: `${dir}/a.go`, line: index + 1, value: ROOT + value })),
 });
 
-const MATRIX = { notes: [], protocol: [], catalog: ["notes", "protocol"], sdk: ["protocol"] };
+const MATRIX = { note: [], "core/protocol": [], catalog: ["note", "core/protocol"], sdk: ["core/protocol"] };
 
 test("a library that reaches a family its row lists is clean", () => {
   const libraries = [
-    library("libs/notes"),
-    library("libs/protocol"),
-    library("libs/catalog", ["libs/notes/domain", "libs/protocol/gen/numen/v1"]),
+    library("libs/note"),
+    library("libs/core/protocol"),
+    library("libs/catalog", ["libs/note/domain", "libs/core/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, MATRIX), []);
 });
@@ -48,26 +48,26 @@ test("a library that reaches an application or a plugin is reported", () => {
 });
 
 test("the plugin SDK family may reach the notes library and the protocol", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin-sdk-go"], ["notes", "protocol"]);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin/sdk-go"], ["note", "core/protocol"]);
   const libraries = [
-    library("libs/notes"),
-    library("libs/protocol"),
-    library("libs/plugin-sdk-go"),
-    library("libs/plugin-sdk-go/host", ["libs/notes", "libs/notes/domain", "libs/protocol/gen/numen/v1"]),
+    library("libs/note"),
+    library("libs/core/protocol"),
+    library("libs/plugin/sdk-go"),
+    library("libs/plugin/sdk-go/host", ["libs/note", "libs/note/domain", "libs/core/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, LIBRARY_DEPENDENCIES), []);
 });
 
 test("the plugin SDK family is not allowed to reach the core", () => {
-  const libraries = [library("libs/core"), library("libs/plugin-sdk-go", ["libs/core/port"])];
+  const libraries = [library("libs/core/kernel"), library("libs/plugin/sdk-go", ["libs/core/kernel/port"])];
   const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
   assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /family plugin-sdk-go reaches core/);
+  assert.match(found[0].symbol, /family plugin\/sdk-go reaches core\/kernel/);
 });
 
 test("the libraries of this repository are read, each with a module path", () => {
   const libraries = readLibraries();
-  assert.ok(libraries.some((one) => one.dir === "libs/plugin-catalog"));
+  assert.ok(libraries.some((one) => one.dir === "libs/plugin/catalog"));
   assert.ok(libraries.every((one) => one.module));
 });
 
@@ -105,13 +105,13 @@ test("the packages of this repository are read, the plugin manager among them", 
 
 test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema and the UI build helpers, and the core client the schema", () => {
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-host"], ["@numen/plugin-sdk", "@numen/core-client"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-loader"], ["@numen/plugin-sdk", "@numen/core-client"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/ui"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
 });
 
 test("a plugin host that declares the schema is reported", () => {
-  const host = { dir: "libs/plugin-host-ts", name: "@numen/plugin-host", declared: ["@numen/plugin-sdk", "@numen/core-client", "@numen/protocol"] };
+  const host = { dir: "libs/plugin/loader", name: "@numen/plugin-loader", declared: ["@numen/plugin-sdk", "@numen/core-client", "@numen/protocol"] };
   const found = findPackageViolations([host], PACKAGE_DEPENDENCIES);
   assert.equal(found.length, 1);
   assert.match(found[0].symbol, /declares @numen\/protocol/);

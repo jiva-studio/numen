@@ -3,7 +3,7 @@
  * the palette, has a handler, and starts through the runner where it comes with values.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { isSharedCommand } from '@numen/plugin-host'
+import { isSharedCommand } from '@numen/plugin-loader'
 import {
   ANSWER_WORDS,
   createCommands,

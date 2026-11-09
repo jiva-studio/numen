@@ -4,7 +4,7 @@
  * the placement of secrets alongside the settings they belong to.
  */
 import type { SelectChoice } from '@numen/ui'
-import { createWhenReader } from '@numen/plugin-host'
+import { createWhenReader } from '@numen/plugin-loader'
 import type {
   PluginInfo,
   SecretDeclaration,

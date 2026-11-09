@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/cli"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
-	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {

@@ -3,7 +3,7 @@ package link
 import (
 	"encoding/json"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // timeSelector locates a segment in a recording: T is [start, end] in seconds from the start of

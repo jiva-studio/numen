@@ -2,8 +2,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
-import type { VaultRow } from '@numen/shell'
+import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-loader'
+import type { VaultRow } from '@numen/workbench'
 
 // jsdom draws no layout, and the palette scrolls the highlighted row into view.
 Element.prototype.scrollIntoView = () => undefined

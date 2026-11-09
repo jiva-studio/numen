@@ -21,7 +21,7 @@ describe('properties', () => {
       '  count = 0',
       '}',
     ].join('\n')
-    assert.deepEqual(lines('libs/core-client/src/a.ts', text), [2, 4, 7, 11])
+    assert.deepEqual(lines('libs/core/client/src/a.ts', text), [2, 4, 7, 11])
   })
 
   it('rejects a comment on a prop of a Vue component', () => {

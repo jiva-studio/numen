@@ -111,7 +111,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs only the narrative check for documentation', () => {
-    assert.deepEqual(getAreas('docs/plan.md', 'libs/core/README.md'), ['narrative'])
+    assert.deepEqual(getAreas('docs/plan.md', 'libs/core/kernel/README.md'), ['narrative'])
   })
 
   it('lists a plugin for a change inside it and runs no Go module', () => {
@@ -135,7 +135,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs what reads the Go SDK and not the window frontend', () => {
-    const areas = getAreas('libs/plugin-sdk-go/host/store.go')
+    const areas = getAreas('libs/plugin/sdk-go/host/store.go')
     assert.ok(areas.includes('sdk_go'))
     assert.ok(areas.includes('plugins_all'))
     assert.ok(!areas.includes('desktop_fe'))
@@ -143,7 +143,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs the Go modules that build on the core and no frontend for a change to the core', () => {
-    assert.deepEqual(getAreas('libs/core/usecase/search/search.go'), [
+    assert.deepEqual(getAreas('libs/core/kernel/usecase/search/search.go'), [
       'core',
       'desktop',
       'mobile',
@@ -154,7 +154,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs every Go module, every frontend and every plugin for a change to the protocol', () => {
-    const areas = getAreas('libs/protocol/numen/v1/manifest.proto')
+    const areas = getAreas('libs/core/protocol/numen/v1/manifest.proto')
     for (const area of ['protocol', 'core', 'desktop', 'mobile', 'sdk_go', 'desktop_fe', 'mobile_fe', 'plugins_all']) {
       assert.ok(areas.includes(area), area)
     }
@@ -162,7 +162,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs the frontends that build on the components', () => {
-    const areas = getAreas('libs/ui/core/src/Button.vue')
+    const areas = getAreas('libs/ui/components/src/Button.vue')
     for (const area of ['ui', 'desktop_fe', 'mobile_fe', 'references', 'plugin_stories', 'plugins_all']) {
       assert.ok(areas.includes(area), area)
     }

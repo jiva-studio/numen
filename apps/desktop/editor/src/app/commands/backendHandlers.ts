@@ -3,7 +3,7 @@
  * lists, the items the core lists for one, and a run of one that writes its message and opens the
  * file it returns, or rejects with its error, which the caller of the run reports.
  */
-import type { CommandItem, HandlerDeclaration, PluginHostDeps } from '@numen/plugin-host'
+import type { CommandItem, HandlerDeclaration, PluginHostDeps } from '@numen/plugin-loader'
 import type { runDeclaredHandler } from '@/entities/plugin'
 
 export interface BackendHandlersDeps {

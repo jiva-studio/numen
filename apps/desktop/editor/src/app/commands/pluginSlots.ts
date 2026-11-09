@@ -14,7 +14,7 @@ import {
   type CommandTarget,
   type WhenReader,
   type WhenValues,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { Component } from 'vue'
 import type { Command } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'

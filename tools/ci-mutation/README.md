@@ -11,7 +11,7 @@ Targets are found in the tracked tree, and a new module or package is included t
 - **Go:** every Go module under `./` with a `_test.go` of its own. [gomutants](https://github.com/szhekpisov/gomutants) applies each mutant through `go test -overlay`, runs the tests that cover the mutated line, and compiles each survivor to drop the ones whose machine code is unchanged.
 - **TypeScript:** every workspace package with a `vitest.config.ts` and source under `src/`. [Stryker](https://stryker-mutator.io) runs with its Vitest runner against the package's projects that do not run in a browser, through a config written at run time into `./.mutation/vitest/`. Test data the tests import from outside the package is found from their import paths and kept in Stryker's sandbox.
 
-A target is named by its path under `./` with dashes (`libs-core`, `apps-desktop-editor`), with `-go` or `-ts` appended where one folder holds both. It takes one shard per 6000 lines of Go or 4500 lines of TypeScript, up to 16. A package or file is placed in a shard by a hash of its path, so adding one moves no other.
+A target is named by its path under `./` with dashes (`libs-core-kernel`, `apps-desktop-editor`), with `-go` or `-ts` appended where one folder holds both. It takes one shard per 6000 lines of Go or 4500 lines of TypeScript, up to 16. A package or file is placed in a shard by a hash of its path, so adding one moves no other.
 
 ```bash
 node tools/mutation/shards.mjs          # every target and its shards
@@ -56,8 +56,8 @@ mutates one source file with the target that contains it, uses no cache, and pri
 ## Running a shard by hand
 
 ```bash
-node tools/mutation/mutate.mjs libs-core --shard 3/12   # writes ./.mutation/reports/libs-core-3-of-12.json
-node tools/mutation/issue.mjs libs-core --dry-run       # prints the issue body from the reports present
+node tools/mutation/mutate.mjs libs-core-kernel --shard 3/12   # writes ./.mutation/reports/libs-core-kernel-3-of-12.json
+node tools/mutation/issue.mjs libs-core-kernel --dry-run       # prints the issue body from the reports present
 ```
 
 `NUMEN_MUTATION_WORKERS` sets the parallelism; it defaults to every core. A TypeScript target needs `@numen/ui` built first.

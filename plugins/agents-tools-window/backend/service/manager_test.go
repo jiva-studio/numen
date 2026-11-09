@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
 
 func TestWindowManagerPreviews(t *testing.T) {

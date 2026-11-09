@@ -4,7 +4,7 @@
  * table. Only the navigation of a tab is a double, so a path that stops reaching it fails here.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-host'
+import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
 import { resolveChoice, createNameItem, type NameMatch } from '@/features/command-palette'
 import { WORDS } from '@/shared/words'
 import {

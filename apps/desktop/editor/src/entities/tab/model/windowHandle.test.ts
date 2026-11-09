@@ -1,6 +1,6 @@
 /** The window handle a kind receives, activating tabs by id. */
 import { describe, expect, it } from 'vitest'
-import { getPanes } from '@numen/shell'
+import { getPanes } from '@numen/workbench'
 import type { AnyTabKind } from './kinds'
 import { useWindowTabs } from './windowTabs'
 

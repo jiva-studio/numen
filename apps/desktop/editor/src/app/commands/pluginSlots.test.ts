@@ -1,7 +1,7 @@
 /** The slot entries of the window: those the plugins declare and those of the application, and how their commands are drawn. */
 import { describe, expect, it } from 'vitest'
 import { FileText } from '@lucide/vue'
-import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-host'
+import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { APP_SLOT_ENTRIES } from './appPlacements'

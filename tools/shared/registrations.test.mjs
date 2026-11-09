@@ -49,7 +49,7 @@ test('backend registrations are read from string literals, constants, shared com
       file,
       [
         'package service',
-        'import "github.com/jiva-studio/numen/libs/plugin-sdk-go/command"',
+        'import "github.com/jiva-studio/numen/libs/plugin/sdk-go/command"',
         'const (',
         '\tcommandOpen = "item.open"',
         '\tcommandImport = command.ImportLink',

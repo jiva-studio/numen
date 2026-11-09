@@ -3,7 +3,7 @@
  * tab and the file it shows, the commands of the window over a tab among them.
  */
 import { computed, type Component } from 'vue'
-import type { TabMenu } from '@numen/shell'
+import type { TabMenu } from '@numen/workbench'
 import {
   isNotePath,
   SLOT,
@@ -14,7 +14,7 @@ import {
   type SlotHost,
   type SlotItem,
   type SlotMenu,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 import type { useWindowTabs } from '@/entities/tab'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'

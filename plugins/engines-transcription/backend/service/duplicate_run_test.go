@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 )
 
 // The palette command transcribes in the vault the host shows, passed as no vault. A tool call that

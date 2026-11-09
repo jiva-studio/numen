@@ -2,8 +2,8 @@
  * Palette search coordination, debouncing, and group management.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { PaletteGroup } from '@numen/shell'
-import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { PaletteGroup } from '@numen/workbench'
+import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { IndexCoverage } from '@/shared/notices/coverage'

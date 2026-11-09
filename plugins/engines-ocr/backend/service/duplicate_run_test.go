@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 

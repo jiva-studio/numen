@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 )
 
 // DefaultBaseURL is the chat API base URL used when the settings specify none.

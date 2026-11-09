@@ -7,7 +7,7 @@
  * to its maximum, one step apart. A setting flagged `preview` is applied while its row is focused
  * and restored when the step is left without a choice.
  */
-import { parseWhen } from '@numen/plugin-host'
+import { parseWhen } from '@numen/plugin-loader'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import { getPaletteValues } from '@/shared/paletteValues'
 import type { StepGroup, StepRow } from '@/shared/steps'

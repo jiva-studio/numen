@@ -2,7 +2,7 @@
  * Note domain methods for the window core.
  */
 import { findErrorCode, isStaleAnswer, asFailure, asValue } from '@numen/core-client'
-import { resolveTextLinks } from '@numen/plugin-host'
+import { resolveTextLinks } from '@numen/plugin-loader'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,

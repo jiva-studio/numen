@@ -33,13 +33,13 @@ const PALETTE = new URL('features/command-palette/', EDITOR)
 const APP = new URL('app/', EDITOR)
 // The window the palette is drawn in, as a plugin manifest names it.
 const TARGET = 'desktop.editor'
-const GO = new URL('../../../libs/core/', import.meta.url)
+const GO = new URL('../../../libs/core/kernel/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
 
 /** The shared commands of the application, which plugins handle. */
 const SHARED = JSON.parse(
-  await readFile(new URL('../../../libs/protocol/commands.json', import.meta.url), 'utf8'),
+  await readFile(new URL('../../../libs/core/protocol/commands.json', import.meta.url), 'utf8'),
 )
 
 /**
@@ -291,7 +291,7 @@ const checkSettingCommands = async () => {
 }
 
 /**
- * The shared commands a plugin handles, in the order libs/protocol/commands.json lists them: over
+ * The shared commands a plugin handles, in the order libs/core/protocol/commands.json lists them: over
  * the note where the command declares no required argument, and over the window where it asks for
  * one, as the window's sharedCommands.ts files them.
  */
@@ -782,7 +782,7 @@ const flags = async () => {
 
 /* ------------------------------------------------------------ the command line */
 
-const CLI = new URL('../../../libs/core/adapter/cli/', import.meta.url)
+const CLI = new URL('../../../libs/core/kernel/adapter/cli/', import.meta.url)
 
 /**
  * What the command line says it takes, out of the one string it prints when

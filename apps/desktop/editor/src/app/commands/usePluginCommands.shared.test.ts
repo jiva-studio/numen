@@ -3,7 +3,7 @@
  * list is its handlers, run over the target with the one picked.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { HandlerDeclaration, PluginHost } from '@numen/plugin-host'
+import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
 import {
   commands,
   type AnswerWords,

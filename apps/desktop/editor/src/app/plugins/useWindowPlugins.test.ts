@@ -5,8 +5,8 @@ import {
   type AgentHost,
   type PluginContext,
   type WorkspaceHost,
-} from '@numen/plugin-host'
-import { createNoticeQueue } from '@numen/shell'
+} from '@numen/plugin-loader'
+import { createNoticeQueue } from '@numen/workbench'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'

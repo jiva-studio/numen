@@ -2,7 +2,7 @@
  * The settings as when conditions read them: `config.<dotted key>`, the application's settings under
  * `app` and a plugin's under its id, as VS Code reads `config.editor.tabCompletion`.
  */
-import type { WhenSettings } from '@numen/plugin-host'
+import type { WhenSettings } from '@numen/plugin-loader'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { SettingOwner } from './settingCommands'
 

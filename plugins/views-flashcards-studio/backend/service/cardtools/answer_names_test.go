@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func requireKeys(t *testing.T, what string, object map[string]any, want, absent []string) {

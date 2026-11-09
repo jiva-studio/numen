@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
-import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-host'
+import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { VaultsHost, WindowHost } from '@numen/plugin-host'
+import type { VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { createShellHost, TARGET } from './host'
 import { createWindowCommands } from './windowCommands'
 

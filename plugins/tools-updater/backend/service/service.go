@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/feed"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"

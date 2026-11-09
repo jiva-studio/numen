@@ -1,6 +1,6 @@
 # Frontend Coding Style & Component Guidelines
 
-The conventions for Vue 3 and TypeScript in numen: `libs/ui/core` and the windows under `apps/desktop/editor` and `apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), _How an interface component is built_, _The component library is shadcn-vue_ and _How this application is tested_.
+The conventions for Vue 3 and TypeScript in numen: `libs/ui/components` and the windows under `apps/desktop/editor` and `apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), _How an interface component is built_, _The component library is shadcn-vue_ and _How this application is tested_.
 
 TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`. A component's props are a contract with another module, and an unchecked one is not a contract.
 
@@ -8,11 +8,11 @@ TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedA
 
 ## 1. The domain boundary
 
-Nothing in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**` — not the components, not the stories, not the fixtures.
+Nothing in `libs/ui/components` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**` — not the components, not the stories, not the fixtures.
 
 A component takes props it defines itself, in a **vocabulary about drawing**, and emits **opaque identifiers**. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. Whoever renders the component translates the domain into that shape and translates the identifier back.
 
-The dependency runs `apps/*` → `libs/ui/core`. Never back, never sideways.
+The dependency runs `apps/*` → `libs/ui/components`. Never back, never sideways.
 
 ---
 
@@ -132,7 +132,7 @@ function formatValue(val: string) { ... }
 - **Every colour, size, radius and duration is a design token.** A literal hex, a raw `rgb()`, a hardcoded duration or a Tailwind palette class (`bg-slate-800`) in a component is a finding.
 - **Tokens are declared on the root alone**, in `src/tokens/tokens.css`. A custom property declared on an element beats the same property inherited from the root, so a component that declares its own is no longer changed by the theme.
 - **`theme.css` defines Tailwind's names from the tokens, never the reverse**, so `bg-surface` and `var(--numen-surface)` resolve to one value.
-- **Text on a ground is readable on it: 4.5:1 for text, 3:1 for large text and for marks.** Text on the accent takes `--numen-accent-ink`, never the inherited colour, `--numen-surface` or a dimmed `opacity`; a hover moves a ground away from its text, not toward it. `libs/ui/core/src/shared/ui/contrast/Contrast.stories.ts` measures every variant, size and state of the kit's controls in both token sets, and the `afterEach` of every story corpus fails a story whose text on the accent, or in the accent, falls below the ratio. A new control that draws on a solid ground gets a case in that story.
+- **Text on a ground is readable on it: 4.5:1 for text, 3:1 for large text and for marks.** Text on the accent takes `--numen-accent-ink`, never the inherited colour, `--numen-surface` or a dimmed `opacity`; a hover moves a ground away from its text, not toward it. `libs/ui/components/src/shared/ui/contrast/Contrast.stories.ts` measures every variant, size and state of the kit's controls in both token sets, and the `afterEach` of every story corpus fails a story whose text on the accent, or in the accent, falls below the ratio. A new control that draws on a solid ground gets a case in that story.
 - **No `dark:` variant anywhere in the module**, including in a component copied in from the shadcn-vue registry — the tokens are `light-dark()` pairs and `color-scheme` chooses.
 - **The root's font size is the interface multiplier.** What scales with the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
 - A component copied in from the registry is edited when it is copied in: its palette, its `dark:` variants and its types are maintained in this module from then on, because the copied source belongs to this module.
@@ -169,7 +169,7 @@ A comment describes the active behavior or invariant. It does not argue, justify
 ## 12. Verification
 
 ```bash
-cd libs/ui/core
+cd libs/ui/components
 npm run typecheck
 npm run test:unit
 npm run build                                   # the windows import @numen/ui from its build
@@ -177,7 +177,7 @@ npx vitest run --project 'stories (chromium)'
 npx vitest run --project 'stories (webkit)'
 ```
 
-Take the `libs/ui/core` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
+Take the `libs/ui/components` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
 
 Then the windows, which need the library built first:
 

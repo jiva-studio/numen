@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
 func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {

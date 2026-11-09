@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func TestTheVaultToolsRequireOnlyThePermissionsOfWhatTheyCall(t *testing.T) {

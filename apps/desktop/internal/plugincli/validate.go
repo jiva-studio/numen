@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
 // Validate inspects a plugin manifest and entrypoints on disk.

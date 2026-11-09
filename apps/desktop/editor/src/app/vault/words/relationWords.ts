@@ -17,7 +17,7 @@ import type {
   LinkMarker,
   LinkRole,
   RelationError,
-} from '@numen/plugin-host'
+} from '@numen/plugin-loader'
 
 /** The role of a link, as named in the window. */
 const calledRole: Record<NoteRoleCode, LinkRole | null> = {

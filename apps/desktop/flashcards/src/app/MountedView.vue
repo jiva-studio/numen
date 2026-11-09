@@ -4,7 +4,7 @@
  * read when the view mounts: a list row is keyed by the item it represents.
  */
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import type { MountedView } from '@numen/plugin-host'
+import type { MountedView } from '@numen/plugin-loader'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

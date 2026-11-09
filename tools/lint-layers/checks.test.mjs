@@ -54,7 +54,7 @@ describe("the TypeScript packages without a lint configuration", () => {
 
 describe("the schemas of plugins", () => {
   it("finds a protobuf schema under a plugin and none elsewhere", () => {
-    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/protocol/proto/numen/v1/a.proto"];
+    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/core/protocol/proto/numen/v1/a.proto"];
     assert.deepEqual(findPluginSchemas(files).map((one) => one.file), ["plugins/alpha/proto/alpha.proto"]);
   });
 });
@@ -107,7 +107,7 @@ describe("the suppressions", () => {
 
 describe("the paths that no layer owns", () => {
   it("finds a module outside the layers", () => {
-    assert.equal(findUnassignedPaths(["stray/go.mod", "libs/core/go.mod", "tools/x/package.json"]).length, 1);
+    assert.equal(findUnassignedPaths(["stray/go.mod", "libs/core/kernel/go.mod", "tools/x/package.json"]).length, 1);
   });
   it("finds a file directly in a layer root", () => {
     assert.equal(findUnassignedPaths(["plugins/notes.txt", "plugins/.gitignore"]).length, 1);
@@ -130,18 +130,18 @@ describe("the Go references", () => {
 });
 
 describe("the go workspace", () => {
-  const work = "go 1.26\n\nuse (\n\t./libs/core\n\t./plugins/a\n)\n\nreplace x => ./libs/core\n";
+  const work = "go 1.26\n\nuse (\n\t./libs/core/kernel\n\t./plugins/a\n)\n\nreplace x => ./libs/core/kernel\n";
   it("lists the used directories", () => {
-    assert.deepEqual(parseWorkspaceUses(work), ["libs/core", "plugins/a"]);
+    assert.deepEqual(parseWorkspaceUses(work), ["libs/core/kernel", "plugins/a"]);
     assert.deepEqual(parseWorkspaceUses("use ./single\n"), ["single"]);
     assert.deepEqual(parseWorkspaceUses("use ( // modules\n\t./a // first\n)\nuse ./b//c\n"), ["a", "b"]);
   });
   it("finds a module the workspace leaves out and a use without a module", () => {
-    const gaps = findWorkspaceGaps(work, ["libs/core", "plugins/b"]).map((one) => one.symbol);
+    const gaps = findWorkspaceGaps(work, ["libs/core/kernel", "plugins/b"]).map((one) => one.symbol);
     assert.deepEqual(gaps, ["missing use ./plugins/b", "use ./plugins/a has no go.mod"]);
   });
   it("accepts a workspace that matches", () => {
-    assert.deepEqual(findWorkspaceGaps(work, ["libs/core", "plugins/a"]), []);
+    assert.deepEqual(findWorkspaceGaps(work, ["libs/core/kernel", "plugins/a"]), []);
   });
 });
 

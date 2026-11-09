@@ -3,8 +3,8 @@
  * of the tab it shows, and the switch that opens the tab on another vault.
  */
 import { computed, watch, type Ref } from 'vue'
-import type { VaultsHost, VaultsState } from '@numen/plugin-host'
-import type { VaultRow } from '@numen/shell'
+import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
+import type { VaultRow } from '@numen/workbench'
 
 interface WindowVaultsDeps {
   readonly list: Readonly<Ref<readonly VaultRow[]>>
