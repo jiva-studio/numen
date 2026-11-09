@@ -26,20 +26,20 @@ const AcceleratorCoreML = "coreml"
 
 // Specs represents the detected host machine hardware capabilities. A zero count or size is unknown.
 type Specs struct {
-	LogicalCPUs     int      `json:"logical_cpus"`
-	PhysicalCPUs    int      `json:"physical_cpus"`
-	PerformanceCPUs int      `json:"performance_cpus"`
-	TotalRAMMB      int64    `json:"total_ram_mb"`
-	AvailableRAMMB  int64    `json:"available_ram_mb"`
+	LogicalCPUs     int      `json:"logicalCPUs"`
+	PhysicalCPUs    int      `json:"physicalCPUs"`
+	PerformanceCPUs int      `json:"performanceCPUs"`
+	TotalRAMMB      int64    `json:"totalRAMMB"`
+	AvailableRAMMB  int64    `json:"availableRAMMB"`
 	Accelerators    []string `json:"accelerators"`
 }
 
 // ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools.
 type ResolvedCompute struct {
 	Profile       PerformanceProfile `json:"profile"`
-	CoreBudget    int                `json:"core_budget"`
+	CoreBudget    int                `json:"coreBudget"`
 	Workers       int                `json:"workers"`
-	MemoryLimitMB int64              `json:"memory_limit_mb"`
+	MemoryLimitMB int64              `json:"memoryLimitMB"`
 }
 
 // Detect inspects the current host machine capabilities.

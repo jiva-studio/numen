@@ -37,6 +37,10 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkSDKNamesNoProtocolType(t, workspace)
 	})
+	t.Run("ProjectJSONKeysAreCamelCase", func(t *testing.T) {
+		t.Parallel()
+		checkProjectJSONKeysAreCamelCase(t, workspace)
+	})
 }
 
 func loadWorkspace(t *testing.T) workspacePackages {

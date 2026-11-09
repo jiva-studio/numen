@@ -46,8 +46,8 @@ var (
 
 // acpModel is one model an ACP agent reports for its sessions.
 type acpModel struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // acpSession is one ACP session with an agent started for it alone. The client offers the agent no

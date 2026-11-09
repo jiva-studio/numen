@@ -12,7 +12,7 @@ import (
 // CodexConfig holds configuration values discovered from Codex configuration files.
 type CodexConfig struct {
 	Model      string         `json:"model,omitempty"`
-	MCPServers map[string]any `json:"mcp_servers,omitempty"`
+	MCPServers map[string]any `json:"mcpServers,omitempty"`
 }
 
 // ReadCodexConfig reads the OpenAI Codex configuration from standard locations.

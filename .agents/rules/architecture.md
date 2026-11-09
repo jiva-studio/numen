@@ -149,6 +149,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `no-suppressions`: §9.
 - `every-path-has-a-layer`: fails on a module that is in no layer.
 - `workspace-lists-every-module`: `go.work` lists every `go.mod`.
+- `json-keys-camelcase`: every JSON key in a plugin manifest, API fixture and TypeScript JSON type is `camelCase`.
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
 - `plugins-independence`: the plugin tests of `libs/core/container` apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
