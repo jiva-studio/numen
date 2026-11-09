@@ -30,6 +30,7 @@ numen/
 │   ├── core-client/              # TypeScript: the client of the core for the windows and the plugin host; private
 │   ├── plugin-host-ts/           # TypeScript: the loader of plugin frontends
 │   ├── plugin-manager/           # Vue: the plugin list and the plugin page, data in by props and results out by events
+│   ├── plugin-catalog/           # Go: the plugin catalog, its manifests and their sources
 │   └── ui/                       # Vue 3: `core` holds components that do not use the domain, `shell` the window chrome
 ├── plugins/                      # one folder per plugin: manifest.json, backend/ (Go), frontend/ (Vue)
 └── apps/
@@ -130,7 +131,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 
 `tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`. `node tools/lint-layers/check.mjs --list` prints the registered verifiers:
 
-- `go-structure`: every test of `libs/core/container`, the package of the structural Go tests: the layers of the core, the machine clock, the plugin dependency rule of §11 and the encapsulation of the protocol by the Go SDK.
+- `go-structure`: every test of `libs/core/container`, the package of the structural Go tests: the layers of the core, the machine clock, the plugin dependency rule of §11 and the encapsulation of the protocol by the Go SDK. It also holds that no core package declares an alias of another core package's type (`NoCoreTypeIsReexported`), that an adapter is driving or driven and not both and a driving adapter references nothing declared under `port/` (`TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort`), that an interface stays within the `interfacebloat` maximum counting embedded methods (`InterfaceSizeCountsTheWholeMethodSet`), that no function of a port calls a method of an interface value (`APortDeclaresAndDoesNotOrchestrate`), and that `container` is the one composition-root package with none below it (`TheCompositionRootIsOnePackage`).
 - `notes-hexagon`: the layer tests of the root package of `libs/notes`.
 - `core-depguard`: `.golangci.yml` depguard rules for the domain and use cases of `libs/core`.
 - `notes-depguard`: depguard rules of `libs/notes`, which depends on nothing of this repository.
