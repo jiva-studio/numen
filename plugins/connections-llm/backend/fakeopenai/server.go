@@ -80,7 +80,7 @@ func New(config Config) *Server {
 	if config.Dimensions <= 0 {
 		config.Dimensions = DefaultDimensions
 	}
-	return &Server{config: config, mu: sync.Mutex{}, requests: nil, behavior: map[string]behavior{}, aborted: make(chan struct{}, 64)}
+	return &Server{config: config, mu: sync.Mutex{}, requests: nil, behavior: map[string]behavior{}, aborted: make(chan struct{}, 64), streams: nil}
 }
 
 // Fail makes a path answer status with an empty body and the header Retry-After. A status of 0 clears it.
@@ -229,38 +229,49 @@ func (s *Server) serveChat(w http.ResponseWriter, r *http.Request, body []byte) 
 	})
 }
 
-func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, echo string) {
+func (s *Server) takeScript(echo string) Stream {
 	s.mu.Lock()
-	script := Stream{Chunks: echoChunks(echo)}
-	if len(s.streams) > 0 {
-		script, s.streams = s.streams[0], s.streams[1:]
+	defer s.mu.Unlock()
+	if len(s.streams) == 0 {
+		return Stream{Chunks: echoChunks(echo), IsBroken: false, Pause: 0}
 	}
-	s.mu.Unlock()
+	script := s.streams[0]
+	s.streams = s.streams[1:]
+	return script
+}
+
+func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, echo string) {
+	script := s.takeScript(echo)
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(http.StatusOK)
 	controller := http.NewResponseController(w)
-	for _, chunk := range script.Chunks {
-		if _, err := io.WriteString(w, "data: "+chunk+"\n\n"); err != nil {
-			return
-		}
-		if err := controller.Flush(); err != nil {
-			return
-		}
-		if script.Pause > 0 && !s.wait(r, script.Pause) {
-			return
-		}
+	if !s.writeChunks(w, r, controller, script) {
+		return
 	}
 	if script.IsBroken {
 		if conn, _, err := controller.Hijack(); err == nil {
-			if err := conn.Close(); err != nil {
-				return
-			}
+			_ = conn.Close()
 		}
 		return
 	}
 	if n := len(script.Chunks); n == 0 || script.Chunks[n-1] != "[DONE]" {
 		<-r.Context().Done()
 	}
+}
+
+func (s *Server) writeChunks(w http.ResponseWriter, r *http.Request, controller *http.ResponseController, script Stream) bool {
+	for _, chunk := range script.Chunks {
+		if _, err := io.WriteString(w, "data: "+chunk+"\n\n"); err != nil {
+			return false
+		}
+		if err := controller.Flush(); err != nil {
+			return false
+		}
+		if script.Pause > 0 && !s.wait(r, script.Pause) {
+			return false
+		}
+	}
+	return true
 }
 
 func echoChunks(echo string) []string {

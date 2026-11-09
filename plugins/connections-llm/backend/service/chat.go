@@ -93,26 +93,33 @@ func (s *Service) Chat(ctx context.Context, call connection.Call, request connec
 	return nil
 }
 
+func newStreamMessage(one connection.ChatMessage) streamMessage {
+	message := streamMessage{Role: one.Role, Content: nil, ToolCalls: nil, ToolCallID: one.ToolCallID}
+	if one.Text != "" || len(one.ToolCalls) == 0 {
+		message.Content = &one.Text
+	}
+	for _, tool := range one.ToolCalls {
+		message.ToolCalls = append(message.ToolCalls, chatToolCall{
+			ID: tool.ID, Type: "function", Function: chatToolFunction{Name: tool.Name, Arguments: tool.Arguments},
+		})
+	}
+	return message
+}
+
 func newStreamBody(call connection.Call, request connection.ProviderChatRequest) streamBody {
 	messages := make([]streamMessage, len(request.Messages))
 	for i, one := range request.Messages {
-		message := streamMessage{Role: one.Role, ToolCallID: one.ToolCallID}
-		if one.Text != "" || len(one.ToolCalls) == 0 {
-			message.Content = &one.Text
-		}
-		for _, tool := range one.ToolCalls {
-			message.ToolCalls = append(message.ToolCalls, chatToolCall{
-				ID: tool.ID, Type: "function", Function: chatToolFunction{Name: tool.Name, Arguments: tool.Arguments},
-			})
-		}
-		messages[i] = message
+		messages[i] = newStreamMessage(one)
 	}
 	tools := make([]toolDefinitionBody, len(request.Tools))
 	for i, one := range request.Tools {
 		tools[i].Type = "function"
 		tools[i].Function.Name, tools[i].Function.Description, tools[i].Function.Parameters = one.Name, one.Description, one.Parameters
 	}
-	body := streamBody{Model: call.Model, Messages: messages, Tools: tools, Stream: true, Temperature: request.Temperature}
+	body := streamBody{
+		Model: call.Model, Messages: messages, Tools: tools, Stream: true, Temperature: request.Temperature,
+		MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil,
+	}
 	if call.Type == typeOpenAI {
 		body.MaxCompletionTokens = request.MaxTokens
 	} else {
@@ -198,14 +205,8 @@ type streamChunk struct {
 			Content   string        `json:"content"`
 			ToolCalls []streamPiece `json:"tool_calls"`
 		} `json:"delta"`
-		Message *struct {
-			Content   string `json:"content"`
-			ToolCalls []struct {
-				ID       string           `json:"id"`
-				Function chatToolFunction `json:"function"`
-			} `json:"tool_calls"`
-		} `json:"message"`
-		FinishReason string `json:"finish_reason"`
+		Message      *streamedMessage `json:"message"`
+		FinishReason string           `json:"finish_reason"`
 	} `json:"choices"`
 	Error json.RawMessage `json:"error"`
 }
@@ -249,7 +250,7 @@ func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
 }
 
 func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(connection.ChatEvent) error) error {
-	state := &chatReader{send: send}
+	state := &chatReader{send: send, calls: nil, finish: "", isOpen: false, isDone: false}
 	if isWholeReply(reader) {
 		answer, err := io.ReadAll(reader)
 		if err != nil {
@@ -260,38 +261,52 @@ func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duratio
 	lines := readLines(ctx, reader)
 	var data bytes.Buffer
 	for !state.isDone {
-		waiting, stop := context.WithTimeout(ctx, wait)
-		var one streamLine
-		select {
-		case one = <-lines:
-			stop()
-		case <-waiting.Done():
-			stop()
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			return errSilent
+		one, err := awaitLine(ctx, lines, wait)
+		if err != nil {
+			return err
 		}
-		line := bytes.TrimRight(one.raw, "\r\n")
-		if field, ok := bytes.CutPrefix(line, []byte("data:")); ok {
-			if data.Len() > 0 {
-				data.WriteByte('\n')
-			}
-			data.Write(bytes.TrimPrefix(field, []byte(" ")))
-		}
-		if len(line) == 0 || one.err != nil {
-			if err := state.flush(&data); err != nil {
-				return err
-			}
-		}
-		if one.err != nil && !state.isDone {
-			if errors.Is(one.err, io.EOF) {
-				return errStreamEnded
-			}
-			return one.err
+		if err := state.takeLine(&data, one); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func awaitLine(ctx context.Context, lines <-chan streamLine, wait time.Duration) (streamLine, error) {
+	waiting, stop := context.WithTimeout(ctx, wait)
+	defer stop()
+	select {
+	case one := <-lines:
+		return one, nil
+	case <-waiting.Done():
+		if ctx.Err() != nil {
+			return streamLine{}, ctx.Err()
+		}
+		return streamLine{}, errSilent
+	}
+}
+
+// takeLine adds the line to the event being read, and reads the event when the line ends it.
+func (r *chatReader) takeLine(data *bytes.Buffer, one streamLine) error {
+	line := bytes.TrimRight(one.raw, "\r\n")
+	if field, ok := bytes.CutPrefix(line, []byte("data:")); ok {
+		if data.Len() > 0 {
+			data.WriteByte('\n')
+		}
+		data.Write(bytes.TrimPrefix(field, []byte(" ")))
+	}
+	if len(line) == 0 || one.err != nil {
+		if err := r.flush(data); err != nil {
+			return err
+		}
+	}
+	if one.err == nil || r.isDone {
+		return nil
+	}
+	if errors.Is(one.err, io.EOF) {
+		return errStreamEnded
+	}
+	return one.err
 }
 
 func isWholeReply(reader *bufio.Reader) bool {
@@ -345,19 +360,28 @@ func (r *chatReader) read(data []byte) error {
 	if err := r.merge(choice.Delta.ToolCalls); err != nil {
 		return err
 	}
-	if message := choice.Message; message != nil {
-		if message.Content != "" {
-			if err := r.emit(connection.ChatEvent{TextDelta: message.Content}); err != nil {
-				return err
-			}
-		}
-		for _, call := range message.ToolCalls {
-			r.calls = append(r.calls, connection.ToolCall{ID: call.ID, Name: call.Function.Name, Arguments: call.Function.Arguments})
-		}
+	if err := r.readMessage(choice.Message); err != nil {
+		return err
 	}
 	if choice.FinishReason != "" {
 		r.finish = choice.FinishReason
 		return r.end()
+	}
+	return nil
+}
+
+// readMessage reads the whole message a service gives instead of deltas.
+func (r *chatReader) readMessage(message *streamedMessage) error {
+	if message == nil {
+		return nil
+	}
+	if message.Content != "" {
+		if err := r.emit(connection.ChatEvent{TextDelta: message.Content}); err != nil {
+			return err
+		}
+	}
+	for _, call := range message.ToolCalls {
+		r.calls = append(r.calls, connection.ToolCall{ID: call.ID, Name: call.Function.Name, Arguments: call.Function.Arguments})
 	}
 	return nil
 }
@@ -424,4 +448,12 @@ func readStreamError(raw json.RawMessage) error {
 		}
 	}
 	return connection.NewStopError(connection.ReasonUnknown)
+}
+
+type streamedMessage struct {
+	Content   string `json:"content"`
+	ToolCalls []struct {
+		ID       string           `json:"id"`
+		Function chatToolFunction `json:"function"`
+	} `json:"tool_calls"`
 }

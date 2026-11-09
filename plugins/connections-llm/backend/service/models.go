@@ -26,7 +26,7 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 	path, isLabelled := "/models", call.Type == typeOpenRouter
 	if isLabelled && operation == operationEmbed {
 		path = "/embeddings/models"
-	} else if isLabelled && operation != operationComplete && operation != operationChat {
+	} else if isLabelled && !isTextOperation(operation) {
 		return []connection.Model{}, nil
 	}
 	var answer modelsAnswer
@@ -37,7 +37,7 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 	for _, one := range answer.Data {
 		model := connection.Model{ID: one.ID, Title: one.Name}
 		if isLabelled {
-			if (operation == operationComplete || operation == operationChat) && !slices.Contains(one.Architecture.OutputModalities, "text") && len(one.Architecture.OutputModalities) > 0 {
+			if isTextOperation(operation) && !makesText(one.Architecture.OutputModalities) {
 				continue
 			}
 			model.Operations = []string{operation}
@@ -46,6 +46,15 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 	}
 	slices.SortFunc(models, func(a, b connection.Model) int { return strings.Compare(a.ID, b.ID) })
 	return models, nil
+}
+
+func isTextOperation(operation string) bool {
+	return operation == operationComplete || operation == operationChat
+}
+
+// makesText is true for a model with no declared output modalities, because OpenRouter leaves the list out for some.
+func makesText(modalities []string) bool {
+	return len(modalities) == 0 || slices.Contains(modalities, "text")
 }
 
 // ListReasoningLevels returns the levels the model of the call takes, or none.

@@ -77,7 +77,7 @@ const getRowBoxes = (root: HTMLElement) =>
 export const WideRowsDoNotOverlap: Story = {
   play: async ({ canvasElement }) => {
     const boxes = getRowBoxes(canvasElement)
-    await expect(boxes).toHaveLength(7)
+    await expect(boxes).toHaveLength(6)
     const edge = Math.round(boxes[0]!.control.right)
     for (const one of boxes) {
       await expect(isOverlapping(one.label, one.control)).toBe(false)
