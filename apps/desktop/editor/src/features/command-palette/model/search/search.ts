@@ -191,6 +191,10 @@ function appendCreateNoteRow(
   }
 }
 
+/** A group is listed when it has rows, or has answered with a message to show in their place. */
+const hasContent = (group: PaletteGroup): boolean =>
+  group.items.length > 0 || (!group.isWorking && Boolean(group.silence))
+
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
   texts: ShallowRef<readonly Passage[]>
@@ -334,9 +338,10 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
-    return isWaiting.value
+    const withCreation = isWaiting.value
       ? base
       : appendCreateNoteRow(base, inputValue.value, words, how.getTarget)
+    return { ...withCreation, groups: withCreation.groups.filter(hasContent) }
   })
 
   const groups = computed(() => searchGroups.value.groups)

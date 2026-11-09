@@ -339,7 +339,7 @@ describe('the row that creates a note, in a search that found nothing', () => {
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
 
-    expect(palette.groups.value.some((one) => one.isWorking)).toBe(true)
+    expect(palette.groups.value).toEqual([])
     expect(getRow(palette)).toBeUndefined()
   })
 

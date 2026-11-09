@@ -176,8 +176,7 @@ describe('answers arriving', () => {
 
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
     expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(false)
-    expect(getGroup(palette.groups.value, 'text')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(true)
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['names'])
   })
 
   it('drops a result of a superseded query', async () => {
@@ -194,7 +193,7 @@ describe('answers arriving', () => {
     // The first question answers late, and with something else entirely.
     vault.names[0]?.answer([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
     await flushPromises()
-    expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(0)
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
 
     vault.names[1]?.answer([createNameMatch()])
     await flushPromises()
@@ -230,9 +229,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([])
     await flushPromises()
 
-    const group = getGroup(palette.groups.value, 'names')
-    expect(group?.silence).toBe('')
-    expect(group?.isWorking).toBe(false)
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
   it('says the vault holds no vectors, where meaning returned nothing', async () => {
@@ -249,7 +246,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
     // The other groups query the words, which a vault with no vectors still
     // answers, and a group that returned nothing contributes no rows.
-    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
@@ -761,7 +758,7 @@ describe('answers to a question overtaken', () => {
     await flushPromises()
 
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
-    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
   it('keeps the group working where only the overtaken question has answered', async () => {
