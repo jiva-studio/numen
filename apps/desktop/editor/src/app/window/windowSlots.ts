@@ -19,7 +19,7 @@ import { getPaletteId } from '../commands/declaredCommands'
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<
     DeclaredCommands,
-    'slots' | 'commands' | 'handlers' | 'whenContext'
+    'slots' | 'commands' | 'contributions' | 'whenContext'
   >
   readonly hostHolder: { readonly current?: PluginHost }
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
