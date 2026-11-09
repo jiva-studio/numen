@@ -1413,7 +1413,6 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
     return [
       createMenuCommand(DEMO_COMMAND.openNote, 'Open the file'),
       createMenuSeparator(1),
-      NEW_SUBMENU,
       renameItem,
       copyItem,
     ]
@@ -1424,7 +1423,6 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
       ? [createMenuCommand(DEMO_COMMAND.showNoteInPlex, 'Show note in plex')]
       : []),
     createMenuSeparator(1),
-    NEW_SUBMENU,
     renameItem,
     copyItem,
     createMenuSeparator(2),
