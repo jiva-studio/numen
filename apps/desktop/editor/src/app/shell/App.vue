@@ -16,7 +16,6 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
-import { SlotDragLayer } from '@/features/slot-layout'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
@@ -67,9 +66,7 @@ const {
   highlightWindow,
   detachTab,
   frame,
-  slotDrag,
 } = useWindow()
-const { source: slotDragSource, position: slotDragPosition, marker: slotDropMarker } = slotDrag
 
 const tabMenu = useWindowTabMenu({
   windowTabs,
@@ -183,7 +180,6 @@ function onShowTab(id: string) {
 
     <SlotViewHost :view="statusBarView" />
 
-    <SlotDragLayer :source="slotDragSource" :at="slotDragPosition" :marker="slotDropMarker" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

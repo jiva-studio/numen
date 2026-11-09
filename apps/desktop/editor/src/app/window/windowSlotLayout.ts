@@ -23,15 +23,23 @@ export const getLayoutEdits = (change: SlotLayoutChange): SettingEdit[] =>
 
 /**
  * The layout of the window. The plugin host reads it before the settings are made, so it is empty
- * until `setSettings` hands them over, and follows them from then on.
+ * until `setSettings` hands them over, and follows them from then on. While an entry is dragged, the
+ * lists of a preview are drawn over it; they are never written.
  */
 export function createWindowSlotLayout() {
   const settings = shallowRef<SlotLayoutSettings | undefined>()
-  const layout = computed(() => readSlotLayout(settings.value?.getSetting(LAYOUT_SLOTS_PATH)))
+  const preview = shallowRef<SlotLayoutChange | null>(null)
+  const layout = computed(() => ({
+    ...readSlotLayout(settings.value?.getSetting(LAYOUT_SLOTS_PATH)),
+    ...preview.value,
+  }))
   return {
     getLayout: (): SlotLayout => layout.value,
     setSettings: (source: SlotLayoutSettings): void => {
       settings.value = source
+    },
+    showPreview: (change: SlotLayoutChange | null): void => {
+      preview.value = change
     },
     writeLayout: async (change: SlotLayoutChange): Promise<void> => {
       await settings.value?.writeSettings(getLayoutEdits(change))

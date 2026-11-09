@@ -792,7 +792,7 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
-/** The Cmd/Ctrl+drag of the slot entries, over the slots of the plugin host and the layout in the settings. */
+/** Starts the Cmd/Ctrl+drag of the slot entries, over the slots of the plugin host and the layout in the settings. */
 const createWindowSlotDrag = (base: WindowCore) =>
   createSlotDrag({
     isMac: () => base.frame.platform.value === 'darwin',
@@ -800,6 +800,7 @@ const createWindowSlotDrag = (base: WindowCore) =>
     listLayoutKeys: (slot) => base.pluginHost.slots.listLayoutKeys(slot),
     getLayout: base.windowSlots.layout.getLayout,
     writeLayout: base.windowSlots.layout.writeLayout,
+    showPreview: base.windowSlots.layout.showPreview,
   })
 
 const getPluginViews = (pluginHost: PluginHost) => ({
@@ -863,6 +864,8 @@ export const useWindow = () => {
 
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
+  createWindowSlotDrag(base)
+
   const api = {
     runCommand,
     ...menuApi,
@@ -892,7 +895,6 @@ export const useWindow = () => {
     tabLinks: base.tabLinks,
     ...createWindowFrameServices(base, ctx, { getTarget }),
     isHighlighted,
-    slotDrag: createWindowSlotDrag(base),
     ...moves,
   }
   return api
