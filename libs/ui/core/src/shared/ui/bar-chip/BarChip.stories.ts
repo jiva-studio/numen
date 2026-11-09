@@ -93,7 +93,6 @@ const expectClosed = async (canvas: HTMLElement): Promise<void> => {
   await expect(getChip(canvas).getAttribute('aria-expanded')).toBe('false')
 }
 
-/** Resolves after the browser has drawn two frames, so a placed popover has settled. */
 const settle = (): Promise<void> =>
   new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 

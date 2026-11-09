@@ -5,22 +5,18 @@
  *
  * Without a `popover` slot a press opens nothing.
  */
-import { ref, useId, useSlots, watch } from 'vue'
+import { useId, useSlots } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
 import { useDialogName } from './useDialogName'
-
-const POPOVER_GAP = 4
+import { useSideOffset } from './useSideOffset'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** Accessible name of the trigger. */
     label: string
-    /** Text of the native tooltip; none when absent. */
     tooltip?: string | undefined
     tone?: BarChipTone
-    /** Accessible name of the popover dialog. */
     popoverLabel?: string | undefined
   }>(),
   { tooltip: undefined, tone: 'neutral', popoverLabel: undefined },
@@ -30,18 +26,10 @@ const props = withDefaults(
 const isOpen = defineModel<boolean>('open', { default: false })
 const slots = useSlots()
 const chipId = useId()
-const sideOffset = ref(POPOVER_GAP)
+const sideOffset = useSideOffset(isOpen)
 
 /* --------------------------------- Hooks ---------------------------------- */
 useDialogName(chipId, () => isOpen.value && hasPopover() && props.popoverLabel !== undefined)
-
-watch(
-  isOpen,
-  (value) => {
-    if (value) sideOffset.value = getSideOffset()
-  },
-  { immediate: true, flush: 'sync' },
-)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onUpdateOpen(value: boolean): void {
@@ -50,17 +38,6 @@ function onUpdateOpen(value: boolean): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-// The popover keeps POPOVER_GAP px from the edge of the bar, whatever the height of the chip:
-// floating-ui measures the offset from the chip, which sits in the middle of the bar.
-function getSideOffset(): number {
-  const style = getComputedStyle(document.documentElement)
-  const barHeight = Number.parseFloat(style.getPropertyValue('--numen-title-bar-height'))
-  const chipHeight = Number.parseFloat(style.getPropertyValue('--numen-chip-height'))
-  if (Number.isNaN(barHeight) || Number.isNaN(chipHeight)) return POPOVER_GAP
-  return (barHeight - chipHeight) / 2 + POPOVER_GAP
-}
-
-// Read on every render: a slot given under a condition appears and goes without a reactive change.
 function hasPopover(): boolean {
   return slots.popover !== undefined
 }

@@ -36,7 +36,6 @@ const mountTasks = (view: Component): VueWrapper => {
   return wrapper
 }
 
-/** The list is drawn at the end of the document, so it is read off the document. */
 const page = (): DOMWrapper<HTMLElement> => new DOMWrapper(document.body)
 
 const openList = async (wrapper: VueWrapper): Promise<void> => {

@@ -121,7 +121,6 @@ export const KeepsItsSize: Story = {
   },
 }
 
-/** The view as a bar draws it, with nothing around it, at the top or the bottom of the window. */
 const inBar = (place: 'top' | 'bottom') => () => ({
   components: { TasksStatus },
   setup: () => ({ RUNNING, FAILED }),

@@ -21,16 +21,15 @@ const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
 }
 
-const drawn: VueWrapper[] = []
+const mounted: VueWrapper[] = []
 
 afterEach(() => {
-  for (const wrapper of drawn.splice(0)) wrapper.unmount()
+  for (const wrapper of mounted.splice(0)) wrapper.unmount()
 })
 
-/** The popover is drawn at the end of the document, so the view is mounted into it. */
 const drawView = (component: never): VueWrapper => {
   const wrapper = mount(component, { attachTo: document.body })
-  drawn.push(wrapper)
+  mounted.push(wrapper)
   return wrapper
 }
 

@@ -32,7 +32,6 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-/** The chip in a container of its own, so its trigger is found in that container. */
 const draw = (stats: Stats | null, phase: 'loading' | 'ready' | 'unavailable' = 'ready') => {
   const container = document.body.appendChild(document.createElement('div'))
   mounted.push(
