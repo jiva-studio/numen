@@ -18,6 +18,7 @@ import {
   readManifestSlotEntries,
   createViewRegistry,
   requireMountAccess,
+  type ViewRegistry,
   SLOT,
   openExternalUrl,
   type LoaderHost,
@@ -179,6 +180,15 @@ const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
  * The platform plugins read is the one `getPlatform` reports: Windows where none is given, as the
  * frame reports without the Wails runtime.
  */
+/** Mounts a declared view for a caller, after checking the permissions of the view kind. */
+function mountDeclaredView(
+  registry: ViewRegistry,
+  caller: { pluginId: string; manifest?: Manifest | undefined },
+) {
+  return (capability: string, element: HTMLElement, viewContext: unknown) =>
+    registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
+}
+
 export function createShellHost(
   agent?: AgentHost,
   services: ShellServices = {},
@@ -212,16 +222,16 @@ export function createShellHost(
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) => add(addView({ pluginId, registration })),
       ...UNUSED_CAPABILITIES,
-      registerView: (registration) => add(declaredViews.registerView(pluginId, registration, manifest?.permissions)),
+      registerView: (registration) =>
+        add(declaredViews.registerView(pluginId, registration, manifest?.permissions)),
       registerSlotView: (registration) =>
         add(registerInSlots(slotViews, { pluginId, manifest }, registration)),
       slots: windowSlots.slots,
       mountView: (capability, element, viewContext) => {
-        const view = declaredViews.mountView(
+        const view = mountDeclaredView(declaredViews, { pluginId, manifest })(
           capability,
           element,
           viewContext,
-          requireMountAccess(capability, { pluginId, manifest }),
         )
         add(view)
         return view
@@ -265,12 +275,6 @@ export function createShellHost(
     /** The view a plugin draws in the title bar, or null while none does. */
     titleBarView: slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */
-    mountView: (capability: string, element: HTMLElement, viewContext: unknown) =>
-      declaredViews.mountView(
-        capability,
-        element,
-        viewContext,
-        requireMountAccess(capability, { pluginId: TARGET }),
-      ),
+    mountView: mountDeclaredView(declaredViews, { pluginId: TARGET }),
   }
 }
