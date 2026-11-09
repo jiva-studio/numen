@@ -283,8 +283,7 @@ describe('findRowIcon', () => {
       findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
     } as unknown as Commands
     const search = {
-      findTabKind: () => 'form',
-      findHitFile: () => 'doc.pdf',
+      reads: { findTabKind: () => 'form', findHitFile: () => 'doc.pdf' },
     } as unknown as SearchState
 
     expect(findRowIcon('n1', commands, search)).toBe(getNoteIcon('sample'))
@@ -299,8 +298,10 @@ describe('findRowIcon', () => {
       findCommandIcon: () => customIcon,
     } as unknown as Commands
     const search = {
-      findTabKind: (id: string) => (id === 'hit-note' ? 'sheet' : null),
-      findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
+      reads: {
+        findTabKind: (id: string) => (id === 'hit-note' ? 'sheet' : null),
+        findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
+      },
     } as unknown as SearchState
 
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
@@ -318,7 +319,7 @@ describe('the icon of the command that opens a document', () => {
 
   it('is the icon of the command the row of a document offers', () => {
     const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
-    const search = { findTabKind: () => null, findHitFile: () => null }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     expect(
       findRowIcon(
@@ -344,18 +345,14 @@ describe('the two choices of the confirmation that empties the trash', () => {
       on: front(),
     }
     const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
-    const search = { findTabKind: () => null, findHitFile: () => null }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     const items = groups.getConfirmGroup(step, '').items
 
     expect(items.map((one) => one.id)).toStrictEqual(['app:trash.empty:keep', COMMAND.emptyTrash])
     for (const one of items) {
       expect(
-        findRowIcon(
-          one.id,
-          commands as unknown as Commands,
-          search as unknown as SearchState,
-        ),
+        findRowIcon(one.id, commands as unknown as Commands, search as unknown as SearchState),
       ).not.toBeNull()
     }
   })

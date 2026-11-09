@@ -355,7 +355,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     setTyped,
     setOpen,
     chooseResult,
-    ...createHitReaders(() => searchGroups.value.hitsById),
+    reads: createHitReaders(() => searchGroups.value.hitsById),
   }
 }
 

@@ -23,8 +23,8 @@ export function findRowIcon(
     const picked = commands.findTabKind(id)
     return picked === null ? (commands.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)
   }
-  const tabKind = search.findTabKind(id)
+  const tabKind = search.reads.findTabKind(id)
   if (tabKind !== null) return getNoteIcon(tabKind)
-  const file = search.findHitFile(id)
+  const file = search.reads.findHitFile(id)
   return file ? (findFileIcon?.(file) ?? File) : null
 }

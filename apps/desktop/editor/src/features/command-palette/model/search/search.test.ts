@@ -501,7 +501,12 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['', 'sample', 'form', 'sheet'])
+    expect(items.map((one) => palette.reads.findTabKind(one.id))).toEqual([
+      '',
+      'sample',
+      'form',
+      'sheet',
+    ])
   })
 
   it('draws a heading as the note it remains in', async () => {
@@ -525,7 +530,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
-    expect(palette.findTabKind(item.id)).toBe('sample')
+    expect(palette.reads.findTabKind(item.id)).toBe('sample')
   })
 
   it('draws a passage as the note it was read out of', async () => {
@@ -549,7 +554,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['sheet', null])
+    expect(items.map((one) => palette.reads.findTabKind(one.id))).toEqual(['sheet', null])
   })
 
   it('names the file of a passage read out of a file that is no note', async () => {
@@ -570,7 +575,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([
+    expect(items.map((one) => palette.reads.findHitFile(one.id))).toEqual([
       null,
       'library/a.bin',
       'talks/b.bin',
@@ -592,7 +597,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([null, null])
+    expect(items.map((one) => palette.reads.findHitFile(one.id))).toEqual([null, null])
   })
 
   it('says nothing about an item it is not drawing', async () => {
@@ -600,8 +605,8 @@ describe('what a row is drawn as', () => {
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
     })
-    expect(palette.findTabKind('notes/entropy.md')).toBeNull()
-    expect(palette.findHitFile('notes/entropy.md')).toBeNull()
+    expect(palette.reads.findTabKind('notes/entropy.md')).toBeNull()
+    expect(palette.reads.findHitFile('notes/entropy.md')).toBeNull()
   })
 })
 
