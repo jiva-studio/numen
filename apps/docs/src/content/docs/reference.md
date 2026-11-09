@@ -111,15 +111,23 @@ The settings of the plugin Numen Agent.
 | `maxTokens` | a number | maximum number of tokens to generate per completion. From 256 to 128000. |
 | `maxSteps` | a number | maximum number of requests to the model one task may make before it is stopped. From 1 to 1000. |
 
+### `md.numen.connections.llm`
+
+The settings of the plugin Language model services.
+
+| | | |
+| --- | --- | --- |
+| `requestTimeout` | a number | seconds to wait for a service to answer. Without a value, a completion waits 120 seconds and an embedding 60 seconds. From 1 to 3600. |
+
 ### `md.numen.engines.embeddings`
 
 The settings of the plugin Vector Embeddings.
 
 | | | |
 | --- | --- | --- |
-| `provider` | text | where texts are turned into vectors. One of `local`, `openrouter`, `openai`, `custom`. |
-| `baseUrl` | text | base URL of the embeddings API, for example https://example.org/v1. |
-| `model` | text | model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face; remote providers use the model ID listed by the service. |
+| `source` | text | where texts are turned into vectors. One of `local`, `connection`. |
+| `model` | text | local model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face. |
+| `connections` | text | the connection and the embedding model that turn texts into vectors. Changing either indexes the vault again. |
 | `minChunkLength` | a number | pieces of text shorter than this many characters get no vector for the search by meaning, so page numbers and running heads do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. 0 gives every piece a vector. From 0 to 1000. |
 | `chunkTokens` | a number | a note is cut into chunks of at most this many tokens, and each chunk gets a vector. It never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. A change cuts the notes again; vectors for texts that are unchanged are kept. From 16 to 8192. |
 

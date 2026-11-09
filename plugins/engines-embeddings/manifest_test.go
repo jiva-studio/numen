@@ -97,21 +97,41 @@ type manifestOption struct {
 	Detail string `json:"detail"`
 }
 
-// The local models of the settings are the curated profiles of the plugin, in the order of the table,
-// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
-func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
+type manifestCondition struct {
+	Setting string   `json:"setting"`
+	Is      []string `json:"is"`
+}
+
+type manifestSetting struct {
+	Key         string             `json:"key"`
+	Type        string             `json:"type"`
+	Title       string             `json:"title"`
+	Description string             `json:"description"`
+	Default     any                `json:"default"`
+	Options     []manifestOption   `json:"options"`
+	Operation   string             `json:"operation"`
+	Max         *float64           `json:"max"`
+	When        *manifestCondition `json:"when"`
+}
+
+func readSettings(t *testing.T) map[string]manifestSetting {
+	t.Helper()
 	var manifest struct {
-		Settings []struct {
-			Key       string `json:"key"`
-			Default   any    `json:"default"`
-			OptionsBy struct {
-				Options map[string][]manifestOption `json:"options"`
-			} `json:"optionsBy"`
-		} `json:"settings"`
+		Settings []manifestSetting `json:"settings"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
+	out := map[string]manifestSetting{}
+	for _, one := range manifest.Settings {
+		out[one.Key] = one
+	}
+	return out
+}
+
+// The local models of the settings are the curated profiles of the plugin, in the order of the table,
+// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
+func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
 	profiles, err := engine.GetShippedProfiles()
 	if err != nil {
 		t.Fatal(err)
@@ -120,19 +140,69 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 	for _, p := range profiles.GetCurated() {
 		want = append(want, manifestOption{Value: p.ID, Title: p.GetOptionTitle(), Detail: p.GetOptionDetail()})
 	}
-	for _, setting := range manifest.Settings {
-		if setting.Key != "model" {
-			continue
-		}
-		if setting.Default != any(engine.DefaultModel) {
-			t.Errorf("model defaults to %q, want %q", setting.Default, engine.DefaultModel)
-		}
-		if got := setting.OptionsBy.Options["local"]; !slices.Equal(got, want) {
-			t.Errorf("local models = %+v, want the curated profiles %+v", got, want)
-		}
-		return
+	model, ok := readSettings(t)["model"]
+	if !ok {
+		t.Fatal("manifest has no model setting")
 	}
-	t.Fatal("manifest has no model setting")
+	if model.Default != any(engine.DefaultModel) {
+		t.Errorf("model defaults to %q, want %q", model.Default, engine.DefaultModel)
+	}
+	if !slices.Equal(model.Options, want) {
+		t.Errorf("local models = %+v, want the curated profiles %+v", model.Options, want)
+	}
+}
+
+// The source is the local model unless a person chooses a connection, and the model of the local
+// source is asked for only while that source is chosen.
+func TestManifestOffersTheLocalModelOrAConnectionAsTheSource(t *testing.T) {
+	settings := readSettings(t)
+	source, ok := settings["source"]
+	if !ok {
+		t.Fatal("manifest has no source setting")
+	}
+	var values []string
+	var titles []string
+	for _, one := range source.Options {
+		values, titles = append(values, one.Value), append(titles, one.Title)
+	}
+	if source.Type != "enum" || source.Title != "Source" || source.Default != any("local") ||
+		!slices.Equal(values, []string{"local", "connection"}) || !slices.Equal(titles, []string{"Local model", "Connection"}) {
+		t.Errorf("source = %+v, want the enum Source of Local model and Connection that starts at local", source)
+	}
+	if when := settings["model"].When; when == nil || when.Setting != "source" || !slices.Equal(when.Is, []string{"local"}) {
+		t.Errorf("model is shown when %+v, want the source is local", when)
+	}
+}
+
+// The connection of the vectors is one row for the operation embed, shown while the source is a connection.
+func TestManifestDeclaresOneConnectionRowForEmbed(t *testing.T) {
+	rows, ok := readSettings(t)["connections"]
+	if !ok {
+		t.Fatal("manifest has no connections setting")
+	}
+	if rows.Type != "connections" || rows.Operation != "embed" || rows.Max == nil || *rows.Max != 1 ||
+		rows.When == nil || rows.When.Setting != "source" || !slices.Equal(rows.When.Is, []string{"connection"}) {
+		t.Errorf("connections = %+v, want one row for embed shown while the source is a connection", rows)
+	}
+}
+
+// The plugin keeps no key, no address and no service of its own.
+func TestManifestDeclaresNoKeyNoAddressAndNoProvider(t *testing.T) {
+	var manifest struct {
+		Secrets []json.RawMessage `json:"secrets"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest.Secrets) != 0 {
+		t.Errorf("%d secrets declared, want none", len(manifest.Secrets))
+	}
+	settings := readSettings(t)
+	for _, key := range []string{"provider", "baseUrl", "apiKey"} {
+		if _, ok := settings[key]; ok {
+			t.Errorf("manifest still declares the setting %s", key)
+		}
+	}
 }
 
 // The longest chunk of a note is a whole number from 16 to 8192 that starts at 256, and the settings

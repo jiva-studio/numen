@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import { writeSetting } from '../../support/vault.js'
 
 async function openTranscriptionSettings(page: Page): Promise<void> {
   await runPaletteCommand(page, 'Open settings', 'Open settings')
@@ -152,7 +153,11 @@ test.describe('OCR settings', () => {
 })
 
 test.describe('Embeddings settings', () => {
-  test('shows the settings of the chosen provider, and keeps the values of the others', async ({
+  test.afterEach(async ({ request }) => {
+    await writeSetting(request, ['md.numen.engines.embeddings', 'source'], 'local')
+  })
+
+  test('shows the model for the local source and the connection for the other source', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -161,42 +166,28 @@ test.describe('Embeddings settings', () => {
       .getByRole('button', { name: /Vector Embeddings/i })
       .first()
       .click()
-    const provider = page.getByTestId('setting-provider')
-    await expect(provider).toBeVisible({ timeout: 10_000 })
+    const source = page.getByTestId('setting-source')
+    await expect(source).toBeVisible({ timeout: 10_000 })
 
-    await expect(provider.locator('.settings__choice')).toHaveText('Local')
-    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
+    await expect(source.locator('.settings__choice')).toHaveText('Local model')
     await expect(page.getByText('Model', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add connection' })).toHaveCount(0)
+    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
     await expect(page.getByText('API key', { exact: true })).toHaveCount(0)
 
-    await provider.locator('.settings__choice').click()
+    await source.locator('.settings__choice').click()
     await expect(
       page.getByRole('menuitemradio', {
-        name: /Local.*Runs ONNX embedding models locally on this machine/i,
+        name: /Local model.*Runs an embedding model on this machine/i,
       }),
     ).toBeVisible()
-    await page.getByRole('menuitemradio', { name: /^Custom service/ }).click()
-    await expect(page.getByText('Service URL', { exact: true })).toBeVisible()
+    await page.getByRole('menuitemradio', { name: /^Connection/ }).click()
+    await expect(page.getByRole('button', { name: 'Add connection' })).toBeVisible()
+    await expect(page.getByText('Model', { exact: true })).toHaveCount(0)
+
+    await source.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: /^Local model/ }).click()
+    await expect(page.getByRole('button', { name: 'Add connection' })).toHaveCount(0)
     await expect(page.getByText('Model', { exact: true })).toBeVisible()
-    await expect(page.getByText('API key', { exact: true }).first()).toBeVisible()
-    const url = page.getByRole('textbox', { name: 'Service URL' })
-    await url.fill('http://127.0.0.1:9/v1')
-    await url.press('Tab')
-    await expect(page.getByRole('textbox', { name: 'Service URL' })).not.toBeFocused()
-
-    await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: /^OpenAI/ }).click()
-    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
-    await expect(page.getByText('Model', { exact: true })).toBeVisible()
-
-    await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: /^Custom service/ }).click()
-    await expect(page.getByRole('textbox', { name: 'Service URL' })).toHaveValue(
-      'http://127.0.0.1:9/v1',
-    )
-
-    await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: /^Local/ }).click()
-    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
   })
 })

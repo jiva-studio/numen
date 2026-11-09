@@ -125,6 +125,7 @@ func (s *embeddingServer) Close() error {
 	defer s.mu.Unlock()
 
 	s.retireOpeningLocked()
+	s.resetConnectionLocked()
 	if s.embedder != nil {
 		err := s.embedder.Close()
 		s.embedder = nil

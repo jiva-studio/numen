@@ -5,7 +5,6 @@ import { callRPC, writeSetting } from '../../support/vault.js'
 
 const NOTES_ID = 'md.numen.notes'
 const PDF_ID = 'md.numen.readers.pdf'
-const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 
 interface ListedSecret {
   readonly id: string
@@ -42,7 +41,6 @@ test.describe('Plugin settings take effect', () => {
     await writeSetting(request, [NOTES_ID, 'lineNumbers'], false)
     await writeSetting(request, [NOTES_ID, 'softWrap'], true)
     await writeSetting(request, [PDF_ID, 'defaultZoom'], 'page')
-    await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'local')
     await deleteSecrets(page)
   })
 
@@ -89,27 +87,26 @@ test.describe('Plugin settings take effect', () => {
     page,
   }) => {
     const value = 'sk-invented-harbour-key'
-    await writeSetting(page.request, [EMBEDDINGS_ID, 'provider'], 'openai')
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
-    await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
+    await settings.getByRole('button', { name: /Numen Agent/ }).click()
     // The key is chosen from the secrets on this machine and is never typed or shown here.
     await expect(settings.locator('.settings__secret')).toBeVisible()
     await expect(settings.getByRole('textbox', { name: 'API key' })).toHaveCount(0)
     await settings.getByRole('button', { name: 'All plugins' }).click()
 
     await settings.getByRole('button', { name: /^Secrets$/ }).click()
-    const section = settings.getByRole('region', { name: 'openai' })
+    const section = settings.getByRole('region', { name: 'openrouter' })
     const valueField = section.getByLabel(/^Value of /)
     await valueField.fill(value)
     await valueField.press('Enter')
 
     await expect
       .poll(async () => (await readSecrets(page)).map((one) => one.name))
-      .toEqual(['OpenAI'])
-    expect((await readSecrets(page))[0]).toMatchObject({ group: 'openai', hasValue: true })
+      .toEqual(['OpenRouter'])
+    expect((await readSecrets(page))[0]).toMatchObject({ group: 'openrouter', hasValue: true })
     await expect(section.getByLabel(/^Value of /)).toHaveValue('')
     expect(await page.content()).not.toContain(value)
 
@@ -122,7 +119,7 @@ test.describe('Plugin settings take effect', () => {
     expect(await page.content()).not.toContain(value)
 
     await reloaded
-      .getByRole('region', { name: 'openai' })
+      .getByRole('region', { name: 'openrouter' })
       .getByRole('button', { name: 'Secret actions' })
       .click()
     await page.getByRole('menuitem', { name: /^delete/i }).click()

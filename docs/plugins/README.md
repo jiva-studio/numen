@@ -573,7 +573,7 @@ The host sends the allowed secrets in the `Configure` call, in `secrets` apart f
 
 A `Configure` handler must not call back into the host to activate another plugin: the host holds the lock of the delivery, and the lock of the secret operations, during the send, and that call waits until the send times out.
 
-In Go the callbacks of `WithConfigure`, `WithUpdateConfig`, `SetConfigure` and `SetUpdateConfig` of `plugin-sdk-go/server` take `(values, secrets)`, with `secrets` of type `server.Secrets`. `server.ReadSecrets(secrets, name)` returns the list for the declaration `name` as `[]server.Secret{ID, Name, Group, Value}` and whether the call carries that declaration. A plugin that uses one key takes the first element, as the plugins of the repository do, `engines-embeddings`, `tools-proofreading` and `agents-numen`:
+In Go the callbacks of `WithConfigure`, `WithUpdateConfig`, `SetConfigure` and `SetUpdateConfig` of `plugin-sdk-go/server` take `(values, secrets)`, with `secrets` of type `server.Secrets`. `server.ReadSecrets(secrets, name)` returns the list for the declaration `name` as `[]server.Secret{ID, Name, Group, Value}` and whether the call carries that declaration. A plugin that uses one key takes the first element, as the plugins of the repository do, `tools-proofreading` and `agents-numen`:
 
 ```go
 if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
@@ -586,7 +586,7 @@ if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
 
 `server.SecretAPIKey` names the declaration `apiKey`. When the call does not carry the declaration the plugin keeps its key; when it carries an empty list the plugin clears it. A plugin reads no key from its environment, and the TypeScript SDK has no call for secrets.
 
-A plugin that reads one key from different groups declares `apiKey` once for each, under conditions on one setting. `engines-embeddings` and `tools-proofreading` declare `apiKey` for the group `openrouter` while `provider` is `openrouter`, for the group `openai` while it is `openai`, and with no group while it is `custom`. `agents-numen` declares `apiKey` for the group `openrouter` with no condition.
+A plugin that reads one key from different groups declares `apiKey` once for each, under conditions on one setting. `tools-proofreading` declares `apiKey` for the group `openrouter` while `provider` is `openrouter`, for the group `openai` while it is `openai`, and with no group while it is `custom`. `agents-numen` declares `apiKey` for the group `openrouter` with no condition.
 
 When the person deletes a secret the host removes its entry, its value and its permissions. Uninstalling a plugin removes its permissions at the next start, disabling it keeps them, and one manifest folder that cannot be read keeps all permissions until a start with none, and an update whose manifest no longer declares a name and group removes the permissions of that declaration. A group stays, with its secrets, when the last plugin that asks for it is removed.
 

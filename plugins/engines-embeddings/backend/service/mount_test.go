@@ -1,7 +1,6 @@
 package service
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -10,15 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// The handler of a host that links the plugin in embeds with the base URL and
-// the key that its own Configure passes.
-func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) {
-	var authorization string
-	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authorization = r.Header.Get("Authorization")
-		encodeJSON(t, w, map[string]any{"data": []map[string]any{{"embedding": []float32{0.5, 0.25}, "index": 0}}})
-	}))
-	defer remote.Close()
+// The handler of a host that links the plugin in serves the local model it is configured for.
+func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
@@ -27,21 +19,17 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	defer web.Close()
 	token := hostcall.WithBearer("linked-token")
 
-	_, err = server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
-		map[string]string{"baseUrl": remote.URL, "provider": "custom"}, keysOf("remote-key"))
-	if err != nil {
+	if _, err := server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
+		map[string]string{"source": "local", "model": "Xenova/bge-m3"}, nil); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	vectors, err := embedding.NewClient(web.Client(), web.URL, token).EmbedTexts(t.Context(), embedding.RoleDocument, []string{"words"})
+	info, err := embedding.NewClient(web.Client(), web.URL, token).GetModelInfo(t.Context())
 	if err != nil {
-		t.Fatalf("EmbedBatch: %v", err)
+		t.Fatalf("GetModelInfo: %v", err)
 	}
 
-	if authorization != "Bearer remote-key" {
-		t.Errorf("the remote service was asked with %q", authorization)
-	}
-	if len(vectors) != 1 || len(vectors[0]) != 2 || vectors[0][0] != 0.5 {
-		t.Errorf("vectors = %v", vectors)
+	if info.Name != "Xenova/bge-m3" || info.Dimensions != 1024 {
+		t.Errorf("model = %s at %d, want Xenova/bge-m3 at 1024", info.Name, info.Dimensions)
 	}
 }
 

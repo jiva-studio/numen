@@ -149,7 +149,7 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "provider": "local"}, nil)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "source": "local"}, nil)
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
