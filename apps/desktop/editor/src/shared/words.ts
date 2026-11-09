@@ -37,7 +37,7 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'No results found',
   noQuery: 'Search failed',
-  nothingFound: 'Nothing found',
+  nothingFound: (query: string) => `Nothing found for “${query}”`,
   notEmbedded: 'Semantic index not built yet',
   /** The commands, and the groups they are drawn in. */
   noteGroupTitle: 'Note',

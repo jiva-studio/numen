@@ -76,7 +76,11 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
 }
 
-async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, text: string) {
+async function mountField(
+  found: { names?: NameMatch[]; passages?: Passage[] },
+  text: string,
+  showSilence = false,
+) {
   const core: SearchDeps = {
     names: async () => found.names ?? [],
     search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
@@ -107,7 +111,9 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
       places: {},
       runChoice,
     },
-    global: { stubs: { Palette: true } },
+    global: {
+      stubs: { Palette: showSilence ? { template: '<div><slot name="silence" /></div>' } : true },
+    },
   })
   const choose = async (item: string, action: string) => {
     field.findComponent(Palette).vm.$emit('choose', item, action)
@@ -317,5 +323,21 @@ describe('the highlight of the search menu as groups answer', () => {
     } finally {
       field.unmount()
     }
+  })
+})
+
+describe('the empty state of the search', () => {
+  it('shows the typed words and the icon when nothing is found', async () => {
+    const one = await mountField({}, '  oo  ', true)
+
+    expect(one.field.get('[data-palette="nothing-text"]').text()).toBe('Nothing found for “oo”')
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(true)
+  })
+
+  it('is absent while results exist', async () => {
+    const one = await mountField({ passages: [bookPassage] }, 'reef', true)
+
+    expect(one.field.find('[data-palette="nothing-text"]').exists()).toBe(false)
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(false)
   })
 })

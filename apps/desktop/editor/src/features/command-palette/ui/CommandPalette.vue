@@ -7,6 +7,7 @@
  * and what a keystroke in it means. The keys of the window open and close each.
  */
 import { computed } from 'vue'
+import { Search } from '@lucide/vue'
 import { Palette, type ActionWords } from '@numen/shell'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
@@ -125,12 +126,41 @@ function getRowIcon(id: string) {
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
     <template v-if="!commands.open.value && search.isNothingFound.value" #silence>
-      {{ words.nothingFound }}
+      <span class="nothing-found">
+        <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
+        <span class="nothing-found__text" data-palette="nothing-text">{{
+          words.nothingFound(search.typed.value.trim())
+        }}</span>
+      </span>
     </template>
   </Palette>
 </template>
 
 <style scoped>
+.nothing-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  padding-block: 1.5rem;
+  text-align: center;
+}
+
+.nothing-found__icon {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  stroke-width: 1.75;
+}
+
+/* A long query is cut by the edge of the panel. */
+.nothing-found__text {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .command-icon {
   inline-size: 100%;
