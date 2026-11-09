@@ -2,7 +2,14 @@
  * The calls on models of a plugin, carried out over ModelService for the rows of that plugin.
  */
 import type { ModelCallFailure, ModelClient } from '@numen/core-client'
-import type { ModelError, ModelHost, Result } from '@numen/plugin-sdk'
+import type {
+  ChatEvent,
+  ChatRequest,
+  ModelCallOptions,
+  ModelError,
+  ModelHost,
+  Result,
+} from '@numen/plugin-sdk'
 
 const readError = (failure: ModelCallFailure): ModelError => ({
   error: failure.errorCode,
@@ -38,6 +45,20 @@ const settle = async <T>(
   }
 }
 
+async function* streamChat(
+  client: ModelClient,
+  pluginId: string,
+  request: ChatRequest,
+  options: ModelCallOptions | undefined,
+): AsyncGenerator<ChatEvent, ModelError | null> {
+  try {
+    const end = yield* client.chat(pluginId, request, options)
+    return end === null ? null : readError(end)
+  } catch (error) {
+    return readCancellation(error, options?.signal)
+  }
+}
+
 /** The model calls a plugin makes, with the plugin id the loader gives it. */
 export const createPluginModels = (client: ModelClient, pluginId: string): ModelHost => ({
   complete: (request, options) =>
@@ -46,4 +67,5 @@ export const createPluginModels = (client: ModelClient, pluginId: string): Model
     settle(options?.signal, () => client.embed(pluginId, request.texts, options)),
   getEmbeddingProfile: (options) =>
     settle(options?.signal, () => client.getEmbeddingProfile(pluginId, options)),
+  chat: (request, options) => streamChat(client, pluginId, request, options),
 })

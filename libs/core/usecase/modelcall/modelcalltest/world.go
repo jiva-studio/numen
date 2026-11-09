@@ -371,7 +371,7 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 
 const addressField = "baseUrl"
 
-func getBothOperations() []string { return []string{"complete", "embed"} }
+func getBothOperations() []string { return []string{"complete", "embed", "chat"} }
 
 func getCompleteOnly() []string { return []string{"complete"} }
 

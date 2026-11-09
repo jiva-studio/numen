@@ -14,6 +14,11 @@ type (
 	TryNextError     = connectionport.TryNextError
 	StopError        = connectionport.StopError
 	CompleteRequest  = connectionport.CompleteRequest
+	ChatRequest      = connectionport.ChatRequest
+	ChatMessage      = connectionport.ChatMessage
+	ChatEvent        = connectionport.ChatEvent
+	ToolCall         = connectionport.ToolCall
+	ToolDefinition   = connectionport.ToolDefinition
 	Priority         = connectionport.Priority
 	CompleteResult   = connectionport.CompleteResult
 	Message          = connectionport.Message
@@ -35,6 +40,14 @@ const (
 	FailureReasonTimeout         = connectionport.FailureReasonTimeout
 	FailureReasonBadRequest      = connectionport.FailureReasonBadRequest
 )
+
+const (
+	ChatFinishStop      = connectionport.ChatFinishStop
+	ChatFinishToolCalls = connectionport.ChatFinishToolCalls
+	ChatFinishLength    = connectionport.ChatFinishLength
+)
+
+type ChatFinishReason = connectionport.ChatFinishReason
 
 const (
 	PriorityBackground  = connectionport.PriorityBackground

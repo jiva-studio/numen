@@ -81,6 +81,46 @@ type CompleteRequest struct {
 // CompleteResult is the text of an answer.
 type CompleteResult struct{ Text string }
 
+// ToolCall is a call of a tool the model asked for. Arguments is one JSON object.
+type ToolCall struct{ ID, Name, Arguments string }
+
+// ToolDefinition is a tool offered to the model. Parameters is the JSON schema of the arguments.
+type ToolDefinition struct{ Name, Description, Parameters string }
+
+// ChatMessage is one message of a conversation. Role is system, user, assistant or tool. An assistant
+// message carries the calls it asked for, and a tool message carries the id of the call it answers.
+type ChatMessage struct {
+	Role       string
+	Text       string
+	ToolCalls  []ToolCall
+	ToolCallID string
+}
+
+// ChatRequest is one turn a provider carries out. The history is in Messages.
+type ChatRequest struct {
+	Messages    []ChatMessage
+	Tools       []ToolDefinition
+	Temperature *float64
+	MaxTokens   int
+}
+
+// ChatFinishReason is why a turn ended. The zero value is ChatFinishStop.
+type ChatFinishReason int
+
+// The reasons a turn ends.
+const (
+	ChatFinishStop ChatFinishReason = iota
+	ChatFinishToolCalls
+	ChatFinishLength
+)
+
+// ChatEvent is one event of a turn: exactly one field is set. A text delta is never empty.
+type ChatEvent struct {
+	TextDelta string
+	ToolCall  *ToolCall
+	Finish    *ChatFinishReason
+}
+
 // Model is a model a service lists. Operations is empty when the service gives no label.
 type Model struct {
 	ID         string
@@ -114,6 +154,11 @@ type (
 	EmbeddingProvider interface {
 		Embed(ctx context.Context, call ProviderCall, texts []string) ([][]float32, error)
 	}
+	// ChatProvider carries out the operation chat. It sends the events of one turn in order and ends with
+	// one finish. It returns the error of the first send that fails.
+	ChatProvider interface {
+		Chat(ctx context.Context, call ProviderCall, request ChatRequest, send func(ChatEvent) error) error
+	}
 	// ModelCatalog lists the models of a connection and the reasoning levels of the model of the call.
 	ModelCatalog interface {
 		ListModels(ctx context.Context, call ProviderCall, operation string) ([]Model, error)
@@ -129,6 +174,7 @@ type (
 // Provider is what a plugin that provides connection types carries out.
 type Provider interface {
 	CompletionProvider
+	ChatProvider
 	EmbeddingProvider
 	ModelCatalog
 	ModelProfiles

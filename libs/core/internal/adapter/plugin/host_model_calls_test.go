@@ -19,6 +19,10 @@ func (noModelCalls) Complete(context.Context, string, connectionport.CompleteReq
 	return connectionport.CompleteResult{}, nil
 }
 
+func (noModelCalls) Chat(context.Context, string, connectionport.ChatRequest, connectionport.Priority, func(connectionport.ChatEvent) error) error {
+	return nil
+}
+
 func (noModelCalls) Embed(context.Context, string, []string, connectionport.Priority) ([][]float32, error) {
 	return nil, nil
 }

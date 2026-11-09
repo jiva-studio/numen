@@ -111,13 +111,17 @@ func classifyTransportError(parent, limit context.Context, err error) error {
 }
 
 func mapStatus(response *http.Response) error {
-	switch status := response.StatusCode; {
+	return mapStatusCode(response.StatusCode, response.Header.Get("Retry-After"))
+}
+
+func mapStatusCode(status int, retryAfter string) error {
+	switch {
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
 		return connection.NewTryNextError(connection.ReasonKeyRejected, 0)
 	case status == http.StatusPaymentRequired:
 		return connection.NewTryNextError(connection.ReasonPaymentRequired, 0)
 	case status == http.StatusTooManyRequests:
-		return connection.NewTryNextError(connection.ReasonRateLimited, parseRetryAfter(response.Header.Get("Retry-After"), time.Now()))
+		return connection.NewTryNextError(connection.ReasonRateLimited, parseRetryAfter(retryAfter, time.Now()))
 	case status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout:
 		return connection.NewTryNextError(connection.ReasonUnreachable, 0)
 	case status >= 400 && status < 500:

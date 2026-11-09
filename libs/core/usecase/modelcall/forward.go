@@ -47,3 +47,15 @@ func (f *ForwardedCalls) GetEmbeddingProfile(ctx context.Context, callerPluginID
 	}
 	return calls.GetEmbeddingProfile(ctx, callerPluginID)
 }
+
+// Chat forwards to the calls of the moment.
+func (f *ForwardedCalls) Chat(
+	ctx context.Context, callerPluginID string, request connectionport.ChatRequest, priority connectionport.Priority,
+	send func(connectionport.ChatEvent) error,
+) error {
+	calls := f.get()
+	if calls == nil {
+		return connectionport.ErrNoConnection
+	}
+	return calls.Chat(ctx, callerPluginID, request, priority, send)
+}

@@ -2,42 +2,48 @@
 package service
 
 import (
+	"context"
 	"net/http"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// Mount registers the agent's services on s and hands the settings and secrets Configure receives to
-// the agent. The agent's tasks end when s closes.
+// Mount registers the agent's services on s, asking the core of the host that the environment names
+// for the turns of a conversation. It hands the settings Configure receives to the agent. The agent's
+// tasks end when s closes.
 func Mount(s *server.Server) error {
-	agent := &Server{
-		Unimplemented: agentrun.Unimplemented{},
-		Client:        nil,
-		mu:            sync.Mutex{},
-		baseURL:       "",
-		key:           "",
-		model:         "",
-		temperature:   nil,
-		maxTokens:     nil,
-		maxSteps:      0,
-		conversations: nil,
-		models:        nil,
-		isListed:      false,
-		registry:      agentrun.Registry{},
+	client, err := connection.NewClientFromEnv()
+	if err != nil {
+		return err
 	}
-	s.SetUpdateConfig(func(values map[string]string, secrets server.Secrets) {
-		agent.Configure(values)
-		agent.ApplySecrets(secrets)
-	})
-	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
-	s.OnClose(agent.Close)
+	mount(s, client)
 	return nil
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
+// from the variables a launched process of the plugin is given. It asks the host those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+	client, err := connection.NewClientFromVars(vars)
+	if err != nil {
+		return nil, err
+	}
+	return server.NewLinkedHandler(vars, func(s *server.Server) error {
+		mount(s, client)
+		return nil
+	})
+}
+
+func mount(s *server.Server, client *connection.Client) {
+	agent := &Server{Unimplemented: agentrun.Unimplemented{}, chat: func(ctx context.Context, request connection.ChatRequest) (chatStream, error) {
+		stream, err := client.Chat(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+		return stream, nil
+	}}
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.Configure(values) })
+	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.OnClose(agent.Close)
 }

@@ -19,6 +19,7 @@ const (
 	typeCompatible = "openai-compatible"
 
 	operationComplete = "complete"
+	operationChat     = "chat"
 	operationEmbed    = "embed"
 	operationList     = "list"
 
@@ -54,7 +55,7 @@ func New() *Service {
 
 // Provider returns the roles the service fills.
 func (s *Service) Provider() connection.Provider {
-	return connection.Provider{Completer: s, Embedder: s, Models: s, Profiles: s}
+	return connection.Provider{Completer: s, Chatter: s, Embedder: s, Models: s, Profiles: s}
 }
 
 // Mount serves the provider on the plugin server and takes the settings of the plugin from Configure.

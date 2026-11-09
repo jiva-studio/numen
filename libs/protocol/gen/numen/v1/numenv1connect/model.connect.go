@@ -40,6 +40,8 @@ const (
 	ModelServiceListReasoningLevelsProcedure = "/numen.v1.ModelService/ListReasoningLevels"
 	// ModelServiceCompleteProcedure is the fully-qualified name of the ModelService's Complete RPC.
 	ModelServiceCompleteProcedure = "/numen.v1.ModelService/Complete"
+	// ModelServiceChatProcedure is the fully-qualified name of the ModelService's Chat RPC.
+	ModelServiceChatProcedure = "/numen.v1.ModelService/Chat"
 	// ModelServiceEmbedProcedure is the fully-qualified name of the ModelService's Embed RPC.
 	ModelServiceEmbedProcedure = "/numen.v1.ModelService/Embed"
 	// ModelServiceGetEmbeddingProfileProcedure is the fully-qualified name of the ModelService's
@@ -56,6 +58,8 @@ type ModelServiceClient interface {
 	ListReasoningLevels(context.Context, *connect.Request[v1.ListReasoningLevelsRequest]) (*connect.Response[v1.ListReasoningLevelsResponse], error)
 	// Complete turns messages into the text of an answer, through the rows of the plugin the request names.
 	Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error)
+	// Chat streams the next turn of a conversation through the rows of the plugin the request names.
+	Chat(context.Context, *connect.Request[v1.ModelServiceChatRequest]) (*connect.ServerStreamForClient[v1.ModelServiceChatResponse], error)
 	// Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
 	Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
@@ -91,6 +95,12 @@ func NewModelServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(modelServiceMethods.ByName("Complete")),
 			connect.WithClientOptions(opts...),
 		),
+		chat: connect.NewClient[v1.ModelServiceChatRequest, v1.ModelServiceChatResponse](
+			httpClient,
+			baseURL+ModelServiceChatProcedure,
+			connect.WithSchema(modelServiceMethods.ByName("Chat")),
+			connect.WithClientOptions(opts...),
+		),
 		embed: connect.NewClient[v1.ModelServiceEmbedRequest, v1.ModelServiceEmbedResponse](
 			httpClient,
 			baseURL+ModelServiceEmbedProcedure,
@@ -111,6 +121,7 @@ type modelServiceClient struct {
 	listModels          *connect.Client[v1.ListModelsRequest, v1.ListModelsResponse]
 	listReasoningLevels *connect.Client[v1.ListReasoningLevelsRequest, v1.ListReasoningLevelsResponse]
 	complete            *connect.Client[v1.ModelServiceCompleteRequest, v1.ModelServiceCompleteResponse]
+	chat                *connect.Client[v1.ModelServiceChatRequest, v1.ModelServiceChatResponse]
 	embed               *connect.Client[v1.ModelServiceEmbedRequest, v1.ModelServiceEmbedResponse]
 	getEmbeddingProfile *connect.Client[v1.ModelServiceGetEmbeddingProfileRequest, v1.ModelServiceGetEmbeddingProfileResponse]
 }
@@ -128,6 +139,11 @@ func (c *modelServiceClient) ListReasoningLevels(ctx context.Context, req *conne
 // Complete calls numen.v1.ModelService.Complete.
 func (c *modelServiceClient) Complete(ctx context.Context, req *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error) {
 	return c.complete.CallUnary(ctx, req)
+}
+
+// Chat calls numen.v1.ModelService.Chat.
+func (c *modelServiceClient) Chat(ctx context.Context, req *connect.Request[v1.ModelServiceChatRequest]) (*connect.ServerStreamForClient[v1.ModelServiceChatResponse], error) {
+	return c.chat.CallServerStream(ctx, req)
 }
 
 // Embed calls numen.v1.ModelService.Embed.
@@ -149,6 +165,8 @@ type ModelServiceHandler interface {
 	ListReasoningLevels(context.Context, *connect.Request[v1.ListReasoningLevelsRequest]) (*connect.Response[v1.ListReasoningLevelsResponse], error)
 	// Complete turns messages into the text of an answer, through the rows of the plugin the request names.
 	Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error)
+	// Chat streams the next turn of a conversation through the rows of the plugin the request names.
+	Chat(context.Context, *connect.Request[v1.ModelServiceChatRequest], *connect.ServerStream[v1.ModelServiceChatResponse]) error
 	// Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
 	Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error)
 	// GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
@@ -180,6 +198,12 @@ func NewModelServiceHandler(svc ModelServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(modelServiceMethods.ByName("Complete")),
 		connect.WithHandlerOptions(opts...),
 	)
+	modelServiceChatHandler := connect.NewServerStreamHandler(
+		ModelServiceChatProcedure,
+		svc.Chat,
+		connect.WithSchema(modelServiceMethods.ByName("Chat")),
+		connect.WithHandlerOptions(opts...),
+	)
 	modelServiceEmbedHandler := connect.NewUnaryHandler(
 		ModelServiceEmbedProcedure,
 		svc.Embed,
@@ -200,6 +224,8 @@ func NewModelServiceHandler(svc ModelServiceHandler, opts ...connect.HandlerOpti
 			modelServiceListReasoningLevelsHandler.ServeHTTP(w, r)
 		case ModelServiceCompleteProcedure:
 			modelServiceCompleteHandler.ServeHTTP(w, r)
+		case ModelServiceChatProcedure:
+			modelServiceChatHandler.ServeHTTP(w, r)
 		case ModelServiceEmbedProcedure:
 			modelServiceEmbedHandler.ServeHTTP(w, r)
 		case ModelServiceGetEmbeddingProfileProcedure:
@@ -223,6 +249,10 @@ func (UnimplementedModelServiceHandler) ListReasoningLevels(context.Context, *co
 
 func (UnimplementedModelServiceHandler) Complete(context.Context, *connect.Request[v1.ModelServiceCompleteRequest]) (*connect.Response[v1.ModelServiceCompleteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.Complete is not implemented"))
+}
+
+func (UnimplementedModelServiceHandler) Chat(context.Context, *connect.Request[v1.ModelServiceChatRequest], *connect.ServerStream[v1.ModelServiceChatResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ModelService.Chat is not implemented"))
 }
 
 func (UnimplementedModelServiceHandler) Embed(context.Context, *connect.Request[v1.ModelServiceEmbedRequest]) (*connect.Response[v1.ModelServiceEmbedResponse], error) {

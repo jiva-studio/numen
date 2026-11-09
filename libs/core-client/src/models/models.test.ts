@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
+  HostModelChatFinishReason,
   ListModelsResponseSchema,
   ListReasoningLevelsResponseSchema,
   ModelErrorCode,
+  ModelServiceChatResponseSchema,
   ModelServiceCompleteResponseSchema,
   ModelServiceEmbedResponseSchema,
   ModelServiceGetEmbeddingProfileResponseSchema,
@@ -30,6 +32,7 @@ const createRpc = (overrides: Partial<ModelRpc> = {}): ModelRpc => ({
         ],
       }),
     ),
+  chat: () => (async function* () {})(),
   complete: () => Promise.resolve(create(ModelServiceCompleteResponseSchema, {})),
   embed: () => Promise.resolve(create(ModelServiceEmbedResponseSchema, {})),
   getEmbeddingProfile: () =>
@@ -291,5 +294,178 @@ describe('createModelClient lists', () => {
     )
 
     await expect(client.listModels('c00000001', 'complete')).rejects.toThrow('ALL_FAILED')
+  })
+})
+
+type ChatEventCase = Parameters<typeof create<typeof ModelServiceChatResponseSchema>>[1]
+
+const streamOf = (...answers: ChatEventCase[]) =>
+  (async function* () {
+    for (const answer of answers) yield create(ModelServiceChatResponseSchema, answer)
+  })()
+
+const readChat = async (stream: AsyncGenerator<unknown, unknown>) => {
+  const events: unknown[] = []
+  for (;;) {
+    const next = await stream.next()
+    if (next.done === true) return { events, end: next.value }
+    events.push(next.value)
+  }
+}
+
+describe('createModelClient chat', () => {
+  it('streams text, tool calls and the finish of a turn in order', async () => {
+    const client = createModelClient(
+      createRpc({
+        chat: () =>
+          streamOf(
+            { event: { case: 'textDelta', value: 'Let me ' } },
+            { event: { case: 'textDelta', value: 'look.' } },
+            {
+              event: {
+                case: 'toolCall',
+                value: { id: 'c1', name: 'list_notes', argumentsJson: '{"limit":3}' },
+              },
+            },
+            {
+              event: {
+                case: 'finish',
+                value: { reason: HostModelChatFinishReason.TOOL_CALLS },
+              },
+            },
+          ),
+      }),
+    )
+
+    const { events, end } = await readChat(client.chat('md.numen.agents.numen', { messages: [] }))
+
+    expect(events).toStrictEqual([
+      { textDelta: 'Let me ' },
+      { textDelta: 'look.' },
+      { toolCall: { id: 'c1', name: 'list_notes', arguments: '{"limit":3}' } },
+      { finish: { reason: 'tool_calls' } },
+    ])
+    expect(end).toBeNull()
+  })
+
+  it('sends the turn of the plugin with the history, the tools, the priority and the signal', async () => {
+    const requests: unknown[] = []
+    const options: unknown[] = []
+    const client = createModelClient(
+      createRpc({
+        chat: (request, callOptions) => {
+          requests.push(request)
+          options.push(callOptions)
+          return streamOf({
+            event: { case: 'finish', value: { reason: HostModelChatFinishReason.STOP } },
+          })
+        },
+      }),
+    )
+    const controller = new AbortController()
+
+    await readChat(
+      client.chat(
+        'md.numen.agents.numen',
+        {
+          messages: [
+            { role: 'user', text: 'list' },
+            {
+              role: 'assistant',
+              text: '',
+              toolCalls: [{ id: 'c0', name: 'list_notes', arguments: '{}' }],
+            },
+            { role: 'tool', text: 'a, b', toolCallId: 'c0' },
+          ],
+          tools: [{ name: 'list_notes', description: 'Lists.', parameters: { type: 'object' } }],
+          temperature: 0.4,
+          maxTokens: 33,
+        },
+        { priority: 'interactive', signal: controller.signal },
+      ),
+    )
+
+    expect(requests).toStrictEqual([
+      expect.objectContaining({
+        pluginId: 'md.numen.agents.numen',
+        messages: [
+          expect.objectContaining({ role: 'user', text: 'list' }),
+          expect.objectContaining({
+            role: 'assistant',
+            toolCalls: [expect.objectContaining({ id: 'c0', name: 'list_notes', argumentsJson: '{}' })],
+          }),
+          expect.objectContaining({ role: 'tool', text: 'a, b', toolCallId: 'c0' }),
+        ],
+        tools: [
+          expect.objectContaining({
+            name: 'list_notes',
+            description: 'Lists.',
+            parametersJson: '{"type":"object"}',
+          }),
+        ],
+        temperature: 0.4,
+        maxTokens: 33,
+        priority: Priority.INTERACTIVE,
+      }),
+    ])
+    expect(options).toStrictEqual([expect.objectContaining({ signal: controller.signal })])
+  })
+
+  it('ends the turn with the failure the core serves and keeps the text before it', async () => {
+    const client = createModelClient(
+      createRpc({
+        chat: () =>
+          streamOf(
+            { event: { case: 'textDelta', value: 'partial' } },
+            {
+              event: {
+                case: 'failure',
+                value: {
+                  error: ModelErrorCode.ALL_FAILED,
+                  detail: 'Ollama: unreachable',
+                  failures: [{ connectionName: 'Ollama', reason: 'unreachable' }],
+                },
+              },
+            },
+          ),
+      }),
+    )
+
+    const { events, end } = await readChat(client.chat('md.numen.agents.numen', { messages: [] }))
+
+    expect(events).toStrictEqual([{ textDelta: 'partial' }])
+    expect(end).toStrictEqual({
+      errorCode: 'all_failed',
+      detail: 'Ollama: unreachable',
+      failures: [{ connectionName: 'Ollama', reason: 'unreachable' }],
+    })
+  })
+
+  it('reads a plugin with no row as no_connection and a wrong request as rejected', async () => {
+    const codes: Array<[ModelErrorCode, string]> = [
+      [ModelErrorCode.NO_CONNECTION, 'no_connection'],
+      [ModelErrorCode.REJECTED, 'rejected'],
+    ]
+    for (const [code, expected] of codes) {
+      const client = createModelClient(
+        createRpc({
+          chat: () => streamOf({ event: { case: 'failure', value: { error: code, detail: 'd' } } }),
+        }),
+      )
+
+      const { end } = await readChat(client.chat('md.numen.agents.numen', { messages: [] }))
+
+      expect(end).toStrictEqual({ errorCode: expected, detail: 'd', failures: [] })
+    }
+  })
+
+  it('throws where the stream ends before the turn did', async () => {
+    const client = createModelClient(
+      createRpc({ chat: () => streamOf({ event: { case: 'textDelta', value: 'cut' } }) }),
+    )
+
+    await expect(
+      readChat(client.chat('md.numen.agents.numen', { messages: [] })),
+    ).rejects.toThrow('before the turn did')
   })
 })

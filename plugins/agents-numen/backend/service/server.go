@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
+	"strings"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // ProgramName is the identifier a task uses to select the agent, and the key of its settings section.
@@ -24,52 +23,57 @@ const programTitle = "Numen Agent"
 
 // The settings Configure reads.
 const (
-	SettingBaseURL     = "baseUrl"
-	SettingModel       = "model"
-	SettingAPIKey      = "apiKey"
+	SettingConnections = "connections"
 	SettingTemperature = "temperature"
 	SettingMaxTokens   = "maxTokens"
 	SettingMaxSteps    = "maxSteps"
 )
 
-// modelsLimit is how long the chat API has to list its models.
-const modelsLimit = 15 * time.Second
+// reasonNoConnection is why a run stops, and why the agent is unreachable, while no row names a connection.
+const reasonNoConnection = "the Numen Agent has no connection: choose one in its settings"
 
 var errClosing = errors.New("this agent is closing")
 
-// Server is numen's own agent: it works a task by calling an OpenAI-compatible chat API and calling
-// the vault's tools over MCP on the model's behalf. It implements AgentService, in a plugin's process
-// or linked into the process that hosts the vault. The zero value uses the default chat API with no
-// key.
+// chatStream is the events of one turn, as the stream of connection.Client gives them.
+type chatStream interface {
+	Next() (connection.ChatEvent, bool)
+	Err() error
+	Close() error
+}
+
+// askModel asks the core for the next turn of a conversation.
+type askModel func(ctx context.Context, request connection.ChatRequest) (chatStream, error)
+
+// Server is numen's own agent: it works a task by asking the core for the turns of a conversation with a
+// model, through the connection its settings name, and calling the vault's tools over MCP on the model's
+// behalf. The core holds the address and the key of the connection. It implements AgentService, in a
+// plugin's process or linked into the process that hosts the vault.
 type Server struct {
 	agentrun.Unimplemented
 
-	Client *http.Client
+	chat askModel
 
 	mu            sync.Mutex
-	baseURL       string
-	key           string
-	model         string
+	row           *connection.Row
 	temperature   *float64
 	maxTokens     *int
 	maxSteps      int
-	conversations map[string][]message
-	models        []model
-	isListed      bool
+	conversations map[string][]connection.ChatMessage
 
 	registry agentrun.Registry
 }
 
-// Configure applies the settings: the base URL of the chat API and the model used when a task names
-// none. A setting absent from the values keeps its current value.
+// Configure applies the settings: the row that names the connection, the model and its reasoning
+// level, and the options of a request. A setting absent from the values keeps its current value, and a
+// row setting that is no list of rows is left out.
 func (s *Server) Configure(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if base, ok := values[SettingBaseURL]; ok {
-		s.baseURL = base
-	}
-	if name, ok := values[SettingModel]; ok {
-		s.model = name
+	if rows, err := connection.ReadRows(values, SettingConnections); err == nil && values[SettingConnections] != "" {
+		s.row = nil
+		if len(rows) > 0 {
+			s.row = &rows[0]
+		}
 	}
 	if tempStr, ok := values[SettingTemperature]; ok && tempStr != "" {
 		if val, err := strconv.ParseFloat(tempStr, 64); err == nil {
@@ -84,24 +88,6 @@ func (s *Server) Configure(values map[string]string) {
 	if val, ok := readPositive(values[SettingMaxSteps]); ok {
 		s.maxSteps = val
 	}
-	s.models, s.isListed = nil, false
-}
-
-// ApplySecrets applies the key sent to the chat API: the first secret of the list the host passes for
-// the declaration apiKey. An empty list means no key, and a call that does not carry the declaration
-// keeps the current key.
-func (s *Server) ApplySecrets(secrets server.Secrets) {
-	list, carried := server.ReadSecrets(secrets, SettingAPIKey)
-	if !carried {
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.key = ""
-	if len(list) > 0 {
-		s.key = list[0].Value
-	}
-	s.models, s.isListed = nil, false
 }
 
 func readPositive(text string) (int, bool) {
@@ -109,16 +95,23 @@ func readPositive(text string) (int, bool) {
 	return val, err == nil && val > 0
 }
 
-func (s *Server) getChat() chat {
+func (s *Server) getRow() (connection.Row, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return chat{
-		baseURL:     s.baseURL,
-		key:         s.key,
-		client:      s.Client,
-		temperature: s.temperature,
-		maxTokens:   s.maxTokens,
+	if s.row == nil {
+		return connection.Row{}, false
 	}
+	return *s.row, true
+}
+
+func (s *Server) getOptions() (*float64, int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	maxTokens := 0
+	if s.maxTokens != nil {
+		maxTokens = *s.maxTokens
+	}
+	return s.temperature, maxTokens
 }
 
 func (s *Server) getMaxSteps(task *agentrun.Request) int {
@@ -128,18 +121,6 @@ func (s *Server) getMaxSteps(task *agentrun.Request) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.maxSteps
-}
-
-func (s *Server) getModel(named string) string {
-	if named != "" {
-		return named
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.model != "" {
-		return s.model
-	}
-	return defaultModel
 }
 
 // Ask works the task and reports each request to the model, its output, each tool call and the
@@ -156,6 +137,9 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	defer s.registry.Remove(work)
 	defer work.End()
 
+	if _, hasRow := s.getRow(); !hasRow {
+		return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reasonNoConnection}})
+	}
 	tools, err := openToolbox(taskCtx, task)
 	if err != nil {
 		if taskCtx.Err() != nil {
@@ -168,29 +152,28 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	defer func() { err = errors.Join(err, tools.close()) }()
 
 	history := s.getConversation(conversation)
-	messages := make([]message, 0, len(history)+2)
+	messages := make([]connection.ChatMessage, 0, len(history)+2)
 	if instructions := task.Instructions; instructions != "" {
-		messages = append(messages, message{Role: "system", Content: new(instructions), ToolCalls: nil, ToolCallID: ""})
+		messages = append(messages, connection.ChatMessage{Role: "system", Text: instructions})
 	}
 	messages = append(messages, history...)
-	messages = append(messages, message{Role: "user", Content: new(task.Prompt), ToolCalls: nil, ToolCallID: ""})
+	messages = append(messages, connection.ChatMessage{Role: "user", Text: task.Prompt})
 
-	modelName := s.getModel(task.Model)
+	temperature, maxTokens := s.getOptions()
 	taskRun := &run{
-		chat:    s.getChat(),
-		model:   modelName,
-		effort:  s.getEffort(taskCtx, modelName, task.Reasoning),
-		tools:   tools,
-		words:   toolcall.IndexDeclarations(task.ToolDeclarations),
-		turns:   s.getMaxSteps(task),
-		send:    send,
-		isPlain: false,
+		ask:         s.chat,
+		temperature: temperature,
+		maxTokens:   maxTokens,
+		tools:       tools,
+		words:       toolcall.IndexDeclarations(task.ToolDeclarations),
+		turns:       s.getMaxSteps(task),
+		send:        send,
 	}
 	transcript, reason, err := taskRun.answer(taskCtx, messages)
 	if taskCtx.Err() != nil {
 		return nil
 	}
-	if failed := (*chatError)(nil); errors.As(err, &failed) {
+	if failed := (*failure)(nil); errors.As(err, &failed) {
 		reason = failed.Error()
 	} else if err != nil {
 		return err
@@ -201,23 +184,23 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
-func (s *Server) getConversation(conversation string) []message {
+func (s *Server) getConversation(conversation string) []connection.ChatMessage {
 	if conversation == "" {
 		return nil
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]message(nil), s.conversations[conversation]...)
+	return append([]connection.ChatMessage(nil), s.conversations[conversation]...)
 }
 
-func (s *Server) appendConversation(conversation string, transcript []message) {
+func (s *Server) appendConversation(conversation string, transcript []connection.ChatMessage) {
 	if conversation == "" {
 		return
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.conversations == nil {
-		s.conversations = map[string][]message{}
+		s.conversations = map[string][]connection.ChatMessage{}
 	}
 	s.conversations[conversation] = append(s.conversations[conversation], transcript...)
 }
@@ -234,71 +217,33 @@ func (s *Server) FinishConversation(ctx context.Context, conversation string) er
 	return nil
 }
 
-// GetState is unreachable while the chat API does not list its models.
-func (s *Server) GetState(ctx context.Context) (*agentrun.State, error) {
+// GetState is unreachable while no row names a connection.
+func (s *Server) GetState(context.Context) (*agentrun.State, error) {
 	state := &agentrun.State{Unreachable: ""}
-	if _, err := s.listModels(ctx); err != nil {
-		state.Unreachable = fmt.Sprintf("the chat API cannot be reached: %v", err)
+	if _, hasRow := s.getRow(); !hasRow {
+		state.Unreachable = reasonNoConnection
 	}
 	return state, nil
 }
 
-// GetPrograms lists the one program this agent runs: the chat API the settings name, installed
-// while it lists its models, with those models and the configured one as the default. It runs only
-// the vault tools a task names.
-func (s *Server) GetPrograms(ctx context.Context, _ []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
-	models, err := s.listModels(ctx)
-	configured := s.getModel("")
+// GetPrograms lists the one program this agent runs. It is installed while a row names a connection,
+// and the model of the row is the one model it offers. It runs only the vault tools a task names.
+func (s *Server) GetPrograms(context.Context, []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
+	row, hasRow := s.getRow()
 	program := &agentrun.Program{
 		Name:        ProgramName,
 		Title:       programTitle,
-		IsInstalled: err == nil,
+		IsInstalled: hasRow,
 		LimitsTools: true,
 		IsDefault:   false,
 		Models:      nil,
 	}
-	hasConfigured := false
-	for _, one := range models {
-		if one.Name == configured {
-			hasConfigured = true
-		}
-		program.Models = append(program.Models, &reasoning.Model{
-			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
-			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
-		})
-	}
-	if !hasConfigured && configured != "" && len(models) > 0 {
-		program.Models = append(program.Models, &reasoning.Model{
-			Name: configured, Title: configured, IsDefault: true,
-			ReasoningLevels: nil, DefaultReasoning: "",
-		})
+	if hasRow {
+		program.Models = []*reasoning.Model{{
+			Name: row.Model, Title: row.Model, IsDefault: true, ReasoningLevels: nil, DefaultReasoning: "",
+		}}
 	}
 	return []*agentrun.Program{program}, nil
-}
-
-func (s *Server) listModels(ctx context.Context) ([]model, error) {
-	s.mu.Lock()
-	if s.isListed {
-		defer s.mu.Unlock()
-		return s.models, nil
-	}
-	request := chat{baseURL: s.baseURL, key: s.key, client: s.Client, temperature: nil, maxTokens: nil}
-	s.mu.Unlock()
-
-	listing, stop := context.WithTimeout(ctx, modelsLimit)
-	defer stop()
-	models, err := request.listModels(listing)
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-
-	// A failure triggers a new request, and a tool list fetched under settings that have since changed is not cached.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if err == nil && s.baseURL == request.baseURL && s.key == request.key {
-		s.models, s.isListed = models, true
-	}
-	return models, err
 }
 
 // Close stops every running task and rejects new ones.
@@ -306,18 +251,28 @@ func (s *Server) Close() error {
 	return s.registry.Close()
 }
 
-func (s *Server) getEffort(ctx context.Context, name, level string) effort {
-	if level == "" {
-		return effort{field: "", level: ""}
-	}
-	models, err := s.listModels(ctx)
-	if err != nil {
-		return effort{field: "", level: ""}
-	}
-	for _, one := range models {
-		if one.Name == name {
-			return newEffort(one, level)
+// failure is a run stopped by a turn that failed. It stops the run and is reported as why it stopped.
+type failure struct{ err error }
+
+func (f *failure) Error() string { return describeFailure(f.err) }
+
+func (f *failure) Unwrap() error { return f.err }
+
+// describeFailure says in the person's words which connection failed and why.
+func describeFailure(err error) string {
+	var allFailed *connection.AllFailedError
+	var rejected *connection.RejectedError
+	switch {
+	case errors.Is(err, connection.ErrNoConnection):
+		return reasonNoConnection
+	case errors.As(err, &allFailed):
+		parts := make([]string, len(allFailed.Failures))
+		for i, one := range allFailed.Failures {
+			parts[i] = one.ConnectionName + ": " + one.Reason
 		}
+		return strings.Join(parts, "; ")
+	case errors.As(err, &rejected):
+		return rejected.ConnectionName + ": " + rejected.Reason
 	}
-	return effort{field: "", level: ""}
+	return err.Error()
 }

@@ -131,6 +131,62 @@ func (HostModelErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{1}
 }
 
+// HostModelChatFinishReason is why a turn ended.
+type HostModelChatFinishReason int32
+
+const (
+	HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_UNSPECIFIED HostModelChatFinishReason = 0
+	// HOST_MODEL_CHAT_FINISH_REASON_STOP is an answer the model finished.
+	HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP HostModelChatFinishReason = 1
+	// HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS is a turn that asks for tool calls.
+	HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS HostModelChatFinishReason = 2
+	// HOST_MODEL_CHAT_FINISH_REASON_LENGTH is an answer cut off at the length limit.
+	HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_LENGTH HostModelChatFinishReason = 3
+)
+
+// Enum value maps for HostModelChatFinishReason.
+var (
+	HostModelChatFinishReason_name = map[int32]string{
+		0: "HOST_MODEL_CHAT_FINISH_REASON_UNSPECIFIED",
+		1: "HOST_MODEL_CHAT_FINISH_REASON_STOP",
+		2: "HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS",
+		3: "HOST_MODEL_CHAT_FINISH_REASON_LENGTH",
+	}
+	HostModelChatFinishReason_value = map[string]int32{
+		"HOST_MODEL_CHAT_FINISH_REASON_UNSPECIFIED": 0,
+		"HOST_MODEL_CHAT_FINISH_REASON_STOP":        1,
+		"HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS":  2,
+		"HOST_MODEL_CHAT_FINISH_REASON_LENGTH":      3,
+	}
+)
+
+func (x HostModelChatFinishReason) Enum() *HostModelChatFinishReason {
+	p := new(HostModelChatFinishReason)
+	*p = x
+	return p
+}
+
+func (x HostModelChatFinishReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (HostModelChatFinishReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_hostmodel_proto_enumTypes[2].Descriptor()
+}
+
+func (HostModelChatFinishReason) Type() protoreflect.EnumType {
+	return &file_numen_v1_hostmodel_proto_enumTypes[2]
+}
+
+func (x HostModelChatFinishReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use HostModelChatFinishReason.Descriptor instead.
+func (HostModelChatFinishReason) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{2}
+}
+
 // HostModelFailure is one row that did not answer.
 type HostModelFailure struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -373,6 +429,496 @@ func (x *HostModelServiceCompleteResponse) GetFailures() []*HostModelFailure {
 	return nil
 }
 
+type HostModelChatMessage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// role is system, user, assistant or tool.
+	Role string `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Text string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	// tool_calls are the calls an assistant message asked for.
+	ToolCalls []*HostModelToolCall `protobuf:"bytes,3,rep,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"`
+	// tool_call_id is the call a tool message answers.
+	ToolCallId    string `protobuf:"bytes,4,opt,name=tool_call_id,json=toolCallId,proto3" json:"tool_call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelChatMessage) Reset() {
+	*x = HostModelChatMessage{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelChatMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelChatMessage) ProtoMessage() {}
+
+func (x *HostModelChatMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelChatMessage.ProtoReflect.Descriptor instead.
+func (*HostModelChatMessage) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *HostModelChatMessage) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *HostModelChatMessage) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *HostModelChatMessage) GetToolCalls() []*HostModelToolCall {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return nil
+}
+
+func (x *HostModelChatMessage) GetToolCallId() string {
+	if x != nil {
+		return x.ToolCallId
+	}
+	return ""
+}
+
+type HostModelToolDefinition struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// parameters_json is the JSON schema of the arguments.
+	ParametersJson string `protobuf:"bytes,3,opt,name=parameters_json,json=parametersJson,proto3" json:"parameters_json,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *HostModelToolDefinition) Reset() {
+	*x = HostModelToolDefinition{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelToolDefinition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelToolDefinition) ProtoMessage() {}
+
+func (x *HostModelToolDefinition) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelToolDefinition.ProtoReflect.Descriptor instead.
+func (*HostModelToolDefinition) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *HostModelToolDefinition) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *HostModelToolDefinition) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *HostModelToolDefinition) GetParametersJson() string {
+	if x != nil {
+		return x.ParametersJson
+	}
+	return ""
+}
+
+type HostModelToolCall struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// arguments_json is the arguments as one JSON object.
+	ArgumentsJson string `protobuf:"bytes,3,opt,name=arguments_json,json=argumentsJson,proto3" json:"arguments_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelToolCall) Reset() {
+	*x = HostModelToolCall{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelToolCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelToolCall) ProtoMessage() {}
+
+func (x *HostModelToolCall) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelToolCall.ProtoReflect.Descriptor instead.
+func (*HostModelToolCall) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *HostModelToolCall) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *HostModelToolCall) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *HostModelToolCall) GetArgumentsJson() string {
+	if x != nil {
+		return x.ArgumentsJson
+	}
+	return ""
+}
+
+type HostModelChatFinish struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Reason        HostModelChatFinishReason `protobuf:"varint,1,opt,name=reason,proto3,enum=numen.v1.HostModelChatFinishReason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelChatFinish) Reset() {
+	*x = HostModelChatFinish{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelChatFinish) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelChatFinish) ProtoMessage() {}
+
+func (x *HostModelChatFinish) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelChatFinish.ProtoReflect.Descriptor instead.
+func (*HostModelChatFinish) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *HostModelChatFinish) GetReason() HostModelChatFinishReason {
+	if x != nil {
+		return x.Reason
+	}
+	return HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_UNSPECIFIED
+}
+
+type HostModelServiceChatRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Messages      []*HostModelChatMessage    `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Tools         []*HostModelToolDefinition `protobuf:"bytes,2,rep,name=tools,proto3" json:"tools,omitempty"`
+	Temperature   *float64                   `protobuf:"fixed64,3,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	MaxTokens     int32                      `protobuf:"varint,4,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Priority      Priority                   `protobuf:"varint,5,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelServiceChatRequest) Reset() {
+	*x = HostModelServiceChatRequest{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelServiceChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelServiceChatRequest) ProtoMessage() {}
+
+func (x *HostModelServiceChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelServiceChatRequest.ProtoReflect.Descriptor instead.
+func (*HostModelServiceChatRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *HostModelServiceChatRequest) GetMessages() []*HostModelChatMessage {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *HostModelServiceChatRequest) GetTools() []*HostModelToolDefinition {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+func (x *HostModelServiceChatRequest) GetTemperature() float64 {
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
+	}
+	return 0
+}
+
+func (x *HostModelServiceChatRequest) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *HostModelServiceChatRequest) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
+}
+
+// HostModelChatError is a turn that did not succeed. A failure after the first event is ALL_FAILED with
+// the one connection that failed.
+type HostModelChatError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         HostModelErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostModelErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*HostModelFailure    `protobuf:"bytes,3,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelChatError) Reset() {
+	*x = HostModelChatError{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelChatError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelChatError) ProtoMessage() {}
+
+func (x *HostModelChatError) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelChatError.ProtoReflect.Descriptor instead.
+func (*HostModelChatError) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *HostModelChatError) GetError() HostModelErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostModelChatError) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *HostModelChatError) GetFailures() []*HostModelFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
+// HostModelServiceChatResponse is one event of a turn. A turn ends with a finish or an error.
+type HostModelServiceChatResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Event:
+	//
+	//	*HostModelServiceChatResponse_TextDelta
+	//	*HostModelServiceChatResponse_ToolCall
+	//	*HostModelServiceChatResponse_Finish
+	//	*HostModelServiceChatResponse_Failure
+	Event         isHostModelServiceChatResponse_Event `protobuf_oneof:"event"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostModelServiceChatResponse) Reset() {
+	*x = HostModelServiceChatResponse{}
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostModelServiceChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostModelServiceChatResponse) ProtoMessage() {}
+
+func (x *HostModelServiceChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostModelServiceChatResponse.ProtoReflect.Descriptor instead.
+func (*HostModelServiceChatResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *HostModelServiceChatResponse) GetEvent() isHostModelServiceChatResponse_Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *HostModelServiceChatResponse) GetTextDelta() string {
+	if x != nil {
+		if x, ok := x.Event.(*HostModelServiceChatResponse_TextDelta); ok {
+			return x.TextDelta
+		}
+	}
+	return ""
+}
+
+func (x *HostModelServiceChatResponse) GetToolCall() *HostModelToolCall {
+	if x != nil {
+		if x, ok := x.Event.(*HostModelServiceChatResponse_ToolCall); ok {
+			return x.ToolCall
+		}
+	}
+	return nil
+}
+
+func (x *HostModelServiceChatResponse) GetFinish() *HostModelChatFinish {
+	if x != nil {
+		if x, ok := x.Event.(*HostModelServiceChatResponse_Finish); ok {
+			return x.Finish
+		}
+	}
+	return nil
+}
+
+func (x *HostModelServiceChatResponse) GetFailure() *HostModelChatError {
+	if x != nil {
+		if x, ok := x.Event.(*HostModelServiceChatResponse_Failure); ok {
+			return x.Failure
+		}
+	}
+	return nil
+}
+
+type isHostModelServiceChatResponse_Event interface {
+	isHostModelServiceChatResponse_Event()
+}
+
+type HostModelServiceChatResponse_TextDelta struct {
+	TextDelta string `protobuf:"bytes,1,opt,name=text_delta,json=textDelta,proto3,oneof"`
+}
+
+type HostModelServiceChatResponse_ToolCall struct {
+	ToolCall *HostModelToolCall `protobuf:"bytes,2,opt,name=tool_call,json=toolCall,proto3,oneof"`
+}
+
+type HostModelServiceChatResponse_Finish struct {
+	Finish *HostModelChatFinish `protobuf:"bytes,3,opt,name=finish,proto3,oneof"`
+}
+
+type HostModelServiceChatResponse_Failure struct {
+	Failure *HostModelChatError `protobuf:"bytes,4,opt,name=failure,proto3,oneof"`
+}
+
+func (*HostModelServiceChatResponse_TextDelta) isHostModelServiceChatResponse_Event() {}
+
+func (*HostModelServiceChatResponse_ToolCall) isHostModelServiceChatResponse_Event() {}
+
+func (*HostModelServiceChatResponse_Finish) isHostModelServiceChatResponse_Event() {}
+
+func (*HostModelServiceChatResponse_Failure) isHostModelServiceChatResponse_Event() {}
+
 type HostModelServiceEmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Texts         []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
@@ -383,7 +929,7 @@ type HostModelServiceEmbedRequest struct {
 
 func (x *HostModelServiceEmbedRequest) Reset() {
 	*x = HostModelServiceEmbedRequest{}
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +941,7 @@ func (x *HostModelServiceEmbedRequest) String() string {
 func (*HostModelServiceEmbedRequest) ProtoMessage() {}
 
 func (x *HostModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[4]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +954,7 @@ func (x *HostModelServiceEmbedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostModelServiceEmbedRequest.ProtoReflect.Descriptor instead.
 func (*HostModelServiceEmbedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *HostModelServiceEmbedRequest) GetTexts() []string {
@@ -437,7 +983,7 @@ type HostModelServiceEmbedResponse struct {
 
 func (x *HostModelServiceEmbedResponse) Reset() {
 	*x = HostModelServiceEmbedResponse{}
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +995,7 @@ func (x *HostModelServiceEmbedResponse) String() string {
 func (*HostModelServiceEmbedResponse) ProtoMessage() {}
 
 func (x *HostModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[5]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +1008,7 @@ func (x *HostModelServiceEmbedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostModelServiceEmbedResponse.ProtoReflect.Descriptor instead.
 func (*HostModelServiceEmbedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HostModelServiceEmbedResponse) GetVectors() []*FloatVector {
@@ -501,7 +1047,7 @@ type HostModelServiceGetEmbeddingProfileRequest struct {
 
 func (x *HostModelServiceGetEmbeddingProfileRequest) Reset() {
 	*x = HostModelServiceGetEmbeddingProfileRequest{}
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -513,7 +1059,7 @@ func (x *HostModelServiceGetEmbeddingProfileRequest) String() string {
 func (*HostModelServiceGetEmbeddingProfileRequest) ProtoMessage() {}
 
 func (x *HostModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[6]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -526,7 +1072,7 @@ func (x *HostModelServiceGetEmbeddingProfileRequest) ProtoReflect() protoreflect
 
 // Deprecated: Use HostModelServiceGetEmbeddingProfileRequest.ProtoReflect.Descriptor instead.
 func (*HostModelServiceGetEmbeddingProfileRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{13}
 }
 
 type HostModelServiceGetEmbeddingProfileResponse struct {
@@ -549,7 +1095,7 @@ type HostModelServiceGetEmbeddingProfileResponse struct {
 
 func (x *HostModelServiceGetEmbeddingProfileResponse) Reset() {
 	*x = HostModelServiceGetEmbeddingProfileResponse{}
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -561,7 +1107,7 @@ func (x *HostModelServiceGetEmbeddingProfileResponse) String() string {
 func (*HostModelServiceGetEmbeddingProfileResponse) ProtoMessage() {}
 
 func (x *HostModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostmodel_proto_msgTypes[7]
+	mi := &file_numen_v1_hostmodel_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -574,7 +1120,7 @@ func (x *HostModelServiceGetEmbeddingProfileResponse) ProtoReflect() protoreflec
 
 // Deprecated: Use HostModelServiceGetEmbeddingProfileResponse.ProtoReflect.Descriptor instead.
 func (*HostModelServiceGetEmbeddingProfileResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_hostmodel_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *HostModelServiceGetEmbeddingProfileResponse) GetModel() string {
@@ -669,7 +1215,43 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x122\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\x126\n" +
-	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"d\n" +
+	"\bfailures\x18\x04 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"\x9c\x01\n" +
+	"\x14HostModelChatMessage\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x12:\n" +
+	"\n" +
+	"tool_calls\x18\x03 \x03(\v2\x1b.numen.v1.HostModelToolCallR\ttoolCalls\x12 \n" +
+	"\ftool_call_id\x18\x04 \x01(\tR\n" +
+	"toolCallId\"x\n" +
+	"\x17HostModelToolDefinition\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12'\n" +
+	"\x0fparameters_json\x18\x03 \x01(\tR\x0eparametersJson\"^\n" +
+	"\x11HostModelToolCall\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
+	"\x0earguments_json\x18\x03 \x01(\tR\rargumentsJson\"R\n" +
+	"\x13HostModelChatFinish\x12;\n" +
+	"\x06reason\x18\x01 \x01(\x0e2#.numen.v1.HostModelChatFinishReasonR\x06reason\"\x98\x02\n" +
+	"\x1bHostModelServiceChatRequest\x12:\n" +
+	"\bmessages\x18\x01 \x03(\v2\x1e.numen.v1.HostModelChatMessageR\bmessages\x127\n" +
+	"\x05tools\x18\x02 \x03(\v2!.numen.v1.HostModelToolDefinitionR\x05tools\x12%\n" +
+	"\vtemperature\x18\x03 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x04 \x01(\x05R\tmaxTokens\x12.\n" +
+	"\bpriority\x18\x05 \x01(\x0e2\x12.numen.v1.PriorityR\bpriorityB\x0e\n" +
+	"\f_temperature\"\x98\x01\n" +
+	"\x12HostModelChatError\x122\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostModelErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x126\n" +
+	"\bfailures\x18\x03 \x03(\v2\x1a.numen.v1.HostModelFailureR\bfailures\"\xf7\x01\n" +
+	"\x1cHostModelServiceChatResponse\x12\x1f\n" +
+	"\n" +
+	"text_delta\x18\x01 \x01(\tH\x00R\ttextDelta\x12:\n" +
+	"\ttool_call\x18\x02 \x01(\v2\x1b.numen.v1.HostModelToolCallH\x00R\btoolCall\x127\n" +
+	"\x06finish\x18\x03 \x01(\v2\x1d.numen.v1.HostModelChatFinishH\x00R\x06finish\x128\n" +
+	"\afailure\x18\x04 \x01(\v2\x1c.numen.v1.HostModelChatErrorH\x00R\afailureB\a\n" +
+	"\x05event\"d\n" +
 	"\x1cHostModelServiceEmbedRequest\x12\x14\n" +
 	"\x05texts\x18\x01 \x03(\tR\x05texts\x12.\n" +
 	"\bpriority\x18\x02 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\"\xd4\x01\n" +
@@ -702,9 +1284,15 @@ const file_numen_v1_hostmodel_proto_rawDesc = "" +
 	"!HOST_MODEL_ERROR_CODE_UNSPECIFIED\x10\x00\x12'\n" +
 	"#HOST_MODEL_ERROR_CODE_NO_CONNECTION\x10\x01\x12$\n" +
 	" HOST_MODEL_ERROR_CODE_ALL_FAILED\x10\x02\x12\"\n" +
-	"\x1eHOST_MODEL_ERROR_CODE_REJECTED\x10\x032\xd4\x02\n" +
+	"\x1eHOST_MODEL_ERROR_CODE_REJECTED\x10\x03*\xca\x01\n" +
+	"\x19HostModelChatFinishReason\x12-\n" +
+	")HOST_MODEL_CHAT_FINISH_REASON_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"HOST_MODEL_CHAT_FINISH_REASON_STOP\x10\x01\x12,\n" +
+	"(HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS\x10\x02\x12(\n" +
+	"$HOST_MODEL_CHAT_FINISH_REASON_LENGTH\x10\x032\xad\x03\n" +
 	"\x10HostModelService\x12a\n" +
-	"\bComplete\x12).numen.v1.HostModelServiceCompleteRequest\x1a*.numen.v1.HostModelServiceCompleteResponse\x12X\n" +
+	"\bComplete\x12).numen.v1.HostModelServiceCompleteRequest\x1a*.numen.v1.HostModelServiceCompleteResponse\x12W\n" +
+	"\x04Chat\x12%.numen.v1.HostModelServiceChatRequest\x1a&.numen.v1.HostModelServiceChatResponse0\x01\x12X\n" +
 	"\x05Embed\x12&.numen.v1.HostModelServiceEmbedRequest\x1a'.numen.v1.HostModelServiceEmbedResponse\x12\x82\x01\n" +
 	"\x13GetEmbeddingProfile\x124.numen.v1.HostModelServiceGetEmbeddingProfileRequest\x1a5.numen.v1.HostModelServiceGetEmbeddingProfileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -720,43 +1308,63 @@ func file_numen_v1_hostmodel_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostmodel_proto_rawDescData
 }
 
-var file_numen_v1_hostmodel_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_hostmodel_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_v1_hostmodel_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_numen_v1_hostmodel_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_hostmodel_proto_goTypes = []any{
 	(Priority)(0),                                       // 0: numen.v1.Priority
 	(HostModelErrorCode)(0),                             // 1: numen.v1.HostModelErrorCode
-	(*HostModelFailure)(nil),                            // 2: numen.v1.HostModelFailure
-	(*HostModelMessage)(nil),                            // 3: numen.v1.HostModelMessage
-	(*HostModelServiceCompleteRequest)(nil),             // 4: numen.v1.HostModelServiceCompleteRequest
-	(*HostModelServiceCompleteResponse)(nil),            // 5: numen.v1.HostModelServiceCompleteResponse
-	(*HostModelServiceEmbedRequest)(nil),                // 6: numen.v1.HostModelServiceEmbedRequest
-	(*HostModelServiceEmbedResponse)(nil),               // 7: numen.v1.HostModelServiceEmbedResponse
-	(*HostModelServiceGetEmbeddingProfileRequest)(nil),  // 8: numen.v1.HostModelServiceGetEmbeddingProfileRequest
-	(*HostModelServiceGetEmbeddingProfileResponse)(nil), // 9: numen.v1.HostModelServiceGetEmbeddingProfileResponse
-	(*FloatVector)(nil),                                 // 10: numen.v1.FloatVector
+	(HostModelChatFinishReason)(0),                      // 2: numen.v1.HostModelChatFinishReason
+	(*HostModelFailure)(nil),                            // 3: numen.v1.HostModelFailure
+	(*HostModelMessage)(nil),                            // 4: numen.v1.HostModelMessage
+	(*HostModelServiceCompleteRequest)(nil),             // 5: numen.v1.HostModelServiceCompleteRequest
+	(*HostModelServiceCompleteResponse)(nil),            // 6: numen.v1.HostModelServiceCompleteResponse
+	(*HostModelChatMessage)(nil),                        // 7: numen.v1.HostModelChatMessage
+	(*HostModelToolDefinition)(nil),                     // 8: numen.v1.HostModelToolDefinition
+	(*HostModelToolCall)(nil),                           // 9: numen.v1.HostModelToolCall
+	(*HostModelChatFinish)(nil),                         // 10: numen.v1.HostModelChatFinish
+	(*HostModelServiceChatRequest)(nil),                 // 11: numen.v1.HostModelServiceChatRequest
+	(*HostModelChatError)(nil),                          // 12: numen.v1.HostModelChatError
+	(*HostModelServiceChatResponse)(nil),                // 13: numen.v1.HostModelServiceChatResponse
+	(*HostModelServiceEmbedRequest)(nil),                // 14: numen.v1.HostModelServiceEmbedRequest
+	(*HostModelServiceEmbedResponse)(nil),               // 15: numen.v1.HostModelServiceEmbedResponse
+	(*HostModelServiceGetEmbeddingProfileRequest)(nil),  // 16: numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	(*HostModelServiceGetEmbeddingProfileResponse)(nil), // 17: numen.v1.HostModelServiceGetEmbeddingProfileResponse
+	(*FloatVector)(nil),                                 // 18: numen.v1.FloatVector
 }
 var file_numen_v1_hostmodel_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.HostModelServiceCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
+	4,  // 0: numen.v1.HostModelServiceCompleteRequest.messages:type_name -> numen.v1.HostModelMessage
 	0,  // 1: numen.v1.HostModelServiceCompleteRequest.priority:type_name -> numen.v1.Priority
 	1,  // 2: numen.v1.HostModelServiceCompleteResponse.error:type_name -> numen.v1.HostModelErrorCode
-	2,  // 3: numen.v1.HostModelServiceCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
-	0,  // 4: numen.v1.HostModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
-	10, // 5: numen.v1.HostModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
-	1,  // 6: numen.v1.HostModelServiceEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
-	2,  // 7: numen.v1.HostModelServiceEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
-	1,  // 8: numen.v1.HostModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
-	2,  // 9: numen.v1.HostModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
-	4,  // 10: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelServiceCompleteRequest
-	6,  // 11: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelServiceEmbedRequest
-	8,  // 12: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelServiceGetEmbeddingProfileRequest
-	5,  // 13: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelServiceCompleteResponse
-	7,  // 14: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelServiceEmbedResponse
-	9,  // 15: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelServiceGetEmbeddingProfileResponse
-	13, // [13:16] is the sub-list for method output_type
-	10, // [10:13] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 3: numen.v1.HostModelServiceCompleteResponse.failures:type_name -> numen.v1.HostModelFailure
+	9,  // 4: numen.v1.HostModelChatMessage.tool_calls:type_name -> numen.v1.HostModelToolCall
+	2,  // 5: numen.v1.HostModelChatFinish.reason:type_name -> numen.v1.HostModelChatFinishReason
+	7,  // 6: numen.v1.HostModelServiceChatRequest.messages:type_name -> numen.v1.HostModelChatMessage
+	8,  // 7: numen.v1.HostModelServiceChatRequest.tools:type_name -> numen.v1.HostModelToolDefinition
+	0,  // 8: numen.v1.HostModelServiceChatRequest.priority:type_name -> numen.v1.Priority
+	1,  // 9: numen.v1.HostModelChatError.error:type_name -> numen.v1.HostModelErrorCode
+	3,  // 10: numen.v1.HostModelChatError.failures:type_name -> numen.v1.HostModelFailure
+	9,  // 11: numen.v1.HostModelServiceChatResponse.tool_call:type_name -> numen.v1.HostModelToolCall
+	10, // 12: numen.v1.HostModelServiceChatResponse.finish:type_name -> numen.v1.HostModelChatFinish
+	12, // 13: numen.v1.HostModelServiceChatResponse.failure:type_name -> numen.v1.HostModelChatError
+	0,  // 14: numen.v1.HostModelServiceEmbedRequest.priority:type_name -> numen.v1.Priority
+	18, // 15: numen.v1.HostModelServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	1,  // 16: numen.v1.HostModelServiceEmbedResponse.error:type_name -> numen.v1.HostModelErrorCode
+	3,  // 17: numen.v1.HostModelServiceEmbedResponse.failures:type_name -> numen.v1.HostModelFailure
+	1,  // 18: numen.v1.HostModelServiceGetEmbeddingProfileResponse.error:type_name -> numen.v1.HostModelErrorCode
+	3,  // 19: numen.v1.HostModelServiceGetEmbeddingProfileResponse.failures:type_name -> numen.v1.HostModelFailure
+	5,  // 20: numen.v1.HostModelService.Complete:input_type -> numen.v1.HostModelServiceCompleteRequest
+	11, // 21: numen.v1.HostModelService.Chat:input_type -> numen.v1.HostModelServiceChatRequest
+	14, // 22: numen.v1.HostModelService.Embed:input_type -> numen.v1.HostModelServiceEmbedRequest
+	16, // 23: numen.v1.HostModelService.GetEmbeddingProfile:input_type -> numen.v1.HostModelServiceGetEmbeddingProfileRequest
+	6,  // 24: numen.v1.HostModelService.Complete:output_type -> numen.v1.HostModelServiceCompleteResponse
+	13, // 25: numen.v1.HostModelService.Chat:output_type -> numen.v1.HostModelServiceChatResponse
+	15, // 26: numen.v1.HostModelService.Embed:output_type -> numen.v1.HostModelServiceEmbedResponse
+	17, // 27: numen.v1.HostModelService.GetEmbeddingProfile:output_type -> numen.v1.HostModelServiceGetEmbeddingProfileResponse
+	24, // [24:28] is the sub-list for method output_type
+	20, // [20:24] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostmodel_proto_init() }
@@ -766,13 +1374,20 @@ func file_numen_v1_hostmodel_proto_init() {
 	}
 	file_numen_v1_embedding_proto_init()
 	file_numen_v1_hostmodel_proto_msgTypes[2].OneofWrappers = []any{}
+	file_numen_v1_hostmodel_proto_msgTypes[8].OneofWrappers = []any{}
+	file_numen_v1_hostmodel_proto_msgTypes[10].OneofWrappers = []any{
+		(*HostModelServiceChatResponse_TextDelta)(nil),
+		(*HostModelServiceChatResponse_ToolCall)(nil),
+		(*HostModelServiceChatResponse_Finish)(nil),
+		(*HostModelServiceChatResponse_Failure)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostmodel_proto_rawDesc), len(file_numen_v1_hostmodel_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   8,
+			NumEnums:      3,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

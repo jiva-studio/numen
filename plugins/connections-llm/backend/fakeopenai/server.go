@@ -48,6 +48,16 @@ type Request struct {
 	Body   []byte
 }
 
+// Stream is one scripted answer to a chat request that asks for a stream. Chunks are the data of the
+// events, in order; "[DONE]" is the end of the stream. When IsBroken is set the server closes the
+// connection after the chunks, with no end. Pause is the wait after each chunk. A script that does not end with "[DONE]" stalls until the
+// client goes away. A request that finds no script gets an echo.
+type Stream struct {
+	Chunks   []string
+	IsBroken bool
+	Pause    time.Duration
+}
+
 type behavior struct {
 	status     int
 	retryAfter string
@@ -61,6 +71,7 @@ type Server struct {
 	requests []Request
 	behavior map[string]behavior
 	aborted  chan struct{}
+	streams  []Stream
 }
 
 // New creates a server that answers as config says.
@@ -79,6 +90,13 @@ func (s *Server) Fail(path string, status int, retryAfter string) {
 	one := s.behavior[path]
 	one.status, one.retryAfter = status, retryAfter
 	s.behavior[path] = one
+}
+
+// QueueStream adds scripted answers for the chat requests that ask for a stream, used in order.
+func (s *Server) QueueStream(streams ...Stream) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.streams = append(s.streams, streams...)
 }
 
 // Delay makes a path wait before it answers. The wait ends when the client disconnects.
@@ -145,7 +163,7 @@ func writeError(w http.ResponseWriter, status int, message string) {
 func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body []byte) {
 	switch {
 	case r.Method == http.MethodPost && path == "/chat/completions":
-		s.serveChat(w, body)
+		s.serveChat(w, r, body)
 	case r.Method == http.MethodPost && path == "/embeddings":
 		s.serveEmbeddings(w, body)
 	case r.Method == http.MethodGet && path == "/models":
@@ -182,19 +200,24 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 
 type chatRequest struct {
 	Model    string `json:"model"`
+	Stream   bool   `json:"stream"`
 	Messages []struct {
 		Role    string `json:"role"`
 		Content string `json:"content"`
 	} `json:"messages"`
 }
 
-func (s *Server) serveChat(w http.ResponseWriter, body []byte) {
+func (s *Server) serveChat(w http.ResponseWriter, r *http.Request, body []byte) {
 	var request chatRequest
 	if err := json.Unmarshal(body, &request); err != nil || request.Model == "" || len(request.Messages) == 0 {
 		writeError(w, http.StatusBadRequest, "model and messages are required")
 		return
 	}
 	last := request.Messages[len(request.Messages)-1].Content
+	if request.Stream {
+		s.serveStream(w, r, "echo: "+last)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"id":     "chatcmpl-fake",
 		modelKey: request.Model,
@@ -204,6 +227,45 @@ func (s *Server) serveChat(w http.ResponseWriter, body []byte) {
 			"finish_reason": "stop",
 		}},
 	})
+}
+
+func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, echo string) {
+	s.mu.Lock()
+	script := Stream{Chunks: echoChunks(echo)}
+	if len(s.streams) > 0 {
+		script, s.streams = s.streams[0], s.streams[1:]
+	}
+	s.mu.Unlock()
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.WriteHeader(http.StatusOK)
+	flusher, _ := w.(http.Flusher)
+	for _, chunk := range script.Chunks {
+		if _, err := io.WriteString(w, "data: "+chunk+"\n\n"); err != nil {
+			return
+		}
+		if flusher != nil {
+			flusher.Flush()
+		}
+		if script.Pause > 0 && !s.wait(r, script.Pause) {
+			return
+		}
+	}
+	if script.IsBroken {
+		panic(http.ErrAbortHandler)
+	}
+	if n := len(script.Chunks); n == 0 || script.Chunks[n-1] != "[DONE]" {
+		<-r.Context().Done()
+	}
+}
+
+func echoChunks(echo string) []string {
+	first, second := echo[:len(echo)/2], echo[len(echo)/2:]
+	return []string{
+		`{"choices":[{"index":0,"delta":{"role":"assistant","content":"` + first + `"}}]}`,
+		`{"choices":[{"index":0,"delta":{"content":"` + second + `"}}]}`,
+		`{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+		"[DONE]",
+	}
 }
 
 type embeddingsRequest struct {

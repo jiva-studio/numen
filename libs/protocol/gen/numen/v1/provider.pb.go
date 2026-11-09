@@ -139,6 +139,62 @@ func (ProviderFailureReason) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_provider_proto_rawDescGZIP(), []int{1}
 }
 
+// ProviderChatFinishReason is why a turn ended.
+type ProviderChatFinishReason int32
+
+const (
+	ProviderChatFinishReason_PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED ProviderChatFinishReason = 0
+	// PROVIDER_CHAT_FINISH_REASON_STOP is an answer the model finished.
+	ProviderChatFinishReason_PROVIDER_CHAT_FINISH_REASON_STOP ProviderChatFinishReason = 1
+	// PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS is a turn that asks for tool calls.
+	ProviderChatFinishReason_PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS ProviderChatFinishReason = 2
+	// PROVIDER_CHAT_FINISH_REASON_LENGTH is an answer cut off at the length limit.
+	ProviderChatFinishReason_PROVIDER_CHAT_FINISH_REASON_LENGTH ProviderChatFinishReason = 3
+)
+
+// Enum value maps for ProviderChatFinishReason.
+var (
+	ProviderChatFinishReason_name = map[int32]string{
+		0: "PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED",
+		1: "PROVIDER_CHAT_FINISH_REASON_STOP",
+		2: "PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS",
+		3: "PROVIDER_CHAT_FINISH_REASON_LENGTH",
+	}
+	ProviderChatFinishReason_value = map[string]int32{
+		"PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED": 0,
+		"PROVIDER_CHAT_FINISH_REASON_STOP":        1,
+		"PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS":  2,
+		"PROVIDER_CHAT_FINISH_REASON_LENGTH":      3,
+	}
+)
+
+func (x ProviderChatFinishReason) Enum() *ProviderChatFinishReason {
+	p := new(ProviderChatFinishReason)
+	*p = x
+	return p
+}
+
+func (x ProviderChatFinishReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProviderChatFinishReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_provider_proto_enumTypes[2].Descriptor()
+}
+
+func (ProviderChatFinishReason) Type() protoreflect.EnumType {
+	return &file_numen_v1_provider_proto_enumTypes[2]
+}
+
+func (x ProviderChatFinishReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProviderChatFinishReason.Descriptor instead.
+func (ProviderChatFinishReason) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{2}
+}
+
 // ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
 type ProviderCall struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -506,6 +562,434 @@ func (x *ProviderServiceCompleteResponse) GetFailure() *ProviderFailure {
 	return nil
 }
 
+type ProviderChatMessage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// role is system, user, assistant or tool.
+	Role string `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Text string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	// tool_calls are the calls an assistant message asked for.
+	ToolCalls []*ProviderToolCall `protobuf:"bytes,3,rep,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"`
+	// tool_call_id is the call a tool message answers.
+	ToolCallId    string `protobuf:"bytes,4,opt,name=tool_call_id,json=toolCallId,proto3" json:"tool_call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProviderChatMessage) Reset() {
+	*x = ProviderChatMessage{}
+	mi := &file_numen_v1_provider_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderChatMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderChatMessage) ProtoMessage() {}
+
+func (x *ProviderChatMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderChatMessage.ProtoReflect.Descriptor instead.
+func (*ProviderChatMessage) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProviderChatMessage) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ProviderChatMessage) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *ProviderChatMessage) GetToolCalls() []*ProviderToolCall {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return nil
+}
+
+func (x *ProviderChatMessage) GetToolCallId() string {
+	if x != nil {
+		return x.ToolCallId
+	}
+	return ""
+}
+
+type ProviderToolDefinition struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// parameters_json is the JSON schema of the arguments.
+	ParametersJson string `protobuf:"bytes,3,opt,name=parameters_json,json=parametersJson,proto3" json:"parameters_json,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ProviderToolDefinition) Reset() {
+	*x = ProviderToolDefinition{}
+	mi := &file_numen_v1_provider_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderToolDefinition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderToolDefinition) ProtoMessage() {}
+
+func (x *ProviderToolDefinition) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderToolDefinition.ProtoReflect.Descriptor instead.
+func (*ProviderToolDefinition) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProviderToolDefinition) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProviderToolDefinition) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ProviderToolDefinition) GetParametersJson() string {
+	if x != nil {
+		return x.ParametersJson
+	}
+	return ""
+}
+
+type ProviderToolCall struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// arguments_json is the arguments as one JSON object.
+	ArgumentsJson string `protobuf:"bytes,3,opt,name=arguments_json,json=argumentsJson,proto3" json:"arguments_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProviderToolCall) Reset() {
+	*x = ProviderToolCall{}
+	mi := &file_numen_v1_provider_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderToolCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderToolCall) ProtoMessage() {}
+
+func (x *ProviderToolCall) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderToolCall.ProtoReflect.Descriptor instead.
+func (*ProviderToolCall) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ProviderToolCall) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ProviderToolCall) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProviderToolCall) GetArgumentsJson() string {
+	if x != nil {
+		return x.ArgumentsJson
+	}
+	return ""
+}
+
+type ProviderChatFinish struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Reason        ProviderChatFinishReason `protobuf:"varint,1,opt,name=reason,proto3,enum=numen.v1.ProviderChatFinishReason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProviderChatFinish) Reset() {
+	*x = ProviderChatFinish{}
+	mi := &file_numen_v1_provider_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderChatFinish) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderChatFinish) ProtoMessage() {}
+
+func (x *ProviderChatFinish) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderChatFinish.ProtoReflect.Descriptor instead.
+func (*ProviderChatFinish) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ProviderChatFinish) GetReason() ProviderChatFinishReason {
+	if x != nil {
+		return x.Reason
+	}
+	return ProviderChatFinishReason_PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED
+}
+
+type ProviderServiceChatRequest struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Call          *ProviderCall             `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	Messages      []*ProviderChatMessage    `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
+	Tools         []*ProviderToolDefinition `protobuf:"bytes,3,rep,name=tools,proto3" json:"tools,omitempty"`
+	Temperature   *float64                  `protobuf:"fixed64,4,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	MaxTokens     int32                     `protobuf:"varint,5,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProviderServiceChatRequest) Reset() {
+	*x = ProviderServiceChatRequest{}
+	mi := &file_numen_v1_provider_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderServiceChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderServiceChatRequest) ProtoMessage() {}
+
+func (x *ProviderServiceChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderServiceChatRequest.ProtoReflect.Descriptor instead.
+func (*ProviderServiceChatRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ProviderServiceChatRequest) GetCall() *ProviderCall {
+	if x != nil {
+		return x.Call
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatRequest) GetMessages() []*ProviderChatMessage {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatRequest) GetTools() []*ProviderToolDefinition {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatRequest) GetTemperature() float64 {
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
+	}
+	return 0
+}
+
+func (x *ProviderServiceChatRequest) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+// ProviderServiceChatResponse is one event of a turn. A turn ends with a finish or a failure.
+type ProviderServiceChatResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Event:
+	//
+	//	*ProviderServiceChatResponse_TextDelta
+	//	*ProviderServiceChatResponse_ToolCall
+	//	*ProviderServiceChatResponse_Finish
+	//	*ProviderServiceChatResponse_Failure
+	Event         isProviderServiceChatResponse_Event `protobuf_oneof:"event"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProviderServiceChatResponse) Reset() {
+	*x = ProviderServiceChatResponse{}
+	mi := &file_numen_v1_provider_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderServiceChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderServiceChatResponse) ProtoMessage() {}
+
+func (x *ProviderServiceChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderServiceChatResponse.ProtoReflect.Descriptor instead.
+func (*ProviderServiceChatResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ProviderServiceChatResponse) GetEvent() isProviderServiceChatResponse_Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatResponse) GetTextDelta() string {
+	if x != nil {
+		if x, ok := x.Event.(*ProviderServiceChatResponse_TextDelta); ok {
+			return x.TextDelta
+		}
+	}
+	return ""
+}
+
+func (x *ProviderServiceChatResponse) GetToolCall() *ProviderToolCall {
+	if x != nil {
+		if x, ok := x.Event.(*ProviderServiceChatResponse_ToolCall); ok {
+			return x.ToolCall
+		}
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatResponse) GetFinish() *ProviderChatFinish {
+	if x != nil {
+		if x, ok := x.Event.(*ProviderServiceChatResponse_Finish); ok {
+			return x.Finish
+		}
+	}
+	return nil
+}
+
+func (x *ProviderServiceChatResponse) GetFailure() *ProviderFailure {
+	if x != nil {
+		if x, ok := x.Event.(*ProviderServiceChatResponse_Failure); ok {
+			return x.Failure
+		}
+	}
+	return nil
+}
+
+type isProviderServiceChatResponse_Event interface {
+	isProviderServiceChatResponse_Event()
+}
+
+type ProviderServiceChatResponse_TextDelta struct {
+	TextDelta string `protobuf:"bytes,1,opt,name=text_delta,json=textDelta,proto3,oneof"`
+}
+
+type ProviderServiceChatResponse_ToolCall struct {
+	ToolCall *ProviderToolCall `protobuf:"bytes,2,opt,name=tool_call,json=toolCall,proto3,oneof"`
+}
+
+type ProviderServiceChatResponse_Finish struct {
+	Finish *ProviderChatFinish `protobuf:"bytes,3,opt,name=finish,proto3,oneof"`
+}
+
+type ProviderServiceChatResponse_Failure struct {
+	Failure *ProviderFailure `protobuf:"bytes,4,opt,name=failure,proto3,oneof"`
+}
+
+func (*ProviderServiceChatResponse_TextDelta) isProviderServiceChatResponse_Event() {}
+
+func (*ProviderServiceChatResponse_ToolCall) isProviderServiceChatResponse_Event() {}
+
+func (*ProviderServiceChatResponse_Finish) isProviderServiceChatResponse_Event() {}
+
+func (*ProviderServiceChatResponse_Failure) isProviderServiceChatResponse_Event() {}
+
 type ProviderServiceEmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Call          *ProviderCall          `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
@@ -516,7 +1000,7 @@ type ProviderServiceEmbedRequest struct {
 
 func (x *ProviderServiceEmbedRequest) Reset() {
 	*x = ProviderServiceEmbedRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[6]
+	mi := &file_numen_v1_provider_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +1012,7 @@ func (x *ProviderServiceEmbedRequest) String() string {
 func (*ProviderServiceEmbedRequest) ProtoMessage() {}
 
 func (x *ProviderServiceEmbedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[6]
+	mi := &file_numen_v1_provider_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +1025,7 @@ func (x *ProviderServiceEmbedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceEmbedRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceEmbedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ProviderServiceEmbedRequest) GetCall() *ProviderCall {
@@ -568,7 +1052,7 @@ type ProviderServiceEmbedResponse struct {
 
 func (x *ProviderServiceEmbedResponse) Reset() {
 	*x = ProviderServiceEmbedResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[7]
+	mi := &file_numen_v1_provider_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -580,7 +1064,7 @@ func (x *ProviderServiceEmbedResponse) String() string {
 func (*ProviderServiceEmbedResponse) ProtoMessage() {}
 
 func (x *ProviderServiceEmbedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[7]
+	mi := &file_numen_v1_provider_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -593,7 +1077,7 @@ func (x *ProviderServiceEmbedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceEmbedResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceEmbedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ProviderServiceEmbedResponse) GetVectors() []*FloatVector {
@@ -622,7 +1106,7 @@ type ProviderModel struct {
 
 func (x *ProviderModel) Reset() {
 	*x = ProviderModel{}
-	mi := &file_numen_v1_provider_proto_msgTypes[8]
+	mi := &file_numen_v1_provider_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -634,7 +1118,7 @@ func (x *ProviderModel) String() string {
 func (*ProviderModel) ProtoMessage() {}
 
 func (x *ProviderModel) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[8]
+	mi := &file_numen_v1_provider_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,7 +1131,7 @@ func (x *ProviderModel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderModel.ProtoReflect.Descriptor instead.
 func (*ProviderModel) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ProviderModel) GetId() string {
@@ -681,7 +1165,7 @@ type ProviderServiceListModelsRequest struct {
 
 func (x *ProviderServiceListModelsRequest) Reset() {
 	*x = ProviderServiceListModelsRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[9]
+	mi := &file_numen_v1_provider_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +1177,7 @@ func (x *ProviderServiceListModelsRequest) String() string {
 func (*ProviderServiceListModelsRequest) ProtoMessage() {}
 
 func (x *ProviderServiceListModelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[9]
+	mi := &file_numen_v1_provider_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +1190,7 @@ func (x *ProviderServiceListModelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceListModelsRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceListModelsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ProviderServiceListModelsRequest) GetCall() *ProviderCall {
@@ -733,7 +1217,7 @@ type ProviderServiceListModelsResponse struct {
 
 func (x *ProviderServiceListModelsResponse) Reset() {
 	*x = ProviderServiceListModelsResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[10]
+	mi := &file_numen_v1_provider_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -745,7 +1229,7 @@ func (x *ProviderServiceListModelsResponse) String() string {
 func (*ProviderServiceListModelsResponse) ProtoMessage() {}
 
 func (x *ProviderServiceListModelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[10]
+	mi := &file_numen_v1_provider_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -758,7 +1242,7 @@ func (x *ProviderServiceListModelsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ProviderServiceListModelsResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceListModelsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ProviderServiceListModelsResponse) GetModels() []*ProviderModel {
@@ -785,7 +1269,7 @@ type ProviderReasoningLevel struct {
 
 func (x *ProviderReasoningLevel) Reset() {
 	*x = ProviderReasoningLevel{}
-	mi := &file_numen_v1_provider_proto_msgTypes[11]
+	mi := &file_numen_v1_provider_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -797,7 +1281,7 @@ func (x *ProviderReasoningLevel) String() string {
 func (*ProviderReasoningLevel) ProtoMessage() {}
 
 func (x *ProviderReasoningLevel) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[11]
+	mi := &file_numen_v1_provider_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -810,7 +1294,7 @@ func (x *ProviderReasoningLevel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderReasoningLevel.ProtoReflect.Descriptor instead.
 func (*ProviderReasoningLevel) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ProviderReasoningLevel) GetValue() string {
@@ -836,7 +1320,7 @@ type ProviderServiceListReasoningLevelsRequest struct {
 
 func (x *ProviderServiceListReasoningLevelsRequest) Reset() {
 	*x = ProviderServiceListReasoningLevelsRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[12]
+	mi := &file_numen_v1_provider_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -848,7 +1332,7 @@ func (x *ProviderServiceListReasoningLevelsRequest) String() string {
 func (*ProviderServiceListReasoningLevelsRequest) ProtoMessage() {}
 
 func (x *ProviderServiceListReasoningLevelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[12]
+	mi := &file_numen_v1_provider_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -861,7 +1345,7 @@ func (x *ProviderServiceListReasoningLevelsRequest) ProtoReflect() protoreflect.
 
 // Deprecated: Use ProviderServiceListReasoningLevelsRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceListReasoningLevelsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ProviderServiceListReasoningLevelsRequest) GetCall() *ProviderCall {
@@ -881,7 +1365,7 @@ type ProviderServiceListReasoningLevelsResponse struct {
 
 func (x *ProviderServiceListReasoningLevelsResponse) Reset() {
 	*x = ProviderServiceListReasoningLevelsResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[13]
+	mi := &file_numen_v1_provider_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -893,7 +1377,7 @@ func (x *ProviderServiceListReasoningLevelsResponse) String() string {
 func (*ProviderServiceListReasoningLevelsResponse) ProtoMessage() {}
 
 func (x *ProviderServiceListReasoningLevelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[13]
+	mi := &file_numen_v1_provider_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -906,7 +1390,7 @@ func (x *ProviderServiceListReasoningLevelsResponse) ProtoReflect() protoreflect
 
 // Deprecated: Use ProviderServiceListReasoningLevelsResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceListReasoningLevelsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ProviderServiceListReasoningLevelsResponse) GetLevels() []*ProviderReasoningLevel {
@@ -932,7 +1416,7 @@ type ProviderServiceGetModelProfileRequest struct {
 
 func (x *ProviderServiceGetModelProfileRequest) Reset() {
 	*x = ProviderServiceGetModelProfileRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[14]
+	mi := &file_numen_v1_provider_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -944,7 +1428,7 @@ func (x *ProviderServiceGetModelProfileRequest) String() string {
 func (*ProviderServiceGetModelProfileRequest) ProtoMessage() {}
 
 func (x *ProviderServiceGetModelProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[14]
+	mi := &file_numen_v1_provider_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -957,7 +1441,7 @@ func (x *ProviderServiceGetModelProfileRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ProviderServiceGetModelProfileRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceGetModelProfileRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ProviderServiceGetModelProfileRequest) GetCall() *ProviderCall {
@@ -986,7 +1470,7 @@ type ProviderServiceGetModelProfileResponse struct {
 
 func (x *ProviderServiceGetModelProfileResponse) Reset() {
 	*x = ProviderServiceGetModelProfileResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[15]
+	mi := &file_numen_v1_provider_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -998,7 +1482,7 @@ func (x *ProviderServiceGetModelProfileResponse) String() string {
 func (*ProviderServiceGetModelProfileResponse) ProtoMessage() {}
 
 func (x *ProviderServiceGetModelProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[15]
+	mi := &file_numen_v1_provider_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1011,7 +1495,7 @@ func (x *ProviderServiceGetModelProfileResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ProviderServiceGetModelProfileResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceGetModelProfileResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ProviderServiceGetModelProfileResponse) GetIsKnown() bool {
@@ -1079,7 +1563,7 @@ type ProviderServiceProbeEmbeddingWidthRequest struct {
 
 func (x *ProviderServiceProbeEmbeddingWidthRequest) Reset() {
 	*x = ProviderServiceProbeEmbeddingWidthRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[16]
+	mi := &file_numen_v1_provider_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1091,7 +1575,7 @@ func (x *ProviderServiceProbeEmbeddingWidthRequest) String() string {
 func (*ProviderServiceProbeEmbeddingWidthRequest) ProtoMessage() {}
 
 func (x *ProviderServiceProbeEmbeddingWidthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[16]
+	mi := &file_numen_v1_provider_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1104,7 +1588,7 @@ func (x *ProviderServiceProbeEmbeddingWidthRequest) ProtoReflect() protoreflect.
 
 // Deprecated: Use ProviderServiceProbeEmbeddingWidthRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceProbeEmbeddingWidthRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ProviderServiceProbeEmbeddingWidthRequest) GetCall() *ProviderCall {
@@ -1124,7 +1608,7 @@ type ProviderServiceProbeEmbeddingWidthResponse struct {
 
 func (x *ProviderServiceProbeEmbeddingWidthResponse) Reset() {
 	*x = ProviderServiceProbeEmbeddingWidthResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[17]
+	mi := &file_numen_v1_provider_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1136,7 +1620,7 @@ func (x *ProviderServiceProbeEmbeddingWidthResponse) String() string {
 func (*ProviderServiceProbeEmbeddingWidthResponse) ProtoMessage() {}
 
 func (x *ProviderServiceProbeEmbeddingWidthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[17]
+	mi := &file_numen_v1_provider_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1149,7 +1633,7 @@ func (x *ProviderServiceProbeEmbeddingWidthResponse) ProtoReflect() protoreflect
 
 // Deprecated: Use ProviderServiceProbeEmbeddingWidthResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceProbeEmbeddingWidthResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ProviderServiceProbeEmbeddingWidthResponse) GetDimensions() int32 {
@@ -1177,7 +1661,7 @@ type ProviderServiceSubmitJobRequest struct {
 
 func (x *ProviderServiceSubmitJobRequest) Reset() {
 	*x = ProviderServiceSubmitJobRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[18]
+	mi := &file_numen_v1_provider_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1189,7 +1673,7 @@ func (x *ProviderServiceSubmitJobRequest) String() string {
 func (*ProviderServiceSubmitJobRequest) ProtoMessage() {}
 
 func (x *ProviderServiceSubmitJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[18]
+	mi := &file_numen_v1_provider_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,7 +1686,7 @@ func (x *ProviderServiceSubmitJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceSubmitJobRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceSubmitJobRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ProviderServiceSubmitJobRequest) GetCall() *ProviderCall {
@@ -1237,7 +1721,7 @@ type ProviderServiceSubmitJobResponse struct {
 
 func (x *ProviderServiceSubmitJobResponse) Reset() {
 	*x = ProviderServiceSubmitJobResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[19]
+	mi := &file_numen_v1_provider_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1249,7 +1733,7 @@ func (x *ProviderServiceSubmitJobResponse) String() string {
 func (*ProviderServiceSubmitJobResponse) ProtoMessage() {}
 
 func (x *ProviderServiceSubmitJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[19]
+	mi := &file_numen_v1_provider_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1262,7 +1746,7 @@ func (x *ProviderServiceSubmitJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceSubmitJobResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceSubmitJobResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ProviderServiceSubmitJobResponse) GetJobId() string {
@@ -1289,7 +1773,7 @@ type ProviderServiceGetJobStatusRequest struct {
 
 func (x *ProviderServiceGetJobStatusRequest) Reset() {
 	*x = ProviderServiceGetJobStatusRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[20]
+	mi := &file_numen_v1_provider_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1301,7 +1785,7 @@ func (x *ProviderServiceGetJobStatusRequest) String() string {
 func (*ProviderServiceGetJobStatusRequest) ProtoMessage() {}
 
 func (x *ProviderServiceGetJobStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[20]
+	mi := &file_numen_v1_provider_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1314,7 +1798,7 @@ func (x *ProviderServiceGetJobStatusRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ProviderServiceGetJobStatusRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceGetJobStatusRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ProviderServiceGetJobStatusRequest) GetCall() *ProviderCall {
@@ -1341,7 +1825,7 @@ type ProviderServiceGetJobStatusResponse struct {
 
 func (x *ProviderServiceGetJobStatusResponse) Reset() {
 	*x = ProviderServiceGetJobStatusResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[21]
+	mi := &file_numen_v1_provider_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1353,7 +1837,7 @@ func (x *ProviderServiceGetJobStatusResponse) String() string {
 func (*ProviderServiceGetJobStatusResponse) ProtoMessage() {}
 
 func (x *ProviderServiceGetJobStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[21]
+	mi := &file_numen_v1_provider_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1366,7 +1850,7 @@ func (x *ProviderServiceGetJobStatusResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ProviderServiceGetJobStatusResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceGetJobStatusResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ProviderServiceGetJobStatusResponse) GetStatus() string {
@@ -1393,7 +1877,7 @@ type ProviderServiceFetchJobResultRequest struct {
 
 func (x *ProviderServiceFetchJobResultRequest) Reset() {
 	*x = ProviderServiceFetchJobResultRequest{}
-	mi := &file_numen_v1_provider_proto_msgTypes[22]
+	mi := &file_numen_v1_provider_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1405,7 +1889,7 @@ func (x *ProviderServiceFetchJobResultRequest) String() string {
 func (*ProviderServiceFetchJobResultRequest) ProtoMessage() {}
 
 func (x *ProviderServiceFetchJobResultRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[22]
+	mi := &file_numen_v1_provider_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1418,7 +1902,7 @@ func (x *ProviderServiceFetchJobResultRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ProviderServiceFetchJobResultRequest.ProtoReflect.Descriptor instead.
 func (*ProviderServiceFetchJobResultRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ProviderServiceFetchJobResultRequest) GetCall() *ProviderCall {
@@ -1445,7 +1929,7 @@ type ProviderServiceFetchJobResultResponse struct {
 
 func (x *ProviderServiceFetchJobResultResponse) Reset() {
 	*x = ProviderServiceFetchJobResultResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[23]
+	mi := &file_numen_v1_provider_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1457,7 +1941,7 @@ func (x *ProviderServiceFetchJobResultResponse) String() string {
 func (*ProviderServiceFetchJobResultResponse) ProtoMessage() {}
 
 func (x *ProviderServiceFetchJobResultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[23]
+	mi := &file_numen_v1_provider_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1470,7 +1954,7 @@ func (x *ProviderServiceFetchJobResultResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ProviderServiceFetchJobResultResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceFetchJobResultResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ProviderServiceFetchJobResultResponse) GetResult() []byte {
@@ -1520,7 +2004,39 @@ const file_numen_v1_provider_proto_rawDesc = "" +
 	"\f_temperature\"j\n" +
 	"\x1fProviderServiceCompleteResponse\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x123\n" +
-	"\afailure\x18\x02 \x01(\v2\x19.numen.v1.ProviderFailureR\afailure\"_\n" +
+	"\afailure\x18\x02 \x01(\v2\x19.numen.v1.ProviderFailureR\afailure\"\x9a\x01\n" +
+	"\x13ProviderChatMessage\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x129\n" +
+	"\n" +
+	"tool_calls\x18\x03 \x03(\v2\x1a.numen.v1.ProviderToolCallR\ttoolCalls\x12 \n" +
+	"\ftool_call_id\x18\x04 \x01(\tR\n" +
+	"toolCallId\"w\n" +
+	"\x16ProviderToolDefinition\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12'\n" +
+	"\x0fparameters_json\x18\x03 \x01(\tR\x0eparametersJson\"]\n" +
+	"\x10ProviderToolCall\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
+	"\x0earguments_json\x18\x03 \x01(\tR\rargumentsJson\"P\n" +
+	"\x12ProviderChatFinish\x12:\n" +
+	"\x06reason\x18\x01 \x01(\x0e2\".numen.v1.ProviderChatFinishReasonR\x06reason\"\x91\x02\n" +
+	"\x1aProviderServiceChatRequest\x12*\n" +
+	"\x04call\x18\x01 \x01(\v2\x16.numen.v1.ProviderCallR\x04call\x129\n" +
+	"\bmessages\x18\x02 \x03(\v2\x1d.numen.v1.ProviderChatMessageR\bmessages\x126\n" +
+	"\x05tools\x18\x03 \x03(\v2 .numen.v1.ProviderToolDefinitionR\x05tools\x12%\n" +
+	"\vtemperature\x18\x04 \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x05 \x01(\x05R\tmaxTokensB\x0e\n" +
+	"\f_temperature\"\xf1\x01\n" +
+	"\x1bProviderServiceChatResponse\x12\x1f\n" +
+	"\n" +
+	"text_delta\x18\x01 \x01(\tH\x00R\ttextDelta\x129\n" +
+	"\ttool_call\x18\x02 \x01(\v2\x1a.numen.v1.ProviderToolCallH\x00R\btoolCall\x126\n" +
+	"\x06finish\x18\x03 \x01(\v2\x1c.numen.v1.ProviderChatFinishH\x00R\x06finish\x125\n" +
+	"\afailure\x18\x04 \x01(\v2\x19.numen.v1.ProviderFailureH\x00R\afailureB\a\n" +
+	"\x05event\"_\n" +
 	"\x1bProviderServiceEmbedRequest\x12*\n" +
 	"\x04call\x18\x01 \x01(\v2\x16.numen.v1.ProviderCallR\x04call\x12\x14\n" +
 	"\x05texts\x18\x02 \x03(\tR\x05texts\"\x84\x01\n" +
@@ -1599,10 +2115,16 @@ const file_numen_v1_provider_proto_rawDesc = "" +
 	"#PROVIDER_FAILURE_REASON_UNREACHABLE\x10\x04\x12#\n" +
 	"\x1fPROVIDER_FAILURE_REASON_TIMEOUT\x10\x05\x12'\n" +
 	"#PROVIDER_FAILURE_REASON_BAD_REQUEST\x10\x06\x12#\n" +
-	"\x1fPROVIDER_FAILURE_REASON_UNKNOWN\x10\a2\xf1\a\n" +
+	"\x1fPROVIDER_FAILURE_REASON_UNKNOWN\x10\a*\xc1\x01\n" +
+	"\x18ProviderChatFinishReason\x12+\n" +
+	"'PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED\x10\x00\x12$\n" +
+	" PROVIDER_CHAT_FINISH_REASON_STOP\x10\x01\x12*\n" +
+	"&PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS\x10\x02\x12&\n" +
+	"\"PROVIDER_CHAT_FINISH_REASON_LENGTH\x10\x032\xc8\b\n" +
 	"\x0fProviderService\x12_\n" +
 	"\bComplete\x12(.numen.v1.ProviderServiceCompleteRequest\x1a).numen.v1.ProviderServiceCompleteResponse\x12V\n" +
-	"\x05Embed\x12%.numen.v1.ProviderServiceEmbedRequest\x1a&.numen.v1.ProviderServiceEmbedResponse\x12e\n" +
+	"\x05Embed\x12%.numen.v1.ProviderServiceEmbedRequest\x1a&.numen.v1.ProviderServiceEmbedResponse\x12U\n" +
+	"\x04Chat\x12$.numen.v1.ProviderServiceChatRequest\x1a%.numen.v1.ProviderServiceChatResponse0\x01\x12e\n" +
 	"\n" +
 	"ListModels\x12*.numen.v1.ProviderServiceListModelsRequest\x1a+.numen.v1.ProviderServiceListModelsResponse\x12\x80\x01\n" +
 	"\x13ListReasoningLevels\x123.numen.v1.ProviderServiceListReasoningLevelsRequest\x1a4.numen.v1.ProviderServiceListReasoningLevelsResponse\x12t\n" +
@@ -1624,88 +2146,105 @@ func file_numen_v1_provider_proto_rawDescGZIP() []byte {
 	return file_numen_v1_provider_proto_rawDescData
 }
 
-var file_numen_v1_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_numen_v1_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_numen_v1_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_numen_v1_provider_proto_goTypes = []any{
 	(ProviderFailureKind)(0),                           // 0: numen.v1.ProviderFailureKind
 	(ProviderFailureReason)(0),                         // 1: numen.v1.ProviderFailureReason
-	(*ProviderCall)(nil),                               // 2: numen.v1.ProviderCall
-	(*ProviderSecret)(nil),                             // 3: numen.v1.ProviderSecret
-	(*ProviderFailure)(nil),                            // 4: numen.v1.ProviderFailure
-	(*ProviderMessage)(nil),                            // 5: numen.v1.ProviderMessage
-	(*ProviderServiceCompleteRequest)(nil),             // 6: numen.v1.ProviderServiceCompleteRequest
-	(*ProviderServiceCompleteResponse)(nil),            // 7: numen.v1.ProviderServiceCompleteResponse
-	(*ProviderServiceEmbedRequest)(nil),                // 8: numen.v1.ProviderServiceEmbedRequest
-	(*ProviderServiceEmbedResponse)(nil),               // 9: numen.v1.ProviderServiceEmbedResponse
-	(*ProviderModel)(nil),                              // 10: numen.v1.ProviderModel
-	(*ProviderServiceListModelsRequest)(nil),           // 11: numen.v1.ProviderServiceListModelsRequest
-	(*ProviderServiceListModelsResponse)(nil),          // 12: numen.v1.ProviderServiceListModelsResponse
-	(*ProviderReasoningLevel)(nil),                     // 13: numen.v1.ProviderReasoningLevel
-	(*ProviderServiceListReasoningLevelsRequest)(nil),  // 14: numen.v1.ProviderServiceListReasoningLevelsRequest
-	(*ProviderServiceListReasoningLevelsResponse)(nil), // 15: numen.v1.ProviderServiceListReasoningLevelsResponse
-	(*ProviderServiceGetModelProfileRequest)(nil),      // 16: numen.v1.ProviderServiceGetModelProfileRequest
-	(*ProviderServiceGetModelProfileResponse)(nil),     // 17: numen.v1.ProviderServiceGetModelProfileResponse
-	(*ProviderServiceProbeEmbeddingWidthRequest)(nil),  // 18: numen.v1.ProviderServiceProbeEmbeddingWidthRequest
-	(*ProviderServiceProbeEmbeddingWidthResponse)(nil), // 19: numen.v1.ProviderServiceProbeEmbeddingWidthResponse
-	(*ProviderServiceSubmitJobRequest)(nil),            // 20: numen.v1.ProviderServiceSubmitJobRequest
-	(*ProviderServiceSubmitJobResponse)(nil),           // 21: numen.v1.ProviderServiceSubmitJobResponse
-	(*ProviderServiceGetJobStatusRequest)(nil),         // 22: numen.v1.ProviderServiceGetJobStatusRequest
-	(*ProviderServiceGetJobStatusResponse)(nil),        // 23: numen.v1.ProviderServiceGetJobStatusResponse
-	(*ProviderServiceFetchJobResultRequest)(nil),       // 24: numen.v1.ProviderServiceFetchJobResultRequest
-	(*ProviderServiceFetchJobResultResponse)(nil),      // 25: numen.v1.ProviderServiceFetchJobResultResponse
-	nil,                 // 26: numen.v1.ProviderCall.FieldsEntry
-	(*FloatVector)(nil), // 27: numen.v1.FloatVector
+	(ProviderChatFinishReason)(0),                      // 2: numen.v1.ProviderChatFinishReason
+	(*ProviderCall)(nil),                               // 3: numen.v1.ProviderCall
+	(*ProviderSecret)(nil),                             // 4: numen.v1.ProviderSecret
+	(*ProviderFailure)(nil),                            // 5: numen.v1.ProviderFailure
+	(*ProviderMessage)(nil),                            // 6: numen.v1.ProviderMessage
+	(*ProviderServiceCompleteRequest)(nil),             // 7: numen.v1.ProviderServiceCompleteRequest
+	(*ProviderServiceCompleteResponse)(nil),            // 8: numen.v1.ProviderServiceCompleteResponse
+	(*ProviderChatMessage)(nil),                        // 9: numen.v1.ProviderChatMessage
+	(*ProviderToolDefinition)(nil),                     // 10: numen.v1.ProviderToolDefinition
+	(*ProviderToolCall)(nil),                           // 11: numen.v1.ProviderToolCall
+	(*ProviderChatFinish)(nil),                         // 12: numen.v1.ProviderChatFinish
+	(*ProviderServiceChatRequest)(nil),                 // 13: numen.v1.ProviderServiceChatRequest
+	(*ProviderServiceChatResponse)(nil),                // 14: numen.v1.ProviderServiceChatResponse
+	(*ProviderServiceEmbedRequest)(nil),                // 15: numen.v1.ProviderServiceEmbedRequest
+	(*ProviderServiceEmbedResponse)(nil),               // 16: numen.v1.ProviderServiceEmbedResponse
+	(*ProviderModel)(nil),                              // 17: numen.v1.ProviderModel
+	(*ProviderServiceListModelsRequest)(nil),           // 18: numen.v1.ProviderServiceListModelsRequest
+	(*ProviderServiceListModelsResponse)(nil),          // 19: numen.v1.ProviderServiceListModelsResponse
+	(*ProviderReasoningLevel)(nil),                     // 20: numen.v1.ProviderReasoningLevel
+	(*ProviderServiceListReasoningLevelsRequest)(nil),  // 21: numen.v1.ProviderServiceListReasoningLevelsRequest
+	(*ProviderServiceListReasoningLevelsResponse)(nil), // 22: numen.v1.ProviderServiceListReasoningLevelsResponse
+	(*ProviderServiceGetModelProfileRequest)(nil),      // 23: numen.v1.ProviderServiceGetModelProfileRequest
+	(*ProviderServiceGetModelProfileResponse)(nil),     // 24: numen.v1.ProviderServiceGetModelProfileResponse
+	(*ProviderServiceProbeEmbeddingWidthRequest)(nil),  // 25: numen.v1.ProviderServiceProbeEmbeddingWidthRequest
+	(*ProviderServiceProbeEmbeddingWidthResponse)(nil), // 26: numen.v1.ProviderServiceProbeEmbeddingWidthResponse
+	(*ProviderServiceSubmitJobRequest)(nil),            // 27: numen.v1.ProviderServiceSubmitJobRequest
+	(*ProviderServiceSubmitJobResponse)(nil),           // 28: numen.v1.ProviderServiceSubmitJobResponse
+	(*ProviderServiceGetJobStatusRequest)(nil),         // 29: numen.v1.ProviderServiceGetJobStatusRequest
+	(*ProviderServiceGetJobStatusResponse)(nil),        // 30: numen.v1.ProviderServiceGetJobStatusResponse
+	(*ProviderServiceFetchJobResultRequest)(nil),       // 31: numen.v1.ProviderServiceFetchJobResultRequest
+	(*ProviderServiceFetchJobResultResponse)(nil),      // 32: numen.v1.ProviderServiceFetchJobResultResponse
+	nil,                 // 33: numen.v1.ProviderCall.FieldsEntry
+	(*FloatVector)(nil), // 34: numen.v1.FloatVector
 }
 var file_numen_v1_provider_proto_depIdxs = []int32{
-	26, // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
-	3,  // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
+	33, // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
+	4,  // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
 	0,  // 2: numen.v1.ProviderFailure.kind:type_name -> numen.v1.ProviderFailureKind
 	1,  // 3: numen.v1.ProviderFailure.reason:type_name -> numen.v1.ProviderFailureReason
-	2,  // 4: numen.v1.ProviderServiceCompleteRequest.call:type_name -> numen.v1.ProviderCall
-	5,  // 5: numen.v1.ProviderServiceCompleteRequest.messages:type_name -> numen.v1.ProviderMessage
-	4,  // 6: numen.v1.ProviderServiceCompleteResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 7: numen.v1.ProviderServiceEmbedRequest.call:type_name -> numen.v1.ProviderCall
-	27, // 8: numen.v1.ProviderServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
-	4,  // 9: numen.v1.ProviderServiceEmbedResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 10: numen.v1.ProviderServiceListModelsRequest.call:type_name -> numen.v1.ProviderCall
-	10, // 11: numen.v1.ProviderServiceListModelsResponse.models:type_name -> numen.v1.ProviderModel
-	4,  // 12: numen.v1.ProviderServiceListModelsResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 13: numen.v1.ProviderServiceListReasoningLevelsRequest.call:type_name -> numen.v1.ProviderCall
-	13, // 14: numen.v1.ProviderServiceListReasoningLevelsResponse.levels:type_name -> numen.v1.ProviderReasoningLevel
-	4,  // 15: numen.v1.ProviderServiceListReasoningLevelsResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 16: numen.v1.ProviderServiceGetModelProfileRequest.call:type_name -> numen.v1.ProviderCall
-	4,  // 17: numen.v1.ProviderServiceGetModelProfileResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 18: numen.v1.ProviderServiceProbeEmbeddingWidthRequest.call:type_name -> numen.v1.ProviderCall
-	4,  // 19: numen.v1.ProviderServiceProbeEmbeddingWidthResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 20: numen.v1.ProviderServiceSubmitJobRequest.call:type_name -> numen.v1.ProviderCall
-	4,  // 21: numen.v1.ProviderServiceSubmitJobResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 22: numen.v1.ProviderServiceGetJobStatusRequest.call:type_name -> numen.v1.ProviderCall
-	4,  // 23: numen.v1.ProviderServiceGetJobStatusResponse.failure:type_name -> numen.v1.ProviderFailure
-	2,  // 24: numen.v1.ProviderServiceFetchJobResultRequest.call:type_name -> numen.v1.ProviderCall
-	4,  // 25: numen.v1.ProviderServiceFetchJobResultResponse.failure:type_name -> numen.v1.ProviderFailure
-	6,  // 26: numen.v1.ProviderService.Complete:input_type -> numen.v1.ProviderServiceCompleteRequest
-	8,  // 27: numen.v1.ProviderService.Embed:input_type -> numen.v1.ProviderServiceEmbedRequest
-	11, // 28: numen.v1.ProviderService.ListModels:input_type -> numen.v1.ProviderServiceListModelsRequest
-	14, // 29: numen.v1.ProviderService.ListReasoningLevels:input_type -> numen.v1.ProviderServiceListReasoningLevelsRequest
-	16, // 30: numen.v1.ProviderService.GetModelProfile:input_type -> numen.v1.ProviderServiceGetModelProfileRequest
-	18, // 31: numen.v1.ProviderService.ProbeEmbeddingWidth:input_type -> numen.v1.ProviderServiceProbeEmbeddingWidthRequest
-	20, // 32: numen.v1.ProviderService.SubmitJob:input_type -> numen.v1.ProviderServiceSubmitJobRequest
-	22, // 33: numen.v1.ProviderService.GetJobStatus:input_type -> numen.v1.ProviderServiceGetJobStatusRequest
-	24, // 34: numen.v1.ProviderService.FetchJobResult:input_type -> numen.v1.ProviderServiceFetchJobResultRequest
-	7,  // 35: numen.v1.ProviderService.Complete:output_type -> numen.v1.ProviderServiceCompleteResponse
-	9,  // 36: numen.v1.ProviderService.Embed:output_type -> numen.v1.ProviderServiceEmbedResponse
-	12, // 37: numen.v1.ProviderService.ListModels:output_type -> numen.v1.ProviderServiceListModelsResponse
-	15, // 38: numen.v1.ProviderService.ListReasoningLevels:output_type -> numen.v1.ProviderServiceListReasoningLevelsResponse
-	17, // 39: numen.v1.ProviderService.GetModelProfile:output_type -> numen.v1.ProviderServiceGetModelProfileResponse
-	19, // 40: numen.v1.ProviderService.ProbeEmbeddingWidth:output_type -> numen.v1.ProviderServiceProbeEmbeddingWidthResponse
-	21, // 41: numen.v1.ProviderService.SubmitJob:output_type -> numen.v1.ProviderServiceSubmitJobResponse
-	23, // 42: numen.v1.ProviderService.GetJobStatus:output_type -> numen.v1.ProviderServiceGetJobStatusResponse
-	25, // 43: numen.v1.ProviderService.FetchJobResult:output_type -> numen.v1.ProviderServiceFetchJobResultResponse
-	35, // [35:44] is the sub-list for method output_type
-	26, // [26:35] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	3,  // 4: numen.v1.ProviderServiceCompleteRequest.call:type_name -> numen.v1.ProviderCall
+	6,  // 5: numen.v1.ProviderServiceCompleteRequest.messages:type_name -> numen.v1.ProviderMessage
+	5,  // 6: numen.v1.ProviderServiceCompleteResponse.failure:type_name -> numen.v1.ProviderFailure
+	11, // 7: numen.v1.ProviderChatMessage.tool_calls:type_name -> numen.v1.ProviderToolCall
+	2,  // 8: numen.v1.ProviderChatFinish.reason:type_name -> numen.v1.ProviderChatFinishReason
+	3,  // 9: numen.v1.ProviderServiceChatRequest.call:type_name -> numen.v1.ProviderCall
+	9,  // 10: numen.v1.ProviderServiceChatRequest.messages:type_name -> numen.v1.ProviderChatMessage
+	10, // 11: numen.v1.ProviderServiceChatRequest.tools:type_name -> numen.v1.ProviderToolDefinition
+	11, // 12: numen.v1.ProviderServiceChatResponse.tool_call:type_name -> numen.v1.ProviderToolCall
+	12, // 13: numen.v1.ProviderServiceChatResponse.finish:type_name -> numen.v1.ProviderChatFinish
+	5,  // 14: numen.v1.ProviderServiceChatResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 15: numen.v1.ProviderServiceEmbedRequest.call:type_name -> numen.v1.ProviderCall
+	34, // 16: numen.v1.ProviderServiceEmbedResponse.vectors:type_name -> numen.v1.FloatVector
+	5,  // 17: numen.v1.ProviderServiceEmbedResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 18: numen.v1.ProviderServiceListModelsRequest.call:type_name -> numen.v1.ProviderCall
+	17, // 19: numen.v1.ProviderServiceListModelsResponse.models:type_name -> numen.v1.ProviderModel
+	5,  // 20: numen.v1.ProviderServiceListModelsResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 21: numen.v1.ProviderServiceListReasoningLevelsRequest.call:type_name -> numen.v1.ProviderCall
+	20, // 22: numen.v1.ProviderServiceListReasoningLevelsResponse.levels:type_name -> numen.v1.ProviderReasoningLevel
+	5,  // 23: numen.v1.ProviderServiceListReasoningLevelsResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 24: numen.v1.ProviderServiceGetModelProfileRequest.call:type_name -> numen.v1.ProviderCall
+	5,  // 25: numen.v1.ProviderServiceGetModelProfileResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 26: numen.v1.ProviderServiceProbeEmbeddingWidthRequest.call:type_name -> numen.v1.ProviderCall
+	5,  // 27: numen.v1.ProviderServiceProbeEmbeddingWidthResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 28: numen.v1.ProviderServiceSubmitJobRequest.call:type_name -> numen.v1.ProviderCall
+	5,  // 29: numen.v1.ProviderServiceSubmitJobResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 30: numen.v1.ProviderServiceGetJobStatusRequest.call:type_name -> numen.v1.ProviderCall
+	5,  // 31: numen.v1.ProviderServiceGetJobStatusResponse.failure:type_name -> numen.v1.ProviderFailure
+	3,  // 32: numen.v1.ProviderServiceFetchJobResultRequest.call:type_name -> numen.v1.ProviderCall
+	5,  // 33: numen.v1.ProviderServiceFetchJobResultResponse.failure:type_name -> numen.v1.ProviderFailure
+	7,  // 34: numen.v1.ProviderService.Complete:input_type -> numen.v1.ProviderServiceCompleteRequest
+	15, // 35: numen.v1.ProviderService.Embed:input_type -> numen.v1.ProviderServiceEmbedRequest
+	13, // 36: numen.v1.ProviderService.Chat:input_type -> numen.v1.ProviderServiceChatRequest
+	18, // 37: numen.v1.ProviderService.ListModels:input_type -> numen.v1.ProviderServiceListModelsRequest
+	21, // 38: numen.v1.ProviderService.ListReasoningLevels:input_type -> numen.v1.ProviderServiceListReasoningLevelsRequest
+	23, // 39: numen.v1.ProviderService.GetModelProfile:input_type -> numen.v1.ProviderServiceGetModelProfileRequest
+	25, // 40: numen.v1.ProviderService.ProbeEmbeddingWidth:input_type -> numen.v1.ProviderServiceProbeEmbeddingWidthRequest
+	27, // 41: numen.v1.ProviderService.SubmitJob:input_type -> numen.v1.ProviderServiceSubmitJobRequest
+	29, // 42: numen.v1.ProviderService.GetJobStatus:input_type -> numen.v1.ProviderServiceGetJobStatusRequest
+	31, // 43: numen.v1.ProviderService.FetchJobResult:input_type -> numen.v1.ProviderServiceFetchJobResultRequest
+	8,  // 44: numen.v1.ProviderService.Complete:output_type -> numen.v1.ProviderServiceCompleteResponse
+	16, // 45: numen.v1.ProviderService.Embed:output_type -> numen.v1.ProviderServiceEmbedResponse
+	14, // 46: numen.v1.ProviderService.Chat:output_type -> numen.v1.ProviderServiceChatResponse
+	19, // 47: numen.v1.ProviderService.ListModels:output_type -> numen.v1.ProviderServiceListModelsResponse
+	22, // 48: numen.v1.ProviderService.ListReasoningLevels:output_type -> numen.v1.ProviderServiceListReasoningLevelsResponse
+	24, // 49: numen.v1.ProviderService.GetModelProfile:output_type -> numen.v1.ProviderServiceGetModelProfileResponse
+	26, // 50: numen.v1.ProviderService.ProbeEmbeddingWidth:output_type -> numen.v1.ProviderServiceProbeEmbeddingWidthResponse
+	28, // 51: numen.v1.ProviderService.SubmitJob:output_type -> numen.v1.ProviderServiceSubmitJobResponse
+	30, // 52: numen.v1.ProviderService.GetJobStatus:output_type -> numen.v1.ProviderServiceGetJobStatusResponse
+	32, // 53: numen.v1.ProviderService.FetchJobResult:output_type -> numen.v1.ProviderServiceFetchJobResultResponse
+	44, // [44:54] is the sub-list for method output_type
+	34, // [34:44] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_provider_proto_init() }
@@ -1715,13 +2254,20 @@ func file_numen_v1_provider_proto_init() {
 	}
 	file_numen_v1_embedding_proto_init()
 	file_numen_v1_provider_proto_msgTypes[4].OneofWrappers = []any{}
+	file_numen_v1_provider_proto_msgTypes[10].OneofWrappers = []any{}
+	file_numen_v1_provider_proto_msgTypes[11].OneofWrappers = []any{
+		(*ProviderServiceChatResponse_TextDelta)(nil),
+		(*ProviderServiceChatResponse_ToolCall)(nil),
+		(*ProviderServiceChatResponse_Finish)(nil),
+		(*ProviderServiceChatResponse_Failure)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_provider_proto_rawDesc), len(file_numen_v1_provider_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   25,
+			NumEnums:      3,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

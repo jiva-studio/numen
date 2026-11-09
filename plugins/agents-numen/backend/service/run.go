@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
-	"log"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 )
 
 // defaultTurns is how many requests to the model one task may make where the task names no limit.
@@ -22,27 +21,18 @@ const reasonTurns = "the agent reached the limit of steps without finishing"
 // reasonCut is why a run stops when the model's answer was cut off at its length limit.
 const reasonCut = "the answer was cut off at the model's length limit"
 
-// chatError is a run stopped by a request to the chat API that failed. It stops the run and is
-// reported as why it stopped.
-type chatError struct{ err error }
-
-func (f *chatError) Error() string { return f.err.Error() }
-
-func (f *chatError) Unwrap() error { return f.err }
-
-// run is one task worked by the model: the chat API, the tools, and where its steps go. isPlain
+// run is one task worked by the model: the way to ask it, the tools, and where its steps go.
 type run struct {
-	chat    chat
-	model   string
-	effort  effort
-	tools   *toolbox
-	words   map[string]toolcall.Declaration
-	turns   int
-	send    func(*agentrun.Response) error
-	isPlain bool
+	ask         askModel
+	temperature *float64
+	maxTokens   int
+	tools       *toolbox
+	words       map[string]toolcall.Declaration
+	turns       int
+	send        func(*agentrun.Response) error
 }
 
-func (r *run) answer(ctx context.Context, messages []message) ([]message, string, error) {
+func (r *run) answer(ctx context.Context, messages []connection.ChatMessage) ([]connection.ChatMessage, string, error) {
 	turns := r.turns
 	if turns <= 0 {
 		turns = defaultTurns
@@ -64,33 +54,21 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 	return messages, reasonTurns, nil
 }
 
-func (r *run) turn(ctx context.Context, messages []message) ([]message, string, bool, error) {
-	if err := r.send(&agentrun.Response{
-		Step: &agentrun.ModelStartedStep{},
-	}); err != nil {
+func (r *run) turn(ctx context.Context, messages []connection.ChatMessage) ([]connection.ChatMessage, string, bool, error) {
+	if err := r.send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
 		return messages, "", false, err
 	}
-	var unsent error
-	emit := func(text string) error {
-		unsent = r.send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
-		return unsent
-	}
-	reply, finished, err := r.ask(ctx, messages, emit)
+	reply, finish, err := r.read(ctx, messages)
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return messages, "", false, ctxErr
 	}
-	if unsent != nil {
-		return messages, "", false, unsent
-	}
 	if err != nil {
-		return messages, "", false, &chatError{err: err}
+		return messages, "", false, err
 	}
-	if finished == "length" {
+	if finish == connection.FinishLength {
 		reply.ToolCalls = nil
-		messages = append(messages, reply)
-		return messages, reasonCut, true, nil
+		return append(messages, reply), reasonCut, true, nil
 	}
-	cleanToolCalls(reply.ToolCalls)
 	messages = append(messages, reply)
 	if len(reply.ToolCalls) == 0 {
 		return messages, reasonDone, true, nil
@@ -99,27 +77,62 @@ func (r *run) turn(ctx context.Context, messages []message) ([]message, string, 
 	return messages, "", false, err
 }
 
-func cleanToolCalls(calls []toolCall) {
-	for i := range calls {
-		if strings.TrimSpace(calls[i].Function.Arguments) == "" {
-			calls[i].Function.Arguments = "{}"
+// read asks for one turn and reports its text as it arrives. A turn that fails keeps the text already
+// reported, calls no tool and is not asked again.
+func (r *run) read(ctx context.Context, messages []connection.ChatMessage) (connection.ChatMessage, connection.FinishReason, error) {
+	reply := connection.ChatMessage{Role: "assistant"}
+	stream, err := r.ask(ctx, connection.ChatRequest{
+		Messages: messages, Tools: r.tools.tools, Temperature: r.temperature, MaxTokens: r.maxTokens,
+		Priority: connection.PriorityInteractive,
+	})
+	if err != nil {
+		return reply, connection.FinishStop, &failure{err: err}
+	}
+	defer func() { _ = stream.Close() }()
+	var text strings.Builder
+	finish := connection.FinishStop
+	for {
+		event, ok := stream.Next()
+		if !ok {
+			break
+		}
+		switch {
+		case event.ToolCall != nil:
+			reply.ToolCalls = append(reply.ToolCalls, *event.ToolCall)
+		case event.Finish != nil:
+			finish = event.Finish.Reason
+		default:
+			text.WriteString(event.TextDelta)
+			if err := r.send(&agentrun.Response{Step: &agentrun.TextStep{Text: event.TextDelta}}); err != nil {
+				return reply, finish, err
+			}
 		}
 	}
+	reply.Text = text.String()
+	if err := stream.Err(); err != nil {
+		return reply, finish, &failure{err: err}
+	}
+	for i := range reply.ToolCalls {
+		if strings.TrimSpace(reply.ToolCalls[i].Arguments) == "" {
+			reply.ToolCalls[i].Arguments = "{}"
+		}
+	}
+	return reply, finish, nil
 }
 
-func (r *run) runToolCalls(ctx context.Context, messages []message, calls []toolCall) ([]message, error) {
+func (r *run) runToolCalls(ctx context.Context, messages []connection.ChatMessage, calls []connection.ToolCall) ([]connection.ChatMessage, error) {
 	for _, call := range calls {
 		result, err := r.callTool(ctx, call)
 		if err != nil {
 			return messages, err
 		}
-		messages = append(messages, message{Role: "tool", ToolCallID: call.ID, Content: new(result), ToolCalls: nil})
+		messages = append(messages, connection.ChatMessage{Role: "tool", ToolCallID: call.ID, Text: result})
 	}
 	return messages, nil
 }
 
-func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
-	name, args := call.Function.Name, call.Function.Arguments
+func (r *run) callTool(ctx context.Context, call connection.ToolCall) (string, error) {
+	name, args := call.Name, call.Arguments
 	described := toolcall.Describe(r.words, name, call.ID, args)
 	if err := r.send(&agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: described}}); err != nil {
 		return "", err
@@ -128,35 +141,8 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if err := r.send(&agentrun.Response{
-		Step: &agentrun.ToolFinishedStep{},
-	}); err != nil {
+	if err := r.send(&agentrun.Response{Step: &agentrun.ToolFinishedStep{}}); err != nil {
 		return "", err
 	}
 	return result, nil
-}
-
-func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
-	var reqErr error
-	if !r.isPlain {
-		reply, finished, err := r.chat.stream(ctx, r.model, r.effort, messages, r.tools.tools, emit)
-		if !errors.Is(err, errStreamRejected) {
-			return reply, finished, err
-		}
-		reqErr = err
-	}
-	reply, finished, err := r.chat.send(ctx, r.model, r.effort, messages, r.tools.tools)
-	if err != nil {
-		return message{}, "", err
-	}
-	if reqErr != nil {
-		r.isPlain = true
-		log.Printf("harness: %v; it answered unstreamed, and this run goes on unstreamed", reqErr)
-	}
-	if text := reply.Content; text != nil && *text != "" {
-		if err := emit(*text); err != nil {
-			return message{}, "", err
-		}
-	}
-	return reply, finished, nil
 }

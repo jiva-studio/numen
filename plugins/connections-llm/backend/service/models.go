@@ -26,7 +26,7 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 	path, isLabelled := "/models", call.Type == typeOpenRouter
 	if isLabelled && operation == operationEmbed {
 		path = "/embeddings/models"
-	} else if isLabelled && operation != operationComplete {
+	} else if isLabelled && operation != operationComplete && operation != operationChat {
 		return []connection.Model{}, nil
 	}
 	var answer modelsAnswer
@@ -37,7 +37,7 @@ func (s *Service) ListModels(ctx context.Context, call connection.Call, operatio
 	for _, one := range answer.Data {
 		model := connection.Model{ID: one.ID, Title: one.Name}
 		if isLabelled {
-			if operation == operationComplete && !slices.Contains(one.Architecture.OutputModalities, "text") && len(one.Architecture.OutputModalities) > 0 {
+			if (operation == operationComplete || operation == operationChat) && !slices.Contains(one.Architecture.OutputModalities, "text") && len(one.Architecture.OutputModalities) > 0 {
 				continue
 			}
 			model.Operations = []string{operation}

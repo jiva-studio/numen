@@ -101,3 +101,17 @@ func TestReasoningLevelsAreListedWhereTheTypeKnowsThem(t *testing.T) {
 func equalModel(a, b connection.Model) bool {
 	return a.ID == b.ID && a.Title == b.Title && slices.Equal(a.Operations, b.Operations)
 }
+
+func TestOpenRouterListsTheTextModelsForChatAsForComplete(t *testing.T) {
+	_, address := startFake(t, fakeopenai.Config{
+		APIKey: testKey, IsLabelled: true,
+		Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
+	})
+
+	models, err := New().ListModels(newContext(t), newCall("openrouter", address, testKey, ""), "chat")
+
+	want := []connection.Model{{ID: "openai/gpt-4o-mini", Title: "GPT-4o mini", Operations: []string{"chat"}}}
+	if err != nil || !slices.EqualFunc(models, want, equalModel) {
+		t.Errorf("chat models = %+v, %v, want %+v", models, err, want)
+	}
+}
