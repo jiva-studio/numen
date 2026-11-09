@@ -62,6 +62,7 @@ export interface Words extends EmptyWords {
   readDocument: string
   wordsOnly: string
   notEmbedded: string
+  searching: string
   creates: string
   asChild: string
   asParent: string
@@ -190,12 +191,24 @@ function appendCreateNoteActions(
 const hasContent = (group: PaletteGroup): boolean =>
   group.items.length > 0 || (!group.isWorking && Boolean(group.silence))
 
+/** While nothing is listed and some group is still working, one working group says so. */
+function appendSearchingGroup(
+  listed: readonly PaletteGroup[],
+  isWorking: Record<SearchGroup, boolean>,
+  title: string,
+): readonly PaletteGroup[] {
+  const hasRows = listed.some((one) => one.items.length > 0)
+  if (hasRows || !Object.values(isWorking).some(Boolean)) return listed
+  return [...listed, { id: 'searching', title, items: [], isWorking: true }]
+}
+
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
   texts: ShallowRef<readonly Passage[]>
   meanings: ShallowRef<readonly Passage[]>
   isWorking: Ref<Record<SearchGroup, boolean>>
   failureMessages: Ref<Partial<Record<SearchGroup, string>>>
+  isAnswered: Ref<boolean>
 }
 
 async function executeSearchQuery(
@@ -212,6 +225,7 @@ async function executeSearchQuery(
   state.meanings.value = []
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
+  state.isAnswered.value = false
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
   }
@@ -252,6 +266,8 @@ async function executeSearchQuery(
       onDone,
     }),
   ])
+  // Stryker disable next-line ConditionalExpression: Outdated queries do not mark the answer.
+  if (ctx.mine.isCurrent) state.isAnswered.value = true
 }
 
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
@@ -279,7 +295,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
-  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages }
+  const isAnswered = ref(false)
+  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages, isAnswered }
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
@@ -289,6 +306,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     meanings.value = []
     isWorking.value = { names: false, text: false, meaning: false }
     failureMessages.value = {}
+    isAnswered.value = false
   }
 
   const ask = (query: string, mine: InFlightRequest) =>
@@ -327,10 +345,17 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       getSilence: getEmptyGroupMessage,
     })
     const withCreation = appendCreateNoteActions(base, inputValue.value, words, how.getTarget)
-    return { ...withCreation, groups: withCreation.groups.filter(hasContent) }
+    const listed = withCreation.groups.filter(hasContent)
+    const groups = appendSearchingGroup(listed, isWorking.value, words.searching)
+    return { ...withCreation, groups }
   })
 
   const groups = computed(() => searchGroups.value.groups)
+
+  /** Whether every question has answered and no group has a row or a message to show. */
+  const isNothingFound = computed(
+    () => isAnswered.value && Boolean(inputValue.value.trim()) && groups.value.length === 0,
+  )
 
   const chooseResult = (item: string, action: string): ResultChoice | null =>
     resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)
@@ -339,6 +364,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     open,
     typed: inputValue,
     groups,
+    isNothingFound,
     setTyped,
     setOpen,
     chooseResult,

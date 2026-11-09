@@ -33,6 +33,7 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Text search only: no embedding model set',
   notEmbedded: 'Semantic index not built yet',
+  searching: 'Searching',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

@@ -37,6 +37,8 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'No results found',
   noQuery: 'Search failed',
+  searching: 'Searching…',
+  nothingFound: 'Nothing found',
   notEmbedded: 'Semantic index not built yet',
   /** The commands, and the groups they are drawn in. */
   noteGroupTitle: 'Note',

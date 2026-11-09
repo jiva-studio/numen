@@ -121,6 +121,9 @@ function getRowIcon(id: string) {
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
+    <template v-if="!commands.open.value && search.isNothingFound.value" #silence>
+      {{ words.nothingFound }}
+    </template>
   </Palette>
 </template>
 

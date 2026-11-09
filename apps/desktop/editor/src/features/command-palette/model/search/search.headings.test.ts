@@ -15,6 +15,7 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
+  searching: 'Searching',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -87,5 +88,42 @@ describe('the headings of the search groups', () => {
 
     expect(getIds(palette)).toEqual(['names'])
     expect(palette.groups.value[0]?.items.map((one) => one.title)).toEqual(['Coral'])
+  })
+
+  it('draws one working group titled Searching while no group has a row', async () => {
+    const { palette } = createHeldVault()
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+
+    expect(palette.groups.value).toEqual([
+      { id: 'searching', title: 'Searching', items: [], isWorking: true },
+    ])
+    expect(palette.isNothingFound.value).toBe(false)
+  })
+
+  it('says nothing found once every question answered with no row', async () => {
+    const { palette, names, passages } = createHeldVault()
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+    names.answer([])
+    passages.answer([])
+    await flushPromises()
+
+    expect(palette.groups.value).toEqual([])
+    expect(palette.isNothingFound.value).toBe(true)
+  })
+
+  it('draws neither Searching nor nothing found while a group has rows', async () => {
+    const { palette, names } = createHeldVault()
+
+    palette.setTyped('cor').catch(() => undefined)
+    await flushPromises()
+    names.answer([coral])
+    await flushPromises()
+
+    expect(getIds(palette)).toEqual(['names'])
+    expect(palette.isNothingFound.value).toBe(false)
   })
 })
