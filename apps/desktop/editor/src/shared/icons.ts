@@ -8,10 +8,11 @@
 import type { Component } from 'vue'
 import { createNamedIcon } from '@numen/ui'
 import { getCommandOwner } from '@numen/plugin-host'
-import { COMMAND, ROW, SETTING_COMMAND_PREFIX } from './commandIds'
+import { COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './commandIds'
 import {
   AppWindow,
   ArrowRightLeft,
+  Command,
   Copy,
   Download,
   CornerDownRight,
@@ -49,6 +50,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [ROW.goToNote, Navigation],
   [COMMAND.searchVault, Search],
   [COMMAND.openSettings, Settings],
+  [COMMANDS_ROW, Command],
   // create
   [COMMAND.createNote, FilePlus],
   [COMMAND.createFolder, FolderPlus],
