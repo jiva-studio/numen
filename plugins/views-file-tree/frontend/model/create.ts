@@ -24,16 +24,3 @@ export const createFolder = async (
   await list.openFolder(into)
   return list.getEntryAt(createdItem) ? createdItem : null
 }
-
-/** Creates a note in the folder and returns the created path. */
-export const createNote = async (
-  list: FileTree,
-  deps: FilesTabDeps,
-  path: string | null,
-): Promise<string | null> => {
-  const into = getFolderFor(list, path)
-  const createdItem = await deps.createNote(into)
-  if (!createdItem) return null
-  await list.openFolder(into)
-  return createdItem
-}

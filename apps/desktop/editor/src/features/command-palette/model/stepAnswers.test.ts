@@ -70,7 +70,7 @@ describe('the answers of a step', () => {
 
   it.each([
     ['a name to type', 'app:note.rename'],
-    ['the name to type again', 'app:note.delete'],
+    ['the name to type again', 'app:file.remove#permanent'],
     ['a choice from a list', 'setting:app:appearance.theme'],
   ])('are not named in a row of %s', (_what, id) => {
     const commands = createPalette()
@@ -85,7 +85,7 @@ describe('the answers of a step', () => {
 
   it('are not named in a row of the notes found, or of the vaults', async () => {
     const found = createPalette()
-    found.startCommand('app:note.goTo', front)
+    found.startCommand('app:file.open#note', front)
     await found.setTyped('he')
     const vaults = createPalette()
     vaults.startCommand('app:vault.remove', front)

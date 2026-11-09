@@ -15,6 +15,7 @@ import {
 import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
+import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
 import type {
   LinkInspectorRequest,
@@ -171,12 +172,7 @@ function createPlexNodeActions(options: {
     deps.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  const createNote = async () => {
-    const path = await deps.createUntitledNote()
-    if (path) await view.go(path)
-  }
-
-  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, createNote }
+  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading }
 }
 
 /** The words of the rows the menu on a node writes itself. */
@@ -193,8 +189,9 @@ function usePlexMenu(options: {
   tabDeps: PlexTabDeps
   getName: (path: string) => string
   getType: (node: string) => NoteType
+  showCreated: (path: string) => Promise<void>
 }) {
-  const { map, tabDeps: deps, getName, getType } = options
+  const { map, tabDeps: deps, getName, getType, showCreated } = options
   const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
     listItems: (command, { target }) => deps.listItems(command, target),
@@ -233,7 +230,10 @@ function usePlexMenu(options: {
   const chooseMenuItem = (id: string) => {
     const choice = nodeMenu.pick(id)
     if (!choice) return
-    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
+    deps
+      .runCommand(choice.command, choice.target.target, choice.itemId)
+      .then((made) => (choice.command === CREATE_NOTE && made ? showCreated(made) : undefined))
+      .catch(reportFailure)
   }
 
   /** The icon of a row, which is the one of the command or submenu of its entry. */
@@ -284,6 +284,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     tabDeps: deps,
     getName,
     getType,
+    showCreated: (path) => view.go(path),
   })
 
   const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))

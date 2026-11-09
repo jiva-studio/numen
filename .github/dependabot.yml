@@ -47,6 +47,8 @@ updates:
       - /plugins/views-flashcards-studio
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "build(deps)"
     groups:
@@ -69,6 +71,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -89,6 +93,8 @@ updates:
     directory: /apps/mobile/android
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "build(deps)"
     groups:
@@ -98,11 +104,18 @@ updates:
       gradle-major:
         patterns: ["*"]
         update-types: ["major"]
+    # Android Gradle Plugin 8.13 runs on Gradle 8 only; the wrapper stays on 8.x
+    # until the plugin moves to 9.
+    ignore:
+      - dependency-name: gradle-wrapper
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "ci(deps)"
     groups:

@@ -33,7 +33,7 @@ Feature: File tree
         | path                | text                    |
         | notes/Brine pump.md | The pump runs at night. |
       And the person opens the note titled "Brine pump"
-      When the person runs the command "Rename file" on the file at "notes/Brine pump.md"
+      When the person runs the command "Rename" on the file at "notes/Brine pump.md"
       And the person names it "Brine pumps.md"
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open

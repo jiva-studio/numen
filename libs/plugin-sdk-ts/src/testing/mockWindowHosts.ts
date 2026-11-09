@@ -34,6 +34,8 @@ export interface MockCommandsHost extends CommandsHost {
   setIds(ids: readonly string[]): void
   // Sets the items a command offers, whatever the target.
   setItems(command: string, items: readonly CommandItem[]): void
+  // Sets the path a run of the command resolves with; a run of any other command resolves with an empty path.
+  setResult(command: string, path: string): void
   getRuns(): MockCommandRun[]
 }
 
@@ -42,13 +44,17 @@ export function createMockCommandsHost(initial: readonly string[] = []): MockCom
   const watchers = new Set<(value: readonly string[]) => void>()
   const runs: MockCommandRun[] = []
   const items = new Map<string, readonly CommandItem[]>()
+  const results = new Map<string, string>()
   return {
     getIds: () => ids,
     watch: (handler) => watchWith(watchers, handler, ids),
     listItems: (command) => Promise.resolve(items.get(command) ?? []),
     run: (command, target, itemId) => {
       runs.push({ command, target, itemId })
-      return Promise.resolve()
+      return Promise.resolve(results.get(command) ?? '')
+    },
+    setResult: (command, path) => {
+      results.set(command, path)
     },
     setItems: (command, next) => {
       items.set(command, next)

@@ -47,6 +47,7 @@ const createWindow = (
   const on: VaultContext & Voice = {
     files: {
       createNote: unused,
+      createUntitled: unused,
       rename: unused,
       remove: unused,
       move: unused,

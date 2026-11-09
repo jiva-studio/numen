@@ -10,6 +10,8 @@ import { createWindowCommands } from './windowCommands'
 
 const WINDOWS = [{ id: 'w2', title: 'Second window' }]
 
+const FOLDER: RunTarget = { path: '', title: '', isFolder: true, others: [], tab: '' }
+
 const FRONT = {
   tab: 'plex:1',
   kind: 'plex',
@@ -19,7 +21,7 @@ const FRONT = {
 
 function setup() {
   const pluginIds = shallowRef<readonly string[]>(['org.example.tide:chart.open'])
-  const runCommandToEnd = vi.fn(async (_id: string, _target: CommandTarget) => undefined)
+  const runCommandToEnd = vi.fn(async (_id: string, _target: CommandTarget) => '')
   const runWithItem = vi.fn(async (_id: string, _target: RunTarget, _argument: string) => undefined)
   const listItems = vi.fn(async (id: string, _target: RunTarget) =>
     id === 'org.example.tide:chart.move' ? WINDOWS : [],
@@ -79,9 +81,9 @@ describe('the commands of the window', () => {
       tab: '',
     }
 
-    await commands.run('app:note.trash', target)
+    await commands.run('app:file.remove', target)
 
-    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('app:note.trash', {
+    expect(runCommandToEnd).toHaveBeenCalledExactlyOnceWith('app:file.remove', {
       ...FRONT,
       path: 'reef/Coral.md',
       file: 'reef/Coral.md',
@@ -117,6 +119,14 @@ describe('the commands of the window', () => {
       title: 'Front',
       tab: 'plex:1',
     })
+  })
+
+  it('resolve with the path of the note the run made, and with an empty path for a run with an item', async () => {
+    const { commands, runCommandToEnd } = setup()
+    runCommandToEnd.mockResolvedValueOnce('Untitled note 1.md')
+
+    expect(await commands.run('app:note.create', FOLDER)).toBe('Untitled note 1.md')
+    expect(await commands.run('org.example.tide:chart.move', undefined, 'w2')).toBe('')
   })
 
   it('run a command with the item picked as its itemId', async () => {

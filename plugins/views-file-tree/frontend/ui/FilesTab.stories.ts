@@ -41,11 +41,10 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
     openEntry: () => undefined,
     listItems: async () => [],
     getMenuEntries: () => ROW_MENU,
-    runCommand: async () => undefined,
+    runCommand: async () => '',
     movePath: async () => undefined,
     setDraggedPaths: () => undefined,
     createFolder: async () => undefined,
-    createNote: async (folder) => `${folder}Untitled note.md`,
     canDropData: () => false,
     dropData: async () => [],
     showError: () => undefined,
@@ -130,7 +129,7 @@ export const TheMenuOnARow: Story = {
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))
     const transcriptText = getMenuItems().map((one) => one.textContent?.trim())
-    await expect(transcriptText).toContain('Rename file')
+    await expect(transcriptText).toContain('Rename')
     await expect(transcriptText).toContain('Move to trash')
 
     // The whole of it is on the screen, on every side.

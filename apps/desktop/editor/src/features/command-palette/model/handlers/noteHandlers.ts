@@ -53,8 +53,11 @@ export const createNoteCommand = async (
   invocation: CommandInvocation,
   on: CommandDeps,
   options: CreateNoteOptions,
-): Promise<void> => {
-  if (!invocation.name) return
+): Promise<string | void> => {
+  if (!invocation.name) {
+    if (invocation.isFolder) return on.files.createUntitled(invocation.path)
+    return
+  }
   const { relation, words } = options
   const createdItem = await on.files.createNote(
     invocation.name,
@@ -63,9 +66,11 @@ export const createNoteCommand = async (
   )
   if (!createdItem) return
   if (invocation.kind === NOTE) {
-    return on.notes.openFile(createdItem.path, createdItem.title, 'split')
+    on.notes.openFile(createdItem.path, createdItem.title, 'split')
+  } else {
+    await navigateToPath(createdItem.path, on, words)
   }
-  await navigateToPath(createdItem.path, on, words)
+  return createdItem.path
 }
 
 /**

@@ -78,7 +78,8 @@ jobs:
   checks:
     needs: [changes]
     uses: ./.github/workflows/checks.yml
-    secrets: inherit
+    secrets:
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
     with:
       workflows: ${{ fromJSON(needs.changes.outputs.areas).workflows }}
       gradle: ${{ fromJSON(needs.changes.outputs.areas).gradle }}
@@ -118,7 +119,9 @@ jobs:
   docs:
     needs: [changes]
     uses: ./.github/workflows/docs.yml
-    secrets: inherit
+    secrets:
+      BUNNY_DOCS_STORAGE_KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
+      BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
     with:
       docs: ${{ fromJSON(needs.changes.outputs.areas).docs }}
 

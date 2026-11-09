@@ -21,14 +21,14 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
-    command: 'app:note.open',
+    command: 'app:file.open',
     group: '0-open',
     order: 10,
   },
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
-    command: 'app:note.copyPath',
+    command: 'app:file.copyPath',
     group: '2-edit',
     order: 20,
     when: OVER_ONE_ROW,
@@ -43,7 +43,7 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
-    command: 'app:note.trash',
+    command: 'app:file.remove',
     group: '9-remove',
   },
   {

@@ -122,12 +122,5 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
 
   const refresh = (event: VaultChangeEvent) => refreshTabs(host, tabs.getAll(), event)
 
-  /** Makes a note and shows it in the plex of the tab `id`. */
-  const createNote = async (id: string): Promise<void> => {
-    const state = tabs.find(id)
-    if (!state) throw new Error(`no plex is open in the tab ${id}`)
-    await state.createNote()
-  }
-
-  return { kind, refresh, createNote }
+  return { kind, refresh }
 }

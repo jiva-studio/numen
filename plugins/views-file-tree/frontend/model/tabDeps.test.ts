@@ -94,10 +94,10 @@ describe('the menu of a row', () => {
   it('runs the command of an entry through the commands of the window', async () => {
     const { host, commands } = createHost()
 
-    await createFilesTabDeps(host, 'files').runCommand('app:note.trash', rowTarget)
+    await createFilesTabDeps(host, 'files').runCommand('app:file.remove', rowTarget)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: 'app:note.trash', target: rowTarget, itemId: undefined },
+      { command: 'app:file.remove', target: rowTarget, itemId: undefined },
     ])
   })
 
@@ -107,7 +107,7 @@ describe('the menu of a row', () => {
     const deps = createFilesTabDeps(withoutSlots, 'files')
 
     expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])
-    await expect(deps.runCommand('app:note.trash', rowTarget)).resolves.toBeUndefined()
+    await expect(deps.runCommand('app:file.remove', rowTarget)).resolves.toBe('')
   })
 
   it('reads the entries of no slot but the menu of the file tree', () => {
@@ -127,9 +127,8 @@ describe('what else a files tab asks of the window', () => {
 
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
-    expect(await deps.createNote('dir/')).toBe('dir/note')
 
-    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
+    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir'])
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {

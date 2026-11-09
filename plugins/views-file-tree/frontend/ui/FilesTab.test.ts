@@ -45,6 +45,7 @@ const mountFiles = async (open: readonly string[] = []) => {
       isDone.push(
         `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
       )
+      return ''
     },
     movePath: async (from, to) => {
       isDone.push(`moves ${from} ${to}`)
@@ -55,7 +56,6 @@ const mountFiles = async (open: readonly string[] = []) => {
     createFolder: async (path) => {
       isDone.push(`makes ${path}`)
     },
-    createNote: async (folderPath) => `${folderPath}Untitled note.md`,
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
       isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
@@ -179,7 +179,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:file.remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('is filed under the name that was typed over it', async () => {
@@ -278,7 +278,7 @@ describe('the menu on a row', () => {
     window.findComponent(Menu).vm.$emit('choose', TRASH.key)
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:file.remove Entropy.md Cover.png Entropy.md'])
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 })
@@ -295,11 +295,10 @@ describe('a folder that could not be read', () => {
       openEntry: () => undefined,
       listItems: async () => [],
       getMenuEntries: () => [],
-      runCommand: async () => undefined,
+      runCommand: async () => '',
       movePath: async () => undefined,
       setDraggedPaths: () => undefined,
       createFolder: async () => undefined,
-      createNote: async () => '',
       canDropData: () => false,
       dropData: async () => [],
       showError: () => undefined,

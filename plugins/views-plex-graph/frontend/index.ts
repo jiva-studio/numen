@@ -47,10 +47,6 @@ export function activate(context: PluginContext): void {
     id: 'graph.showNote',
     handler: (note) => travel(note.path),
   })
-  context.registerCommand({
-    id: 'graph.createNote',
-    handler: (note) => plexes.createNote(note.tab),
-  })
 }
 
 export default definePlugin({

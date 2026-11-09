@@ -21,7 +21,7 @@ const target = (override: Partial<CommandTarget> = {}): CommandTarget => ({
 const open = async (chosen: CommandTarget) => {
   const openFile = vi.fn()
   await runInvocation(
-    createInvocation(COMMAND.openNote, chosen),
+    createInvocation(COMMAND.openFile, chosen),
     { notes: { openFile }, writeMessage: vi.fn() } as unknown as CommandDeps,
     ANSWER_WORDS,
   )
@@ -30,12 +30,12 @@ const open = async (chosen: CommandTarget) => {
 
 describe('the invocation of a command over a target with a line', () => {
   it('keeps the line', () => {
-    expect(createInvocation(COMMAND.openNote, target({ line: 7 })).line).toBe(7)
-    expect(createInvocation(COMMAND.openNote, target({ line: 0 })).line).toBe(0)
+    expect(createInvocation(COMMAND.openFile, target({ line: 7 })).line).toBe(7)
+    expect(createInvocation(COMMAND.openFile, target({ line: 0 })).line).toBe(0)
   })
 
   it('has no line where the target has none', () => {
-    expect(createInvocation(COMMAND.openNote, target()).line).toBeUndefined()
+    expect(createInvocation(COMMAND.openFile, target()).line).toBeUndefined()
   })
 })
 
@@ -60,5 +60,31 @@ describe('the command that opens a note', () => {
     expect(openFile).toHaveBeenCalledTimes(1)
     expect(openFile.mock.calls[0]?.slice(0, 3)).toEqual(['reef/Coral.md', 'Coral', 'current'])
     expect(openFile.mock.calls[0]?.[3]).toBeUndefined()
+  })
+})
+
+describe('the command that opens a note with the argument placement', () => {
+  const run = async (values: Record<string, string>, chosen: CommandTarget) => {
+    const openFile = vi.fn()
+    await runInvocation(
+      { ...createInvocation(COMMAND.openFile, chosen), values },
+      { notes: { openFile }, writeMessage: vi.fn() } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+    return openFile
+  }
+
+  it('opens the note in a split at the line of the target', async () => {
+    const openFile = await run({ placement: 'split' }, target({ line: 7 }))
+
+    expect(openFile).toHaveBeenCalledExactlyOnceWith('reef/Coral.md', 'Coral', 'split', {
+      line: 7,
+    })
+  })
+
+  it('opens in the current tab where the argument names no known place', async () => {
+    const openFile = await run({ placement: 'elsewhere' }, target())
+
+    expect(openFile.mock.calls[0]?.[2]).toBe('current')
   })
 })

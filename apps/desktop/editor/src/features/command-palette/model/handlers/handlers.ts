@@ -9,7 +9,7 @@
  */
 import { formatErrorMessage } from '@numen/core-client'
 import type { CommandDeps, CommandHandler } from './deps'
-import type { CommandInvocation } from '../../types'
+import type { CommandInvocation, CommandPlace } from '../../types'
 import type { AnswerWords } from '../../words'
 import { joinAll, formatNames } from '../../lib/voice/voice'
 export type { CommandDeps }
@@ -18,32 +18,27 @@ import {
   createNoteCommand,
   createFolderCommand,
   moveFileCommand,
-  navigateToPath,
   renameNoteCommand,
   flushTab,
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import { SETTINGS } from '@/entities/tab'
-import { COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
+import { ARGUMENT, COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
+
+const getPlace = (invocation: CommandInvocation): CommandPlace | undefined => {
+  if (invocation.selector !== undefined) return { selector: invocation.selector }
+  return invocation.line === undefined ? undefined : { line: invocation.line }
+}
+
+const openFile = (invocation: CommandInvocation, on: CommandDeps): void => {
+  const file = invocation.path || invocation.file
+  const placement = invocation.values?.[ARGUMENT.placement] === 'split' ? 'split' : 'current'
+  on.notes.openFile(file, invocation.title || file, placement, getPlace(invocation))
+}
 
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
-  [COMMAND.openNote]: (invocation, on) =>
-    on.notes.openFile(
-      invocation.path,
-      invocation.title,
-      'current',
-      invocation.line === undefined ? undefined : { line: invocation.line },
-    ),
-  [COMMAND.openFile]: (invocation, on) =>
-    on.notes.openFile(
-      invocation.file,
-      invocation.title || invocation.file,
-      'current',
-      invocation.selector === undefined ? undefined : { selector: invocation.selector },
-    ),
-  [COMMAND.openNoteBeside]: (invocation, on) =>
-    on.notes.openFile(invocation.path, invocation.title, 'split'),
+  [COMMAND.openFile]: openFile,
   [COMMAND.createChildNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'child', words }),
   [COMMAND.createParentNote]: (invocation, on, words) =>
@@ -53,17 +48,17 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.createNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: null, words }),
   [COMMAND.renameNote]: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  [COMMAND.trashNote]: (invocation, on, words) =>
-    removeFiles(invocation, on, { isPermanent: false, words }),
-  [COMMAND.deleteNote]: (invocation, on, words) =>
-    removeFiles(invocation, on, { isPermanent: true, words }),
-  [COMMAND.copyNotePath]: (invocation, on) => on.copyPath(invocation.path),
+  [COMMAND.removeFile]: (invocation, on, words) =>
+    removeFiles(invocation, on, {
+      isPermanent: invocation.values?.[ARGUMENT.removal] === 'permanent',
+      words,
+    }),
+  [COMMAND.copyFilePath]: (invocation, on) => on.copyPath(invocation.path),
   [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
   [COMMAND.moveFile]: (invocation, on, words) => moveFileCommand(invocation, on, words),
   [COMMAND.createFolder]: (invocation, on, words) => createFolderCommand(invocation, on, words),
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
-  [COMMAND.goToNote]: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   [COMMAND.openVault]: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   [COMMAND.createVault]: (_, on, words) => addVault(on, words),
   [COMMAND.renameVault]: (invocation, on, words) => renameVault(invocation, on, words),
@@ -106,22 +101,24 @@ export async function runInvocation(
   invocation: CommandInvocation | null,
   on: CommandDeps,
   words: AnswerWords,
-): Promise<void> {
-  if (!invocation) return
+): Promise<string> {
+  if (!invocation) return ''
   const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
   const handler = commandRegistry.get(invocation.id) ?? HANDLERS[invocation.id]
-  if (!isSetting && !handler) return
+  if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
     if (isSetting) {
       await runSetting(invocation, on)
     } else if (handler) {
-      await handler(withCurrentNotePath(invocation, on), on, words)
+      const made = await handler(withCurrentNotePath(invocation, on), on, words)
+      return made || ''
     }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')
   }
+  return ''
 }
 
 const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [

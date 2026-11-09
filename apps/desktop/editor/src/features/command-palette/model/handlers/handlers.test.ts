@@ -82,6 +82,10 @@ const window = (
         isDone.push(`createNote ${title} ${from || '—'} ${relation ?? '—'}`)
         return answers.wasMade === false ? null : { path: `${title}.md`, title }
       },
+      createUntitled: async (folder) => {
+        isDone.push(`createUntitled ${folder || '—'}`)
+        return answers.wasMade === false ? '' : `${folder ? `${folder}/` : ''}Untitled note 1.md`
+      },
       rename: async (path, title) => {
         isDone.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
@@ -109,8 +113,8 @@ const window = (
       close: (id) => {
         isDone.push(`close ${id}`)
       },
-      openFile: (path, title, showing) => {
-        isDone.push(`openFile ${path} ${title} ${showing}`)
+      openFile: (path, title, placement) => {
+        isDone.push(`openFile ${path} ${title} ${placement}`)
       },
     },
     vaults: {
@@ -186,7 +190,13 @@ describe('every command that is offered', () => {
   it('is carried out by something', async () => {
     for (const command of createCommands(WORDS)) {
       const one = window()
-      await carry(createInvocation(command.id, front(), 'Entropy'), one.on)
+      await carry(
+        {
+          ...createInvocation(command.command ?? command.id, front(), 'Entropy'),
+          ...(command.values ? { values: command.values } : {}),
+        },
+        one.on,
+      )
 
       expect(one.actions, command.id).not.toStrictEqual([])
     }
@@ -200,9 +210,9 @@ describe('every command that is offered', () => {
       emitEvent: (ev) => events.push(ev),
     }
 
-    await carry(createInvocation('app:note.open', front()), onWithEmit)
+    await carry(createInvocation('app:file.open', front()), onWithEmit)
 
-    expect(events).toStrictEqual(['onCommand:app:note.open'])
+    expect(events).toStrictEqual(['onCommand:app:file.open'])
   })
 })
 
@@ -224,17 +234,17 @@ describe('pluggable command registry', () => {
 
   it('allows overriding existing commands via commands.registerCommand', async () => {
     const executed: string[] = []
-    const unregister = commands.registerCommand('app:note.open', () => {
+    const unregister = commands.registerCommand('app:file.open', () => {
       executed.push('custom-read')
     })
 
     const one = window()
-    await carry(createInvocation('app:note.open', front()), one.on)
+    await carry(createInvocation('app:file.open', front()), one.on)
     expect(executed).toStrictEqual(['custom-read'])
     expect(one.actions).toStrictEqual([])
 
     unregister()
-    await carry(createInvocation('app:note.open', front()), one.on)
+    await carry(createInvocation('app:file.open', front()), one.on)
     expect(one.actions).toContain('openFile physics/Ontology.md Ontology current')
   })
 
@@ -255,8 +265,11 @@ describe('a note put in front of the person', () => {
   it('opens in a tab of its own, and alongside it where the second key reached it', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.open', front()), one.on)
-    await carry(createInvocation('app:note.openBeside', front()), one.on)
+    await carry(createInvocation('app:file.open', front()), one.on)
+    await carry(
+      { ...createInvocation('app:file.open', front()), values: { placement: 'split' } },
+      one.on,
+    )
 
     expect(one.actions).toStrictEqual([
       'openFile physics/Ontology.md Ontology current',
@@ -329,6 +342,72 @@ describe('a note made', () => {
 
     await carry(createInvocation('app:note.createChild', front(), ''), one.on)
 
+    expect(one.actions).toStrictEqual([])
+  })
+})
+
+describe('a note made over a folder', () => {
+  const folder = (path: string) => front({ path, file: path, isFolder: true, isTargetNamed: true })
+
+  it('is untitled, filed in the folder, and answers its path', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:note.create', folder('physics')), one.on)
+
+    expect(made).toBe('physics/Untitled note 1.md')
+    expect(one.actions).toStrictEqual(['createUntitled physics'])
+  })
+
+  it('is filed at the root where the folder is the root', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:note.create', folder('')), one.on)
+
+    expect(made).toBe('Untitled note 1.md')
+    expect(one.actions).toStrictEqual(['createUntitled —'])
+  })
+
+  it('opens nothing and takes the person nowhere', async () => {
+    const one = window()
+
+    await carry(createInvocation('app:note.create', folder('physics')), one.on)
+
+    expect(one.actions).toStrictEqual(['createUntitled physics'])
+  })
+
+  it('answers nothing where the vault made no note', async () => {
+    const one = window({ wasMade: false })
+
+    expect(await carry(createInvocation('app:note.create', folder('physics')), one.on)).toBe('')
+  })
+
+  it('keeps the typed name when one is given', async () => {
+    const one = window()
+
+    const made = await carry(
+      createInvocation('app:note.create', folder('physics'), 'Entropy'),
+      one.on,
+    )
+
+    expect(made).toBe('Entropy.md')
+    expect(one.actions[0]).toBe('createNote Entropy — —')
+  })
+
+  it('answers the path of a note made under a typed name over a note', async () => {
+    const one = window()
+
+    expect(await carry(createInvocation('app:note.create', front(), 'Entropy'), one.on)).toBe(
+      'Entropy.md',
+    )
+    expect(await carry(createInvocation('app:note.createChild', front(), 'Heat'), one.on)).toBe(
+      'Heat.md',
+    )
+  })
+
+  it('answers nothing over a note without a name', async () => {
+    const one = window()
+
+    expect(await carry(createInvocation('app:note.create', front()), one.on)).toBe('')
     expect(one.actions).toStrictEqual([])
   })
 })
@@ -431,7 +510,7 @@ describe('a note removed', () => {
   it('has nothing on its way to its file before the file is removed', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
@@ -442,7 +521,13 @@ describe('a note removed', () => {
   it('goes off the disk where destroying was what was requested', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.delete', front(), 'Ontology'), one.on)
+    await carry(
+      {
+        ...createInvocation('app:file.remove', front(), 'Ontology'),
+        values: { removal: 'permanent' },
+      },
+      one.on,
+    )
 
     expect(one.actions[1]).toBe('remove physics/Ontology.md true')
   })
@@ -451,7 +536,7 @@ describe('a note removed', () => {
   it('says nothing about a note that went where it was requested to go', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([])
   })
@@ -459,7 +544,7 @@ describe('a note removed', () => {
   it('says the notes that link to nothing now', async () => {
     const one = window({ removed: createRemoveResult({ dangling: ['Order.md', 'Notes.md'] }) })
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
     expect(one.severities).toStrictEqual(['warning'])
@@ -468,7 +553,7 @@ describe('a note removed', () => {
   it('leaves every plex standing on it at the note the vault opens with', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.actions.at(-1)).toBe('leave physics/Ontology.md Root.md')
   })
@@ -480,7 +565,7 @@ describe('a note removed', () => {
       navigator: { ...one.on.navigator, getOpeningNote: () => '' },
     }
 
-    await carry(createInvocation('app:note.trash', front()), nowhere)
+    await carry(createInvocation('app:file.remove', front()), nowhere)
 
     expect(one.actions.some((step) => step.startsWith('leave'))).toBe(false)
   })
@@ -488,7 +573,7 @@ describe('a note removed', () => {
   it('releases the tab that was reading it', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
+    await carry(createInvocation('app:file.remove', front(), '', 'active'), one.on)
 
     expect(one.actions).toContain('close active')
   })
@@ -496,7 +581,7 @@ describe('a note removed', () => {
   it('keeps the tab of a note the vault would not remove', async () => {
     const one = window({ removed: asFailure('notFound' as const) })
 
-    await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
+    await carry(createInvocation('app:file.remove', front(), '', 'active'), one.on)
 
     expect(one.actions).not.toContain('close active')
   })
@@ -504,7 +589,7 @@ describe('a note removed', () => {
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
     const one = window({ removed: asFailure('notFound' as const) })
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
     expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
@@ -513,7 +598,7 @@ describe('a note removed', () => {
   it('is rejected while the note is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
@@ -526,7 +611,7 @@ describe('several files removed at once', () => {
   it('takes each of them out of the vault, in the order they were given', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', both), one.on)
+    await carry(createInvocation('app:file.remove', both), one.on)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
@@ -537,7 +622,7 @@ describe('several files removed at once', () => {
   it('takes every plex standing on one of them to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', both), one.on)
+    await carry(createInvocation('app:file.remove', both), one.on)
 
     expect(one.actions.filter((step) => step.startsWith('leave'))).toStrictEqual([
       'leave physics/Ontology.md Root.md',
@@ -548,7 +633,7 @@ describe('several files removed at once', () => {
   it('says the notes that link to nothing now, each of them once', async () => {
     const one = window({ removed: createRemoveResult({ trashed: '', dangling: ['Order.md'] }) })
 
-    await carry(createInvocation('app:note.trash', both), one.on)
+    await carry(createInvocation('app:file.remove', both), one.on)
 
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md`])
   })
@@ -568,7 +653,7 @@ describe('several files removed at once', () => {
       },
     }
 
-    await carry(createInvocation('app:note.trash', both), picky)
+    await carry(createInvocation('app:file.remove', both), picky)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
@@ -679,7 +764,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is removed at its current position now', async () => {
     const one = window({ targetPath: 'physics/Being.md' })
 
-    await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
+    await carry(createInvocation('app:file.remove', front(), '', 'active'), one.on)
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
@@ -690,7 +775,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is left at the name it was made over where no tab holds it', async () => {
     const one = window({ targetPath: 'physics/Being.md' })
 
-    await carry(createInvocation('app:note.trash', front()), one.on)
+    await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.actions[0]).toBe('remove physics/Ontology.md false')
   })
@@ -716,20 +801,15 @@ describe('a command over the window', () => {
 })
 
 describe('a command over the vault', () => {
-  it('travels to the note that was picked', async () => {
+  it('opens the note that was picked in the current group', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.goTo', { ...front(), path: 'Root.md' }), one.on)
+    await carry(
+      createInvocation('app:file.open', { ...front(), path: 'Root.md', title: 'Root' }),
+      one.on,
+    )
 
-    expect(one.actions).toStrictEqual(['travel Root.md'])
-  })
-
-  it('says a pick that names no note at all', async () => {
-    const one = window()
-
-    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
-
-    expect(one.notices).toStrictEqual([words.nowhere])
+    expect(one.actions).toStrictEqual(['openFile Root.md Root current'])
   })
 
   it('has no command to go to a start note', async () => {
@@ -745,7 +825,7 @@ describe('what the window is requested about a note', () => {
   it('has its path copied to the clipboard', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.copyPath', front()), one.on)
+    await carry(createInvocation('app:file.copyPath', front()), one.on)
 
     expect(one.actions).toStrictEqual(['copies physics/Ontology.md'])
   })
@@ -906,7 +986,7 @@ describe('nothing to carry out', () => {
       files: { ...one.on.files, remove: async () => Promise.reject(createLostConnection('gone')) },
     }
 
-    await runInvocation(createInvocation('app:note.trash', front()), broken, words)
+    await runInvocation(createInvocation('app:file.remove', front()), broken, words)
 
     expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
     expect(one.severities).toStrictEqual(['error'])
@@ -994,7 +1074,7 @@ describe('a command nothing carries out', () => {
   it('does nothing and says nothing', async () => {
     const one = window()
 
-    await carry({ ...createInvocation('app:note.open', front()), id: 'nothing' }, one.on)
+    await carry({ ...createInvocation('app:file.open', front()), id: 'nothing' }, one.on)
 
     expect(one.actions).toStrictEqual([])
     expect(one.calls).toStrictEqual([])
@@ -1002,14 +1082,6 @@ describe('a command nothing carries out', () => {
 })
 
 describe('what the voice says in which severity', () => {
-  it('cautions that a pick names no note at all', async () => {
-    const one = window()
-
-    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
-
-    expect(one.severities).toStrictEqual(['warning'])
-  })
-
   it('cautions that a rename waits on the person, and errors on failure', async () => {
     const pendingItem = window({ isAsking: true })
     const failedWindow = window({ renamed: asFailure('invalidName' as const) })
@@ -1079,8 +1151,8 @@ describe('what the voice says in which severity', () => {
     const failingWindow = window({ removed: asFailure('notFound' as const) })
     const pendingItem = window({ isAsking: true })
 
-    await carry(createInvocation('app:note.trash', front()), failingWindow.on)
-    await carry(createInvocation('app:note.trash', front()), pendingItem.on)
+    await carry(createInvocation('app:file.remove', front()), failingWindow.on)
+    await carry(createInvocation('app:file.remove', front()), pendingItem.on)
 
     expect(failingWindow.severities).toStrictEqual(['error'])
     expect(pendingItem.notices).toStrictEqual([words.unanswered])
@@ -1092,7 +1164,7 @@ describe('a file removed that no tab holds', () => {
   it('closes no tab', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.trash', front({ path: 'physics/Heat.pdf' })), one.on)
+    await carry(createInvocation('app:file.remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
     expect(one.actions).toStrictEqual([
       'remove physics/Heat.pdf false',

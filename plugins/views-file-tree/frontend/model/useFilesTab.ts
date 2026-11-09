@@ -11,7 +11,7 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { TRASH_NOTE } from '../lib/menu'
+import { CREATE_NOTE, TRASH_FILE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -39,13 +39,7 @@ function createFileCreation(
     const createdItem = await create.createFolder(list, deps, path)
     if (createdItem) renamingPath.value = createdItem
   }
-
-  const createNote = async (path: string | null) => {
-    const createdItem = await create.createNote(list, deps, path)
-    if (createdItem) renamingPath.value = createdItem
-  }
-
-  return { createFolder, createNote }
+  return { createFolder }
 }
 
 function createFileMoves(list: FileTree, deps: FilesTabDeps) {
@@ -113,7 +107,11 @@ interface FileMenuTarget {
   readonly target: CommandTarget
 }
 
-function useFileMenu(list: FileTree, deps: FilesTabDeps) {
+function useFileMenu(
+  list: FileTree,
+  deps: FilesTabDeps,
+  showCreated: (folder: string, path: string) => Promise<void>,
+) {
   const reportFailure = createFailureReporter(deps)
   const slotMenu = useSlotMenu<FileMenuTarget>({
     listItems: (command, { target }) => deps.listItems(command, target),
@@ -147,7 +145,14 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const chooseMenuItem = (id: string) => {
     const choice = slotMenu.pick(id)
     if (!choice) return
-    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
+    deps
+      .runCommand(choice.command, choice.target.target, choice.itemId)
+      .then((made) =>
+        choice.command === CREATE_NOTE && made
+          ? showCreated(choice.target.target.path, made)
+          : undefined,
+      )
+      .catch(reportFailure)
   }
 
   return {
@@ -191,7 +196,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
     const first = paths[0]
     if (first === undefined) return
     deps
-      .runCommand(TRASH_NOTE, getPathTarget(list, first, paths.slice(1)))
+      .runCommand(TRASH_FILE, getPathTarget(list, first, paths.slice(1)))
       .catch(createFailureReporter(deps))
   }
 
@@ -215,7 +220,10 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const actions = createFileActions(list, deps)
   const creators = createFileCreation(list, deps, renamingPath)
   const { move } = createFileMoves(list, deps)
-  const fileMenu = useFileMenu(list, deps)
+  const fileMenu = useFileMenu(list, deps, async (folder, path) => {
+    await list.openFolder(folder)
+    renamingPath.value = path
+  })
 
   const reportFailure = createFailureReporter(deps)
 
@@ -236,7 +244,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     move,
     drop: () => deps.setDraggedPaths([]),
     createFolder: creators.createFolder,
-    createNote: creators.createNote,
     canDropData: (types) => deps.canDropData(types),
     dropData: async (data) => {
       const folder = create.getFolderFor(list, list.selectedPaths.value[0] ?? null)

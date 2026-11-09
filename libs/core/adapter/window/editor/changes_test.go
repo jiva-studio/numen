@@ -586,10 +586,10 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 
 	// The page is listening and will say nothing at all.
 	linked := 400 * time.Millisecond
+	began := testsupport.GetMachine().Now()
 	ctx, cancel := context.WithTimeout(t.Context(), linked)
 	defer cancel()
 
-	began := testsupport.GetMachine().Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled")
 	}
@@ -834,10 +834,10 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	page.endStream(t)
 
 	linked := 400 * time.Millisecond
+	began := testsupport.GetMachine().Now()
 	ctx, endsAt := context.WithTimeout(t.Context(), linked)
 	defer endsAt()
 
-	began := testsupport.GetMachine().Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled after the page went")
 	}

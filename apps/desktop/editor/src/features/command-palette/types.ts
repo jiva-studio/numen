@@ -80,15 +80,21 @@ export interface CommandTarget {
   readonly isReady: boolean
 }
 
-/** A command a user can invoke. */
+/**
+ * A command a user can invoke, as one row. A row is run under its `id`; a row whose `command` is
+ * set runs that command with its `values` as the arguments.
+ */
 export interface Command {
   readonly id: string
+  readonly command?: string
+  readonly values?: Readonly<Record<string, string>>
   readonly text: string
   readonly detail?: string
   readonly keys?: PaletteKeys
   readonly icon?: Component
   readonly iconName?: string
   readonly input?: PromptStep
+  readonly canOmitNameOverFolder?: boolean
   readonly next?: PromptStep
   readonly prompts?: readonly CommandPrompt[]
   readonly group: CommandGroup
@@ -180,7 +186,7 @@ export interface Notes {
    * Opens a file in the editor matching its type, in its own tab or beside the
    * current one.
    */
-  openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
+  openFile(path: string, title: string, placement: 'current' | 'split', at?: CommandPlace): void
 }
 
 /**

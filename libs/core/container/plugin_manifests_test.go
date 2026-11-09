@@ -216,17 +216,46 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := []string{pluginport.ActivationEventAll}
+	valid := pluginport.PluginActivationEvents()
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{name}}, pluginport.ErrInvalidActivationEvent) {
-			t.Errorf("the validator refuses %s", name)
+		sample := strings.ReplaceAll(name, "<ext>", "pdf")
+		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{sample}}, pluginport.ErrInvalidActivationEvent) {
+			t.Errorf("the validator refuses %s", sample)
 		}
 	}
-	if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{"onCommand:run"}}, pluginport.ErrInvalidActivationEvent) {
-		t.Error("the validator accepts an event no host emits to a subscriber")
+	for _, invalid := range []string{"*", "onFile:", "onFile:*", "onCommand:run"} {
+		if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{invalid}}, pluginport.ErrInvalidActivationEvent) {
+			t.Errorf("the validator accepts %s", invalid)
+		}
+	}
+}
+
+func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
+	byID := map[string]pluginport.PluginManifest{}
+	for _, one := range getPluginManifests(t) {
+		if slices.Contains(one.ActivationEvents, "*") {
+			t.Errorf("%s declares the wildcard activation event", one.ID)
+		}
+		byID[one.ID] = one.PluginManifest
+	}
+	for _, id := range []string{"md.numen.engines.embeddings", "md.numen.agents.mcp.server"} {
+		m, ok := byID[id]
+		if !ok {
+			t.Fatalf("missing plugin %s", id)
+		}
+		if len(m.ActivationEvents) != 0 {
+			t.Errorf("%s declares activationEvents %v, want none", id, m.ActivationEvents)
+		}
+	}
+	relevance, ok := byID["md.numen.tools.search.relevance"]
+	if !ok {
+		t.Fatal("missing plugin md.numen.tools.search.relevance")
+	}
+	if !slices.Equal(relevance.ActivationEvents, []string{pluginport.ActivationEventVectorsReady}) {
+		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onVectorsReady]", relevance.ActivationEvents)
 	}
 }
 
@@ -249,8 +278,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `*` (every event)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"*"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onStartup` (when the host starts)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onStartup"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }

@@ -135,6 +135,10 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	if err != nil {
 		return nil, false, err
 	}
+	if err := r.host.Queue.ReportTask(ctx, newTask(req)); err != nil {
+		r.release(key)
+		return nil, false, err
+	}
 	runEnd := make(chan struct{})
 	go func() {
 		defer close(runEnd)
@@ -227,15 +231,19 @@ func (r *Recognition) release(key string) {
 	delete(r.running, key)
 }
 
+func newTask(req Request) host.Task {
+	return host.Task{
+		ID: GetTaskID(req.Vault, req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
+	}
+}
+
 func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
 	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
-	task := host.Task{
-		ID: GetTaskID(req.Vault, req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
-		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
-	}
+	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
 		task.FailureReason = err.Error()

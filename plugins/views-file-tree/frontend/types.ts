@@ -49,12 +49,14 @@ export interface FilesTabDeps {
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the row. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
-  /** Runs a command of the window or of a plugin over the row; with `itemId`, the one picked. */
-  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
+  /**
+   * Runs a command of the window or of a plugin over the row; with `itemId`, the one picked.
+   * Answers the path of the note it made, empty where none.
+   */
+  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<string>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
-  createNote(folder: string): Promise<string>
   /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
   canDropData(types: readonly string[]): boolean
   /** Hands data dropped into the folder to the plugin that takes it; answers what it made. */
@@ -103,7 +105,6 @@ export interface FilesTabState {
   drop(): void
   remove(paths: readonly string[]): void
   createFolder(path: string | null): Promise<void>
-  createNote(path: string | null): Promise<void>
   /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
   canDropData(types: readonly string[]): boolean
   /** Hands data dropped on the tree to the plugin that takes it, into the folder of the selection. */

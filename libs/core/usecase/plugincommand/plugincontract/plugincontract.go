@@ -105,7 +105,9 @@ type (
 )
 
 const (
-	ActivationEventAll          = pluginport.ActivationEventAll
+	ActivationEventStartup      = pluginport.ActivationEventStartup
+	ActivationEventVectorsReady = pluginport.ActivationEventVectorsReady
+	ActivationEventFilePrefix   = pluginport.ActivationEventFilePrefix
 	CommandArgumentBoolean      = pluginport.CommandArgumentBoolean
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
 	CommandArgumentVersion      = pluginport.CommandArgumentVersion
@@ -206,6 +208,8 @@ func FormatSettingValue(value any) string { return pluginport.FormatSettingValue
 func GetDependencyKinds() []manifest.DependencyKind { return pluginport.GetDependencyKinds() }
 
 func NormalizePermission(permission string) string { return pluginport.NormalizePermission(permission) }
+
+func PluginActivationEvents() []string { return pluginport.PluginActivationEvents() }
 
 func PluginCapabilities() []string { return pluginport.PluginCapabilities() }
 

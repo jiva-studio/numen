@@ -17,10 +17,6 @@ type contentTypeTable interface {
 	ListExtensions(mask domain.ContentType) []string
 }
 
-// eventFilePrefix starts the event a window sends for a file it opens, followed by its extension
-// or its name.
-const eventFilePrefix = "onFile:"
-
 // contentTypeCache stores the resolved types of the enabled plugins. The text
 // plugins are queried once for each file of a vault, and listing the extensions
 // of a mask reads the whole table.
@@ -159,12 +155,4 @@ func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []plugi
 		out = append(out, pluginport.PluginReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})
 	}
 	return out
-}
-
-func (h *Host) isOpeningFileLocked(p manifest.Discovered, event string) bool {
-	extension, ok := strings.CutPrefix(event, eventFilePrefix)
-	if !ok || extension == "" {
-		return false
-	}
-	return p.Manifest.HasBackend() && p.Manifest.IsHandling(h.getLookupLocked().getContentType("file."+extension))
 }

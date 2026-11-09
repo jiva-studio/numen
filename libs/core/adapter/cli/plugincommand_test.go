@@ -249,3 +249,33 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 }
+
+func TestVersionCommandRequiresFile(t *testing.T) {
+	declared := &pluginCommands{entries: []plugincommand.Entry{{
+		PluginID: "md.numen.tools.proofreading",
+		Command:  plugincommand.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
+	}}}
+	commands := plugincommand.NewCommands(declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
+	deps := cli.Deps{
+		Vaults: createVaultList(getNotebook()),
+		PluginCommands: func() cli.PluginCommands {
+			return cli.PluginCommands{
+				List: commands.List,
+				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
+					return commands.Run, func() error { return nil }, nil
+				},
+			}
+		},
+	}
+
+	help, err := runWithDeps(deps, "help")
+	if err != nil || !strings.Contains(help, "numen-cli proofreading.create <vault> <file>\n") {
+		t.Fatalf("the help reads %q (%v)", help, err)
+	}
+	if _, err := runWithDeps(deps, "proofreading.create", "notebook", "talks/lecture.wav"); err != nil {
+		t.Fatal(err)
+	}
+	if len(declared.calls) != 1 || declared.calls[0].Path != "talks/lecture.wav" {
+		t.Errorf("the plugin was sent %+v", declared.calls)
+	}
+}

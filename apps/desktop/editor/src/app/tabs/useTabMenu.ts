@@ -22,7 +22,7 @@ import { WORDS } from '@/shared/words'
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
   /** Runs a command of an entry over the tab; with `itemId`, the one picked. */
-  runCommand?(command: string, target: RunTarget, itemId?: string): Promise<void>
+  runCommand?(command: string, target: RunTarget, itemId?: string): Promise<unknown>
   /** The items a command of an entry offers over the tab. */
   listItems?(command: string, target: RunTarget): Promise<readonly CommandItem[]>
   /** The tab and the file it shows, which the commands of the entries run over. */

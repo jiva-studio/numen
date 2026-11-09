@@ -149,10 +149,10 @@ describe('choosing an action of a row of the search', () => {
     const row = one.rows.find((each) => each.item.includes('books/Atlas.pdf'))
     expect(row).toBeDefined()
 
-    await one.choose(row!.item, 'app:file.open')
+    await one.choose(row!.item, 'app:file.open#document')
 
     expect(one.runChoice).toHaveBeenCalledExactlyOnceWith({
-      command: 'app:file.open',
+      command: 'app:file.open#document',
       over: { path: '', file: 'books/Atlas.pdf', title: '', selector: { page: 3 } },
       input: '',
     })
@@ -164,7 +164,7 @@ describe('choosing an action of a row of the search', () => {
     expect(row).toBeDefined()
     expect(one.search.open.value).toBe(true)
 
-    await one.choose(row!.item, 'app:file.open')
+    await one.choose(row!.item, 'app:file.open#document')
 
     expect(one.search.open.value).toBe(false)
     expect(one.runChoice).toHaveBeenCalledTimes(1)
@@ -212,7 +212,7 @@ describe('choosing a row of the commands', () => {
     one.search.setOpen(false)
     one.commands.setOpen(true)
 
-    await one.choose('app:note.copyPath', 'app:note.copyPath')
+    await one.choose('app:file.copyPath', 'app:file.copyPath')
 
     expect(h.runInvocation).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()

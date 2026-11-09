@@ -120,8 +120,9 @@ function createPaletteItems(
     ],
     pluginHost,
     getTarget: options.getTarget,
-    runApp: (id, target, itemId) =>
-      runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps()),
+    runApp: async (id, target, itemId) => {
+      await runInvocationToEnd(createInvocation(id, target, itemId), getCommandDeps())
+    },
     runPlugin: async (id, target, itemId) => {
       const note = await getCommandNote(target)
       await pluginHost?.executeCommand(id, note, { itemId, isAwaited: true })
@@ -133,14 +134,18 @@ function createPaletteItems(
   })
 }
 
-async function runInvocationToEnd(invocation: CommandInvocation, deps: CommandDeps): Promise<void> {
+async function runInvocationToEnd(
+  invocation: CommandInvocation,
+  deps: CommandDeps,
+): Promise<string> {
   const errors: string[] = []
   const writeMessage: MessageWriter = (text, severity) => {
     if (severity === 'error') errors.push(text)
     else deps.writeMessage(text, severity)
   }
-  await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
+  const made = await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
   if (errors[0] !== undefined) throw new Error(errors[0])
+  return made
 }
 
 /** What the runs of the window go through: the palettes, the plugin host and the deps of a command. */
@@ -162,7 +167,8 @@ interface RunWay {
 /**
  * The two runs of a command of the window. The run of the palette and the shortcuts writes its
  * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
- * writes nothing: it settles when the run ends and rejects with its error.
+ * writes nothing: it settles when the run ends with the path of the note it made, empty where it
+ * made none, and rejects with its error.
  */
 export function createCommandRunner(parts: CommandRunnerParts) {
   const { commands, palette, pluginHost, getCommandNote } = parts
@@ -200,10 +206,11 @@ export function createCommandRunner(parts: CommandRunnerParts) {
       if (typeof run === 'string') parts.writeMessage(run, 'error')
       else runInBackground(run, (error) => parts.writeMessage(formatErrorMessage(error), 'error'))
     },
-    runCommandToEnd: async (id: string, target: CommandTarget): Promise<void> => {
+    runCommandToEnd: async (id: string, target: CommandTarget): Promise<string> => {
       const run = startRun(id, target, { isAwaited: true })
       if (typeof run === 'string') throw new Error(run)
-      await run
+      const made = await run
+      return typeof made === 'string' ? made : ''
     },
   }
 }

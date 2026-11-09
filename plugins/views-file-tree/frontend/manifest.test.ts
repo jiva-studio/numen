@@ -55,7 +55,7 @@ describe('the menu of a row', () => {
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.createNote',
+        command: 'app:note.create',
         group: '0-tree',
         order: 10,
         when: 'target.isFolder',
@@ -80,14 +80,10 @@ describe('the menu of a row', () => {
   it('declares the commands the menu runs, over any row', () => {
     expect(getCommand('tree.renameFile')).toStrictEqual({
       id: 'tree.renameFile',
-      title: 'Rename file',
+      title: 'Rename',
       icon: 'pencil',
     })
-    expect(getCommand('tree.createNote')).toStrictEqual({
-      id: 'tree.createNote',
-      title: 'Create note here',
-      icon: 'file-plus',
-    })
+    expect(getCommand('tree.createNote')).toBeUndefined()
     expect(getCommand('tree.createFolder')).toStrictEqual({
       id: 'tree.createFolder',
       title: 'Create folder',

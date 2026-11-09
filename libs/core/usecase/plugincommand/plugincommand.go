@@ -110,7 +110,7 @@ func (u List) ExecuteHandlers() []Entry {
 	})
 }
 
-// GetParts says what the enabled plugin of the id has, its name and the readable names of its text kinds.
+// GetParts returns the parts of the enabled plugin of the id, its name and the titles of its text kinds.
 func (u List) GetParts(pluginID string) Parts {
 	if u.commands == nil {
 		return Parts{}
@@ -204,6 +204,9 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
 	}
+	if condition.HasItems() && call.Path == "" {
+		return fmt.Errorf("%w: %s needs a file", ErrBadArguments, declared.ID)
+	}
 	values, err := u.readNote(ctx, v, condition, pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)), call.Path)
 	if err != nil {
 		return fmt.Errorf("read the note %s: %w", call.Path, err)
@@ -284,8 +287,7 @@ func (u Run) readNote(
 	return target.WithNote(noteType, properties), nil
 }
 
-// ListContentTypes gives the content type of a file by its extension, lowercase and without the dot,
-// for every extension the table knows a type of; the window derives target.contentType from it.
+// ListContentTypes returns the content type of each registered extension, lowercase and without the dot.
 func (u List) ListContentTypes() map[string]string {
 	out := map[string]string{}
 	if u.types == nil {
@@ -312,7 +314,7 @@ func hasItems(conditions *pluginport.PluginConditions, command Command) bool {
 // call names a path.
 func (u List) HasTargetVariable(command Command) bool {
 	condition, err := u.conditions.Parse(command.When)
-	return err == nil && condition.HasTargetVariable()
+	return err == nil && (condition.HasTargetVariable() || condition.HasItems())
 }
 
 // IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.

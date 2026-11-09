@@ -15,7 +15,7 @@ import { WORDS as words } from '@/shared/words'
 
 describe('the icon a command is drawn with', () => {
   it('is there for every command the window places in the menu of a row of the file tree', () => {
-    for (const id of [COMMAND.openNote, COMMAND.copyNotePath, COMMAND.trashNote]) {
+    for (const id of [COMMAND.openFile, COMMAND.copyFilePath, COMMAND.removeFile]) {
       expect(findIcon(id), id).not.toBeNull()
     }
   })
