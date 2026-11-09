@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
@@ -34,5 +35,6 @@ func main() {
 	if _, err := fmt.Fprintf(os.Stdout, "http://%s/v1\n", listener.Addr()); err != nil {
 		log.Fatal(err)
 	}
-	log.Fatal(http.Serve(listener, fake))
+	server := &http.Server{Handler: fake, ReadHeaderTimeout: 10 * time.Second}
+	log.Fatal(server.Serve(listener))
 }

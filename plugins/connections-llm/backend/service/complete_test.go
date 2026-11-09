@@ -28,7 +28,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 		t.Errorf("text = %q", result.Text)
 	}
 	requests := fake.Requests()
-	if len(requests) != 1 || requests[0].Method != "POST" || requests[0].Path != "/chat/completions" {
+	if len(requests) != 1 || requests[0].Method != http.MethodPost || requests[0].Path != "/chat/completions" {
 		t.Fatalf("requests = %+v", requests)
 	}
 	if got := requests[0].Header.Get("Authorization"); got != "Bearer "+testKey {

@@ -75,8 +75,8 @@ func (s *Service) Chat(ctx context.Context, call connection.Call, request connec
 	}
 	err = readChatStream(requestCtx, bufio.NewReader(response.Body), s.getLimit(call, operationChat), send)
 	if err != nil {
-		var sendError *sendFailure
-		var failure *streamFailure
+		var sendError *sendError
+		var failure *streamError
 		switch {
 		case errors.As(err, &sendError):
 			return sendError.err
@@ -178,15 +178,15 @@ func (s *Service) openStream(
 	return response, requestCtx, cancel, nil
 }
 
-// sendFailure is a send that failed: the receiver of the events is gone.
-type sendFailure struct{ err error }
+// sendError is a send that failed: the receiver of the events is gone.
+type sendError struct{ err error }
 
-func (e *sendFailure) Error() string { return e.err.Error() }
+func (e *sendError) Error() string { return e.err.Error() }
 
-// streamFailure is a failure the service reported inside the stream.
-type streamFailure struct{ err error }
+// streamError is a failure the service reported inside the stream.
+type streamError struct{ err error }
 
-func (e *streamFailure) Error() string { return e.err.Error() }
+func (e *streamError) Error() string { return e.err.Error() }
 
 var errStreamEnded = errors.New("the stream ended before the turn did")
 
@@ -345,7 +345,7 @@ func (r *chatReader) read(data []byte) error {
 		return err
 	}
 	if len(chunk.Error) > 0 && string(chunk.Error) != "null" {
-		return &streamFailure{err: readStreamError(chunk.Error)}
+		return &streamError{err: readStreamError(chunk.Error)}
 	}
 	if len(chunk.Choices) == 0 {
 		return nil
@@ -387,7 +387,7 @@ func (r *chatReader) readMessage(message *streamedMessage) error {
 func (r *chatReader) emit(event connection.ChatEvent) error {
 	r.isOpen = true
 	if err := r.send(event); err != nil {
-		return &sendFailure{err: err}
+		return &sendError{err: err}
 	}
 	return nil
 }
@@ -395,7 +395,7 @@ func (r *chatReader) emit(event connection.ChatEvent) error {
 func (r *chatReader) merge(pieces []streamPiece) error {
 	for _, piece := range pieces {
 		if piece.Index < 0 || piece.Index >= maxStreamedCalls {
-			return &streamFailure{err: connection.NewStopError(connection.ReasonUnknown)}
+			return &streamError{err: connection.NewStopError(connection.ReasonUnknown)}
 		}
 		for len(r.calls) <= piece.Index {
 			r.calls = append(r.calls, connection.ToolCall{})
