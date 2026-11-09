@@ -10,7 +10,6 @@ Feature: Proofreading
     Background:
       Given the vault has the following:
         | path                      | sample             |
-        | assets/                   |                    |
         | assets/pumped-storage.pdf | pumped-storage.pdf |
       And the person recognizes the text of the file at "assets/pumped-storage.pdf"
       And the person proofreads the recognition of the file at "assets/pumped-storage.pdf"
@@ -27,8 +26,7 @@ Feature: Proofreading
 
     Background:
       Given the vault has the following:
-        | path                | sample      |
-        | assets/             |             |
+        | path               | sample      |
         | assets/lecture.wav | lecture.wav |
       And the person transcribes the recording at "assets/lecture.wav"
       And the person proofreads the transcript of the recording at "assets/lecture.wav"

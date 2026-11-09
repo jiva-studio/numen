@@ -10,7 +10,6 @@ Feature: Recognition
     Background:
       Given the vault has the following:
         | path                            | sample                   |
-        | assets/                         |                          |
         | assets/regenerative-braking.pdf | regenerative-braking.pdf |
       And the person recognizes the text of the file at "assets/regenerative-braking.pdf"
 
@@ -28,7 +27,6 @@ Feature: Recognition
     Background:
       Given the vault has the following:
         | path                | sample       |
-        | assets/             |              |
         | assets/flywheel.pdf | flywheel.pdf |
       And the person recognizes the text of the file at "assets/flywheel.pdf"
 
