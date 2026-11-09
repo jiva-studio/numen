@@ -101,6 +101,14 @@ export class TabDriver {
     return parseReference(reference, name).reference === 'at' && name.endsWith('.md')
   }
 
+  private async isFileOpened(filePath: string): Promise<boolean> {
+    const { tabs, activeId } = await readOpenTabs(this.scenario.page.request)
+    const active = tabs.find((one) => one.id === activeId)
+    if (active?.path === filePath) return true
+    // A file opened from a file tree that is linked to another tab shows in that tab, and the tree stays in front.
+    return active?.kind === TAB_KINDS.Files.id && tabs.some((one) => one.path === filePath)
+  }
+
   private async listNotePaths(): Promise<string[]> {
     const { tabs } = await readOpenTabs(this.scenario.page.request)
     return tabs.filter((one) => one.kind === 'note').map((one) => one.path)
@@ -152,7 +160,7 @@ export class TabDriver {
     await this.scenario.ensureWorkspace()
     await this.scenario.watchVersions(filePath)
     await (await revealTreeRow(this.scenario.page, filePath)).press('Enter')
-    await expect.poll(() => readActivePath(this.scenario.page.request)).toBe(filePath)
+    await expect.poll(() => this.isFileOpened(filePath)).toBe(true)
   }
 
   async playRecording(kind: TabKindChoice, reference: string, name: string): Promise<void> {
