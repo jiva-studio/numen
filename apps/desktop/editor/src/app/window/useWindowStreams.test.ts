@@ -38,7 +38,7 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
   return deps
 }
 
-const opened = { paths: [], shouldReload: false, renamed: [] }
+const openingMessage = { paths: [], shouldReload: false, renamed: [] }
 
 const task = (id: string): Task => ({
   id,
@@ -61,7 +61,7 @@ describe('following the vault', () => {
       core: {
         ...setup().core,
         watchVaultChanges: () =>
-          yielding(opened, { paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
+          yielding(openingMessage, { paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
       },
     })
 
@@ -72,7 +72,7 @@ describe('following the vault', () => {
 
   it('lists the files again when the stream opens, and asks nothing more', async () => {
     const deps = setup({
-      core: { ...setup().core, watchVaultChanges: () => yielding(opened) },
+      core: { ...setup().core, watchVaultChanges: () => yielding(openingMessage) },
     })
 
     await createWindowStreams(deps).follow()
@@ -83,7 +83,7 @@ describe('following the vault', () => {
 
   it('ignores a change that names no path, no reload and no rename after the stream opened', async () => {
     const deps = setup({
-      core: { ...setup().core, watchVaultChanges: () => yielding(opened, opened) },
+      core: { ...setup().core, watchVaultChanges: () => yielding(openingMessage, openingMessage) },
     })
 
     await createWindowStreams(deps).follow()
@@ -98,7 +98,7 @@ describe('following the vault', () => {
     ['a rename', { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] }],
   ])('tells a change that names %s', async (_name, change) => {
     const deps = setup({
-      core: { ...setup().core, watchVaultChanges: () => yielding(opened, change) },
+      core: { ...setup().core, watchVaultChanges: () => yielding(openingMessage, change) },
     })
 
     await createWindowStreams(deps).follow()
