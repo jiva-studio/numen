@@ -793,6 +793,26 @@ describe('answers to a question overtaken', () => {
 
     expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
   })
+
+  it('forgets what each group found for an earlier question as soon as another question is typed', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+    })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.answer([passage()])
+    vault.mode('meaning')?.answer([passage({ path: 'notes/heat.md', title: 'Heat' })])
+    await flushPromises()
+
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
+    expect(getGroup(palette.groups.value, 'text')?.items).toStrictEqual([])
+    expect(getGroup(palette.groups.value, 'meaning')?.items).toStrictEqual([])
+  })
 })
 
 describe('the palette opened and put away', () => {
