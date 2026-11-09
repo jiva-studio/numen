@@ -131,19 +131,6 @@ type AgentProvider interface {
 	GetPrograms(ctx context.Context, commands map[string][]string) ([]AgentProgram, error)
 }
 
-// CompletionPrograms finds the program a route names and starts the tasks that
-// carry the questions to it.
-type CompletionPrograms interface {
-	// GetProgram returns the program named, or, when the name is empty, the one
-	// the settings name, else the default of the plugins. A program that is not
-	// installed or that no plugin lists fails with ErrNoRoute, and plugins that
-	// cannot be reached with ErrUnavailable.
-	GetProgram(ctx context.Context, name string) (AgentProgram, error)
-	// StartRun starts the task on the program it names, under that program's
-	// section of the settings.
-	StartRun(ctx context.Context, task Task) (Run, error)
-}
-
 // stoppedDone is the reason an agent gives when it stopped because it was done.
 const stoppedDone = "done"
 

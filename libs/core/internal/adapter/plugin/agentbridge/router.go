@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/agent/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 

@@ -340,7 +340,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1con
 func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memoryVault) {
 	t.Helper()
 	vault := newMemoryVault(map[string]string{"samples/A.md": "body", "Animal.md": "form"})
-	hosted := newCallers(nil)
+	hosted := newCallers()
 	hosted.vault = vault
 	return newVaultClient(t, hosted, "token-a"), vault
 }
@@ -366,7 +366,7 @@ func TestTheVaultTheWindowShowsIsNamed(t *testing.T) {
 }
 
 func TestHostVault_NoVaultReturnsEmptyList(t *testing.T) {
-	hosted := newCallers(nil)
+	hosted := newCallers()
 	client := newVaultClient(t, hosted, "token-a")
 
 	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
@@ -568,7 +568,7 @@ func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
 
 func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	vault := newMemoryVault(map[string]string{"a.md": "a"})
-	hosted := newCallers(nil)
+	hosted := newCallers()
 	hosted.vault = vault
 	client := newVaultClient(t, hosted, "token-b")
 

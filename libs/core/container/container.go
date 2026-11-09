@@ -186,7 +186,6 @@ func (c Config) settings() settingswiring.Config {
 		AgentProvider:    c.AgentProvider,
 		GetAgentPrograms: c.plugins().GetAgentPrograms,
 		SetSecretSource:  c.plugins().SetSecretSource,
-		SetCompleter:     c.plugins().SetCompleter,
 	}
 }
 

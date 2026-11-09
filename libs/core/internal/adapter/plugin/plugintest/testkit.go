@@ -20,7 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"connectrpc.com/connect"
-	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -246,12 +245,6 @@ func (h *LeaseHost) GetVaultPath() string { return "" }
 
 func (h *LeaseHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
-}
-
-type CompleterFunc func(ctx context.Context, question completionport.Question) (string, error)
-
-func (f CompleterFunc) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
-	return f(ctx, question)
 }
 
 // GetPort returns the port the test server listens on.

@@ -47,16 +47,6 @@ Selects the agent the panel uses and configures how each program runs. A program
 | --- | --- | --- |
 | `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `balanced`, `maximum`. |
 
-### `app.ai.default`
-
-The agent and the model that handle the questions of a plugin whose own setting names no agent, and how many questions one agent handles at once.
-
-| | | |
-| --- | --- | --- |
-| `agent` | text | the id of the agent plugin to use. Empty selects the provider with the lowest id. |
-| `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
-| `concurrency` | a number | how many questions one agent handles at once. |
-
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.

@@ -118,7 +118,6 @@ const (
 	DependencyStateMissing      = pluginport.DependencyStateMissing
 	DependencyStateProvisioning = pluginport.DependencyStateProvisioning
 	DependencyStateReady        = pluginport.DependencyStateReady
-	PermissionAIComplete        = pluginport.PermissionAIComplete
 	PermissionIndexRead         = pluginport.PermissionIndexRead
 	PermissionSearchPolicy      = pluginport.PermissionSearchPolicy
 	PermissionNetworkAlias      = pluginport.PermissionNetworkAlias

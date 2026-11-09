@@ -52,7 +52,7 @@ func (b brokenVault) RenameNote(ctx context.Context, from, title string) (string
 func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = brokenVault{vault}
 	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 	mux := http.NewServeMux()

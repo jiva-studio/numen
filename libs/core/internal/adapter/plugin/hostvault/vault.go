@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 
-	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
@@ -95,7 +94,7 @@ func (a Vault) EnsureIndexed(ctx context.Context) (pluginport.PluginIndexState, 
 
 func (a Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 	if a.Moved == nil {
-		return nil, fmt.Errorf("watch moves: %w", completionport.ErrUnavailable)
+		return nil, fmt.Errorf("watch moves: %w", domain.ErrUnavailable)
 	}
 	return a.Moved(ctx)
 }
@@ -336,7 +335,7 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 		return nil, nil, err
 	}
 	if a.Watcher == nil {
-		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, completionport.ErrUnavailable)
+		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, domain.ErrUnavailable)
 	}
 	return a.Watcher.WatchVault(ctx, v)
 }

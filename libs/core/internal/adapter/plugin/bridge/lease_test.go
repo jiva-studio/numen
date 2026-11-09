@@ -7,8 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // refusingHost fails every activation with the error given.
@@ -40,7 +40,7 @@ func TestOpenPluginSortsTheFailureToActivate(t *testing.T) {
 	}
 
 	_, _, err = Open(t.Context(), refusingHost{err: context.Canceled}, "md.numen.a", numenv1connect.NewEmbeddingServiceClient)
-	if !errors.Is(err, context.Canceled) || errors.Is(err, completionport.ErrUnavailable) {
+	if !errors.Is(err, context.Canceled) || errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a canceled activation is %v, want the cancellation alone", err)
 	}
 }

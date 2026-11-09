@@ -13,13 +13,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const (
@@ -36,7 +33,7 @@ var (
 )
 
 // Callers is what the host endpoint queries the host for about a call: who made
-// it, what that plugin may do, and who serves a completion.
+// it and what that plugin may do.
 type callerLease interface {
 	Acquire(pluginID string)
 	Release(pluginID string)
@@ -60,7 +57,6 @@ type workServices interface {
 
 // Services is what the host lends the plugins that call it.
 type Services interface {
-	GetCompleter() completionport.Completer
 	GetPluginVault() pluginport.PluginVault
 	GetPluginTexts() pluginport.PluginTexts
 	GetDependencies() pluginport.DependencyCatalog
@@ -103,7 +99,6 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	endpoint := &Endpoint{callers: callers, port: linked.Port, serveResult: make(chan error, 1)}
 
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
 	mux.Handle(numenv1connect.NewHostModelServiceHandler(&modelEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
@@ -153,30 +148,6 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	return nil
 }
 
-// Complete serves a plugin's completion request with text from the configured
-// agent. A request without a valid token is unauthenticated, one without the
-// ai:complete permission is denied.
-func (e *Endpoint) Complete(
-	ctx context.Context,
-	req *connect.Request[v1.HostServiceCompleteRequest],
-) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	pluginID, err := e.authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
-	if err != nil {
-		return nil, err
-	}
-	completer := e.callers.GetCompleter()
-	if completer == nil {
-		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, ""), nil
-	}
-	text, err := completer.Complete(ctx, pluginID, readWireQuestion(req.Msg.GetQuestion()))
-	if err != nil {
-		return answerFailure(ctx, err)
-	}
-	return connect.NewResponse(&v1.HostServiceCompleteResponse{
-		Answer: &v1.CompletionAnswer{Text: text},
-	}), nil
-}
-
 func (e *Endpoint) authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, recognized := e.callers.GetPluginIDByToken(token)
@@ -195,23 +166,6 @@ func (e *Endpoint) authorize(header, permission string) (string, error) {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil
-}
-
-func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
-	}
-	if errors.Is(err, completionport.ErrInvalidQuestion) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if code, isRefusal := writeRefusal(err); isRefusal {
-		return refuseCompletion(code, readRefusalDetail(err)), nil
-	}
-	return nil, connect.NewError(connect.CodeInternal, err)
-}
-
-func refuseCompletion(code v1.CompletionErrorCode, detail string) *connect.Response[v1.HostServiceCompleteResponse] {
-	return connect.NewResponse(&v1.HostServiceCompleteResponse{Error: code, Detail: detail})
 }
 
 func checkLoopback(address string) error {

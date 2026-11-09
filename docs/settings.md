@@ -238,38 +238,6 @@ How many requests Numen Agent may make to the model for one task before it is st
 
 A section is kept whether or not it is in use, so trying another agent temporarily loses no settings.
 
-## Where a plugin's questions to a model are answered
-
-A plugin that holds the `ai:complete` permission requests a completion from the host and specifies no model, agent or key. The host identifies the plugin by the token it gave that plugin at launch, and uses `app.ai.default`. Nothing in a question selects where it is sent. The question is sent to the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is the agent's output.
-
-```json
-{
-  "app": {
-    "ai": {
-      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-    }
-  }
-}
-```
-
-|                              |                                                                                                                                                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app.ai.default.agent`       | the name of the agent program that answers the questions plugins ask (`claude`, `codex`, `antigravity`, `acp:<name>`, the names of the programs the plugins list). Empty uses the program `app.agent.use` names, else the default of the plugins. |
-| `app.ai.default.model`       | the model that program answers with. Empty uses the model `app.agent.<program>.model` names, else the program's own. It applies to the default agent alone.                                                                                       |
-| `app.ai.default.concurrency` | how many questions one agent answers at once; the others wait in a queue, and a question whose plugin gave up is removed from the queue. Below one is one.                                                                                        |
-
-A program that is not installed or that no plugin lists returns `NO_ROUTE`, and so does a question when `app.agent.use` is empty or no program is installed; no other program is used instead. A program whose plugin cannot be reached, that stops without an answer or that produces no output returns `UNAVAILABLE`, with the reason it stopped in the log. The command line and the model of the program's section under `app.agent` apply to the task as they do to the panel's. A model the program does not offer is reported as the program's own error.
-
-Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `app.agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission denied. It rejects a task that names a tool. It finds the known ACP agents on the PATH itself, when it starts and when its settings change, and adds the executables of its setting `executablePath`, which holds only the paths the person set.
-
-The file is read at every question, so a choice written while the application runs applies to the next one.
-
-The settings page writes `app.agent.use` through the agent chat plugin, which chooses the agent of a conversation in a dropdown with its model and reasoning. The reasoning a new question starts with is the setting `reasoning` of the agent chat plugin, `reasoning` in the object `md.numen.views.agent.chat`: the name of one of the levels a model lists, empty for the default of the model. The agents in its lists are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
-
-No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest, and the person enters the key on the Secrets page and allows it to the plugin (see [Secrets](#secrets)).
-
-A setting of type `string` that declares `options` in its manifest is chosen from them in a list that can be searched, and its value can also be typed.
-
 ## Connections
 
 A connection is a place the core sends requests to for plugins, and the way in: a service you pay for, a server you run, or an agent program on this computer. You enter it once, on the Connections page, the row Connections beside System in the list of settings. A connection has an id, a type, a name, and the fields its type declares, such as an address and a key. The model and the reasoning level are not part of it. The Secrets page stays beside it and is unchanged.

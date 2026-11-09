@@ -283,13 +283,10 @@ func TestManifestNetworkAlias(t *testing.T) {
 	}
 }
 
-func TestManifestAcceptsAICompletePermission(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !m.HasPermission(manifest.PermissionAIComplete) {
-		t.Errorf("manifest must hold %s", manifest.PermissionAIComplete)
+func TestManifestRejectsAICompletePermission(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
+	if !errors.Is(err, manifest.ErrInvalidPermission) {
+		t.Errorf("error = %v, want invalid permission", err)
 	}
 }
 

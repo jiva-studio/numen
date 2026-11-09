@@ -147,7 +147,7 @@ func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat 
 
 func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	if vault != nil {
 		hostCallers.vault = vault
 	}

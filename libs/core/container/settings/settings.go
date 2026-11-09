@@ -58,7 +58,6 @@ type Config struct {
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentport.AgentProgram
 	SetSecretSource           func()
-	SetCompleter              func()
 }
 
 // DefaultSettings returns the settings of an unconfigured installation.
@@ -156,9 +155,6 @@ func (c Config) ConfigurePluginHost(s Settings) {
 	c.PluginHost.SetKeyStore(c.KeyStore)
 	if c.SetSecretSource != nil {
 		c.SetSecretSource()
-	}
-	if c.SetCompleter != nil {
-		c.SetCompleter()
 	}
 	c.SubscribeHost()
 }

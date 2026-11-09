@@ -92,7 +92,7 @@ func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 
 func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	ctx := t.Context()
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = newMemoryVault(nil)
 	fakeCallers.texts = newMemoryTexts()
 	client := newTextClient(t, fakeCallers, "token-a")
@@ -144,7 +144,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 }
 
 func TestHostText_InvalidVersionReturnsErrorCode(t *testing.T) {
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = newMemoryVault(nil)
 	fakeCallers.texts = newMemoryTexts()
 	res, err := newTextClient(t, fakeCallers, "token-a").PutTextVersion(t.Context(), connect.NewRequest(&v1.PutTextVersionRequest{Path: "a.pdf", Key: "k"}))
@@ -157,7 +157,7 @@ func TestHostText_InvalidVersionReturnsErrorCode(t *testing.T) {
 }
 
 func TestHostText_ErrorWithoutVaultOrPermission(t *testing.T) {
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	res, err := newTextClient(t, fakeCallers, "token-a").ListTextVersions(t.Context(), connect.NewRequest(&v1.ListTextVersionsRequest{Path: "a.pdf"}))
 	if err != nil {
 		t.Fatal(err)
@@ -179,7 +179,7 @@ func TestHostText_ErrorWithoutVaultOrPermission(t *testing.T) {
 }
 
 func TestTextCallsWithoutVaultReturnNoVault(t *testing.T) {
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.texts = newMemoryTexts()
 	res, err := newTextClient(t, fakeCallers, "token-a").ListTextVersions(t.Context(), connect.NewRequest(&v1.ListTextVersionsRequest{Path: "a.pdf"}))
 	if err != nil {
@@ -196,7 +196,7 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 	physics.others = map[domain.VaultID]*memoryVault{
 		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
 	}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = physics
 	texts := newMemoryTexts()
 	fakeCallers.texts = texts

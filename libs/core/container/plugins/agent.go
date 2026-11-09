@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,8 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/usecase/completion"
+	"github.com/jiva-studio/numen/libs/core/usecase/agent"
 )
 
 // ProgramsLimit is how long the providers have to list the programs they run.
@@ -51,49 +49,19 @@ func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settin
 	return c.Programs.Get(programsWait, list)
 }
 
-var errNoCompletionProvider = errors.New("no plugin host runs agent programs")
-
-func (c Config) completionAgentSettings() completion.AgentSettings {
+func (c Config) getAgentSettings() agent.AgentSettings {
 	target := c.GetSettingsOrDefaults().Agent
-	return completion.AgentSettings{
+	return agent.AgentSettings{
 		IsNamed:  target.IsNamed(),
 		Use:      target.GetUse(),
 		Commands: target.GetCommands(),
-		GetProgram: func(name string) completion.ProgramSettings {
+		GetProgram: func(name string) agent.ProgramSettings {
 			section := target.GetProgram(name)
-			return completion.ProgramSettings{
+			return agent.ProgramSettings{
 				Model:   section.Model,
 				Command: section.Command,
 			}
 		},
-	}
-}
-
-func (c Config) newCompletionRouter() (*completion.Router, error) {
-	provider := c.AgentProvider()
-	if provider == nil {
-		return nil, errNoCompletionProvider
-	}
-	return completion.NewRouter(
-		func() completion.Config {
-			return completion.Config{Default: completion.Route(c.GetSettingsOrDefaults().AI.Default)}
-		},
-		completion.NewPrograms(provider, c.completionAgentSettings),
-	)
-}
-
-// SetCompleter wires the completion router onto the plugin host when supported.
-func (c Config) SetCompleter() {
-	if c.PluginHost == nil || c.SafeMode {
-		return
-	}
-	router, err := c.newCompletionRouter()
-	if err != nil {
-		c.handleError(err)
-		return
-	}
-	if host, ok := c.PluginHost.(completionport.CompleterHost); ok {
-		host.SetCompleter(router)
 	}
 }
 
@@ -106,7 +74,7 @@ func (c Config) GetSettingsAgent() agentport.Agent {
 	if provider == nil {
 		return nil
 	}
-	return completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings))
+	return agent.NewSettingsAgent(agent.NewPrograms(provider, c.getAgentSettings))
 }
 
 // GetToolProvider returns an agent provider that attaches plugin tools to each run.

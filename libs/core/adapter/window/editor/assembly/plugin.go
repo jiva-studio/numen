@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 
-	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/agent/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/modellist"

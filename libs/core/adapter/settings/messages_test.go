@@ -13,9 +13,10 @@ import (
 
 func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
 	for body, want := range map[string]string{
-		`{"app":{"appearance":{"textScale":9}}}`:         `numen.json: "app.appearance.textScale": 9 is out of range 0.8..1.75; the value is ignored`,
-		`{"app":{"appearance":{"tint":"warm"}}}`:         `numen.json: "app.appearance.tint": no such setting; the value is ignored`,
-		`{"app":3}`:                                      `numen.json: app is not a JSON object; its settings are ignored`,
+		`{"app":{"appearance":{"textScale":9}}}`:   `numen.json: "app.appearance.textScale": 9 is out of range 0.8..1.75; the value is ignored`,
+		`{"app":{"appearance":{"tint":"warm"}}}`:   `numen.json: "app.appearance.tint": no such setting; the value is ignored`,
+		`{"app":{"ai":{"default":{"agent":"a"}}}}`: `numen.json: "app.ai": no such setting; the value is ignored`,
+		`{"app":3}`: `numen.json: app is not a JSON object; its settings are ignored`,
 		`{"importing":{"ffmpeg":{"command":[]}}}`:        `numen.json: importing is not a valid plugin id; its settings are ignored`,
 		`{"md.numen.sample.speech":3}`:                   `numen.json: md.numen.sample.speech is not a JSON object; its settings are ignored`,
 		`{"md.numen.ghost":{"model":"small"}}`:           `numen.json: no installed plugin md.numen.ghost; its settings are ignored`,

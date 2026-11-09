@@ -24,7 +24,6 @@ type File struct {
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
-	AI          AI                   `json:"ai"`
 	Plugins     map[string]map[string]any
 	Secrets     []pluginport.Secret
 	Connections []connectionport.Connection
@@ -37,7 +36,6 @@ type appObject struct {
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
-	AI          AI                   `json:"ai"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -47,10 +45,9 @@ type appSections struct {
 	Agent       *Agent                `json:"agent"`
 	Titles      *Titles               `json:"naming"`
 	Performance *hardware.Performance `json:"performance"`
-	AI          *AI                   `json:"ai"`
 }
 
-func isOutsideDeclaration(section string) bool { return section == "agent" || section == "ai" }
+func isOutsideDeclaration(section string) bool { return section == "agent" }
 
 // keyVersion is the key of the version of the file.
 const keyVersion = "v"
@@ -86,7 +83,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
+		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance}},
 	}
 	if len(f.Secrets) > 0 {
 		members = append(members, struct {
@@ -193,7 +190,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Performance, &f.AI}
+	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Performance}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 

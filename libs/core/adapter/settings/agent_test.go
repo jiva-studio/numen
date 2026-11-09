@@ -138,17 +138,6 @@ func jsonEqual(a, b map[string]any) bool {
 	return errLeft == nil && errRight == nil && string(remaining) == string(right)
 }
 
-// The default is placed under ai.default, with the agent, the model and the limit.
-func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
-	var config settings.AI
-	if err := json.Unmarshal([]byte(`{"default": {"agent": "a", "model": "m", "concurrency": 3}}`), &config); err != nil {
-		t.Fatal(err)
-	}
-	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 3}); config.Default != want {
-		t.Errorf("read %+v, want %+v", config.Default, want)
-	}
-}
-
 // A section of a program holds the command and the model; what a plugin reads for itself is not kept by
 // the core, and a section written back carries only the two.
 func TestASectionKeepsOnlyTheCommandAndTheModel(t *testing.T) {

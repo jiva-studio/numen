@@ -124,8 +124,8 @@ func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
 	if got := listPermissionDifferences([]string{"vault:read", "network:outbound", "network", "root"}, valid); len(got) != 1 {
 		t.Errorf("a permission only the guide names is found %d times: %v", len(got), got)
 	}
-	line := "- **`permissions`**: Whitelisted: `vault:read` and `ai:complete` (ask). Any other value, such as `root`, is rejected."
-	if got := readDocumentedPermissions("text\n" + line + "\n"); !slices.Equal(got, []string{"vault:read", "ai:complete"}) {
+	line := "- **`permissions`**: Whitelisted: `vault:read` and `index:read`. Any other value, such as `root`, is rejected."
+	if got := readDocumentedPermissions("text\n" + line + "\n"); !slices.Equal(got, []string{"vault:read", "index:read"}) {
 		t.Errorf("the guide's line is read as %v", got)
 	}
 	if got := readDocumentedPermissions("no such line"); got != nil {

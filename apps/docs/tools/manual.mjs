@@ -483,7 +483,6 @@ const meaning = (doc, name, keys) => {
 const PACKAGES = {
   settings: 'adapter/settings',
   hardware: 'adapter/settings/hardware',
-  completion: 'usecase/completion',
 }
 
 const held = new Map()
@@ -636,8 +635,7 @@ const readSettingPlugins = async () => {
 
 /**
  * The settings of the owner app. The shell declares most of them in a JSON of the format of a
- * manifest, and the reference is read from that declaration. The sections of the agent and the AI
- * route stay Go types.
+ * manifest, and the reference is read from that declaration. The section of the agent stays a Go type.
  */
 const settings = async () => {
   const declared = JSON.parse(await read(new URL('adapter/settings/', GO), 'app.json')).settings
@@ -661,21 +659,6 @@ const settings = async () => {
     })),
   )
   const doc = { agent: docOf(source, 'Agent') }
-  const ai = sectioned(await keysOf(PACKAGES.settings, 'AI', 'ai'))
-  const aiKeys = await keysOf(PACKAGES.settings, 'AI', 'ai')
-  for (const section of ai) {
-    sections.set(
-      section.path,
-      aiKeys
-        .filter((one) => one.path.startsWith(`${section.path}.`))
-        .map((key) => ({
-          key: key.path.slice(section.path.length + 1),
-          kind: key.kind,
-          meaning: key.meaning,
-        })),
-    )
-    doc[section.path] = section.meaning
-  }
 
   const out = [
     '| | | |',
@@ -685,7 +668,7 @@ const settings = async () => {
     '| `<plugin id>` |  | holds the settings of one plugin, next to its `enabled`. |',
     '',
   ]
-  const order = ['appearance', 'agent', 'naming', 'performance', 'ai.default']
+  const order = ['appearance', 'agent', 'naming', 'performance']
   for (const section of [
     ...order,
     ...[...sections.keys()].filter((name) => !order.includes(name)),

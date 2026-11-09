@@ -54,7 +54,7 @@ func newToolClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 // shows with no context, whatever context it sends.
 func TestAPluginCallsTheToolsInTheVaultTheHostShows(t *testing.T) {
 	tools := &recordedTools{}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.tools, fakeCallers.vault = tools, newMemoryVault(nil)
 	client := newToolClient(t, fakeCallers, "token-a")
 
@@ -87,7 +87,7 @@ func TestAPluginCallsTheToolsInTheVaultItNames(t *testing.T) {
 	tools := &recordedTools{}
 	vault := newMemoryVault(nil)
 	vault.others = map[domain.VaultID]*memoryVault{"v2": {vault: &domain.Vault{ID: "v2", Name: "Biology"}}}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.tools, fakeCallers.vault = tools, vault
 
 	req := connect.NewRequest(&v1.CallToolRequest{Name: "note_read"})
@@ -103,7 +103,7 @@ func TestAPluginCallsTheToolsInTheVaultItNames(t *testing.T) {
 // A plugin without vault:read is rejected, and an unknown caller is not served.
 func TestTheToolsRefuseACallerWithoutVaultRead(t *testing.T) {
 	tools := &recordedTools{}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.tools = tools
 
 	_, err := newToolClient(t, fakeCallers, "token-b").ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))

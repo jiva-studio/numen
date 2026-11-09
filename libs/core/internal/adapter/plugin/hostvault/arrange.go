@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
-	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
@@ -104,7 +103,7 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 		return nil, nil, err
 	}
 	if a.Arranger.Checks == nil {
-		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, completionport.ErrUnavailable)
+		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, domain.ErrUnavailable)
 	}
 	report, err := a.Arranger.Checks.Execute(ctx, v, checks...)
 	if err != nil {

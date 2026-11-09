@@ -229,7 +229,7 @@ func newArrangeClient(
 ) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = vault
 	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, list: list, granted: granted}}
 	mux := http.NewServeMux()
@@ -603,7 +603,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 	} {
 		t.Run(name, func(t *testing.T) {
-			hostCallers := newCallers(nil)
+			hostCallers := newCallers()
 			hostCallers.vault = failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
 			endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 			mux := http.NewServeMux()
@@ -745,7 +745,7 @@ func (o escapingPathVault) RenameNote(ctx context.Context, from, title string) (
 func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = escapingPathVault{vault}
 	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 	mux := http.NewServeMux()

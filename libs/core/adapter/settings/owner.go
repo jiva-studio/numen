@@ -53,7 +53,7 @@ type Registries func(name string) ([]string, bool)
 // CheckWrite returns why a value is not one the setting at the path takes. The first path element
 // is the owner and the rest is the key path under it. It checks the declared key, the type, enum
 // membership and range bounds, and for rows of connections the rows (see RegistryConnections). The
-// keys `agent` and `ai` of the owner app are outside the check.
+// key `agent` of the owner app is outside the check.
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {

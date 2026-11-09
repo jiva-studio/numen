@@ -26,9 +26,6 @@ const (
 	// PermissionNetworkOutbound allows outbound network requests.
 	PermissionNetworkOutbound = "network:outbound"
 
-	// PermissionAIComplete allows asking the host for a model completion.
-	PermissionAIComplete = "ai:complete"
-
 	// PermissionIndexRead allows reading the search index of a vault: its note titles, the stored
 	// vectors of its chunks, and the state of its embedding.
 	PermissionIndexRead = "index:read"
@@ -50,7 +47,7 @@ const (
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionNetworkOutbound,
-		PermissionAIComplete, PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
 	}
 }
 

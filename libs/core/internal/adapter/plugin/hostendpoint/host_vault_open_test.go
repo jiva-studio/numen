@@ -22,7 +22,7 @@ import (
 
 func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = newFakeNoteVault()
 	endpoint, err := Open(t.Context(), Address, vaultListCallers{callers: hostCallers, list: list, granted: []string{pluginport.PermissionVaultManage}})
 	if err != nil {

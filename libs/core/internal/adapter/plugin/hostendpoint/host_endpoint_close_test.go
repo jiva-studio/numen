@@ -11,7 +11,7 @@ import (
 // A client transport keeps a connection it dialed for a call that another connection served. Such a
 // connection has no request in flight, and Close does not wait for it.
 func TestCloseReturnsWhileAConnectionHasNoRequest(t *testing.T) {
-	endpoint, err := Open(t.Context(), Address, newCallers(nil))
+	endpoint, err := Open(t.Context(), Address, newCallers())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -85,7 +85,7 @@ func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vau
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	vault := &cancellingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = vault
 	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
 	return endpoint, vault, ctx
@@ -326,7 +326,7 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	vault := &cancellingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = vault
 	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
 	batch := getCancelledBatch()

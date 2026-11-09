@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/agent/agentcontract"
 )
 
 // StreamAgentTask passes one task to the agent and writes its output to the

@@ -10,7 +10,7 @@
 // query: matches and counts are read models, and asking a repository for them
 // turns it into a service named after a repository.
 //
-// One sub-package holds one domain's ports: agentport, completionport,
+// One sub-package holds one domain's ports: agentport,
 // settingsport, pluginport, connectionport, contenttypeport, embeddingport,
 // floorport, themeport, textport, vaultport, noteport, sourceport, problemport,
 // indexport, machineport and windowport.

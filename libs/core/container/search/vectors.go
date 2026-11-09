@@ -6,9 +6,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // EmbedderReady reports whether an embedding plugin is enabled.
@@ -57,7 +57,7 @@ func (c Config) OpenEmbedder(ctx context.Context, onReadError func(error)) (embe
 		return nil, func() error { return nil }, nil
 	}
 	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
-	if errors.Is(err, completionport.ErrUnavailable) {
+	if errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	}
 	if err != nil {

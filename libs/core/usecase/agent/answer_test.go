@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
 
 // run replays steps and records that it was stopped.
@@ -119,7 +118,7 @@ func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
 func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
 	_, err := agent.Answer(t.Context(), &starter{err: errors.New("no plugin runs it")}, agentport.Task{})
 
-	if !errors.Is(err, completionport.ErrUnavailable) {
+	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("got %v, want port.ErrUnavailable", err)
 	}
 }
@@ -129,7 +128,7 @@ func TestAnAgentThatStopsForAReasonIsUnavailableWithThatReason(t *testing.T) {
 
 	_, err := agent.Answer(t.Context(), target, agentport.Task{})
 
-	if !errors.Is(err, completionport.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
+	if !errors.Is(err, domain.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
 		t.Errorf("got %v, want port.ErrUnavailable naming the reason", err)
 	}
 }
@@ -141,7 +140,7 @@ func TestAnAgentThatReturnsNothingIsUnavailable(t *testing.T) {
 		"no steps":    {},
 	} {
 		_, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, agentport.Task{})
-		if !errors.Is(err, completionport.ErrUnavailable) {
+		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("%s: got %v, want port.ErrUnavailable", name, err)
 		}
 	}
@@ -158,7 +157,7 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 		"stopped":     {run: newRun(stop("canceled"))},
 	} {
 		_, err := agent.Answer(ctx, target, agentport.Task{})
-		if !errors.Is(err, context.Canceled) || errors.Is(err, completionport.ErrUnavailable) {
+		if !errors.Is(err, context.Canceled) || errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("%s: got %v, want context.Canceled alone", name, err)
 		}
 	}

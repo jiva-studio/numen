@@ -15,7 +15,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -161,7 +160,7 @@ func TestACommandOfAPluginThatCannotStartIsUnavailable(t *testing.T) {
 	_, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
 
 	var unavailable *pluginport.UnavailableError
-	if !errors.As(err, &unavailable) || !errors.Is(err, completionport.ErrUnavailable) {
+	if !errors.As(err, &unavailable) || !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a plugin that cannot start is %v, want it unavailable", err)
 	}
 }
@@ -184,7 +183,7 @@ func TestACommandOfAPluginThatServesNoCommandsIsUnavailable(t *testing.T) {
 
 	_, err = Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
 
-	if !errors.Is(err, completionport.ErrUnavailable) {
+	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a plugin that serves no commands is %v, want it unavailable", err)
 	}
 }

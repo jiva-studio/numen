@@ -18,7 +18,6 @@ on:
       - "libs/core/adapter/cli/**"
       - "libs/core/adapter/settings/**"
       - "libs/core/container/**"
-      - "libs/core/usecase/completion/**"
       - "plugins/*/manifest.json"
       - "plugins/*/frontend/**"
       - "tools/ci-commands/**"

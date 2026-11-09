@@ -3,8 +3,6 @@ package pluginport
 import (
 	"errors"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
 
 // An UnavailableError is ErrUnavailable regardless of its reason, keeps its
@@ -23,11 +21,8 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 		if got := tc.err.Error(); got != tc.want {
 			t.Errorf("Error() = %q, want %q", got, tc.want)
 		}
-		if !errors.Is(tc.err, completionport.ErrUnavailable) {
+		if !errors.Is(tc.err, ErrUnavailable) {
 			t.Errorf("%q is not ErrUnavailable", tc.want)
-		}
-		if errors.Is(tc.err, completionport.ErrNoRoute) {
-			t.Errorf("%q is ErrNoRoute", tc.want)
 		}
 	}
 	if !errors.Is(&UnavailableError{Reason: PluginFailed, Err: cause}, cause) {

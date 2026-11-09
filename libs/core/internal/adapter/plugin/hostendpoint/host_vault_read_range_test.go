@@ -29,7 +29,7 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 		"sonar.bin":       "ab\xff\xfecd",
 		"notes/Danube.md": "# Danube\n",
 	})
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = hostvault.Vault{
 		Current: func() (domain.Vault, bool) { return v, true },
 		Readers: vaultreader.Readers{},
@@ -120,7 +120,7 @@ func TestReadFileWithoutALengthReturnsTheWholeFileAsBytes(t *testing.T) {
 }
 
 func TestRangedReadFileWithoutAVaultReturnsNoVault(t *testing.T) {
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(&Endpoint{callers: hostCallers})))
 	server := httptest.NewServer(mux)

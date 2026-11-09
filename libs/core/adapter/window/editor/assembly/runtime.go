@@ -3,7 +3,7 @@ package assembly
 import (
 	"context"
 
-	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/agent/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"

@@ -87,7 +87,7 @@ func (c *recordingClient) Do(request *http.Request) (*http.Response, error) {
 
 func newModelClient(t *testing.T, calls connectionport.ModelCalls, token string) (numenv1connect.HostModelServiceClient, *recordingClient) {
 	t.Helper()
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.modelCalls = calls
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostModelServiceHandler(&modelEndpoint{endpoint: &Endpoint{callers: fakeCallers}}))
@@ -110,7 +110,7 @@ func TestCompleteIsAskedForThePluginTheTokenNames(t *testing.T) {
 		t.Fatalf("Complete = %v, %v", response, err)
 	}
 	if len(calls.callers) != 1 || calls.callers[0] != "md.numen.b" {
-		t.Errorf("callers = %v, want md.numen.b: the plugin of the token, which holds no ai:complete permission", calls.callers)
+		t.Errorf("callers = %v, want md.numen.b: the plugin of the token", calls.callers)
 	}
 	if len(calls.request.Messages) != 1 || calls.request.Messages[0] != (connectionport.Message{Role: "user", Text: "u"}) ||
 		*calls.request.Temperature != 0.4 || calls.request.MaxTokens != 33 {
@@ -314,7 +314,7 @@ func TestEmbedCarriesThePriorityOfTheRequest(t *testing.T) {
 }
 
 func TestThePluginEndpointDoesNotMountModelService(t *testing.T) {
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	endpoint, err := Open(t.Context(), "127.0.0.1:0", fakeCallers)
 	if err != nil {
 		t.Fatal(err)

@@ -30,7 +30,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
@@ -1190,7 +1189,7 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 // The host names a running plugin by the token it was launched with.
 func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 	host := newRunningTestHost(t, map[string]runningPlugin{
-		"md.numen.a": {"token-a", []string{manifest.PermissionAIComplete}},
+		"md.numen.a": {"token-a", []string{manifest.PermissionIndexRead}},
 		"md.numen.b": {"token-b", nil},
 		"md.numen.c": {"", nil},
 	})
@@ -1205,26 +1204,26 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.CheckPluginPermission("md.numen.b", manifest.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
+	if err := host.CheckPluginPermission("md.numen.b", manifest.PermissionIndexRead); !errors.Is(err, pluginport.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
-	if err := host.CheckPluginPermission("md.numen.a", manifest.PermissionAIComplete); err != nil {
+	if err := host.CheckPluginPermission("md.numen.a", manifest.PermissionIndexRead); err != nil {
 		t.Errorf("a plugin with the permission failed: %v", err)
 	}
 }
 
-// The host endpoint serves only once something answers completions, and
+// The host endpoint serves only once something answers the calls on models, and
 // stops when the host does.
-func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
+func TestTheHostEndpointOpensOnceAndStaysClosedAfterTeardown(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	if got, err := host.openHostEndpoint(t.Context()); err != nil || got != 0 {
-		t.Fatalf("without a completer: port %d, %v", got, err)
+		t.Fatalf("without model calls: port %d, %v", got, err)
 	}
 
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetModelCalls(noModelCalls{})
 	first, err := host.openHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
-		t.Fatalf("with a completer: port %d, %v", first, err)
+		t.Fatalf("with model calls: port %d, %v", first, err)
 	}
 	again, err := host.openHostEndpoint(t.Context())
 	if err != nil || again != first {
@@ -1262,7 +1261,7 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetModelCalls(noModelCalls{})
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
@@ -1286,7 +1285,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 		}
 	})
 	host.hostAddress = "127.0.0.1:-1"
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetModelCalls(noModelCalls{})
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 

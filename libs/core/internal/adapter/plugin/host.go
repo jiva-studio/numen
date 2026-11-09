@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	modelcallport "github.com/jiva-studio/numen/libs/core/usecase/modelcall/modelcallcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
@@ -93,7 +92,6 @@ type Host struct {
 	problems               []manifestjson.DiscoveryProblem
 	installed              []manifest.Discovered
 	hasScanned             bool
-	completer              completionport.Completer
 	modelCalls             modelcallport.ModelCalls
 	vault                  pluginport.PluginVault
 	texts                  pluginport.PluginTexts
@@ -148,7 +146,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		discoverMu:             sync.RWMutex{},
 		failedPlugins:          nil,
 		problems:               nil,
-		completer:              nil,
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
 		dependencies:           nil,

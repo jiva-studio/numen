@@ -44,7 +44,7 @@ func newStoreHost(t *testing.T) storeHost {
 	t.Helper()
 	vault := newMemoryVault(nil)
 	vault.storeRoot = t.TempDir()
-	hosted := newCallers(nil)
+	hosted := newCallers()
 	hosted.vault = vault
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: &Endpoint{callers: hosted}}))
