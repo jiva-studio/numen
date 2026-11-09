@@ -47,7 +47,8 @@ export class ApplicationDriver {
     const command = page
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
-    if (label in TEXT_COMMANDS) await this.expectOpenTabHasText(TEXT_COMMANDS[label] as PluginCommand)
+    const textCommand = TEXT_COMMANDS[label]
+    if (textCommand) await this.expectOpenTabHasText(textCommand)
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)

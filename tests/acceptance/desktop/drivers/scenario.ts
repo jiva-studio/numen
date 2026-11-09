@@ -65,7 +65,7 @@ export class Scenario {
   /** Deletes the text versions made over the files the scenario opened: a file of the vault outlives the scenario. */
   async removeTexts(): Promise<void> {
     for (const filePath of this.files) {
-      const answer = await callRPC(this.page.request, 'CommandService/ListCommandItems', {
+      const answer: Record<string, unknown> = await callRPC(this.page.request, 'CommandService/ListCommandItems', {
         path: filePath,
         commands: [{ command: DELETE_TEXT_ID }],
       }).catch(() => ({}))
