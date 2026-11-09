@@ -23,6 +23,7 @@ import {
   type NoteLookup,
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
+import { countNotes } from '@/entities/file'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createNoticeQueue, getTabPaneRect, useWindowFrame } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
@@ -476,6 +477,7 @@ function initWindowServices(
     catalog: pluginCatalog,
     connections,
     models,
+    countNotes: () => countNotes((folder) => core.list(folder)),
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })

@@ -117,6 +117,12 @@ export const WORDS = {
   connectionRowsModelPlaceholder: 'Choose or type a model',
   connectionRowsReasoning: 'Reasoning',
   connectionRowsDefault: 'Default',
+  connectionRowsIndexQuestion: (count: number | undefined, name: string) =>
+    count === undefined
+      ? `This indexes your notes through ${name}. It may cost money.`
+      : `This indexes ${count} ${count === 1 ? 'note' : 'notes'} through ${name}. It may cost money.`,
+  connectionRowsIndexLabel: 'Index the notes',
+  connectionRowsIndexConfirm: 'Index',
   connectionRowsRemove: (position: number) => `Remove row ${position}`,
   connectionRowsGrip: (position: number, count: number) => `Move row ${position} of ${count}`,
   connectionRowsPickedUp: (position: number, count: number) =>

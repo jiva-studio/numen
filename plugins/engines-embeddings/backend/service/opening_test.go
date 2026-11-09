@@ -52,7 +52,7 @@ func TestACallOfTheHostDoesNotWaitForTheModelToOpen(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	within(t, "Configure", func() { srv.updateConfig(map[string]string{"provider": "local"}, nil) })
+	within(t, "Configure", func() { srv.updateConfig(map[string]string{"source": "local"}, nil) })
 }
 
 func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
@@ -88,13 +88,13 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/bge-m3"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/bge-m3"}, nil)
 	go func() { embedText(t.Context(), t, srv) }()
 	if got := <-names; got != "Xenova/bge-m3" {
 		t.Fatalf("opened %q first", got)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": engine.DefaultModel}, nil)
 	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		t.Fatalf("the batch after the change: %v", err)

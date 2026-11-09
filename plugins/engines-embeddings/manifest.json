@@ -6,7 +6,9 @@
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
-  "contributes": { "category": "engines" },
+  "contributes": {
+    "category": "engines"
+  },
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
   "dependencies": [
@@ -15,148 +17,67 @@
       "kind": "runtime"
     }
   ],
-  "secrets": [
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
-      "group": "openrouter",
-      "when": {
-        "setting": "provider",
-        "is": ["openrouter"]
-      }
-    },
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
-      "group": "openai",
-      "when": {
-        "setting": "provider",
-        "is": ["openai"]
-      }
-    },
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets Vector Embeddings send your texts to the service you chose to turn them into vectors.",
-      "when": {
-        "setting": "provider",
-        "is": ["custom"]
-      }
-    }
-  ],
-  "backend": { "entrypoint": "bin/engines-embeddings" },
+  "backend": {
+    "entrypoint": "bin/engines-embeddings"
+  },
   "settings": [
     {
-      "key": "provider",
+      "key": "source",
       "type": "enum",
-      "title": "Provider",
+      "title": "Source",
       "description": "Where texts are turned into vectors",
       "default": "local",
       "options": [
         {
           "value": "local",
-          "title": "Local",
-          "detail": "Runs ONNX embedding models locally on this machine"
+          "title": "Local model",
+          "detail": "Runs an embedding model on this machine"
         },
         {
-          "value": "openrouter",
-          "title": "OpenRouter",
-          "detail": "OpenRouter embeddings API"
-        },
-        {
-          "value": "openai",
-          "title": "OpenAI",
-          "detail": "OpenAI embeddings API"
-        },
-        {
-          "value": "custom",
-          "title": "Custom service",
-          "detail": "Any OpenAI-compatible embeddings API"
+          "value": "connection",
+          "title": "Connection",
+          "detail": "Sends the texts to a service through a connection"
         }
       ]
-    },
-    {
-      "key": "baseUrl",
-      "type": "string",
-      "title": "Service URL",
-      "description": "Base URL of the embeddings API, for example https://example.org/v1",
-      "default": "",
-      "when": {
-        "setting": "provider",
-        "is": ["custom"]
-      }
     },
     {
       "key": "model",
       "type": "string",
       "title": "Model",
-      "description": "Model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face; remote providers use the model ID listed by the service.",
+      "description": "Local model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face.",
       "default": "Xenova/multilingual-e5-small",
-      "optionsBy": {
-        "setting": "provider",
-        "options": {
-          "local": [
-            {
-              "value": "Xenova/multilingual-e5-small",
-              "title": "E5 small (default, CPU, 118 MB)",
-              "detail": "384 dims · Hugging Face"
-            },
-            {
-              "value": "onnx-community/harrier-oss-v1-270m-ONNX",
-              "title": "Harrier 270M (better, 344 MB)",
-              "detail": "640 dims · Hugging Face"
-            },
-            {
-              "value": "Xenova/bge-m3",
-              "title": "BGE-M3 (large, 569 MB)",
-              "detail": "1024 dims · Hugging Face"
-            }
-          ],
-          "openrouter": [
-            {
-              "value": "openai/text-embedding-3-small",
-              "title": "OpenAI: text-embedding-3-small",
-              "detail": "1536 dims · OpenRouter"
-            },
-            {
-              "value": "openai/text-embedding-3-large",
-              "title": "OpenAI: text-embedding-3-large",
-              "detail": "3072 dims · OpenRouter"
-            },
-            { "value": "baai/bge-m3", "title": "BAAI: BGE-M3", "detail": "1024 dims · OpenRouter" },
-            {
-              "value": "qwen/qwen3-embedding-8b",
-              "title": "Qwen3 Embedding 8B",
-              "detail": "4096 dims · OpenRouter"
-            }
-          ],
-          "openai": [
-            {
-              "value": "text-embedding-3-small",
-              "title": "text-embedding-3-small",
-              "detail": "1536 dims · OpenAI"
-            },
-            {
-              "value": "text-embedding-3-large",
-              "title": "text-embedding-3-large",
-              "detail": "3072 dims · OpenAI"
-            },
-            {
-              "value": "text-embedding-ada-002",
-              "title": "text-embedding-ada-002",
-              "detail": "1536 dims · OpenAI"
-            }
-          ],
-          "custom": [
-            {
-              "value": "text-embedding-3-small",
-              "title": "text-embedding-3-small",
-              "detail": "OpenAI-compatible model ID"
-            }
-          ]
+      "options": [
+        {
+          "value": "Xenova/multilingual-e5-small",
+          "title": "E5 small (default, CPU, 118 MB)",
+          "detail": "384 dims · Hugging Face"
+        },
+        {
+          "value": "onnx-community/harrier-oss-v1-270m-ONNX",
+          "title": "Harrier 270M (better, 344 MB)",
+          "detail": "640 dims · Hugging Face"
+        },
+        {
+          "value": "Xenova/bge-m3",
+          "title": "BGE-M3 (large, 569 MB)",
+          "detail": "1024 dims · Hugging Face"
         }
+      ],
+      "when": {
+        "setting": "source",
+        "is": ["local"]
+      }
+    },
+    {
+      "key": "connections",
+      "type": "connections",
+      "title": "Connection",
+      "description": "The connection and the embedding model that turn texts into vectors. Changing either indexes the vault again.",
+      "operation": "embed",
+      "max": 1,
+      "when": {
+        "setting": "source",
+        "is": ["connection"]
       }
     },
     {

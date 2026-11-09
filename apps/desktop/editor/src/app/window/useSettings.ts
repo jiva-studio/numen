@@ -36,10 +36,12 @@ export interface SettingsDeps {
   catalog?: PluginCatalog
   connections?: ConnectionClient
   models?: ModelClient
+  countNotes?: Installation['countNotes']
 }
 
 interface SettingsTabConfigDeps {
   models?: ModelClient
+  countNotes?: Installation['countNotes']
   appearance: ReturnType<typeof createWindowAppearance>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
@@ -66,13 +68,21 @@ function createConnectionMembers(
   }
 }
 
-function createModelMembers(models: ModelClient | undefined): Partial<Installation> {
-  if (!models) return {}
+function createModelMembers(deps: {
+  models?: ModelClient
+  countNotes?: Installation['countNotes']
+}): Partial<Installation> {
+  const { models, countNotes } = deps
   return {
-    listModels: (connectionId: string, operation: string) =>
-      models.listModels(connectionId, operation),
-    listReasoningLevels: (connectionId: string, model: string) =>
-      models.listReasoningLevels(connectionId, model),
+    ...(countNotes ? { countNotes } : {}),
+    ...(models
+      ? {
+          listModels: (connectionId: string, operation: string) =>
+            models.listModels(connectionId, operation),
+          listReasoningLevels: (connectionId: string, model: string) =>
+            models.listReasoningLevels(connectionId, model),
+        }
+      : {}),
   }
 }
 
@@ -97,7 +107,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getPlatform,
     catalogEntries,
     reportError,
-    models,
   } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
@@ -109,7 +118,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
     ...createConnectionMembers(connections),
-    ...createModelMembers(models),
+    ...createModelMembers(deps),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
@@ -264,12 +273,11 @@ export function useSettings({
   catalog,
   connections: connectionClient,
   models,
+  countNotes,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
-  const getPluginName = (pluginId: string): string =>
-    rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
     words,
@@ -286,7 +294,7 @@ export function useSettings({
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.start(),
-    getName: getPluginName,
+    getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
   const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined
@@ -305,6 +313,7 @@ export function useSettings({
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
       ...(models ? { models } : {}),
+      ...(countNotes ? { countNotes } : {}),
     }),
     reportError,
   )
@@ -330,7 +339,7 @@ export function useSettings({
     appearance.close()
   }
 
-  const api = {
+  return {
     appearance,
     rest,
     configured,
@@ -340,5 +349,4 @@ export function useSettings({
     start,
     close,
   }
-  return api
 }

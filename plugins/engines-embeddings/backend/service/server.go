@@ -2,12 +2,9 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"os"
@@ -18,17 +15,13 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
-)
-
-const (
-	modelEmbedding3Small           = "text-embedding-3-small"
-	modelOpenRouterEmbedding3Small = "openai/text-embedding-3-small"
 )
 
 type embeddingServer struct {
@@ -48,13 +41,15 @@ type embeddingServer struct {
 
 	chunkTokens int
 
-	mu          sync.Mutex
-	embedder    textEmbedder
-	apiKey      string
-	baseURL     string
-	provider    string
-	localName   string
-	remoteModel string
+	mu        sync.Mutex
+	embedder  textEmbedder
+	localName string
+	source    string
+
+	fetch             *profileFetch
+	connectionProfile *connection.EmbeddingProfile
+	models            modelClient
+	newModels         func() (modelClient, error)
 
 	profile      performance.Profile
 	isProfileSet bool
@@ -71,9 +66,6 @@ type textEmbedder interface {
 
 // openEmbedder loads the model a server embeds with.
 type openEmbedder func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error)
-
-// providerLocal is the provider that runs the model on this machine.
-const providerLocal = "local"
 
 // envMockML names the variable that selects the mock embedder for automated tests.
 const envMockML = "NUMEN_MOCK_ML"
@@ -113,40 +105,21 @@ func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo,
 	return engine.MockEmbedder{LogPath: s.mockLog}, nil
 }
 
-func (s *embeddingServer) updateConfig(values map[string]string, secrets server.Secrets) {
+func (s *embeddingServer) updateConfig(values map[string]string, _ server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.applyProfileLocked(performance.Read(values))
 	s.loadProfilesLocked()
-	if provider := values["provider"]; provider != "" {
-		s.provider = provider
-	}
-	model := values["model"]
-	if model != "" && !s.profiles.IsLocal(model) {
-		s.remoteModel = model
-	}
-	if s.provider != providerLocal && s.provider != "" && s.remoteModel == "" {
-		s.remoteModel = getDefaultRemoteModel(s.provider)
-	}
+	s.source = readSource(values)
+	s.resetConnectionLocked()
 	s.modelInfo.MinChunkLength = readMinChunkLength(values)
 	if _, ok := values[settingChunkTokens]; ok {
 		s.chunkTokens = ReadChunkTokens(values)
 	}
-	if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
-		s.apiKey = getFirstValue(list)
-	}
-	s.baseURL = values["baseUrl"]
-	if s.provider == providerLocal || s.provider == "" {
-		s.updateLocalModelLocked(model)
+	if !s.isConnectionLocked() {
+		s.updateLocalModelLocked(values["model"])
 	}
 	s.refreshModelInfoLocked()
-}
-
-func getFirstValue(list []server.Secret) string {
-	if len(list) == 0 {
-		return ""
-	}
-	return list[0].Value
 }
 
 func (s *embeddingServer) loadProfilesLocked() {
@@ -168,28 +141,13 @@ func (s *embeddingServer) refreshModelIdentityLocked() {
 	if s.isMock {
 		return
 	}
-	keep := s.modelInfo
-	if s.provider != providerLocal && s.remoteModel != "" {
-		profile := s.profiles.GetRemote(s.remoteModel)
-		s.modelInfo = engine.ModelInfo{
-			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
-			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
-			ChunkTokens: ClampChunkTokens(s.chunkTokens, profile.GetTokens()),
-			Handling:    profile.GetHandling(),
-		}
-		applyDimensionEnv(&s.modelInfo)
+	if s.isConnectionLocked() {
 		return
 	}
+	keep := s.modelInfo
 	s.modelInfo = s.localInfo
 	s.modelInfo.Concurrency = keep.Concurrency
 	s.modelInfo.MinChunkLength = keep.MinChunkLength
-}
-
-func getDefaultRemoteModel(provider string) string {
-	if provider == "openrouter" {
-		return modelOpenRouterEmbedding3Small
-	}
-	return modelEmbedding3Small
 }
 
 func (s *embeddingServer) updateLocalModelLocked(model string) {
@@ -231,7 +189,7 @@ func (s *embeddingServer) resolveLocalModel(model string) (engine.ModelInfo, eng
 	if model == "" {
 		model = os.Getenv("NUMEN_EMBEDDING_MODEL")
 	}
-	if model == "" || s.profiles.IsRemote(model) {
+	if model == "" {
 		model = engine.DefaultModel
 	}
 	profile, err := s.profiles.GetLocal(model)
@@ -268,12 +226,9 @@ func newEmbeddingServer() *embeddingServer {
 			chunkTokens: defaultChunkTokens,
 			mu:          sync.Mutex{},
 			embedder:    nil,
-			apiKey:      "",
-			baseURL:     "",
-			provider:    "",
 			localName:   info.Name,
-			remoteModel: "",
-			profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
+			source:      sourceLocal, fetch: nil, connectionProfile: nil, models: nil, newModels: newModelClient,
+			profile: performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 		}
 		s.open = s.openMockModel
 		s.loadProfilesLocked()
@@ -288,11 +243,8 @@ func newEmbeddingServer() *embeddingServer {
 		chunkTokens: defaultChunkTokens,
 		mu:          sync.Mutex{},
 		embedder:    nil,
-		apiKey:      "",
-		baseURL:     "",
-		provider:    "",
-		remoteModel: "",
-		profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
+		source:      sourceLocal, fetch: nil, connectionProfile: nil, models: nil, newModels: newModelClient,
+		profile: performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 	}
 	s.loadProfilesLocked()
 	s.updateLocalModelLocked("")
@@ -358,8 +310,12 @@ func applyRuntimeEnv(local *engine.LocalModel) {
 	}
 }
 
-func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {
+func (s *embeddingServer) GetModelInfo(ctx context.Context) (embedding.ModelInfo, error) {
 	s.mu.Lock()
+	if s.isConnectionLocked() {
+		s.mu.Unlock()
+		return s.getConnectionModelInfo(ctx)
+	}
 	info := s.modelInfo
 	localErr := s.getLocalErrLocked()
 	s.mu.Unlock()
@@ -368,7 +324,7 @@ func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, 
 	}
 	passes := info.Concurrency
 	if passes <= 0 {
-		passes = 4
+		passes = defaultPasses
 	}
 	return embedding.ModelInfo{
 		Name:           info.Name,
@@ -398,7 +354,7 @@ func (s *embeddingServer) getLocalErr() error {
 }
 
 func (s *embeddingServer) getLocalErrLocked() error {
-	if s.isMock || (s.provider != providerLocal && s.provider != "") {
+	if s.isMock || s.isConnectionLocked() {
 		return nil
 	}
 	return s.localErr
@@ -414,26 +370,25 @@ func (s *embeddingServer) applyHandling(role embedding.Role, texts []string) []s
 	return handling.Apply(engine.RoleDocument, texts)
 }
 
+// defaultPasses is the number of batches a model runs in parallel when it reports none.
+const defaultPasses = 4
+
 func getIndexShare(passes int) int {
 	return max(passes-1, 1)
 }
 
-// EmbedTexts returns one vector per text. A local model reads the texts with the prefix its profile
-// names for the role; a remote service reads them as they are.
+// EmbedTexts returns one vector per text, made for the role. A local model reads the texts with the
+// prefix its profile names for the role; a connection is given the prefixes of its profile.
 func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
 
-	key, baseURL := s.getService()
-	if key != "" && baseURL != "" {
-		return s.embedRemoteTexts(ctx, key, baseURL, texts)
-	}
-	if s.isRemoteProvider() {
-		if baseURL == "" {
-			return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding service URL is not configured"))
-		}
-		return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding API key is not configured"))
+	s.mu.Lock()
+	isConnection := s.isConnectionLocked()
+	s.mu.Unlock()
+	if isConnection {
+		return s.embedThroughConnection(ctx, role, texts)
 	}
 
 	if err := s.getLocalErr(); err != nil {
@@ -463,122 +418,15 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, t
 	return denseVectors, nil
 }
 
-func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL string, texts []string) ([][]float32, error) {
-	model := s.getModelName()
-	vectors := make([][]float32, len(texts))
-	for i, t := range texts {
-		vec, err := computeServiceVector(ctx, key, baseURL, model, t)
-		if err != nil {
-			// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only error message string"
-			return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("service text %d: %w", i, err))
-		}
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="computeServiceVector returns non-empty vector on nil error"
-		if len(vec) > 0 {
-			s.mu.Lock()
-			s.modelInfo.Dimensions = len(vec)
-			s.mu.Unlock()
-		}
-		vectors[i] = vec
-	}
-	return vectors, nil
-}
-
-type openAIEmbeddingRequest struct {
-	Input []string `json:"input"`
-	Model string   `json:"model"`
-}
-
-type openAIEmbeddingResponse struct {
-	Data []struct {
-		Embedding []float32 `json:"embedding"`
-		Index     int       `json:"index"`
-	} `json:"data"`
-}
-
-func (s *embeddingServer) isRemoteProvider() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return !s.isMock && s.provider != "" && s.provider != providerLocal
-}
-
-func (s *embeddingServer) getService() (key, baseURL string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	switch {
-	case s.isMock || s.provider == providerLocal:
-		return "", ""
-	case s.provider == "openai":
-		return s.apiKey, "https://api.openai.com/v1"
-	case s.provider == "openrouter":
-		return s.apiKey, "https://openrouter.ai/api/v1"
-	}
-	baseURL = s.baseURL
-	if baseURL == "" {
-		baseURL = os.Getenv("NUMEN_EMBEDDING_URL")
-	}
-	return s.apiKey, baseURL
-}
-
-func (s *embeddingServer) getModelName() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.modelInfo.Name
-}
-
-func computeServiceVector(ctx context.Context, key, baseURL, model, text string) (vector []float32, err error) {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="HTTP client timeout constant"
-	client := &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 30 * time.Second}
-	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
-	reqBody, err := json.Marshal(openAIEmbeddingRequest{
-		Input: []string{text},
-		Model: model,
-	})
-	// gomutants:disable-next-line BRANCH_IF reason="marshaling string struct cannot fail"
-	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="marshaling string struct cannot fail"
-		return nil, err
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+key)
-
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="http response body close does not fail in memory"
-	defer func() { err = errors.Join(err, resp.Body.Close()) }()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	// gomutants:disable-next-line BRANCH_IF reason="unreadable body leaves respBytes empty and fails status or unmarshal"
-	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="unreadable body leaves respBytes empty and fails status or unmarshal"
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d: %s", resp.StatusCode, string(respBytes))
-	}
-
-	var openAIResp openAIEmbeddingResponse
-	// gomutants:disable-next-line BRANCH_IF reason="invalid json leaves openAIResp.Data empty and fails length check below"
-	if err := json.Unmarshal(respBytes, &openAIResp); err != nil {
-		return nil, err
-	}
-	if len(openAIResp.Data) > 0 && len(openAIResp.Data[0].Embedding) > 0 {
-		return openAIResp.Data[0].Embedding, nil
-	}
-
-	return nil, fmt.Errorf("no embedding returned by service")
-}
-
 // Mount registers the embedding service on s, with the model the environment configures. The
-// embedder closes with s.
+// embedder closes with s. The model API of the host is the one the environment names.
 func Mount(s *server.Server) error {
+	return mount(s, newModelClient)
+}
+
+func mount(s *server.Server, newModels func() (modelClient, error)) error {
 	embedSrv := newEmbeddingServer()
+	embedSrv.newModels = newModels
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
@@ -587,7 +435,10 @@ func Mount(s *server.Server) error {
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
+// from the variables a launched process of the plugin is given. The model API of the host is the one
+// those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+	return server.NewLinkedHandler(vars, func(s *server.Server) error {
+		return mount(s, func() (modelClient, error) { return connection.NewClientFromVars(vars) })
+	})
 }

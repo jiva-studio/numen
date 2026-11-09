@@ -54,6 +54,9 @@ export function useRowDrafts(source: RowDraftsSource) {
   return {
     drafts,
     write,
+    reset: (): void => {
+      drafts.value = createDrafts(readRows(source.getValue()))
+    },
     add: (): void => {
       drafts.value = [
         ...drafts.value,
