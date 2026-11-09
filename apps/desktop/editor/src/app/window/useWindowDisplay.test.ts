@@ -174,6 +174,7 @@ describe('the stream of changes', () => {
   it('says what changed, and waits for whatever is drawn from it', async () => {
     const core = fake({
       watchVaultChanges: async function* () {
+        yield { paths: [], shouldReload: false, renamed: [] }
         yield { paths: ['Somewhere/Else.md'], shouldReload: false, renamed: [] }
       },
     })
@@ -181,12 +182,13 @@ describe('the stream of changes', () => {
 
     await one.window.follow()
 
-    expect(one.changed).toStrictEqual(['Somewhere/Else.md'])
+    expect(one.changed).toStrictEqual(['', 'Somewhere/Else.md'])
   })
 
   it('says a reload is empty at all, so everything reads again', async () => {
     const core = fake({
       watchVaultChanges: async function* () {
+        yield { paths: [], shouldReload: false, renamed: [] }
         yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
       },
     })
@@ -194,12 +196,13 @@ describe('the stream of changes', () => {
 
     await one.window.follow()
 
-    expect(one.changed).toStrictEqual([''])
+    expect(one.changed).toStrictEqual(['', ''])
   })
 
   it('says where a note went, for whatever is showing it to follow', async () => {
     const core = fake({
       watchVaultChanges: async function* () {
+        yield { paths: [], shouldReload: false, renamed: [] }
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
@@ -207,7 +210,7 @@ describe('the stream of changes', () => {
 
     await one.window.follow()
 
-    expect(one.changed).toStrictEqual(['Note.md → Renamed.md'])
+    expect(one.changed).toStrictEqual(['', 'Note.md → Renamed.md'])
   })
 
   it('asks where the vault opens again when that is the note that moved', async () => {
