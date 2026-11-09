@@ -1011,6 +1011,10 @@ func getRefusal(from, to string) string {
 		if !isAssembled(to) {
 			return "the composition root assembles the core and does none of its work"
 		}
+	case isUnder(from, "domain"):
+		if !isUnder(to, "domain") {
+			return "a domain package imports the standard library, the notes domain and the domain packages, and nothing else of the core"
+		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
 	case strings.HasPrefix(from, "internal/test"):
 	default:
@@ -1031,7 +1035,7 @@ func isAmong(these []string, pkg string) bool {
 }
 
 func isAssembled(to string) bool {
-	return isUnder(to, "container") || to == "domain" || isUnder(to, "port") ||
+	return isUnder(to, "container") || isUnder(to, "domain") || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
@@ -1097,6 +1101,23 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/adapterlib/onnxruntime", "usecase/note", true},
 		{"internal/adapterlib/onnxruntime", "internal/adapter/filesystem", true},
 		{"internal/adapterlib/onnxruntime", "port", false},
+
+		// A domain package of the core imports no other layer of it, and every layer
+		// above it may import the domain.
+		{"domain/plugin", "port", true},
+		{"domain/plugin", "port/pluginport", true},
+		{"domain/plugin", "usecase/note", true},
+		{"domain/plugin", "adapter/index", true},
+		{"domain/plugin", "internal/adapter/trash", true},
+		{"domain/plugin", "internal/text", true},
+		{"domain/plugin", "container", true},
+		{"domain/plugin", "domain/settings", false},
+		{"domain/settings/sub", "domain/settings", false},
+		{"container", "domain/plugin", false},
+		{"usecase/note", "domain/plugin", false},
+		{"port/pluginport", "domain/plugin", false},
+		{"adapter/window/editor", "domain/plugin", false},
+		{"internal/adapter/plugin", "domain/plugin", false},
 
 		// Fixtures build the real adapters.
 		{"internal/testsupport", "adapter/index", false},
