@@ -1,4 +1,4 @@
-/** The layout of the bar slots as the window reads and writes it. Every plugin here is invented. */
+/** The layout of the slots as the window reads and writes it. Every plugin here is invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { createWindowSlotLayout, getLayoutEdits } from './windowSlotLayout'

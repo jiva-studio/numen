@@ -45,17 +45,40 @@ export function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
 }
 
-/** The items of a slot that is not a bar: its groups in order, a separator between two of them. */
-export function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
-  const groups = new Map<string, Placed[]>()
+/**
+ * The entries of a slot in drawing order: those its layout lists, in the order of their first place
+ * in the list, then those placed there that no slot lists, by group, order and plugin id.
+ */
+export function sortPlaced(
+  placed: readonly Placed[],
+  getLayoutIndex: (entry: DeclaredSlotEntry) => number | undefined,
+): Placed[] {
+  const inLayout: { readonly one: Placed; readonly index: number }[] = []
+  const outsideLayout: Placed[] = []
   for (const one of keepFirstOfEachCommand(placed)) {
-    const name = one.entry.group ?? ''
-    groups.set(name, [...(groups.get(name) ?? []), one])
+    const index = getLayoutIndex(one.entry)
+    if (index === undefined) outsideLayout.push(one)
+    else inLayout.push({ one, index })
   }
+  return [
+    ...inLayout
+      .sort((a, b) => a.index - b.index || compareInSlot(a.one, b.one))
+      .map(({ one }) => one),
+    ...outsideLayout.sort(compareInSlot),
+  ]
+}
+
+/** The items of a slot: its entries in drawing order, with a separator between two neighbours of different groups. */
+export function layOut(slot: string, ordered: readonly Placed[]): SlotItem[] {
   const items: SlotItem[] = []
-  for (const name of [...groups.keys()].sort(compareGroups)) {
-    if (items.length > 0) items.push({ kind: 'separator', key: `${slot}/separator/${name}` })
-    items.push(...(groups.get(name) ?? []).sort(compareInGroup).map((one) => one.item))
-  }
+  let separators = 0
+  ordered.forEach((one, index) => {
+    const previous = ordered[index - 1]
+    if (previous && (previous.entry.group ?? '') !== (one.entry.group ?? '')) {
+      items.push({ kind: 'separator', key: `${slot}/separator/${separators}` })
+      separators += 1
+    }
+    items.push(one.item)
+  })
   return items
 }

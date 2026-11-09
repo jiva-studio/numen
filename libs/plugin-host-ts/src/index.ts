@@ -66,7 +66,6 @@ export {
   type SlotRegistryDeps,
 } from './slots/slotRegistry'
 export {
-  isBarSlot,
   moveSlotEntry,
   readSlotLayout,
   type SlotLayout,

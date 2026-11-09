@@ -31,7 +31,7 @@ import (
 // AgentAt is the key of the agent section in the settings file.
 const AgentAt = "agent"
 
-// layoutAt and layoutSlotsAt are the path of the bar layout under the owner app.
+// layoutAt and layoutSlotsAt are the path of the slot layout under the owner app.
 const (
 	layoutAt      = "layout"
 	layoutSlotsAt = "slots"

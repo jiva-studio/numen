@@ -1,43 +1,60 @@
 /**
- * The user's arrangement of the bar slots, kept in the settings at `app.layout.slots`: the key of
- * an entry, the layout a settings value holds, and the lists a drop of an entry writes.
+ * The user's arrangement of the slots, kept in the settings at `app.layout.slots`: the key of an
+ * entry, the layout a settings value holds, and the lists a drop of an entry writes.
  */
-import { BAR_SLOTS, type BarSlotName } from '@numen/plugin-sdk'
+import { SLOT, type SlotName } from '@numen/plugin-sdk'
 import type { DeclaredSlotEntry } from './slotRegistry'
 
-/** The user's arrangement of the bar slots: per bar slot, the keys of its entries in drawing order. */
-export type SlotLayout = Readonly<Partial<Record<BarSlotName, readonly string[]>>>
+/** The user's arrangement of the slots: per slot, the keys of its entries in drawing order. */
+export type SlotLayout = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
-/** The lists of the bar slots a drop changes, each the whole new list of its slot. */
-export type SlotLayoutChange = Readonly<Partial<Record<BarSlotName, readonly string[]>>>
+/** The lists of the slots a drop changes, each the whole new list of its slot. */
+export type SlotLayoutChange = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
 /** One drop: the entry, the slot it is drawn in, the slot it is dropped in, and the key it is dropped before. */
 export interface SlotMove {
   readonly key: string
-  readonly from: BarSlotName
-  readonly to: BarSlotName
+  readonly from: SlotName
+  readonly to: SlotName
   readonly before?: string | undefined
 }
 
-/** Whether a slot name is one of the bar slots. */
-export const isBarSlot = (slot: string): slot is BarSlotName =>
-  (BAR_SLOTS as readonly string[]).includes(slot)
+const SLOT_NAMES: readonly SlotName[] = Object.values(SLOT)
 
-/** The key of an entry in the layout, `<plugin id>/<view or command id>`; undefined for a submenu. */
+const isSlotName = (slot: string): slot is SlotName => (SLOT_NAMES as readonly string[]).includes(slot)
+
+/** The key of an entry in the layout, `<home slot>|<plugin id>/<view or command id>`; undefined for a submenu. */
 export function getLayoutKey(entry: DeclaredSlotEntry): string | undefined {
   const id = entry.command ?? entry.view
-  return id ? `${entry.pluginId}/${id}` : undefined
+  return id ? `${entry.slot}|${entry.pluginId}/${id}` : undefined
+}
+
+/** Where a key of the layout is: the first slot, in `slots.json` order, that lists it, and its first index there. */
+export interface LayoutPlace {
+  readonly slot: SlotName
+  readonly index: number
+}
+
+/** The place of each key in the layout. */
+export function findLayoutPlaces(layout: SlotLayout): ReadonlyMap<string, LayoutPlace> {
+  const places = new Map<string, LayoutPlace>()
+  for (const slot of SLOT_NAMES) {
+    ;(layout[slot] ?? []).forEach((key, index) => {
+      if (!places.has(key)) places.set(key, { slot, index })
+    })
+  }
+  return places
 }
 
 const isKeyList = (value: unknown): value is readonly string[] =>
   Array.isArray(value) && value.every((one) => typeof one === 'string')
 
-/** The layout a settings value holds. A slot that is not a bar slot and a list that is not a list of strings are left out. */
+/** The layout a settings value holds. A slot that \`slots.json\` does not declare and a list that is not a list of strings are left out. */
 export function readSlotLayout(value: unknown): SlotLayout {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return {}
-  const layout: Partial<Record<BarSlotName, readonly string[]>> = {}
+  const layout: Partial<Record<SlotName, readonly string[]>> = {}
   for (const [slot, keys] of Object.entries(value)) {
-    if (isBarSlot(slot) && isKeyList(keys)) layout[slot] = [...keys]
+    if (isSlotName(slot) && isKeyList(keys)) layout[slot] = [...keys]
   }
   return layout
 }
@@ -84,24 +101,24 @@ function mergeStoredKeys(
 /** The lists a drop writes; empty when the drop leaves every slot as it is drawn. */
 export function moveSlotEntry(
   layout: SlotLayout,
-  drawn: Readonly<Record<BarSlotName, readonly string[]>>,
+  drawn: Readonly<Partial<Record<SlotName, readonly string[]>>>,
   move: SlotMove,
 ): SlotLayoutChange {
   const { key, from, to, before } = move
-  const removed = drawn[from].filter((one) => one !== key)
-  const inserted = insertBefore(from === to ? removed : drawn[to], key, before)
-  if (from === to && isSameList(inserted, drawn[from])) return {}
+  const removed = (drawn[from] ?? []).filter((one) => one !== key)
+  const inserted = insertBefore(from === to ? removed : (drawn[to] ?? []), key, before)
+  if (from === to && isSameList(inserted, drawn[from] ?? [])) return {}
 
-  const orders: Partial<Record<BarSlotName, readonly string[]>> =
+  const orders: Partial<Record<SlotName, readonly string[]>> =
     from === to ? { [to]: inserted } : { [from]: removed, [to]: inserted }
-  const change: Partial<Record<BarSlotName, readonly string[]>> = {}
-  for (const slot of BAR_SLOTS) {
+  const change: Partial<Record<SlotName, readonly string[]>> = {}
+  for (const slot of SLOT_NAMES) {
     const next = orders[slot]
     if (next === undefined) continue
     const list = mergeStoredKeys(
       layout[slot] ?? [],
       next,
-      (one) => one === key || drawn[slot].includes(one),
+      (one) => one === key || (drawn[slot] ?? []).includes(one),
     )
     if (!isSameList(list, layout[slot])) change[slot] = list
   }

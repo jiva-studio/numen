@@ -106,6 +106,10 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	raw, err = clearNullLayoutSections(raw, setting.At)
+	if err != nil {
+		return nil, err
+	}
 	return replaceValueAt(raw, setting.At, value, "")
 }
 

@@ -1,5 +1,5 @@
 /**
- * The layout of the bar slots as the window keeps it: read from the settings at `app.layout.slots`
+ * The layout of the slots as the window keeps it: read from the settings at `app.layout.slots`
  * for the plugin host, and written there in one write per drop.
  */
 import { computed, shallowRef } from 'vue'

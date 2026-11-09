@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -10,27 +11,28 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// keyLayout is the section of the owner app that holds the user's arrangement of the bars.
+// keyLayout is the section of the owner app that holds the user's arrangement of the slots.
 const keyLayout = "layout"
 
-// keyLayoutSlots is the member of the layout that maps a bar slot to its entries.
+// keyLayoutSlots is the member of the layout that maps a slot to its entries.
 const keyLayoutSlots = "slots"
 
-// Layout is the user's arrangement of the bar slots. The window writes it when the user moves an
-// entry of the title bar or the status bar by Cmd/Ctrl+drag.
+// Layout is the user's arrangement of the slots. The window writes it when the user moves an
+// entry of a slot by Cmd/Ctrl+drag.
 //
 //numen:settings
 type Layout struct {
-	// Slots maps a bar slot to the keys of its entries in drawing order; a key is
-	// <plugin id>/<view or command id>. An entry no slot lists is drawn where its plugin places it.
+	// Slots maps a slot to the keys of its entries in drawing order; a key is
+	// <home slot>|<plugin id>/<view or command id>, the home slot being the slot its manifest places
+	// the entry in. An entry no slot lists is drawn where its plugin places it.
 	Slots map[string][]string `json:"slots,omitempty"`
 }
 
 var errNotAKeyList = errors.New("expected a list of entry keys")
 
-// readLayout returns the part of a layout in the file that is in force. A slot that is not a bar slot,
-// a value that is not a list of strings, and a key that names no owner are left out, each with a
-// notice.
+// readLayout returns the part of a layout in the file that is in force. A slot that slots.json does
+// not declare, a value that is not a list of strings, and a key that names no home slot or owner
+// are left out, each with a notice.
 func (f *File) readLayout(value any) Layout {
 	label := OwnerApp + "." + keyLayout
 	object, isObject := value.(map[string]any)
@@ -66,8 +68,8 @@ func (f *File) readLayoutSlots(label string, value any) map[string][]string {
 }
 
 func (f *File) readLayoutList(label, slot string, value any) ([]string, bool) {
-	if !manifest.IsBarSlot(slot) {
-		f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", label, fmt.Errorf("%w: not a bar slot", ErrUndeclared)))
+	if !manifest.IsSlot(slot) {
+		f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", label, fmt.Errorf("%w: not a slot", ErrUndeclared)))
 		return nil, false
 	}
 	list, err := readKeyList(value)
@@ -87,7 +89,7 @@ func (f *File) readLayoutList(label, slot string, value any) ([]string, bool) {
 }
 
 // checkLayoutWrite returns why a value is not one the path under app.layout takes: the layout
-// object with only slots, the map of bar slots, or the list of one bar slot. A list holds valid keys,
+// object with only slots, the map of slots, or the list of one slot. A list holds valid keys,
 // none twice.
 func checkLayoutWrite(path []string, value any) error {
 	switch {
@@ -97,7 +99,7 @@ func checkLayoutWrite(path []string, value any) error {
 		return ErrUndeclared
 	case len(path) == 1:
 		return checkLayoutSlots(value)
-	case len(path) == 2 && manifest.IsBarSlot(path[1]):
+	case len(path) == 2 && manifest.IsSlot(path[1]):
 		return checkLayoutList(value)
 	}
 	return ErrUndeclared
@@ -131,8 +133,8 @@ func checkLayoutSlots(value any) error {
 		return fmt.Errorf("%w: expected an object", ErrWrongType)
 	}
 	for slot, list := range slots {
-		if !manifest.IsBarSlot(slot) {
-			return fmt.Errorf("%w: %s is not a bar slot", ErrUndeclared, slot)
+		if !manifest.IsSlot(slot) {
+			return fmt.Errorf("%w: %s is not a slot", ErrUndeclared, slot)
 		}
 		if err := checkLayoutList(list); err != nil {
 			return err
@@ -176,12 +178,37 @@ func readKeyList(value any) ([]string, error) {
 	return keys, nil
 }
 
-// checkLayoutKey returns why a key names no entry: a key is <owner>/<id>, the owner being app or a
-// plugin id. A plugin that is not installed is a valid owner.
+// checkLayoutKey returns why a key names no entry: a key is <home slot>|<owner>/<id>, the owner
+// being app or a plugin id. A plugin that is not installed is a valid owner.
 func checkLayoutKey(key string) error {
-	owner, id, found := strings.Cut(key, "/")
-	if !found || id == "" || (owner != OwnerApp && !manifest.IsValidID(owner)) {
-		return fmt.Errorf("%w: %q is not <plugin id>/<id>", ErrWrongType, key)
+	home, entry, hasHome := strings.Cut(key, "|")
+	owner, id, hasOwner := strings.Cut(entry, "/")
+	if !hasHome || home == "" || !hasOwner || id == "" || (owner != OwnerApp && !manifest.IsValidID(owner)) {
+		return fmt.Errorf("%w: %q is not <home slot>|<plugin id>/<id>", ErrWrongType, key)
 	}
 	return nil
+}
+
+// clearNullLayoutSections replaces a null on the way to a layout setting with an empty object, so
+// the setting can be written inside it. A null there holds no arrangement, as no section does.
+func clearNullLayoutSections(raw []byte, at []string) ([]byte, error) {
+	if len(at) < 3 || at[0] != OwnerApp || at[1] != keyLayout {
+		return raw, nil
+	}
+	var root map[string]any
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return nil, err
+	}
+	for length := 2; length < len(at); length++ {
+		value, found := lookupPath(root, at[:length])
+		if !found || value != nil {
+			continue
+		}
+		patched, err := replaceValueAt(raw, at[:length], []byte("{}"), "")
+		if err != nil {
+			return nil, err
+		}
+		raw = patched
+	}
+	return raw, nil
 }

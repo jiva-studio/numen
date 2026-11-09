@@ -792,11 +792,11 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
-/** The Cmd/Ctrl+drag of the bar entries, over the slots of the plugin host and the layout in the settings. */
+/** The Cmd/Ctrl+drag of the slot entries, over the slots of the plugin host and the layout in the settings. */
 const createWindowSlotDrag = (base: WindowCore) =>
   createSlotDrag({
     isMac: () => base.frame.platform.value === 'darwin',
-    findLayoutKey: (itemKey) => base.pluginHost.slots.findLayoutKey(itemKey),
+    findLayoutKey: (itemKey, slot) => base.pluginHost.slots.findLayoutKey(itemKey, slot),
     listLayoutKeys: (slot) => base.pluginHost.slots.listLayoutKeys(slot),
     getLayout: base.windowSlots.layout.getLayout,
     writeLayout: base.windowSlots.layout.writeLayout,

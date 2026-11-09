@@ -1,23 +1,22 @@
 /**
- * The Cmd/Ctrl+drag of the entries of the bars. A press with the modifier on an entry the bar plugins
- * mark starts a press; past the threshold it is a drag, and a drop on a bar slot writes the lists the
- * move changes in one write. Every other press is left to the page.
+ * The Cmd/Ctrl+drag of the entries of the slots. A press with the modifier on an entry the plugins
+ * mark starts a press; past the threshold it is a drag, and a drop on a marked slot writes the lists
+ * the move changes in one write. Every other press is left to the page.
  */
 import { computed, onScopeDispose, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { browserClock, measureRect, usePressDrag, type Clock, type Position } from '@numen/ui'
 import {
-  BAR_SLOTS,
+  SLOT,
   SLOT_ATTRIBUTE,
   SLOT_ENTRY_ATTRIBUTE,
-  isBarSlot,
   moveSlotEntry,
-  type BarSlotName,
+  type SlotName,
   type SlotLayout,
   type SlotLayoutChange,
 } from '@numen/plugin-host'
 import { findDropPlace, type EntryBox } from '../lib/dropPlace'
 
-/** The attribute the root element of the page carries while a bar entry is dragged. */
+/** The attribute the root element of the page carries while a slot entry is dragged. */
 export const DRAGGING_ATTRIBUTE = 'data-numen-slot-dragging'
 
 /** How far, in pixels, the pointer moves before a press becomes a drag. */
@@ -25,8 +24,8 @@ const DRAG_THRESHOLD = 4
 
 export interface SlotDragDeps {
   readonly isMac: () => boolean
-  readonly findLayoutKey: (itemKey: string) => string | undefined
-  readonly listLayoutKeys: (slot: BarSlotName) => readonly string[]
+  readonly findLayoutKey: (itemKey: string, slot: SlotName) => string | undefined
+  readonly listLayoutKeys: (slot: SlotName) => readonly string[]
   readonly getLayout: () => SlotLayout
   readonly writeLayout: (change: SlotLayoutChange) => Promise<void>
   readonly getClock?: () => Clock
@@ -49,21 +48,23 @@ export interface SlotDragState {
 /** The entry a press holds: its layout key, the slot it is drawn in and its title. */
 interface PressedEntry {
   readonly key: string
-  readonly from: BarSlotName
+  readonly from: SlotName
   readonly label: string
 }
 
 interface SlotDropTarget {
-  readonly slot: BarSlotName
+  readonly slot: SlotName
   readonly before: string | undefined
   readonly marker: SlotDropMarker
 }
 
-const findBarSlot = (element: Element | null): { element: Element; slot: BarSlotName } | null => {
+const SLOT_NAMES: readonly string[] = Object.values(SLOT)
+
+const findSlot = (element: Element | null): { element: Element; slot: SlotName } | null => {
   const slotElement = element?.closest(`[${SLOT_ATTRIBUTE}]`)
   const slot = slotElement?.getAttribute(SLOT_ATTRIBUTE)
-  if (!slotElement || !slot || !isBarSlot(slot)) return null
-  return { element: slotElement, slot }
+  if (!slotElement || !slot || !SLOT_NAMES.includes(slot)) return null
+  return { element: slotElement, slot: slot as SlotName }
 }
 
 const getEntryLabel = (element: Element, key: string): string => {
@@ -83,32 +84,42 @@ type LayoutDeps = Pick<
 const findPressedEntry = (target: EventTarget | null, deps: LayoutDeps): PressedEntry | null => {
   if (!(target instanceof Element)) return null
   const entry = target.closest(`[${SLOT_ENTRY_ATTRIBUTE}]`)
-  const bar = findBarSlot(entry)
-  const key = deps.findLayoutKey(entry?.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '')
-  if (!entry || !bar || key === undefined) return null
-  return { key, from: bar.slot, label: getEntryLabel(entry, key) }
+  const found = findSlot(entry)
+  if (!entry || !found) return null
+  const key = deps.findLayoutKey(entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', found.slot)
+  if (key === undefined) return null
+  return { key, from: found.slot, label: getEntryLabel(entry, key) }
 }
 
-const listEntryBoxes = (slotElement: Element, dragged: string, deps: LayoutDeps): EntryBox[] =>
+const listEntryBoxes = (
+  slotElement: Element,
+  slot: SlotName,
+  dragged: string,
+  deps: LayoutDeps,
+): EntryBox[] =>
   [...slotElement.querySelectorAll(`[${SLOT_ENTRY_ATTRIBUTE}]`)].flatMap((element) => {
-    const key = deps.findLayoutKey(element.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '')
+    const key = deps.findLayoutKey(element.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', slot)
     if (key === undefined || key === dragged) return []
     const box = measureRect(element)
     return [{ key, left: box.left, right: box.right }]
   })
 
-/** The bar slot under the point and the place in it the entry goes to; null outside the bar slots. */
+/** The slot under the point and the place in it the entry goes to; null outside the marked slots. */
 const findDropTarget = (
   entry: PressedEntry,
   point: Position,
   deps: LayoutDeps,
 ): SlotDropTarget | null => {
-  const bar = findBarSlot(document.elementFromPoint(point.x, point.y))
-  if (!bar) return null
-  const box = measureRect(bar.element)
-  const place = findDropPlace(listEntryBoxes(bar.element, entry.key, deps), point.x, box.left)
+  const found = findSlot(document.elementFromPoint(point.x, point.y))
+  if (!found) return null
+  const box = measureRect(found.element)
+  const place = findDropPlace(
+    listEntryBoxes(found.element, found.slot, entry.key, deps),
+    point.x,
+    box.left,
+  )
   return {
-    slot: bar.slot,
+    slot: found.slot,
     before: place.before,
     marker: { x: place.x, top: box.top, height: box.height },
   }
@@ -116,9 +127,10 @@ const findDropTarget = (
 
 /** Writes the lists a drop changes, in one write; a drop that changes nothing writes nothing. */
 const writeDrop = (entry: PressedEntry, target: SlotDropTarget, deps: LayoutDeps): void => {
-  const drawnKeys = Object.fromEntries(
-    BAR_SLOTS.map((slot) => [slot, deps.listLayoutKeys(slot)]),
-  ) as Record<BarSlotName, readonly string[]>
+  const drawnKeys: Partial<Record<SlotName, readonly string[]>> = {
+    [entry.from]: deps.listLayoutKeys(entry.from),
+    [target.slot]: deps.listLayoutKeys(target.slot),
+  }
   const change = moveSlotEntry(deps.getLayout(), drawnKeys, {
     key: entry.key,
     from: entry.from,
@@ -150,6 +162,7 @@ function createClickBlocker() {
 }
 
 interface DocumentListeners {
+  readonly blur: () => void
   readonly pointerdown: (event: PointerEvent) => void
   readonly keydown: (event: KeyboardEvent) => void
   readonly click: (event: MouseEvent) => void
@@ -157,10 +170,12 @@ interface DocumentListeners {
 
 /** Adds the listeners to the document in the capture phase, before any element of the page, until disposal. */
 const listenInCapture = (listeners: DocumentListeners): void => {
+  window.addEventListener('blur', listeners.blur)
   document.addEventListener('pointerdown', listeners.pointerdown, true)
   document.addEventListener('keydown', listeners.keydown, true)
   document.addEventListener('click', listeners.click, true)
   onScopeDispose(() => {
+    window.removeEventListener('blur', listeners.blur)
     document.removeEventListener('pointerdown', listeners.pointerdown, true)
     document.removeEventListener('keydown', listeners.keydown, true)
     document.removeEventListener('click', listeners.click, true)
@@ -172,6 +187,10 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
   const isCancelled = shallowRef(false)
   const clicks = createClickBlocker()
   const endDrag = (): void => root.removeAttribute(DRAGGING_ATTRIBUTE)
+  const cancelDrag = (): void => {
+    isCancelled.value = true
+    endDrag()
+  }
 
   const {
     dragging,
@@ -193,7 +212,11 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
   })
 
   listenInCapture({
+    // The window loses the pointer, and its release, when it loses focus.
+    blur: cancelDrag,
     pointerdown: (event: PointerEvent): void => {
+      // A release that never arrived leaves a drag open; a new press ends it.
+      if (root.hasAttribute(DRAGGING_ATTRIBUTE)) cancelDrag()
       if (event.button !== 0 || !hasDragModifier(event, deps.isMac())) return
       const entry = findPressedEntry(event.target, deps)
       if (!entry) return
@@ -206,8 +229,7 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
       if (event.key !== 'Escape' || !dragging.value?.hasMoved || isCancelled.value) return
       event.preventDefault()
       event.stopPropagation()
-      isCancelled.value = true
-      endDrag()
+      cancelDrag()
     },
     click: clicks.onClick,
   })
