@@ -206,7 +206,9 @@ function guardAgent(
 
 /** The agent of a plugin, whose calls need the permissions the manifest of the plugin declares. */
 export function createPluginAgent(agent: AgentHost, target: PermissionTarget): AgentHost {
-  return guardAgent(agent, (permission, operation) => checkPermission(target, permission, operation))
+  return guardAgent(agent, (permission, operation) =>
+    checkPermission(target, permission, operation),
+  )
 }
 
 function guardBuffers(
