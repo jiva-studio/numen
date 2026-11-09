@@ -300,11 +300,6 @@ func getDisplacedSources(
 }
 
 func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
-	name := domain.Basename(to)
-	if name == domain.Basename(from) {
-		return nil
-	}
-
 	var title string
 	var named bool
 	err := tx.QueryRowContext(ctx, getStatement("note_naming"), vault, from).Scan(&title, &named)
@@ -314,13 +309,11 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	if err != nil {
 		return fmt.Errorf("what the note %s is called: %w", from, err)
 	}
-	displayName := title
-	if !named {
-		displayName = name
-	} else if filed, _ := domain.GetReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
+	displayName, isRenamed := domain.GetNameAfterMove(from, to, title, named)
+	if !isRenamed {
 		return nil
 	}
-	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), displayName, vault, from); err != nil {
+	if err := exec(ctx, tx, "rename_note", domain.FoldName(domain.Basename(to)), displayName, vault, from); err != nil {
 		return err
 	}
 	return exec(ctx, tx, "rename_title", vault, from, displayName)
