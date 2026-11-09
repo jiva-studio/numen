@@ -88,6 +88,7 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 	if err != nil {
 		return nil, err
 	}
+	commandPkgs := findCommandPackages(parsed)
 	localConsts := map[string]string{}
 	for _, decl := range parsed.Decls {
 		gen, ok := decl.(*ast.GenDecl)
@@ -101,7 +102,7 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 			}
 			for i, name := range valSpec.Names {
 				if i < len(valSpec.Values) {
-					if text, ok := resolveValue(valSpec.Values[i], localConsts, sharedConsts); ok {
+					if text, ok := resolveValue(valSpec.Values[i], localConsts, sharedConsts, commandPkgs); ok {
 						localConsts[name.Name] = text
 					}
 				}
@@ -114,11 +115,11 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 		if !ok || fn.Body == nil {
 			continue
 		}
-		registries := findCommandRegistries(fn.Body)
+		registries := findCommandRegistries(fn.Body, commandPkgs)
 		if len(registries) == 0 {
 			continue
 		}
-		rangeKeys := findRangeKeys(fn.Body, localConsts, sharedConsts)
+		rangeKeys := findRangeKeys(fn.Body, localConsts, sharedConsts, commandPkgs)
 		ast.Inspect(fn.Body, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
 			if !ok || len(call.Args) == 0 {
@@ -132,7 +133,7 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 			if !ok || !registries[recv.Name] {
 				return true
 			}
-			for _, id := range resolveCommandIDs(call.Args[0], localConsts, sharedConsts, rangeKeys) {
+			for _, id := range resolveCommandIDs(call.Args[0], localConsts, sharedConsts, rangeKeys, commandPkgs) {
 				found = append(found, registration{File: path, ID: id})
 			}
 			return true
@@ -141,7 +142,23 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 	return found, nil
 }
 
-func findCommandRegistries(body *ast.BlockStmt) map[string]bool {
+func findCommandPackages(parsed *ast.File) map[string]bool {
+	pkgs := map[string]bool{}
+	for _, imp := range parsed.Imports {
+		importPath, ok := stringLiteral(imp.Path)
+		if !ok || !strings.HasSuffix(importPath, "/command") {
+			continue
+		}
+		if imp.Name != nil && imp.Name.Name != "_" && imp.Name.Name != "." {
+			pkgs[imp.Name.Name] = true
+		} else {
+			pkgs["command"] = true
+		}
+	}
+	return pkgs
+}
+
+func findCommandRegistries(body *ast.BlockStmt, commandPkgs map[string]bool) map[string]bool {
 	registries := map[string]bool{}
 	ast.Inspect(body, func(n ast.Node) bool {
 		assign, ok := n.(*ast.AssignStmt)
@@ -158,7 +175,7 @@ func findCommandRegistries(body *ast.BlockStmt) map[string]bool {
 				continue
 			}
 			pkg, ok := sel.X.(*ast.Ident)
-			if !ok || pkg.Name != "command" {
+			if !ok || !commandPkgs[pkg.Name] {
 				continue
 			}
 			if i < len(assign.Lhs) {
@@ -172,7 +189,7 @@ func findCommandRegistries(body *ast.BlockStmt) map[string]bool {
 	return registries
 }
 
-func findRangeKeys(body *ast.BlockStmt, localConsts, sharedConsts map[string]string) map[string][]string {
+func findRangeKeys(body *ast.BlockStmt, localConsts, sharedConsts map[string]string, commandPkgs map[string]bool) map[string][]string {
 	keys := map[string][]string{}
 	ast.Inspect(body, func(n ast.Node) bool {
 		rangeStmt, ok := n.(*ast.RangeStmt)
@@ -193,20 +210,20 @@ func findRangeKeys(body *ast.BlockStmt, localConsts, sharedConsts map[string]str
 			if !ok {
 				continue
 			}
-			if text, ok := resolveValue(kv.Key, localConsts, sharedConsts); ok {
+			if text, ok := resolveValue(kv.Key, localConsts, sharedConsts, commandPkgs); ok {
 				list = append(list, text)
 			} else {
 				list = append(list, "<unreadable>")
 			}
 		}
-		keys[keyIdent.Name] = list
+		keys[keyIdent.Name] = append(keys[keyIdent.Name], list...)
 		return true
 	})
 	return keys
 }
 
-func resolveCommandIDs(expr ast.Expr, localConsts, sharedConsts map[string]string, rangeKeys map[string][]string) []string {
-	if text, ok := resolveValue(expr, localConsts, sharedConsts); ok {
+func resolveCommandIDs(expr ast.Expr, localConsts, sharedConsts map[string]string, rangeKeys map[string][]string, commandPkgs map[string]bool) []string {
+	if text, ok := resolveValue(expr, localConsts, sharedConsts, commandPkgs); ok {
 		return []string{text}
 	}
 	if ident, ok := expr.(*ast.Ident); ok {
@@ -217,7 +234,7 @@ func resolveCommandIDs(expr ast.Expr, localConsts, sharedConsts map[string]strin
 	return []string{""}
 }
 
-func resolveValue(expr ast.Expr, localConsts, sharedConsts map[string]string) (string, bool) {
+func resolveValue(expr ast.Expr, localConsts, sharedConsts map[string]string, commandPkgs map[string]bool) (string, bool) {
 	if text, ok := stringLiteral(expr); ok {
 		return text, true
 	}
@@ -227,7 +244,7 @@ func resolveValue(expr ast.Expr, localConsts, sharedConsts map[string]string) (s
 			return text, true
 		}
 	case *ast.SelectorExpr:
-		if pkg, ok := x.X.(*ast.Ident); ok && pkg.Name == "command" {
+		if pkg, ok := x.X.(*ast.Ident); ok && commandPkgs[pkg.Name] {
 			if text, ok := sharedConsts[x.Sel.Name]; ok {
 				return text, true
 			}
