@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"maps"
 	"strings"
 	"sync"
 	"testing"
@@ -404,9 +405,7 @@ func TestTheChunkSettingsApplyToTheConnection(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(t, host)
 	values := map[string]string{"minChunkLength": "120", "chunkTokens": "20000"}
-	for k, v := range connectionValues() {
-		values[k] = v
-	}
+	maps.Copy(values, connectionValues())
 	srv.updateConfig(values)
 
 	info := getModelInfoOf(t, srv)
