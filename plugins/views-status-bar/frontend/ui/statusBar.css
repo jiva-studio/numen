@@ -56,10 +56,15 @@
   height: 100%;
 }
 
-.status-bar__view:empty {
+/* The shell wraps each view in a display: contents span, so a view that draws nothing is a wrapper
+   whose span is empty. It takes no room, and the bar gap sits only between two views that draw
+   something, also with up to two empty views between them. */
+.status-bar__view:has(> [data-slot-view]:empty) {
   display: none;
 }
 
-.status-bar__view + .status-bar__view {
+.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:not(:has(> [data-slot-view]:empty)) {
   margin-inline-start: var(--numen-bar-gap);
 }
