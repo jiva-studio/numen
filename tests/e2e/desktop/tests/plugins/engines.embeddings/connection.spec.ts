@@ -63,8 +63,9 @@ const chooseConnection = async (settings: Locator, page: Page, name: string) => 
   await settings.getByRole('button', { name: 'Connection', exact: true }).click()
   await page.getByRole('menuitemradio', { name: new RegExp(`^${name}`) }).click()
   await settings.getByRole('button', { name: 'Model', exact: true }).click()
-  await page.getByRole('textbox').last().fill(MODEL)
-  await page.getByRole('textbox').last().press('Enter')
+  const search = page.getByRole('combobox', { name: 'Search models' })
+  await search.fill(MODEL)
+  await search.press('Enter')
 }
 
 const readCoverage = async (page: Page): Promise<{ chunks: number; embedded: number }> => {
