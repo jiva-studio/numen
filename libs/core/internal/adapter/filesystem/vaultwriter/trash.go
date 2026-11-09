@@ -11,6 +11,8 @@ import (
 // EmptyTrash deletes every file and folder under the vault's trash, deepest
 // first, and keeps the trash folder. The paths that could not be deleted are
 // returned relative to the vault; an entry that fails does not stop the others.
+// A folder holding an undeleted entry stays and is not reported itself; a folder
+// that cannot be read is reported as one undeleted path.
 func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -31,11 +33,9 @@ func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err e
 	return deleteFolderContent(ctx, trash, ".", TrashDir)
 }
 
-// deleteFolderContent empties dir of root. A folder holding an undeleted entry
-// stays and is not reported itself.
 func deleteFolderContent(ctx context.Context, root *os.Root, dir, display string) ([]string, error) {
-	entries, err := readFolder(root, dir)
-	if err != nil {
+	entries, isReadable := readFolder(root, dir)
+	if !isReadable {
 		return []string{display}, nil
 	}
 	var undeleted []string
@@ -62,11 +62,12 @@ func deleteFolderContent(ctx context.Context, root *os.Root, dir, display string
 	return undeleted, nil
 }
 
-func readFolder(root *os.Root, dir string) ([]fs.DirEntry, error) {
+func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, isReadable bool) {
 	folder, err := root.Open(dir)
 	if err != nil {
-		return nil, err
+		return nil, false
 	}
-	defer func() { _ = folder.Close() }()
-	return folder.ReadDir(-1)
+	entries, err = folder.ReadDir(-1)
+	closeAndJoin(&err, folder)
+	return entries, err == nil
 }

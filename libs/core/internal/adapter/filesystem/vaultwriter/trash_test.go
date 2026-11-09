@@ -89,7 +89,11 @@ func TestEmptyTrashReportsWhatItCannotDeleteAndGoesOn(t *testing.T) {
 	if err := os.Chmod(locked, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(locked, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(locked, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	undeleted, err := w.EmptyTrash(t.Context())
 	if err != nil {
