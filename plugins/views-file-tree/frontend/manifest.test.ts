@@ -80,7 +80,7 @@ describe('the menu of a row', () => {
   it('declares the commands the menu runs, over any row', () => {
     expect(getCommand('tree.renameFile')).toStrictEqual({
       id: 'tree.renameFile',
-      title: 'Rename file',
+      title: 'Rename',
       icon: 'pencil',
     })
     expect(getCommand('tree.createNote')).toBeUndefined()

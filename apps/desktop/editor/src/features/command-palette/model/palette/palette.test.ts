@@ -310,7 +310,7 @@ describe('a command that needs nothing', () => {
 
     expect(commands.chooseItem('app:file.open', 'app:file.open#beside')).toMatchObject({
       id: 'app:file.open',
-      values: { showing: 'split' },
+      values: { placement: 'split' },
     })
   })
 

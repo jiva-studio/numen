@@ -186,7 +186,7 @@ export interface Notes {
    * Opens a file in the editor matching its type, in its own tab or beside the
    * current one.
    */
-  openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
+  openFile(path: string, title: string, placement: 'current' | 'split', at?: CommandPlace): void
 }
 
 /**

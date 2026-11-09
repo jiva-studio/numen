@@ -32,8 +32,8 @@ const getPlace = (invocation: CommandInvocation): CommandPlace | undefined => {
 
 const openFile = (invocation: CommandInvocation, on: CommandDeps): void => {
   const file = invocation.path || invocation.file
-  const showing = invocation.values?.[ARGUMENT.showing] === 'split' ? 'split' : 'current'
-  on.notes.openFile(file, invocation.title || file, showing, getPlace(invocation))
+  const placement = invocation.values?.[ARGUMENT.placement] === 'split' ? 'split' : 'current'
+  on.notes.openFile(file, invocation.title || file, placement, getPlace(invocation))
 }
 
 /** What each command evaluates to. A command with no entry here does nothing. */
