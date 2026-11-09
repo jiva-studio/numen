@@ -95,7 +95,7 @@ func readAffinity() map[int]bool {
 		return nil
 	}
 	allowed := make(map[int]bool)
-	for cpu := 0; cpu < len(set)*64; cpu++ {
+	for cpu := range len(set) * 64 {
 		if set.IsSet(cpu) {
 			allowed[cpu] = true
 		}
