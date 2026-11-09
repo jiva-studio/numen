@@ -40,7 +40,6 @@ export const getSampleKind = (fileName: string): SampleKind => {
 export const describePath = (write: Pick<VaultWrite, 'kind' | 'path'>): string =>
   write.kind === 'folder' ? `${write.path}/` : write.path
 
-/** The columns of a table by their names: the allowed ones, in their order, each at most once, the first required. */
 const readColumns = (header: readonly string[], allowed: readonly string[], what: string): string[] => {
   const list = allowed.join(' | ')
   for (const name of header) {
@@ -62,19 +61,19 @@ const readTable = (rows: readonly string[][], allowed: readonly string[], what: 
 }
 
 const parseWrite = (cells: Record<string, string>): VaultWrite => {
-  const { path: written, text = '', sample = '' } = cells
-  if (written === '') throw new Error('a row of the files has no path')
-  if (text !== '' && sample !== '') throw new Error(`"${written}" has a text and a sample: give one of them`)
-  if (written.endsWith('/')) {
-    if (text !== '' || sample !== '') throw new Error(`"${written}" is a folder: a folder has no text and no sample`)
-    assertVaultPath(written.slice(0, -1))
-    return { kind: 'folder', path: written.slice(0, -1) }
+  const { path: cell, text = '', sample = '' } = cells
+  if (cell === '') throw new Error('a row of the files has no path')
+  if (text !== '' && sample !== '') throw new Error(`"${cell}" has a text and a sample: give one of them`)
+  if (cell.endsWith('/')) {
+    if (text !== '' || sample !== '') throw new Error(`"${cell}" is a folder: a folder has no text and no sample`)
+    assertVaultPath(cell.slice(0, -1))
+    return { kind: 'folder', path: cell.slice(0, -1) }
   }
-  assertVaultPath(written)
-  if (sample !== '') return { kind: 'sample', path: written, sample, sampleKind: getSampleKind(sample) }
-  if (text === '') return { kind: 'empty', path: written }
-  if (!written.endsWith('.md')) throw new Error(`"${written}" has a text but is not a .md file: only a note has a text`)
-  return { kind: 'note', path: written, text }
+  assertVaultPath(cell)
+  if (sample !== '') return { kind: 'sample', path: cell, sample, sampleKind: getSampleKind(sample) }
+  if (text === '') return { kind: 'empty', path: cell }
+  if (!cell.endsWith('.md')) throw new Error(`"${cell}" has a text but is not a .md file: only a note has a text`)
+  return { kind: 'note', path: cell, text }
 }
 
 /** The writes a table of files asks for: folders, notes, samples and empty files. */
@@ -87,19 +86,19 @@ export const parseVaultFiles = (rows: readonly string[][]): VaultWrite[] => {
 }
 
 /** Fails on the first path of the writes that the vault has. */
-export const assertPathsAreFree = (writes: readonly VaultWrite[], isTaken: (entryPath: string) => boolean): void => {
-  const taken = writes.find((one) => isTaken(one.path))
-  if (taken !== undefined) throw new Error(`"${describePath(taken)}" is in the vault already`)
+export const assertPathsAreFree = (writes: readonly VaultWrite[], hasPath: (entryPath: string) => boolean): void => {
+  const found = writes.find((one) => hasPath(one.path))
+  if (found !== undefined) throw new Error(`"${describePath(found)}" is in the vault already`)
 }
 
 /** The checks a table asks of a vault: each path is there, a folder when it ends with a slash, a note with the text when it has one. */
 export const parseVaultChecks = (rows: readonly string[][]): VaultCheck[] =>
   readTable(rows, CHECK_COLUMNS, 'the files table').map((cells) => {
-    const { path: written, text = '' } = cells
-    if (written === '') throw new Error('a row of the files has no path')
-    const isFolder = written.endsWith('/')
-    if (isFolder && text !== '') throw new Error(`"${written}" is a folder: a folder has no text`)
-    const entryPath = isFolder ? written.slice(0, -1) : written
+    const { path: cell, text = '' } = cells
+    if (cell === '') throw new Error('a row of the files has no path')
+    const isFolder = cell.endsWith('/')
+    if (isFolder && text !== '') throw new Error(`"${cell}" is a folder: a folder has no text`)
+    const entryPath = isFolder ? cell.slice(0, -1) : cell
     assertVaultPath(entryPath)
     return { path: entryPath, isFolder, text }
   })

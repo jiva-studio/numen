@@ -152,7 +152,7 @@ export const createCardId = (deck: string, index: number): string => {
 
 export const countCards = (deckText: string): number => deckText.match(CARD_HEADING)?.length ?? 0
 
-/** The section of a card: headed by its first value, naming its card model, one section for each value given. */
+/** The section of a card: headed by its first value, naming its card model, one section for each value that has text. */
 export const createCardText = (
   model: string,
   fields: readonly string[],
@@ -164,10 +164,10 @@ export const createCardText = (
       throw new Error(`the card model "${model}" has no field "${field}": it has ${fields.join(', ')}`)
     }
   }
-  const given = values.filter(([, value]) => value !== '')
-  if (given.length === 0) throw new Error(`a card of the card model "${model}" has no value`)
-  const heading = given.find(([field]) => field === fields[0])?.[1] ?? given[0][1]
-  const sections = given.map(([field, value]) => `### ${field}\n\n${value}\n`)
+  const filled = values.filter(([, value]) => value !== '')
+  if (filled.length === 0) throw new Error(`a card of the card model "${model}" has no value`)
+  const heading = filled.find(([field]) => field === fields[0])?.[1] ?? filled[0][1]
+  const sections = filled.map(([field, value]) => `### ${field}\n\n${value}\n`)
   return `\n## ${heading} ^${id}\n\n[[${model}]]\n\n${sections.join('\n')}`
 }
 
