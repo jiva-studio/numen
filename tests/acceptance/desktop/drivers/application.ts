@@ -10,6 +10,7 @@ import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/de
 import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 
+const COMMAND_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
 const DELETE_TEXT_ID = 'app:version.delete'
 
@@ -54,6 +55,8 @@ export class ApplicationDriver {
       return
     }
     const field = getPaletteInput(page)
+    // The palette that took the command asks for its input once its placeholder is no longer the command prompt.
+    await expect(field).not.toHaveAttribute('placeholder', COMMAND_PLACEHOLDER)
     const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
     if (kind === 'item') {
       await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
