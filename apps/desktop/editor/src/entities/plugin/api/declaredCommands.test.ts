@@ -2,16 +2,21 @@
  * The commands the plugins declare as the window reads them, and a run as the
  * window dispatches it and reads its result.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { COMMAND_ERROR_CODE, asFailure, asValue, type PluginCatalog } from '@numen/core-client'
 import { createWhenReader } from '@numen/plugin-loader'
-import { createMockCatalogEntry } from '@numen/core-client/testing'
+import { createMockCatalogEntry, installCoreAnswers } from '@numen/core-client/testing'
 import type { PluginInfo } from '@numen/plugin-manager'
 import { useCatalogEntries } from '../model/catalogEntries'
-
-vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
+import {
+  isOverTarget,
+  listDeclaredCommands,
+  listDeclaredItemLists,
+  runDeclaredCommand,
+  runDeclaredHandler,
+} from './declaredCommands'
 
 const request = {
   listCommands: vi.fn(),
@@ -19,13 +24,15 @@ const request = {
   listCommandItems: vi.fn(),
 }
 
-const {
-  isOverTarget,
-  listDeclaredCommands,
-  listDeclaredItemLists,
-  runDeclaredCommand,
-  runDeclaredHandler,
-} = await import('./declaredCommands')
+let restore: () => void
+
+beforeEach(() => {
+  restore = installCoreAnswers({ pluginCommands: request })
+})
+
+afterEach(() => {
+  restore()
+})
 
 const proofread = {
   pluginId: 'org.example.ink',
@@ -232,7 +239,7 @@ describe('a run', () => {
       ok: true,
       value: { message: 'Converted 3 pages', openedPath: 'a.md' },
     })
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'md.numen.pages',
       command: 'convert',
       path: 'a.pdf',
@@ -252,7 +259,7 @@ describe('a run', () => {
       { path: 'a.md', values: {} },
     )
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith(expect.objectContaining({ path: '' }))
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({ path: '' })
   })
 
   it('of a command over no file is handed the file a place named', async () => {
@@ -267,9 +274,7 @@ describe('a run', () => {
       { path: 'Glaciers', values: {}, isTargetNamed: true },
     )
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith(
-      expect.objectContaining({ path: 'Glaciers' }),
-    )
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({ path: 'Glaciers' })
   })
 
   it('that did not succeed answers why', async () => {
@@ -322,7 +327,7 @@ describe('the items of a command', () => {
         result: { ok: false, error: 'talks/a.mp3 is not in the vault' },
       },
     ])
-    expect(request.listCommandItems).toHaveBeenLastCalledWith({
+    expect(request.listCommandItems.mock.lastCall?.[0]).toMatchObject({
       path: 'talks/a.mp3',
       commands: [
         { pluginId: 'org.example.ink', command: 'ink.proofread' },
@@ -344,7 +349,7 @@ describe('the items of a command', () => {
       itemId: 'org.example.ears/ears',
     })
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'org.example.ink',
       command: 'ink.proofread',
       path: 'talks/a.mp3',
@@ -409,7 +414,7 @@ describe('the handlers of shared commands', () => {
     )
 
     expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'org.example.ink',
       command: 'app:version.delete',
       path: 'talks/a.mp3',

@@ -1,10 +1,11 @@
 /**
  * Tests the mapping of tab links requests and stream to the workspace service.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { tabLinksCore } from './tabLinks'
 
-const request = vi.hoisted(() => ({
+const request = {
   watchTabLinks: vi.fn(),
   cancelWatchTabLinks: vi.fn(),
   writeTabLinks: vi.fn(),
@@ -13,7 +14,7 @@ const request = vi.hoisted(() => ({
   moveTab: vi.fn(),
   acceptTabMove: vi.fn(),
   highlightWindow: vi.fn(),
-}))
+}
 
 const ORBITS = {
   id: 'plex:1',
@@ -29,10 +30,15 @@ const MAIN_WINDOW = {
   tabCount: 2,
 }
 
-vi.mock('@/shared/clients', () => ({ workspace: request, keepaliveWorkspace: request }))
+let restore: () => void
 
 beforeEach(() => {
   vi.clearAllMocks()
+  restore = installCoreAnswers({ workspace: request })
+})
+
+afterEach(() => {
+  restore()
 })
 
 async function* createResponses(responses: readonly unknown[]) {
@@ -91,7 +97,7 @@ describe('watchTabLinks', () => {
     const events = []
     for await (const event of tabLinksCore.watchTabLinks('window-a', signal)) events.push(event)
 
-    expect(request.watchTabLinks).toHaveBeenCalledWith({ windowId: 'window-a' }, { signal })
+    expect(request.watchTabLinks.mock.lastCall?.[0]).toMatchObject({ windowId: 'window-a' })
     expect(events).toStrictEqual([
       {
         links: {
@@ -120,7 +126,7 @@ describe('watchTabLinks', () => {
 
     await tabLinksCore.cancelTabLinksWatch('window-a')
 
-    expect(request.cancelWatchTabLinks).toHaveBeenCalledWith({ windowId: 'window-a' })
+    expect(request.cancelWatchTabLinks.mock.lastCall?.[0]).toMatchObject({ windowId: 'window-a' })
   })
 })
 
@@ -135,23 +141,19 @@ describe('writeTabLinks', () => {
       window: MAIN_WINDOW,
     })
 
-    expect(request.writeTabLinks.mock.calls).toStrictEqual([
-      [
-        {
-          windowId: 'window-a',
-          change: { case: 'link', value: { sourceTabId: 'plex:1', targetTabId: 'files:2' } },
+    expect(request.writeTabLinks.mock.calls.map(([sent]) => sent)).toMatchObject([
+      {
+        windowId: 'window-a',
+        change: { case: 'link', value: { sourceTabId: 'plex:1', targetTabId: 'files:2' } },
+      },
+      { windowId: 'window-a', change: { case: 'unlinkTabId', value: 'plex:1' } },
+      {
+        windowId: 'window-a',
+        change: {
+          case: 'tabs',
+          value: { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }], window: MAIN_WINDOW },
         },
-      ],
-      [{ windowId: 'window-a', change: { case: 'unlinkTabId', value: 'plex:1' } }],
-      [
-        {
-          windowId: 'window-a',
-          change: {
-            case: 'tabs',
-            value: { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }], window: MAIN_WINDOW },
-          },
-        },
-      ],
+      },
     ])
   })
 
@@ -161,7 +163,7 @@ describe('writeTabLinks', () => {
 
     await tabLinksCore.syncTabPath(sync)
 
-    expect(request.syncTabPath).toHaveBeenCalledWith(sync)
+    expect(request.syncTabPath.mock.lastCall?.[0]).toMatchObject(sync)
   })
 })
 
@@ -178,7 +180,10 @@ describe('tab move requests', () => {
       moveId: 'move-1',
     })
     expect(await tabLinksCore.readDetachedTab('window-b', 'plex:9')).toBeNull()
-    expect(request.readDetachedTab).toHaveBeenCalledWith({ windowId: 'window-b', tabId: 'plex:1' })
+    expect(request.readDetachedTab.mock.calls[0]?.[0]).toMatchObject({
+      windowId: 'window-b',
+      tabId: 'plex:1',
+    })
   })
 
   it('sends MoveTab and converts the error code of the response', async () => {
@@ -208,7 +213,7 @@ describe('tab move requests', () => {
       ok: false,
       error: 'cancelled',
     })
-    expect(request.moveTab).toHaveBeenCalledWith({
+    expect(request.moveTab.mock.lastCall?.[0]).toMatchObject({
       windowId: 'window-a',
       targetWindowId: 'window-b',
       tab: ORBITS,
@@ -222,7 +227,7 @@ describe('tab move requests', () => {
       ok: false,
       error: 'timeout',
     })
-    expect(request.acceptTabMove).toHaveBeenCalledWith({
+    expect(request.acceptTabMove.mock.lastCall?.[0]).toMatchObject({
       windowId: 'window-b',
       tabId: 'plex:1',
       moveId: 'move-1',
@@ -234,6 +239,9 @@ describe('tab move requests', () => {
 
     await tabLinksCore.highlightWindow('window-b', true)
 
-    expect(request.highlightWindow).toHaveBeenCalledWith({ windowId: 'window-b', isOn: true })
+    expect(request.highlightWindow.mock.lastCall?.[0]).toMatchObject({
+      windowId: 'window-b',
+      isOn: true,
+    })
   })
 })

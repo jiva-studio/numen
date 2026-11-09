@@ -4,6 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowTabs } from '@/entities/tab'
 import type { SettingEdit } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -11,29 +13,8 @@ import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { createPluginSupport } from '@/app/plugins/useWindowPlugins'
 import { useSettings } from './useSettings'
-import type * as SettingsModule from '@/entities/settings'
 
-const file = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
-
-vi.mock('@/entities/settings', async (importOriginal) => ({
-  ...(await importOriginal<typeof SettingsModule>()),
-  themes: {
-    getAppearance: async () => {
-      const app = (file.current['app'] ?? {}) as Record<string, Record<string, unknown>>
-      return {
-        themes: [],
-        applied: 'preset:numen',
-        mode: (app['appearance']?.['mode'] as string | undefined) ?? 'system',
-        sizes: { interfaceScale: 1, textScale: 1 },
-        bounds: { interfaceScale: { min: 0.8, max: 1.4 }, textScale: { min: 0.8, max: 1.4 } },
-      }
-    },
-    readTheme: async () => '',
-    watchThemes: async function* () {
-      yield* []
-    },
-  },
-}))
+const file = { current: {} as Record<string, unknown> }
 
 const createFeed = () => {
   const pending: ((batch: readonly SettingEdit[]) => void)[] = []
@@ -105,12 +86,42 @@ const change = (feed: ReturnType<typeof createFeed>, path: readonly string[], va
   feed.push([{ at: path, value: JSON.stringify(value) }])
 }
 
+const MODES: Record<string, ThemeModeCode> = {
+  system: THEME_MODE.SYSTEM,
+  light: THEME_MODE.LIGHT,
+  dark: THEME_MODE.DARK,
+}
+
 describe('a setting that changes', () => {
+  let restore: () => void
+
   beforeEach(() => {
     vi.useFakeTimers()
+    restore = installCoreAnswers({
+      theme: {
+        listThemes: () => {
+          const app = (file.current['app'] ?? {}) as Record<string, Record<string, unknown>>
+          const mode = app['appearance']?.['mode'] as string | undefined
+          return {
+            themes: [],
+            applied: 'preset:numen',
+            mode: MODES[mode ?? 'system'] ?? THEME_MODE.SYSTEM,
+            interfaceScale: 1,
+            textScale: 1,
+            interfaceScaleBounds: { min: 0.8, max: 1.4 },
+            textScaleBounds: { min: 0.8, max: 1.4 },
+          }
+        },
+        readTheme: () => ({ css: '' }),
+        async *watchThemes() {
+          yield* []
+        },
+      },
+    })
   })
 
   afterEach(() => {
+    restore()
     vi.useRealTimers()
   })
 
@@ -142,14 +153,11 @@ describe('a setting that changes', () => {
   it('draws the mode in the window when the event arrives', async () => {
     const { settings, feed } = create()
     await settings.start()
-    await settle()
-    expect(settings.appearance.mode.value).toBe('light')
+    await vi.waitFor(() => expect(settings.appearance.mode.value).toBe('light'))
 
     change(feed, ['app', 'appearance', 'mode'], 'dark')
-    await vi.advanceTimersByTimeAsync(0)
-    await settle()
 
-    expect(settings.appearance.mode.value).toBe('dark')
+    await vi.waitFor(() => expect(settings.appearance.mode.value).toBe('dark'))
     settings.close()
   })
 
