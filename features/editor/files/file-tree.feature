@@ -22,8 +22,8 @@ Feature: File tree
 
     Scenario: A folder is made
       Given the vault has the following:
-        | path       | text |
-        | Saltworks/ |      |
+        | path                     | text                    |
+        | Saltworks/Evaporation.md | Brine dries in the sun. |
       When the person runs the command "Create folder" on the folder at "Saltworks"
       And the person names it "Brine tanks"
       Then the vault contains the folder at "Saltworks/Brine tanks"
