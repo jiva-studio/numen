@@ -37,9 +37,9 @@ Feature: Import link
       Then the number of the notes of the type "link" in the vault "Test" is 2
 
     Scenario: The same address opens its note
-      Given the person closes the tab for the web address "http://numen.dev/three"
+      Given the person closes the note tab for the web address "http://numen.dev/three"
       When the person imports the link "http://numen.dev/three"
-      Then the tab for the web address "http://numen.dev/three" is open
+      Then the note tab for the web address "http://numen.dev/three" is open
       And the number of the notes of the type "link" in the vault "Test" is 1
 
   Rule: A video has a recording
