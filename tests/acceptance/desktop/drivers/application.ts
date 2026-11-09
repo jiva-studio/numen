@@ -10,11 +10,13 @@ import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
-import { listVersionIds } from './text-versions.js'
+import { listVersions } from './text-versions.js'
 
 const COMMAND_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
 const PROOFREAD_TEXT = 'Proofread text'
+/** The title of the version a file has before any plugin makes text of it. */
+const TEXT_LAYER = 'Text layer'
 const DELETE_TEXT_ID = 'app:version.delete'
 
 export class ApplicationDriver {
@@ -40,7 +42,7 @@ export class ApplicationDriver {
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
     if (label === DELETE_TEXT) await this.expectOpenTabHasText()
-    if (label === PROOFREAD_TEXT) await this.expectActiveFileHasVersion()
+    if (label === PROOFREAD_TEXT) await this.expectActiveFileHasMadeText()
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)
@@ -119,10 +121,12 @@ export class ApplicationDriver {
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
   }
 
-  private async expectActiveFileHasVersion(): Promise<void> {
+  private async expectActiveFileHasMadeText(): Promise<void> {
     const { request } = this.scenario.page
-    // Proofreading offers the versions the file has when it is asked for them, so it waits for the first one.
-    await expect.poll(async () => (await listVersionIds(request, await readActivePath(request))).length).toBeGreaterThan(0)
+    // Proofreading offers the versions the file has when it is asked for them, so it waits for the text a plugin made.
+    await expect
+      .poll(async () => (await listVersions(request, await readActivePath(request))).some((one) => !one.title.startsWith(TEXT_LAYER)))
+      .toBe(true)
   }
 
   private async expectOpenTabHasText(): Promise<void> {
