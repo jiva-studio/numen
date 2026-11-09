@@ -1,7 +1,8 @@
 /** The person at the text of a file or a link: making it, proofreading it, downloading it, deleting it. */
 import { expect } from 'playwright/test'
+import { getTab } from '../../../e2e/desktop/tests/support/layout.js'
 import type { ApplicationDriver } from './application.js'
-import { ANY_TAB, getAddressTitle, getCurrentVersionLabel, type TextKind } from './rules.js'
+import { getAddressTitle, getCurrentVersionLabel, type TextKind } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
 import { hasMadeText, hasVersions } from './text-versions.js'
@@ -45,7 +46,7 @@ export class TextDriver {
   async importLink(address: string): Promise<void> {
     await this.application.runCommand(IMPORT_LINK)
     await this.application.enterText(address)
-    await this.tab.expectOpen(ANY_TAB, 'at', `${getAddressTitle(address)}.md`)
+    await expect(getTab(this.scenario.page, getAddressTitle(address)).first()).toBeVisible()
   }
 
   async downloadText(address: string): Promise<void> {
