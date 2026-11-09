@@ -27,8 +27,11 @@ export class PluginDriver {
     await field.fill('Open settings')
     await page.getByRole('option', { name: /^Open settings$/ }).first().click()
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
-    await settings.getByRole('button', { name: new RegExp(name) }).click()
     const toggle = settings.getByRole('switch', { name: new RegExp(`Enabled ${name}`) })
+    const plugin = settings.getByRole('button', { name: new RegExp(name) })
+    // The settings open on the page of the plugin shown last.
+    await expect(toggle.or(plugin)).toBeVisible()
+    if (!(await toggle.isVisible())) await plugin.click()
     // The switch moves when the core has answered its write, so the click is not waited for to change it.
     if ((await toggle.isChecked()) !== isEnabled) await toggle.click()
     await expect(toggle).toBeChecked({ checked: isEnabled })
