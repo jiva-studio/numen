@@ -449,7 +449,7 @@ describe('a page turned while another document is drawn', () => {
     expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
   })
 
-  it('waits for the columns, because the spread and the marks still belong to the document before', async () => {
+  it('waits for the columns to stand for the new markup', async () => {
     const { props, layout } = room()
     flushFrames()
     props.markup = '<p>two</p>'
@@ -623,6 +623,39 @@ describe('the layout being mounted', () => {
     flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
+
+  it('does not set the columns again on fonts.ready when the fonts are already loaded', async () => {
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { status: 'loaded', ready: Promise.resolve() },
+    })
+    room()
+    flushFrames()
+    columns().measure.mockClear()
+    turns().stand.mockClear()
+
+    await Promise.resolve()
+    await Promise.resolve()
+
+    flushAllFrames()
+    expect(columns().measure).not.toHaveBeenCalled()
+    expect(turns().stand).not.toHaveBeenCalled()
+  })
+
+  it('does not set the columns a second time when fonts.ready resolves before the first layout', async () => {
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { status: 'loading', ready: Promise.resolve() },
+    })
+    room()
+
+    await Promise.resolve()
+    await Promise.resolve()
+
+    flushAllFrames()
+    expect(columns().measure).toHaveBeenCalledTimes(1)
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('the page counter of a document just drawn', () => {
@@ -706,7 +739,7 @@ describe('the text set again for a picture or a face that arrives', () => {
 })
 
 describe('the columns of a document with a picture that has not arrived', () => {
-  const addPicture = (text: HTMLElement) => {
+  const appendImage = (text: HTMLElement) => {
     const picture = document.createElement('img')
     Object.defineProperty(picture, 'complete', { value: false })
     text.append(picture)
@@ -716,7 +749,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
   it('are read once the picture has arrived', () => {
     const { layout, text } = room()
     flushFrames()
-    const picture = addPicture(text)
+    const picture = appendImage(text)
     columns().readColumns.mockClear()
     turns().stand.mockClear()
 
@@ -732,7 +765,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
   it('are read once the picture has failed', () => {
     const { layout, text } = room()
     flushFrames()
-    const picture = addPicture(text)
+    const picture = appendImage(text)
     columns().readColumns.mockClear()
 
     layout().settle(() => 40)

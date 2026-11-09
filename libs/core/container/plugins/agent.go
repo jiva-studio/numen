@@ -46,7 +46,7 @@ func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settin
 	if c.Programs == nil {
 		return list()
 	}
-	return c.Programs.Get(programsWait, list)
+	return c.Programs.Get(programsWait, list, c.RefreshSettingEvents)
 }
 
 func (c Config) getAgentSettings() agent.AgentSettings {

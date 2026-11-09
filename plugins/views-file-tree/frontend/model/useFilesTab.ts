@@ -198,6 +198,14 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   return { getNameOf, activate, rename, drag, remove }
 }
 
+async function selectDropped(list: FileTree, paths: readonly string[]) {
+  const first = paths[0]
+  if (first === undefined) return
+  await list.refresh()
+  await list.revealPath(first)
+  list.selectPaths(paths)
+}
+
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const renamingPath = ref<string | null>(null)
   const setRenamingPath = (path: string | null) => {
@@ -230,8 +238,12 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     createFolder: creators.createFolder,
     createNote: creators.createNote,
     canDropData: (types) => deps.canDropData(types),
-    dropData: (data) =>
-      deps.dropData(create.getFolderFor(list, list.selectedPaths.value[0] ?? null), data),
+    dropData: async (data) => {
+      const folder = create.getFolderFor(list, list.selectedPaths.value[0] ?? null)
+      const paths = await deps.dropData(folder, data)
+      await selectDropped(list, paths)
+      return paths
+    },
     openMenu: fileMenu.openMenu,
     dismissMenu: fileMenu.dismissMenu,
     chooseMenuItem: fileMenu.chooseMenuItem,

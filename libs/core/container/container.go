@@ -90,6 +90,7 @@ type Resources struct {
 	settingEvents   *settingevents.Events
 	secretGate      *secret.Gate
 	pluginChanges   *pluginchanges.Signals
+	programs        *settingsadapter.ProgramList
 	subscribedHosts sync.Map
 }
 
@@ -102,6 +103,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &pluginchanges.Signals{},
 		secretGate:    secret.NewGate(),
+		programs:      &settingsadapter.ProgramList{},
 	}
 }
 
@@ -122,6 +124,13 @@ func (c Config) getResources() *Resources {
 		return c.Resources
 	}
 	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &pluginchanges.Signals{}}
+}
+
+func (c Config) getPrograms() *settingsadapter.ProgramList {
+	if c.programs != nil {
+		return c.programs
+	}
+	return c.getResources().programs
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -179,6 +188,7 @@ func (c Config) settings() settingswiring.Config {
 		Watches:          res.watches,
 		SettingsFiles:    res.settingsFiles,
 		SettingEvents:    res.settingEvents,
+		Programs:         c.getPrograms(),
 		SecretGate:       res.secretGate,
 		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
@@ -288,6 +298,7 @@ func (c Config) vault() vaultwiring.Config {
 
 func (c Config) plugins() pluginswiring.Config {
 	res := c.getResources()
+	programs := c.getPrograms()
 	v := c.vaultBase()
 	s := settingswiring.Config{
 		SettingsPath:  c.SettingsPath,
@@ -297,6 +308,7 @@ func (c Config) plugins() pluginswiring.Config {
 		Watches:       res.watches,
 		SettingsFiles: res.settingsFiles,
 		SettingEvents: res.settingEvents,
+		Programs:      programs,
 		ErrorHandler:  c.handleError,
 	}
 	return pluginswiring.Config{
@@ -312,7 +324,7 @@ func (c Config) plugins() pluginswiring.Config {
 		PluginChanges:         res.pluginChanges,
 		TextVersions:          c.TextVersions,
 		ListAppSettings:       s.ListAppSettings,
-		Programs:              c.programs,
+		Programs:              programs,
 		VaultReaders:          v.VaultReaders(),
 		VaultWriters:          v.VaultWriters(),
 		VaultWatcher:          v.VaultWatcher(),

@@ -67,7 +67,9 @@ func (c Config) Models() func() []settingsport.Model {
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
 	c.agentProvider = provider
-	c.programs = &settingsadapter.ProgramList{}
+	if c.getPrograms() == nil {
+		c.programs = &settingsadapter.ProgramList{}
+	}
 	return c.settings().ModelsForProvider(c.agentProvider)
 }
 

@@ -9,7 +9,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref, type Component } from 'vue'
 import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
-import { NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
 import {
@@ -41,6 +40,12 @@ const createEntry = (command: string, extra: Partial<SlotCommand> = {}): SlotCom
 /** The row of the entry that opens the note. */
 const OPEN_ROW = 'org.example.sample/command/app:note.open'
 
+/** The row of the entry the slot holds over the canvas. */
+const NEW_NOTE_ROW = 'org.example.sample/command/org.example.sample:graph.createNote'
+
+/** The entries the slot of the canvas menu holds in these tests. */
+const CANVAS_MENU: readonly SlotItem[] = [createEntry('org.example.sample:graph.createNote')]
+
 /** The entries the slot of the node menu holds in these tests. */
 const NODE_MENU: readonly SlotItem[] = [
   createEntry('app:note.open', { icon: SHARE_ICON }),
@@ -57,6 +62,7 @@ const createDeps = (
   editor,
   isReady: ref(true),
   isNesting: ref(true),
+  tabId: 'plex:1',
   headings: ref(6),
   openNote: () => undefined,
   readHeadings: async () => new Map(),
@@ -104,6 +110,7 @@ const tab = (
     editor: vault.editor,
     isReady: ref(true),
     isNesting,
+    tabId: 'plex:1',
     headings: ref(6),
     openNote: (path, options) => {
       openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current'])
@@ -116,7 +123,7 @@ const tab = (
     },
     getMenuEntries: (target) => {
       menuTargets.push(target)
-      return NODE_MENU
+      return target.isFolder ? CANVAS_MENU : NODE_MENU
     },
     listItems: async () => [],
     getNoteIcon: (tabKind) => (tabKind === 'sample' ? SAMPLE_ICON : null),
@@ -243,6 +250,13 @@ describe('the menu on a node', () => {
     expect(one.ran).toEqual([['org.example.sample:share.run', 'Child.md', 'Child']])
   })
 
+  it('does not offer a new note over a node', () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+
+    expect(one.state.menuItems.value.map((item) => item.id)).not.toContain(NEW_NOTE_ROW)
+  })
+
   it('passes the note type of a node that is not a plain note', () => {
     const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
     one.state.openMenu(createMenuRequest(one.node('Sample.md')))
@@ -310,48 +324,45 @@ describe('a plex drawing nothing', () => {
   })
 })
 
-describe('the menu off every node', () => {
+describe('the menu of a place with no node', () => {
   const request = { node: null, at: { x: 1, y: 2 }, opening: 'pointer' as const }
 
-  it('makes a note, and the plex relies on it', async () => {
+  it('asks for the entries over the vault root of its own tab', () => {
+    const one = tab('Root.md')
+
+    one.state.openMenu(request)
+
+    expect(one.menuTargets).toStrictEqual([
+      { path: '', title: '', isFolder: true, others: [], tab: 'plex:1' },
+    ])
+  })
+
+  it('draws the entries the slot holds over the canvas', () => {
     const one = tab('Root.md')
     one.state.openMenu(request)
 
-    one.state.chooseMenuItem(NEW_NOTE)
+    expect(one.state.menuItems.value.map((item) => item.id)).toStrictEqual([NEW_NOTE_ROW])
+  })
+
+  it('runs the command of the row over the canvas target, and closes the menu', async () => {
+    const one = tab('Root.md')
+    one.state.openMenu(request)
+
+    one.state.chooseMenuItem(NEW_NOTE_ROW)
     await settle()
 
-    expect(one.wrote).toStrictEqual(['Untitled note.md'])
-    expect(one.went).toContain('Untitled note.md')
+    expect(one.ran).toStrictEqual([['org.example.sample:graph.createNote', '', '']])
     expect(one.state.menu.value).toBeNull()
   })
 
-  it('remains where it stood where the vault made none', async () => {
-    const one = tab('Root.md')
-    one.writes.value = ''
-    one.state.openMenu(request)
-
-    one.state.chooseMenuItem(NEW_NOTE)
-    await settle()
-
-    expect(one.went).toStrictEqual([])
-  })
-
-  it('offers a note to be made and no command a plugin declares over a note', () => {
+  it('makes no note of its own', async () => {
     const one = tab('Root.md')
     one.state.openMenu(request)
 
-    expect(one.state.menuItems.value).toStrictEqual(NONE)
-  })
-
-  it('makes nothing of a command over a note, there being no note it is over', async () => {
-    const one = tab('Root.md')
-    one.state.openMenu(request)
-
-    one.state.chooseMenuItem(OPEN_ROW)
+    one.state.chooseMenuItem(NEW_NOTE_ROW)
     await settle()
 
     expect(one.wrote).toStrictEqual([])
-    expect(one.ran).toStrictEqual([])
   })
 })
 

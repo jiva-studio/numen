@@ -45,7 +45,11 @@ const describeRun = (command: string, target: CommandTarget): string =>
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
+const tab = (
+  fails = false,
+  extra: Record<string, readonly Entry[]> = {},
+  dropped: readonly string[] = [],
+) => {
   const isDone: string[] = []
   const request: string[] = []
   const targets: CommandTarget[] = []
@@ -95,7 +99,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
       isDone.push(`drops into ${folderPath === ROOT ? '/' : folderPath} ${data['text/uri-list']}`)
-      return []
+      return dropped
     },
     showError: (text) => {
       isDone.push(`says ${text}`)
@@ -810,5 +814,28 @@ describe('a file rejected in a folder that is shut', () => {
     await one.createNote('ghost/Note.md')
 
     expect(recorded).toStrictEqual(['writes ghost/Untitled note.md'])
+  })
+})
+
+describe('notes a drop made or found', () => {
+  const drop = { 'text/uri-list': 'https://a.test/' }
+
+  it('are selected, and the folders above the first are opened', async () => {
+    const { one, list } = tab(false, {}, ['physics/Kelvin.md', 'Entropy.md'])
+
+    await one.dropData(drop)
+
+    expect(list.selectedPaths.value).toEqual(['physics/Kelvin.md', 'Entropy.md'])
+    expect(list.isFolderOpen('physics')).toBe(true)
+  })
+
+  it('leave the selection as it was when the drop returns none', async () => {
+    const { one, list } = tab()
+    list.selectPaths(['Entropy.md'])
+
+    await one.dropData(drop)
+
+    expect(list.selectedPaths.value).toEqual(['Entropy.md'])
+    expect(list.isFolderOpen('physics')).toBe(false)
   })
 })

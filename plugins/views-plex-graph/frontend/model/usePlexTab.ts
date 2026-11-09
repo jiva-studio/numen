@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, ref, watch, type Component } from 'vue'
+import { computed, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import {
@@ -12,7 +12,6 @@ import {
   useSlotMenu,
   type CommandTarget,
 } from '@numen/plugin-sdk'
-import { NEW_NOTE, NONE } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
@@ -194,20 +193,16 @@ function usePlexMenu(options: {
   tabDeps: PlexTabDeps
   getName: (path: string) => string
   getType: (node: string) => NoteType
-  createNote: () => Promise<void>
 }) {
-  const { map, tabDeps: deps, getName, getType, createNote } = options
+  const { map, tabDeps: deps, getName, getType } = options
   const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
-  const canvasMenu = ref<MenuRequest | null>(null)
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
     listItems: (command, { target }) => deps.listItems(command, target),
     words: MENU_WORDS,
     onError: reportFailure,
   })
-  const menu = computed(() => canvasMenu.value ?? nodeMenu.target.value?.request ?? null)
-  const menuItems = computed<readonly MenuItem[]>(() =>
-    canvasMenu.value ? NONE : (nodeMenu.menu.value?.items ?? []),
-  )
+  const menu = computed(() => nodeMenu.target.value?.request ?? null)
+  const menuItems = computed<readonly MenuItem[]>(() => nodeMenu.menu.value?.items ?? [])
 
   const getNodeTarget = (node: string, path: string): CommandTarget => {
     const type = getType(node)
@@ -215,29 +210,27 @@ function usePlexMenu(options: {
     return type === NOTE_TYPE ? target : { ...target, noteType: type }
   }
 
-  const close = () => {
-    canvasMenu.value = null
-    nodeMenu.close()
-  }
+  /** The vault root over this tab: the target of a place where there is no node. */
+  const getCanvasTarget = (): CommandTarget => ({
+    path: '',
+    title: '',
+    isFolder: true,
+    others: [],
+    tab: deps.tabId,
+  })
+
+  const close = () => nodeMenu.close()
 
   const openMenu = (request: MenuRequest) => {
     close()
-    if (request.node === null) {
-      canvasMenu.value = request
-      return
-    }
-    const path = map.getNodePath(request.node)
-    if (!path) return
-    const target = getNodeTarget(request.node, path)
+    const path = request.node === null ? '' : map.getNodePath(request.node)
+    if (request.node !== null && !path) return
+    const target =
+      request.node === null ? getCanvasTarget() : getNodeTarget(request.node, path ?? '')
     nodeMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
   }
 
   const chooseMenuItem = (id: string) => {
-    if (canvasMenu.value) {
-      close()
-      if (id === NEW_NOTE) createNote().catch(reportFailure)
-      return
-    }
     const choice = nodeMenu.pick(id)
     if (!choice) return
     deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
@@ -291,7 +284,6 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     tabDeps: deps,
     getName,
     getType,
-    createNote: nodeActions.createNote,
   })
 
   const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))

@@ -25,7 +25,6 @@ function flushLayout(element: HTMLElement): number {
   return element.offsetWidth
 }
 
-/** The curve of `--numen-easing`, which the turn follows frame by frame. */
 const EASING = { x1: 0.32, y1: 0.72, x2: 0, y2: 1 }
 
 /** How far along the curve a turn is when that share of its time has passed. */
@@ -86,11 +85,12 @@ function translatePaper(
     onEnd?.()
     return
   }
-  const began = performance.now()
+  let began: number | undefined
   const running: RunningTurn = { frame: 0, to }
   runningTurns.set(text, running)
   const draw = (now: number): void => {
-    const time = Math.min((now - began) / duration, 1)
+    began ??= Math.max(now, performance.now())
+    const time = Math.min(Math.max((now - began) / duration, 0), 1)
     if (time >= 1) {
       text.style.translate = to
       runningTurns.delete(text)
@@ -114,10 +114,8 @@ export interface BookTurnsOptions {
 
 /** `onMove` is called when the current offset changes. */
 export function useBookTurns(options: BookTurnsOptions) {
-  /** Which spread is in front, counted from the first. */
   const activeSpread = ref(0)
 
-  /** The spread in front, as a page of the book, and how many there are. */
   const front = computed(() =>
     createPages({
       book: options.props.book,
@@ -128,16 +126,10 @@ export function useBookTurns(options: BookTurnsOptions) {
     }),
   )
 
-  /** How much of the chapter in front is still to come, which is measured exactly. */
   const leftInChapter = computed(() =>
     leftInDocument(options.flow.value, activeSpread.value, options.marks.value),
   )
 
-  /**
-   * The spread positioned at the near edge of the reading area. The columns are
-   * translated there, gap included, so the last spread of a document is
-   * positioned like every other one.
-   */
   const stand = (spread: number, how: 'smooth' | 'auto') => {
     activeSpread.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
     if (!options.paper.value) return
@@ -145,13 +137,6 @@ export function useBookTurns(options: BookTurnsOptions) {
     translatePaper(options.paper.value, to, how)
   }
 
-  /**
-   * Shows `spread` after a turn into the adjacent document. The columns start one spread away on
-   * the side the turn comes from and are carried to it, while `leaving`, a copy of the spread that
-   * was in front, is carried out and removed at the end. A copy taken during a running turn starts
-   * where that turn drew it and ends one spread past the place that turn was going to; the columns
-   * start the same distance away, so the two move by one distance and never overlap.
-   */
   const enterSpread = (
     spread: number,
     way: 'next' | 'back',
@@ -185,12 +170,6 @@ export function useBookTurns(options: BookTurnsOptions) {
     announce()
   }
 
-  /**
-   * The offset currently being read, preserved while the text is laid out again. A layout moves to
-   * the spread that contains this offset, and the first run of that spread is often an earlier one,
-   * so the offset is kept while its run is in the active spread. Taking the first run every time
-   * moves the passage back by a part of a spread on each layout of a resize.
-   */
   let keptOffset: number | undefined
   const isInFront = (pos: number) =>
     pos >= options.props.span.start &&
@@ -203,18 +182,12 @@ export function useBookTurns(options: BookTurnsOptions) {
     keptOffset = now
     return now
   }
-  /** Keeps `pos` in front across the layouts that follow. */
   const keepOffset = (pos: number) => {
     keptOffset = pos
   }
 
-  /** The spread one offset of the book's text falls on. */
   const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
 
-  /**
-   * Turns one page in the direction `way`. Returns the offset requested from the owner when the
-   * turn goes past an end of the document.
-   */
   const turn = (way: PageNavigationAction): number | undefined => {
     const to = goToPage(way, {
       spread: activeSpread.value,

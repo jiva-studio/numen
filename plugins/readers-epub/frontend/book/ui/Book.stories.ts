@@ -76,14 +76,8 @@ const activeReading =
     components: { Book },
     setup() {
       const offset = ref(chapter.span.start)
-      // How large the text is set belongs to whatever holds the reader, so the
-      // story holds it, and presses its own way of setting it.
       const size = ref(1)
-      // A passage asked for, as a search hit asks for one; a story sends it as a `jump` event.
       const target = ref<{ offset: number } | null>(null)
-
-      // Keys also go to the element that hosts the reader. The story registers the
-      // key handler on that element, and the book reports whether it handled the key.
       const book = ref<{ handleKey(event: KeyboardEvent): boolean } | null>(null)
       const turns = (event: KeyboardEvent) => {
         if (book.value?.handleKey(event)) event.preventDefault()
@@ -686,7 +680,7 @@ export const NarrowedTo852Then691RightAfterATurn: Story = {
 }
 
 /**
- * A passage asked for on the spread in front, in its second column, stays in front when the area
+ * A target passage on the spread in front, in its second column, stays in front when the area
  * narrows to one column and the passage falls on the next spread.
  */
 export const TargetInFrontKeptAcrossAResize: Story = {
@@ -791,25 +785,15 @@ export const DrawnOutOfSight: Story = {
   },
 }
 
-/**
- * The turn is the columns being carried, so the page slides across the pane
- * and not jumping. A layout is not a turn and is put in place at once, and
- * a layout that left the turn out is a book that turns without moving. The turn is
- * written frame by frame, not set to a CSS transition: the end of a transition of
- * `translate` drew a stray frame in WebKitGTK.
- */
-export const TheTurnIsCarried: Story = {
-  decorators: [WIDE],
-  render: activeReading(createChapter(PROSE)),
-  play: async ({ canvasElement }) => {
+const createCarriedTurnPlay =
+  (beforeTurn?: () => void): Play =>
+  async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
     const paper = getPaper(canvasElement)
     await expect(paper.style.transition).toBe('')
     await expect(paper.getAnimations()).toHaveLength(0)
 
-    // The columns carried are carried the whole way, over frames of their own,
-    // and where they come to rest is one spread along.
     const was = paper.getBoundingClientRect().left
     const values = new Set<string>()
     const watch = () => {
@@ -817,6 +801,7 @@ export const TheTurnIsCarried: Story = {
       frame = requestAnimationFrame(watch)
     }
     let frame = requestAnimationFrame(watch)
+    beforeTurn?.()
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(
       async () =>
@@ -828,5 +813,35 @@ export const TheTurnIsCarried: Story = {
     )
     cancelAnimationFrame(frame)
     await expect(values.size).toBeGreaterThan(2)
-  },
+  }
+
+/**
+ * The turn is the columns being carried, so the page slides across the pane
+ * and not jumping. A layout is not a turn and is put in place at once, and
+ * a layout that left the turn out is a book that turns without moving. The turn is
+ * written frame by frame, not set to a CSS transition: the end of a transition of
+ * `translate` drew a stray frame in WebKitGTK.
+ */
+export const TheTurnIsCarried: Story = {
+  decorators: [WIDE],
+  render: activeReading(createChapter(PROSE)),
+  play: createCarriedTurnPlay(),
+}
+
+/** A turn that starts with a blocked thread still moves across several frames. */
+export const TheTurnIsCarriedAfterABlockedStart: Story = {
+  decorators: [WIDE],
+  render: activeReading(createChapter(PROSE)),
+  play: createCarriedTurnPlay(() => {
+    window.addEventListener(
+      'keydown',
+      () => {
+        const until = performance.now() + 260
+        while (performance.now() < until) {
+          // wait
+        }
+      },
+      { once: true },
+    )
+  }),
 }

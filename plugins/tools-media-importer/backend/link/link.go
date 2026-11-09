@@ -422,10 +422,12 @@ const (
 	copyingVideo = "Copying a video"
 )
 
-func getTaskID(work, path string) string { return work + ":" + path }
+func getTaskID(work string, vault domain.VaultID, path string) string {
+	return work + ":" + string(vault) + ":" + path
+}
 
-// GetCopyTaskID returns the id of the copy of the video of a link note in the list of tasks.
-func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
+// GetCopyTaskID returns the id of the copy of the video of a link note of a vault in the list of tasks.
+func GetCopyTaskID(vault domain.VaultID, path string) string { return getTaskID("copy", vault, path) }
 
 // FetchText fetches the text published at a link's address and stores it as a
 // text version of the link. An address that publishes no text stores nothing.
@@ -458,7 +460,7 @@ func (l *Links) beginTextFetch(ctx context.Context, link Link) (host.Task, error
 		return host.Task{}, ErrBeingFetched
 	}
 	task := host.Task{
-		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
+		ID: getTaskID("text", link.Vault, link.Path), Title: fetchingText, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
@@ -526,7 +528,7 @@ func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int6
 }
 
 // StartMediaCopy shows the task of the copy of the media of a link and copies them in the
-// background. Where the media asked for are already stored it starts nothing and returns their size
+// background. Where the requested media are already stored it starts nothing and returns their size
 // and false. It returns ErrBeingFetched where another run copies the media, and ErrNotCopyable where
 // nothing copies what the address publishes. A failure of the copy is shown as the error of the task.
 func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Media) (int64, bool, error) {
@@ -568,7 +570,7 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media
 		return nil, 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: GetCopyTaskID(link.Path), Title: copyingVideo, Detail: link.Path,
+		ID: GetCopyTaskID(link.Vault, link.Path), Title: copyingVideo, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)

@@ -1,4 +1,3 @@
-/** What the field of the window does with the row and the action a person chooses. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/shell'
@@ -217,5 +216,107 @@ describe('choosing a row of the commands', () => {
 
     expect(h.runInvocation).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
+  })
+})
+
+function createDeferred<T>() {
+  let answer = (_value: T) => undefined as void
+  const promise = new Promise<T>((resolve) => {
+    answer = resolve
+  })
+  return { promise, answer }
+}
+
+describe('the highlight of the search menu as groups answer', () => {
+  it('keeps the highlight on the selected row when another search group answers', async () => {
+    const names = [createDeferred<NameMatch[]>(), createDeferred<NameMatch[]>()]
+    const wordsGroup = [createDeferred<Passage[]>(), createDeferred<Passage[]>()]
+    const meaningGroup = [createDeferred<Passage[]>(), createDeferred<Passage[]>()]
+    const holds = [createDeferred<void>(), createDeferred<void>()]
+    let namesTurn = 0
+    let wordsTurn = 0
+    let meaningTurn = 0
+    let holdTurn = 0
+    const core: SearchDeps = {
+      names: () => names[namesTurn++]!.promise,
+      search: (_query, mode) =>
+        mode === 'words' ? wordsGroup[wordsTurn++]!.promise : meaningGroup[meaningTurn++]!.promise,
+    }
+    const search = useSearch(core, words, {
+      wait: () => holds[holdTurn++]!.promise,
+      getTarget: () => inFront,
+      menu: { getEntries: () => [SHOW] },
+    })
+    const commands = useCommandPalette(
+      { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      words,
+      () => inFront,
+      { getTitle: () => '', getTabAt: () => null },
+      { getStepGroups: () => [], previewItem: () => undefined },
+      runSupport(),
+    )
+    const field = mount(CommandPalette, {
+      props: {
+        commands,
+        search,
+        doing: {} as CommandDeps,
+        getTarget: () => inFront,
+        places: {},
+        runChoice: vi.fn(),
+      },
+      global: { stubs: { teleport: true } },
+    })
+
+    try {
+      search.setOpen(true)
+      await flushPromises()
+
+      await field.get('input[type="text"]').setValue('coral')
+      await flushPromises()
+      expect(field.findAll('[role="option"]')).toHaveLength(0)
+
+      holds[0]!.answer()
+      await flushPromises()
+      names[0]!.answer([byName, heading])
+      wordsGroup[0]!.answer([notePassage])
+      meaningGroup[0]!.answer([bookPassage])
+      await flushPromises()
+
+      await field.get('input[type="text"]').setValue('entropy')
+      await flushPromises()
+      expect(field.findAll('[role="option"]')).toHaveLength(0)
+
+      holds[1]!.answer()
+      await flushPromises()
+
+      names[1]!.answer([
+        { ...byName, path: 'notes/Entropy.md', title: 'Entropy' },
+        { ...byName, path: 'notes/Thermodynamics.md', title: 'Thermodynamics' },
+      ])
+      await flushPromises()
+
+      const input = field.get('input[type="text"]')
+      const selectedTitle = () =>
+        field.get('[role="option"][aria-selected="true"] [data-palette="name"]').text()
+
+      expect(selectedTitle()).toBe('Entropy')
+
+      await input.trigger('keydown', { key: 'ArrowDown' })
+      await flushPromises()
+
+      expect(selectedTitle()).toBe('Thermodynamics')
+
+      wordsGroup[1]!.answer([notePassage])
+      await flushPromises()
+
+      expect(selectedTitle()).toBe('Thermodynamics')
+
+      meaningGroup[1]!.answer([bookPassage])
+      await flushPromises()
+
+      expect(selectedTitle()).toBe('Thermodynamics')
+    } finally {
+      field.unmount()
+    }
   })
 })

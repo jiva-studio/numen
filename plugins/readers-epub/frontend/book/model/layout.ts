@@ -19,16 +19,9 @@ import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
-/** How many turns wait for a document that is being drawn; a key held down asks for more. */
 const MAX_WAITING_TURNS = 8
-
-/**
- * Frames without a change of size after which a resize is over. A pointer dragging a border
- * reports at its own rate, so a drag can leave a frame or two without a change.
- */
 const SETTLED_FRAMES = 4
 
-/** The document the columns stand for: its markup and where it begins in the book. */
 interface StoodFor {
   readonly markup: string
   readonly start: number
@@ -49,7 +42,6 @@ export interface BookLayoutOptions {
   readonly getEdge: (of: HTMLElement) => number
 }
 
-/** A page turn past an end of the document: its direction and the offset it asked the owner for. */
 interface BorderTurn {
   readonly way: 'next' | 'back'
   readonly offset: number
@@ -110,8 +102,12 @@ function watchBookLayout(
 
   onMounted(() => {
     context.settle(() => props.at)
-    doc.fonts?.ready.then(context.settleKept, context.settleKept)
-    // A face that loads once a page needs it sets the text again.
+    if (doc.fonts?.status !== 'loaded') {
+      const settleWhenReady = () => {
+        if (context.isStood.value) context.settleKept()
+      }
+      doc.fonts?.ready.then(settleWhenReady, settleWhenReady)
+    }
     doc.fonts?.addEventListener?.('loadingdone', context.settleKept)
   })
   onBeforeUnmount(() => doc.fonts?.removeEventListener?.('loadingdone', context.settleKept))
@@ -168,7 +164,6 @@ function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<
 
 /** Handles re-settling and watching dimensions / links in book layout. */
 export function createBookSettling(options: BookSettlingOptions) {
-  /** The turn the next layout carries the columns in by, and the copy of the spread it carries out. */
   let entry: { way: BorderTurn['way']; leaving: LeavingSpread | undefined } | undefined
 
   const removeCopy = (copy: HTMLElement) => {
@@ -176,16 +171,11 @@ export function createBookSettling(options: BookSettlingOptions) {
     options.column.unmarkCopy(copy)
   }
 
-  /** Copies the spread in front of `text` into `holder`, with its highlights. */
   const createLeaving = (text: HTMLElement, holder: HTMLElement): LeavingSpread => {
     const copy = copyPaper(text, holder, options.column.markCopy)
     return { copy, target: getTurnTarget(text), remove: () => removeCopy(copy) }
   }
 
-  /**
-   * Runs while the paper still holds the markup before. A page turn into this markup keeps a copy
-   * of the spread in front to carry out; any other move drops the copies there are.
-   */
   const prepareEntry = (led: BookLink | undefined) => {
     const holder = options.leaving.value
     for (const copy of holder ? [...holder.children] : []) removeCopy(copy as HTMLElement)
@@ -197,7 +187,6 @@ export function createBookSettling(options: BookSettlingOptions) {
     entry = { way, leaving: isShown ? createLeaving(text, holder) : undefined }
   }
 
-  /** `getKeep` is read when the columns are read, so a turn made since the request is kept. */
   const lay = (getKeep: () => number, led?: BookLink) => {
     const box = options.area.value
     const text = options.paper.value
@@ -220,7 +209,6 @@ export function createBookSettling(options: BookSettlingOptions) {
   }
 
   let measuredSize = options.signals.viewport.value
-  /** Reads the columns on the next frame, or once the pictures in them have arrived. */
   const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
     measuredSize = options.signals.viewport.value
@@ -233,11 +221,6 @@ export function createBookSettling(options: BookSettlingOptions) {
     })
   }
 
-  /**
-   * Sets the columns again with the offset in front kept, for a change in the text that nothing
-   * resizes: a picture or a face that arrives after the columns were read. Requests made within
-   * one frame are answered once.
-   */
   let isKeptQueued = false
   const settleKept = () => {
     if (isKeptQueued) return
@@ -248,12 +231,6 @@ export function createBookSettling(options: BookSettlingOptions) {
     })
   }
 
-  /**
-   * Sets the columns again with the offset in front kept, once the area has kept one size for
-   * `SETTLED_FRAMES` frames. Reading the columns measures every run of the text, and a border being
-   * dragged changes the size on almost every frame. The size `settle` has just measured is the one
-   * the columns are read at, and no resize.
-   */
   let framesSinceResize = 0
   let isResizeQueued = false
   const waitForSettledSize = () => {
@@ -321,14 +298,12 @@ export function useBookLayout(options: BookLayoutOptions) {
     onMove: options.onMove,
   })
 
-  /** The last page turn, while it is past an end of the document. */
   let borderTurn: BorderTurn | undefined
   const turn = (way: PageNavigationAction) => {
     const offset = turnPage(way)
     const isAcross = offset !== undefined && (way === 'next' || way === 'back')
     borderTurn = isAcross ? { way, offset } : undefined
   }
-  /** Whether the markup now drawn holds the offset the last turn asked for, and the reader is there. */
   const takeBorderTurn = () => {
     const last = borderTurn
     borderTurn = undefined
@@ -343,11 +318,6 @@ export function useBookLayout(options: BookLayoutOptions) {
     stoodFor.value?.markup === options.props.markup &&
     stoodFor.value.start === options.props.span.start
 
-  /**
-   * Turns asked for while the columns are being set for the markup in front wait for them. Until
-   * then the spread and the marks belong to the document before, and a turn made from them names a
-   * place in that document, which is then drawn again.
-   */
   const queuedTurns: PageNavigationAction[] = []
   const turnWhenStood = (way: PageNavigationAction) => {
     if (isStoodForMarkup() || !isMeasured.value) turn(way)

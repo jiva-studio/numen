@@ -1,1 +1,1 @@
-{ "paths": ["talks/tidal-mill.md"] }
+{ "paths": ["talks/tidal-mill.md"], "failed": ["https://example.com/broken"] }

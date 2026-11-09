@@ -32,9 +32,10 @@ const (
 // closed. The first recording it opens closes startCh.
 type blockingModel struct {
 	*heardModel
-	startCh   chan struct{}
-	startOnce sync.Once
-	release   chan struct{}
+	startCh      chan struct{}
+	startOnce    sync.Once
+	release      chan struct{}
+	onTranscribe func()
 }
 
 func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording, error) {
@@ -45,6 +46,13 @@ func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording,
 		return nil, ctx.Err()
 	}
 	return m.heardModel.Open(ctx, raw)
+}
+
+func (m *blockingModel) Transcribe(ctx context.Context, audio engine.Audio) (string, error) {
+	if m.onTranscribe != nil {
+		m.onTranscribe()
+	}
+	return m.heardModel.Transcribe(ctx, audio)
 }
 
 // recordingQueue is the queue in memory that sends the id of every task that ends on doneCh, and
@@ -113,6 +121,13 @@ func (f blockingFiles) ReadFile(ctx context.Context, vault domain.VaultID, path 
 	return f.files.ReadFile(ctx, vault, path)
 }
 
+func (f blockingFiles) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
+	if p, ok := f.files.(activeVaultProvider); ok {
+		return p.GetActiveVaultID(ctx)
+	}
+	return "", nil
+}
+
 // failingFiles is the files of a vault whose every read fails, while the vault still lists them.
 type failingFiles struct{}
 
@@ -126,6 +141,7 @@ func (failingFiles) ReadFile(context.Context, domain.VaultID, string) ([]byte, e
 // Chemistry with a recording of its own.
 type toolFixture struct {
 	*scene
+	chemistry *hosttest.Vault
 	chemTexts *hosttest.Texts
 	finishing recordingQueue
 	blocking  *blockingModel
@@ -149,6 +165,7 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 	}
 	chemTexts.SetStore(PluginID, chemistry.Store())
 	chemTexts.File(chemistryLecture, []byte(chemistrySound))
+	s.chemistry = chemistry
 	s.chemTexts = chemTexts
 
 	s.finishing = recordingQueue{
@@ -256,7 +273,7 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -381,7 +398,7 @@ func TestTranscriptCreateOfTranscribedRecordingReturnsVersion(t *testing.T) {
 	out := s.createTranscript(t, "Lectures", lecture)
 
 	want := TranscriptCreateOutput{
-		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
@@ -396,7 +413,7 @@ func TestTranscriptCreateOfPartlyTranscribedRecordingStartsRun(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -418,7 +435,7 @@ func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	out := s.createTranscript(t, "Lectures", lecture)
 
 	want := TranscriptCreateOutput{
-		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
@@ -469,7 +486,7 @@ func TestTranscriptCreateOfTranscriptProofreadReturnsItWithoutRun(t *testing.T) 
 	out := s.createTranscript(t, "Lectures", lecture)
 
 	want := TranscriptCreateOutput{
-		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(proofread.GetID()),
+		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(proofread.GetID()),
 	}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
@@ -484,7 +501,7 @@ func TestTranscriptCreateOfRecordingProofreadStartsTheRun(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -499,7 +516,7 @@ func TestTranscriptCreateOfPartialTranscriptProofreadStartsTheRun(t *testing.T) 
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -530,7 +547,7 @@ func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
 	}
 
 	out := s.createTranscript(t, "Chemistry", chemistryLecture)
-	if out.State != "started" || out.TaskID != "transcription:"+chemistryLecture {
+	if out.State != "started" || out.TaskID != "transcription:Chemistry:"+chemistryLecture {
 		t.Fatalf("transcript_create in Chemistry returned %+v", out)
 	}
 	close(s.blocking.release)
@@ -550,6 +567,79 @@ func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
 	}
 }
 
+func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
+	s := newToolFixture(t)
+	s.chemistry.File(lecture, lectureSound)
+	s.chemTexts.File(lecture, []byte(lectureSound))
+	s.putTranscript(t, false)
+	close(s.blocking.release)
+
+	inBatch := make(chan struct{})
+	releaseBatch := make(chan struct{})
+	var once sync.Once
+	s.blocking.onTranscribe = func() {
+		once.Do(func() {
+			close(inBatch)
+			<-releaseBatch
+		})
+	}
+
+	first := s.createTranscript(t, "Lectures", lecture)
+	if want := (TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}); first != want {
+		t.Fatalf("first call returned %+v, want %+v", first, want)
+	}
+	select {
+	case <-inBatch:
+	case <-time.After(workDeadline):
+		t.Fatalf("Lectures did not start transcribing within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+	}
+
+	again := s.createTranscript(t, "Lectures", lecture)
+	if want := (TranscriptCreateOutput{TaskID: first.TaskID, Path: lecture, State: "running"}); again != want {
+		t.Errorf("second call in Lectures returned %+v, want %+v", again, want)
+	}
+
+	second := s.createTranscript(t, "Chemistry", lecture)
+	if want := (TranscriptCreateOutput{TaskID: "transcription:Chemistry:" + lecture, Path: lecture, State: "started"}); second != want {
+		t.Fatalf("call in Chemistry returned %+v, want %+v", second, want)
+	}
+
+	deadline := time.After(workDeadline)
+	for {
+		byID := map[string]host.Task{}
+		for _, task := range s.queue.ListTasks() {
+			byID[task.ID] = task
+		}
+		if lTask, okL := byID[first.TaskID]; okL {
+			if cTask, okC := byID[second.TaskID]; okC && cTask.Title == taskWaiting {
+				if lTask.CompletedCount != 1 || lTask.TotalCount != 2 || cTask.CompletedCount != 0 || cTask.TotalCount != 0 {
+					t.Errorf("tasks %+v and %+v, want 1/2 in Lectures and 0/0 in Chemistry", lTask, cTask)
+				}
+				break
+			}
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("tasks %+v, want both %s and %s", s.queue.ListTasks(), first.TaskID, second.TaskID)
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	close(releaseBatch)
+	s.waitFinished(t, first.TaskID)
+	s.waitFinished(t, second.TaskID)
+	s.transcriber.Close()
+
+	inLectures, err := s.texts.ListVersions(t.Context(), lecture)
+	if err != nil || inLectures.Live == "" {
+		t.Errorf("Lectures lists %+v (%v), want the transcript live", inLectures, err)
+	}
+	inChemistry, err := s.chemTexts.ListVersions(t.Context(), lecture)
+	if err != nil || inChemistry.Live == "" {
+		t.Errorf("Chemistry lists %+v (%v), want the transcript live", inChemistry, err)
+	}
+}
+
 func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 	reader := blockingFiles{startCh: make(chan struct{}), startOnce: &sync.Once{}, release: make(chan struct{})}
 	s := newToolFixtureWithFiles(t, func(files Files) Files {
@@ -560,7 +650,7 @@ func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -584,7 +674,7 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -753,7 +843,7 @@ func TestTranscriptCreateOfATranscribedRecordingReadsNoFile(t *testing.T) {
 	out := s.createTranscript(t, "Lectures", lecture)
 
 	want := TranscriptCreateOutput{
-		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)

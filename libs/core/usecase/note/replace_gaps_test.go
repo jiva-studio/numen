@@ -253,3 +253,23 @@ func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
 		t.Errorf("matched %q and instead %q", nowhere.Matched, nowhere.Instead)
 	}
 }
+
+// An observer that cannot be notified of the change stops the replacement, as it stops a write, and the
+// note stays as it was.
+func TestAReplacementWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
+	t.Parallel()
+	const was = "ééé 😀 target tail\n"
+	c := openChanging(t, map[string]string{"Aggressor.md": was})
+	observerError := errors.New("the observer cannot be reached")
+	replacing := c.replace()
+	replacing.Drawing = func(context.Context, domain.Edit) error { return observerError }
+
+	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.FileStat{})
+
+	if !errors.Is(err, observerError) {
+		t.Fatalf("want the error of the observer, got %v", err)
+	}
+	if body := c.read(t, "Aggressor.md"); body != was {
+		t.Errorf("the refused replacement landed anyway:\n%s", body)
+	}
+}
