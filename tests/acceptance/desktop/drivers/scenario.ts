@@ -4,7 +4,7 @@ import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
 import { deleteVersion, listVersionIds } from './text-versions.js'
-import { DEFAULT_VAULT, parseReference, pickByTitle, pickVault } from './rules.js'
+import { DEFAULT_VAULT, getNoteFile, parseReference, pickByTitle, pickVault } from './rules.js'
 import { Server } from './server.js'
 import { World } from './world.js'
 
@@ -33,6 +33,10 @@ export class Scenario {
 
   get hasWorld(): boolean {
     return this.world !== undefined
+  }
+
+  get hasServer(): boolean {
+    return this.server !== undefined
   }
 
   /** Gives the scenario a world of its own, if it has none, and puts an empty vault of that name in it. */
@@ -133,6 +137,19 @@ export class Scenario {
     const savedPath = this.paths.get(name)
     if (savedPath) return savedPath
     return pickByTitle(name, [...(await readSavedStates(this.page.request)).keys()])
+  }
+
+  /** The path of the note a step wrote or the person made: the file the product made, or the file in the world. */
+  getNotePath(title: string): string {
+    const remembered = this.paths.get(title)
+    if (remembered !== undefined) return remembered
+    if (this.world === undefined) throw new Error(`no note is titled "${title}": begin with the vault has the note titled "${title}" with "..."`)
+    return getNoteFile(title)
+  }
+
+  /** The vault a step names when the scenario has no world: the shared vault, named by the run or not at all. */
+  checkSharedVault(name: string): void {
+    if (name !== DEFAULT_VAULT) this.setVault(name)
   }
 
   setVault(name: string): void {

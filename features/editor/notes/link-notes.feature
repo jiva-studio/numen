@@ -5,14 +5,16 @@ Feature: Link notes
     Given the vault "Test" has the note at "notes/Entropy.md"
 
   Scenario: A link is written with a completion
-    Given the person has the note titled "Heat engine" with "Work from a difference in temperature."
+    Given the vault has the note titled "Heat engine" with "Work from a difference in temperature."
+    And the person opens the note titled "Heat engine"
     When the person writes "See [[Entr" in the note titled "Heat engine"
     And the person chooses the completion "Entropy" in the note titled "Heat engine"
     Then the note titled "Heat engine" on disk has "See [[Entropy]]"
     And the note titled "Heat engine" links to the note at "notes/Entropy.md"
 
   Scenario: A link opens the note it names
-    Given the person has the note titled "Carnot cycle" with "The cycle is bounded by [[Entropy]] alone."
+    Given the vault has the note titled "Carnot cycle" with "The cycle is bounded by [[Entropy]] alone."
+    And the person opens the note titled "Carnot cycle"
     When the person opens the link "[[Entropy]]" in the note titled "Carnot cycle"
     Then the tab at "notes/Entropy.md" is active
     And the note at "notes/Entropy.md" has "A measure of uncertainty"

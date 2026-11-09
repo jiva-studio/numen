@@ -2,7 +2,8 @@ Feature: Restore tabs
   A person leaves tabs open. When the window starts again, each tab is restored at the place where the person left it.
 
   Scenario: A note tab is restored with the text written in it
-    Given the person has the note titled "Shopping list" with "tea"
+    Given the vault has the note titled "Shopping list" with "tea"
+    And the person opens the note titled "Shopping list"
     And the person writes "bread" in the note titled "Shopping list"
     And the note titled "Shopping list" on disk has "bread"
     When the application "editor" starts

@@ -1,9 +1,5 @@
 import { Given, Then, When } from '../support/bdd.js'
 
-Given('the person has the note titled {string} with {string}', async ({ person }, title: string, text: string) => {
-  await person.note.create(title, text)
-})
-
 When('the person opens the note titled {string}', async ({ person }, title: string) => {
   await person.note.open(title)
 })

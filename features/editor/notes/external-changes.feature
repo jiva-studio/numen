@@ -2,7 +2,8 @@ Feature: External changes of a note
   A person writes a note. Another program changes the same note on disk.
 
   Background:
-    Given the person has the note titled "Shopping list" with "tea"
+    Given the vault has the note titled "Shopping list" with "tea"
+    And the person opens the note titled "Shopping list"
 
   Rule: A note without unsaved text has the text of its file
 

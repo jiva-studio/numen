@@ -16,8 +16,10 @@ Feature: Plex
       And the plex has the note titled "Tributary" as the "child"
 
     Scenario: A note is linked to a note found by its title
-      Given the person has the note titled "Quay" with "The quay is at the harbour."
-      And the person has the note titled "Jetty" with "The jetty is at the quay."
+      Given the vault has the note titled "Quay" with "The quay is at the harbour."
+      And the person opens the note titled "Quay"
+      And the vault has the note titled "Jetty" with "The jetty is at the quay."
+      And the person opens the note titled "Jetty"
       And the person runs the command "Show note in plex" on the tab titled "Quay"
       When the person links the note titled "Quay" to the note titled "Jetty" in the plex
       Then the note titled "Quay" links to the note titled "Jetty"
@@ -31,7 +33,8 @@ Feature: Plex
       Then the plex has the note titled "Entropy" as the "focus"
 
     Scenario: A tab linked to the plex opens the note clicked in it
-      Given the person has the note titled "Weir notes" with "Water over the weir."
+      Given the vault has the note titled "Weir notes" with "Water over the weir."
+      And the person opens the note titled "Weir notes"
       And the person runs the command "Link with tab" on the tab titled "Thermodynamics"
       And the person enters "Weir notes"
       When the person clicks the note titled "Entropy" in the plex

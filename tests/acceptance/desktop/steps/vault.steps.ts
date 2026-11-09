@@ -4,8 +4,8 @@ Given('the empty vault {string}', ({ person }, name: string) => {
   person.vault.createEmpty(name)
 })
 
-Given('{vault} has the note titled {string} with {string}', ({ person }, vault: string, title: string, text: string) => {
-  person.vault.writeNote(vault, title, text)
+Given('{vault} has the note titled {string} with {string}', async ({ person }, vault: string, title: string, text: string) => {
+  await person.vault.writeNote(vault, title, text)
 })
 
 Given('{vault} has the folder at {string}', ({ person }, vault: string, folder: string) => {

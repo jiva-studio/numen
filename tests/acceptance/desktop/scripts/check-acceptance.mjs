@@ -26,7 +26,6 @@ const SIMILAR = 0.5
 const PENDING = new Set([
   '{vault} has the folder at {string}',
   '{vault} has the PDF at {string}',
-  'the person opens the note titled {string}',
 ])
 
 const walk = (dir, ext) =>
@@ -130,13 +129,12 @@ for (const definition of definitions) {
 
 // Near-duplicates: the same words, ignoring the parameters, articles, tenses and plurals. A setup
 // (Given), an action (When) and an outcome (Then) may share their words; two of one kind may not.
-const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'that', 'its', 'it', 'is', 'are', 'has', 'have', 'in', 'from'])
+const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'that', 'its', 'it', 'is', 'are', 'has', 'have', 'person', 'in', 'from'])
 const stem = (word) => word.replace(/(ing|ed|es|s|d)$/, '')
 const getWords = (pattern) =>
   new Set(
     pattern
       .toLowerCase()
-      .replace(/\{vault\}/g, ' vault ')
       .replace(/\{tab\}/g, ' tab ')
       .replace(/\{[^}]*\}/g, ' ')
       .split(/[^a-z]+/)

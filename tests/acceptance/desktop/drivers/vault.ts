@@ -1,7 +1,7 @@
 /** The vault of the scenario as a person finds it: what is in its folder before the application starts, and what is there after. */
 import { expect } from 'playwright/test'
-import { listFiles } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertEntry } from './rules.js'
+import { createNote, listFilePaths, listFiles, writeNote as writeBody } from '../../../e2e/desktop/tests/support/vault.js'
+import { assertEntry, getNoteFile } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class VaultDriver {
@@ -11,8 +11,20 @@ export class VaultDriver {
     this.scenario.createVault(name)
   }
 
-  writeNote(vault: string, title: string, text: string): void {
-    this.scenario.getWorld().writeNote(this.scenario.getVault(vault), title, text)
+  async writeNote(vault: string, title: string, text: string): Promise<void> {
+    if (this.scenario.hasWorld) {
+      this.scenario.getWorld().writeNote(this.scenario.getVault(vault), title, text)
+      this.scenario.rememberNote(title, getNoteFile(title))
+      if (this.scenario.hasServer) await this.expectListed(getNoteFile(title))
+      return
+    }
+    this.scenario.checkSharedVault(vault)
+    const { request } = this.scenario.page
+    await this.scenario.claimTitle(title)
+    const notePath = await createNote(request, title)
+    this.scenario.rememberNote(title, notePath)
+    await writeBody(request, notePath, `${text}\n`)
+    await this.expectListed(notePath)
   }
 
   makeFolder(vault: string, folder: string): void {
@@ -47,6 +59,11 @@ export class VaultDriver {
     }
     this.scenario.setVault(vault)
     await expect.poll(() => this.listEntries(file)).not.toContain(file)
+  }
+
+  private async expectListed(filePath: string): Promise<void> {
+    const parent = filePath.split('/').slice(0, -1).join('/')
+    await expect.poll(() => listFilePaths(this.scenario.page.request, parent)).toContain(filePath)
   }
 
   private async listEntries(entryPath: string): Promise<string[]> {
