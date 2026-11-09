@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
+import { COMMAND } from '@/shared/commandIds'
 import { findIcon } from '@/shared/icons'
 import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
 import type * as CommandPaletteModule from '@/features/command-palette'
@@ -152,7 +153,7 @@ describe('the icons the window draws with', () => {
   it('draw a command with the window’s icon, and an entry by what it is', () => {
     const host = createIconHost({})
 
-    expect(host.getCommandIcon('rename')).toBe(findIcon('rename'))
+    expect(host.getCommandIcon(COMMAND.renameNote)).toBe(findIcon(COMMAND.renameNote))
     expect(host.getCommandIcon('nothing at all')).toBeNull()
     expect(host.getEntryIcon(entry('physics', true, true), false)).toBe(Folder)
     expect(host.getEntryIcon(entry('physics', true, true), true)).toBe(FolderOpen)

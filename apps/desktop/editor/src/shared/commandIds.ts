@@ -51,3 +51,6 @@ export const ARGUMENT = {
   placement: 'placement',
   removal: 'removal',
 } as const
+
+/** The welcome row that puts the commands up. It is no command of its own, so it is its own identity. */
+export const COMMANDS_ROW = 'commands'

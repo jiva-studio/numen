@@ -8,7 +8,7 @@ import type { PaletteKeys } from '@numen/ui'
 import type { VaultRow, WelcomeAction } from '@numen/shell'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, COMMANDS_ROW } from '@/shared/commandIds'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
@@ -32,7 +32,7 @@ export interface Words {
 }
 
 /** The row that puts the commands up, which is no command of its own. */
-export const COMMANDS = 'commands'
+export const COMMANDS = COMMANDS_ROW
 
 /**
  * The entry points, in render order. The settings come last and are always offered.
