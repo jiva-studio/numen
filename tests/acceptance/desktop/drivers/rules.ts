@@ -56,9 +56,9 @@ export const getAncestors = (entryPath: string): string[] => {
   return parts.map((_, index) => parts.slice(0, index + 1).join('/'))
 }
 
-export type PaletteField = 'name' | 'item' | 'note' | 'text'
+export type PaletteField = 'name' | 'item' | 'note' | 'vault' | 'text'
 
-const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item', 'Search notes': 'note' }
+const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item', 'Search notes': 'note', 'Search vaults': 'vault' }
 
 /** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, a note found by words, or a text. */
 export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
@@ -67,7 +67,7 @@ export type PaletteAction = 'name' | 'pick' | 'type'
 
 const ACTION_FIELDS: Record<PaletteAction, readonly PaletteField[]> = {
   name: ['name'],
-  pick: ['item', 'note'],
+  pick: ['item', 'note', 'vault'],
   type: ['text'],
 }
 
@@ -81,6 +81,7 @@ const FIELD_ASKS: Record<PaletteField, string> = {
   name: 'a name',
   item: 'an item to pick',
   note: 'an item to pick',
+  vault: 'an item to pick',
   text: 'a text',
 }
 
