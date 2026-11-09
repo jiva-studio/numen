@@ -15,7 +15,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
-  searching: 'Searching',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -90,16 +89,43 @@ describe('the headings of the search groups', () => {
     expect(palette.groups.value[0]?.items.map((one) => one.title)).toEqual(['Coral'])
   })
 
-  it('draws one working group titled Searching while no group has a row', async () => {
+  it('draws no searching group while the questions are out', async () => {
     const { palette } = createHeldVault()
 
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
 
-    expect(palette.groups.value).toEqual([
-      { id: 'searching', title: 'Searching', items: [], isWorking: true },
-    ])
+    expect(getIds(palette)).not.toContain('searching')
     expect(palette.isNothingFound.value).toBe(false)
+  })
+
+  it('is busy while a question is out', async () => {
+    const { palette } = createHeldVault()
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+
+    expect(palette.isBusy.value).toBe(true)
+  })
+
+  it('is busy until the last question answers', async () => {
+    const { palette, names, passages } = createHeldVault()
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+    names.answer([])
+    await flushPromises()
+    expect(palette.isBusy.value).toBe(true)
+
+    passages.answer([])
+    await flushPromises()
+    expect(palette.isBusy.value).toBe(false)
+  })
+
+  it('is not busy before anything is typed', () => {
+    const { palette } = createHeldVault()
+
+    expect(palette.isBusy.value).toBe(false)
   })
 
   it('says nothing found once every question answered with no row', async () => {
@@ -115,7 +141,7 @@ describe('the headings of the search groups', () => {
     expect(palette.isNothingFound.value).toBe(true)
   })
 
-  it('draws neither Searching nor nothing found while a group has rows', async () => {
+  it('draws no nothing found while a group has rows', async () => {
     const { palette, names } = createHeldVault()
 
     palette.setTyped('cor').catch(() => undefined)

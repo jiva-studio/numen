@@ -24,7 +24,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
-  searching: 'Searching',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

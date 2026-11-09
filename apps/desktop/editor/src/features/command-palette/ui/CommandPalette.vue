@@ -40,6 +40,7 @@ const field = computed(() =>
   props.commands.open.value
     ? {
         open: true,
+        isBusy: false,
         typed: props.commands.typed.value,
         groups: props.commands.groups.value,
         crumb: props.commands.crumb.value,
@@ -49,6 +50,7 @@ const field = computed(() =>
       }
     : {
         open: props.search.open.value,
+        isBusy: props.search.isBusy.value,
         typed: props.search.typed.value,
         groups: props.search.groups.value,
         crumb: '',
@@ -106,6 +108,7 @@ function getRowIcon(id: string) {
     :model-value="field.typed"
     :groups="field.groups"
     :is-open="field.open"
+    :is-busy="field.isBusy"
     :placeholder="field.placeholder"
     :crumb="field.crumb"
     :step="field.step"

@@ -5,9 +5,11 @@
  * The field names the row that is lit for a screen reader; where that row is
  * and what the words turn up are the caller's.
  *
- * `data-palette` names each part: `crumb` and `field`.
+ * `data-palette` names each part: `crumb`, `field` and `busy`, the spinner at the end of
+ * the row while more results are on their way.
  */
 import { useTemplateRef } from 'vue'
+import { Spinner } from '@numen/ui'
 import { listId, optionId } from '../../lib/place'
 
 defineProps<{
@@ -17,6 +19,7 @@ defineProps<{
   placeholder: string
   name: string
   crumb: string
+  isBusy?: boolean
 }>()
 
 const searchQuery = defineModel<string>({ required: true })
@@ -54,15 +57,19 @@ defineExpose({ focus, select })
       :aria-label="name"
       :aria-describedby="crumb ? `${uid}-crumb` : undefined"
       :aria-expanded="isExpanded"
+      :aria-busy="isBusy || undefined"
       :aria-controls="listId(uid)"
       :aria-activedescendant="here >= 0 ? optionId(uid, here) : undefined"
     />
+    <!-- Over the end of the field, so the text and the row do not move. -->
+    <Spinner v-if="isBusy" class="palette__busy" data-palette="busy" />
   </div>
 </template>
 
 <style scoped>
 /* The padding at the start of the row; the step the field belongs to is laid out inside it. */
 .palette__ask {
+  position: relative;
   padding-inline-start: var(--numen-field-text-inset);
 }
 
@@ -81,6 +88,14 @@ defineExpose({ focus, select })
   color: inherit;
   font: inherit;
   outline: none;
+}
+
+.palette__busy {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--numen-field-text-inset);
+  translate: 0 -50%;
+  pointer-events: none;
 }
 
 .palette__field::placeholder {

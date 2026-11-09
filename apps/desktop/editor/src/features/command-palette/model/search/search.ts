@@ -62,7 +62,6 @@ export interface Words extends EmptyWords {
   readDocument: string
   wordsOnly: string
   notEmbedded: string
-  searching: string
   creates: string
   asChild: string
   asParent: string
@@ -190,17 +189,6 @@ function appendCreateNoteActions(
 /** A group is listed when it has rows, or has answered with a message to show in their place. */
 const hasContent = (group: PaletteGroup): boolean =>
   group.items.length > 0 || (!group.isWorking && Boolean(group.silence))
-
-/** While nothing is listed and some group is still working, one working group says so. */
-function appendSearchingGroup(
-  listed: readonly PaletteGroup[],
-  isWorking: Record<SearchGroup, boolean>,
-  title: string,
-): readonly PaletteGroup[] {
-  const hasRows = listed.some((one) => one.items.length > 0)
-  if (hasRows || !Object.values(isWorking).some(Boolean)) return listed
-  return [...listed, { id: 'searching', title, items: [], isWorking: true }]
-}
 
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
@@ -345,12 +333,13 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       getSilence: getEmptyGroupMessage,
     })
     const withCreation = appendCreateNoteActions(base, inputValue.value, words, how.getTarget)
-    const listed = withCreation.groups.filter(hasContent)
-    const groups = appendSearchingGroup(listed, isWorking.value, words.searching)
-    return { ...withCreation, groups }
+    return { ...withCreation, groups: withCreation.groups.filter(hasContent) }
   })
 
   const groups = computed(() => searchGroups.value.groups)
+
+  /** Whether any question of the current request is still out. */
+  const isBusy = computed(() => Object.values(isWorking.value).some(Boolean))
 
   /** Whether every question has answered and no group has a row or a message to show. */
   const isNothingFound = computed(
@@ -365,6 +354,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     typed: inputValue,
     groups,
     isNothingFound,
+    isBusy,
     setTyped,
     setOpen,
     chooseResult,

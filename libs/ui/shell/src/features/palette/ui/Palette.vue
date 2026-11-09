@@ -30,6 +30,7 @@ import type { PaletteProps } from './Palette.types'
 const props = withDefaults(defineProps<PaletteProps>(), {
   groups: () => [],
   isOpen: false,
+  isBusy: false,
   placeholder: 'Search',
   crumb: '',
   step: '',
@@ -148,6 +149,7 @@ function reveal(): void {
       :uid="uid"
       :here="isPanelOpen ? -1 : here"
       :is-expanded="placed.length !== 0"
+      :is-busy="isBusy"
       :placeholder="placeholder"
       :name="name"
       :crumb="crumb"

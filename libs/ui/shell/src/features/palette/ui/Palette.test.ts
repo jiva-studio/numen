@@ -1008,3 +1008,34 @@ describe('one step of several', () => {
     expect(palette.emitted('back')).toBeUndefined()
   })
 })
+
+describe('the busy mark of the field', () => {
+  const field = () => document.body.querySelector('[data-palette="field"]')
+  const busy = () => document.body.querySelector('[data-palette="busy"]')
+
+  it('draws a spinner in the row of the field while busy', async () => {
+    mountPalette({ isBusy: true })
+    await settle()
+
+    expect(busy()).not.toBeNull()
+    expect(field()?.getAttribute('aria-busy')).toBe('true')
+  })
+
+  it('draws no spinner and no busy mark when not busy', async () => {
+    mountPalette()
+    await settle()
+
+    expect(busy()).toBeNull()
+    expect(field()?.hasAttribute('aria-busy')).toBe(false)
+  })
+
+  it('removes the spinner once busy turns off', async () => {
+    const palette = mountPalette({ isBusy: true })
+    await settle()
+
+    await palette.setProps({ isBusy: false })
+    await settle()
+
+    expect(busy()).toBeNull()
+  })
+})
