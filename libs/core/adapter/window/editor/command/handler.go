@@ -51,6 +51,7 @@ func (h *Handler) ListCommands(
 	for _, one := range slotEntries {
 		slots = append(slots, newWireSlotEntry(one))
 	}
+	keybindings := newWireKeybindings(h.list.ExecuteKeybindings())
 	handlerEntries := h.list.ExecuteHandlers()
 	handlers := make([]*v1.PluginHandler, 0, len(handlerEntries))
 	for _, one := range handlerEntries {
@@ -62,6 +63,7 @@ func (h *Handler) ListCommands(
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
 		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(), Handlers: handlers,
+		Keybindings: keybindings,
 	}), nil
 }
 
@@ -123,6 +125,22 @@ func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.Plug
 		When:      entry.Command.When,
 		HasItems:  list.HasItems(entry.Command),
 	}
+}
+
+func newWireKeybindings(entries []plugincommand.KeybindingEntry) []*v1.PluginKeybinding {
+	wire := make([]*v1.PluginKeybinding, 0, len(entries))
+	for _, one := range entries {
+		wire = append(wire, &v1.PluginKeybinding{
+			PluginId: one.PluginID,
+			Keybinding: &v1.ManifestKeybinding{
+				Key:     one.Keybinding.Key,
+				Command: one.Keybinding.Command,
+				Values:  one.Keybinding.Values,
+				When:    one.Keybinding.When,
+			},
+		})
+	}
+	return wire
 }
 
 func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {

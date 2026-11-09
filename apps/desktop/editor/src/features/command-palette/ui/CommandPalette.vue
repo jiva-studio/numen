@@ -4,7 +4,7 @@
  * and the search.
  *
  * The two share a field, and which one is active determines what is drawn in it
- * and what a keystroke in it means. Two chords open and close each.
+ * and what a keystroke in it means. The keys of the window open and close each.
  */
 import { computed } from 'vue'
 import { Palette, type ActionWords } from '@numen/shell'
@@ -14,7 +14,6 @@ import type { CommandTarget } from '../types'
 import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
-import { usePaletteShortcuts } from '../model/palette/shortcuts'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
 import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
@@ -35,8 +34,6 @@ const actionWords: ActionWords = {
   placeholder: words.findAction,
   silence: words.noAction,
 }
-
-usePaletteShortcuts(props.search, props.commands)
 
 /** What the palette draws: the commands while they are open, the search under. */
 const field = computed(() =>

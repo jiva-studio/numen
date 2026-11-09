@@ -1,0 +1,42 @@
+/**
+ * The keys drawn beside a command: those of the application come from its keybindings, those of a
+ * plugin from the key the host holds for its command. Control and Command are equivalent.
+ */
+import { APP_KEYBINDINGS } from '@numen/plugin-host'
+import { keyChord, type PaletteKeys } from '@numen/ui'
+
+/** The keys that hold the window's modifier in a key a plugin declares, such as `mod+shift+x`. */
+const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'control', 'cmd'])
+
+/**
+ * The keys of a declared key as drawn for the current platform, or undefined unless the key is the
+ * window's modifier plus a letter, optionally with Shift.
+ */
+export const findShortcutKeys = (shortcut: string, agent: string): PaletteKeys | undefined => {
+  const parts = shortcut
+    .toLowerCase()
+    .split('+')
+    .map((part) => part.trim())
+  const letter = parts.at(-1) ?? ''
+  const modifiers = parts.slice(0, -1)
+  if (!/^[a-z]$/.test(letter) || !modifiers.some((one) => MODIFIERS.has(one))) return undefined
+  if (modifiers.some((one) => !MODIFIERS.has(one) && one !== 'shift')) return undefined
+  return keyChord(letter, agent, modifiers.includes('shift'))
+}
+
+/**
+ * The keys of the first keybinding of the application for the command, as drawn for the current
+ * platform, or undefined for a command without one.
+ */
+export const findChordKeys = (command: string, agent: string): PaletteKeys | undefined => {
+  const key = APP_KEYBINDINGS.find(
+    (one) => one.command === command && Object.keys(one.values).length === 0,
+  )?.key
+  return key === undefined ? undefined : findShortcutKeys(key, agent)
+}
+
+/** The keys of the command as a palette row property. */
+export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
+  const keys = findChordKeys(command, agent)
+  return keys ? { keys } : {}
+}

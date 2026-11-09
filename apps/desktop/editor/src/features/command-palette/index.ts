@@ -2,13 +2,7 @@
  * The command palette: the window it opens, the commands it offers, and the
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
-export {
-  isChord,
-  findChordCommand,
-  findChordKeys,
-  createRowKeys,
-  findShortcutKeys,
-} from './lib/chords/chords'
+export { findChordKeys, createRowKeys, findShortcutKeys } from './lib/keys/keys'
 export { createCommands } from './lib/commands/table'
 export { createInvocation } from './lib/entries/invocation'
 export { createNotes } from './lib/notes/notes'

@@ -502,3 +502,43 @@ describe('useCatalogEntries', () => {
     )
   })
 })
+
+describe('the keybindings of the plugins', () => {
+  it('are read with their plugin, key, command, values and condition, and none where the core lists none', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [],
+      keybindings: [
+        {
+          pluginId: 'org.example.ink',
+          keybinding: { key: 'mod+shift+i', command: 'ink.open', values: {}, when: '' },
+        },
+        {
+          pluginId: 'org.example.ink',
+          keybinding: {
+            key: 'g',
+            command: 'app:file.open',
+            values: { placement: 'split' },
+            when: '!window.isFieldFocused',
+          },
+        },
+      ],
+    })
+
+    const { keybindings } = await listDeclaredCommands()
+
+    expect(keybindings).toStrictEqual([
+      { pluginId: 'org.example.ink', key: 'mod+shift+i', command: 'ink.open' },
+      {
+        pluginId: 'org.example.ink',
+        key: 'g',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        when: '!window.isFieldFocused',
+      },
+    ])
+
+    request.listCommands.mockResolvedValue({ commands: [], slots: [] })
+    expect((await listDeclaredCommands()).keybindings).toStrictEqual([])
+  })
+})

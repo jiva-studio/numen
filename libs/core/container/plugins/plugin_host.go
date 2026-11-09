@@ -438,6 +438,7 @@ func (c Config) OpenChooseTabKind() *tabkind.Choose {
 type commandManifests interface {
 	ListCommands() []pluginport.PluginCommandEntry
 	ListSlots() []pluginport.PluginSlotEntry
+	ListKeybindings() []pluginport.PluginKeybindingEntry
 	ListHandlers() []pluginport.PluginCommandEntry
 	GetParts(pluginID string) pluginport.PluginParts
 }

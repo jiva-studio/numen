@@ -26,8 +26,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
-  isChord: vi.fn(),
-  findChordCommand: vi.fn(),
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
   registerCommand: vi.fn(),

@@ -24,6 +24,7 @@ export const COMMAND = {
   moveTabToWindow: formatAppCommandId('tab.moveToWindow'),
   linkTab: formatAppCommandId('tab.link'),
   searchVault: formatAppCommandId('vault.search'),
+  openCommands: formatAppCommandId('commands.open'),
   openSettings: formatAppCommandId('settings.open'),
   openVault: formatAppCommandId('vault.open'),
   createVault: formatAppCommandId('vault.create'),

@@ -146,6 +146,42 @@ describe('the keys of the plugins', () => {
     expect(handler).not.toHaveBeenCalled()
   })
 
+  it('hand a key of the application to the window with the values of the keybinding', () => {
+    const { host, handler } = create()
+    host.registerKeybindings('org.example.ledger', [
+      { key: 'g', command: 'app:file.open', values: { placement: 'split' }, when: '!window.isFieldFocused' },
+    ])
+    const runApp = vi.fn()
+    const getNote = vi.fn(async () => NOTE)
+
+    expect(host.handleShortcut(press({ code: 'KeyG' }), getNote, TARGET, runApp)).toBe(true)
+    expect(runApp).toHaveBeenCalledExactlyOnceWith('app:file.open', { placement: 'split' })
+    expect(getNote).not.toHaveBeenCalled()
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('hand a key of the application from commands.json to the window, and nothing for a key it does not hold', () => {
+    const { host } = create()
+    const runApp = vi.fn()
+
+    expect(host.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE, TARGET, runApp)).toBe(true)
+    expect(runApp).toHaveBeenCalledExactlyOnceWith('app:commands.open', {})
+    expect(host.handleShortcut(press({ code: 'KeyQ', ctrlKey: true }), async () => NOTE, TARGET, runApp)).toBe(false)
+    expect(runApp).toHaveBeenCalledOnce()
+  })
+
+  it('do not hand a key of the application while its condition is false', () => {
+    const { host, windowValues } = create()
+    host.registerKeybindings('org.example.ledger', [
+      { key: 'g', command: 'app:file.open', when: '!window.isFieldFocused' },
+    ])
+    const runApp = vi.fn()
+    windowValues['window.isFieldFocused'] = true
+
+    expect(host.handleShortcut(press({ code: 'KeyG' }), async () => NOTE, TARGET, runApp)).toBe(false)
+    expect(runApp).not.toHaveBeenCalled()
+  })
+
   it('warn once of a conflict with a key of the application', () => {
     const { host, reportSlotIssue } = create()
     host.registerKeybindings('org.example.ledger', [{ key: 'mod+p', command: 'ledger.open' }])

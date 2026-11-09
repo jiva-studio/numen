@@ -8,8 +8,6 @@ const isOpen = ref(false)
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: {},
-  isChord: vi.fn(),
-  findChordCommand: vi.fn(),
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
   useCommandPalette: () => ({ open: isOpen }),

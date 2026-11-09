@@ -6,8 +6,6 @@ import { formatErrorMessage } from '@numen/core-client'
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
-  isChord,
-  findChordCommand,
   runInvocation,
   createInvocation,
   useCommandPalette,
@@ -26,10 +24,12 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
+import { COMMAND } from '@/shared/commandIds'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
+import { syncKeybindings } from './syncKeybindings'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
@@ -295,16 +295,27 @@ export function useCommands(options: CommandsDepsOptions) {
       choice.values,
     )
 
+  /** Runs the command of the application a key is bound to, with the values of the keybinding. */
+  const runAppKey = (command: string, values: Values): void => {
+    if (command === COMMAND.searchVault) {
+      commands.setOpen(false)
+      palette.setOpen(!palette.open.value)
+    } else if (command === COMMAND.openCommands) {
+      palette.setOpen(false)
+      commands.setOpen(!commands.open.value)
+    } else runCommand(command, getTarget(), undefined, values)
+  }
+
+  if (pluginHost && declaredCommands?.keybindings) {
+    syncKeybindings(pluginHost, declaredCommands.keybindings, options.rest.plugins)
+  }
+
+  /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
-    if (pluginHost?.handleShortcut(event, getNote, getTarget())) return event.preventDefault()
-    if (!isChord(event)) return
-    const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
-    if (!command) return
-    event.preventDefault()
-    runCommand(command, getTarget())
+    if (pluginHost?.handleShortcut(event, getNote, getTarget(), runAppKey)) event.preventDefault()
   }
 
   return {

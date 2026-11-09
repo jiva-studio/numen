@@ -71,6 +71,21 @@ func (m Manifests) ListSlots() []pluginport.PluginSlotEntry {
 	return found
 }
 
+// ListKeybindings lists the keybindings the manifests of the enabled plugins declare. No plugin is started.
+func (m Manifests) ListKeybindings() []pluginport.PluginKeybindingEntry {
+	var found []pluginport.PluginKeybindingEntry
+	for _, info := range m.host.GetPluginInfos() {
+		plugin, isEnabled := m.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, entry := range plugin.Manifest.Contributes.Keybindings {
+			found = append(found, pluginport.PluginKeybindingEntry{PluginID: plugin.Manifest.ID, Keybinding: entry})
+		}
+	}
+	return found
+}
+
 // ListHandlers lists the handlers the manifests of the enabled plugins declare, each as a command under
 // the full id of its shared command. No plugin is started.
 func (m Manifests) ListHandlers() []pluginport.PluginCommandEntry {
@@ -139,6 +154,8 @@ type NoManifests struct{}
 func (NoManifests) ListCommands() []pluginport.PluginCommandEntry { return nil }
 
 func (NoManifests) ListSlots() []pluginport.PluginSlotEntry { return nil }
+
+func (NoManifests) ListKeybindings() []pluginport.PluginKeybindingEntry { return nil }
 
 func (NoManifests) ListHandlers() []pluginport.PluginCommandEntry { return nil }
 

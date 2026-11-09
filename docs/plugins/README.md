@@ -487,7 +487,7 @@ A plugin keeps what it downloads or makes in its folder of the vault's store, ne
 
 ## Keybindings
 
-`contributes.keybindings` is a list of `{ "key", "command", "values"?, "when"? }`. `key` is a chord of the modifiers `mod`, `ctrl`, `alt`, `shift` and `meta` joined by `+` and one key name, such as `mod+shift+p`, or a single letter such as `n`. `command` is the id of a command of the manifest or the full id of another command, such as `app:file.open`. `values` maps argument names to text and is checked as the `values` of a slot entry. `when` is a condition, see [Conditions](#conditions); two entries with the same `key` and the same `when` make the manifest invalid. The keys of the application are the `keybindings` list of `libs/protocol/commands.json`.
+`contributes.keybindings` is a list of `{ "key", "command", "values"?, "when"? }`. `key` is a chord of the modifiers `mod`, `ctrl`, `alt`, `shift` and `meta` joined by `+` and one key name, such as `mod+shift+p`, or a single letter such as `n`. `command` is the id of a command of the manifest or the full id of another command, such as `app:file.open`. `values` maps argument names to text and is checked as the `values` of a slot entry. `when` is a condition, see [Conditions](#conditions); two entries with the same `key` and the same `when` make the manifest invalid. The keys of the application are the `keybindings` list of `libs/protocol/commands.json`; there `command` may also be the id of a row of the palette that runs a command, such as `app:file.open#note`. The core lists the keybindings of every enabled plugin with its commands, so a key works before its plugin starts, and the window matches every key against them in one handler.
 
 ## Slots
 

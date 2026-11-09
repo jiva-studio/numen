@@ -48,6 +48,7 @@ import { createBackendHandlers } from '../commands/backendHandlers'
 import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
 import { getNamedIcon } from '@/shared/icons'
+import { isFieldFocused } from '@/shared/isFieldFocused'
 import { useWindowDisplay } from './useWindowDisplay'
 import { createEditorVaults } from './windowVaults'
 import { createWindowCommands } from './windowCommands'
@@ -410,6 +411,12 @@ interface WindowContext {
   versionCommands?: ReturnType<typeof createVersionCommands>
 }
 
+/** Whether the search or the command palette is open; false until the window commands exist. */
+function isPaletteOpen(ctx: WindowContext): boolean {
+  const { commands } = ctx
+  return commands ? commands.palette.open.value || commands.commands.open.value : false
+}
+
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
   // Stryker disable next-line ConditionalExpression: definite-assignment guard for cyclic window wiring
   if (!ctx.commands) throw new Error('window commands are read before they are created')
@@ -507,6 +514,8 @@ function initWindowKindsAndCommands(
       'window.isVaultOpen': inFront.vault.id !== '',
       'window.isVaultReady': inFront.isReady,
       'window.isTabOpen': inFront.tab !== '',
+      'window.isFieldFocused': isFieldFocused(),
+      'window.isPaletteOpen': isPaletteOpen(ctx),
     }
   }
 

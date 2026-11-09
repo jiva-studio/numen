@@ -49,6 +49,18 @@ interface WireHandler {
   readonly hasItems: boolean
 }
 
+interface WireKeybinding {
+  readonly pluginId: string
+  readonly keybinding?:
+    | {
+        readonly key: string
+        readonly command: string
+        readonly values?: Readonly<Record<string, string>> | undefined
+        readonly when: string
+      }
+    | undefined
+}
+
 interface DeclaredArgument {
   readonly name: string
   readonly title: string
@@ -70,12 +82,22 @@ export interface DeclaredSlot {
   readonly values?: Readonly<Record<string, string>>
 }
 
+/** One entry of `contributes.keybindings` of an enabled plugin, as the core lists it. */
+export interface DeclaredKeybinding {
+  readonly pluginId: string
+  readonly key: string
+  readonly command: string
+  readonly values?: Readonly<Record<string, string>>
+  readonly when?: string
+}
+
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
 export interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
   readonly contentTypes?: Readonly<Record<string, string>>
   readonly handlers?: readonly HandlerDeclaration[]
+  readonly keybindings?: readonly DeclaredKeybinding[]
 }
 
 /** One command a plugin declares. */
@@ -157,7 +179,17 @@ const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDecla
   hasItems,
 })
 
-/** Every command the enabled plugins declare, in the order of the plugins' ids, and their slot entries. */
+const readKeybinding = ({ pluginId, keybinding }: WireKeybinding): DeclaredKeybinding => ({
+  pluginId,
+  key: keybinding?.key ?? '',
+  command: keybinding?.command ?? '',
+  ...(keybinding?.values && Object.keys(keybinding.values).length > 0
+    ? { values: { ...keybinding.values } }
+    : {}),
+  ...(keybinding?.when ? { when: keybinding.when } : {}),
+})
+
+/** Every command the enabled plugins declare, in the order of the plugins' ids, their slot entries and their keybindings. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
   return {
@@ -165,6 +197,8 @@ export async function listDeclaredCommands(): Promise<DeclaredList> {
     slots: answer.slots.map(readSlotEntry),
     contentTypes: { ...answer.contentTypeByExtension },
     handlers: (answer.handlers as readonly WireHandler[] | undefined)?.map(readHandler) ?? [],
+    keybindings:
+      (answer.keybindings as readonly WireKeybinding[] | undefined)?.map(readKeybinding) ?? [],
   }
 }
 

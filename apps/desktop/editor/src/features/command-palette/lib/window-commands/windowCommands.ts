@@ -2,7 +2,7 @@
  * The commands offered over the window: what it opens, and how it is drawn.
  */
 import { COMMAND, ROW } from '@/shared/commandIds'
-import { createRowKeys } from '../chords/chords'
+import { createRowKeys } from '../keys/keys'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'

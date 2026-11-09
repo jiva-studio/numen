@@ -50,6 +50,8 @@ type declaredCommands struct {
 	calls   []plugincommand.Call
 }
 
+func (d *declaredCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+
 func (d *declaredCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (d *declaredCommands) ListHandlers() []plugincommand.Entry { return nil }

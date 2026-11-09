@@ -70,7 +70,7 @@ export function createCommandApi(
     /**
      * Runs the command of the key event over the note, and returns whether the event is such a key.
      * The caller prevents the default of the event on true; `target` is what is in front, for the
-     * condition of the command.
+     * condition of the command. A key of an application command is given to `runApp`.
      */
     handleShortcut: createShortcutHandler({ deps, keybindings, getAvailable, executeCommand }),
   }

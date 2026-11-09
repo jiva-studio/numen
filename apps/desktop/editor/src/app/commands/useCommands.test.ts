@@ -1,4 +1,4 @@
-/** How a command runs, and what a key chord triggers. */
+/** How a command runs, and what a key press triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandDeps, CommandTarget, PaletteLists } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
@@ -10,9 +10,8 @@ const h = vi.hoisted(() => ({
   setCommandsOpen: vi.fn(),
   setPaletteOpen: vi.fn(),
   isCommandsOpen: { value: false },
+  isSearchOpen: { value: false },
   runInvocation: vi.fn(() => Promise.resolve()),
-  isChord: vi.fn(),
-  findChordCommand: vi.fn(),
   depsOptions: null as unknown,
   registerCommand: vi.fn(),
   getExtraCommands: null as null | (() => readonly unknown[]),
@@ -21,13 +20,11 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
-  isChord: h.isChord,
-  findChordCommand: h.findChordCommand,
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
   registerCommand: h.registerCommand,
   useSearch: () => {
-    return { setOpen: h.setPaletteOpen }
+    return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
   },
   useCommandPalette: (...args: unknown[]) => {
     h.getExtraCommands = args[7] as () => readonly unknown[]
@@ -58,7 +55,7 @@ const inFront = (path: string, isReady = true) =>
     isReady,
   }) as unknown as CommandTarget
 
-const setup = (isPrevented = false) => {
+const setup = (isPrevented = false, pluginHost?: object) => {
   const content: [string, string][] = []
   const press = vi.fn(() => isPrevented)
   const options = {
@@ -72,6 +69,7 @@ const setup = (isPrevented = false) => {
     coverage: () => ({}),
     rest: {},
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
+    ...(pluginHost ? { pluginHost } : {}),
   } as unknown as CommandsDepsOptions
   return { messages: content, press, ...useCommands(options) }
 }
@@ -90,8 +88,7 @@ const keyEvent = (key: string, overrides: Partial<KeyboardEvent> = {}) => {
 beforeEach(() => {
   vi.clearAllMocks()
   h.isCommandsOpen.value = false
-  h.isChord.mockReturnValue(true)
-  h.findChordCommand.mockReturnValue('save')
+  h.isSearchOpen.value = false
 })
 
 describe('running a command', () => {
@@ -226,58 +223,120 @@ describe('a run to its end, as a plugin awaits it', () => {
 })
 
 describe('a key press', () => {
-  it('runs the command of the chord, requested for by the lowercase key', () => {
-    h.startCommand.mockReturnValue({ id: 'inv' })
-    const one = setup()
-    const event = keyEvent('S', { shiftKey: true })
+  type RunAppKey = (command: string, values: Record<string, string>) => void
+
+  /** A host whose registry matches the key as the test says: no match, or an app command to run. */
+  const createHost = (match?: { command: string; values?: Record<string, string> }) => ({
+    getPaletteCommands: () => [],
+    hasCommandItems: () => false,
+    hasCommand: () => false,
+    isSharedCommand: () => false,
+    executeCommand: vi.fn(),
+    handleShortcut: vi.fn(
+      (_event: KeyboardEvent, _getNote: unknown, _target: unknown, runApp: RunAppKey) => {
+        if (match) runApp(match.command, match.values ?? {})
+        return match !== undefined
+      },
+    ),
+  })
+
+  it('goes to the registry with the event, the target and a runner of the application keys', () => {
+    const host = createHost()
+    const one = setup(false, host)
+    const event = keyEvent('s')
 
     one.onKeyDown(event)
 
-    expect(h.findChordCommand).toHaveBeenCalledWith('s', true)
-    expect(h.startCommand).toHaveBeenCalledWith('save', target)
+    expect(host.handleShortcut).toHaveBeenCalledExactlyOnceWith(
+      event,
+      expect.any(Function),
+      target,
+      expect.any(Function),
+    )
+  })
+
+  it('runs the command of the application a key matched, and prevents the default', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup(false, createHost({ command: 'app:note.create' }))
+    const event = keyEvent('n')
+
+    one.onKeyDown(event)
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.create', target)
     expect(event.preventDefault).toHaveBeenCalledOnce()
   })
 
+  it('runs the command of the application with the values of the keybinding', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup(false, createHost({ command: 'app:file.open', values: { placement: 'split' } }))
+
+    one.onKeyDown(keyEvent('g'))
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:file.open', target, undefined, {
+      placement: 'split',
+    })
+  })
+
+  it('prevents nothing and runs nothing where no keybinding matched', () => {
+    const one = setup(false, createHost())
+    const event = keyEvent('q')
+
+    one.onKeyDown(event)
+
+    expect(h.startCommand).not.toHaveBeenCalled()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
   it('does nothing where the event was already handled', () => {
-    const one = setup()
-    const event = keyEvent('s', { defaultPrevented: true })
+    const host = createHost({ command: 'app:note.create' })
+    const one = setup(false, host)
+    const event = keyEvent('n', { defaultPrevented: true })
 
     one.onKeyDown(event)
 
     expect(one.press).not.toHaveBeenCalled()
-    expect(h.startCommand).not.toHaveBeenCalled()
+    expect(host.handleShortcut).not.toHaveBeenCalled()
   })
 
   it('stops at the tabs where they take the key', () => {
-    const one = setup(true)
-    const event = keyEvent('s')
+    const host = createHost({ command: 'app:note.create' })
+    const one = setup(true, host)
+    const event = keyEvent('n')
 
     one.onKeyDown(event)
 
     expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(h.isChord).not.toHaveBeenCalled()
+    expect(host.handleShortcut).not.toHaveBeenCalled()
   })
 
-  it('does nothing where the key is no chord', () => {
-    h.isChord.mockReturnValue(false)
-    const one = setup()
-    const event = keyEvent('s')
+  it('opens the search for its key, and closes it where it is open', () => {
+    const one = setup(false, createHost({ command: 'app:vault.search' }))
 
-    one.onKeyDown(event)
+    one.onKeyDown(keyEvent('k'))
 
-    expect(h.findChordCommand).not.toHaveBeenCalled()
-    expect(event.preventDefault).not.toHaveBeenCalled()
-  })
-
-  it('does nothing where the chord has no command', () => {
-    h.findChordCommand.mockReturnValue(null)
-    const one = setup()
-    const event = keyEvent('s')
-
-    one.onKeyDown(event)
-
+    expect(h.setCommandsOpen).toHaveBeenCalledExactlyOnceWith(false)
+    expect(h.setPaletteOpen).toHaveBeenLastCalledWith(true)
     expect(h.startCommand).not.toHaveBeenCalled()
-    expect(event.preventDefault).not.toHaveBeenCalled()
+
+    h.isSearchOpen.value = true
+    one.onKeyDown(keyEvent('k'))
+
+    expect(h.setPaletteOpen).toHaveBeenLastCalledWith(false)
+  })
+
+  it('opens the commands for its key, and closes them where they are open', () => {
+    const one = setup(false, createHost({ command: 'app:commands.open' }))
+
+    one.onKeyDown(keyEvent('p'))
+
+    expect(h.setPaletteOpen).toHaveBeenCalledExactlyOnceWith(false)
+    expect(h.setCommandsOpen).toHaveBeenLastCalledWith(true)
+
+    h.isCommandsOpen.value = true
+    one.onKeyDown(keyEvent('p'))
+
+    expect(h.setCommandsOpen).toHaveBeenLastCalledWith(false)
+    expect(h.startCommand).not.toHaveBeenCalled()
   })
 })
 
@@ -485,7 +544,6 @@ describe('a plugin command over a note', () => {
       }),
     )
     expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(h.isChord).not.toHaveBeenCalled()
   })
 })
 

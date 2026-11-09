@@ -95,6 +95,8 @@ type commands struct {
 	ran []pluginport.PluginCommandCall
 }
 
+func (c *commands) ListKeybindings() []pluginport.PluginKeybindingEntry { return nil }
+
 func (c *commands) ListSlots() []pluginport.PluginSlotEntry { return nil }
 
 func (c *commands) ListHandlers() []pluginport.PluginCommandEntry { return nil }

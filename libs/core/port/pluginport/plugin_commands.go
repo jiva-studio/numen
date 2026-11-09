@@ -20,6 +20,12 @@ type PluginSlotEntry struct {
 	Entry    manifest.SlotEntry
 }
 
+// PluginKeybindingEntry is one keybinding an enabled plugin declares, and the plugin that declares it.
+type PluginKeybindingEntry struct {
+	PluginID   string
+	Keybinding manifest.Keybinding
+}
+
 // PluginParts is what one plugin has and whether the host runs it.
 type PluginParts struct {
 	HasBackend  bool
@@ -62,6 +68,9 @@ type PluginCommands interface {
 	// ListSlots lists the slot entries of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListSlots() []PluginSlotEntry
+	// ListKeybindings lists the keybindings of every enabled plugin, in the order of the plugins' ids and
+	// then of each manifest.
+	ListKeybindings() []PluginKeybindingEntry
 	// ListHandlers lists the handlers of shared commands of every enabled plugin, in the order of the
 	// plugins' ids and then of each manifest, each as a command under the full id of its shared
 	// command, with the handler's title and condition.
