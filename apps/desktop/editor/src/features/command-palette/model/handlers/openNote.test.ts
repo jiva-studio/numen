@@ -63,7 +63,7 @@ describe('the command that opens a note', () => {
   })
 })
 
-describe('the command that opens a note with the argument showing', () => {
+describe('the command that opens a note with the argument placement', () => {
   const run = async (values: Record<string, string>, chosen: CommandTarget) => {
     const openFile = vi.fn()
     await runInvocation(
@@ -75,7 +75,7 @@ describe('the command that opens a note with the argument showing', () => {
   }
 
   it('opens the note in a split at the line of the target', async () => {
-    const openFile = await run({ showing: 'split' }, target({ line: 7 }))
+    const openFile = await run({ placement: 'split' }, target({ line: 7 }))
 
     expect(openFile).toHaveBeenCalledExactlyOnceWith('reef/Coral.md', 'Coral', 'split', {
       line: 7,
@@ -83,7 +83,7 @@ describe('the command that opens a note with the argument showing', () => {
   })
 
   it('opens in the current tab where the argument names no known place', async () => {
-    const openFile = await run({ showing: 'elsewhere' }, target())
+    const openFile = await run({ placement: 'elsewhere' }, target())
 
     expect(openFile.mock.calls[0]?.[2]).toBe('current')
   })

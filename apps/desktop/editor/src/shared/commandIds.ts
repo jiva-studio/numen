@@ -48,6 +48,6 @@ export const ROW = {
 
 /** The names of the arguments of the command that opens a file and of the command that removes a file. */
 export const ARGUMENT = {
-  showing: 'showing',
+  placement: 'placement',
   removal: 'removal',
 } as const

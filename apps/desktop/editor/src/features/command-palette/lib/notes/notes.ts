@@ -17,14 +17,14 @@ export interface NoteOpeners {
 }
 
 const createPlacement = (
-  showing: 'current' | 'split',
+  placement: 'current' | 'split',
   place: CommandPlace | undefined,
 ): Parameters<NoteOpeners['openFile']>[2] => {
   const line = place?.line
   const selector = place?.selector
-  if (line === undefined && selector === undefined) return showing
+  if (line === undefined && selector === undefined) return placement
   return {
-    where: showing,
+    where: placement,
     ...(line === undefined ? {} : { line }),
     ...(selector === undefined ? {} : { selector }),
   }
@@ -46,7 +46,7 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
       await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
-    openFile: (path, title, showing, place) =>
-      noteOpeners.openFile(path, title, createPlacement(showing, place)),
+    openFile: (path, title, placement, place) =>
+      noteOpeners.openFile(path, title, createPlacement(placement, place)),
   }
 }

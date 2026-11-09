@@ -113,8 +113,8 @@ const window = (
       close: (id) => {
         isDone.push(`close ${id}`)
       },
-      openFile: (path, title, showing) => {
-        isDone.push(`openFile ${path} ${title} ${showing}`)
+      openFile: (path, title, placement) => {
+        isDone.push(`openFile ${path} ${title} ${placement}`)
       },
     },
     vaults: {
@@ -267,7 +267,7 @@ describe('a note put in front of the person', () => {
 
     await carry(createInvocation('app:file.open', front()), one.on)
     await carry(
-      { ...createInvocation('app:file.open', front()), values: { showing: 'split' } },
+      { ...createInvocation('app:file.open', front()), values: { placement: 'split' } },
       one.on,
     )
 

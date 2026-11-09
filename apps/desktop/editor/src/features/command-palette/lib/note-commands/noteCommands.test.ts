@@ -38,7 +38,7 @@ describe('the rows that run one command with an argument', () => {
     expect(find('app:file.open')).toMatchObject({ also: 'app:file.open#beside' })
     expect(find('app:file.open#beside')).toMatchObject({
       command: 'app:file.open',
-      values: { showing: 'split' },
+      values: { placement: 'split' },
     })
   })
 

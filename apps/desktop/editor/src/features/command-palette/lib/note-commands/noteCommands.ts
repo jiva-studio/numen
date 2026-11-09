@@ -18,7 +18,7 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
   {
     id: ROW.openNoteBeside,
     command: COMMAND.openFile,
-    values: { [ARGUMENT.showing]: 'split' },
+    values: { [ARGUMENT.placement]: 'split' },
     text: words.beside,
     group: 'note',
     ...withWhen('target.isNote'),
