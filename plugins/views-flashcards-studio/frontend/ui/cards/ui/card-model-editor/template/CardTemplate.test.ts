@@ -1,10 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CardTemplate from './CardTemplate.vue'
-import type { FieldValue } from '../../../lib/card'
-import { getDeclaredFields } from '../../../lib/order'
-import { templateRows, type TemplateRow, type CardModelTemplate } from '../../../lib/card-model'
-import { sampleValues } from '../../../lib/fill'
+import type { FieldValue } from '../../../../../lib/cards'
+import { getDeclaredFields } from '../../../../../lib/cards'
+import { templateRows, type TemplateRow, type CardModelTemplate } from '../../../../../lib/cards'
+import { sampleValues } from '../../../../../lib/cards'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 

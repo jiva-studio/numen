@@ -1,5 +1,5 @@
 import { shallowRef, type ShallowRef } from 'vue'
-import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '../lib/order'
+import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '../../../lib/cards'
 
 /** Dependencies for ordering and moving dragged items. */
 export interface DragDeps<At extends InsertionPoint | undefined> {

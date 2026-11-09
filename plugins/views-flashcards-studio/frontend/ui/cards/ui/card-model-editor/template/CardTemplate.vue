@@ -4,15 +4,15 @@ import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
 import TemplatePane from './TemplatePane.vue'
 import TemplateStrip from './TemplateStrip.vue'
-import type { Half, StepDirection } from '../../../lib/order'
+import type { Half, StepDirection } from '../../../../../lib/cards'
 import {
   getPanes,
   CARD_MODEL_WORDS,
   type TemplateRow,
   type Pane,
   type CardModelWords,
-} from '../../../lib/card-model'
-import { insert } from '../../../lib/fill'
+} from '../../../../../lib/cards'
+import { insert } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

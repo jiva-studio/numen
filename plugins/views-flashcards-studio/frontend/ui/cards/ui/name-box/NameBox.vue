@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NameEntryState } from '../../model/nameEntry'
-import type { Objection } from '../../lib/order'
+import type { Objection } from '../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

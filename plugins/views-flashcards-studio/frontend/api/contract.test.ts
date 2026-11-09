@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import typesSource from './types.ts?raw'
+import stopSource from '../lib/stop.ts?raw'
 
 const fixtureFiles = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -46,7 +47,7 @@ const parseTypes = (source: string) => {
   return { interfaces, enums }
 }
 
-const { interfaces, enums } = parseTypes(typesSource)
+const { interfaces, enums } = parseTypes(typesSource + stopSource)
 
 const check = (value: unknown, typeName: string, path: string, isRequest: boolean): string[] => {
   if (typeName === 'string') return typeof value === 'string' ? [] : [`${path}: not a string`]

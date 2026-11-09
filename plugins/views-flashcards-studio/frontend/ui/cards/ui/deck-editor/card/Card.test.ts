@@ -6,9 +6,9 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Card from './Card.vue'
 import { DECK_CONTEXT } from '../../../model/context'
-import { type DeckSection, type CardWords, type DeckCard } from '../../../lib/deck'
-import { getGrid, type Tile } from '../../../lib/grid'
-import type { CardModel } from '../../../lib/card'
+import { type DeckSection, type CardWords, type DeckCard } from '../../../../../lib/cards'
+import { getGrid, type Tile } from '../../../../../lib/cards'
+import type { CardModel } from '../../../../../lib/cards'
 
 const CUTS: readonly CardModel[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 

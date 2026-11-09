@@ -9,7 +9,7 @@ import {
   type Settings,
 } from '../wire/settings'
 import { type Goal } from '../wire/goal'
-import { StopReason, type BudgetName } from '../../api/types.js'
+import { StopReason, type BudgetName } from '../../lib/stop'
 import type { CardsFailure } from '../types'
 
 export type { Goal, BudgetUnit, Rule, Load, Settings }

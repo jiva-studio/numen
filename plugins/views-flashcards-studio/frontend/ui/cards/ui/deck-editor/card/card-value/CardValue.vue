@@ -7,9 +7,9 @@ import { inject } from 'vue'
 import { ErrorMessage } from '../../../error-message'
 import { AutosizeTextarea } from '../../../autosize-textarea'
 import { Divider } from '../../../divider'
-import { DECK_WORDS, type CardWords } from '../../../../lib/deck'
+import { DECK_WORDS, type CardWords } from '../../../../../../lib/cards'
 import { DECK_CONTEXT } from '../../../../model/context'
-import type { PlacedFieldValue } from '../../../../lib/grid'
+import type { PlacedFieldValue } from '../../../../../../lib/cards'
 
 const props = withDefaults(
   defineProps<{

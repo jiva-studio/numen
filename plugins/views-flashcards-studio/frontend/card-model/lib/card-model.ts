@@ -6,7 +6,7 @@
  * they were given. Creating those identities, and converting user edits into
  * the fields and the templates a file is written from, is done here.
  */
-import { orderNames, reorderFields, type InsertionPoint } from '../../ui/cards'
+import { orderNames, reorderFields, type InsertionPoint } from '../../lib/cards'
 import {
   type VaultTemplate,
   type VaultCardModel,

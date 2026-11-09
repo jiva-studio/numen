@@ -4,9 +4,9 @@ import { ErrorMessage } from '../../error-message'
 import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
 import { CardValue } from './card-value'
-import { DECK_WORDS, type CardWords } from '../../../lib/deck'
-import type { PlacedFieldValue, Tile } from '../../../lib/grid'
-import { createSealedMap, type StepDirection } from '../../../lib/order'
+import { DECK_WORDS, type CardWords } from '../../../../../lib/cards'
+import type { PlacedFieldValue, Tile } from '../../../../../lib/cards'
+import { createSealedMap, type StepDirection } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

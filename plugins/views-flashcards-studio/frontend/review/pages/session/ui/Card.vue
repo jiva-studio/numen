@@ -6,7 +6,8 @@
  * here the way it reads where it was written.
  */
 import { ref } from 'vue'
-import { CardProse, scheme } from '../../../../ui/cards'
+import { scheme } from '../../../../lib/cards'
+import { CardProse } from '../../../../ui/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

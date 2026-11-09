@@ -7,9 +7,9 @@ import { ErrorMessage } from '../../error-message'
 import { SectionName } from './section-name'
 import { Divider } from '../../divider'
 import { useNameEntry } from '../../../model/nameEntry'
-import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
-import type { PlacedSection } from '../../../lib/grid'
-import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
+import { DECK_WORDS, type DeckWords } from '../../../../../lib/cards'
+import type { PlacedSection } from '../../../../../lib/cards'
+import { checkHeadingName, type HeadingObjection } from '../../../../../lib/cards'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(

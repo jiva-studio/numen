@@ -8,8 +8,8 @@ import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
 import { useNameEntry } from '../../../model/nameEntry'
 import { Button } from '@numen/ui'
-import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
-import { CARD_MODEL_WORDS, type TemplateRow, type CardModelWords } from '../../../lib/card-model'
+import { checkHeadingName, type HeadingObjection } from '../../../../../lib/cards'
+import { CARD_MODEL_WORDS, type TemplateRow, type CardModelWords } from '../../../../../lib/cards'
 
 const props = withDefaults(
   defineProps<{

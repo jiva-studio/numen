@@ -8,9 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import CardModel from './CardModelEditor.vue'
-import { orderNames, reorderFields, type Half, type InsertionPoint } from '../../lib/order'
-import type { CardModelTemplate } from '../../lib/card-model'
-import { renameField } from '../../lib/fill'
+import { orderNames, reorderFields, type Half, type InsertionPoint } from '../../../../lib/cards'
+import type { CardModelTemplate } from '../../../../lib/cards'
+import { renameField } from '../../../../lib/cards'
 
 interface Corpus {
   readonly fields: readonly string[]

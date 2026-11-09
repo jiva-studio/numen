@@ -12,8 +12,8 @@ import {
   type InsertionPoint,
   type Objection,
   type StepDirection,
-} from '../../../lib/order'
-import { CARD_MODEL_WORDS, type FieldRow, type CardModelWords } from '../../../lib/card-model'
+} from '../../../../../lib/cards'
+import { CARD_MODEL_WORDS, type FieldRow, type CardModelWords } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

@@ -3,7 +3,8 @@
  * Displays flashcard card model editor and handles field and template definitions.
  */
 import { computed } from 'vue'
-import { CardModelEditor, type InsertionPoint, type Half } from '../../ui/cards'
+import { type InsertionPoint, type Half } from '../../lib/cards'
+import { CardModelEditor } from '../../ui/cards'
 import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { CardModelTabState } from '../types'

@@ -2,7 +2,7 @@
  * Type declarations for the flashcards card model tab domain.
  */
 import type { ComputedRef } from 'vue'
-import type { Half } from '../ui/cards'
+import type { Half } from '../lib/cards'
 import type { OpenNote } from '../buffer'
 import type { Marks } from '../cards'
 import type { BufferCardModel } from './lib/card-model'

@@ -6,7 +6,7 @@ import { computed, useTemplateRef } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { AutosizeTextarea } from '../../autosize-textarea'
 import { CardProse } from '../../card-prose'
-import { CARD_MODEL_WORDS, type Pane, type CardModelWords } from '../../../lib/card-model'
+import { CARD_MODEL_WORDS, type Pane, type CardModelWords } from '../../../../../lib/cards'
 
 withDefaults(
   defineProps<{

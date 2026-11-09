@@ -14,7 +14,7 @@ import { win } from '@numen/ui'
 import { onScopeDispose, shallowRef } from 'vue'
 import { CardRow } from '../card-row'
 import { Icon } from '../icon'
-import { parseStepKey, STEP_KEYS, type StepDirection } from '../../lib/order'
+import { parseStepKey, STEP_KEYS, type StepDirection } from '../../../../lib/cards'
 
 defineProps<{
   drag: string

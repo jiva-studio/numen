@@ -5,7 +5,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import SectionHeading from './SectionHeading.vue'
-import type { PlacedSection } from '../../../lib/grid'
+import type { PlacedSection } from '../../../../../lib/cards'
 
 const SECTION: PlacedSection = { id: 'roots', name: 'Roots', at: 1 }
 

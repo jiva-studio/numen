@@ -6,9 +6,9 @@ import { computed } from 'vue'
 import {
   getBlanks as cardBlanks,
   getDeclaredFields as cardFields,
-  DeckEditor,
   type InsertionPoint,
-} from '../../ui/cards'
+} from '../../lib/cards'
+import { DeckEditor } from '../../ui/cards'
 import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { DeckTabState } from '../types'
