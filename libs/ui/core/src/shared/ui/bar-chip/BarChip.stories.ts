@@ -8,14 +8,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import BarChip from './BarChip.vue'
 import type { BarChipTone } from '.'
-import {
-  FACE,
-  LABEL,
-  POPOVER_ACTION,
-  POPOVER_LABEL,
-  POPOVER_TEXT,
-  TOOLTIP,
-} from './fixtures/faces'
+import { FACE, LABEL, POPOVER_ACTION, POPOVER_LABEL, POPOVER_TEXT, TOOLTIP } from './fixtures/faces'
 import { pressKey, pressOn } from './fixtures/press'
 
 /** Where the chip is drawn in the viewport. */
