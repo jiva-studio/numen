@@ -71,7 +71,7 @@ type Layout struct {
 
 ### 1.6 Manifest validation (Go, `libs/plugin-catalog/manifest/slot.go`)
 
-`listSlotIssues` no longer has a check that depends on the slot kind. The functions `listBarIssues` and `barEntries.add` and the issues "placed in the bar slots" and "view and command share one key in the bar slots" are deleted. The check on this branch's base stays: the same command placed twice in one slot is refused with `%w: %s %q is placed twice in %q`.
+`listSlotIssues` gets one check that applies to every slot: a view and a command of one plugin with the same id in the same slot are refused with `%w: view and command %q share one key in %q`. `listSlotIssues` has no check that depends on the slot kind. The functions `listBarIssues` and `barEntries.add` and the issues "placed in the bar slots" and "view and command share one key in the bar slots" are deleted (the same-key check above replaces the second). The check on this branch's base stays: the same command placed twice in one slot is refused with `%w: %s %q is placed twice in %q`.
 
 A view or a command may be placed in several slots, and a command in menus and in any other slot; each placement has its own key (§1.1).
 
@@ -339,6 +339,12 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - **When**: the manifest is validated
 - **Then**: it is accepted.
 
+### AC-28: A view and a command with one id in one slot are refused
+
+- **Given**: a manifest that places view `open.it` and command `open.it` in `titleBar.commands`; and one that places them in two different slots; and two plugins that each place an entry with the id `open.it` in one slot
+- **When**: each manifest is validated
+- **Then**: the first is refused with `ErrInvalidSlotEntry`, because both entries would have the layout key `titleBar.commands|<plugin id>/open.it`; the other two are accepted.
+
 ### AC-20: The slot row marks its slots and entries
 
 - **Given**: the title bar and the status bar, whose slots are drawn by the shared slot row, with commands, a command with items and a view
@@ -397,5 +403,6 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 6. **Key in two lists (hand-edited file):** drawn in the first slot in `slots.json` order, both copies kept in the file, as proposed.
 7. **Two plugins placing the same full command in one slot:** the first is drawn, the second is not movable, as proposed.
 8. **Decision 2026-11-09: no `isBar`, slots are generic; the key includes the home slot.**
+9. **Decision 2026-11-09: same view/command id twice in one slot of one plugin is refused, so the key stays unique; no kind marker in the key.**
 
 PR #1795 (`feat/slot-entry-values`) changes `slot.go`, `slotRegistry.ts`, the SDK `slots.ts` and `docs/plugins/README.md`; the branch that merges second rebases onto the first.
