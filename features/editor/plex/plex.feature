@@ -10,6 +10,7 @@ Feature: Plex
     Scenario: A child note is linked to the note in front
       When the person runs the command "Create child note"
       And the person enters "Tributary"
+      And the person runs the command "Show note in plex" on the tab titled "Entropy"
       Then the vault "Test" has the note titled "Tributary"
       And the note titled "Entropy" links to the note titled "Tributary"
       And the plex has the note titled "Tributary" as the "child"
@@ -17,6 +18,7 @@ Feature: Plex
     Scenario: A note is linked to a note found by its title
       Given the person has the note titled "Quay" with "The quay is at the harbour."
       And the person has the note titled "Jetty" with "The jetty is at the quay."
+      And the person runs the command "Show note in plex" on the tab titled "Quay"
       When the person links the note titled "Quay" to the note titled "Jetty" in the plex
       Then the note titled "Quay" links to the note titled "Jetty"
 
