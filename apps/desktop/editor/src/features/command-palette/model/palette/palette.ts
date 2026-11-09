@@ -34,7 +34,7 @@ import type {
 } from '../../types'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
-import { createPaletteSteps } from './navigation'
+import { createPaletteSteps, findUnsuppliedPrompt } from './navigation'
 
 /** How many notes the step that picks one requests. */
 const GROUP_RESULT_LIMIT = 8
@@ -136,24 +136,35 @@ interface PaletteCommandsDeps {
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
+  const openSteps = (): void => {
+    if (deps.open.value) return
+    deps.steps.reset()
+    deps.open.value = true
+  }
+
   /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
   const startCommand = (
     id: string,
     target: CommandTarget,
     input?: string,
+    values?: Readonly<Record<string, string>>,
   ): CommandInvocation | null => {
     const command = deps.byId.get(id)
     if (!command || !command.isAvailable(target, deps.runs)) return null
     if (!command.input) return deps.invocation(command.id, target)
+    if (command.input === 'arguments' && values) {
+      const promptIndex = findUnsuppliedPrompt(command, 0, values)
+      if (promptIndex < 0) return deps.invocation(command.id, target)
+      openSteps()
+      deps.steps.pushStep({ step: 'arguments', command, on: target, promptIndex, values })
+      return null
+    }
     const name = input?.trim() ?? ''
     if (command.input === 'name' && name !== '') return deps.invocation(command.id, target, name)
     if (command.canOmitNameOverFolder && target.isTargetNamed && target.isFolder) {
       return deps.invocation(command.id, target)
     }
-    if (!deps.open.value) {
-      deps.steps.reset()
-      deps.open.value = true
-    }
+    openSteps()
     deps.steps.pushStep({ step: command.input, command, on: target })
     return null
   }

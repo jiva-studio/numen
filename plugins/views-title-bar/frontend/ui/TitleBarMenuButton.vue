@@ -26,7 +26,14 @@ const props = withDefaults(
 )
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string, itemId?: string): void }>()
+const emit = defineEmits<{
+  (
+    event: 'run-command',
+    command: string,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): void
+}>()
 
 /* --------------------------------- State ---------------------------------- */
 const button = useTemplateRef<HTMLElement>('button')
@@ -70,7 +77,8 @@ function onClose(): void {
 function onChoose(id: string): void {
   const pick = slotMenu.pick(id)
   if (!pick) return
-  if (pick.itemId === undefined) emit('run-command', pick.command)
+  if (pick.values) emit('run-command', pick.command, pick.itemId, pick.values)
+  else if (pick.itemId === undefined) emit('run-command', pick.command)
   else emit('run-command', pick.command, pick.itemId)
 }
 

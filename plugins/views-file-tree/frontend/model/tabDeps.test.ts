@@ -101,6 +101,23 @@ describe('the menu of a row', () => {
     ])
   })
 
+  it('runs the command of an entry with the values of the entry', async () => {
+    const { host, commands } = createHost()
+
+    await createFilesTabDeps(host, 'files').runCommand('app:file.open', rowTarget, undefined, {
+      placement: 'split',
+    })
+
+    expect(commands.getRuns()).toStrictEqual([
+      {
+        command: 'app:file.open',
+        target: rowTarget,
+        itemId: undefined,
+        values: { placement: 'split' },
+      },
+    ])
+  })
+
   it('is empty, and runs nothing, in a window that offers no slots and no commands', async () => {
     const { host } = createHost()
     const { slots: _slots, commands: _commands, ...withoutSlots } = host

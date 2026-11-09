@@ -56,6 +56,7 @@ export interface SearchHit {
   selector: Selector | null
   isCreation?: boolean
   actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
+  actionCommands?: Readonly<Record<string, string>>
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -72,19 +73,36 @@ function createNoteActions(
 ): {
   actions: readonly PaletteAction[]
   actionIds: readonly string[]
-  valuesOfHit: Pick<SearchHit, 'actionValues'>
+  valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
 } {
-  const commands = entries.filter((one) => one.kind === 'command')
-  const menu = commands.map((one) => ({ id: one.command, text: one.title }))
+  const commands = entries
+    .filter((one) => one.kind === 'command')
+    .map((one) => ({ one, id: getActionId(one.command, one.values) }))
+  const menu = commands.map(({ one, id }) => ({ id, text: one.title }))
   const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
-  const withValues = commands.flatMap((one) =>
-    one.values && Object.keys(one.values).length > 0 ? [[one.command, one.values] as const] : [],
+  const withValues = commands.flatMap(({ one, id }) =>
+    one.values && Object.keys(one.values).length > 0 ? [[id, one.values] as const] : [],
   )
+  const otherIds = commands.filter(({ one, id }) => id !== one.command)
   return {
     actions,
     actionIds: actions.map((one) => one.id),
-    valuesOfHit: withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {},
+    valuesOfHit: {
+      ...(withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {}),
+      ...(otherIds.length > 0
+        ? { actionCommands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
+        : {}),
+    },
   }
+}
+
+function getActionId(command: string, values: Readonly<Record<string, string>> | undefined) {
+  const names = Object.keys(values ?? {}).sort()
+  if (!values || names.length === 0) return command
+  const pairs = names.map(
+    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values[name] ?? '')}`,
+  )
+  return `${command}?${pairs.join('&')}`
 }
 
 /**
@@ -217,7 +235,7 @@ export function resolveChoice(
   const place = { path: hit.path, file: hit.path, title: hit.title }
   const values = hit.actionValues?.[action]
   return {
-    command: action,
+    command: hit.actionCommands?.[action] ?? action,
     over: hit.line >= 0 ? { ...place, line: hit.line } : place,
     input: '',
     ...(values ? { values } : {}),

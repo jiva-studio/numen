@@ -199,8 +199,10 @@ export function createCommandRunner(parts: CommandRunnerParts) {
           : pluginHost.executeCommand(id, note)
       })
     }
-    const invocation =
-      way.input === undefined
+    const { values } = getValues(way.values)
+    const invocation = values
+      ? commands.startCommand(id, target, way.input, values)
+      : way.input === undefined
         ? commands.startCommand(id, target)
         : commands.startCommand(id, target, way.input)
     if (invocation) {

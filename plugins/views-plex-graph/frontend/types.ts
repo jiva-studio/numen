@@ -131,7 +131,12 @@ export interface PlexTabDeps {
    * Runs a command of the menu over the note of a node; with `itemId`, the item picked. Answers
    * the path of the note it made, empty where none.
    */
-  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<string>
+  runCommand(
+    command: string,
+    target: CommandTarget,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): Promise<string>
   /** The icon the window draws a type of note with. */
   getNoteIcon(tabKind: string): Component | null
   readonly openingPath: Readonly<Ref<string>>

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -57,20 +58,28 @@ func (e SlotEntry) getPlaced() (kind, id string) {
 	return "", ""
 }
 
+func (e SlotEntry) getValuesKey() string {
+	query := url.Values{}
+	for name, value := range e.Values {
+		query.Set(name, value)
+	}
+	return query.Encode()
+}
+
 func (m Manifest) listSlotIssues() []error {
 	declared := map[string]Command{}
 	for _, command := range m.Contributes.Commands {
 		declared[command.ID] = command
 	}
 	var issues []error
-	type placement struct{ slot, kind, id string }
+	type placement struct{ slot, kind, id, values string }
 	observed := map[placement]bool{}
 	submenus := map[string]bool{}
 	windowViews := map[string]bool{}
 	for _, entry := range m.Contributes.Slots {
 		issues = append(issues, listSlotEntryIssues(entry, declared)...)
 		kind, id := entry.getPlaced()
-		key := placement{entry.Slot, kind, id}
+		key := placement{entry.Slot, kind, id, entry.getValuesKey()}
 		if kind != "" && observed[key] {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
 		}

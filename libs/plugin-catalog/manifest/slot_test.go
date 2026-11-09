@@ -159,6 +159,7 @@ func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 		`[{"slot":"titleBar.commands","command":"app:file.remove","values":{"removal":"trash"}}]`,
 		`[{"slot":"titleBar.commands","command":"app:link.import","values":{"address":"https://example.org"}}]`,
 		`[{"slot":"titleBar.commands","command":"org.example.harbor:harbor.open","values":{"any":"thing"}}]`,
+		`[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"current"}},{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}}]`,
 	}
 	for _, slots := range valid {
 		if _, err := readValueSlots(slots); err != nil {
@@ -169,6 +170,7 @@ func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 		"an argument the command does not take":  `[{"slot":"titleBar.commands","command":"app:file.open","values":{"where":"split"}}]`,
 		"a value the argument does not allow":    `[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"aside"}}]`,
 		"values for a command without arguments": `[{"slot":"titleBar.commands","command":"app:settings.open","values":{"placement":"split"}}]`,
+		"the same values twice in a slot":        `[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}},{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}}]`,
 	}
 	for name, slots := range invalid {
 		if _, err := readValueSlots(slots); !errors.Is(err, manifest.ErrInvalidSlotEntry) {

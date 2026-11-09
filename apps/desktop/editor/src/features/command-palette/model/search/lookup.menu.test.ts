@@ -251,17 +251,36 @@ describe('the command an action of a result runs', () => {
 describe('an entry that holds values', () => {
   const WITH_VALUES = entry(`${ATLAS}:graph.show`, 'Show', { values: { where: 'plex' } })
 
+  const getActionId = (row: ReturnType<typeof createNameItem>, text: string): string =>
+    row.item.actions?.find((one) => one.text === text)?.id ?? ''
+
   it('gives the values to the choice of its action, and none to the choice of another', () => {
     const row = createNameItem(createName(), WORDS, [WITH_VALUES, OTHER])
 
-    expect(resolveChoice(row.hit, WITH_VALUES.command)?.values).toStrictEqual({ where: 'plex' })
+    const choice = resolveChoice(row.hit, getActionId(row, 'Show'))
+
+    expect(choice?.command).toBe(WITH_VALUES.command)
+    expect(choice?.values).toStrictEqual({ where: 'plex' })
     expect(resolveChoice(row.hit, OTHER.command)).not.toHaveProperty('values')
+  })
+
+  it('keeps the plain open of a note free of the values of an entry for the same command', () => {
+    const splitEntry = entry(COMMAND.openFile, 'Open in split', { values: { placement: 'split' } })
+    const row = createNameItem(createName(), WORDS, [splitEntry])
+
+    expect(resolveChoice(row.hit, COMMAND.openFile)).not.toHaveProperty('values')
+    expect(resolveChoice(row.hit, getActionId(row, 'Open in split'))).toMatchObject({
+      command: COMMAND.openFile,
+      values: { placement: 'split' },
+    })
   })
 
   it('gives the values to the choice on a passage of a note', () => {
     const row = createPassageItem('text', createPassage(), WORDS, [WITH_VALUES])
 
-    expect(resolveChoice(row.hit, WITH_VALUES.command)?.values).toStrictEqual({ where: 'plex' })
+    expect(resolveChoice(row.hit, getActionId(row, 'Show'))?.values).toStrictEqual({
+      where: 'plex',
+    })
   })
 
   it('leaves the hit without values where no entry holds any', () => {

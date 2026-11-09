@@ -53,7 +53,12 @@ export interface FilesTabDeps {
    * Runs a command of the window or of a plugin over the row; with `itemId`, the one picked.
    * Answers the path of the note it made, empty where none.
    */
-  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<string>
+  runCommand(
+    command: string,
+    target: CommandTarget,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): Promise<string>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
