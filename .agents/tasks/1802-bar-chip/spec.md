@@ -92,7 +92,7 @@ Behavior:
 - Size in px, from tokens in `tokens.css`: `--numen-chip-height: 20px`, `--numen-chip-text: 12px`, `--numen-chip-inset: 8px` (inline padding), `--numen-chip-mark: 12px` (the size a plugin gives its mark), face gap `calc(var(--numen-chip-inset) / 2)`. `font-variant-numeric: tabular-nums`, `line-height: 1`, `white-space: nowrap`, `border-radius: var(--numen-radius)`, no border.
 - Grounds: `neutral` = `--numen-surface` / `--numen-ink`, hover and open `color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%)`; `accent` = `--numen-accent` / `--numen-accent-ink`, hover and open `filter: brightness(1.08)`; `alarm` = `--numen-alarm-bg` / `--numen-alarm` in every state.
 - Every child of the trigger has `pointer-events: none` (WebKit sends no click when the node under a press is replaced before the release; today in `tasksStatus.css`).
-- Popover: reka-ui `PopoverRoot` (`v-model:open`), `PopoverTrigger as-child`, `PopoverPortal`, `PopoverContent` with `side="bottom"`, `align="end"`, `side-offset="4"`, `avoid-collisions` (flips to the top when there is no room below). Escape and a press outside close it (reka-ui defaults). A resize does not close it.
+- Popover: reka-ui `PopoverRoot` (`v-model:open`), `PopoverTrigger as-child`, `PopoverPortal`, `PopoverContent` with `side="bottom"`, `align="end"`, `side-offset` = (bar height − chip height) / 2 + 4px, read from `--numen-title-bar-height` and `--numen-chip-height` (the popover starts 4px below the bar, or ends 4px above it after the flip), `avoid-collisions` (flips to the top when there is no room below). Escape and a press outside close it (reka-ui defaults). A resize does not close it.
 - The chip draws the panel frame: `--numen-raised` ground, `--numen-ink` text, `1px solid var(--numen-panel-border)`, `--numen-radius-popup`, `--numen-panel-shadow`, `overflow: hidden`, stacked above both bars. The plugin's content sets its own width and inner layout in rem.
 - `PopoverContent` carries `role="dialog"`; the plugin content drops its own `role="dialog"` and `aria-modal`. The dialog's `aria-label` is `popoverLabel` (e.g. "Index stats") — see Q5.
 - No business logic in the view; the component has no pure module because it computes nothing.
@@ -159,7 +159,7 @@ Fixture data is invented. Sizes, spacing, scale behavior and contrast are not te
 
 - **Given**: a `BarChip` with popover content near the top of the viewport
 - **When**: the chip is pressed
-- **Then**: a dialog appears, the trigger has `aria-expanded="true"`, and the dialog's top edge is at or below the chip's bottom edge.
+- **Then**: a dialog appears, the trigger has `aria-expanded="true"`, and the dialog's top edge is 4px below the bottom edge of the bar.
 
 ### AC-10: The popover opens upward when there is no room below
 

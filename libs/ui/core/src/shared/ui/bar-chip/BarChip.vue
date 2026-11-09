@@ -5,10 +5,11 @@
  *
  * Without a `popover` slot a press opens nothing.
  */
-import { useId, useSlots } from 'vue'
+import { ref, useId, useSlots, watch } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
-import { useDialogName } from './useDialogName'
+
+const POPOVER_GAP = 4
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -27,10 +28,17 @@ const props = withDefaults(
 /* --------------------------------- State ---------------------------------- */
 const isOpen = defineModel<boolean>('open', { default: false })
 const slots = useSlots()
-const chipId = useId()
+const labelId = useId()
+const sideOffset = ref(POPOVER_GAP)
 
 /* --------------------------------- Hooks ---------------------------------- */
-useDialogName(chipId, () => isOpen.value && hasPopover() && props.popoverLabel !== undefined)
+watch(
+  isOpen,
+  (value) => {
+    if (value) sideOffset.value = getSideOffset()
+  },
+  { immediate: true, flush: 'sync' },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onUpdateOpen(value: boolean): void {
@@ -40,6 +48,16 @@ function onUpdateOpen(value: boolean): void {
 
 /* -------------------------------- Helpers --------------------------------- */
 // Read on every render: a slot given under a condition appears and goes without a reactive change.
+// The popover keeps POPOVER_GAP px from the edge of the bar, whatever the height of the chip:
+// floating-ui measures the offset from the chip, which sits in the middle of the bar.
+function getSideOffset(): number {
+  const style = getComputedStyle(document.documentElement)
+  const barHeight = Number.parseFloat(style.getPropertyValue('--numen-title-bar-height'))
+  const chipHeight = Number.parseFloat(style.getPropertyValue('--numen-chip-height'))
+  if (Number.isNaN(barHeight) || Number.isNaN(chipHeight)) return POPOVER_GAP
+  return (barHeight - chipHeight) / 2 + POPOVER_GAP
+}
+
 function hasPopover(): boolean {
   return slots.popover !== undefined
 }
@@ -66,11 +84,14 @@ function hasPopover(): boolean {
         class="bar-chip__popover"
         side="bottom"
         align="end"
-        :side-offset="4"
+        :side-offset="sideOffset"
         avoid-collisions
         :aria-label="props.popoverLabel"
-        :data-bar-chip-popover="chipId"
+        :aria-labelledby="props.popoverLabel === undefined ? undefined : labelId"
       >
+        <span v-if="props.popoverLabel !== undefined" :id="labelId" class="bar-chip__label">{{
+          props.popoverLabel
+        }}</span>
         <slot name="popover" />
       </PopoverContent>
     </PopoverPortal>
@@ -130,6 +151,15 @@ function hasPopover(): boolean {
 </style>
 
 <style>
+.bar-chip__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .bar-chip__popover {
   box-sizing: border-box;
   max-width: calc(100vw - 1rem);
