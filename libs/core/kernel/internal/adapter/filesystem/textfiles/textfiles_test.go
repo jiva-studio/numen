@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 const plugin = "org.example.transcription"
@@ -46,7 +46,7 @@ func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := files.ReadTextFile(t.Context(), plugin, "../core/x.jsonl"); err == nil || errors.Is(err, textport.ErrNoText) {
+	if _, err := files.ReadTextFile(t.Context(), plugin, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
 		t.Fatalf("a name with a slash: got %v, want a refusal", err)
 	}
 }

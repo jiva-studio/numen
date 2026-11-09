@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -88,7 +89,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
 		},
 		"a file where the note would go": {
-			fmt.Errorf("Old.md: %w", vaultport.ErrAlreadyExists),
+			fmt.Errorf("Old.md: %w", vault.ErrAlreadyExists),
 			v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true,
 		},
 		"a file where a folder of the path must be": {
@@ -111,7 +112,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 }
 
 func TestWhichCodeAnErrorTheSchemaDoesNotCarryAnswersWith(t *testing.T) {
-	outside := fmt.Errorf("../elsewhere.md: %w", vaultport.ErrOutside)
+	outside := fmt.Errorf("../elsewhere.md: %w", vault.ErrOutside)
 	if got := wire.GetCode(outside); got != connect.CodeInvalidArgument {
 		t.Errorf("a path that leaves the vault answers %v", got)
 	}

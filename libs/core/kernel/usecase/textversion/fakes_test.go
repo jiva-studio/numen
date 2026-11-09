@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/textfile"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -96,7 +97,7 @@ func (m *memoryFiles) ReadTextFile(_ context.Context, pluginID, name string) (te
 	raw, ok := m.files[pluginID+"/"+name]
 	m.mu.Unlock()
 	if !ok {
-		return textport.TextFile{}, textport.ErrNoText
+		return textport.TextFile{}, textdomain.ErrNoText
 	}
 	segments, err := textfile.Decode(raw)
 	if err != nil {

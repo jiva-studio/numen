@@ -10,8 +10,7 @@ import (
 
 	"github.com/ebitengine/purego"
 	"github.com/ebitengine/purego/objc"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
 // unsupported is the Cocoa error code for a volume that has no trash.
@@ -72,7 +71,7 @@ func moveToTrash(path string, _ time.Time) error {
 		return nil
 	}
 	if failure != 0 && objc.Send[int](failure, sel.code) == unsupported {
-		return fmt.Errorf("%s: %w", path, machineport.ErrNoTrash)
+		return fmt.Errorf("%s: %w", path, machine.ErrNoTrash)
 	}
 	return fmt.Errorf("%s: %s", path, getFailureMessage(sel, failure))
 }

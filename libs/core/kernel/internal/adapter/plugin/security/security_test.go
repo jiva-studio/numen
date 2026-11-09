@@ -3,12 +3,11 @@ package security
 import (
 	"crypto/rand"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func TestVaultPathValidator(t *testing.T) {
@@ -49,7 +48,7 @@ func TestVaultPathValidator(t *testing.T) {
 	t.Run("path traversal escape rejected", func(t *testing.T) {
 		traversalPath := filepath.Join(subDir, "..", "..", "outside.pdf")
 		_, err := validator.ValidatePath(vaultDir, traversalPath)
-		if !errors.Is(err, pluginport.ErrPathTraversal) {
+		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})
@@ -57,7 +56,7 @@ func TestVaultPathValidator(t *testing.T) {
 	t.Run("relative path traversal escape rejected", func(t *testing.T) {
 		traversalPath := "../outside.pdf"
 		_, err := validator.ValidatePath(vaultDir, traversalPath)
-		if !errors.Is(err, pluginport.ErrPathTraversal) {
+		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})
@@ -89,7 +88,7 @@ func TestVaultPathValidator(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err := validator.ValidatePath(vaultDir, "broken_link.pdf")
-		if !errors.Is(err, pluginport.ErrPathTraversal) {
+		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal for broken outside symlink, got %v", err)
 		}
 	})
@@ -105,7 +104,7 @@ func TestVaultPathValidator(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err := validator.ValidatePath(vaultDir, "real_link.pdf")
-		if !errors.Is(err, pluginport.ErrPathTraversal) {
+		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal for outside symlink, got %v", err)
 		}
 	})

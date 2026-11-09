@@ -6,12 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func createOutsideFolder(t *testing.T, files map[string]string) string {
@@ -124,7 +123,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Cover.png" {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if !errors.Is(brought.Errors[0].Why, vaultport.ErrAlreadyExists) {
+	if !errors.Is(brought.Errors[0].Why, vault.ErrAlreadyExists) {
 		t.Errorf("the error: want ErrAlreadyExists, got %v", brought.Errors[0].Why)
 	}
 	if body := readArrived(t, v.Path, "Cover.png"); body != "MINE" {

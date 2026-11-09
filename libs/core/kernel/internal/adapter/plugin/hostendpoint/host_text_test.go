@@ -16,9 +16,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // memoryTexts keeps the versions the plugins put, by vault, and returns a version's text as its key.
@@ -33,7 +33,7 @@ func newMemoryTexts() *memoryTexts {
 
 func (m *memoryTexts) PutVersion(_ context.Context, v domain.Vault, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
 	if params.Key == "" || params.Kind == "" || params.File == "" {
-		return domain.TextVersion{}, textport.ErrInvalidVersion
+		return domain.TextVersion{}, text.ErrInvalidVersion
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -77,7 +77,7 @@ func (m *memoryTexts) ReadText(ctx context.Context, v domain.Vault, path string,
 			return pluginport.PluginTextPage{Segments: []domain.TextSegment{{Text: one.Key, Selector: `{"page":3}`}}}, nil
 		}
 	}
-	return pluginport.PluginTextPage{}, textport.ErrNoText
+	return pluginport.PluginTextPage{}, text.ErrNoText
 }
 
 func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostTextServiceClient {

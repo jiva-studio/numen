@@ -2,9 +2,8 @@ package note_test
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func TestRenameOntoTakenFilenameReturnsTheNoteUnchanged(t *testing.T) {
@@ -16,7 +15,7 @@ func TestRenameOntoTakenFilenameReturnsTheNoteUnchanged(t *testing.T) {
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
 
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Fatalf("the rename returned %v, want ErrAlreadyExists", err)
 	}
 	if want := "Entropy.md already exists; Old.md is unchanged"; err.Error() != want {

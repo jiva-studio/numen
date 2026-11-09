@@ -57,6 +57,14 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkCompositionRootIsOnePackage(t, workspace)
 	})
+	t.Run("NoStructHoldsMoreThanFiveUseCases", func(t *testing.T) {
+		t.Parallel()
+		checkNoStructHoldsMoreThanFiveUseCases(t, workspace)
+	})
+	t.Run("NoWiringPackageExistsOutsideTheContainer", func(t *testing.T) {
+		t.Parallel()
+		checkNoWiringPackageExistsOutsideTheContainer(t, workspace)
+	})
 }
 
 func loadWorkspace(t *testing.T) workspacePackages {

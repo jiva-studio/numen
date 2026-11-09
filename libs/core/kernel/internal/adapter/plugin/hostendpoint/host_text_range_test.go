@@ -10,8 +10,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // textRangeCall is one ReadTextRange call the ranging texts received.
@@ -39,7 +39,7 @@ func (r *rangingTexts) ReadText(ctx context.Context, v domain.Vault, path string
 func (r *rangingTexts) ReadTextRange(_ context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (pluginport.PluginTextRange, error) {
 	r.ranges = append(r.ranges, textRangeCall{vault: v.ID, path: path, id: id, start: start, length: length})
 	if path != "herons.pdf" {
-		return pluginport.PluginTextRange{}, textport.ErrNoText
+		return pluginport.PluginTextRange{}, text.ErrNoText
 	}
 	return pluginport.PluginTextRange{
 		Segments: []domain.TextSegment{

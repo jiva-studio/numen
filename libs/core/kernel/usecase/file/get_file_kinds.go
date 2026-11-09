@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -33,7 +34,7 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	refs := make(map[string]domain.FileStat, len(paths))
 	for _, path := range paths {
 		ref, err := reader.StatFile(ctx, path)
-		if errors.Is(err, vaultport.ErrNotExist) || errors.Is(err, vaultport.ErrOutside) {
+		if errors.Is(err, vaultport.ErrNotExist) || errors.Is(err, vault.ErrOutside) {
 			continue
 		}
 		// A file the vault ignores is present and is not a source.

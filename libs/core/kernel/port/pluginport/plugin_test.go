@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
@@ -26,7 +27,7 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 		if !errors.Is(tc.err, completionport.ErrUnavailable) {
 			t.Errorf("%q is not ErrUnavailable", tc.want)
 		}
-		if errors.Is(tc.err, completionport.ErrNoRoute) {
+		if errors.Is(tc.err, completion.ErrNoRoute) {
 			t.Errorf("%q is ErrNoRoute", tc.want)
 		}
 	}

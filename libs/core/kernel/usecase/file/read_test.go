@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -196,7 +197,7 @@ func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 		secret,
 		"/etc/passwd",
 	} {
-		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vaultport.ErrOutside) {
+		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 	}
@@ -218,7 +219,7 @@ func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	}
 
 	for _, path := range []string{"linked/secret.txt", "secret.txt"} {
-		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vaultport.ErrOutside) {
+		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 	}

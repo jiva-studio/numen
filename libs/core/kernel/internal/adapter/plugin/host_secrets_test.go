@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -56,7 +57,7 @@ func (k *keys) GetKey(_ context.Context, name string) (string, error) {
 	}
 	key, found := k.item[name]
 	if !found {
-		return "", pluginport.ErrNoKey
+		return "", plugindomain.ErrNoKey
 	}
 	return key, nil
 }
@@ -79,7 +80,7 @@ func (k *keys) DeleteKey(_ context.Context, name string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if _, found := k.item[name]; !found {
-		return pluginport.ErrNoKey
+		return plugindomain.ErrNoKey
 	}
 	delete(k.item, name)
 	return nil
@@ -379,7 +380,7 @@ func TestUnreadableKeyStoreFailsAndSendsEmptyDeclaration(t *testing.T) {
 // fails neither Configure nor a change of a setting.
 func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	store := newKeys(map[string]string{})
-	store.failed = pluginport.ErrNoKeyStore
+	store.failed = plugindomain.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
 	host.SetSecretSource(allowOne(secretPluginID))
 	var reported []error
@@ -397,7 +398,7 @@ func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	if probe.last(t).GetValues()["model"] != "opus" {
 		t.Errorf("values = %v, want the setting", probe.last(t).GetValues())
 	}
-	if len(reported) != 1 || !errors.Is(reported[0], pluginport.ErrNoKeyStore) {
+	if len(reported) != 1 || !errors.Is(reported[0], plugindomain.ErrNoKeyStore) {
 		t.Errorf("reported %v, want port.ErrNoKeyStore once", reported)
 	}
 }
@@ -407,7 +408,7 @@ type untouchable struct{ t *testing.T }
 
 func (u untouchable) GetKey(context.Context, string) (string, error) {
 	u.t.Error("the key store was read for a declaration nothing is allowed to")
-	return "", pluginport.ErrNoKey
+	return "", plugindomain.ErrNoKey
 }
 
 func (u untouchable) SetKey(context.Context, string, string) error {

@@ -6,9 +6,8 @@ import (
 	"fmt"
 	pathpkg "path"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // UntitledName is the title of a note before the person has named it.
@@ -32,7 +31,7 @@ func NewCreateInRelation(create Create, addresses *GetLinkAddress) CreateInRelat
 }
 
 // Execute creates the note. An untitled note takes the lowest free number; a
-// title that is already taken fails with vaultport.ErrAlreadyExists.
+// title that is already taken fails with vault.ErrAlreadyExists.
 func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain.RelatedNote) (CreateResult, error) {
 	if in.From == "" || !domain.IsConnectionRole(in.Role) {
 		return CreateResult{}, fmt.Errorf("%w: %q of %q", domain.ErrNotCreatable, in.Role, in.From)
@@ -61,7 +60,7 @@ func (u Create) ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote)
 	for attempt := 1; attempt <= MaxUntitledAttempts; attempt++ {
 		in.Title = getUntitledName(attempt)
 		made, err := u.Execute(ctx, v, in)
-		if errors.Is(err, vaultport.ErrAlreadyExists) {
+		if errors.Is(err, vault.ErrAlreadyExists) {
 			continue
 		}
 		return made, err

@@ -2,24 +2,8 @@ package pluginport
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-)
-
-var (
-	// ErrNoModel is a search call on an installation that has no embedding model.
-	ErrNoModel = errors.New("the installation has no embedding model")
-	// ErrRecipeMismatch is a search call that names a recipe other than the one of the model in use.
-	ErrRecipeMismatch = errors.New("the recipe is not the one of the model in use")
-	// ErrInvalidFloor is a floor outside the range above zero and up to one.
-	ErrInvalidFloor = errors.New("a floor is a cosine similarity above 0 and at most 1")
-	// ErrLimitExceeded is an embedding call with more texts, or longer ones, than one call embeds.
-	ErrLimitExceeded = errors.New("the call exceeds the limits of one embedding call")
-	// ErrEmbeddingFailed is an embedding model that could not answer.
-	ErrEmbeddingFailed = errors.New("the embedding model could not answer")
-	// ErrInvalidQuery is a query vector whose dimension count is not the one of the vectors in the index.
-	ErrInvalidQuery = errors.New("a query vector does not match the vectors of the index")
 )
 
 // The limits of the search index calls.
@@ -89,7 +73,7 @@ type PluginSearchFloor struct {
 
 // PluginSearchIndex is the search index of the vaults, as the plugins that call the host read it. Each
 // call works the vault it is given. A call that names a recipe other than the one of the model in use
-// returns ErrRecipeMismatch, and one on an installation with no model returns ErrNoModel.
+// returns plugin.ErrRecipeMismatch, and one on an installation with no model returns plugin.ErrNoModel.
 type PluginSearchIndex interface {
 	// GetEmbeddingState is the model in use and how far the vault is embedded under it.
 	GetEmbeddingState(ctx context.Context, v domain.Vault) (PluginEmbeddingState, error)
@@ -102,7 +86,7 @@ type PluginSearchIndex interface {
 	// carry a vector under the recipe and belong to a source other than the query's note. At most
 	// MaxSampledQueries queries are taken, and at most MaxSampledPassages small chunks, in the order of
 	// their content hashes. A query longer or shorter than the vectors of the index returns
-	// ErrInvalidQuery.
+	// plugin.ErrInvalidQuery.
 	SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []PluginSimilarityQuery) (PluginSimilaritySample, error)
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector,
 	// zero where there is none.

@@ -6,9 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func riverFiles() map[string]string {
@@ -84,7 +83,7 @@ func TestReadRangeOfBytesThatAreNotUTF8IsNotText(t *testing.T) {
 
 	_, err := access.ReadRange(t.Context(), "sonar.bin", 0, 6)
 
-	if !errors.Is(err, pluginport.ErrNotText) {
+	if !errors.Is(err, plugin.ErrNotText) {
 		t.Errorf("a range of bytes that are not UTF-8 was read with %v, want ErrNotText", err)
 	}
 	if got, err := access.ReadRange(t.Context(), "sonar.bin", 4, 2); err != nil || got.Text != "cd" {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
@@ -14,12 +15,12 @@ func TestWritePassesTheSettingsOn(t *testing.T) {
 	var passed []settingsport.Setting
 	write := settings.NewWrite(func(output []settingsport.Setting) error {
 		passed = output
-		return settingsport.ErrNotASetting
+		return settingsdomain.ErrNotASetting
 	})
 
 	err := write.Execute([]settingsport.Setting{{Path: []string{"a"}, JSON: "1"}})
 
-	if !errors.Is(err, settingsport.ErrNotASetting) || len(passed) != 1 {
+	if !errors.Is(err, settingsdomain.ErrNotASetting) || len(passed) != 1 {
 		t.Fatalf("error is %v after passing %v", err, passed)
 	}
 }

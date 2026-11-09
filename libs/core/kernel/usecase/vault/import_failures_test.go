@@ -15,6 +15,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -196,7 +197,7 @@ func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vaultport.ErrAlreadyExists) {
+	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vault.ErrAlreadyExists) {
 		t.Fatalf("what stayed outside: %+v", brought.Errors)
 	}
 	if len(brought.Imported) != 0 {

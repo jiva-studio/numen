@@ -4,13 +4,12 @@ package trash
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // TestMoveToTrashFromManyGoroutines trashes folders from many goroutines at once, the way several
@@ -38,7 +37,7 @@ func TestMoveToTrashFromManyGoroutines(t *testing.T) {
 	wg.Wait()
 
 	for i, err := range failures {
-		if err != nil && !errors.Is(err, machineport.ErrNoTrash) {
+		if err != nil && !errors.Is(err, machine.ErrNoTrash) {
 			t.Errorf("folder %d: %v", i, err)
 			continue
 		}

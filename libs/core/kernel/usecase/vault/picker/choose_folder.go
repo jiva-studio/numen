@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // ErrNoTrash is a machine with no trash.
-var ErrNoTrash = machineport.ErrNoTrash
+var ErrNoTrash = machine.ErrNoTrash
 
 // ChooseFolder shows this machine's folder dialog with the given title and
 // starting folder.
@@ -39,5 +40,5 @@ func (u ChooseFolder) GetPickFolder() PickFolder {
 // IsFolderDialogUnavailable reports whether an error means the dialog cannot be
 // shown: one is already open, or this machine has none.
 func IsFolderDialogUnavailable(err error) bool {
-	return errors.Is(err, machineport.ErrChoosing) || errors.Is(err, machineport.ErrNoFolderDialog)
+	return errors.Is(err, machine.ErrChoosing) || errors.Is(err, machine.ErrNoFolderDialog)
 }

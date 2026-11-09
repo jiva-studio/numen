@@ -6,10 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const (
@@ -177,7 +176,7 @@ func TestAVersionWhoseFileChangedIsNotLive(t *testing.T) {
 	s.folders.write(proofreader+"/"+strings.TrimPrefix(string(b), proofreader+"/")+".jsonl", []byte(`{"text":"tampered"}`+"\n"))
 
 	s.requireLive(t, "after B's file changed", s.getReaderVersion(), "layer thw ")
-	if _, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, b); !errors.Is(err, textport.ErrNoText) {
+	if _, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, b); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("reading a changed version file: got %v, want ErrNoText", err)
 	}
 }
@@ -218,7 +217,7 @@ func TestCreateEditMakesANewLiveVersionInTheEditingPluginsFolder(t *testing.T) {
 func TestCreateEditRejectsASourceTheFileDoesNotHave(t *testing.T) {
 	s := newScene(t)
 	_, err := s.versions.CreateEdit(t.Context(), s.vault, textversion.TextEdit{PluginID: player, Path: scanPath, Source: "x/y"})
-	if !errors.Is(err, textport.ErrNoText) {
+	if !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("got %v, want ErrNoText", err)
 	}
 }
@@ -233,7 +232,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	if id, _ := s.getLive(t); id != "" {
 		t.Fatalf("%s is live after the file was replaced", id)
 	}
-	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash()); !errors.Is(err, textport.ErrNoText) {
+	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash()); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("the live text of a replaced file: got %v, want ErrNoText", err)
 	}
 
@@ -290,14 +289,14 @@ func TestRecordVersionRejectsInvalidVersions(t *testing.T) {
 		params   textversion.VersionPut
 		want     error
 	}{
-		"a plugin that makes no text": {"org.numen.other", valid, textport.ErrNotTextPlugin},
-		"no key":                      {ocr, with(func(p *textversion.VersionPut) { p.Key = "" }), textport.ErrInvalidVersion},
-		"no kind":                     {ocr, with(func(p *textversion.VersionPut) { p.Kind = "" }), textport.ErrInvalidVersion},
-		"no file":                     {ocr, with(func(p *textversion.VersionPut) { p.File = "" }), textport.ErrInvalidVersion},
-		"a file that is not there":    {ocr, with(func(p *textversion.VersionPut) { p.File = "gone.jsonl" }), textport.ErrInvalidVersion},
-		"a file that is not segments": {ocr, with(func(p *textversion.VersionPut) { p.File = "vtt.jsonl" }), textport.ErrInvalidVersion},
-		"a source that is not there":  {ocr, with(func(p *textversion.VersionPut) { p.Source = "x/y" }), textport.ErrInvalidVersion},
-		"itself as its source":        {ocr, with(func(p *textversion.VersionPut) { p.Source = domain.NewTextVersionID(ocr, "k") }), textport.ErrInvalidVersion},
+		"a plugin that makes no text": {"org.numen.other", valid, textdomain.ErrNotTextPlugin},
+		"no key":                      {ocr, with(func(p *textversion.VersionPut) { p.Key = "" }), textdomain.ErrInvalidVersion},
+		"no kind":                     {ocr, with(func(p *textversion.VersionPut) { p.Kind = "" }), textdomain.ErrInvalidVersion},
+		"no file":                     {ocr, with(func(p *textversion.VersionPut) { p.File = "" }), textdomain.ErrInvalidVersion},
+		"a file that is not there":    {ocr, with(func(p *textversion.VersionPut) { p.File = "gone.jsonl" }), textdomain.ErrInvalidVersion},
+		"a file that is not segments": {ocr, with(func(p *textversion.VersionPut) { p.File = "vtt.jsonl" }), textdomain.ErrInvalidVersion},
+		"a source that is not there":  {ocr, with(func(p *textversion.VersionPut) { p.Source = "x/y" }), textdomain.ErrInvalidVersion},
+		"itself as its source":        {ocr, with(func(p *textversion.VersionPut) { p.Source = domain.NewTextVersionID(ocr, "k") }), textdomain.ErrInvalidVersion},
 	}
 	for name, c := range cases {
 		if _, err := s.versions.PutVersion(ctx, s.vault, c.pluginID, c.params); !errors.Is(err, c.want) {
@@ -329,8 +328,8 @@ func TestRecordVersionRejectsAPropertyWithAnotherRoot(t *testing.T) {
 		},
 	}
 	for name, params := range cases {
-		if _, err := s.versions.PutVersion(ctx, s.vault, ocr, params); !errors.Is(err, textport.ErrInvalidVersion) {
-			t.Errorf("%s: got %v, want %v", name, err, textport.ErrInvalidVersion)
+		if _, err := s.versions.PutVersion(ctx, s.vault, ocr, params); !errors.Is(err, textdomain.ErrInvalidVersion) {
+			t.Errorf("%s: got %v, want %v", name, err, textdomain.ErrInvalidVersion)
 		}
 	}
 }
@@ -436,7 +435,7 @@ func TestGetTextPageReadsTheVersionFileInPages(t *testing.T) {
 	if len(page.Segments) != 2 || page.NextCursor != "" || page.Segments[1].Selector != `{"page":2}` {
 		t.Fatalf("page %+v, want both segments with their selectors and no next page", page)
 	}
-	if _, err := s.versions.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "x"); !errors.Is(err, textport.ErrNoText) {
+	if _, err := s.versions.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "x"); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("a cursor that is no number: got %v, want ErrNoText", err)
 	}
 }

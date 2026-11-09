@@ -19,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -166,7 +167,7 @@ func (m *memoryVault) Create(_ context.Context, path string, content []byte) err
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, there := m.files[path]; there {
-		return vaultport.ErrAlreadyExists
+		return vaultdomain.ErrAlreadyExists
 	}
 	m.files[path] = string(content)
 	return nil

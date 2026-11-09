@@ -1,7 +1,10 @@
 // Package completioncontract re-exports the completion port contract.
 package completioncontract
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+)
 
 type (
 	Completer     = completionport.Completer
@@ -11,7 +14,7 @@ type (
 )
 
 var (
-	ErrInvalidQuestion = completionport.ErrInvalidQuestion
-	ErrNoRoute         = completionport.ErrNoRoute
+	ErrInvalidQuestion = completion.ErrInvalidQuestion
+	ErrNoRoute         = completion.ErrNoRoute
 	ErrUnavailable     = completionport.ErrUnavailable
 )

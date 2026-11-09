@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -124,7 +125,7 @@ func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string)
 		if err == nil {
 			return target, nil
 		}
-		if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		if !errors.Is(err, vault.ErrAlreadyExists) {
 			return "", mapMissingNote(err)
 		}
 		if attempt > 100 {

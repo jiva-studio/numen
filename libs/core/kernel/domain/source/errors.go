@@ -1,4 +1,5 @@
-package sourceport
+// Package source holds the sentinel errors of the documents a reader imports.
+package source
 
 import "errors"
 

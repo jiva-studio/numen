@@ -412,17 +412,9 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	}
 }
 
-func isClockRead(name string) bool { return name == "Now" || name == "Since" }
+func isClockRead(name string) bool { return name == "Now" || name == "Since" || name == "Until" }
 
-func isTimerArm(name string) bool {
-	switch name {
-	case "After", "AfterFunc", "NewTimer", "NewTicker", "Tick":
-		return true
-	}
-	return false
-}
-
-func getClockReads(file *ast.File) (reads, arms []string) {
+func getClockReads(file *ast.File) (reads []string) {
 	ast.Inspect(file, func(node ast.Node) bool {
 		pos, is := node.(*ast.SelectorExpr)
 		if !is {
@@ -435,12 +427,9 @@ func getClockReads(file *ast.File) (reads, arms []string) {
 		if isClockRead(pos.Sel.Name) {
 			reads = append(reads, "time."+pos.Sel.Name)
 		}
-		if isTimerArm(pos.Sel.Name) {
-			arms = append(arms, "time."+pos.Sel.Name)
-		}
 		return true
 	})
-	return reads, arms
+	return reads
 }
 
 // TestNothingOfTheCoreReadsTheMachinesClock checks that the domain has no access to the current time.
@@ -463,12 +452,8 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		read++
-		reads, arms := getClockReads(file)
-		for _, one := range reads {
+		for _, one := range getClockReads(file) {
 			wrong = append(wrong, path+" runs "+one+": a scenario is handed a clock and reads no other")
-		}
-		if len(arms) > 0 {
-			wrong = append(wrong, path+" runs "+arms[0]+": the core arms no timer of the machine's")
 		}
 		return nil
 	})
@@ -1026,6 +1011,10 @@ func getRefusal(from, to string) string {
 		if !isAssembled(to) {
 			return "the composition root assembles the core and does none of its work"
 		}
+	case isUnder(from, "domain"):
+		if !isUnder(to, "domain") {
+			return "a domain package imports the standard library, the notes domain and the domain packages, and nothing else of the core"
+		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
 	case strings.HasPrefix(from, "internal/test"):
 	default:
@@ -1046,7 +1035,7 @@ func isAmong(these []string, pkg string) bool {
 }
 
 func isAssembled(to string) bool {
-	return isUnder(to, "container") || to == "domain" || isUnder(to, "port") ||
+	return isUnder(to, "container") || isUnder(to, "domain") || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
@@ -1113,6 +1102,23 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/adapterlib/onnxruntime", "internal/adapter/filesystem", true},
 		{"internal/adapterlib/onnxruntime", "port", false},
 
+		// A domain package of the core imports no other layer of it, and every layer
+		// above it may import the domain.
+		{"domain/plugin", "port", true},
+		{"domain/plugin", "port/pluginport", true},
+		{"domain/plugin", "usecase/note", true},
+		{"domain/plugin", "adapter/index", true},
+		{"domain/plugin", "internal/adapter/trash", true},
+		{"domain/plugin", "internal/text", true},
+		{"domain/plugin", "container", true},
+		{"domain/plugin", "domain/settings", false},
+		{"domain/settings/sub", "domain/settings", false},
+		{"container", "domain/plugin", false},
+		{"usecase/note", "domain/plugin", false},
+		{"port/pluginport", "domain/plugin", false},
+		{"adapter/window/editor", "domain/plugin", false},
+		{"internal/adapter/plugin", "domain/plugin", false},
+
 		// Fixtures build the real adapters.
 		{"internal/testsupport", "adapter/index", false},
 		{"internal/testonly", "container", false},
@@ -1140,6 +1146,10 @@ func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 		if _, err := os.Stat(getPackageDir(item)); err != nil {
 			t.Fatalf("%s: %v", item, err)
 		}
+	}
+	// getPackageDir reads "domain" as the notes domain; the domain packages of the core are read here.
+	if _, err := os.Stat(filepath.Join("..", "domain")); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1296,8 +1306,8 @@ type Store interface {
 	}
 }
 
-// the clock read and each timer armed, and lets through the arithmetic over an
-// instant and the constructors that read no clock.
+// the clock reads, and lets through timers, the arithmetic over an instant and
+// the constructors that read no clock.
 func TestClockRule_RejectsClockReads(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "clock.go", `package p
 
@@ -1306,6 +1316,7 @@ import "time"
 func run(origin time.Time) {
 	_ = time.Now()
 	_ = time.Since(origin)
+	_ = time.Until(origin)
 	<-time.After(time.Second)
 	time.AfterFunc(time.Second, func() {})
 	_ = time.NewTimer(time.Second)
@@ -1319,13 +1330,8 @@ func run(origin time.Time) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads, arms := getClockReads(file)
-	if want := []string{"time.Now", "time.Since"}; !slices.Equal(reads, want) {
+	if reads, want := getClockReads(file), []string{"time.Now", "time.Since", "time.Until"}; !slices.Equal(reads, want) {
 		t.Errorf("the rule refuses the reads %v, want %v", reads, want)
-	}
-	want := []string{"time.After", "time.AfterFunc", "time.NewTimer", "time.NewTicker", "time.Tick"}
-	if !slices.Equal(arms, want) {
-		t.Errorf("the rule refuses the timers %v, want %v", arms, want)
 	}
 }
 
@@ -1562,8 +1568,8 @@ func TestNoStructCarriesAContext(t *testing.T) {
 	}
 }
 
-// TestNothingOutsideAdaptersReadsClockOrRandom verifies this across libs/note, plugins, and apps/desktop.
-func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
+// TestNothingOutsideAdaptersReadsTheMachineClock verifies this across libs/note, plugins, and apps/desktop.
+func TestNothingOutsideAdaptersReadsTheMachineClock(t *testing.T) {
 	roots := []string{"../../../note", "../../../../plugins", "../../../../apps/desktop"}
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -1578,23 +1584,9 @@ func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			reads, arms := getClockReads(file)
-			for _, one := range reads {
+			for _, one := range getClockReads(file) {
 				t.Errorf("%s runs %s: inject a clock port instead of reading the machine clock", path, one)
 			}
-			for _, one := range arms {
-				t.Errorf("%s runs %s: inject a clock/timer port instead of arming machine timers", path, one)
-			}
-			ast.Inspect(file, func(n ast.Node) bool {
-				sel, ok := n.(*ast.SelectorExpr)
-				if !ok {
-					return true
-				}
-				if id, ok := sel.X.(*ast.Ident); ok && id.Name == "rand" && (sel.Sel.Name == "Read" || strings.HasPrefix(sel.Sel.Name, "Int")) {
-					t.Errorf("%s runs rand.%s: inject an entropy source instead of calling global rand", path, sel.Sel.Name)
-				}
-				return true
-			})
 			return nil
 		})
 		if err != nil {

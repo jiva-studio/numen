@@ -125,6 +125,8 @@ linters:
               desc: "the domain does not reach plugins"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/usecase"
               desc: "the domain does not reach use cases"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/port"
+              desc: "the domain does not reach ports"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/container"
               desc: "the domain does not reach the composition root"
             - pkg: "os"

@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -78,7 +79,7 @@ func TestHostWindowActivateTabNeedsWindowFocus(t *testing.T) {
 func TestHostWindowActivateTabWithoutAWindowReturnsNoWindow(t *testing.T) {
 	for name, window := range map[string]pluginport.PluginWindow{
 		"no window bound":                 nil,
-		"a window that reports no window": &recordingWindow{err: fmt.Errorf("activate: %w", pluginport.ErrNoWindow)},
+		"a window that reports no window": &recordingWindow{err: fmt.Errorf("activate: %w", plugin.ErrNoWindow)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			client, _ := newWindowClient(t, window, "token-a")
@@ -91,14 +92,14 @@ func TestHostWindowActivateTabWithoutAWindowReturnsNoWindow(t *testing.T) {
 }
 
 func TestHostWindowActivateTabReturnsDeadlineWhenTabNotShown(t *testing.T) {
-	window := &recordingWindow{err: fmt.Errorf("activate tab %q: %w", "tab-1", pluginport.ErrTabNotShown)}
+	window := &recordingWindow{err: fmt.Errorf("activate tab %q: %w", "tab-1", plugin.ErrTabNotShown)}
 	client, _ := newWindowClient(t, window, "token-a")
 
 	got, err := client.ActivateTab(t.Context(), connect.NewRequest(&v1.ActivateTabRequest{TabId: "tab-1"}))
 	if connect.CodeOf(err) != connect.CodeDeadlineExceeded {
 		t.Fatalf("ActivateTab returned %v (%v), want deadline exceeded", got, err)
 	}
-	if !strings.Contains(err.Error(), `"tab-1"`) || !strings.Contains(err.Error(), pluginport.ErrTabNotShown.Error()) {
+	if !strings.Contains(err.Error(), `"tab-1"`) || !strings.Contains(err.Error(), plugin.ErrTabNotShown.Error()) {
 		t.Errorf("ActivateTab got %v, want the message of the window naming tab-1", err)
 	}
 }

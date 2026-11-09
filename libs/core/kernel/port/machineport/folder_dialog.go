@@ -2,16 +2,7 @@ package machineport
 
 import (
 	"context"
-	"errors"
 )
-
-// ErrChoosing is returned when a picker is requested while one is already open.
-// At most one picker is open at a time.
-var ErrChoosing = errors.New("a folder picker is already open")
-
-// ErrNoFolderDialog is returned when a machine cannot show a folder picker. A folder is
-// then supplied to the application another way, and a vault is added by its path.
-var ErrNoFolderDialog = errors.New("this machine cannot show a folder picker")
 
 // FolderDialog lets the user pick a folder on this machine.
 //
@@ -24,8 +15,8 @@ type FolderDialog interface {
 	// The picker has the title title and opens at startingAt; an empty value
 	// selects the machine default.
 	//
-	// It returns ErrChoosing when a picker is already open, and
-	// ErrNoFolderDialog when this machine cannot show one.
+	// It returns machine.ErrChoosing when a picker is already open, and
+	// machine.ErrNoFolderDialog when this machine cannot show one.
 	ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error)
 }
 

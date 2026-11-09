@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
@@ -24,7 +25,7 @@ func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
 	cfg.PluginHost = host
 
 	err := writeAt(cfg, `"bogus"`, "app", "performance", "profile")
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Fatalf("the write gave %v", err)
 	}
 	if len(host.profiles) != 0 {
@@ -43,7 +44,7 @@ func TestAScaleOutsideItsBoundsIsRefusedWhoeverWritesIt(t *testing.T) {
 	for _, value := range []string{`2.5`, `0.5`, `0`} {
 		cfg, path := writeSettings(t, `{}`)
 		err := writeAt(cfg, value, "app", "appearance", "interfaceScale")
-		if !errors.Is(err, settingsport.ErrNotASetting) {
+		if !errors.Is(err, settings.ErrNotASetting) {
 			t.Errorf("%s gave %v", value, err)
 		}
 		raw, readErr := os.ReadFile(path)
@@ -59,7 +60,7 @@ func TestAScaleOutsideItsBoundsIsRefusedWhoeverWritesIt(t *testing.T) {
 func TestAStringWhereTheNamingAcceptsABooleanIsRefused(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	err := writeAt(cfg, `"yes"`, "app", "naming", "syncTitleAndFilename")
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("the write gave %v", err)
 	}
 }
@@ -67,7 +68,7 @@ func TestAStringWhereTheNamingAcceptsABooleanIsRefused(t *testing.T) {
 func TestAThemeThatIsNotInstalledIsRefused(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	err := writeAt(cfg, `"mine:not-installed"`, "app", "appearance", "theme")
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("the write gave %v", err)
 	}
 }
@@ -75,7 +76,7 @@ func TestAThemeThatIsNotInstalledIsRefused(t *testing.T) {
 func TestAKeyAPluginDoesNotDeclareIsRefused(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	err := writeAt(cfg, `"x"`, "md.numen.nobody", "mistyped")
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("the write gave %v", err)
 	}
 	raw, readErr := os.ReadFile(path)
@@ -93,7 +94,7 @@ func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `9`},
 	})
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Fatalf("the write gave %v", err)
 	}
 	raw, readErr := os.ReadFile(path)
@@ -166,7 +167,7 @@ func TestSettingsWriteOfUsedPluginPortFailsAndKeepsTheFile(t *testing.T) {
 	cfg.PluginHost = host
 
 	err := writeAt(cfg, fmt.Sprint(takenPort), relayPlugin, "port")
-	if !errors.Is(err, settingsport.ErrNotASetting) {
+	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("writing the taken port %d gave %v", takenPort, err)
 	}
 	raw, readErr := os.ReadFile(path)

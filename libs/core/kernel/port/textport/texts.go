@@ -10,11 +10,11 @@ import (
 // highlighting read it: the text of a version, read from the plugin that made
 // it. contentHash is domain.HashContent of the file as it is now.
 type Texts interface {
-	// FindLiveVersion is the file's live version, or ErrNoText where none is live.
+	// FindLiveVersion is the file's live version, or text.ErrNoText where none is live.
 	FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error)
-	// GetLiveText is the text of the file's live version, or ErrNoText where none is live.
+	// GetLiveText is the text of the file's live version, or text.ErrNoText where none is live.
 	GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error)
-	// GetVersionText is the text of one version, live or not, or ErrNoText.
+	// GetVersionText is the text of one version, live or not, or text.ErrNoText.
 	GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error)
 }
 

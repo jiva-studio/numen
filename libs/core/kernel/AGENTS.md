@@ -16,7 +16,7 @@ Each test verifies adherence to structural rules.
 | ----------------------------------------------------------------------------- | -------------------------------------------------- |
 | A package is on the layer its path states, and imports only from lower layers | `TestTheLayersAreWhatTheyAre`                      |
 | No package that the core is compiled from imports an adapter                  | `TestNothingTheCoreIsCompiledFromReachesOutward`   |
-| A use case imports no other use case (use cases are isolated)                 | `TestUseCaseImportsFollowDeclaredEdges`            |
+| A use case imports no other use case (use cases are isolated)                 | `TestNoUseCaseImportsAnotherUseCase`               |
 | An adapter does not name the port it implements                               | `TestNoAdapterNamesThePortItSatisfies`             |
 | The composition root returns no adapter type                                  | `TestTheRootPassesOutNoAdapterTheCompilerContains` |
 | A package is imported under the name its layer gives it                       | `TestNoPackageIsImportedBelowItsLayer`             |
@@ -24,6 +24,11 @@ Each test verifies adherence to structural rules.
 | An adapter that references a use case is driving, one with a type that implements a port is driven, and none is both | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/AnAdapterIsDrivingOrDrivenNotBoth` |
 | A driving adapter references no type, function, variable, constant or method declared under `port/`, aliases resolved | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/ADrivingAdapterReferencesNoPort` |
 | The composition root is the one package `container`; no package lies below it | `TestTheTypeCheckedWorkspaceObeysItsRules/TheCompositionRootIsOnePackage` |
+| A package under `domain/` of the core imports the standard library, `libs/note/domain` and other domain packages, no other layer of the core, no third-party code; every other layer and the composition root may import it | `TestTheLayersAreWhatTheyAre`, `TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer` |
+| No plugin, no plugin SDK and no plugin catalog package imports a package of the core, a domain package included | `TestNoPluginImportsAnotherPluginOrTheCore`, `TestNoSDKOrCatalogPackageImportsTheCore` |
+| The depguard rule `domain` denies `port` as well as adapters, use cases and the composition root | `.golangci.yml` |
+| No struct holds more than five use cases | `TestTheTypeCheckedWorkspaceObeysItsRules/NoStructHoldsMoreThanFiveUseCases` |
+| No package outside `container`, `apps/*/cmd` and `apps/*/app` imports a use case package and a driven adapter package (one with a type that implements a `port/` interface) | `TestTheTypeCheckedWorkspaceObeysItsRules/NoWiringPackageExistsOutsideTheContainer` |
 
 ## What the core may not do
 
@@ -45,7 +50,7 @@ outside `port/`.
 | Every port method is called from outside `port/`   | `TestEveryPortMethodIsCalledSomewhereElse`      |
 | Every adapter serving the schema is a driving one  | `TestEveryAdapterServingTheSchemaIsDriving`     |
 | No function or method of a port calls a method of an interface value | `TestTheTypeCheckedWorkspaceObeysItsRules/APortDeclaresAndDoesNotOrchestrate` |
-| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in every module that configuration covers | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
+| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in the kernel, the notes library, the SDK, the applications and the plugins, not in a tool | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
 
 ## Names in the core
 
@@ -54,11 +59,13 @@ outside `port/`.
 | An identity is named with the core's own term, in fields and in signatures                    | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn`           |
 | An instant is a `time.Time`                                                                   | `TestEveryInstantTheCoreCarriesIsATime`                                                    |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
-| The machine clock is read only inside a clock port implementation; timers and randomness are not restricted | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
+| The machine clock (`time.Now`, `Since`, `Until`) is read only inside a clock port implementation; timers and randomness are not restricted | `TestNothingOfTheCoreReadsTheMachinesClock`, `TestNothingOutsideAdaptersReadsTheMachineClock`, `TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation` |
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 
 The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain` and themselves, and that no plugin and not the SDK imports; a port has one to three methods and no type of its own; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
+
+A `domain/<area>` package takes the value types, constants and sentinel errors of its area. An alias of an interface stays in its `*contract` package until the change that puts a use case in front of that interface deletes alias and importers together.
 
 No type is named by a gerund or a participle.
 

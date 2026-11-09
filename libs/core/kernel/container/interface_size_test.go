@@ -108,6 +108,14 @@ func getBloatedInterfaces(pkgs []*packages.Package, limit int) ([]finding, inter
 	return sortFindings(found), count
 }
 
+// isInterfaceSizeScope reports whether a module, by its directory under the repository root, is one whose
+// interfaces the size rule counts: the kernel, the notes library, the plugin SDK, the applications and the plugins.
+func isInterfaceSizeScope(rel string) bool {
+	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/note", "libs/plugin/sdk-go", "apps", "plugins"}, func(root string) bool {
+		return isWithin(filepath.ToSlash(rel), root)
+	})
+}
+
 func checkInterfaceSizeCountsTheWholeMethodSet(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	root, err := filepath.Abs(repoRootDir)
@@ -117,6 +125,13 @@ func checkInterfaceSizeCountsTheWholeMethodSet(t *testing.T, workspace workspace
 	var total interfaceCount
 	covered := 0
 	for _, dir := range listWorkspaceModules(t) {
+		rel, err := filepath.Rel(root, dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !isInterfaceSizeScope(rel) {
+			continue
+		}
 		config, err := findStructureConfig(dir, root)
 		if err != nil {
 			t.Fatal(err)
@@ -141,7 +156,7 @@ func checkInterfaceSizeCountsTheWholeMethodSet(t *testing.T, workspace workspace
 	}
 
 	// A walk that reads no interface built from embedded ones checks nothing the linter does not.
-	if covered < 10 || total.interfaces < 100 || total.composed == 0 {
+	if covered < 8 || total.interfaces < 100 || total.composed == 0 {
 		t.Fatalf("%d modules, %d interfaces and %d composed interfaces read: the rule is checked against nothing",
 			covered, total.interfaces, total.composed)
 	}
@@ -198,6 +213,33 @@ type Service interface {
 	}
 	if count.interfaces != 5 || count.composed != 2 {
 		t.Errorf("%d interfaces and %d composed read, want 5 and 2", count.interfaces, count.composed)
+	}
+}
+
+// The rule counts the kernel, the notes library, the plugin SDK, the applications and the plugins, and no
+// other library and no tool.
+func TestInterfaceSizeRule_CountsNoToolAndNoOtherLibrary(t *testing.T) {
+	for _, tc := range []struct {
+		rel       string
+		isCounted bool
+	}{
+		{"libs/core/kernel", true},
+		{"libs/note", true},
+		{"libs/plugin/sdk-go", true},
+		{"libs/plugin/sdk-go/host", true},
+		{"apps/desktop", true},
+		{"apps/desktop/build/tools", true},
+		{"apps/mobile", true},
+		{"tools/lint-comments", false},
+		{"libs/plugin/catalog", false},
+		{"libs/core/protocol", false},
+		{"plugins/agents-acp", true},
+		{"plugins/views-flashcards-studio", true},
+		{"libs/plugin/sdk-golang", false},
+	} {
+		if got := isInterfaceSizeScope(tc.rel); got != tc.isCounted {
+			t.Errorf("%s is counted: %v, want %v", tc.rel, got, tc.isCounted)
+		}
 	}
 }
 

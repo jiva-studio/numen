@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -335,11 +335,11 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"network:outbound"})
 
-		if err := sup.CheckPermission("vault:read"); !errors.Is(err, pluginport.ErrPermissionDenied) {
+		if err := sup.CheckPermission("vault:read"); !errors.Is(err, plugin.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 
-		if _, err := sup.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, pluginport.ErrPermissionDenied) {
+		if _, err := sup.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, plugin.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 	})
@@ -366,7 +366,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		sup.SetPermissions([]string{"vault:read"})
 
 		_, err := sup.ValidatePath(vaultDir, "../secret.txt")
-		if !errors.Is(err, pluginport.ErrPathTraversal) {
+		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})

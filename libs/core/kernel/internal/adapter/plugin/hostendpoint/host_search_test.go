@@ -15,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -229,12 +230,12 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 		err  error
 		want v1.HostSearchErrorCode
 	}{
-		{"no model", pluginport.ErrNoModel, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL},
-		{"a recipe mismatch", pluginport.ErrRecipeMismatch, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH},
-		{"an invalid floor", pluginport.ErrInvalidFloor, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR},
-		{"a limit exceeded", pluginport.ErrLimitExceeded, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED},
-		{"an embedding failure", pluginport.ErrEmbeddingFailed, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED},
-		{"an invalid query", pluginport.ErrInvalidQuery, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY},
+		{"no model", plugin.ErrNoModel, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL},
+		{"a recipe mismatch", plugin.ErrRecipeMismatch, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH},
+		{"an invalid floor", plugin.ErrInvalidFloor, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR},
+		{"a limit exceeded", plugin.ErrLimitExceeded, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED},
+		{"an embedding failure", plugin.ErrEmbeddingFailed, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED},
+		{"an invalid query", plugin.ErrInvalidQuery, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			client := newSearchClient(t, newSearchCallers(&recordingSearch{err: tc.err}), "token-a")
@@ -283,7 +284,7 @@ func TestHostSearchAnswersTheIndexStatistics(t *testing.T) {
 		t.Errorf("the call worked the vaults %v, want the shown v1", search.vaults)
 	}
 
-	failing := newSearchClient(t, newSearchCallers(&recordingSearch{err: pluginport.ErrNoModel}), "token-a")
+	failing := newSearchClient(t, newSearchCallers(&recordingSearch{err: plugin.ErrNoModel}), "token-a")
 	noModel, err := failing.GetIndexStats(ctx, connect.NewRequest(&v1.GetIndexStatsRequest{}))
 	if err != nil || noModel.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL || noModel.Msg.GetChunkCount() != 0 {
 		t.Errorf("an installation with no model answered %v (%v)", noModel.Msg, err)

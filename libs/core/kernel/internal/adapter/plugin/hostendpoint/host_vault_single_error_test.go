@@ -18,9 +18,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
@@ -93,7 +93,7 @@ func TestWriteFileWithANoteErrorReturnsInternalWithTheErrorText(t *testing.T) {
 }
 
 func TestCreateFileOverAnExistingFileReturnsAlreadyExists(t *testing.T) {
-	client := newFailingFileClient(t, fmt.Errorf("create Ganges.md: %w", vaultport.ErrAlreadyExists))
+	client := newFailingFileClient(t, fmt.Errorf("create Ganges.md: %w", vault.ErrAlreadyExists))
 
 	res, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "Ganges.md", Content: []byte("text")}))
 	if err != nil {

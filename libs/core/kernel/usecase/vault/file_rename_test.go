@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // The file tree renames a file, and the note in it is called by the name the
@@ -278,7 +277,7 @@ func TestARenameOntoATakenNamePreservesTheNoteCalledWhatItWas(t *testing.T) {
 	f := openFiling(t, map[string]string{"Entropy.md": raw, "Disorder.md": "# Disorder\n"})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if moved.IsMoved {

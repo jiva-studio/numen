@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
@@ -86,11 +87,11 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash strin
 	}
 	file, ok := s.shelves[t.vault.ID].Files[path]
 	if !ok || domain.HashContent(file.Raw) != contentHash {
-		return placedVersion{}, textport.ErrNoText
+		return placedVersion{}, text.ErrNoText
 	}
 	parts, err := indexfake.ReadBookSegments(file.Raw)
 	if err != nil {
-		return placedVersion{}, textport.ErrNoText
+		return placedVersion{}, text.ErrNoText
 	}
 	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: contentHash[:8], Kind: "book-text", InputHash: contentHash}
 	made = placedVersion{version: version, parts: parts}
@@ -127,11 +128,11 @@ func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id d
 	}
 	file, ok := t.texts.shelves[t.vault.ID].Files[path]
 	if !ok {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, text.ErrNoText
 	}
 	live, err := t.findLive(ctx, path, domain.HashContent(file.Raw))
 	if err != nil || live.version.GetID() != id {
-		return domain.VersionText{}, textport.ErrNoText
+		return domain.VersionText{}, text.ErrNoText
 	}
 	return domain.NewVersionText(live.version, live.parts), nil
 }

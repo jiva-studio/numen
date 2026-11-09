@@ -4,11 +4,10 @@ package trash
 
 import (
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 func moveToTrash(path string, _ time.Time) error {
-	return fmt.Errorf("%s: %w", path, machineport.ErrNoTrash)
+	return fmt.Errorf("%s: %w", path, machine.ErrNoTrash)
 }

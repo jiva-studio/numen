@@ -15,6 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -184,7 +186,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 		return func() error { return nil }, false, nil
 	}
 	release, err := u.Claim.ClaimIndex(ctx)
-	if errors.Is(err, vaultport.ErrClaimed) {
+	if errors.Is(err, vault.ErrClaimed) {
 		return nil, true, nil
 	}
 	if err != nil {
@@ -549,7 +551,7 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 
 	read, err := e.read(ctx, path, from)
 	switch {
-	case vaultport.IsNoNote(err), errors.Is(err, vaultport.ErrNotExist), errors.Is(err, textport.ErrNoText):
+	case vaultport.IsNoNote(err), errors.Is(err, vaultport.ErrNotExist), errors.Is(err, textdomain.ErrNoText):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)
@@ -565,7 +567,7 @@ func (e *extracted) read(ctx context.Context, path, from string) (string, error)
 		return string(raw), err
 	}
 	if e.texts == nil {
-		return "", textport.ErrNoText
+		return "", textdomain.ErrNoText
 	}
 	doc, err := e.texts.GetVersionText(ctx, path, domain.TextVersionID(from))
 	return doc.Text, err

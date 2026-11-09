@@ -59,6 +59,7 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{pluginsPrefix + "other", true},
 		{pluginsPrefix + "other/backend/service", true},
 		{module + "port", true},
+		{module + "domain/plugin", true},
 		{strings.TrimSuffix(module, "/"), true},
 		{numenRoot + "apps/desktop/app", true},
 		{self, false},

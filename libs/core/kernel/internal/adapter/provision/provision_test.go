@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -81,7 +82,7 @@ func TestRegistry_RoutesRequirementByKind(t *testing.T) {
 		t.Errorf("onnx ran %d times and models %d, want one each", onnx.calls.Load(), models.calls.Load())
 	}
 	_, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}, nil)
-	if !errors.Is(err, pluginport.ErrNoProvisioner) {
+	if !errors.Is(err, plugin.ErrNoProvisioner) {
 		t.Errorf("err = %v, want ErrNoProvisioner", err)
 	}
 	if registry.CanProvision(pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}) {

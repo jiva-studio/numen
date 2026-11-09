@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -215,7 +216,7 @@ func TestPluginRenameToExistingFilenameKeepsNoteUnchanged(t *testing.T) {
 
 	_, _, _, err := shared.RenameNote(t.Context(), "Rivers/Danube.md", "Deltas")
 
-	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("the rename onto Rivers/Deltas.md returned %v, want ErrAlreadyExists", err)
 	}
 	if content, found := readVaultFile(t, v, "Rivers/Danube.md"); !found || content != danube {

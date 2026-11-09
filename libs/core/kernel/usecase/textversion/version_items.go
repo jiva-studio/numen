@@ -9,9 +9,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // VersionItems is the text versions of a vault file that the commands of the
@@ -146,6 +146,6 @@ func (u *VersionItems) RunVersionItem(
 
 // The errors of the version items, for a driving adapter.
 var (
-	ErrNoText         = textport.ErrNoText
-	ErrInvalidVersion = textport.ErrInvalidVersion
+	ErrNoText         = text.ErrNoText
+	ErrInvalidVersion = text.ErrInvalidVersion
 )

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	completiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
@@ -41,7 +42,7 @@ func NewPrograms(provider agentport.AgentProvider, getAgent func() AgentSettings
 func (p *Programs) GetProgram(ctx context.Context, name string) (agentport.AgentProgram, error) {
 	target := p.getAgent()
 	if name == "" && !target.IsNamed {
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", completionport.ErrNoRoute)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", completiondomain.ErrNoRoute)
 	}
 	if name == "" {
 		name = target.Use
@@ -54,9 +55,9 @@ func (p *Programs) GetProgram(ctx context.Context, name string) (agentport.Agent
 	case !isFound && listErr != nil:
 		return agentport.AgentProgram{}, fmt.Errorf("%w: %w", completionport.ErrUnavailable, listErr)
 	case !isFound:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", completionport.ErrNoRoute, name)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", completiondomain.ErrNoRoute, name)
 	case !found.IsInstalled:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", completionport.ErrNoRoute, found.Name)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", completiondomain.ErrNoRoute, found.Name)
 	}
 	return found, nil
 }
