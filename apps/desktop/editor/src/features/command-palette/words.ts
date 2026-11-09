@@ -113,7 +113,6 @@ export interface Words extends EmptyWords {
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string
-  readonly creating: string
   readonly creates: string
   readonly asChild: string
   readonly asParent: string

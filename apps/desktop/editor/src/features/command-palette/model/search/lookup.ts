@@ -54,7 +54,7 @@ export interface SearchHit {
   type: NoteType | null
   tabKind?: string
   selector: Selector | null
-  isCreation?: boolean
+  creationIds?: readonly string[]
   actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
   actionCommands?: Readonly<Record<string, string>>
 }
@@ -219,7 +219,7 @@ function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
 /**
  * The command an action of a hit runs, over what, with which input; null where the hit does not
  * carry the action. A note is the target by its path and a line, a file that is no note by its
- * file and selector, and the row that creates a note by the window and the words typed.
+ * file and selector, and an action that creates a note by the window and the words typed.
  */
 export function resolveChoice(
   result: SearchHit | undefined,
@@ -227,7 +227,7 @@ export function resolveChoice(
   typed = '',
 ): ResultChoice | null {
   if (!result || !result.actionIds.includes(action)) return null
-  if (result.isCreation) {
+  if (result.creationIds?.includes(action)) {
     return {
       command: action,
       over: null,

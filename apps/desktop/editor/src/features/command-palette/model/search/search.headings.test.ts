@@ -1,6 +1,5 @@
 /** The group headings of the search, with the real group builder and only the vault questions held back. */
 import { describe, expect, it } from 'vitest'
-import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
 import { createDeferred } from '@/testing/deferred'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
@@ -16,7 +15,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -67,7 +65,7 @@ describe('the headings of the search groups', () => {
     expect(palette.groups.value).toEqual([])
   })
 
-  it('draws only the create note row where every question returned nothing', async () => {
+  it('draws no row where every question returned nothing', async () => {
     const { palette, names, passages } = createHeldVault()
 
     palette.setTyped('Entropy').catch(() => undefined)
@@ -76,7 +74,7 @@ describe('the headings of the search groups', () => {
     passages.answer([])
     await flushPromises()
 
-    expect(getIds(palette)).toEqual([CREATE_NOTE_ROW])
+    expect(palette.groups.value.flatMap((one) => one.items)).toEqual([])
   })
 
   it('draws the names group with its rows once names are found', async () => {

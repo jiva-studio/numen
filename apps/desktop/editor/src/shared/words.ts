@@ -134,7 +134,6 @@ export const WORDS = {
   erases: 'Erase',
   binned: 'The folder moves to the trash',
   /** The note a search did not find, offered as one to make. */
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

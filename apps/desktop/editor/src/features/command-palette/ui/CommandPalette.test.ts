@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/shell'
 import type { SlotCommand } from '@numen/plugin-host'
 import { WORDS as words } from '@/shared/words'
-import { CREATE_NOTE_ROW } from '../lib/entries/entries'
 import { runSupport } from '../model/palette/runSupport'
 import { useCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
@@ -182,7 +181,7 @@ describe('choosing an action of a row of the search', () => {
   })
 })
 
-describe('choosing an action of the row that creates a note', () => {
+describe('choosing an action that creates a note on a row of the search', () => {
   it.each([
     'app:note.create',
     'app:note.createChild',
@@ -191,9 +190,9 @@ describe('choosing an action of the row that creates a note', () => {
   ])(
     'runs %s with the words typed as its input, as a command and not as a branch',
     async (action) => {
-      const one = await mountField({}, '  Entropy  ')
+      const one = await mountField({ names: [byName] }, '  Entropy  ')
 
-      await one.choose(CREATE_NOTE_ROW, action)
+      await one.choose(byName.path, action)
 
       expect(one.runChoice).toHaveBeenCalledExactlyOnceWith({
         command: action,

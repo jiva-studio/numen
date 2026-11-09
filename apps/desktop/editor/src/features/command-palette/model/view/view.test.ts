@@ -11,7 +11,6 @@ import { findIcon } from '@/shared/icons'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
-import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandTarget, PaletteLists } from '../../types'
 import type { Commands } from '../palette/palette'
@@ -293,7 +292,7 @@ describe('findRowIcon', () => {
     expect(findRowIcon('app:note.create', commands, search)).toBe(findIcon('app:note.create'))
   })
 
-  it('resolves create-note, search note type, and file hit icons when commands palette is closed', () => {
+  it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
       open: ref(false),
       findTabKind: () => 'sample',
@@ -304,7 +303,6 @@ describe('findRowIcon', () => {
       findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
     } as unknown as SearchState
 
-    expect(findRowIcon(CREATE_NOTE_ROW, commands, search)).toBe(findIcon('app:note.create'))
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
     expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
     expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)
