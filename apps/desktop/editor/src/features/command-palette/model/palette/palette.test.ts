@@ -1660,6 +1660,45 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     expect(result?.values).toStrictEqual({ topic: 'Quantum' })
   })
 
+  it('asks only for the arguments the caller did not supply and keeps the supplied ones', () => {
+    const commands = useCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      getExtraCommands: () => [
+        {
+          id: 'org.example.sample:args.run',
+          text: 'With args',
+          group: 'window',
+          input: 'arguments',
+          prompts: [
+            { name: 'topic', title: 'Topic title', isRequired: true },
+            { name: 'detail', title: 'Detail title', isRequired: true },
+          ],
+          isAvailable: () => true,
+        },
+      ],
+    })
+
+    const all = commands.startCommand('org.example.sample:args.run', front(), undefined, {
+      topic: 'Quantum',
+      detail: 'Spin',
+    })
+    expect(all?.id).toBe('org.example.sample:args.run')
+
+    commands.startCommand('org.example.sample:args.run', front(), undefined, { detail: 'Spin' })
+    expect(commands.placeholder.value).toBe('Topic title')
+    commands.setTyped('Quantum').catch(rethrow)
+    const result = chooseRow(commands)
+    expect(result?.values).toStrictEqual({ detail: 'Spin', topic: 'Quantum' })
+  })
+
   it('toggles search and command palettes via keyboard shortcuts', () => {
     const searchOpen = ref(false)
     const search = {

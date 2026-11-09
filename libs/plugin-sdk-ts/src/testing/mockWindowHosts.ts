@@ -27,6 +27,7 @@ export interface MockCommandRun {
   readonly command: string
   readonly target: CommandTarget | undefined
   readonly itemId: string | undefined
+  readonly values?: Readonly<Record<string, string>>
 }
 
 // MockCommandsHost is a CommandsHost whose ids a test sets, and whose runs it reads back.
@@ -49,8 +50,8 @@ export function createMockCommandsHost(initial: readonly string[] = []): MockCom
     getIds: () => ids,
     watch: (handler) => watchWith(watchers, handler, ids),
     listItems: (command) => Promise.resolve(items.get(command) ?? []),
-    run: (command, target, itemId) => {
-      runs.push({ command, target, itemId })
+    run: (command, target, itemId, values) => {
+      runs.push({ command, target, itemId, ...(values ? { values } : {}) })
       return Promise.resolve(results.get(command) ?? '')
     },
     setResult: (command, path) => {

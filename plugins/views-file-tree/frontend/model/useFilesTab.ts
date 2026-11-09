@@ -136,7 +136,7 @@ function useFileMenu(
     const choice = slotMenu.pick(id)
     if (!choice) return
     deps
-      .runCommand(choice.command, choice.target.target, choice.itemId)
+      .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
       .then((made) =>
         CREATED_COMMANDS.has(choice.command) && made
           ? showCreated(choice.target.target.path, made)

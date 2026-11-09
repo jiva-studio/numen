@@ -102,7 +102,7 @@ describe('the commands a plugin declares in its manifest', () => {
     settle()
 
     expect(await running).toBe(true)
-    expect(handler).toHaveBeenCalledWith(note)
+    expect(handler).toHaveBeenCalledWith(note, undefined, {})
   })
 
   it('are not run for a plugin that failed to activate', async () => {
@@ -150,7 +150,7 @@ describe('the commands a plugin declares in its manifest', () => {
 
     expect(await host.executeCommand('md.tree:tree.open', note)).toBe(true)
 
-    expect(handler).toHaveBeenCalledWith(note)
+    expect(handler).toHaveBeenCalledWith(note, undefined, {})
   })
 
   it('keep two plugins that register the same short id apart', async () => {

@@ -10,24 +10,24 @@ import (
 //numen:api
 type Level struct {
 	// Name is the identifier by which a task requests the level.
-	Name string
+	Name string `json:"name"`
 	// Title is the display name of the level.
-	Title string
+	Title string `json:"title"`
 }
 
 // Model is one model a program offers.
 //
 //numen:api
 type Model struct {
-	Name  string
-	Title string
+	Name  string `json:"name"`
+	Title string `json:"title"`
 	// IsDefault is set where the program names the model it answers with unasked.
-	IsDefault bool
+	IsDefault bool `json:"isDefault,omitempty"`
 	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
 	// the most. Empty where the model offers no choice.
-	ReasoningLevels []Level
+	ReasoningLevels []Level `json:"reasoningLevels,omitempty"`
 	// DefaultReasoning is the level the model works at unasked. Empty where it names none.
-	DefaultReasoning string
+	DefaultReasoning string `json:"defaultReasoning,omitempty"`
 }
 
 func listLevelNames() []string {

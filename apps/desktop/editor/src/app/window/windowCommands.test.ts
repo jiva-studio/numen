@@ -21,8 +21,17 @@ const FRONT = {
 
 function setup() {
   const pluginIds = shallowRef<readonly string[]>(['org.example.tide:chart.open'])
-  const runCommandToEnd = vi.fn(async (_id: string, _target: CommandTarget) => '')
-  const runWithItem = vi.fn(async (_id: string, _target: RunTarget, _argument: string) => undefined)
+  const runCommandToEnd = vi.fn(
+    async (_id: string, _target: CommandTarget, _values?: Readonly<Record<string, string>>) => '',
+  )
+  const runWithItem = vi.fn(
+    async (
+      _id: string,
+      _target: RunTarget,
+      _argument: string,
+      _values?: Readonly<Record<string, string>>,
+    ) => undefined,
+  )
   const listItems = vi.fn(async (id: string, _target: RunTarget) =>
     id === 'org.example.tide:chart.move' ? WINDOWS : [],
   )
@@ -150,5 +159,30 @@ describe('the commands of the window', () => {
 
     await expect(commands.run('org.example.tide:chart.open')).rejects.toThrow('the disk is full')
     expect(isEnded).toBe(true)
+  })
+})
+
+describe('the run of a command with values', () => {
+  it('gives the values to the run of a command without items', async () => {
+    const { commands, runCommandToEnd } = setup()
+
+    await commands.run('app:note.show', undefined, undefined, { where: 'plex' })
+
+    expect(runCommandToEnd).toHaveBeenCalledWith('app:note.show', expect.anything(), {
+      where: 'plex',
+    })
+  })
+
+  it('gives the values to the run of a command with an item', async () => {
+    const { commands, runWithItem } = setup()
+
+    await commands.run('org.example.tide:chart.move', FOLDER, 'w2', { where: 'plex' })
+
+    expect(runWithItem).toHaveBeenCalledWith(
+      'org.example.tide:chart.move',
+      expect.anything(),
+      'w2',
+      { where: 'plex' },
+    )
   })
 })

@@ -8,12 +8,19 @@ import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@num
 import type { CommandTarget } from '@/features/command-palette'
 import { getNamedTarget, toRunTarget } from '../commands/runTarget'
 
+type Values = Readonly<Record<string, string>>
+
 interface WindowCommandsDeps {
   readonly getAppIds: () => readonly string[]
   readonly getPluginIds: () => readonly string[]
-  readonly runCommandToEnd: (id: string, target: CommandTarget) => Promise<string>
+  readonly runCommandToEnd: (id: string, target: CommandTarget, values?: Values) => Promise<string>
   readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
-  readonly runWithItem: (id: string, target: RunTarget, itemId: string) => Promise<void>
+  readonly runWithItem: (
+    id: string,
+    target: RunTarget,
+    itemId: string,
+    values?: Values,
+  ) => Promise<void>
   readonly getTarget: () => CommandTarget
 }
 
@@ -27,10 +34,11 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     getIds: () => ids.value,
     watch: (handler) => ({ dispose: watch(ids, handler, { immediate: true }) }),
     listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
-    run: async (id, target, itemId) => {
+    run: async (id, target, itemId, values) => {
       const runTarget = getRunTarget(target)
-      if (itemId === undefined) return deps.runCommandToEnd(id, runTarget)
-      await deps.runWithItem(id, toRunTarget(runTarget), itemId)
+      const extra = values === undefined ? [] : [values]
+      if (itemId === undefined) return deps.runCommandToEnd(id, runTarget, ...extra)
+      await deps.runWithItem(id, toRunTarget(runTarget), itemId, ...extra)
       return ''
     },
   }

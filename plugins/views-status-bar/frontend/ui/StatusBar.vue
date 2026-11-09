@@ -17,11 +17,14 @@ defineProps<{
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
+const emit = defineEmits<{
+  (event: 'run', command: string, itemId?: string, values?: Readonly<Record<string, string>>): void
+}>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRun(command: string, itemId?: string): void {
-  if (itemId === undefined) emit('run', command)
+function onRun(command: string, itemId?: string, values?: Readonly<Record<string, string>>): void {
+  if (values) emit('run', command, itemId, values)
+  else if (itemId === undefined) emit('run', command)
   else emit('run', command, itemId)
 }
 </script>
