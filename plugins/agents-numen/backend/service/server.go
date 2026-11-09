@@ -258,7 +258,6 @@ func (f *failure) Error() string { return describeFailure(f.err) }
 
 func (f *failure) Unwrap() error { return f.err }
 
-// describeFailure says in the person's words which connection failed and why.
 func describeFailure(err error) string {
 	var allFailed *connection.AllFailedError
 	var rejected *connection.RejectedError
@@ -275,4 +274,18 @@ func describeFailure(err error) string {
 		return rejected.ConnectionName + ": " + rejected.Reason
 	}
 	return err.Error()
+}
+
+func newAgent(chat askModel) *Server {
+	return &Server{
+		Unimplemented: agentrun.Unimplemented{},
+		chat:          chat,
+		mu:            sync.Mutex{},
+		row:           nil,
+		temperature:   nil,
+		maxTokens:     nil,
+		maxSteps:      0,
+		conversations: nil,
+		registry:      agentrun.Registry{},
+	}
 }

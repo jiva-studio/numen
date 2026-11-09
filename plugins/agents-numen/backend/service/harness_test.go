@@ -190,7 +190,6 @@ func getSpoken(steps []*agentrun.Response) []string {
 	return response
 }
 
-// newServer returns an agent whose single row names a connection, asking the model.
 func newServer(model *fakeModel) *Server {
 	s := &Server{chat: model.chat}
 	s.Configure(map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c00000001", Model: "m1", Reasoning: "low"})})
@@ -314,8 +313,8 @@ func TestAFailureInTheMiddleOfTheAnswerKeepsTheTextAndNamesTheConnection(t *test
 	if got := describeSteps(steps); got != "model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if spoken := strings.Join(getSpoken(steps), ""); spoken != "The plan is " {
-		t.Errorf("the text kept is %q", spoken)
+	if keptText := strings.Join(getSpoken(steps), ""); keptText != "The plan is " {
+		t.Errorf("the text kept is %q", keptText)
 	}
 	if reason := steps[len(steps)-1].GetStopped(); reason != "OpenRouter: unreachable" {
 		t.Errorf("stopped %q", reason)
@@ -342,7 +341,7 @@ func TestARejectionNamesTheConnectionAndTheReason(t *testing.T) {
 	}
 }
 
-func TestAnAgentWithNoRowStopsBeforeAnyRequestAndSaysWhereToChooseOne(t *testing.T) {
+func TestAnAgentWithNoRowStopsBeforeAnyRequestAndNamesWhereToChooseOne(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
 	s := &Server{chat: model.chat}
 
@@ -397,7 +396,7 @@ func TestTheOptionsOfTheSettingsGoWithEveryRequest(t *testing.T) {
 	}
 }
 
-func TestAnAnswerCutAtItsLengthLimitIsReportedSo(t *testing.T) {
+func TestAnAnswerTruncatedAtItsLengthLimitIsReportedSo(t *testing.T) {
 	model := &fakeModel{turns: []turn{{events: []connection.ChatEvent{
 		{TextDelta: "The plan is to"}, {Finish: &connection.Finish{Reason: connection.FinishLength}},
 	}}}}
@@ -410,7 +409,7 @@ func TestAnAnswerCutAtItsLengthLimitIsReportedSo(t *testing.T) {
 	}
 }
 
-func TestACutOffAnswerCallsNoTool(t *testing.T) {
+func TestATruncatedAnswerCallsNoTool(t *testing.T) {
 	model := &fakeModel{turns: []turn{{events: []connection.ChatEvent{
 		{ToolCall: &connection.ToolCall{ID: "c", Name: "note_read", Arguments: "{}"}}, {Finish: &connection.Finish{Reason: connection.FinishLength}},
 	}}}}
@@ -696,21 +695,21 @@ func TestACancelledTaskEndsTheStreamOfTheModel(t *testing.T) {
 	}}
 	s.Configure(map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m"})})
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
-	spoke := make(chan struct{}, 1)
+	finish := make(chan error, 1)
+	firstText := make(chan struct{}, 1)
 	go func() {
-		done <- s.Ask(ctx, newTask("", "Hello?"), func(r *agentrun.Response) error {
+		finish <- s.Ask(ctx, newTask("", "Hello?"), func(r *agentrun.Response) error {
 			if r.GetText() != "" {
-				spoke <- struct{}{}
+				firstText <- struct{}{}
 			}
 			return nil
 		})
 	}()
-	<-spoke
+	<-firstText
 
 	cancel()
 
-	if err := <-done; err != nil {
+	if err := <-finish; err != nil {
 		t.Errorf("a cancelled task returned %v", err)
 	}
 	<-ended
@@ -777,7 +776,7 @@ func TestOnlyTheFirstRowIsUsed(t *testing.T) {
 	}
 }
 
-func TestARowsSettingThatIsNoListLeavesTheRowsAsTheyWere(t *testing.T) {
+func TestARowsSettingThatIsNoListKeepsTheRowsAsTheyWere(t *testing.T) {
 	s := newServer(&fakeModel{})
 
 	s.Configure(map[string]string{SettingConnections: "not a list"})

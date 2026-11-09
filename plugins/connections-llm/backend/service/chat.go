@@ -126,8 +126,6 @@ func newStreamBody(call connection.Call, request connection.ProviderChatRequest)
 	return body
 }
 
-// openStream sends the request and returns the response with the context that ends the request and
-// the function that cancels it. The caller closes the body and cancels the request.
 func (s *Service) openStream(
 	ctx context.Context, call connection.Call, body streamBody,
 ) (*http.Response, context.Context, context.CancelFunc, error) {
@@ -231,7 +229,6 @@ type streamLine struct {
 	err error
 }
 
-// readLines reads the lines of the stream in the background until the stream ends, fails or ctx ends.
 func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
 	lines := make(chan streamLine)
 	go func() {
@@ -417,8 +414,6 @@ func (r *chatReader) end() error {
 	return r.emit(connection.ChatEvent{Finish: &connection.Finish{Reason: reason}})
 }
 
-// readStreamError turns the error object of a stream into a failure by its code. The text of the service
-// is dropped.
 func readStreamError(raw json.RawMessage) error {
 	var described struct {
 		Code json.RawMessage `json:"code"`

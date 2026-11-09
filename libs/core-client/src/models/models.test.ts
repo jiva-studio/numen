@@ -32,7 +32,10 @@ const createRpc = (overrides: Partial<ModelRpc> = {}): ModelRpc => ({
         ],
       }),
     ),
-  chat: () => (async function* () {})(),
+  chat: () =>
+    (async function* () {
+      yield* []
+    })(),
   complete: () => Promise.resolve(create(ModelServiceCompleteResponseSchema, {})),
   embed: () => Promise.resolve(create(ModelServiceEmbedResponseSchema, {})),
   getEmbeddingProfile: () =>

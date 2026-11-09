@@ -36,13 +36,13 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, client *connection.Client) {
-	agent := &Server{Unimplemented: agentrun.Unimplemented{}, chat: func(ctx context.Context, request connection.ChatRequest) (chatStream, error) {
+	agent := newAgent(func(ctx context.Context, request connection.ChatRequest) (chatStream, error) {
 		stream, err := client.Chat(ctx, request)
 		if err != nil {
 			return nil, err
 		}
 		return stream, nil
-	}}
+	})
 	s.SetUpdateConfig(func(values map[string]string) { agent.Configure(values) })
 	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	s.OnClose(agent.Close)

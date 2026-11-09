@@ -78,8 +78,6 @@ func (r *run) turn(ctx context.Context, messages []connection.ChatMessage) ([]co
 	return messages, "", false, err
 }
 
-// read asks for one turn and reports its text as it arrives. A turn that fails keeps the text already
-// reported, calls no tool and is not asked again.
 func (r *run) read(
 	ctx context.Context, messages []connection.ChatMessage,
 ) (reply connection.ChatMessage, finish connection.FinishReason, err error) {

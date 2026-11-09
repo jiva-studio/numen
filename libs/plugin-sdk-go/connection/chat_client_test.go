@@ -234,19 +234,19 @@ func TestACancelledChatInTheMiddleOfATurnKeepsTheTextAndReturnsTheContextError(t
 func TestACancelledChatBeforeTheFirstEventReturnsTheContextError(t *testing.T) {
 	host := &fakeChatHost{entered: make(chan struct{}), ended: make(chan error, 1)}
 	ctx, cancel := context.WithCancel(t.Context())
-	opened := make(chan error, 1)
+	openResult := make(chan error, 1)
 	go func() {
 		stream, err := newChatClient(t, host).Chat(ctx, ChatRequest{})
 		if stream != nil {
 			closeAfter(t, stream)
 		}
-		opened <- err
+		openResult <- err
 	}()
 	<-host.entered
 
 	cancel()
 
-	if err := <-opened; !errors.Is(err, context.Canceled) {
+	if err := <-openResult; !errors.Is(err, context.Canceled) {
 		t.Errorf("Chat = %v, want context.Canceled", err)
 	}
 	if got := <-host.ended; !errors.Is(got, context.Canceled) {

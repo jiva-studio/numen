@@ -46,13 +46,11 @@ const settle = async <T>(
 }
 
 async function* streamChat(
-  client: ModelClient,
-  pluginId: string,
-  request: ChatRequest,
+  open: () => ReturnType<ModelClient['chat']>,
   options: ModelCallOptions | undefined,
 ): AsyncGenerator<ChatEvent, ModelError | null> {
   try {
-    const end = yield* client.chat(pluginId, request, options)
+    const end = yield* open()
     return end === null ? null : readError(end)
   } catch (error) {
     return readCancellation(error, options?.signal)
@@ -67,5 +65,5 @@ export const createPluginModels = (client: ModelClient, pluginId: string): Model
     settle(options?.signal, () => client.embed(pluginId, request.texts, options)),
   getEmbeddingProfile: (options) =>
     settle(options?.signal, () => client.getEmbeddingProfile(pluginId, options)),
-  chat: (request, options) => streamChat(client, pluginId, request, options),
+  chat: (request, options) => streamChat(() => client.chat(pluginId, request, options), options),
 })

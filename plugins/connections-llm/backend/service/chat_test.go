@@ -156,7 +156,7 @@ func TestAToolCallWithEmptyArgumentsIsSentAsAnEmptyObject(t *testing.T) {
 	}
 }
 
-func TestAnAnswerCutAtTheLengthLimitFinishesWithLength(t *testing.T) {
+func TestAnAnswerTruncatedAtTheLengthLimitFinishesWithLength(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 		`{"choices":[{"delta":{"content":"cut"}}]}`,
@@ -319,15 +319,15 @@ func TestAChatCancelledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 30*time.Second)
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
+	finish := make(chan error, 1)
 	go func() {
-		done <- New().Chat(ctx, newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return nil })
+		finish <- New().Chat(ctx, newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return nil })
 	}()
 	time.Sleep(100 * time.Millisecond)
 
 	cancel()
 
-	if err := <-done; !errors.Is(err, context.Canceled) {
+	if err := <-finish; !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want the cancellation", err)
 	}
 	select {
@@ -339,16 +339,16 @@ func TestAChatCancelledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 
 func TestAChatStopsWhenTheReceiverOfTheEventsFails(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{})
-	gone := errors.New("the stream is closed")
+	consumerFailure := errors.New("the stream is closed")
 
-	err := New().Chat(newContext(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return gone })
+	err := New().Chat(newContext(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return consumerFailure })
 
-	if !errors.Is(err, gone) {
+	if !errors.Is(err, consumerFailure) {
 		t.Errorf("err = %v, want the error of the receiver", err)
 	}
 }
 
-func TestNoEventAndNoFailureOfAChatHoldsTheKey(t *testing.T) {
+func TestNoEventAndNoFailureOfAChatContainsTheKey(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{APIKey: "another-key"})
 
 	events, err := runChat(t, New(), newCall("openrouter", address, testKey, "m"), chatUser("hi"))

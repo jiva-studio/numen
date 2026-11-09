@@ -215,12 +215,12 @@ func TestAChatTurnSkipsATypeThatCannotChat(t *testing.T) {
 
 func TestAnErrorOfTheConsumerEndsTheTurnAndIsReturnedAsItIs(t *testing.T) {
 	s := newSetup(t, "chat")
-	gone := errors.New("the consumer went away")
+	consumerFailure := errors.New("the consumer went away")
 
 	err := s.calls.Chat(t.Context(), consumerID, connectionport.ChatRequest{}, connectionport.PriorityBackground,
-		func(connectionport.ChatEvent) error { return gone })
+		func(connectionport.ChatEvent) error { return consumerFailure })
 
-	if !errors.Is(err, gone) {
+	if !errors.Is(err, consumerFailure) {
 		t.Errorf("err = %v, want the error of the consumer", err)
 	}
 	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
@@ -232,17 +232,17 @@ func TestACancelledChatReturnsTheErrorOfTheContextAndFreesTheLease(t *testing.T)
 	s := newSetup(t, "chat")
 	s.world.Provider.Block(addressOne)
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
+	finish := make(chan error, 1)
 	go func() {
 		_, err := s.chatAs(ctx, consumerID, connectionport.PriorityBackground)
-		done <- err
+		finish <- err
 	}()
 	<-s.world.Provider.Entered()
 
 	cancel()
 
 	select {
-	case err := <-done:
+	case err := <-finish:
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("err = %v, want context.Canceled", err)
 		}

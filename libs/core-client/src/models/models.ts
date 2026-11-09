@@ -245,11 +245,10 @@ const writeChatRequest = (pluginId: string, request: ModelChatInput, options?: M
 
 async function* streamChat(
   rpc: ModelRpc,
-  pluginId: string,
-  request: ModelChatInput,
+  request: ReturnType<typeof writeChatRequest>,
   options: ModelCallOptions | undefined,
 ): AsyncGenerator<ModelChatEvent, ModelCallFailure | null> {
-  const stream = rpc.chat(writeChatRequest(pluginId, request, options), writeCallOptions(options))
+  const stream = rpc.chat(request, writeCallOptions(options))
   for await (const answer of stream as AsyncIterable<ModelServiceChatResponse>) {
     switch (answer.event.case) {
       case 'textDelta':
@@ -285,7 +284,7 @@ const writePriority = (priority: ModelCallPriority | undefined): Priority =>
 
 /** The lists asked through a ModelService client. */
 export const createModelClient = (rpc: ModelRpc): ModelClient => ({
-  chat: (pluginId, request, options) => streamChat(rpc, pluginId, request, options),
+  chat: (pluginId, request, options) => streamChat(rpc, writeChatRequest(pluginId, request, options), options),
   listModels: async (connectionId, operation) => {
     const answer = await rpc.listModels({ connectionId, operation })
     const failure = readFailure(answer.error, answer.detail)

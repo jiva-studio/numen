@@ -161,11 +161,11 @@ func TestAChatRoleThePluginDoesNotServeIsAStopOfUnknownReason(t *testing.T) {
 
 func TestAnErrorOfTheReceiverEndsTheChatAndIsReturnedAsItIs(t *testing.T) {
 	provider, _, _ := newBridge(t, &chatService{events: []*v1.ProviderServiceChatResponse{providerText("a"), providerText("b")}})
-	gone := errors.New("the consumer went away")
+	consumerFailure := errors.New("the consumer went away")
 
-	err := provider.Chat(t.Context(), connectionport.ProviderCall{}, connectionport.ChatRequest{}, func(connectionport.ChatEvent) error { return gone })
+	err := provider.Chat(t.Context(), connectionport.ProviderCall{}, connectionport.ChatRequest{}, func(connectionport.ChatEvent) error { return consumerFailure })
 
-	if !errors.Is(err, gone) {
+	if !errors.Is(err, consumerFailure) {
 		t.Errorf("err = %v, want the error of the receiver", err)
 	}
 }

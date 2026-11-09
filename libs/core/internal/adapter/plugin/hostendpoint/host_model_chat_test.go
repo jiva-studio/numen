@@ -219,7 +219,7 @@ func TestAChatConsumerReceivesNoKeyInAnyEvent(t *testing.T) {
 	}
 }
 
-func TestEveryChatFinishReasonOfTheSchemaIsWrittenFromThePortOne(t *testing.T) {
+func TestEveryChatFinishReasonOfTheSchemaIsEncodedFromThePortOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.HostModelChatFinishReason]connectionport.ChatFinishReason{
 		v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_STOP:       connectionport.ChatFinishStop,
 		v1.HostModelChatFinishReason_HOST_MODEL_CHAT_FINISH_REASON_TOOL_CALLS: connectionport.ChatFinishToolCalls,
