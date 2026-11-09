@@ -50,7 +50,7 @@ Placing a new feature here: a new host call is a client built in `Mount` and pas
 
 ```text
 frontend/
-├── index.ts          # builds UpdateParts (api, timer), creates the model, registers the view   index.ts:19-29
+├── index.ts          # builds UpdateParts (api), creates the model, registers the view   index.ts:19-29
 ├── api/updater.ts    # the JSON messages and SERVICE, matching backend/api
 ├── api/wire.ts       # createApi(SERVICE) behind the UpdateApi interface
 ├── model/updates.ts  # createUpdates(deps): state and actions; imports UpdateApi as a type only   updates.ts:8-11
@@ -60,7 +60,7 @@ frontend/
 ```
 
 - The direction is `ui` to `model` to `api` to `lib`: `model/updates.ts` imports the `UpdateApi` type of `api/wire` (`:10`) and the message types of `api/updater` (`:11`); `lib/release.ts` imports `../types` and `../words` and none of the segments.
-- `index.ts` builds `UpdateParts` (`:19-29`) with the real `updater` and a browser timer, and `createUpdates` takes them as `deps`, so `index.test.ts` and `model/updates.test.ts` pass fakes.
+- `index.ts` builds `UpdateParts` (`:19-29`) with the real `updater`, and `createUpdates` takes them as `deps`, so `index.test.ts` and `model/updates.test.ts` pass fakes.
 - `api/updater.test.ts` reads the JSON files of `testdata/api/`, which the Go tests of `backend/api` read as well. The frontend never imports a Go package, and the backend never imports a TypeScript file.
 - The plugin imports `@numen/plugin-sdk` and `@numen/ui` and nothing else of the repository (`package.json`, `dependencies`).
 

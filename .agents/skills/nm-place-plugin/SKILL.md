@@ -102,7 +102,7 @@ The imports point inward and nowhere else.
 - `api` imports nothing of the plugin.
 - A package named `service` or `engine` is outer; inner packages never import it.
 
-The consumer declares an interface: one to five methods, in the vocabulary of the use case, accepted as a parameter and satisfied by a concrete type that a constructor returns. A constructor validates its dependencies. Time, randomness and identifiers arrive as parameters. The machine clock is read only in a method `Now() time.Time` of a type implementing a declared clock interface (`clock.System` of the SDK is one), and a timer or a random source only in a method of a type that implements an interface the plugin declares. Cancellation and `ctx` follow `.agents/rules/coding-style-backend.md`.
+The consumer declares an interface: one to five methods, in the vocabulary of the use case, accepted as a parameter and satisfied by a concrete type that a constructor returns. A constructor validates its dependencies. Time and identifiers arrive as parameters. The machine clock is read only in a method `Now() time.Time` of a type implementing a declared clock interface (`clock.System` of the SDK is one). Cancellation and `ctx` follow `.agents/rules/coding-style-backend.md`.
 
 A backend with an engine of its own (a PDF, OCR or ONNX runtime) keeps the engine in a package named after what it computes (`pdf`, `recognition`), outside `service`; `service` calls it through an interface the service declares. The engine's helpers are packages named after what they compute, below or beside it.
 
@@ -127,10 +127,10 @@ A small frontend keeps the segments at the root of `frontend/` (`plugins/tools-u
 Inside a slice the imports run `ui` to `model` to `api` to `lib`: a segment imports the segments after it and none before it.
 
 - `ui/` holds every `.vue` file. A component is a humble view over values it receives: the template calculates nothing, the script keeps within 100 lines and 6 inline props and follows the order Props, Emits, State, Hooks, Handlers, Helpers. It touches no `window`, `document` or `navigator`, and imports no wire file or `@connectrpc`.
-- `model/` holds composables (`useDeckTabs`) and factories (`createUpdates`) that own state and call `api`. It takes the clock, timers and measurements as parameters, and imports no component.
+- `model/` holds composables (`useDeckTabs`) and factories (`createUpdates`) that own state and call `api`. It takes the clock and measurements as parameters, and imports no component.
 - `api/` holds the message types of the backend service and the wire adapter, `createApi(SERVICE)` behind an interface the model declares. It is the segment that touches host services for I/O.
 - `lib/` holds pure functions over plain values. It imports no Vue, Pinia, `@vue/*`, component, or file of `ui`, `model` or `api` at any depth, and uses no `window`, `document`, `navigator`, `localStorage`, `Date.now()`, `new Date()`, `Math.random()`, `setTimeout` or `setInterval`. A type that `lib` and `api` both use is declared in `lib` or in `types.ts`, and `api` imports it.
-- `frontend/index.ts` builds the real parts (the wire adapter, the browser timer) and passes them to the model, so a test passes fakes. `activate` registers and returns.
+- `frontend/index.ts` builds the real parts (the wire adapter) and passes them to the model, so a test passes fakes. `activate` registers and returns.
 
 Two slices do not import each other. A value two slices need is a pure function in `frontend/lib/`, a type in `frontend/types.ts`, or is written again in each slice. A component that two slices draw belongs to one of them and the other draws it through that slice's `index.ts`, or is copied.
 
