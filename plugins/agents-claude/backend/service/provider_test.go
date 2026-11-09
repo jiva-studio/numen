@@ -111,7 +111,7 @@ func TestACompleteCallLetsClaudeWriteNothing(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "written")
 	t.Setenv(writeTargetVariable, target)
 	script := writeScript(t, "claude", answerScript)
-	if err := exec.Command(script).Run(); err != nil {
+	if err := exec.CommandContext(t.Context(), script).Run(); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(target); err != nil {

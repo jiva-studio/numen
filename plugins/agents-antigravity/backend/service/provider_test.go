@@ -101,7 +101,7 @@ func TestACompleteCallLetsAntigravityWriteNothing(t *testing.T) {
 	t.Setenv(writeTargetVariable, target)
 	svc := newAntigravity(t, answerScript)
 	script := svc.getExecutablePath()
-	if err := exec.Command(script, "--dangerously-skip-permissions").Run(); err != nil {
+	if err := exec.CommandContext(t.Context(), script, "--dangerously-skip-permissions").Run(); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(target); err != nil {
