@@ -513,3 +513,22 @@ func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 		t.Fatalf("Chemistry failed: %v", err)
 	}
 }
+
+func TestStartReportsTaskBeforeReturning(t *testing.T) {
+	s := newScene(t)
+	release := make(chan struct{})
+	var once sync.Once
+	s.recogniser.onRecognise = func() {
+		once.Do(func() { <-release })
+	}
+
+	done, started, err := s.run.Start(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	if err != nil || !started {
+		t.Fatalf("Start returned (%v, %v)", started, err)
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 1 || tasks[0].Detail != "books/scan.pdf" {
+		t.Errorf("tasks right after Start = %+v, want the task reported", tasks)
+	}
+	close(release)
+	<-done
+}

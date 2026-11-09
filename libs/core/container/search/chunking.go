@@ -58,7 +58,8 @@ func (c Config) SetNoteCut(scan *vault.Scan, db *vault.Index) {
 	scan.Cut = c.CutNotes()
 	scan.ShouldRecut = c.Chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
+		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
+		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
 	}
 }
 

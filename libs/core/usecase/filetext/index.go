@@ -88,13 +88,15 @@ func (u Index) Execute(ctx context.Context, v domain.Vault) (IndexResult, error)
 	if err != nil {
 		return res, err
 	}
-	if err := u.discover(ctx, v, on, &res); err != nil {
+	noteStats, notePaths, err := u.discover(ctx, v, on, &res)
+	if err != nil {
 		return res, err
 	}
-	if err := u.dropOutdatedText(ctx, v, on, &res); err != nil {
+	notePaths, err = u.dropOutdatedText(ctx, v, on, notePaths, &res)
+	if err != nil {
 		return res, err
 	}
-	return res, u.cut(ctx, v, on, &res)
+	return res, u.cut(ctx, v, on, noteStats, notePaths, &res)
 }
 
 func (u Index) discover(
@@ -102,16 +104,20 @@ func (u Index) discover(
 	v domain.Vault,
 	on openVault,
 	res *IndexResult,
-) error {
+) (map[string]domain.FileStat, []string, error) {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	found, err := u.walkAndRecord(ctx, v, on, recognized, res)
+	noteStats, err := u.readNoteStats(ctx, v)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	return u.removeGone(ctx, v, on, recognized, found, res)
+	found, notePaths, err := u.walkAndRecord(ctx, v, on, recognized, noteStats, res)
+	if err != nil {
+		return nil, nil, err
+	}
+	return noteStats, notePaths, u.removeGone(ctx, v, on, recognized, found, res)
 }
 
 func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
@@ -122,41 +128,112 @@ func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain
 	return stats, nil
 }
 
+func (u Index) readNoteStats(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
+	sources, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
+	}
+	if len(sources) == 0 {
+		return nil, nil
+	}
+	stats, err := u.queries.GetFileStats(ctx, v.ID, domain.KindNote)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
+	}
+	noteStats := make(map[string]domain.FileStat, len(sources))
+	for _, one := range sources {
+		if stat, ok := stats[one.Path]; ok {
+			noteStats[one.Path] = stat
+		}
+	}
+	return noteStats, nil
+}
+
 func (u Index) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
 	stats map[string]domain.FileStat,
+	noteStats map[string]domain.FileStat,
 	res *IndexResult,
-) (map[string]bool, error) {
+) (map[string]bool, []string, error) {
 	found := make(map[string]bool)
+	var notePaths []string
 	err := on.files.WalkFiles(ctx, func(ref domain.FileStat) error {
-		if ref.Kind != domain.KindFile {
-			return nil
-		}
-		found[ref.Path] = true
-		previous, isKnown := stats[ref.Path]
-		if !isKnown {
-			hasText, err := on.texts.IsTextSource(ctx, ref.Path)
+		switch ref.Kind {
+		case domain.KindFile:
+			found[ref.Path] = true
+			return u.recordFile(ctx, v, on, stats, ref, res)
+		case domain.KindNote:
+			hasCut, err := u.checkNote(ctx, on, noteStats, ref, res)
 			if err != nil {
-				return fmt.Errorf("find the text of %s: %w", ref.Path, err)
+				return err
 			}
-			if !hasText {
-				return nil
+			if hasCut {
+				notePaths = append(notePaths, ref.Path)
 			}
-		}
-		res.Seen++
-		if isKnown && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
-			res.Unchanged++
+			return nil
+		default:
 			return nil
 		}
-		if err := u.sources.SaveSource(ctx, v.ID, domain.Source{FileStat: ref}); err != nil {
-			return fmt.Errorf("record %s: %w", ref.Path, err)
-		}
-		res.Recorded++
-		return nil
 	})
-	return found, err
+	return found, notePaths, err
+}
+
+func (u Index) recordFile(
+	ctx context.Context,
+	v domain.Vault,
+	on openVault,
+	stats map[string]domain.FileStat,
+	ref domain.FileStat,
+	res *IndexResult,
+) error {
+	previous, isKnown := stats[ref.Path]
+	if !isKnown {
+		hasText, err := on.texts.IsTextSource(ctx, ref.Path)
+		if err != nil {
+			return fmt.Errorf("find the text of %s: %w", ref.Path, err)
+		}
+		if !hasText {
+			return nil
+		}
+	}
+	res.Seen++
+	if isKnown && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		res.Unchanged++
+		return nil
+	}
+	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{FileStat: ref}); err != nil {
+		return fmt.Errorf("record %s: %w", ref.Path, err)
+	}
+	res.Recorded++
+	return nil
+}
+
+func (u Index) checkNote(
+	ctx context.Context,
+	on openVault,
+	noteStats map[string]domain.FileStat,
+	ref domain.FileStat,
+	res *IndexResult,
+) (bool, error) {
+	previous, isKnown := noteStats[ref.Path]
+	if !isKnown {
+		hasText, err := on.texts.IsTextSource(ctx, ref.Path)
+		if err != nil {
+			return false, fmt.Errorf("find the text of %s: %w", ref.Path, err)
+		}
+		if !hasText {
+			return false, nil
+		}
+	}
+	res.Seen++
+	if isKnown && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		res.Unchanged++
+		return false, nil
+	}
+	res.Recorded++
+	return true, nil
 }
 
 func (u Index) removeGone(
@@ -218,20 +295,43 @@ func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string 
 	return added
 }
 
-func (u Index) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
+func (u Index) dropOutdatedText(
+	ctx context.Context,
+	v domain.Vault,
+	on openVault,
+	notePaths []string,
+	res *IndexResult,
+) ([]string, error) {
 	cut, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
-		return fmt.Errorf("read index: %w", err)
+		return notePaths, fmt.Errorf("read index: %w", err)
 	}
 	for _, one := range cut {
 		if err := ctx.Err(); err != nil {
-			return err
+			return notePaths, err
 		}
 		if err := u.recordIfOutdated(ctx, v, on, one, res); err != nil {
-			return err
+			return notePaths, err
 		}
 	}
-	return nil
+	notes, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	if err != nil {
+		return notePaths, fmt.Errorf("read index: %w", err)
+	}
+	for _, one := range notes {
+		if err := ctx.Err(); err != nil {
+			return notePaths, err
+		}
+		outdated, err := u.isOutdated(ctx, on, one)
+		if err != nil {
+			return notePaths, err
+		}
+		if outdated {
+			res.Outdated++
+			notePaths = append(notePaths, one.Path)
+		}
+	}
+	return notePaths, nil
 }
 
 func (u Index) recordIfOutdated(
@@ -241,19 +341,9 @@ func (u Index) recordIfOutdated(
 	source sourceport.SourceText,
 	res *IndexResult,
 ) error {
-	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.ContentHash)
-	switch {
-	case err == nil && string(live) == source.Producer:
-		return nil
-	case err != nil && !errors.Is(err, textport.ErrNoText):
-		return fmt.Errorf("find the live version of %s: %w", source.Path, err)
-	}
-	ref, err := on.files.StatFile(ctx, source.Path)
-	if vaultport.IsNoNote(err) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("stat %s: %w", source.Path, err)
+	ref, outdated, err := u.statIfOutdated(ctx, on, source)
+	if err != nil || !outdated {
+		return err
 	}
 	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{FileStat: ref}); err != nil {
 		return fmt.Errorf("record %s: %w", source.Path, err)
@@ -262,7 +352,41 @@ func (u Index) recordIfOutdated(
 	return nil
 }
 
-func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
+func (u Index) isOutdated(ctx context.Context, on openVault, source sourceport.SourceText) (bool, error) {
+	_, outdated, err := u.statIfOutdated(ctx, on, source)
+	return outdated, err
+}
+
+func (u Index) statIfOutdated(
+	ctx context.Context,
+	on openVault,
+	source sourceport.SourceText,
+) (domain.FileStat, bool, error) {
+	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.ContentHash)
+	switch {
+	case err == nil && string(live) == source.Producer:
+		return domain.FileStat{}, false, nil
+	case err != nil && !errors.Is(err, textport.ErrNoText):
+		return domain.FileStat{}, false, fmt.Errorf("find the live version of %s: %w", source.Path, err)
+	}
+	ref, err := on.files.StatFile(ctx, source.Path)
+	if vaultport.IsNoNote(err) {
+		return domain.FileStat{}, false, nil
+	}
+	if err != nil {
+		return domain.FileStat{}, false, fmt.Errorf("stat %s: %w", source.Path, err)
+	}
+	return ref, true, nil
+}
+
+func (u Index) cut(
+	ctx context.Context,
+	v domain.Vault,
+	on openVault,
+	noteStats map[string]domain.FileStat,
+	notePaths []string,
+	res *IndexResult,
+) error {
 	sizes := u.sizes()
 	recognized := []string{recipe(versionReader, sizes)}
 	run := cutRun{tried: map[string]bool{}, sizes: sizes, res: res}
@@ -274,6 +398,11 @@ func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *Index
 		func(ctx context.Context) ([]string, error) {
 			return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, domain.KindFile, recognized, sourcesPerQuery)
 		},
+	}
+	if len(notePaths) > 0 || len(noteStats) > 0 {
+		questions = append(questions, func(ctx context.Context) ([]string, error) {
+			return u.getNotePathsToCut(ctx, v, noteStats, notePaths, recognized)
+		})
 	}
 	for _, ask := range questions {
 		for {
@@ -291,6 +420,29 @@ func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *Index
 		}
 	}
 	return nil
+}
+
+func (u Index) getNotePathsToCut(
+	ctx context.Context,
+	v domain.Vault,
+	noteStats map[string]domain.FileStat,
+	notePaths []string,
+	recognized []string,
+) ([]string, error) {
+	if len(noteStats) == 0 {
+		return notePaths, nil
+	}
+	other, err := u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, domain.KindNote, recognized, sourcesPerQuery)
+	if err != nil {
+		return nil, err
+	}
+	out := slices.Clone(notePaths)
+	for _, path := range other {
+		if _, ok := noteStats[path]; ok {
+			out = append(out, path)
+		}
+	}
+	return out, nil
 }
 
 // cutRun is the state one cut shares across its queries: the paths tried, the chunk
@@ -524,6 +676,9 @@ func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (do
 }
 
 func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }
+
+// Recipe returns the recipe that names the version reader and the chunk sizes.
+func (u Index) Recipe() string { return recipe(versionReader, u.sizes()) }
 
 func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 

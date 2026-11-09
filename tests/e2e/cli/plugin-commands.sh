@@ -1,6 +1,6 @@
 #!/bin/sh
 # Runs the commands the plugins declare through numen-cli over a temporary vault, with mock models
-# and no network: transcribe, recognise, import and proofread, then scan, and searches for the text
+# and no network: transcribe, recognize, import and proofread, then scan, and searches for the text
 # each one made.
 #
 #   unshare -rn sh -c 'ip link set lo up && tests/e2e/cli/plugin-commands.sh'
@@ -53,11 +53,12 @@ expect() {
 }
 
 cli vault add "$work/vault" --name talks >/dev/null
-expect "numen-cli transcribe <vault> <file>" help
-expect "transcribed talks/lecture.wav" transcribe talks talks/lecture.wav
-expect "recognised 1 pages of books/flywheel.pdf" recognise talks books/flywheel.pdf
-expect "its text fetched" import talks --address http://tidal-mills.numen.test/
-expect "proofread 1 lines of talks/lecture.wav" proofread talks talks/lecture.wav
+expect "numen-cli app:file.createText <vault> <file>" help
+expect "transcribing talks/lecture.wav" app:file.createText talks talks/lecture.wav
+expect "recognizing books/flywheel.pdf" app:file.createText talks books/flywheel.pdf --plugin md.numen.engines.ocr
+expect "http---tidal-mills.numen.test-.md" app:link.import talks --address http://tidal-mills.numen.test/
+expect "Fetching the text of http---tidal-mills.numen.test-.md" app:file.createText talks http---tidal-mills.numen.test-.md
+expect "proofread 1 lines of talks/lecture.wav" proofreading.create talks talks/lecture.wav
 expect "3 sources: 3 read" scan talks
 expect "Mock transcribed text for automated test." search talks "transcribed text"
 expect "a flywheel keeps it in a rotor" search talks flywheel

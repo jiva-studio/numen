@@ -379,6 +379,10 @@ jobs:
         working-directory: apps/desktop/build/pgonorm
         run: go build -o /dev/null .
 
+      - name: Run CLI end-to-end tests
+        working-directory: .
+        run: tests/e2e/cli/plugin-commands.sh
+
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
         with:

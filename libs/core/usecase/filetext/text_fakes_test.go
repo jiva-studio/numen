@@ -140,6 +140,9 @@ func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id d
 func (t libraryVaultTexts) IsTextSource(_ context.Context, path string) (bool, error) {
 	t.texts.mu.Lock()
 	defer t.texts.mu.Unlock()
+	if file, ok := t.texts.shelves[t.vault.ID].Files[path]; ok && file.Kind == domain.KindNote {
+		return len(t.texts.extra[path]) > 0 && !t.texts.outside[path], nil
+	}
 	return !t.texts.outside[path], nil
 }
 

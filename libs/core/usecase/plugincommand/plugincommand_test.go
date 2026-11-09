@@ -189,20 +189,25 @@ func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
 	}
 }
 
-func TestRunCommandRejectsTheRootFolderForACommandOverAFile(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", Command: plugincommand.Command{
-		ID: "proofreading.create", Title: "Proofread", When: "target.isFile || target.isNote",
-	}}}}
-	commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
+func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
+	for _, when := range []string{"target.isFile || target.isNote", "version.isLive && version.kind != ''"} {
+		declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", Command: plugincommand.Command{
+			ID: "proofreading.create", Title: "Proofread", When: when,
+		}}}}
+		commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
 
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create"}); !errors.Is(err, plugincommand.ErrBadArguments) {
-		t.Errorf("the root folder answered %v, want ErrBadArguments", err)
-	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "talks/a.mp3"}); err != nil {
-		t.Errorf("a file answered %v", err)
-	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "README"}); err != nil {
-		t.Errorf("a path of no known type, which the core cannot tell from a folder, answered %v", err)
+		if !commands.List.HasTargetVariable(declared.entries[0].Command) {
+			t.Errorf("%q was reported as taking no file", when)
+		}
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create"}); !errors.Is(err, plugincommand.ErrBadArguments) {
+			t.Errorf("%q: the root folder answered %v, want ErrBadArguments", when, err)
+		}
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "talks/a.mp3"}); err != nil {
+			t.Errorf("%q: a file answered %v", when, err)
+		}
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "README"}); err != nil {
+			t.Errorf("%q: a path of no known type, which the core cannot tell from a folder, answered %v", when, err)
+		}
 	}
 }
 
@@ -255,7 +260,7 @@ type settingsOf map[string]any
 
 func (s settingsOf) GetWhenConfig() map[string]any { return s }
 
-func TestRunRefusesACommandWhoseSettingDoesNotHold(t *testing.T) {
+func TestRunRejectsDisabledCommandSetting(t *testing.T) {
 	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "org.example.scans", Command: plugincommand.Command{
 		ID: "scan", Title: "Scan", When: "config.org.example.scans.isEnabled == true",
 	}}}}

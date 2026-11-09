@@ -573,3 +573,46 @@ func TestANoteWhoseVersionIsDeletedIsReadAsANoteAgain(t *testing.T) {
 		t.Errorf("the notes read again are %v, want only %s", reread, linkPath)
 	}
 }
+
+func TestExecuteIndexesNoteTextVersion(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	shelf.Put(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
+	shelf.Put("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
+
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	var reread []string
+	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
+		reread = append(reread, path)
+		return nil
+	}
+	article := texts.put(indexfake.GetFirst(), linkPath, "test.importer", "article", timedParts())
+
+	res, err := extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Seen != 1 || res.Recorded != 1 || res.Extracted != 1 {
+		t.Fatalf("first run reports %+v, want only the link note seen, recorded and extracted", res)
+	}
+	if got := index.Sources[indexfake.GetFirst().ID][linkPath].Producer; got != string(article.GetID()) {
+		t.Errorf("producer = %q, want %q", got, article.GetID())
+	}
+
+	res, err = extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Seen != 1 || res.Unchanged != 1 || res.Extracted != 0 {
+		t.Errorf("second run reports %+v, want the link note unchanged", res)
+	}
+
+	texts.drop(linkPath)
+	res, err = extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Outdated != 1 || !slices.Equal(reread, []string{linkPath}) {
+		t.Errorf("run after dropping the version reports %+v and reread %v", res, reread)
+	}
+}
