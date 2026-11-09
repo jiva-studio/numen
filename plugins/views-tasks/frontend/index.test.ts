@@ -44,7 +44,7 @@ describe('the manifest', () => {
   it('places the view of the plugin in the status slot of the title bar while a vault is open', () => {
     expect(manifest.id).toBe('md.numen.views.tasks')
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'titleBar.status', view: TASKS_VIEW, when: 'window.isVaultOpen' },
+      { slot: 'titleBar.status', view: TASKS_VIEW, order: 20, when: 'window.isVaultOpen' },
     ])
   })
 
