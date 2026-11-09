@@ -130,7 +130,7 @@ describe('the text of a deck', () => {
 
   it('leaves out the fields without a value and refuses a card without any', () => {
     const card = createCardText('Animal', ['Name', 'Height'], [['Name', 'Llama'], ['Height', '']], id)
-    expect(card).toBe(`\\n## Llama ^${id}\\n\\n[[Animal]]\\n\\n### Name\\n\\nLlama\\n`)
+    expect(card).toBe(`\n## Llama ^${id}\n\n[[Animal]]\n\n### Name\n\nLlama\n`)
     expect(() => createCardText('Animal', ['Name'], [['Name', '']], id)).toThrow('a card of the card model "Animal" has no value')
   })
 
