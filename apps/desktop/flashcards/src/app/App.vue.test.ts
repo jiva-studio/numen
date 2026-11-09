@@ -201,7 +201,9 @@ describe('App', () => {
             listVaults: async () => VAULTS,
             fetch: (async (url: string) => {
               if (url.includes('broken')) return new Response('not json', { status: 200 })
-              return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
+              return new Response(
+                JSON.stringify({ ...MANIFEST, id: 'md.numen.closing', permissions: ['vault:read'] }),
+              )
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
