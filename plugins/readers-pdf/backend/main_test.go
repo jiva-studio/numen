@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
@@ -15,7 +17,8 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	vaultDir := t.TempDir()
 	outsideDir := t.TempDir()
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
-	documents := service.NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", "md.numen.readers.pdf"), pdf.NewWorkers())
+	vault := hosttest.New("vault")
+	documents := service.NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, hosttest.NewTexts("vault", "md.numen.readers.pdf"), pdf.NewWorkers())
 
 	_, err := documents.GetDocument(t.Context(), service.GetDocumentRequest{Path: outsidePath})
 	assertDenied(t, err, "GetDocument outside the vault")

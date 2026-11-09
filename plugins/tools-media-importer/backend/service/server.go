@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
@@ -26,13 +27,17 @@ const EnvMockML = "NUMEN_MOCK_ML"
 const PluginID = "md.numen.tools.media.importer"
 
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
+	client := host.NewClient(endpoint)
 	return link.Host{
 		PluginID: PluginID,
-		Vault:    host.NewClient(endpoint),
-		Store:    host.NewStoreClient(endpoint),
-		Texts:    host.NewTextClient(endpoint),
-		Queue:    host.NewQueueClient(endpoint),
-		Clock:    clock.System{},
+		Vaults: func(id domain.VaultID) link.Vault {
+			on := client.With(id)
+			return link.Vault{Files: on, Writer: on}
+		},
+		Store: host.NewStoreClient(endpoint),
+		Texts: host.NewTextClient(endpoint),
+		Queue: host.NewQueueClient(endpoint),
+		Clock: clock.System{},
 	}
 }
 

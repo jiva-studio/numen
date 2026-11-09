@@ -696,7 +696,7 @@ func TestVaultGetFindsTheVaultByItsNameFolderOrIdentifier(t *testing.T) {
 			geology, _, withList := newTwoVaults(t)
 			registry := withList
 			if !isListed {
-				unlisted, err := service.New(geology).Registry()
+				unlisted, err := service.New(vaultsOf(geology)).Registry()
 				if err != nil {
 					t.Fatal(err)
 				}

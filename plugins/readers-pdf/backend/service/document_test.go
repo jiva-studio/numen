@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -21,7 +23,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 	writeFile(t, outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	documents := NewDocumentServer(files, hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return files.With(id) }, hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
 	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
@@ -71,7 +73,8 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 }
 
 func TestDocumentServerEmptyPath(t *testing.T) {
-	documents := NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
+	vault := hosttest.New("vault")
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
 	ctx := t.Context()
 
 	// 1. GetDocument with empty path

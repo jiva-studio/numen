@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
@@ -15,7 +17,7 @@ func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
 	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(createImageEpub(t))})
 	current.Beside(other)
-	books := NewBookServer(current)
+	books := NewBookServer(func(id domain.VaultID) host.FileReader { return current.With(id) })
 	t.Cleanup(books.Close)
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+entriesPattern, NewEntryServer(books))

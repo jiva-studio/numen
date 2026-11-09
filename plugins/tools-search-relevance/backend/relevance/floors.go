@@ -51,7 +51,7 @@ type ProbeResult struct {
 // the plugin's own folder.
 type Host struct {
 	Search host.Search
-	Vault  host.Vault
+	Vaults func(domain.VaultID) host.NoteLookup
 	Store  host.Store
 }
 
@@ -76,9 +76,9 @@ type scope struct {
 }
 
 func (f *Floors) open(vault domain.VaultID) scope {
-	search, notes, store := f.host.Search, f.host.Vault, f.host.Store
+	search, notes, store := f.host.Search, f.host.Vaults(vault), f.host.Store
 	if vault != "" {
-		search, notes, store = search.With(vault), notes.With(vault), store.With(vault)
+		search, store = search.With(vault), store.With(vault)
 	}
 	return scope{search: search, notes: notes, records: NewRecords(store)}
 }

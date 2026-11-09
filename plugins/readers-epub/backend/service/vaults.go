@@ -25,11 +25,10 @@ func getRequestVault(ctx context.Context) domain.VaultID {
 	return ""
 }
 
-func getVault(ctx context.Context, files host.Vault) host.Vault {
-	if id := getRequestVault(ctx); id != "" {
-		return files.With(id)
-	}
-	return files
+// vaultFiles is what the text server reads of a vault: its files and its name.
+type vaultFiles interface {
+	host.FileReader
+	GetVault(ctx context.Context) (domain.Vault, error)
 }
 
 func readVaultError(path string, err error) error {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -71,7 +72,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
 		Queue:  queue,
 	}, clock.NewFake(getMeasuredAt()))
 
@@ -332,10 +333,10 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		name  string
 		hosts service.Hosts
 	}{
-		{"missing search", service.Hosts{Floors: relevance.Host{Vault: vault, Store: vault.Store()}, Queue: queue}},
+		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}, Queue: queue}},
 		{"missing vault", service.Hosts{Floors: relevance.Host{Search: search, Store: vault.Store()}, Queue: queue}},
-		{"missing store", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault}, Queue: queue}},
-		{"missing queue", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()}}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk)
@@ -354,7 +355,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	setNotes(vault, 25)
 
 	appReportFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
@@ -368,7 +369,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	search.FailEmbedding(nil)
 	appFinishFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {

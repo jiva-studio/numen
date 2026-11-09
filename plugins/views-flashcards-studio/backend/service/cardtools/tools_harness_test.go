@@ -6,9 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
@@ -23,7 +24,7 @@ type session struct {
 func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	registry, err := service.New(service.Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()}).Tools()
+	registry, err := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +93,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	installation := vaulttest.NewInstallation()
 	installation.Add(t, map[string]string{"Animals.md": "# Empty\n"})
 	garden := installation.Add(t, vault())
-	registry, err := service.New(service.Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
+	registry, err := service.New(service.Config{Vaults: vaulttest.Vaults(installation.Host), Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +126,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 
 	// Transport errors from GetVault and VaultNotes/FileAccess propagate through tools.
 	fv := &errHostVault{Vault: installation.Host, getVaultErr: errors.New("transport down")}
-	errReg, err := service.New(service.Config{Vault: fv, Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
+	errReg, err := service.New(service.Config{Vaults: fv.vaults(), Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,12 +148,12 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 }
 
 type errHostVault struct {
-	host.Vault
+	*hosttest.Vault
 	getVaultErr error
 	opErr       error
 }
 
-func (e *errHostVault) With(id domain.VaultID) host.Vault {
+func (e *errHostVault) With(id domain.VaultID) *errHostVault {
 	return &errHostVault{Vault: e.Vault.With(id), getVaultErr: e.getVaultErr, opErr: e.opErr}
 }
 
@@ -175,4 +176,15 @@ func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileSt
 		return domain.FileStat{}, e.opErr
 	}
 	return e.Vault.StatFile(ctx, path)
+}
+
+// vaults gives the ports' calls on the vault with an identity; the empty identity is e itself.
+func (e *errHostVault) vaults() func(domain.VaultID) hostports.Vault {
+	return func(id domain.VaultID) hostports.Vault {
+		on := e
+		if id != "" {
+			on = e.With(id)
+		}
+		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+	}
 }

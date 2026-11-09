@@ -53,7 +53,7 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 	if length <= 0 || length > fileReadMost {
 		length = fileReadMost
 	}
-	read, err := t.vault.ReadRange(ctx, in.Path, max(in.Start, 0), length)
+	read, err := t.vault.Files.ReadRange(ctx, in.Path, max(in.Start, 0), length)
 	if errors.Is(err, host.ErrNotText) {
 		return FileReadOutput{}, fmt.Errorf("%s is not a text file; library_read reads the text of a PDF, a book or a recording", in.Path)
 	}
@@ -99,11 +99,11 @@ func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateO
 	}
 
 	data := []byte(in.Text)
-	if err := t.vault.Create(ctx, in.Path, data); err != nil {
+	if err := t.vault.Writer.Create(ctx, in.Path, data); err != nil {
 		return FileCreateOutput{}, fmt.Errorf("%s cannot be created: %w", in.Path, err)
 	}
 
-	if err := t.vault.Scan(ctx, []string{in.Path}); err != nil {
+	if err := t.vault.Index.Scan(ctx, []string{in.Path}); err != nil {
 		return FileCreateOutput{}, fmt.Errorf("%s cannot be indexed: %w", in.Path, err)
 	}
 

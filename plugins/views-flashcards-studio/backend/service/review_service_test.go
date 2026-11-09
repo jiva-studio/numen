@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
@@ -14,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -144,7 +145,9 @@ func TestAnsweringAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 }
 
 // unreadable is a host whose list of vaults cannot be read.
-type unreadable struct{ host.Vault }
+type unreadable struct{ *hosttest.Vault }
+
+func (u unreadable) With(id domain.VaultID) unreadable { return unreadable{Vault: u.Vault.With(id)} }
 
 func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 	return nil, errors.New("the list of vaults cannot be read")
@@ -155,7 +158,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // their vaults are gone.
 func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
-	handler := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store(), Now: vaulttest.NewClock()})}
+	handler := &reviewHandler{Backend: New(Config{Vaults: unreadable{Vault: installation.Host}.vaults(), Store: installation.Host.Store(), Now: vaulttest.NewClock()})}
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(t.Context(),
 		&api.WatchCardsDueRequest{})
@@ -449,5 +452,13 @@ func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
 	out, err := handler.StartSession(ctx, &api.StartSessionRequest{Vault: string(target[0].ID)})
 	if codeOf(err) != server.CodeInternal || out != nil {
 		t.Errorf("a session that could not be worked out came back with %+v and %v", out, err)
+	}
+}
+
+// vaults gives the ports' calls on the vault with an identity; the empty identity is u itself.
+func (u unreadable) vaults() func(domain.VaultID) hostports.Vault {
+	return func(id domain.VaultID) hostports.Vault {
+		on := u.With(id)
+		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 	}
 }

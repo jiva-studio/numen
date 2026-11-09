@@ -59,13 +59,19 @@ type Recogniser interface {
 	Recognize(ctx context.Context, page image.Image) ([]Block, error)
 }
 
-// Host is what a recognition works through: the vault the file is read from, the plugin's folder
+// Files is what a recognition reads of a vault: its files and its name.
+type Files interface {
+	host.FileReader
+	GetVault(ctx context.Context) (domain.Vault, error)
+}
+
+// Host is what a recognition works through: the vaults the file is read from, the plugin's folder
 // the text is stored in, the text versions it is reported to, and the queue it runs in.
 type Host struct {
-	Vault host.Vault
-	Store host.Store
-	Texts host.Texts
-	Queue host.Queue
+	Vaults func(domain.VaultID) Files
+	Store  host.Store
+	Texts  host.Texts
+	Queue  host.Queue
 }
 
 // ErrAlreadyRecognising is returned for a file another run is recognizing.
@@ -84,7 +90,7 @@ type Recognition struct {
 // New returns the recognition through the host, with the function that opens the recogniser when a
 // page is first read.
 func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recognition, error) {
-	if h.Vault == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
+	if h.Vaults == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
 	return &Recognition{
@@ -186,7 +192,7 @@ func (r *Recognition) GetVaultID(ctx context.Context, vault domain.VaultID) (dom
 	if vault != "" {
 		return vault, nil
 	}
-	shown, err := r.host.Vault.GetVault(ctx)
+	shown, err := r.host.Vaults("").GetVault(ctx)
 	if err != nil {
 		return "", fmt.Errorf("get the shown vault: %w", err)
 	}
@@ -239,9 +245,9 @@ func newTask(req Request) host.Task {
 }
 
 func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
-	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
+	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
-		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
+		on.store, on.texts = on.store.With(req.Vault), on.texts.With(req.Vault)
 	}
 	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
@@ -269,21 +275,17 @@ func GetTaskID(vault domain.VaultID, filePath string) string {
 
 // StatFile returns the metadata of a file of a vault. An empty vault ID means the vault the host shows.
 func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
-	on := r.host.Vault
-	if vault != "" {
-		on = on.With(vault)
-	}
-	return on.StatFile(ctx, filePath)
+	return r.host.Vaults(vault).StatFile(ctx, filePath)
 }
 
-func isMissing(ctx context.Context, vault host.Vault, filePath string) bool {
+func isMissing(ctx context.Context, vault host.FileReader, filePath string) bool {
 	_, err := vault.StatFile(ctx, filePath)
 	return errors.Is(err, host.ErrNotExist)
 }
 
 // reach is the vault a recognition reads, its store and its text versions, all of one vault.
 type reach struct {
-	vault host.Vault
+	vault host.FileReader
 	store host.Store
 	texts host.Texts
 }

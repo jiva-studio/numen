@@ -28,10 +28,10 @@ const textKind domain.TextKind = "page-text"
 // versions: every word with its page and the rectangle it covers in its selector. Each layer is
 // written as background work in the host's queue.
 type TextServer struct {
-	files host.Vault
-	texts host.Texts
-	store host.Store
-	queue host.Queue
+	vaults func(domain.VaultID) vaultFiles
+	texts  host.Texts
+	store  host.Store
+	queue  host.Queue
 
 	wg sync.WaitGroup
 
@@ -50,13 +50,13 @@ type TextRequest struct {
 	Path  string
 }
 
-// NewTextServer is the text layers of the files read through files, written into store and reported
+// NewTextServer is the text layers of the files read through vaults, written into store and reported
 // to texts, each written in a turn of queue.
 func NewTextServer(
-	files host.Vault, texts host.Texts, store host.Store, queue host.Queue, workers *pdf.Workers,
+	vaults func(domain.VaultID) vaultFiles, texts host.Texts, store host.Store, queue host.Queue, workers *pdf.Workers,
 ) *TextServer {
 	return &TextServer{
-		files: files, texts: texts, store: store, queue: queue,
+		vaults: vaults, texts: texts, store: store, queue: queue,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
 		running: map[string]context.CancelFunc{}, workers: workers,
 	}
@@ -85,7 +85,7 @@ type layer struct {
 
 func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 
-func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path string) (layer, error) {
+func (s *TextServer) readLayer(ctx context.Context, files host.FileReader, path string) (layer, error) {
 	raw, _, err := files.Read(ctx, path)
 	// gomutants:disable-next-line BRANCH_IF reason="vault read failure stops layer extraction"
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 // started again.
 func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
 	if req.Vault == "" {
-		shown, err := s.files.GetVault(ctx)
+		shown, err := s.vaults("").GetVault(ctx)
 		if err != nil {
 			return fmt.Errorf("get the shown vault: %w", err)
 		}
@@ -172,7 +172,7 @@ func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Ta
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.files.With(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
+	files, texts, store := s.vaults(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
 	read, err := s.readLayer(ctx, files, req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
 		return nil

@@ -29,10 +29,10 @@ const textKind domain.TextKind = "book-text"
 // it begins at. The text and its offsets are the ones the reader sets the book with. Each text is
 // written as background work in the host's queue.
 type TextServer struct {
-	files host.Vault
-	texts host.Texts
-	store host.Store
-	queue host.Queue
+	vaults func(domain.VaultID) vaultFiles
+	texts  host.Texts
+	store  host.Store
+	queue  host.Queue
 
 	wg sync.WaitGroup
 
@@ -49,11 +49,11 @@ type TextRequest struct {
 	Path  string
 }
 
-// NewTextServer is the texts of the books read through files, written into store and reported to
+// NewTextServer is the texts of the books read through vaults, written into store and reported to
 // texts, each written in a turn of queue.
-func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
+func NewTextServer(vaults func(domain.VaultID) vaultFiles, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
 	return &TextServer{
-		files: files, texts: texts, store: store, queue: queue,
+		vaults: vaults, texts: texts, store: store, queue: queue,
 		wg:       sync.WaitGroup{},
 		mu:       sync.Mutex{},
 		isClosed: false,
@@ -88,7 +88,7 @@ func isUnreadable(err error) bool {
 		errors.Is(err, epub.ErrNoPackage) || errors.Is(err, epub.ErrEncrypted)
 }
 
-func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string) (bookText, error) {
+func (s *TextServer) readBook(ctx context.Context, files host.FileReader, path string) (bookText, error) {
 	raw, _, err := files.Read(ctx, path)
 	if err != nil {
 		return bookText{}, err
@@ -124,7 +124,7 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 // again.
 func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
 	if req.Vault == "" {
-		shown, err := s.files.GetVault(ctx)
+		shown, err := s.vaults("").GetVault(ctx)
 		if err != nil {
 			return fmt.Errorf("get the shown vault: %w", err)
 		}
@@ -183,7 +183,7 @@ func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Tas
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.files.With(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
+	files, texts, store := s.vaults(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
 	read, err := s.readBook(ctx, files, req.Path)
 	if isUnreadable(err) {
 		return nil

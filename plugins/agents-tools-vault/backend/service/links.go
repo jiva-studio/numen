@@ -48,12 +48,12 @@ func (t *Tools) listLinks(ctx context.Context, in LinkListInput) (LinkListOutput
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 
-	outgoing, err := t.vault.GetLinks(ctx, path)
+	outgoing, err := t.vault.Links.GetLinks(ctx, path)
 	if err != nil {
 		return LinkListOutput{}, err
 	}
 
-	incoming, err := t.vault.GetBacklinks(ctx, path)
+	incoming, err := t.vault.Links.GetBacklinks(ctx, path)
 	if err != nil {
 		return LinkListOutput{}, err
 	}

@@ -234,7 +234,8 @@ func TestVaultOpenOfAnUnknownVaultIsRejected(t *testing.T) {
 }
 
 func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
-	registry, err := service.New(hosttest.New(geologyVault)).Registry()
+	geology := hosttest.New(geologyVault)
+	registry, err := service.New(vaultsOf(geology)).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

@@ -55,7 +55,7 @@ func (b *Backend) getRowFolder(ctx context.Context, row string) (string, error) 
 	if row == "" {
 		return "", nil
 	}
-	_, err := b.vault.StatFile(ctx, row)
+	_, err := b.vaults("").Files.StatFile(ctx, row)
 	switch {
 	case errors.Is(err, host.ErrNotExist):
 		return "", fmt.Errorf("%s: %w", row, errRowGone)

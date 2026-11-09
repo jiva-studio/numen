@@ -9,6 +9,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
@@ -184,7 +186,7 @@ func TestTheFloorOfTheCoreIsStoredByTheFloorsOfThePlugin(t *testing.T) {
 		t.Run(fixture.Name, func(t *testing.T) {
 			search, vault := hostOf(fixture)
 			search.SetProgress(10, 10)
-			floors := relevance.New(relevance.Host{Search: search, Vault: vault, Store: vault.Store()}, newClock())
+			floors := relevance.New(relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}, newClock())
 
 			outcome, state, err := floors.Calibrate(t.Context(), "")
 			if err != nil || outcome != relevance.Calibrated {

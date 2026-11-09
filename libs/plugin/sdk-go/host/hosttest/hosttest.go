@@ -43,7 +43,17 @@ type Vault struct {
 	tb         testing.TB
 }
 
-var _ host.Vault = (*Vault)(nil)
+var (
+	_ host.VaultSelector = (*Vault)(nil)
+	_ host.VaultIndex    = (*Vault)(nil)
+	_ host.FileReader    = (*Vault)(nil)
+	_ host.FileWriter    = (*Vault)(nil)
+	_ host.NoteLookup    = (*Vault)(nil)
+	_ host.LinkLookup    = (*Vault)(nil)
+	_ host.NoteArranger  = (*Vault)(nil)
+	_ host.LinkEditor    = (*Vault)(nil)
+	_ host.CacheStore    = (*Vault)(nil)
+)
 
 // New is a vault of the name, shown by the host, whose files are held in memory.
 func New(name string) *Vault {
@@ -575,7 +585,12 @@ func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (v *Vault) With(id domain.VaultID) host.Vault {
+// With returns the vault with the given identity, used as the shown vault is. The empty identity is
+// the vault itself.
+func (v *Vault) With(id domain.VaultID) *Vault {
+	if id == "" {
+		return v
+	}
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	return v.find(id)

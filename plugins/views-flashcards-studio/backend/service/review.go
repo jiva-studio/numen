@@ -90,7 +90,7 @@ func (h *reviewHandler) WatchCardsDue(
 	ctx context.Context, _ *api.WatchCardsDueRequest,
 	send func(*api.WatchCardsDueResponse) error,
 ) error {
-	recognized, err := h.vault.GetVaults(ctx)
+	recognized, err := h.vaults("").Selector.GetVaults(ctx)
 	if err != nil {
 		return newError(server.CodeInternal, err)
 	}
@@ -182,7 +182,7 @@ func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 
 	// The vault is brought up to date before it is counted. Nothing is counted from a walk half done,
 	// and the numbers arrive with the count that the finished walk wakes.
-	state, err := h.vault.With(v.ID).EnsureIndexed(ctx)
+	state, err := h.vaults(v.ID).Index.EnsureIndexed(ctx)
 	if err != nil {
 		one.Unread = err.Error()
 		return one
@@ -505,7 +505,7 @@ func (h *reviewHandler) WatchReloads(
 ) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
-	moved, err := h.vault.WatchMoves(ctx)
+	moved, err := h.vaults("").Index.WatchMoves(ctx)
 	if err != nil {
 		return newError(server.CodeUnavailable, err)
 	}

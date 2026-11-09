@@ -96,7 +96,7 @@ func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) 
 	if t.list != nil {
 		return t.list.GetVaultList(ctx)
 	}
-	vaults, err := t.host.GetVaults(ctx)
+	vaults, err := t.vaults("").Selector.GetVaults(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) 
 }
 
 func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemListInput) (VaultProblemListOutput, error) {
-	problems, err := t.vault.GetProblems(ctx, in.Checks)
+	problems, err := t.vault.Arranger.GetProblems(ctx, in.Checks)
 	if err != nil {
 		return VaultProblemListOutput{}, err
 	}

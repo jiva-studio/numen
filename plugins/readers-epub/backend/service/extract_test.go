@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 
@@ -85,7 +87,7 @@ func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime in
 
 func readEntry(t *testing.T, files *hosttest.Vault, path, entry string, baseline *api.FileStat) (api.ReadBookEntryResponse, error) {
 	t.Helper()
-	books := NewBookServer(files)
+	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	return books.ReadBookEntry(t.Context(),
 		api.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline})

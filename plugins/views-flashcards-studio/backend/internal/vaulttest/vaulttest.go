@@ -55,13 +55,13 @@ func createVaultName(tb testing.TB) string {
 
 // Of is the ports over a vault the test made.
 func Of(host *hosttest.Vault) Env {
-	ports := hostports.New(host, host.Store())
+	ports := hostports.New(Vaults(host), host.Store())
 	return Env{
 		Host:    host,
 		Store:   host.Store(),
 		Vault:   host.Vault(),
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
+		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
 	}
 }
 
@@ -78,12 +78,12 @@ type Installation struct {
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()
-	ports := hostports.New(host, host.Store())
+	ports := hostports.New(Vaults(host), host.Store())
 	return Installation{
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
+		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
 	}
 }
 
@@ -114,4 +114,12 @@ func WaitFor(tb testing.TB, condition func() bool) {
 		time.Sleep(step)
 	}
 	tb.Fatal("it never came to be so")
+}
+
+// Vaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
+func Vaults(v *hosttest.Vault) func(domain.VaultID) hostports.Vault {
+	return func(id domain.VaultID) hostports.Vault {
+		on := v.With(id)
+		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+	}
 }

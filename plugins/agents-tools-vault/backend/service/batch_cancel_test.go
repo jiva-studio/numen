@@ -19,7 +19,7 @@ type cancelledBatchVault struct {
 	*hosttest.Vault
 }
 
-func (c cancelledBatchVault) With(domain.VaultID) host.Vault { return c }
+func (c cancelledBatchVault) With(domain.VaultID) cancelledBatchVault { return c }
 
 func (c cancelledBatchVault) MoveNotes(ctx context.Context, paths []string, folder string) ([]host.NoteMove, error) {
 	out := make([]host.NoteMove, 0, len(paths))
@@ -55,7 +55,7 @@ func (c cancelledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([
 func newCancelledBatchRegistry(t *testing.T) *tools.Registry {
 	t.Helper()
 	v, _ := newGeologyVault(t)
-	registry, err := service.New(cancelledBatchVault{v}).Registry()
+	registry, err := service.New(cancelledBatchVault{v}.vaults()).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -101,5 +101,13 @@ func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 		if got.Path != target || got.TrashPath != "" || !strings.Contains(got.Error, want) {
 			t.Errorf("entry %d is %+v, want %s not removed with an error containing %q", i+1, got, target, want)
 		}
+	}
+}
+
+// vaults gives the calls on the vault with an identity, all through c.
+func (c cancelledBatchVault) vaults() func(domain.VaultID) service.Vault {
+	return func(id domain.VaultID) service.Vault {
+		on := c.With(id)
+		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
 	}
 }

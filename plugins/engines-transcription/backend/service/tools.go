@@ -49,13 +49,13 @@ type TranscriptCreateOutput struct {
 // Tools serves transcript_create. The transcriptions it starts end with Transcriber.Close.
 type Tools struct {
 	transcriber *Transcriber
-	vault       host.Vault
+	vaults      func(domain.VaultID) VaultReader
 }
 
 // NewTools returns the tools for the transcriber, which check the requested recordings through the
 // vault.
-func NewTools(transcriber *Transcriber, vault host.Vault) *Tools {
-	return &Tools{transcriber: transcriber, vault: vault}
+func NewTools(transcriber *Transcriber, vaults func(domain.VaultID) VaultReader) *Tools {
+	return &Tools{transcriber: transcriber, vaults: vaults}
 }
 
 // Registry registers and returns the transcription tool.
@@ -91,7 +91,7 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	if in.Path == "" {
 		return TranscriptCreateOutput{}, errors.New("path required")
 	}
-	if _, err := t.vault.With(vault).StatFile(ctx, in.Path); err != nil {
+	if _, err := t.vaults(vault).StatFile(ctx, in.Path); err != nil {
 		if errors.Is(err, host.ErrNotExist) {
 			return TranscriptCreateOutput{}, fmt.Errorf("%s: %w", in.Path, errNotFound)
 		}

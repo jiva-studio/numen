@@ -25,14 +25,14 @@ const (
 
 // Tools provides MCP tools for interacting with flashcards.
 type Tools struct {
-	vault    host.Vault
+	vaults   func(domain.VaultID) host.VaultSelector
 	cards    cards.Scenarios
 	deckedit deckedit.Scenarios
 }
 
 // New creates a Tools instance.
-func New(vault host.Vault, cards cards.Scenarios, deckedit deckedit.Scenarios) *Tools {
-	return &Tools{vault: vault, cards: cards, deckedit: deckedit}
+func New(vaults func(domain.VaultID) host.VaultSelector, cards cards.Scenarios, deckedit deckedit.Scenarios) *Tools {
+	return &Tools{vaults: vaults, cards: cards, deckedit: deckedit}
 }
 
 // Registry builds the tools registry.
@@ -68,7 +68,7 @@ func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
 	if id == "" {
 		return domain.Vault{}, errNoVault
 	}
-	v, err := t.vault.With(domain.VaultID(id)).GetVault(ctx)
+	v, err := t.vaults(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
 		return domain.Vault{}, errors.New("the agent vault is not registered in this installation")
 	}

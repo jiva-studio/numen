@@ -39,7 +39,17 @@ func request[T any](c *Client, msg *T) *connect.Request[T] {
 	return req
 }
 
-var _ Vault = (*Client)(nil)
+var (
+	_ VaultSelector = (*Client)(nil)
+	_ VaultIndex    = (*Client)(nil)
+	_ FileReader    = (*Client)(nil)
+	_ FileWriter    = (*Client)(nil)
+	_ NoteLookup    = (*Client)(nil)
+	_ LinkLookup    = (*Client)(nil)
+	_ NoteArranger  = (*Client)(nil)
+	_ LinkEditor    = (*Client)(nil)
+	_ CacheStore    = (*Client)(nil)
+)
 
 // NewClientFromEnv connects to the host the process was started for: its endpoint and the token identifying
 // the plugin come from the environment. It returns hostcall.ErrNoHost where the environment names no host.
@@ -393,7 +403,9 @@ func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
 	return changes, nil
 }
 
-func (c *Client) With(id domain.VaultID) Vault {
+// With returns the client for the vault with the given identity, used as the shown vault is. A call on
+// it returns ErrUnknownVault when the installation has no such vault.
+func (c *Client) With(id domain.VaultID) *Client {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

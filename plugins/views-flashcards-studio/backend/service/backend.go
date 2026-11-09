@@ -33,7 +33,7 @@ var errNoVault = errors.New("no vault is open")
 
 // Config is what the backend is made from.
 type Config struct {
-	Vault     host.Vault
+	Vaults    func(domain.VaultID) hostports.Vault
 	Store     host.Store
 	DayStart  func() time.Duration
 	Now       ports.Clock
@@ -43,7 +43,7 @@ type Config struct {
 
 // Backend answers the cards, the presets and the review.
 type Backend struct {
-	vault  host.Vault
+	vaults func(domain.VaultID) hostports.Vault
 	ports  hostports.Ports
 	titles ports.NoteQueries
 	now    ports.Clock
@@ -67,10 +67,10 @@ func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
-	wired := hostports.New(cfg.Vault, cfg.Store)
+	wired := hostports.New(cfg.Vaults, cfg.Store)
 	now := cfg.Now
 	b := &Backend{
-		vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg,
+		vaults: cfg.Vaults, ports: wired, titles: wired.Notes, now: now, cfg: cfg,
 		runs: sessions{mu: sync.Mutex{}, run: nil}, scenariosStore: atomic.Pointer[Scenarios]{},
 	}
 	b.scenariosStore.Store(b.build(cfg.DayStart))
@@ -92,7 +92,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	}
 	// What a window writes is updated in the index by the paths it touched, and the index is the host's.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
-		return cfg.Vault.With(v.ID).Scan(ctx, paths)
+		return cfg.Vaults(v.ID).Index.Scan(ctx, paths)
 	}
 
 	read := cards.NewRead(wired.Readers, wired.Links)
@@ -130,7 +130,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 }
 
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
-	v, err := b.vault.GetVault(ctx)
+	v, err := b.vaults("").Selector.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {
 		return domain.Vault{}, newError(server.CodeFailedPrecondition, errNoVault)
 	}
@@ -141,7 +141,7 @@ func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 }
 
 func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error) {
-	v, err := b.vault.With(domain.VaultID(id)).GetVault(ctx)
+	v, err := b.vaults(domain.VaultID(id)).Selector.GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
 		return domain.Vault{}, newError(server.CodeNotFound, err)
 	}

@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -24,13 +25,13 @@ const mostPixels = 1 << 24
 
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
-	files   host.Vault
+	vaults  func(domain.VaultID) host.FileReader
 	workers *pdf.Workers
 }
 
-// NewPageServer returns a PageServer that reads files from files and draws them on the workers.
-func NewPageServer(files host.Vault, workers *pdf.Workers) *PageServer {
-	return &PageServer{files: files, workers: workers}
+// NewPageServer returns a PageServer that reads files from vaults and draws them on the workers.
+func NewPageServer(vaults func(domain.VaultID) host.FileReader, workers *pdf.Workers) *PageServer {
+	return &PageServer{vaults: vaults, workers: workers}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
@@ -53,7 +54,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid wide", http.StatusBadRequest)
 		return
 	}
-	raw, _, err := getVault(s.files, r.Header).Read(r.Context(), path)
+	raw, _, err := s.vaults(host.GetRequestVault(r.Header)).Read(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), getStatus(err))
 		return

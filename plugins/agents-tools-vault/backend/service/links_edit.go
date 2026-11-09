@@ -176,7 +176,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	if len(additions) == 0 {
 		return out, nil
 	}
-	added, err := t.vault.AddLinks(ctx, additions)
+	added, err := t.vault.Editor.AddLinks(ctx, additions)
 	if err != nil {
 		return LinkAddOutput{}, fmt.Errorf("write the links: %w", err)
 	}
@@ -215,7 +215,7 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 		return LinkEditOutput{}, err
 	}
 	change := domain.Link{Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
-	stat, err := t.vault.UpdateLinks(ctx, in.From, target, change, baseline)
+	stat, err := t.vault.Editor.UpdateLinks(ctx, in.From, target, change, baseline)
 	if err != nil {
 		return LinkEditOutput{}, describeWriteError(in.From, err)
 	}
@@ -235,7 +235,7 @@ func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOu
 	if err != nil {
 		return LinkEditOutput{}, err
 	}
-	stat, err := t.vault.RemoveLinks(ctx, in.From, target, role, baseline)
+	stat, err := t.vault.Editor.RemoveLinks(ctx, in.From, target, role, baseline)
 	if err != nil {
 		return LinkEditOutput{}, describeWriteError(in.From, err)
 	}

@@ -113,7 +113,7 @@ func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameO
 	if strings.TrimSpace(in.Path) == "" {
 		return NoteRenameOutput{}, errors.New("path is required")
 	}
-	result, err := t.vault.RenameNote(ctx, in.Path, in.Title)
+	result, err := t.vault.Arranger.RenameNote(ctx, in.Path, in.Title)
 	if err != nil {
 		return NoteRenameOutput{}, err
 	}
@@ -140,7 +140,7 @@ func (t *Tools) moveNotes(ctx context.Context, in NoteMoveInput) (NoteMoveOutput
 	if folder == "" {
 		return NoteMoveOutput{}, errors.New(`folder is empty; pass "/" for the vault root`)
 	}
-	moves, err := t.vault.MoveNotes(ctx, in.Paths, strings.Trim(folder, "/"))
+	moves, err := t.vault.Arranger.MoveNotes(ctx, in.Paths, strings.Trim(folder, "/"))
 	if err != nil {
 		return NoteMoveOutput{}, err
 	}
@@ -168,7 +168,7 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	if err := checkPaths(in.Paths); err != nil {
 		return NoteRemoveOutput{}, err
 	}
-	removals, err := t.vault.RemoveNotes(ctx, in.Paths)
+	removals, err := t.vault.Arranger.RemoveNotes(ctx, in.Paths)
 	if err != nil {
 		return NoteRemoveOutput{}, err
 	}

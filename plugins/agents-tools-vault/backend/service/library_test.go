@@ -138,7 +138,7 @@ func newLibrary(t *testing.T) library {
 		{Path: talkPath, Text: "Today we speak about the heron.", Location: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
 	})
 
-	svc := service.New(vault).WithLibrary(texts, search)
+	svc := service.New(vaultsOf(vault)).WithLibrary(texts, search)
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -322,7 +322,7 @@ func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 		t.Fatal("the search of another vault is not a fake")
 	}
 	gardenSearch.SetIndexedPassages([]host.Passage{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
-	registry, err := service.New(vault).WithLibrary(hosttest.NewTexts(testVault, readerID), search).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(hosttest.NewTexts(testVault, readerID), search).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +354,7 @@ func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	cyrillic.File("ru.pdf", []byte(pdfBytes))
 	putText(t, cyrillic, readerID, "ru.pdf", "page-text", []byte(pdfBytes), []domain.TextSegment{{Text: "Ачарьи говорят", Selector: `{"page":1}`}})
 	l.vault.File("ru.pdf", pdfBytes)
-	svc := service.New(l.vault).WithLibrary(cyrillic, l.search)
+	svc := service.New(vaultsOf(l.vault)).WithLibrary(cyrillic, l.search)
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)

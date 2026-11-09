@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
@@ -128,7 +129,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
+	return mount(s, recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
 }
 
 func getConfig() engine.Config {

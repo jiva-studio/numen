@@ -142,7 +142,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 		},
 	}
 	recognitions, err := recognition.New(
-		recognition.Host{Vault: vault, Store: vault.Store(), Texts: texts, Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: vault.Store(), Texts: texts, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) {
 			s.openCount.Add(1)
 			return s.recogniser, nil
@@ -610,11 +610,11 @@ func (c *readCounts) getCounts() (scan, versions int) {
 
 // countingVault is the vault whose file reads are counted as reads of the scan.
 type countingVault struct {
-	host.Vault
+	*hosttest.Vault
 	counts *readCounts
 }
 
-func (v countingVault) With(id domain.VaultID) host.Vault {
+func (v countingVault) With(id domain.VaultID) countingVault {
 	return countingVault{Vault: v.Vault.With(id), counts: v.counts}
 }
 
@@ -656,9 +656,10 @@ func (t countingTexts) ReadText(ctx context.Context, path string, id domain.Text
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}
+	counted := countingVault{Vault: s.vault, counts: counts}
 	recognitions, err := recognition.New(
 		recognition.Host{
-			Vault: countingVault{Vault: s.vault, counts: counts}, Store: countingStore{Store: s.vault.Store(), counts: counts},
+			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: countingStore{Store: s.vault.Store(), counts: counts},
 			Texts: countingTexts{Texts: s.texts, counts: counts}, Queue: s.queue,
 		},
 		func(context.Context) (recognition.Recogniser, error) {

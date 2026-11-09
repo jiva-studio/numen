@@ -16,7 +16,7 @@ func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search,
 	t.Helper()
 	search, vault := newHost(hint)
 	fill(search, vault, 25, passagesOf(60, 3))
-	return relevance.New(relevance.Host{Search: search, Vault: vault, Store: vault.Store()}, newClock()), search, vault
+	return relevance.New(relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}, newClock()), search, vault
 }
 
 func TestGetShowsTheHintOfTheModelBeforeAnythingIsStored(t *testing.T) {
@@ -616,7 +616,7 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 		s := &faultSearch{Search: rawSearch}
 		st := &faultStore{Store: vault.Store()}
 		configure(s, st, rawSearch)
-		return relevance.New(relevance.Host{Search: s, Vault: vault, Store: st}, newClock())
+		return relevance.New(relevance.Host{Search: s, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: st}, newClock())
 	}
 
 	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {

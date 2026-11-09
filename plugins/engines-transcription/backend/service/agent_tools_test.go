@@ -172,10 +172,10 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 		Queue: s.queue, doneCh: make(chan string, 64), failCh: make(chan host.Task, 64), calls: &queueCalls{},
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
-	s.transcriber = NewTranscriber(wrap(vaultFiles{vault: s.vault}), s.store, s.texts, s.finishing,
+	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}), s.store, s.texts, s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
-	registry, err := NewTools(s.transcriber, s.vault).Registry()
+	registry, err := NewTools(s.transcriber, func(id domain.VaultID) VaultReader { return s.vault.With(id) }).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -777,11 +777,11 @@ func (f countingFiles) ReadFile(ctx context.Context, vault domain.VaultID, path 
 
 // countingVault is the vault whose file reads are counted as reads of the recording.
 type countingVault struct {
-	host.Vault
+	*hosttest.Vault
 	counts *readCounts
 }
 
-func (v countingVault) With(id domain.VaultID) host.Vault {
+func (v countingVault) With(id domain.VaultID) countingVault {
 	return countingVault{Vault: v.Vault.With(id), counts: v.counts}
 }
 
@@ -823,11 +823,12 @@ func (t countingTexts) ReadText(ctx context.Context, path string, id domain.Text
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}
-	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vault: s.vault}, counts: counts},
+	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}, counts: counts},
 		countingStore{Store: s.store, counts: counts}, countingTexts{Texts: s.texts, counts: counts}, s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
-	registry, err := NewTools(s.transcriber, countingVault{Vault: s.vault, counts: counts}).Registry()
+	counted := countingVault{Vault: s.vault, counts: counts}
+	registry, err := NewTools(s.transcriber, func(id domain.VaultID) VaultReader { return counted.With(id) }).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
