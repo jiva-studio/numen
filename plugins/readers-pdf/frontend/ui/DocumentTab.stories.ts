@@ -10,10 +10,10 @@ import { expect, waitFor } from 'storybook/test'
 import { shallowRef, watch } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { frameStory } from './fixtures/frame'
-import { useDocumentReader } from './model/useDocumentReader'
-import { useDocumentTab } from './model/useDocumentTab'
-import type { Documents, TextRange } from './types'
+import { frameStory } from '../fixtures/frame'
+import { useDocumentReader } from '../model/useDocumentReader'
+import { useDocumentTab } from '../model/useDocumentTab'
+import type { Documents, TextRange } from '../types'
 
 const meta = {
   title: 'Reading/Document tab',

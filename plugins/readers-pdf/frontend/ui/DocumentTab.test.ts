@@ -6,13 +6,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, reactive, ref, shallowRef } from 'vue'
 import DocumentTab from './DocumentTab.vue'
-import type { TextRange } from './types'
+import type { TextRange } from '../types'
 
 const reader = vi.hoisted(() => ({
   focusSpans: vi.fn(async (..._spans: readonly TextRange[]) => undefined),
 }))
 
-vi.mock('./model/useDocumentReader', () => ({
+vi.mock('../model/useDocumentReader', () => ({
   useDocumentReader: (path: string) => ({
     path,
     pages: shallowRef([{ width: 600, height: 800 }]),
@@ -31,7 +31,7 @@ vi.mock('./model/useDocumentReader', () => ({
   }),
 }))
 
-vi.mock('./reader', () => ({
+vi.mock('../reader', () => ({
   Reader: defineComponent({
     name: 'Reader',
     setup: () => () => h('div', { class: 'reader-stub' }),

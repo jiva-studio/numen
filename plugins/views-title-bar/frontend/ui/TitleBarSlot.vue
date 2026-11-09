@@ -5,21 +5,14 @@
  * drags the window.
  */
 import type { Component } from 'vue'
-import type { AppInfo, CommandItem, SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import type { SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { formatShortcut } from '../lib/shortcut'
 import { formatTooltip } from '../lib/title'
 import TitleBarMenuButton from './TitleBarMenuButton.vue'
+import type { TitleBarSlotProps } from './TitleBarSlot.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  name: string
-  entries: readonly SlotItem[]
-  getKey: (entry: SlotItem) => string
-  hidden: ReadonlySet<string>
-  platform: AppInfo['platform']
-  listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: unknown) => void) | undefined
-}>()
+const props = defineProps<TitleBarSlotProps>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{

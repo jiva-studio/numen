@@ -59,7 +59,6 @@ export default [
                 '@/shared/**',
                 '@/entities/**',
                 '@/features/**',
-                '@/widgets/**',
                 '@/app/**',
               ],
               message:

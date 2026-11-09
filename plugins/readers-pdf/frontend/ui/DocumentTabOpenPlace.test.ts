@@ -8,11 +8,11 @@ import { mount } from '@vue/test-utils'
 import { h } from 'vue'
 import type { Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { useDocumentReader } from './model/useDocumentReader'
-import { useDocumentTab } from './model/useDocumentTab'
-import type { Documents } from './types'
+import { useDocumentReader } from '../model/useDocumentReader'
+import { useDocumentTab } from '../model/useDocumentTab'
+import type { Documents } from '../types'
 
-vi.mock('./reader', () => ({
+vi.mock('../reader', () => ({
   Reader: { name: 'Reader', render: () => h('div', { class: 'reader-stub' }) },
 }))
 

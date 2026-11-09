@@ -6,24 +6,14 @@
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
 import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
-import { useSlotMenu, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
+import { useSlotMenu } from '@numen/plugin-sdk'
 import { TITLE_BAR_WORDS } from '../lib/words'
+import type { TitleBarMenuButtonProps } from './TitleBarMenuButton.types'
 
 defineOptions({ inheritAttrs: false })
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    entries: readonly SlotItem[]
-    label: string
-    icon?: unknown
-    tooltip?: string
-    isItemList?: boolean
-    listItems: (command: string) => Promise<readonly CommandItem[]>
-    reportError?: ((error: unknown) => void) | undefined
-  }>(),
-  { isItemList: false },
-)
+const props = withDefaults(defineProps<TitleBarMenuButtonProps>(), { isItemList: false })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
