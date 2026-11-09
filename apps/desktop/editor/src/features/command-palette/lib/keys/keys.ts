@@ -24,19 +24,34 @@ export const findShortcutKeys = (shortcut: string, agent: string): PaletteKeys |
   return keyChord(letter, agent, modifiers.includes('shift'))
 }
 
+type Values = Readonly<Record<string, string>>
+
+const hasSameValues = (a: Values, b: Values): boolean => {
+  const names = Object.keys(a)
+  return names.length === Object.keys(b).length && names.every((name) => a[name] === b[name])
+}
+
 /**
- * The keys of the first keybinding of the application for the command, as drawn for the current
- * platform, or undefined for a command without one.
+ * The keys of the first keybinding of the application for the command with these values, as drawn
+ * for the current platform, or undefined for a command without one.
  */
-export const findChordKeys = (command: string, agent: string): PaletteKeys | undefined => {
+export const findChordKeys = (
+  command: string,
+  agent: string,
+  values: Values = {},
+): PaletteKeys | undefined => {
   const key = APP_KEYBINDINGS.find(
-    (one) => one.command === command && Object.keys(one.values).length === 0,
+    (one) => one.command === command && hasSameValues(one.values, values),
   )?.key
   return key === undefined ? undefined : findShortcutKeys(key, agent)
 }
 
-/** The keys of the command as a palette row property. */
-export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
-  const keys = findChordKeys(command, agent)
+/** The keys of the command with these values as a palette row property. */
+export const createRowKeys = (
+  command: string,
+  agent: string,
+  values: Values = {},
+): { keys?: PaletteKeys } => {
+  const keys = findChordKeys(command, agent, values)
   return keys ? { keys } : {}
 }

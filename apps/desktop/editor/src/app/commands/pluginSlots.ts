@@ -69,7 +69,6 @@ export function createSlotCommandFinder(
     return {
       title: found.text,
       ...getEditorIcon(found.iconName, command),
-      shortcut: '',
       hasItems: found.listItems !== undefined,
     }
   }
@@ -85,7 +84,6 @@ export function createSlotCommandFinder(
     return {
       title: look.title,
       ...(look.icon ? { icon: getNamedIcon(look.icon) } : {}),
-      shortcut: hostCommand?.shortcut ?? '',
       hasItems,
     }
   }
@@ -119,7 +117,7 @@ export function createSlotCommandFinder(
       )
     const icon = findIcon(command)
     return isPossible
-      ? { title: shared.title, ...(icon ? { icon } : {}), shortcut: '', hasItems: true }
+      ? { title: shared.title, ...(icon ? { icon } : {}), hasItems: true }
       : undefined
   }
 

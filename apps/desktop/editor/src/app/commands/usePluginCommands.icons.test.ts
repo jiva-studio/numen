@@ -8,6 +8,7 @@ describe('the palette entry of a command a plugin declares', () => {
   it('is drawn with the icon the manifest names', () => {
     const host = {
       hasCommandItems: () => false,
+      getKeyFor: () => undefined,
       getPaletteCommands: () => [
         { id: 'md.tree:tree.open', title: 'Open file tree', icon: 'folder-tree' },
       ],

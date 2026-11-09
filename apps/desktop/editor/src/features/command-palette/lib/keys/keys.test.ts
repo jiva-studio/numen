@@ -35,6 +35,14 @@ describe('how a key is drawn on the row that names it', () => {
     })
   })
 
+  it('is the key of the command with the same values only', () => {
+    expect(findChordKeys('app:file.open#note', 'Linux x86_64', { placement: 'split' })).toBeUndefined()
+    expect(createRowKeys('app:file.open#note', 'Linux x86_64', { placement: 'split' })).toEqual({})
+    expect(createRowKeys('app:file.open#note', 'Linux x86_64', {})).toEqual({
+      keys: { icons: ['control'], letter: 'G' },
+    })
+  })
+
   it('is nothing for a command no key reaches', () => {
     expect(findChordKeys('app:file.remove#permanent', 'Linux x86_64')).toBeUndefined()
     expect(createRowKeys('app:file.remove#permanent', 'Linux x86_64')).toEqual({})

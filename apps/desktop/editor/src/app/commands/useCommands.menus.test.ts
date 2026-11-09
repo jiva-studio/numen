@@ -88,6 +88,7 @@ function setup(
   const writeMessage = vi.fn()
   const pluginHost = {
     getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
+    getKeyFor: () => undefined,
     hasCommandItems: () => false,
     hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
     isSharedCommand: (id: string) => id === 'app:file.createText',

@@ -345,13 +345,15 @@ describe('a plugin command over a note', () => {
     id: 'org.example.sample:summary.run',
     title: 'Open summary',
     when: 'target.isNote',
-    shortcut: 'mod+k',
   }
   const GRAPH = {
     id: 'org.example.sample:graph.run',
     title: 'New graph',
-    shortcut: 'mod+shift+x',
     icon: 'waypoints',
+  }
+  const KEYS: Record<string, string> = {
+    [SUMMARY.id]: 'mod+k',
+    [GRAPH.id]: 'mod+shift+x',
   }
   const setupPlugin = (
     declared: readonly object[] = [SUMMARY],
@@ -362,6 +364,7 @@ describe('a plugin command over a note', () => {
     const writeMessage = vi.fn()
     const pluginHost = {
       getPaletteCommands: () => declared,
+      getKeyFor: (id: string) => KEYS[id],
       hasCommandItems: () => false,
       hasCommand: (id: string) => id === 'summary',
       executeCommand,

@@ -48,7 +48,7 @@ export function createCommandApi(
   }
   return {
     ...handlers,
-    getPaletteCommands: () => getAvailable().map((one) => createPaletteCommand(one, keybindings.getKeyFor(one.id))),
+    getPaletteCommands: () => getAvailable().map((one) => createPaletteCommand(one)),
     hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     hasCommandItems: (id: string): boolean =>
       isSharedCommand(id) || registry.commands.value.get(id)?.reg.listItems !== undefined,

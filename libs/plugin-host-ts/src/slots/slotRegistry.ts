@@ -38,11 +38,15 @@ export interface DeclaredSlotEntry {
 export interface SlotCommandLook {
   readonly title: string
   readonly icon?: unknown
-  readonly shortcut?: string | undefined
   readonly hasItems?: boolean | undefined
 }
 
 export interface SlotRegistryDeps {
+  /** The key bound to the command with these values, such as `mod+shift+p`; the item carries it. */
+  readonly getKeyFor?: (
+    command: string,
+    values?: Readonly<Record<string, string>>,
+  ) => string | undefined
   readonly getEntries: () => readonly DeclaredSlotEntry[] | undefined
   readonly findCommand: (
     command: string,
@@ -205,6 +209,7 @@ function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
   look: SlotCommandLook | undefined,
+  key: string | undefined,
 ): SlotItem | undefined {
   if (!look) return undefined
   const icon = entry.icon ?? look.icon
@@ -215,7 +220,7 @@ function toCommandItem(
     command,
     title: entry.title || look.title,
     ...(icon === undefined ? {} : { icon }),
-    shortcut: look.shortcut ?? '',
+    shortcut: key ?? '',
     hasItems: look.hasItems ?? false,
     ...(entry.values && Object.keys(entry.values).length > 0 ? { values: entry.values } : {}),
   }
@@ -286,7 +291,12 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     if (!isDrawnOver(entry, target)) return undefined
     if (entry.command) {
       const command = getFullCommand(entry, entry.command)
-      return toCommandItem(entry, command, deps.findCommand(command, target))
+      return toCommandItem(
+        entry,
+        command,
+        deps.findCommand(command, target),
+        deps.getKeyFor?.(command, entry.values),
+      )
     }
     if (entry.view) return toViewItem(entry, entry.view, deps.findView(entry.pluginId, entry.view))
     const { owners, inCycle } = declared.value

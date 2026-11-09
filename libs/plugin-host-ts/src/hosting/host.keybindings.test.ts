@@ -214,10 +214,11 @@ describe('the keys of the plugins', () => {
     expect(host.getKeyFor('app:commands.open')).toBe('mod+p')
   })
 
-  it('give the key of a command to the palette as its hint', () => {
+  it('give the key of a command to a hint, and the palette command carries none', () => {
     const { host } = create()
     host.registerKeybindings('org.example.ledger', [{ key: 'mod+l', command: 'ledger.open' }])
 
-    expect(host.getPaletteCommands()[0]?.shortcut).toBe('mod+l')
+    expect(host.getKeyFor('org.example.ledger:ledger.open')).toBe('mod+l')
+    expect(host.getPaletteCommands()[0]).not.toHaveProperty('shortcut')
   })
 })

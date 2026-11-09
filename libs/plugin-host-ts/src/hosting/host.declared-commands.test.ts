@@ -52,7 +52,6 @@ describe('the commands a plugin declares in its manifest', () => {
         id: formatCommandId('md.tree', 'tree.revealNote'),
         title: 'Show note in file tree',
         icon: 'folder-tree',
-        shortcut: 'mod+shift+e',
         when: 'target.isNote',
       },
     ])

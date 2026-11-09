@@ -35,7 +35,7 @@ function setup(entries: readonly DeclaredSlotEntry[], overrides: Partial<SlotReg
       if (title === undefined) return undefined
       // A command over a note is left out where the slot has no note.
       if (command.endsWith('.note') && !target?.path) return undefined
-      return { title, shortcut: '' }
+      return { title }
     },
     findView: (pluginId, view) =>
       view === 'balance' ? { name: `${pluginId}-${view}` } : undefined,
@@ -148,13 +148,32 @@ describe('the entries of a slot', () => {
     const { registry } = setup(
       [{ pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.sum' }],
       {
-        findCommand: () => ({ title: 'Sum', shortcut: '', hasItems: true }),
+        findCommand: () => ({ title: 'Sum', hasItems: true }),
       },
     )
 
     expect(registry.getEntries('fileTree.context', NOTE)).toMatchObject([
       { kind: 'command', command: `${LEDGER}:ledger.sum`, hasItems: true },
     ])
+  })
+
+  it('carry the key bound to the command with the values of the entry, one key for each entry', () => {
+    const keys: Record<string, string> = {
+      [`${LEDGER}:ledger.open?kind=plex`]: 'mod+shift+p',
+      [`${LEDGER}:ledger.open?kind=files`]: 'mod+alt+e',
+    }
+    const { registry } = setup(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', values: { kind: 'plex' } },
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', values: { kind: 'files' } },
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
+      ],
+      { getKeyFor: (command, values) => keys[`${command}?kind=${values?.kind}`] },
+    )
+
+    expect(
+      registry.getEntries('titleBar.commands').map((one) => (one.kind === 'command' ? one.shortcut : '')),
+    ).toStrictEqual(['', 'mod+alt+e', 'mod+shift+p'])
   })
 
   it('leave out a view that has not been registered', () => {

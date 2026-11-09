@@ -320,7 +320,6 @@ describe('a tab kind component', () => {
       {
         id: 'reader.plugin:rich',
         title: 'Rich',
-        shortcut: 'ctrl+b',
         when: 'target.isNote',
         icon: 'star',
       },

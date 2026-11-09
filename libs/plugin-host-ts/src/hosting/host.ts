@@ -330,7 +330,10 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     drops: createDropRegistry(),
     slotViews,
   })
+  const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
+    createKeybindingApi(deps)
   const slots = createSlotRegistry({
+    getKeyFor: keybindings.getKeyFor,
     getEntries: () => deps.getSlotEntries?.(),
     findCommand: (command, target) => deps.findSlotCommand?.(command, target),
     findView: slotViews.findView,
@@ -340,8 +343,6 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   })
   contextHost.getSlots = () => slots
   const parts = { registry, slotViews, deps }
-  const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
-    createKeybindingApi(deps)
 
   return {
     ...createContextApi(registry, contextHost, registerKeybindings),
