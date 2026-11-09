@@ -323,10 +323,16 @@ describe('the rows of a setting of connections', () => {
 })
 
 describe('the rows of embeddings, whose change indexes the vault again', () => {
+  const EMBED_MODELS: readonly ModelInfo[] = [
+    { id: 'alpha', title: 'Alpha', operations: ['embed'] },
+    { id: 'beta', title: 'Beta', operations: ['embed'] },
+  ]
+
   const mountEmbedRows = (options: Options = {}) =>
     mountRows({
       operation: 'embed',
       max: 1,
+      listModels: vi.fn(() => Promise.resolve(asValue(EMBED_MODELS))),
       countNotes: vi.fn(() => Promise.resolve(120)),
       ...options,
     })

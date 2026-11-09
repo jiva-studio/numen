@@ -20,7 +20,6 @@ interface FakeServer {
   stop(): void
 }
 
-/** The fake OpenAI API of the connections plugin, started on a free loopback port. */
 const startFakeServer = async (binary: string, flags: readonly string[]): Promise<FakeServer> => {
   const child: ChildProcess = spawn(binary, ['-addr', '127.0.0.1:0', ...flags], {
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -30,7 +29,12 @@ const startFakeServer = async (binary: string, flags: readonly string[]): Promis
     child.once('exit', () => reject(new Error('the fake OpenAI server ended before it listened')))
     child.stdout?.once('data', (chunk: Buffer) => resolve(chunk.toString().trim()))
   })
-  return { address, stop: () => void child.kill() }
+  return {
+    address,
+    stop: () => {
+      child.kill()
+    },
+  }
 }
 
 const openSettings = async (page: Page): Promise<Locator> => {
@@ -38,7 +42,6 @@ const openSettings = async (page: Page): Promise<Locator> => {
   return page.getByRole('tabpanel', { name: /Settings/ })
 }
 
-/** Makes a connection of the type OpenAI-compatible server on the Connections page. */
 const addConnection = async (settings: Locator, page: Page, name: string, address: string) => {
   await settings.getByRole('button', { name: /^Connections$/ }).click()
   await settings.getByRole('button', { name: 'Add connection' }).click()
@@ -52,7 +55,6 @@ const addConnection = async (settings: Locator, page: Page, name: string, addres
   await settings.getByRole('button', { name: 'All plugins' }).click()
 }
 
-/** Picks the connection and types the model in the one row of the embeddings, and confirms. */
 const chooseConnection = async (settings: Locator, page: Page, name: string) => {
   await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
   await settings.getByTestId('setting-source').locator('.settings__choice').click()
@@ -88,8 +90,8 @@ test.describe('Embeddings through a connection', () => {
   test.afterEach(async ({ request }) => {
     await writeSetting(request, [EMBEDDINGS_ID, 'source'], 'local')
     for (const server of servers.splice(0)) server.stop()
-    const listed = await callRPC(request, 'ProviderConnectionService/ListProviderConnections', {})
-    for (const one of (listed['connections'] ?? []) as { id: string }[]) {
+    const all = await callRPC(request, 'ProviderConnectionService/ListProviderConnections', {})
+    for (const one of (all['connections'] ?? []) as { id: string }[]) {
       await callRPC(request, 'ProviderConnectionService/DeleteProviderConnection', { id: one.id })
     }
   })

@@ -25,7 +25,6 @@ type modelClient interface {
 	GetEmbeddingProfile(ctx context.Context) (connection.EmbeddingProfile, error)
 }
 
-// newModelClient creates the client of the host the plugin process was started for.
 func newModelClient() (modelClient, error) {
 	return connection.NewClientFromEnv()
 }
@@ -54,7 +53,6 @@ type profileFetch struct {
 	err      error
 }
 
-// resetConnectionLocked forgets the profile and ends the read of it, so the next call asks again.
 func (s *embeddingServer) resetConnectionLocked() {
 	if s.fetch != nil {
 		s.fetch.cancel()
@@ -63,8 +61,6 @@ func (s *embeddingServer) resetConnectionLocked() {
 	s.connectionProfile = nil
 }
 
-// getConnectionProfile returns the profile of the embedding model of the connection. The host reads it
-// from the provider once for a configuration of the plugin; a failed read is not kept.
 func (s *embeddingServer) getConnectionProfile(ctx context.Context) (connection.EmbeddingProfile, modelClient, error) {
 	models, err := s.getModelClient()
 	if err != nil {
@@ -126,8 +122,6 @@ func (s *embeddingServer) getModelClient() (modelClient, error) {
 	return models, nil
 }
 
-// readConnectionError keeps the cancellation of a call as it is and gives every failure of the rows the
-// code of a setting that does not allow the call; the text names each connection and its reason.
 func readConnectionError(err error) error {
 	var failed *connection.AllFailedError
 	var rejected *connection.RejectedError
@@ -178,8 +172,6 @@ func getConnectionHandlingHash(profile connection.EmbeddingProfile) string {
 	return handling.Hash(profile.MaxTokens)
 }
 
-// embedThroughConnection embeds the texts with the prefix the profile names for the role. A person's
-// question goes ahead of the indexing in the queue of the connection.
 func (s *embeddingServer) embedThroughConnection(ctx context.Context, role embedding.Role, texts []string) ([][]float32, error) {
 	profile, models, err := s.getConnectionProfile(ctx)
 	if err != nil {

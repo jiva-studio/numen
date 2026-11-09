@@ -7,11 +7,7 @@
     "exports": "warn",
     "types": "warn"
   },
-  "ignoreWorkspaces": [
-    ".",
-    "libs/protocol",
-    "tools/*"
-  ],
+  "ignoreWorkspaces": [".", "libs/protocol", "tools/*"],
   "workspaces": {
     "libs/ui/core": {
       "entry": [
@@ -20,10 +16,7 @@
         "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
-      "project": [
-        "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}"
-      ]
+      "project": ["src/**/*.{ts,vue,mdx,css}", ".storybook/**/*.{ts,js}"]
     },
     "libs/ui/shell": {
       "entry": [
@@ -32,34 +25,19 @@
         "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
-      "project": [
-        "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}"
-      ]
+      "project": ["src/**/*.{ts,vue,mdx,css}", ".storybook/**/*.{ts,js}"]
     },
     "libs/core-client": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
-      "project": [
-        "src/**/*.ts"
-      ]
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
     },
     "libs/plugin-host-ts": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
-      "project": [
-        "src/**/*.ts"
-      ]
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
     },
     "libs/plugin-manager": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,vue}"
-      ]
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.{ts,vue}"]
     },
     "libs/plugin-sdk-ts": {
       "entry": [
@@ -68,51 +46,24 @@
         "stories/vitest.config.ts",
         "stories/.storybook/**/*.{ts,js}"
       ],
-      "project": [
-        "src/**/*.{ts,vue}",
-        "test/**/*.ts",
-        "stories/**/*.{ts,js}"
-      ]
+      "project": ["src/**/*.{ts,vue}", "test/**/*.ts", "stories/**/*.{ts,js}"]
     },
     "apps/desktop/editor": {
-      "entry": [
-        "src/**/*.stories.ts",
-        "src/**/*.test.ts",
-        ".storybook/**/*.{ts,js}"
-      ],
-      "project": [
-        "src/**/*.{ts,vue}",
-        ".storybook/**/*.{ts,js}"
-      ]
+      "entry": ["src/**/*.stories.ts", "src/**/*.test.ts", ".storybook/**/*.{ts,js}"],
+      "project": ["src/**/*.{ts,vue}", ".storybook/**/*.{ts,js}"]
     },
     "apps/desktop/flashcards": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,vue}"
-      ]
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.{ts,vue}"]
     },
     "apps/mobile": {
-      "entry": [
-        "src/main.ts",
-        "src/**/*.test.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,vue}"
-      ],
-      "ignoreDependencies": [
-        "vue-router"
-      ]
+      "entry": ["src/main.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.{ts,vue}"],
+      "ignoreDependencies": ["vue-router"]
     },
     "apps/docs": {
-      "entry": [
-        "tools/*.mjs"
-      ],
-      "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
-      ],
+      "entry": ["tools/*.mjs"],
+      "project": ["src/**/*.{ts,astro,vue}", "tools/**/*.mjs"],
       "ignoreDependencies": [
         "@fontsource-variable/newsreader",
         "@fontsource/ibm-plex-mono",
@@ -120,26 +71,13 @@
       ]
     },
     "apps/landing": {
-      "entry": [
-        "tools/*.mjs"
-      ],
-      "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
-      ],
+      "entry": ["tools/*.mjs"],
+      "project": ["src/**/*.{ts,astro,vue}", "tools/**/*.mjs"],
       "paths": {
-        "@editor-features/*": [
-          "../desktop/editor/src/features/*"
-        ],
-        "@plugins/*": [
-          "../../plugins/*"
-        ],
-        "@numen/ui-shell": [
-          "../../libs/ui/shell/src/index.ts"
-        ],
-        "@numen/ui-shell/styles.css": [
-          "../../libs/ui/shell/src/styles.css"
-        ]
+        "@editor-features/*": ["../desktop/editor/src/features/*"],
+        "@plugins/*": ["../../plugins/*"],
+        "@numen/ui-shell": ["../../libs/ui/shell/src/index.ts"],
+        "@numen/ui-shell/styles.css": ["../../libs/ui/shell/src/styles.css"]
       }
     },
     "tests/e2e/desktop": {
@@ -151,25 +89,12 @@
         "flashcards/**/*.spec.ts",
         "tests/**/*.spec.ts"
       ],
-      "project": [
-        "**/*.{ts,mjs,js}"
-      ],
-      "ignoreBinaries": [
-        "nix",
-        "ffmpeg",
-        "ffprobe",
-        "unshare"
-      ]
+      "project": ["**/*.{ts,mjs,js}"],
+      "ignoreBinaries": ["go", "nix", "ffmpeg", "ffprobe", "unshare"]
     },
     "plugins/*": {
-      "entry": [
-        "frontend/index.ts",
-        "frontend/**/*.stories.ts",
-        "frontend/**/*.test.ts"
-      ],
-      "project": [
-        "frontend/**/*.{ts,vue}"
-      ]
+      "entry": ["frontend/index.ts", "frontend/**/*.stories.ts", "frontend/**/*.test.ts"],
+      "project": ["frontend/**/*.{ts,vue}"]
     }
   }
 }

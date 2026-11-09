@@ -13,7 +13,7 @@
  * may charge for. It is written after a question that names the notes and the connection, and a
  * row that is not complete changes nothing meanwhile.
  */
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, ConfirmDialog, type SelectChoice } from '@numen/ui'
 import {
@@ -27,6 +27,7 @@ import type { PluginSettingInfo } from '@/entities/settings'
 import type { Installation } from '../../../types'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
+import { useIndexQuestion } from './useIndexQuestion'
 import { useRowDrafts } from './useRowDrafts'
 import { useRowOrder } from './useRowOrder'
 
@@ -43,10 +44,19 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
-const question = ref<{ readonly rows: readonly StoredRow[]; readonly text: string } | undefined>()
 const { drafts, write, reset, add, remove, update, move } = useRowDrafts({
   getValue: () => props.value,
-  onChange: (rows) => void onRowsChange(rows),
+  onChange: (rows) => onRowsChange(rows),
+})
+const { question, ask, confirm, cancel } = useIndexQuestion({
+  countNotes: readNoteCount,
+  getText: (rows, count) =>
+    words.connectionRowsIndexQuestion(
+      count,
+      connections.value.find((one) => one.id === rows[0]?.connection)?.name ?? '',
+    ),
+  onConfirm: (rows) => emit('change', rows),
+  onCancel: reset,
 })
 const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
   drafts,
@@ -93,29 +103,14 @@ const canAdd = computed(() => drafts.value.length < limit.value && connections.v
 onMounted(() => props.installation.loadConnections?.())
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onRowsChange(rows: readonly StoredRow[]): Promise<void> {
+function onRowsChange(rows: readonly StoredRow[]): void {
   if (operation.value !== 'embed') {
     emit('change', rows)
     return
   }
   if (drafts.value.length !== rows.length) return
-  if (!isIndexChange(rows)) {
-    emit('change', rows)
-    return
-  }
-  const name = connections.value.find((one) => one.id === rows[0]?.connection)?.name ?? ''
-  question.value = { rows, text: words.connectionRowsIndexQuestion(await countNotes(), name) }
-}
-
-function onConfirmIndex(): void {
-  const rows = question.value?.rows
-  question.value = undefined
-  if (rows) emit('change', rows)
-}
-
-function onCancelIndex(): void {
-  question.value = undefined
-  reset()
+  if (isIndexChange(rows)) ask(rows)
+  else emit('change', rows)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -125,7 +120,7 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
   return rows.length > 0 && rows.map(getKey).join('\n') !== stored.join('\n')
 }
 
-async function countNotes(): Promise<number | undefined> {
+async function readNoteCount(): Promise<number | undefined> {
   try {
     return await props.installation.countNotes?.()
   } catch {
@@ -190,8 +185,8 @@ function getReason(row: RowDraft): string {
       :label="words.connectionRowsIndexLabel"
       :confirm-text="words.connectionRowsIndexConfirm"
       :cancel-text="words.connectionCancel"
-      @confirm="onConfirmIndex"
-      @cancel="onCancelIndex"
+      @confirm="confirm"
+      @cancel="cancel"
     />
   </div>
 </template>

@@ -68,13 +68,21 @@ function createConnectionMembers(
   }
 }
 
-function createModelMembers(models: ModelClient | undefined): Partial<Installation> {
-  if (!models) return {}
+function createModelMembers(deps: {
+  models?: ModelClient
+  countNotes?: Installation['countNotes']
+}): Partial<Installation> {
+  const { models, countNotes } = deps
   return {
-    listModels: (connectionId: string, operation: string) =>
-      models.listModels(connectionId, operation),
-    listReasoningLevels: (connectionId: string, model: string) =>
-      models.listReasoningLevels(connectionId, model),
+    ...(countNotes ? { countNotes } : {}),
+    ...(models
+      ? {
+          listModels: (connectionId: string, operation: string) =>
+            models.listModels(connectionId, operation),
+          listReasoningLevels: (connectionId: string, model: string) =>
+            models.listReasoningLevels(connectionId, model),
+        }
+      : {}),
   }
 }
 
@@ -99,8 +107,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getPlatform,
     catalogEntries,
     reportError,
-    models,
-    countNotes,
   } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
@@ -111,9 +117,8 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
-    ...(countNotes ? { countNotes } : {}),
     ...createConnectionMembers(connections),
-    ...createModelMembers(models),
+    ...createModelMembers(deps),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
@@ -270,7 +275,6 @@ export function useSettings({
   models,
   countNotes,
 }: SettingsDeps) {
-  const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
@@ -278,7 +282,7 @@ export function useSettings({
   const appearance = createWindowAppearance({
     core: themes,
     words,
-    write: writeAppearanceMessage,
+    write: log.getWriter('appearance'),
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
   const secrets = createSecretStore(core, {
@@ -336,7 +340,7 @@ export function useSettings({
     appearance.close()
   }
 
-  const api = {
+  return {
     appearance,
     rest,
     configured,
@@ -346,5 +350,4 @@ export function useSettings({
     start,
     close,
   }
-  return api
 }
