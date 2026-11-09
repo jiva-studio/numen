@@ -5,7 +5,15 @@
  * entry itself stands dimmed where a drop would put it, and the entries around it slide aside.
  * Every other press is left to the page.
  */
-import { computed, nextTick, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onScopeDispose,
+  shallowRef,
+  watch,
+  type ComputedRef,
+  type Ref,
+} from 'vue'
 import { browserClock, measureRect, usePressDrag, type Clock, type Position } from '@numen/ui'
 import {
   SLOT,

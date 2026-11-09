@@ -186,7 +186,6 @@ function onShowTab(id: string) {
 
     <SlotDragLayer :copy="slotDragCopy" :at="slotDragPosition" />
 
-
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"
       :called="getTitle"
