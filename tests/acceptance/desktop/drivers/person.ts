@@ -9,6 +9,7 @@ import { ApplicationDriver } from './application.js'
 import { FileTreeDriver } from './file-tree.js'
 import { NoteDriver } from './notes.js'
 import { PlexDriver } from './plex.js'
+import { ReviewDriver } from './review.js'
 import { Scenario } from './scenario.js'
 import { SearchDriver } from './search.js'
 import { TabDriver } from './tabs.js'
@@ -22,6 +23,7 @@ export class Person {
   readonly search: SearchDriver
   readonly plex: PlexDriver
   readonly web: WebDriver
+  readonly review: ReviewDriver
   private readonly scenario: Scenario
 
   constructor(page: Page) {
@@ -33,6 +35,7 @@ export class Person {
     this.search = new SearchDriver(this.scenario)
     this.plex = new PlexDriver(this.scenario)
     this.web = new WebDriver()
+    this.review = new ReviewDriver(this.scenario)
   }
 
   async removeNotes(): Promise<void> {

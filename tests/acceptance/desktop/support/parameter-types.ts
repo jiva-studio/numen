@@ -19,6 +19,12 @@ defineParameterType({
 })
 
 defineParameterType({
+  name: 'scope',
+  regexp: /vault|deck/,
+  transformer: (scope: string) => scope,
+})
+
+defineParameterType({
   name: 'entry',
   regexp: /file|folder/,
   transformer: (entry: string) => entry,

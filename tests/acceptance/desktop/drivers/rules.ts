@@ -62,8 +62,23 @@ const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'it
 export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
 
 export const assertApplication = (name: string): void => {
-  if (name === 'flashcards') throw new Error('the application "flashcards" is not built yet: use "editor"')
-  if (name !== 'editor') throw new Error(`"${name}" is not an application: use "editor"`)
+  if (name !== 'editor' && name !== 'flashcards') {
+    throw new Error(`"${name}" is not an application: use "editor" or "flashcards"`)
+  }
+}
+
+const RATINGS: Record<string, number> = { Again: 1, Hard: 2, Good: 3, Easy: 4 }
+
+/** The number the review log writes for an answer. */
+export const getRating = (answer: string): number => {
+  const rating = RATINGS[answer]
+  if (rating === undefined) throw new Error(`"${answer}" is not an answer: use Again, Hard, Good or Easy`)
+  return rating
+}
+
+export const parseReviewScope = (scope: string): 'vault' | 'deck' => {
+  if (scope !== 'vault' && scope !== 'deck') throw new Error(`"${scope}" is not reviewed: use "vault" or "deck"`)
+  return scope
 }
 
 export const parseCount = (text: string): number => {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertApplication,
+  getRating,
+  parseReviewScope,
   assertEntry,
   assertPosition,
   assertSingleTab,
@@ -103,8 +105,8 @@ describe('assertApplication', () => {
     expect(() => assertApplication('editor')).not.toThrow()
   })
 
-  it('throws for the flashcards window, which is not built', () => {
-    expect(() => assertApplication('flashcards')).toThrow('is not built yet')
+  it('accepts the flashcards window', () => {
+    expect(() => assertApplication('flashcards')).not.toThrow()
   })
 
   it('throws for a word that is no application', () => {
@@ -179,5 +181,25 @@ describe('getAncestors', () => {
   it('lists the folders above a path, the top one first', () => {
     expect(getAncestors('a/b/c.md')).toEqual(['a', 'a/b'])
     expect(getAncestors('a.md')).toEqual([])
+  })
+})
+
+describe('getRating', () => {
+  it('numbers the four answers', () => {
+    expect(['Again', 'Hard', 'Good', 'Easy'].map(getRating)).toEqual([1, 2, 3, 4])
+  })
+
+  it('throws for a word that is no answer', () => {
+    expect(() => getRating('Maybe')).toThrow('"Maybe" is not an answer')
+  })
+})
+
+describe('parseReviewScope', () => {
+  it('passes a vault and a deck', () => {
+    expect(['vault', 'deck'].map(parseReviewScope)).toEqual(['vault', 'deck'])
+  })
+
+  it('throws for any other word', () => {
+    expect(() => parseReviewScope('card')).toThrow('"card" is not reviewed')
   })
 })

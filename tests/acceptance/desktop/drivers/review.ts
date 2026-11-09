@@ -1,0 +1,65 @@
+/** The person at the flashcards window: choosing a vault, reviewing its cards, answering them. */
+import fs from 'node:fs'
+import path from 'node:path'
+import { expect } from 'playwright/test'
+import { getEscaped, getRating, parseReviewScope } from './rules.js'
+import type { Scenario } from './scenario.js'
+
+/** The folder the review of the flashcards plugin writes its answers to. */
+const getAnswerFolder = (): string =>
+  path.join(process.env['NUMEN_FLASHCARDS_VAULT'] ?? '', '.numen', 'md.numen.views.flashcards.studio')
+
+const readAnswers = (): { rating?: number; undo?: string }[] => {
+  const folder = getAnswerFolder()
+  if (!fs.existsSync(folder)) return []
+  return fs
+    .readdirSync(folder)
+    .filter((name) => name.endsWith('.jsonl'))
+    .sort()
+    .flatMap((name) => fs.readFileSync(path.join(folder, name), 'utf8').split('\n'))
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as { rating?: number; undo?: string })
+}
+
+export class ReviewDriver {
+  private answersBefore = 0
+
+  constructor(private readonly scenario: Scenario) {}
+
+  async chooseVault(name: string): Promise<void> {
+    const { page } = this.scenario
+    await page.getByRole('button', { name: new RegExp(getEscaped(name)) }).click()
+    await expect(page.getByRole('heading', { name })).toBeVisible()
+  }
+
+  async startReview(scope: string, name: string): Promise<void> {
+    const { page } = this.scenario
+    const button =
+      parseReviewScope(scope) === 'vault'
+        ? page.getByRole('button', { name: /Review/ })
+        : page.getByRole('button', { name: new RegExp(getEscaped(name)) })
+    await expect(button).toBeEnabled()
+    await button.click()
+    await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
+  }
+
+  async showAnswer(): Promise<void> {
+    await this.scenario.page.getByRole('button', { name: /Show the answer/ }).click()
+  }
+
+  async answer(answer: string): Promise<void> {
+    getRating(answer)
+    this.answersBefore = readAnswers().length
+    await this.scenario.page.getByRole('button', { name: new RegExp(`\\b${answer}\\b`) }).click()
+  }
+
+  async expectAnswer(answer: string): Promise<void> {
+    const rating = getRating(answer)
+    await expect.poll(() => readAnswers().length).toBe(this.answersBefore + 1)
+    expect(readAnswers().at(-1)?.rating).toBe(rating)
+  }
+
+  async expectSessionHas(text: string): Promise<void> {
+    await expect(this.scenario.page.getByText(text, { exact: true }).first()).toBeVisible()
+  }
+}

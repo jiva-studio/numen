@@ -19,6 +19,10 @@ export class ApplicationDriver {
   async startApplication(name: string): Promise<void> {
     assertApplication(name)
     const { page } = this.scenario
+    if (name === 'flashcards') {
+      await page.goto(`https://127.0.0.1:${process.env['NUMEN_FLASHCARDS_TEST_PORT']}/`)
+      return
+    }
     if (this.scenario.isOpen) {
       await page.reload()
     } else {
