@@ -25,7 +25,7 @@ const readRegistered = (plugin) => {
 const readAppIds = (path) => [...read(path).matchAll(/'(app:[a-z.-]+)'/g)].map((m) => m[1])
 
 test('the demo declares every command the plex menu sends to the window', () => {
-  for (const id of readAppIds('plugins/views-plex-graph/frontend/lib/menu.ts')) {
+  for (const id of readAppIds('plugins/views-plex-graph/frontend/lib/commands.ts')) {
     assert.ok(declared.has(id), `the demo does not declare ${id}`)
   }
 })
@@ -46,7 +46,7 @@ test('the demo declares every command the plugins it draws register', () => {
 
 test('the demo runs each command it declares', () => {
   const naming = window.slice(window.indexOf('const NAMING_COMMAND'), window.indexOf('function openNamingStep'))
-  const body = naming + window.slice(window.indexOf('function runVaultCommand('))
+  const body = naming + window.slice(window.indexOf('async function runMenuCommand('))
   for (const name of declared.values()) {
     assert.ok(body.includes(`DEMO_COMMAND.${name}`), `runVaultCommand does not handle ${name}`)
   }

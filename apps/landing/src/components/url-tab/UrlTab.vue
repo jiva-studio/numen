@@ -75,7 +75,6 @@ const tab = useTranscript(props.recordings, targetPath, {
   plays: () => true,
 })
 const { url, now, isPlaying } = tab.playback
-const menuItems = tab.offers.items
 
 const isFramedPage = computed(() => url.value !== '' && !url.value.endsWith('.mp4'))
 
@@ -108,10 +107,6 @@ onUnmounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onChoose(id: string) {
-  void tab.offers.run(id)
-}
-
 function onTimeUpdate(ms: number) {
   framePosition.value = ms
 }
@@ -122,7 +117,7 @@ function onPlayState(playing: boolean) {
 </script>
 
 <template>
-  <MediaLayout :state="tab" is-framed :menu-items="menuItems" @choose="onChoose">
+  <MediaLayout :state="tab" is-framed>
     <template #player>
       <MediaEmbed
         ref="player"

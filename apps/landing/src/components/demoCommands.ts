@@ -11,7 +11,7 @@ export const DEMO_COMMAND = {
   createParentNote: 'app:note.createParent',
   createJumpNote: 'app:note.createJump',
   renameNote: 'app:note.rename',
-  trashNote: 'app:note.trash',
+  removeFile: 'app:file.remove',
   copyNotePath: 'app:note.copyPath',
   openFiles: 'md.numen.views.file.tree:tree.open',
   revealNote: 'md.numen.views.file.tree:tree.revealNote',
