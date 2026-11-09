@@ -236,3 +236,32 @@ describe('the icon of a row', () => {
     expect(menu.getIcon(`${shared.key}#item:md.numen.pdf`)).toBe('text-icon')
   })
 })
+
+describe('the values of an entry', () => {
+  it('go to the pick of its row', () => {
+    const withPlace = command('show', { values: { where: 'plex' } })
+
+    const menu = createSlotMenu([withPlace, command('plain')], new Map(), WORDS)
+
+    expect(menu.getPick(withPlace.key)).toStrictEqual({
+      command: withPlace.command,
+      values: { where: 'plex' },
+    })
+    expect(menu.getPick('md.numen.test/command/plain')).toStrictEqual({
+      command: 'md.numen.test:plain',
+    })
+  })
+
+  it('go to the pick of each item of a command with items', () => {
+    const moved = command('move', { hasItems: true, values: { keep: 'yes' } })
+    const lists: CommandItemLists = new Map([[moved.key, [{ id: 'w1', title: 'Atlas' }]]])
+
+    const menu = createSlotMenu([moved], lists, WORDS)
+
+    expect(menu.getPick(`${moved.key}#item:w1`)).toStrictEqual({
+      command: moved.command,
+      itemId: 'w1',
+      values: { keep: 'yes' },
+    })
+  })
+})

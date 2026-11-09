@@ -127,6 +127,10 @@ message ManifestSlotEntry {
   // isRoot, isFolder and isMultiple combined with &&, || and ! and parentheses. The entry is left out
   // while it is false. Empty is always true.
   string when = 9;
+  // values are the values of the arguments of the command by argument name, as text, in the form a
+  // run of a command takes. The host passes them when the entry is chosen. Only a command entry
+  // holds them.
+  map<string, string> values = 10;
 }
 
 // ManifestHandler is the plugin's handler of a shared command of commands.json. The plugin's code

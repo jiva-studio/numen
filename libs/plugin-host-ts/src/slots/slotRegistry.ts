@@ -31,6 +31,7 @@ export interface DeclaredSlotEntry {
   readonly group?: string | undefined
   readonly order?: number | undefined
   readonly when?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 /** How a command available in a slot is drawn. */
@@ -85,14 +86,17 @@ const compareGroups = (a: string, b: string): number => {
 const compareInSlot = (a: Placed, b: Placed): number =>
   compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
 
+const getRunKey = (placed: Placed): string =>
+  `${placed.item.kind === 'command' ? placed.item.command : ''}${getValuesKey(placed.entry.values)}`
+
 function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   const first = new Map<string, Placed>()
   for (const one of placed) {
     if (one.item.kind !== 'command') continue
-    const current = first.get(one.item.command)
-    if (current === undefined || compareInSlot(one, current) < 0) first.set(one.item.command, one)
+    const current = first.get(getRunKey(one))
+    if (current === undefined || compareInSlot(one, current) < 0) first.set(getRunKey(one), one)
   }
-  return placed.filter((one) => one.item.kind !== 'command' || first.get(one.item.command) === one)
+  return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
 }
 
 const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
@@ -188,21 +192,32 @@ function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): De
   return { entries, owners, inCycle: new Set(cycles.flat()) }
 }
 
+const getValuesKey = (values: DeclaredSlotEntry['values']): string => {
+  const names = Object.keys(values ?? {}).sort(compareText)
+  if (names.length === 0) return ''
+  const pairs = names.map(
+    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values?.[name] ?? '')}`,
+  )
+  return `?${pairs.join('&')}`
+}
+
 function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
   look: SlotCommandLook | undefined,
 ): SlotItem | undefined {
   if (!look) return undefined
+  const icon = entry.icon ?? look.icon
   return {
     kind: 'command',
-    key: `${entry.pluginId}/command/${command}`,
+    key: `${entry.pluginId}/command/${command}${getValuesKey(entry.values)}`,
     pluginId: entry.pluginId,
     command,
-    title: look.title,
-    ...(look.icon === undefined ? {} : { icon: look.icon }),
+    title: entry.title || look.title,
+    ...(icon === undefined ? {} : { icon }),
     shortcut: look.shortcut ?? '',
     hasItems: look.hasItems ?? false,
+    ...(entry.values && Object.keys(entry.values).length > 0 ? { values: entry.values } : {}),
   }
 }
 
@@ -314,5 +329,6 @@ export function readManifestSlotEntries(
     ...(one.group ? { group: one.group } : {}),
     ...(one.order === undefined ? {} : { order: one.order }),
     ...(one.when ? { when: one.when } : {}),
+    ...(Object.keys(one.values).length > 0 ? { values: one.values } : {}),
   }))
 }

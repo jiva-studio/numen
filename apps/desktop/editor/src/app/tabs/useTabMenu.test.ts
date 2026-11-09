@@ -49,10 +49,25 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
 })
 
 const createCommands = () => {
-  const runs: { command: string; target: RunTarget | undefined; itemId?: string }[] = []
+  const runs: {
+    command: string
+    target: RunTarget | undefined
+    itemId?: string
+    values?: Readonly<Record<string, string>>
+  }[] = []
   return {
-    run: async (id: string, target?: RunTarget, itemId?: string) => {
-      runs.push(itemId === undefined ? { command: id, target } : { command: id, target, itemId })
+    run: async (
+      id: string,
+      target?: RunTarget,
+      itemId?: string,
+      values?: Readonly<Record<string, string>>,
+    ) => {
+      runs.push({
+        command: id,
+        target,
+        ...(itemId === undefined ? {} : { itemId }),
+        ...(values === undefined ? {} : { values }),
+      })
     },
     listItems: vi.fn(async (_id: string, _target?: RunTarget) => [
       { id: 'window-a', title: 'Atlas' },
@@ -156,6 +171,19 @@ describe('the menu of a tab', () => {
 
     expect(commands.getRuns()).toStrictEqual([{ command: DETACH.command, target: TARGETS.reef }])
     expect(menu.menu.value).toBeNull()
+  })
+
+  it('runs the command of an entry with the values the entry holds', async () => {
+    const withPlace = command(ATLAS, 'graph.show', 'Show', { values: { where: 'plex' } })
+    const { menu, commands } = setup([withPlace])
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    menu.choose('reef', withPlace.key)
+
+    expect(commands.getRuns()).toStrictEqual([
+      { command: withPlace.command, target: TARGETS.reef, values: { where: 'plex' } },
+    ])
   })
 
   it('runs nothing for a menu since closed, or one requested on another tab', async () => {

@@ -2,7 +2,16 @@ import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { REPO_ROOT, failOnFindings, readGo, removeLineComment, requireMatches } from "./helpers.mjs";
+import {
+  GO_MODULE_ROOT,
+  REPO_ROOT,
+  failOnFindings,
+  getGoModReferences,
+  getGoReferences,
+  parseGoWork,
+  readGo,
+  requireMatches,
+} from "./helpers.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -29,7 +38,7 @@ export function getPluginCapture(file) {
   return /^plugins\/([^/]+)\//.exec(file)?.[1];
 }
 
-const GO_PLUGIN_IMPORT = /github\.com\/jiva-studio\/numen\/plugins\/([A-Za-z0-9._-]+)/g;
+const GO_PLUGIN_PREFIX = `${GO_MODULE_ROOT}plugins/`;
 
 /**
  * Every reference from a file of plugin X to a plugin Y other than X: a Go import, and a dependency on the
@@ -42,13 +51,19 @@ export function findPluginCrossings(sources, packageNames) {
   for (const { file, text } of sources) {
     const own = getPluginCapture(file);
     if (!own) continue;
-    const report = (other, how, offset) => {
+    const report = (other, how, line) => {
       if (other && other !== own && plugins.has(other)) {
-        found.push({ file, line: text.slice(0, offset).split("\n").length, symbol: `${how} ${other}` });
+        found.push({ file, line, symbol: `${how} ${other}` });
       }
     };
     if (file.endsWith(".go") || file.endsWith("/go.mod")) {
-      for (const match of text.matchAll(GO_PLUGIN_IMPORT)) report(match[1], "Go import of", match.index);
+      const refs = file.endsWith(".go") ? getGoReferences(text) : getGoModReferences(text);
+      for (const { line, value } of refs.imports) {
+        if (value.startsWith(GO_PLUGIN_PREFIX)) {
+          const other = value.slice(GO_PLUGIN_PREFIX.length).split("/")[0];
+          report(other, "Go import of", line);
+        }
+      }
       continue;
     }
     if (path.basename(file) === "package.json") {
@@ -56,7 +71,7 @@ export function findPluginCrossings(sources, packageNames) {
       for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
         for (const name of Object.keys(manifest[field] ?? {})) {
           const other = [...packageNames].find(([, one]) => one === name)?.[0];
-          report(other, `${field} names`, 0);
+          report(other, `${field} names`, 1);
         }
       }
     }
@@ -91,7 +106,14 @@ export function verifyPluginsHoldNoSchema() {
 
 const SUPPRESSION_COMMENT = /(?<![\w-])(nolint(?::\S+)?|eslint-disable(?:-next-line|-line)?|eslint-enable|@ts-expect-error|@ts-ignore|@ts-nocheck)(?![\w-])/;
 const GOLANGCI_CONFIG = /(^|\/)\.golangci[^/]*\.ya?ml$/;
-const GOLANGCI_EXCLUSION_KEY = /^\s*(exclusions|exclude-functions|exclude-rules|exclude-dirs|exclude-files|exclude-use-default)\s*:/;
+const GOLANGCI_EXCLUSION_KEYS = new Set([
+  "exclusions",
+  "exclude-functions",
+  "exclude-rules",
+  "exclude-dirs",
+  "exclude-files",
+  "exclude-use-default",
+]);
 const ESLINT_CONFIG = /(^|\/)(eslint\.config\.[cm]?js|base-eslint\.mjs)$/;
 const SOURCE_FILE_NAME = /^[^*]+\.(ts|tsx|vue|js|mjs|cjs|go)$/;
 /** The scripts that state rules: the checks and the configurations of the tools they run. */
@@ -122,6 +144,36 @@ function getScriptComments(file, text, lineOffset = 0) {
   return { comments, sourceFile };
 }
 
+/** The comments and exclusion keys of a YAML source, read from its syntax tree and CST tokens. */
+function parseYamlConfig(text) {
+  const yaml = require("yaml");
+  const lineCounter = new yaml.LineCounter();
+  const doc = yaml.parseDocument(text, { lineCounter, keepSourceTokens: true });
+  const comments = [];
+  const walkTokens = (token) => {
+    if (!token) return;
+    if (token.type === "comment") {
+      comments.push({ line: lineCounter.linePos(token.offset).line, value: token.source });
+    }
+    for (const key of ["before", "after", "items", "sep", "key", "value", "start", "end"]) {
+      const child = token[key];
+      if (Array.isArray(child)) child.forEach(walkTokens);
+      else if (child && typeof child === "object") walkTokens(child);
+    }
+  };
+  walkTokens(doc.contents?.srcToken);
+  const exclusionKeys = [];
+  yaml.visit(doc, {
+    Pair(_, pair) {
+      if (yaml.isScalar(pair.key) && GOLANGCI_EXCLUSION_KEYS.has(String(pair.key.value))) {
+        const line = pair.key.range ? lineCounter.linePos(pair.key.range[0]).line : 1;
+        exclusionKeys.push({ line, symbol: String(pair.key.value) });
+      }
+    },
+  });
+  return { comments, exclusionKeys };
+}
+
 /** The comments of a source file, by its language. */
 function getComments(file, text) {
   if (file.endsWith(".go")) return readGo(text).comments;
@@ -130,12 +182,18 @@ function getComments(file, text) {
     const { descriptor } = parse(text);
     const scripts = [descriptor.script, descriptor.scriptSetup].filter(Boolean);
     const inScript = scripts.flatMap((block) => getScriptComments(file.replace(/\.vue$/, ".ts"), block.content, block.loc.start.line - 1).comments);
-    const inTemplate = [...text.matchAll(/<!--([\s\S]*?)-->/g)].map((match) => ({
-      line: text.slice(0, match.index).split("\n").length,
-      value: match[0],
-    }));
+    const inTemplate = [];
+    const visitTemplate = (node) => {
+      if (!node) return;
+      if (node.type === 3) {
+        inTemplate.push({ line: node.loc.start.line, value: node.loc.source });
+      }
+      for (const child of node.children ?? []) visitTemplate(child);
+    };
+    visitTemplate(descriptor.template?.ast);
     return [...inScript, ...inTemplate];
   }
+  if (/\.ya?ml$/.test(file)) return parseYamlConfig(text).comments;
   if (CODE_FILE.test(file)) return getScriptComments(file, text).comments;
   return [];
 }
@@ -190,12 +248,9 @@ export function findSuppressions(sources) {
       if (match) found.push({ file, line, symbol: match[1] });
     }
     if (GOLANGCI_CONFIG.test(file)) {
-      text.split("\n").forEach((one, index) => {
-        const key = GOLANGCI_EXCLUSION_KEY.exec(one);
-        if (key) found.push({ file, line: index + 1, symbol: key[1] });
-        const hash = one.indexOf("#");
-        if (hash !== -1 && /\bnolint\b/.test(one.slice(hash))) found.push({ file, line: index + 1, symbol: "nolint" });
-      });
+      for (const { line, symbol } of parseYamlConfig(text).exclusionKeys) {
+        found.push({ file, line, symbol });
+      }
     }
     if (ESLINT_CONFIG.test(file)) found.push(...findFileEntriesInConfig(file, text));
     if (CHECK_SCRIPT.test(file) && !file.endsWith(".test.mjs")) found.push(...findFileListsInChecks(file, text));
@@ -249,18 +304,9 @@ export function verifyEveryPathHasALayer() {
 
 /* --------------------------------- go.work -------------------------------- */
 
-/** The module directories a go.work file uses. */
+/** The module directories a go.work file uses, read via `go work edit -json`. */
 export function parseWorkspaceUses(text) {
-  const dirs = [];
-  let isBlock = false;
-  for (const raw of text.split("\n")) {
-    const line = removeLineComment(raw).trim();
-    if (/^use\s*\($/.test(line)) isBlock = true;
-    else if (isBlock && line === ")") isBlock = false;
-    else if (isBlock && line) dirs.push(line.replace(/^\.\//, ""));
-    else if (/^use\s+\S+/.test(line)) dirs.push(line.replace(/^use\s+/, "").replace(/^\.\//, ""));
-  }
-  return dirs;
+  return (parseGoWork(text).Use ?? []).map(({ DiskPath }) => DiskPath.replace(/^\.\//, ""));
 }
 
 /** The disagreement between a go.work file and the directories that hold a go.mod. */
@@ -281,6 +327,93 @@ export function verifyWorkspaceListsEveryModule() {
     .filter((dir) => dir !== ".");
   requireMatches("go.mod files read", moduleDirs.length, 10);
   failOnFindings("go.work disagrees with the modules", findWorkspaceGaps(fs.readFileSync(path.join(REPO_ROOT, "go.work"), "utf8"), moduleDirs));
+}
+
+/* -------------------------------- JSON keys ------------------------------- */
+
+function isCamelCaseKey(name) {
+  return /^[a-z][a-zA-Z0-9]*$/.test(name);
+}
+
+function isSnakeCaseKey(name) {
+  return /^[A-Za-z0-9]+_[A-Za-z0-9_]+$/.test(name);
+}
+
+function isRpcMethodSignature(node, ts) {
+  if (!node.type || !ts.isTypeLiteralNode(node.type)) return false;
+  const names = node.type.members
+    .filter((member) => ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name))
+    .map((member) => member.name.text);
+  return names.includes("request") && names.includes("response");
+}
+
+function findJsonObjectKeyViolations(file, text) {
+  const found = [];
+  const visit = (value) => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    for (const [key, child] of Object.entries(value)) {
+      if (!isCamelCaseKey(key)) found.push({ file, line: 1, symbol: `JSON key ${JSON.stringify(key)}` });
+      visit(child);
+    }
+  };
+  visit(JSON.parse(text));
+  return found;
+}
+
+function findScriptJsonKeyViolations(file, text, lineOffset = 0) {
+  const ts = require("typescript");
+  const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, kind);
+  const isApiFile = /(^|\/)api(\/|\.ts$)/.test(file);
+  const found = [];
+  const checkProperty = (node) => {
+    const name = node.name && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) ? node.name.text : "";
+    if (!name) return;
+    const isInvalid = isSnakeCaseKey(name) || (isApiFile && !isRpcMethodSignature(node, ts) && !isCamelCaseKey(name));
+    if (!isInvalid) return;
+    const line = sourceFile.getLineAndCharacterOfPosition(node.name.getStart(sourceFile)).line + 1 + lineOffset;
+    found.push({ file, line, symbol: `JSON property ${JSON.stringify(name)}` });
+  };
+  const visit = (node) => {
+    if (ts.isPropertySignature(node)) checkProperty(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
+/**
+ * Every non-camelCase JSON key in project manifests, API fixtures, and TypeScript JSON shapes.
+ */
+export function findNonCamelCaseJsonKeys(sources) {
+  const found = [];
+  for (const { file, text } of sources) {
+    if (isGenerated(text)) continue;
+    if (file.endsWith(".json")) {
+      found.push(...findJsonObjectKeyViolations(file, text));
+    } else if (file.endsWith(".vue")) {
+      const { parse } = require("@vue/compiler-sfc");
+      const { descriptor } = parse(text);
+      for (const block of [descriptor.script, descriptor.scriptSetup].filter(Boolean)) {
+        found.push(...findScriptJsonKeyViolations(file.replace(/\.vue$/, ".ts"), block.content, block.loc.start.line - 1));
+      }
+    } else if (/\.(ts|tsx)$/.test(file)) {
+      found.push(...findScriptJsonKeyViolations(file, text));
+    }
+  }
+  return found;
+}
+
+const PROJECT_JSON_OR_TS = /(\/manifest\.json|\/testdata\/api\/[^/]+\.json|\.(ts|tsx|vue))$/;
+
+export function verifyJsonKeysAreCamelCase() {
+  const sources = readTrackedSources(LAYER_ROOTS, (file) => PROJECT_JSON_OR_TS.test(file) && !file.includes("node_modules/"));
+  requireMatches("manifests and TypeScript sources read for JSON keys", sources.length, 500);
+  failOnFindings("Non-camelCase JSON keys", findNonCamelCaseJsonKeys(sources));
 }
 
 export const DISCIPLINE_VERIFIERS = [
@@ -318,5 +451,12 @@ export const DISCIPLINE_VERIFIERS = [
     module: "quality",
     name: "go.work Lists Every Module That Has a go.mod",
     run: verifyWorkspaceListsEveryModule,
+  },
+  {
+    id: "json-keys-camelcase",
+    scope: "libs",
+    module: "quality",
+    name: "JSON Keys Are camelCase (manifest schemas, API fixtures, and TypeScript JSON types)",
+    run: verifyJsonKeysAreCamelCase,
   },
 ];

@@ -27,6 +27,7 @@ export interface SlotCommand {
   readonly icon?: unknown
   readonly shortcut: string
   readonly hasItems: boolean
+  readonly values?: Readonly<Record<string, string>>
 }
 
 // SlotView is a component a plugin registered with `registerSlotView` and draws itself.

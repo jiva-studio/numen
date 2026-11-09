@@ -1243,7 +1243,7 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.openFiles]: FolderTree,
   [DEMO_COMMAND.openAgent]: Bot,
   [DEMO_COMMAND.askAgent]: Bot,
-  [DEMO_COMMAND.newTreeFolder]: FolderPlus,
+  [DEMO_COMMAND.createFolder]: FolderPlus,
   [DEMO_COMMAND.renameTreeEntry]: PenLine,
 }
 
@@ -1291,7 +1291,7 @@ const NEW_SUBMENU: SlotItem = {
   icon: Plus,
   entries: [
     createMenuCommand(DEMO_COMMAND.createNote, 'Create note'),
-    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
+    createMenuCommand(DEMO_COMMAND.createFolder, 'Create folder'),
   ],
 }
 
@@ -1436,6 +1436,8 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
 async function runMenuCommand(command: string, target: RowTarget): Promise<string> {
   if (command === DEMO_COMMAND.createNote && target.isFolder)
     return createUntitledInVault(target.path)
+  if (command === DEMO_COMMAND.createFolder && target.isFolder)
+    return createFolderInVault(target.path)
   const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')
   return ''
@@ -1511,6 +1513,17 @@ async function createUntitledInVault(folder: string): Promise<string> {
   return path
 }
 
+async function createFolderInVault(folder: string): Promise<string> {
+  await fileTree.loadFolder(folder)
+  const taken = new Set(fileTree.getEntriesInFolder(folder).map((one) => one.name))
+  let name = 'New folder'
+  for (let count = 2; taken.has(name); count++) name = `New folder ${count}`
+  const path = folder ? `${folder}/${name}` : name
+  customFolders.value = [...customFolders.value, path]
+  await fileTree.refresh()
+  return path
+}
+
 const filesState: FilesTabState = useFilesTab(fileTree, {
   openEntry: ({ path }) => {
     openVaultFile(path, 'current')
@@ -1548,11 +1561,6 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
   },
   setDraggedPaths: (paths) => {
     draggedPaths.value = paths
-  },
-  createFolder: async (folderPath) => {
-    if (!customFolders.value.includes(folderPath)) {
-      customFolders.value = [...customFolders.value, folderPath]
-    }
   },
   canDropData: () => false,
   dropData: async () => [],
@@ -2493,9 +2501,7 @@ function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' |
 
 function runVaultCommand(command: string, targetPath: string, source: 'files' | 'plex' = 'plex') {
   const folder = targetPath === ROOT ? null : targetPath
-  if (command === DEMO_COMMAND.newTreeFolder) {
-    void filesState.createFolder(folder)
-  } else if (command === DEMO_COMMAND.renameTreeEntry) {
+  if (command === DEMO_COMMAND.renameTreeEntry) {
     if (folder !== null) filesState.setRenamingPath(targetPath)
   } else if (command === DEMO_COMMAND.openNote) {
     openVaultFile(targetPath, 'current')

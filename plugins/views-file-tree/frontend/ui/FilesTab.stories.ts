@@ -44,7 +44,6 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
     runCommand: async () => '',
     movePath: async () => undefined,
     setDraggedPaths: () => undefined,
-    createFolder: async () => undefined,
     canDropData: () => false,
     dropData: async () => [],
     showError: () => undefined,

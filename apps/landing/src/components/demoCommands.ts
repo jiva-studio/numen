@@ -19,6 +19,6 @@ export const DEMO_COMMAND = {
   showNoteInPlex: 'md.numen.views.plex.graph:graph.showNote',
   openAgent: 'md.numen.views.agent.chat:chat.open',
   askAgent: 'md.numen.views.agent.chat:note.ask',
-  newTreeFolder: 'md.numen.views.file.tree:tree.createFolder',
+  createFolder: 'app:folder.create',
   renameTreeEntry: 'md.numen.views.file.tree:tree.renameFile',
 } as const

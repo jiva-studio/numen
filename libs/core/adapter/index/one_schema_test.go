@@ -74,9 +74,9 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	var dump []struct {
-		Kind string `json:"Kind"`
-		Name string `json:"Name"`
-		Body string `json:"Body"`
+		Kind string `json:"kind"`
+		Name string `json:"name"`
+		Body string `json:"body"`
 	}
 	if err := json.Unmarshal(raw, &dump); err != nil {
 		t.Fatal(err)

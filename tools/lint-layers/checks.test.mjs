@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  findNonCamelCaseJsonKeys,
   findPluginCrossings,
   findPluginSchemas,
   findSuppressions,
@@ -10,7 +11,7 @@ import {
   parseWorkspaceUses,
 } from "./checks/discipline.mjs";
 import { findTsPackagesWithoutEslint } from "./checks/frontend.mjs";
-import { getGoModReferences, getGoReferences, removeLineComment, requireMatches } from "./checks/helpers.mjs";
+import { getGoModReferences, getGoReferences, requireMatches } from "./checks/helpers.mjs";
 import { compareGoVersions, getLinterBuildGap, parseBuiltWithGo, parseGoDirective } from "./checks/tools.mjs";
 
 describe("the minimum match count", () => {
@@ -27,8 +28,12 @@ describe("plugin isolation over the captured plugin", () => {
     { file: "plugins/alpha/backend/a.go", text: 'import "github.com/jiva-studio/numen/plugins/alpha/backend/b"' },
     { file: "plugins/beta/backend/b.go", text: "package b" },
   ];
-  it("accepts references to the own plugin", () => {
-    assert.deepEqual(findPluginCrossings(base, packages), []);
+  it("accepts references to the own plugin and ignores comments", () => {
+    const withComment = [
+      ...base,
+      { file: "plugins/alpha/backend/a.go", text: '// github.com/jiva-studio/numen/plugins/beta/backend\npackage a\n' },
+    ];
+    assert.deepEqual(findPluginCrossings(withComment, packages), []);
   });
   it("finds a Go import of another plugin", () => {
     const sources = [...base, { file: "plugins/alpha/backend/a.go", text: 'import "github.com/jiva-studio/numen/plugins/beta/backend"' }];
@@ -114,12 +119,8 @@ describe("the paths that no layer owns", () => {
 });
 
 describe("the Go references", () => {
-  it("drops the text from the first // on", () => {
-    assert.equal(removeLineComment('a := "x" // b // c'), 'a := "x" ');
-    assert.equal(removeLineComment("plain"), "plain");
-  });
   it("reads the imports of a Go file and skips commented ones", () => {
-    const source = 'package a\n\nimport (\n\t"fmt" // print\n\t// "os"\n)\n';
+    const source = 'package a\n\nimport (\n\t"fmt" // print\n\t// "os"\n\t/* "net" */\n)\n';
     assert.deepEqual(getGoReferences(source).imports, [{ line: 4, value: "fmt" }]);
   });
   it("reads the module paths of a go.mod and skips commented ones", () => {
@@ -162,6 +163,33 @@ describe("the version of the linter", () => {
   it("accepts a linter built with the same or a newer Go", () => {
     assert.equal(getLinterBuildGap(report("1.26.9"), "1.26.9"), "");
     assert.equal(getLinterBuildGap(report("1.27.0"), "1.26.9"), "");
+  });
+});
+
+describe("the camelCase JSON keys", () => {
+  it("rejects a snake_case key in a manifest JSON schema and accepts camelCase", () => {
+    const badManifest = JSON.stringify({
+      id: "md.numen.example",
+      settings: {
+        schema: {
+          type: "object",
+          properties: {
+            maxTokens: { type: "number" },
+            chunk_tokens: { type: "number" },
+          },
+        },
+      },
+    });
+    const findings = findNonCamelCaseJsonKeys([{ file: "plugins/example/manifest.json", text: badManifest }]);
+    assert.deepEqual(findings.map((one) => one.symbol), ['JSON key "chunk_tokens"']);
+  });
+  it("rejects a snake_case or PascalCase property in a TypeScript JSON shape and accepts RPC method entries", () => {
+    const source = [
+      "export interface StatsOut { totalCount: number; max_side: number; Answered: number }",
+      "export type Methods = { GetStats: { request: Record<string, never>; response: StatsOut } }",
+    ].join("\n");
+    const findings = findNonCamelCaseJsonKeys([{ file: "plugins/example/frontend/api/stats.ts", text: source }]);
+    assert.deepEqual(findings.map((one) => one.symbol), ['JSON property "max_side"', 'JSON property "Answered"']);
   });
 });
 

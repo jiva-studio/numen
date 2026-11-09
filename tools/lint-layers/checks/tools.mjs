@@ -1,7 +1,7 @@
 import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { REPO_ROOT } from "./helpers.mjs";
+import { REPO_ROOT, parseGoWork } from "./helpers.mjs";
 
 /** The numbers of a Go version such as `1.26.9` or `1.26`; a missing patch is 0. */
 function parseGoVersion(version) {
@@ -42,7 +42,7 @@ export function parseBuiltWithGo(output) {
 
 /** The `go` directive of a go.work or go.mod text, or undefined. */
 export function parseGoDirective(text) {
-  return /^go\s+(\d+\.\d+(?:\.\d+)?)\s*$/m.exec(text)?.[1];
+  return parseGoWork(text).Go || undefined;
 }
 
 /**

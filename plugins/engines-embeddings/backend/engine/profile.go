@@ -95,11 +95,11 @@ func (p Profile) GetOptionDetail() string {
 // Handling is what is done to a text before the model reads it and to the output after. It decides
 // which vector a text gets, so it is part of the recipe.
 type Handling struct {
-	QueryPrefix    string   `json:"query_prefix"`
-	DocumentPrefix string   `json:"document_prefix"`
+	QueryPrefix    string   `json:"queryPrefix"`
+	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
 	Normalise      bool     `json:"normalise"`
-	ExtraInputs    []string `json:"extra_inputs"`
+	ExtraInputs    []string `json:"extraInputs"`
 }
 
 // Role is what a text is embedded for.

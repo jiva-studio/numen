@@ -198,6 +198,7 @@ func newSlots(wire []*v1.ManifestSlotEntry) []manifest.SlotEntry {
 			Group:   one.GetGroup(),
 			Order:   order,
 			When:    one.GetWhen(),
+			Values:  one.GetValues(),
 		})
 	}
 	return out

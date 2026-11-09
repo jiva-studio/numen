@@ -3,7 +3,10 @@ package manifest
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
@@ -19,6 +22,15 @@ var (
 	fullCommandIDPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9.]*:[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$`)
 )
 
+// AppCommandArgument is an argument of an app command; an argument of the type enum lists the values it
+// allows in Options.
+type AppCommandArgument struct {
+	Name    string
+	Title   string
+	Type    string
+	Options []string
+}
+
 // SlotEntry places one thing of the plugin in a slot of a window, or in a submenu a plugin declares.
 // Exactly one of Command, View and Submenu is set.
 type SlotEntry struct {
@@ -31,6 +43,7 @@ type SlotEntry struct {
 	Group   string
 	Order   *int
 	When    string
+	Values  map[string]string
 }
 
 func (e SlotEntry) getPlaced() (kind, id string) {
@@ -45,20 +58,28 @@ func (e SlotEntry) getPlaced() (kind, id string) {
 	return "", ""
 }
 
+func (e SlotEntry) getValuesKey() string {
+	parts := make([]string, 0, len(e.Values))
+	for _, name := range slices.Sorted(maps.Keys(e.Values)) {
+		parts = append(parts, strconv.Quote(name)+"="+strconv.Quote(e.Values[name]))
+	}
+	return strings.Join(parts, "&")
+}
+
 func (m Manifest) listSlotIssues() []error {
-	declared := map[string]bool{}
+	declared := map[string]Command{}
 	for _, command := range m.Contributes.Commands {
-		declared[command.ID] = true
+		declared[command.ID] = command
 	}
 	var issues []error
-	type placement struct{ slot, kind, id string }
+	type placement struct{ slot, kind, id, values string }
 	observed := map[placement]bool{}
 	submenus := map[string]bool{}
 	windowViews := map[string]bool{}
 	for _, entry := range m.Contributes.Slots {
 		issues = append(issues, listSlotEntryIssues(entry, declared)...)
 		kind, id := entry.getPlaced()
-		key := placement{entry.Slot, kind, id}
+		key := placement{entry.Slot, kind, id, entry.getValuesKey()}
 		if kind != "" && observed[key] {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
 		}
@@ -77,7 +98,20 @@ func (m Manifest) listSlotIssues() []error {
 	return issues
 }
 
-func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
+func listSlotCommandIssues(entry SlotEntry, declared map[string]Command) []error {
+	var issues []error
+	command, isDeclared := declared[entry.Command]
+	if !isDeclared && !fullCommandIDPattern.MatchString(entry.Command) {
+		issues = append(issues, fmt.Errorf("%w: command %q is neither declared by the manifest nor the full id of a command", ErrInvalidSlotEntry, entry.Command))
+	}
+	issues = append(issues, listSlotLookIssues(entry)...)
+	if isDeclared {
+		return append(issues, listSlotValueIssues(entry, command)...)
+	}
+	return append(issues, listForeignValueIssues(entry)...)
+}
+
+func listSlotEntryIssues(entry SlotEntry, declared map[string]Command) []error {
 	var issues []error
 	if strings.TrimSpace(entry.Slot) == "" {
 		issues = append(issues, fmt.Errorf("%w: an entry has no slot", ErrInvalidSlotEntry))
@@ -92,19 +126,77 @@ func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
 	}
 	switch {
 	case entry.Command != "":
-		if !declared[entry.Command] && !fullCommandIDPattern.MatchString(entry.Command) {
-			issues = append(issues, fmt.Errorf("%w: command %q is neither declared by the manifest nor the full id of a command", ErrInvalidSlotEntry, entry.Command))
-		}
+		issues = append(issues, listSlotCommandIssues(entry, declared)...)
 	case entry.View != "":
+		issues = append(issues, listUnplacedValuesIssues(entry, "view", entry.View)...)
 		if !tabKindPattern.MatchString(entry.View) {
 			issues = append(issues, fmt.Errorf("%w: view %q is not lowercase words", ErrInvalidSlotEntry, entry.View))
 		}
 	case entry.Submenu != "":
+		issues = append(issues, listUnplacedValuesIssues(entry, "submenu", entry.Submenu)...)
 		issues = append(issues, listSubmenuIssues(entry)...)
 	default:
 		issues = append(issues, fmt.Errorf("%w: the entry in %q places no command, view or submenu", ErrInvalidSlotEntry, entry.Slot))
 	}
 	return issues
+}
+
+func listSlotValueIssues(entry SlotEntry, command Command) []error {
+	var issues []error
+	for _, name := range slices.Sorted(maps.Keys(entry.Values)) {
+		if _, isDeclared := command.GetArgument(name); !isDeclared {
+			issues = append(issues, fmt.Errorf("%w: values of command %q name the argument %q, which the command does not declare", ErrInvalidSlotEntry, entry.Command, name))
+		}
+	}
+	return issues
+}
+
+func listSlotLookIssues(entry SlotEntry) []error {
+	var issues []error
+	if entry.Title != "" && strings.TrimSpace(entry.Title) == "" {
+		issues = append(issues, fmt.Errorf("%w: command %q has a blank title", ErrInvalidSlotEntry, entry.Command))
+	}
+	if entry.Icon != "" && !iconNamePattern.MatchString(entry.Icon) {
+		issues = append(issues, fmt.Errorf("%w: command %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidSlotEntry, entry.Command, entry.Icon))
+	}
+	return issues
+}
+
+func listForeignValueIssues(entry SlotEntry) []error {
+	if len(entry.Values) == 0 || !strings.HasPrefix(entry.Command, "app:") {
+		return nil
+	}
+	allowed := map[string][]string{}
+	if appArguments, isAppCommand := GetAppCommandArguments(entry.Command); isAppCommand {
+		for _, argument := range appArguments {
+			if argument.Type == SettingTypeEnum {
+				allowed[argument.Name] = argument.Options
+			} else {
+				allowed[argument.Name] = nil
+			}
+		}
+	}
+	for _, argument := range GetSharedCommandArguments(entry.Command) {
+		allowed[argument.Name] = nil
+	}
+	var issues []error
+	for _, name := range slices.Sorted(maps.Keys(entry.Values)) {
+		options, isDeclared := allowed[name]
+		switch {
+		case !isDeclared:
+			issues = append(issues, fmt.Errorf("%w: values of command %q name the argument %q, which the command does not take", ErrInvalidSlotEntry, entry.Command, name))
+		case len(options) > 0 && !slices.Contains(options, entry.Values[name]):
+			issues = append(issues, fmt.Errorf("%w: value %q of the argument %q of command %q is not one of %s", ErrInvalidSlotEntry, entry.Values[name], name, entry.Command, strings.Join(options, ", ")))
+		}
+	}
+	return issues
+}
+
+func listUnplacedValuesIssues(entry SlotEntry, kind, id string) []error {
+	if len(entry.Values) == 0 {
+		return nil
+	}
+	return []error{fmt.Errorf("%w: %s %q holds values, and only a command takes them", ErrInvalidSlotEntry, kind, id)}
 }
 
 func listSubmenuIssues(entry SlotEntry) []error {
