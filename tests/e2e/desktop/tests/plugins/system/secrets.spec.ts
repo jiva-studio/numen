@@ -22,7 +22,7 @@ const createProbe = (id: string, title: string, log: string): InstalledPlugin =>
       description: 'Records the secrets it receives',
       capabilities: [],
       targets: ['desktop.editor'],
-      activationEvents: ['onStartup'],
+      activationEvents: ['onVectorsReady', 'onFile:md'],
       permissions: [],
       backend: { entrypoint: 'bin/probe' },
       secrets: [
