@@ -38,7 +38,11 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
   return deps
 }
 
-const openingMessage = { paths: [], shouldReload: false, renamed: [] }
+const openingMessage: { paths: string[]; shouldReload: boolean; renamed: []; versionPaths?: string[] } = {
+  paths: [],
+  shouldReload: false,
+  renamed: [],
+}
 
 const task = (id: string): Task => ({
   id,
