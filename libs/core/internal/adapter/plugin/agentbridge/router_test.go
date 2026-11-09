@@ -51,7 +51,7 @@ func writeAgentProvider(t *testing.T, dir, id string) {
 	text := fmt.Sprintf(`{
 		"id": %q, "name": %q, "version": "1.0.0", "description": "Agent provider",
 		"capabilities": ["ai.agent.provider"], "targets": ["desktop.editor"],
-		"activationEvents": ["*"], "permissions": [],
+		"permissions": [],
 		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/agent"}
 	}`, id, id)
 	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(text), 0o600); err != nil {

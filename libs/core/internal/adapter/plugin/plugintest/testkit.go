@@ -40,6 +40,7 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		"description": "Sample",
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
+		"activationEvents": ["onFile:pdf"],
 		"contributes": {
 			"readers": [{"id": "pdf", "contentTypes": ["application/pdf"], "rank": "default"}]
 		},
