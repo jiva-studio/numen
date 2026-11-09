@@ -22,7 +22,7 @@ func (p *listingProvider) GetPrograms(ctx context.Context, _ map[string][]string
 	return nil, context.DeadlineExceeded
 }
 
-func TestTheListingOfProgramsHasALimitAndAFailedListingLeavesTheProgramUnavailable(t *testing.T) {
+func TestGetProgramListsProgramsWithinADeadline(t *testing.T) {
 	provider := &listingProvider{}
 	programs := NewPrograms(provider, func() AgentSettings { return AgentSettings{} })
 
@@ -37,7 +37,7 @@ func TestTheListingOfProgramsHasALimitAndAFailedListingLeavesTheProgramUnavailab
 	}
 }
 
-func TestAProgramThatIsNotInstalledIsUnavailable(t *testing.T) {
+func TestGetProgramFailsForAProgramNotInstalledOrNotListed(t *testing.T) {
 	provider := &staticProvider{programs: []agentport.AgentProgram{{Name: "claude"}}}
 	programs := NewPrograms(provider, func() AgentSettings { return AgentSettings{} })
 

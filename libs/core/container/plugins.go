@@ -21,8 +21,6 @@ import (
 
 const envMockML = pluginswiring.EnvMockML
 
-const programsLimit = pluginswiring.ProgramsLimit
-
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
 type PluginServices = pluginswiring.PluginServices
 
