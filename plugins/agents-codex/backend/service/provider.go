@@ -15,6 +15,9 @@ import (
 )
 
 const (
+	roleSystem            = "system"
+	roleUser              = "user"
+	roleAssistant         = "assistant"
 	settingRequestTimeout = "requestTimeout"
 	defaultRequestLimit   = 120 * time.Second
 	stoppedDone           = "done"
@@ -87,9 +90,9 @@ func newCompletionTask(call connection.Call, request connection.ProviderComplete
 	var turns []connection.Message
 	for _, message := range request.Messages {
 		switch message.Role {
-		case "system":
+		case roleSystem:
 			system = append(system, message.Text)
-		case "", "user", "assistant":
+		case "", roleUser, roleAssistant:
 			turns = append(turns, message)
 		default:
 			return nil, fmt.Errorf("unknown role %q", message.Role)
@@ -112,7 +115,7 @@ func writePrompt(turns []connection.Message) string {
 	parts := make([]string, 0, len(turns))
 	for _, turn := range turns {
 		role := "User"
-		if turn.Role == "assistant" {
+		if turn.Role == roleAssistant {
 			role = "Assistant"
 		}
 		parts = append(parts, role+":\n"+turn.Text)
