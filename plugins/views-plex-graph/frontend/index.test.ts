@@ -108,7 +108,6 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     await ctx.triggerCommand('graph.open', {
-
       path: 'Other.md',
 
       title: 'Other.md',
@@ -120,7 +119,6 @@ describe('view-plex-graph plugin', () => {
       others: [],
 
       tab: '',
-
     })
     await settle()
 
@@ -132,7 +130,6 @@ describe('view-plex-graph plugin', () => {
     const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('graph.open', {
-
       path: 'Other.md',
 
       title: 'Other.md',
@@ -144,7 +141,6 @@ describe('view-plex-graph plugin', () => {
       others: [],
 
       tab: '',
-
     })
 
     expect(strip.tabOpens).toStrictEqual([[PLEX, 'Other.md']])

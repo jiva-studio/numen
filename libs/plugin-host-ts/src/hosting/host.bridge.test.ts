@@ -199,15 +199,10 @@ describe('a command over a note', () => {
     host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
 
-    host.handleShortcut(event, async () => ({
-      path: '',
-      title: '',
-      type: 'note',
-      isFolder: false,
-      others: [],
-      tab: '',
-    }))
-    host.handleShortcut(event, async () => NOTE)
+    const NO_NOTE = { path: '', title: '', isFolder: false, others: [], tab: '' }
+
+    host.handleShortcut(event, async () => ({ ...NOTE, path: '' }), { target: NO_NOTE })
+    host.handleShortcut(event, async () => NOTE, { target: NOTE })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})

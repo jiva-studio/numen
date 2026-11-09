@@ -127,7 +127,6 @@ describe('view-file-tree plugin', () => {
     await settle()
 
     await ctx.triggerCommand('tree.open', {
-
       path: 'B.md',
 
       title: 'B.md',
@@ -139,7 +138,6 @@ describe('view-file-tree plugin', () => {
       others: [],
 
       tab: '',
-
     })
 
     const state = strip.tabs[0]!.state as FilesTabState
@@ -150,7 +148,6 @@ describe('view-file-tree plugin', () => {
     const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('tree.open', {
-
       path: 'A.md',
 
       title: 'A.md',
@@ -162,7 +159,6 @@ describe('view-file-tree plugin', () => {
       others: [],
 
       tab: '',
-
     })
     await settle()
 

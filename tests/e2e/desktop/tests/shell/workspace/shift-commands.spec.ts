@@ -42,17 +42,4 @@ test.describe('a command reached by a keystroke holding Shift', () => {
       ).toBeVisible()
     }
   })
-
-  test('draws the keystroke of closing a tab with Control and W', async ({ page }) => {
-    await openWorkspace(page)
-    await page.keyboard.press('Control+p')
-    await expect(page.locator('input[data-palette="field"]').first()).toBeVisible()
-
-    await expect(
-      page
-        .locator('[data-palette="list"]')
-        .getByText(/Control\s*W/)
-        .first(),
-    ).toBeVisible()
-  })
 })

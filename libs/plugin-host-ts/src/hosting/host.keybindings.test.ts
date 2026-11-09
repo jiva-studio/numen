@@ -5,6 +5,8 @@ import { createPluginHost } from './host'
 import { getTargetValues } from '../when/targetValues'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
+type Manifest = Parameters<ReturnType<typeof createPluginHost>['registerManifest']>[1]
+
 const NOTE = {
   path: 'Tides.md',
   title: 'Tides',
@@ -27,6 +29,7 @@ const LEDGER: CommandDeclaration = {
 function create(
   declarations: CommandDeclaration[] = [LEDGER],
   extra: Partial<PluginHostDeps> = {},
+  manifest?: Manifest,
 ) {
   const windowValues: Record<string, boolean> = {}
   const reportSlotIssue = vi.fn()
@@ -40,6 +43,7 @@ function create(
     ...extra,
   })
   const handler = vi.fn()
+  if (manifest) host.registerManifest('org.example.ledger', manifest)
   host.createContext('org.example.ledger').registerCommand({ id: 'ledger.open', handler })
   return { host, handler, windowValues, reportSlotIssue }
 }
@@ -61,7 +65,14 @@ describe('the keys of the plugins', () => {
 
   it('read mod as Meta once the platform of the application turns out to be macOS', async () => {
     let platform: 'windows' | 'darwin' = 'windows'
-    const app = { name: 'Numen', version: '1.0.0', build: 1, get platform() { return platform } }
+    const app = {
+      name: 'Numen',
+      version: '1.0.0',
+      build: 1,
+      get platform() {
+        return platform
+      },
+    }
     const { host, handler } = create([LEDGER], { app })
     host.registerKeybindings('org.example.ledger', [{ key: 'mod+l', command: 'ledger.open' }])
     platform = 'darwin'
@@ -74,7 +85,6 @@ describe('the keys of the plugins', () => {
   })
 
   it('are read from the keybindings of the manifest', async () => {
-    const { host, handler } = create()
     const parsed = parseManifest(
       JSON.stringify({
         id: 'org.example.ledger',
@@ -87,7 +97,7 @@ describe('the keys of the plugins', () => {
       }),
     )
     if (!parsed.ok) throw new Error(parsed.error)
-    host.registerManifest('org.example.ledger', parsed.value)
+    const { host, handler } = create([LEDGER], {}, parsed.value)
 
     expect(host.handleShortcut(CTRL_L, async () => NOTE)).toBe(true)
     await settle()
@@ -135,9 +145,16 @@ describe('the keys of the plugins', () => {
   })
 
   it('leave a weaker keybinding free when the command of the stronger one is not available', async () => {
-    const find: CommandDeclaration = { ...LEDGER, id: 'ledger.find', title: 'Find', when: 'target.isFolder' }
+    const find: CommandDeclaration = {
+      ...LEDGER,
+      id: 'ledger.find',
+      title: 'Find',
+      when: 'target.isFolder',
+    }
     const { host, handler, windowValues } = create([LEDGER, find])
-    host.createContext('org.example.ledger').registerCommand({ id: 'ledger.find', handler: vi.fn() })
+    host
+      .createContext('org.example.ledger')
+      .registerCommand({ id: 'ledger.find', handler: vi.fn() })
     host.registerKeybindings('org.example.ledger', [
       { key: 'mod+l', command: 'ledger.find', when: 'window.isFieldFocused' },
       { key: 'mod+l', command: 'ledger.open' },
@@ -163,12 +180,19 @@ describe('the keys of the plugins', () => {
   it('hand a key of the application to the window with the values of the keybinding', () => {
     const { host, handler } = create()
     host.registerKeybindings('org.example.ledger', [
-      { key: 'g', command: 'app:file.open', values: { placement: 'split' }, when: '!window.isFieldFocused' },
+      {
+        key: 'g',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        when: '!window.isFieldFocused',
+      },
     ])
     const runApp = vi.fn()
     const getNote = vi.fn(async () => NOTE)
 
-    expect(host.handleShortcut(press({ code: 'KeyG' }), getNote, { target: TARGET, runApp })).toBe(true)
+    expect(host.handleShortcut(press({ code: 'KeyG' }), getNote, { target: TARGET, runApp })).toBe(
+      true,
+    )
     expect(runApp).toHaveBeenCalledExactlyOnceWith('app:file.open', { placement: 'split' })
     expect(getNote).not.toHaveBeenCalled()
     expect(handler).not.toHaveBeenCalled()
@@ -178,9 +202,19 @@ describe('the keys of the plugins', () => {
     const { host } = create()
     const runApp = vi.fn()
 
-    expect(host.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE, { target: TARGET, runApp })).toBe(true)
+    expect(
+      host.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE, {
+        target: TARGET,
+        runApp,
+      }),
+    ).toBe(true)
     expect(runApp).toHaveBeenCalledExactlyOnceWith('app:commands.open', {})
-    expect(host.handleShortcut(press({ code: 'KeyQ', ctrlKey: true }), async () => NOTE, { target: TARGET, runApp })).toBe(false)
+    expect(
+      host.handleShortcut(press({ code: 'KeyQ', ctrlKey: true }), async () => NOTE, {
+        target: TARGET,
+        runApp,
+      }),
+    ).toBe(false)
     expect(runApp).toHaveBeenCalledOnce()
   })
 
@@ -192,7 +226,9 @@ describe('the keys of the plugins', () => {
     const runApp = vi.fn()
     windowValues['window.isFieldFocused'] = true
 
-    expect(host.handleShortcut(press({ code: 'KeyG' }), async () => NOTE, { target: TARGET, runApp })).toBe(false)
+    expect(
+      host.handleShortcut(press({ code: 'KeyG' }), async () => NOTE, { target: TARGET, runApp }),
+    ).toBe(false)
     expect(runApp).not.toHaveBeenCalled()
   })
 
