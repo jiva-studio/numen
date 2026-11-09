@@ -38,6 +38,8 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
   return deps
 }
 
+const opened = { paths: [], shouldReload: false, renamed: [] }
+
 const task = (id: string): Task => ({
   id,
   label: 'Indexing',
@@ -59,26 +61,34 @@ describe('following the vault', () => {
       core: {
         ...setup().core,
         watchVaultChanges: () =>
-          yielding({ paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
+          yielding(opened, { paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
       },
     })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], ['talks/a.mp3'])
+    expect(deps.onVaultChanged).toHaveBeenLastCalledWith([], [], ['talks/a.mp3'])
   })
 
-  it('ignores a change that names no path, no reload and no rename', async () => {
+  it('lists the files again when the stream opens, and asks nothing more', async () => {
     const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () => yielding({ paths: [], shouldReload: false, renamed: [] }),
-      },
+      core: { ...setup().core, watchVaultChanges: () => yielding(opened) },
     })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).not.toHaveBeenCalled()
+    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], [])
+    expect(deps.ask).not.toHaveBeenCalled()
+  })
+
+  it('ignores a change that names no path, no reload and no rename after the stream opened', async () => {
+    const deps = setup({
+      core: { ...setup().core, watchVaultChanges: () => yielding(opened, opened) },
+    })
+
+    await createWindowStreams(deps).follow()
+
+    expect(deps.onVaultChanged).toHaveBeenCalledTimes(1)
     expect(deps.ask).not.toHaveBeenCalled()
   })
 
@@ -88,12 +98,12 @@ describe('following the vault', () => {
     ['a rename', { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] }],
   ])('tells a change that names %s', async (_name, change) => {
     const deps = setup({
-      core: { ...setup().core, watchVaultChanges: () => yielding(change) },
+      core: { ...setup().core, watchVaultChanges: () => yielding(opened, change) },
     })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).toHaveBeenCalledTimes(1)
+    expect(deps.onVaultChanged).toHaveBeenCalledTimes(2)
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
@@ -177,7 +187,7 @@ describe('following the vault', () => {
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
-  it('draws the page again on a reload that swaps the vault, and notifies nothing', async () => {
+  it('draws the page again on a reload that swaps the vault, and notifies no change', async () => {
     const deps = setup({
       core: {
         ...setup().core,
@@ -189,7 +199,7 @@ describe('following the vault', () => {
     await createWindowStreams(deps).follow()
 
     expect(deps.reload).toHaveBeenCalledTimes(1)
-    expect(deps.onVaultChanged).not.toHaveBeenCalled()
+    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], [])
   })
 })
 
