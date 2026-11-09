@@ -27,13 +27,15 @@ interface ViewInstance {
 
 /** What a mounting plugin holds, checked against the plugin that declared a view of its own kind. */
 export interface MountAccess {
+  /** Whether the view is of a kind a plugin registers itself, so the registrant's vault permissions apply. */
+  readonly inherits: boolean
   readonly permissions: readonly string[]
   readonly requirePerm: (permission: string, operation: string) => void
 }
 
 interface Mount {
   readonly capability: string
-  readonly access?: MountAccess | undefined
+  readonly access: MountAccess
   readonly element: HTMLElement
   readonly context: unknown
   instance?: ViewInstance | undefined
@@ -63,8 +65,8 @@ function createStyle(pluginId: string): HTMLElement[] {
 }
 
 function isAllowed(mount: Mount, view: DeclaredView): boolean {
-  const held = mount.access?.permissions
-  return !held || view.vaultPermissions.every((one) => held.includes(one))
+  const { inherits, permissions } = mount.access
+  return !inherits || view.vaultPermissions.every((one) => permissions.includes(one))
 }
 
 function drawView(mount: Mount, view: DeclaredView): ViewInstance {
@@ -120,11 +122,11 @@ export function createViewRegistry() {
   const mountView = (
     capability: string,
     element: HTMLElement,
-    ...[context, access]: [context: unknown, access?: MountAccess]
+    ...[context, access]: [context: unknown, access: MountAccess]
   ): MountedView => {
     const declaredView = declared.find((one) => one.registration.capability === capability)
-    for (const permission of declaredView?.vaultPermissions ?? []) {
-      access?.requirePerm(permission, 'mountView')
+    for (const permission of access.inherits ? (declaredView?.vaultPermissions ?? []) : []) {
+      access.requirePerm(permission, 'mountView')
     }
     const mount: Mount = { capability, element, context, access }
     mounts.add(mount)

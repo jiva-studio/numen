@@ -11,17 +11,17 @@ import type {
   TabKindRegistration,
   ViewRegistration,
 } from '@numen/plugin-sdk'
-import type { PluginContextHost } from './types'
-import { getViewPermissions } from './viewPermissions'
+import type { PluginContextHost } from '../types'
+import type { PermissionTarget } from './permission'
+import { requireMountAccess } from './viewPermissions'
 
 export type Track = (disposable: Disposable) => Disposable
 export type RequirePermission = (permission: string, operation: string) => void
 
 /** What the registrations of a plugin are tracked and guarded with. */
 export interface RegistrationGuard {
-  readonly requirePerm: RequirePermission
+  readonly target: PermissionTarget
   readonly add: Track
-  readonly permissions: readonly string[]
 }
 
 export function createRegistrations(
@@ -29,7 +29,8 @@ export function createRegistrations(
   host: PluginContextHost,
   guard: RegistrationGuard,
 ) {
-  const { requirePerm, add, permissions } = guard
+  const { target, add } = guard
+  const permissions = target.manifest?.permissions ?? []
   return {
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
@@ -41,9 +42,7 @@ export function createRegistrations(
       add(host.registerAgentProvider(pluginId, reg)),
     registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg, permissions)),
     mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      const required = getViewPermissions(capability)
-      for (const permission of required ?? []) requirePerm(permission, 'mountView')
-      const access = required ? undefined : { permissions, requirePerm }
+      const access = requireMountAccess(capability, target)
       const view = host.mountView(capability, element, context, access)
       return { focus: () => view.focus(), ...add(view) }
     },

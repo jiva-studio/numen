@@ -227,7 +227,7 @@ export interface PluginContextHost {
     capability: string,
     element: HTMLElement,
     context: unknown,
-    access?: MountAccess,
+    access: MountAccess,
   ): MountedView
   registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
   readonly drops: DropHost

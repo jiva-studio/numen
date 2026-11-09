@@ -9,6 +9,7 @@ import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } 
 import type { Manifest } from '@numen/core-client'
 import {
   createAppInfo,
+  createPluginAgent,
   createExternalOpener,
   createPluginNotices,
   createSlotRegistry,
@@ -16,6 +17,7 @@ import {
   getDeclaredSlots,
   readManifestSlotEntries,
   createViewRegistry,
+  requireMountAccess,
   SLOT,
   openExternalUrl,
   type LoaderHost,
@@ -210,19 +212,24 @@ export function createShellHost(
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) => add(addView({ pluginId, registration })),
       ...UNUSED_CAPABILITIES,
-      registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
+      registerView: (registration) => add(declaredViews.registerView(pluginId, registration, manifest?.permissions)),
       registerSlotView: (registration) =>
         add(registerInSlots(slotViews, { pluginId, manifest }, registration)),
       slots: windowSlots.slots,
       mountView: (capability, element, viewContext) => {
-        const view = declaredViews.mountView(capability, element, viewContext)
+        const view = declaredViews.mountView(
+          capability,
+          element,
+          viewContext,
+          requireMountAccess(capability, { pluginId, manifest }),
+        )
         add(view)
         return view
       },
       closeTab: (id) => closeTab(id),
       hasPermission: (permission) => manifest?.permissions.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
-      ...(agent ? { agent } : {}),
+      ...(agent ? { agent: createPluginAgent(agent, { pluginId, manifest }) } : {}),
       ...getFilledServices(services),
     }
     contexts.set(pluginId, context)
@@ -258,6 +265,12 @@ export function createShellHost(
     /** The view a plugin draws in the title bar, or null while none does. */
     titleBarView: slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */
-    mountView: declaredViews.mountView,
+    mountView: (capability: string, element: HTMLElement, viewContext: unknown) =>
+      declaredViews.mountView(
+        capability,
+        element,
+        viewContext,
+        requireMountAccess(capability, { pluginId: TARGET }),
+      ),
   }
 }
