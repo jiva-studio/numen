@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { disposeAllEntries, type HostRegistry } from './registry'
 import { registerPluginStyle } from '../styles'
-import { CONVERSATION } from '@numen/plugin-sdk'
+import { CONVERSATION, NOTE_EDITOR, type NoteEditorContext, type VaultNotes } from '@numen/plugin-sdk'
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
@@ -447,5 +447,80 @@ describe('createPluginHost', () => {
 
     host.disposePlugin('md.numen.links')
     expect(drops?.canDrop(['text/uri-list'])).toBe(false)
+  })
+})
+
+describe('a note editor view mounted by a plugin', () => {
+  // The view of the notes plugin, reduced: it reads the note of the path it is mounted with
+  // through the notes service of the plugin that registered it, and draws the body.
+  const createHost = () => {
+    const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
+    const host = createPluginHost({
+      registerKind: () => vi.fn(),
+      registerExtensionReader: () => vi.fn(),
+      openTab: () => Promise.resolve('tab'),
+      getNotes: () => ({ read }) as unknown as VaultNotes,
+    } as unknown as PluginHostDeps)
+    const notesPlugin = host.createContext(
+      'md.numen.notes',
+      createMockManifest('md.numen.notes', {
+        name: 'Notes',
+        permissions: ['vault:read', 'vault:write'],
+      }),
+    )
+    notesPlugin.registerView({
+      capability: NOTE_EDITOR,
+      component: defineComponent({
+        props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
+        setup(props) {
+          const body = ref('')
+          if (props.context.path) {
+            void notesPlugin.notes!.read(props.context.path).then((one) => (body.value = one.body))
+          }
+          return () => h('div', body.value)
+        },
+      }),
+    })
+    const createCaller = (permissions: string[]) =>
+      host.createContext(
+        'md.numen.caller',
+        createMockManifest('md.numen.caller', { name: 'Caller', permissions }),
+      )
+    return { read, createCaller }
+  }
+  const settle = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    await nextTick()
+  }
+
+  it('refuses to mount a view with a note path to a plugin without vault:read', async () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+
+    expect(() =>
+      createCaller([]).mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
+    ).toThrow(/vault:read/)
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
+    expect(element.textContent).toBe('')
+  })
+
+  it('mounts a view with a note path for a plugin with vault:read', async () => {
+    const { createCaller } = createHost()
+    const element = document.createElement('div')
+
+    createCaller(['vault:read']).mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
+    await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
+  })
+
+  it('mounts a view without a note path for a plugin without vault:read', async () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+
+    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, {})).not.toThrow()
+    await settle()
+
+    expect(read).not.toHaveBeenCalled()
   })
 })
