@@ -32,6 +32,17 @@ function onUpdateOpen(value: boolean): void {
   if (value && !hasPopover()) return
   isOpen.value = value
 }
+
+// The content of reka-ui labels itself by the trigger, which wins over `aria-label`. The dialog is
+// named by `popoverLabel`, so that label is removed once the content is drawn.
+function nameDialog(instance: unknown): void {
+  const element = (instance as { $el?: Element } | null)?.$el
+  if (!(element instanceof Element)) return
+  const dialog = element.matches('[role="dialog"]')
+    ? element
+    : element.querySelector('[role="dialog"]')
+  dialog?.removeAttribute('aria-labelledby')
+}
 </script>
 
 <template>
@@ -58,7 +69,7 @@ function onUpdateOpen(value: boolean): void {
         :side-offset="4"
         :avoid-collisions="true"
         :aria-label="props.popoverLabel"
-        aria-labelledby=""
+        :ref="nameDialog"
       >
         <slot name="popover" />
       </PopoverContent>
