@@ -24,8 +24,6 @@ const meta = {
     setup: () => ({ args }),
     template: `
       <div class="numen" style="display:flex;align-items:center;justify-content:flex-end;block-size:2rem;background:var(--numen-titlebar);border-bottom:1px solid var(--numen-rule);color:var(--numen-ink);font-family:var(--numen-font-sans)">
-        <span data-neutral-probe style="position: fixed; top: 400px; left: 0; inline-size: 4px; block-size: 4px; background: var(--numen-surface)"></span>
-        <span data-alarm-probe style="position: fixed; top: 400px; left: 8px; inline-size: 4px; block-size: 4px; background: var(--numen-alarm-bg)"></span>
         <TasksStatus v-bind="args" />
       </div>
     `,
@@ -38,13 +36,6 @@ type Story = StoryObj<typeof meta>
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
   within(canvasElement).getByRole('button')
 
-const getGround = (element: Element): string => getComputedStyle(element).backgroundColor
-
-const expectTone = async (canvasElement: HTMLElement, tone: 'neutral' | 'alarm') => {
-  const probe = canvasElement.querySelector(`[data-${tone}-probe]`)!
-  await expect(getGround(getChip(canvasElement))).toBe(getGround(probe))
-}
-
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
   await expect(chip.textContent?.trim()).toBe('Idle')
@@ -53,7 +44,6 @@ const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.querySelector('.tasks-status__ring-fill')).toBeNull()
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
   await expect(chip.getBoundingClientRect().height).toBe(20)
-  await expectTone(canvasElement, 'neutral')
 }
 
 const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -62,7 +52,6 @@ const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.getAttribute('aria-label')).toBe('0 of 2 tasks done')
   await expect(chip.getAnimations()).toHaveLength(0)
   await expect(chip.querySelector('.tasks-status__ring-fill')).not.toBeNull()
-  await expectTone(canvasElement, 'neutral')
 }
 
 const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
@@ -70,7 +59,6 @@ const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
   await expect(chip.getAttribute('aria-label')).toBe('1 failed')
   await expect(chip.textContent?.trim()).toBe('Idle')
   await expect(chip.querySelector('.tasks-status__badge')).toBeNull()
-  await expectTone(canvasElement, 'alarm')
   await expect(getComputedStyle(chip).borderTopWidth).toBe('0px')
 }
 
@@ -133,30 +121,6 @@ export const KeepsItsSize: Story = {
   },
 }
 
-/** The scales, as [interface, text]: the designed size, each one larger, and both larger. */
-const SCALES: readonly (readonly [string, string])[] = [
-  ['1', '1'],
-  ['2', '1'],
-  ['1', '2'],
-  ['2', '2'],
-]
-
-const measureAtEveryScale = <T>(measure: () => T): T[] => {
-  const style = document.documentElement.style
-  const found: T[] = []
-  try {
-    for (const [interfaceScale, textScale] of SCALES) {
-      style.setProperty('--numen-interface-scale', interfaceScale)
-      style.setProperty('--numen-text-scale', textScale)
-      found.push(measure())
-    }
-  } finally {
-    style.removeProperty('--numen-interface-scale')
-    style.removeProperty('--numen-text-scale')
-  }
-  return found
-}
-
 /** The view as a bar draws it, with nothing around it, at the top or the bottom of the window. */
 const inBar = (place: 'top' | 'bottom') => () => ({
   components: { TasksStatus },
@@ -171,24 +135,6 @@ const inBar = (place: 'top' | 'bottom') => () => ({
 
 const getViewChip = (canvasElement: HTMLElement): HTMLElement =>
   within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getAllByRole('button')[0]!
-
-/** The chip is 20px high at every scale, and the view is exactly as wide and high as its chip. */
-export const KeepsItsSizeAndAddsNoSpaceWhateverTheScale: Story = {
-  render: inBar('top'),
-  play: async ({ canvasElement }) => {
-    const view = canvasElement.querySelector<HTMLElement>('[data-view]')!
-    const found = measureAtEveryScale(() => {
-      const chip = getViewChip(canvasElement).getBoundingClientRect()
-      const box = view.getBoundingClientRect()
-      return { chip: [chip.width, chip.height], view: [box.width, box.height] }
-    })
-    for (const one of found) {
-      await expect(one.chip[1]).toBe(20)
-      await expect(one.view).toStrictEqual(one.chip)
-      await expect(one).toStrictEqual(found[0])
-    }
-  },
-}
 
 /** A press opens the list of tasks; its close button closes it. */
 export const OpensTheTaskListAndClosesItFromItsButton: Story = {

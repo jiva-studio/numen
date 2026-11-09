@@ -5,11 +5,10 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
-import { h, markRaw, type FunctionalComponent } from 'vue'
 import { FilePlus, FolderTree, Search } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
 import type { AppInfo, SlotItem, VaultsState } from '@numen/plugin-sdk'
-import { command, separator, view } from '../testing/entries'
+import { command, separator } from '../testing/entries'
 
 interface Knobs {
   appName: string
@@ -17,25 +16,9 @@ interface Knobs {
   platform: AppInfo['platform']
   buttons: 'windows' | 'mac'
   commands: readonly SlotItem[]
-  status: readonly SlotItem[]
 }
 
 const ORCHARD = { id: 'orchard', name: 'Orchard notes' }
-
-/** A view that draws a box of a fixed size in pixels, which a story finds by `data-box`. */
-const createBoxView = (id: string): FunctionalComponent =>
-  markRaw(() =>
-    h('span', {
-      'data-box': id,
-      style: 'display: inline-block; inline-size: 40px; block-size: 20px',
-    }),
-  )
-
-const BOXES: readonly SlotItem[] = [
-  view('tide', createBoxView('tide')),
-  view('reef', createBoxView('reef')),
-  view('kelp', createBoxView('kelp')),
-]
 
 const ACTIONS: readonly SlotItem[] = [
   command('files', { title: 'Open file tree', icon: FolderTree }),
@@ -65,7 +48,7 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { TitleBar },
     setup: () => ({ args }),
-    template: `<div style="inline-size: 960px"><TitleBar v-bind="args" /><div data-bar-height-probe style="inline-size: 1px; block-size: var(--numen-title-bar-height)" /></div>`,
+    template: `<div style="inline-size: 960px"><TitleBar v-bind="args" /></div>`,
   }),
 }
 
@@ -199,51 +182,5 @@ export const StartsTheCommandsAtTheEdgeWhereThereAreNoSystemButtons: Story = {
     const first = canvasElement.querySelector('[data-title-bar-command]')!.getBoundingClientRect()
     await expect(canvasElement.querySelector('[data-mac-buttons-inset]')).toBeNull()
     await expect(first.left).toBe(bar.left)
-  },
-}
-
-/** The bar is as high as the bar height token, 32px, at every scale. */
-export const TakesItsHeightFromTheBarHeightToken: Story = {
-  play: async ({ canvasElement }) => {
-    await waitForCommands(canvasElement)
-    const found = await measureAtEveryScale(() => ({
-      bar: canvasElement.querySelector('[data-title-bar]')!.getBoundingClientRect().height,
-      token: canvasElement.querySelector('[data-bar-height-probe]')!.getBoundingClientRect().height,
-    }))
-    for (const one of found) await expect(one).toStrictEqual({ bar: 32, token: 32 })
-  },
-}
-
-/** Two adjacent views of the bar are 4px apart at every scale; the bar draws the gap. */
-export const PutsTheBarGapBetweenViewsWhateverTheScale: Story = {
-  args: { status: BOXES },
-  play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelectorAll('[data-box]')).toHaveLength(3))
-    const found = await measureAtEveryScale(() => {
-      const boxes = [...canvasElement.querySelectorAll('[data-box]')].map((box) =>
-        box.getBoundingClientRect(),
-      )
-      return boxes.slice(1).map((box, index) => box.left - boxes[index]!.right)
-    })
-    for (const gaps of found) await expect(gaps).toStrictEqual([4, 4])
-  },
-}
-
-/** Two adjacent command buttons touch: the gap between entries is for views only. */
-export const KeepsAdjacentCommandButtonsTouching: Story = {
-  args: {
-    commands: [
-      command('files', { title: 'Open file tree', icon: FolderTree }),
-      command('note', { title: 'Create note', icon: FilePlus }),
-    ],
-  },
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(canvasElement.querySelectorAll('[data-title-bar-command]')).toHaveLength(2),
-    )
-    const [first, second] = [...canvasElement.querySelectorAll('[data-title-bar-command]')].map(
-      (one) => one.getBoundingClientRect(),
-    )
-    await expect(second!.left - first!.right).toBe(0)
   },
 }

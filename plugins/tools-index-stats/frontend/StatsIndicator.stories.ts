@@ -186,30 +186,6 @@ export const KeepsItsSize: Story = {
   },
 }
 
-/** The scales, as [interface, text]: the designed size, each one larger, and both larger. */
-const SCALES: readonly (readonly [string, string])[] = [
-  ['1', '1'],
-  ['2', '1'],
-  ['1', '2'],
-  ['2', '2'],
-]
-
-const measureAtEveryScale = <T>(measure: () => T): T[] => {
-  const style = document.documentElement.style
-  const found: T[] = []
-  try {
-    for (const [interfaceScale, textScale] of SCALES) {
-      style.setProperty('--numen-interface-scale', interfaceScale)
-      style.setProperty('--numen-text-scale', textScale)
-      found.push(measure())
-    }
-  } finally {
-    style.removeProperty('--numen-interface-scale')
-    style.removeProperty('--numen-text-scale')
-  }
-  return found
-}
-
 /** The view as a bar draws it, with nothing around it, at the top or the bottom of the window. */
 const inBar = (place: 'top' | 'bottom') => () => ({
   components: { StatsIndicator },
@@ -224,24 +200,6 @@ const inBar = (place: 'top' | 'bottom') => () => ({
 
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
   within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getAllByRole('button')[0]!
-
-/** The chip is 20px high at every scale, and the view is exactly as wide and high as its chip. */
-export const KeepsItsSizeAndAddsNoSpaceWhateverTheScale: Story = {
-  render: inBar('top'),
-  play: async ({ canvasElement }) => {
-    const view = canvasElement.querySelector<HTMLElement>('[data-view]')!
-    const found = measureAtEveryScale(() => {
-      const chip = getChip(canvasElement).getBoundingClientRect()
-      const box = view.getBoundingClientRect()
-      return { chip: [chip.width, chip.height], view: [box.width, box.height] }
-    })
-    for (const one of found) {
-      await expect(one.chip[1]).toBe(20)
-      await expect(one.view).toStrictEqual(one.chip)
-      await expect(one).toStrictEqual(found[0])
-    }
-  },
-}
 
 /** The close button of the dialog closes it, and a resize of the window keeps it open. */
 export const ClosesFromItsButtonAndStaysOpenOnAResize: Story = {

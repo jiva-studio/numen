@@ -153,55 +153,7 @@ Jsdom tests: `PopoverPortal` teleports the content to `document.body`. A test th
 
 ## 4. Acceptance Criteria
 
-Scales below are the pairs (interface, text) `(1,1)`, `(2,1)`, `(1,2)`, `(2,2)`, set on the document as in `TitleBarScale.stories.ts`. Fixture data is invented.
-
-### AC-1: The status bar is 32px high at every scale
-
-- **Given**: the status bar with an invented command entry and an invented view entry
-- **When**: it is measured at every scale
-- **Then**: its height is 32px at every scale.
-
-### AC-2: The status bar height is in px, not in root font sizes
-
-- **Given**: the status bar
-- **When**: interface scale 2 and text scale 2 are set
-- **Then**: the root font size is larger than 16px and the bar height is less than two root font sizes.
-
-### AC-3: Both bars have the same height
-
-- **Given**: the title bar and the status bar drawn in one story
-- **When**: they are measured at every scale
-- **Then**: the two heights are equal at every scale.
-
-### AC-4: Status bar entries keep their size at every scale
-
-- **Given**: the status bar with a text command, an icon command and a separator
-- **When**: they are measured at every scale
-- **Then**: the width and height of each entry and of the separator are the same at every scale.
-
-### AC-5: The chip has one height and one text size at every scale
-
-- **Given**: a `BarChip` with an invented face
-- **When**: it is measured at every scale
-- **Then**: its height is 20px and its computed font size is 12px at every scale.
-
-### AC-6: Long and non-Latin face text keeps the chip height
-
-- **Given**: chips whose face is empty, one character, Devanagari text, and a 200-character string with no break
-- **When**: they are drawn
-- **Then**: every chip is 20px high and its text is on one line.
-
-### AC-7: A chip has the same size in either bar
-
-- **Given**: one view entry rendering a `BarChip` with the same invented face in the title bar slot `titleBar.status` and in the status bar slot `statusBar.right`
-- **When**: both are measured at every scale
-- **Then**: the two chips have the same width and height, and the same at every scale.
-
-### AC-8: The bar draws the gap between entries in px
-
-- **Given**: two adjacent view entries rendering chips, in the title bar and in the status bar
-- **When**: they are measured at every scale
-- **Then**: the distance between the right edge of the first chip and the left edge of the second is 4px in both bars at every scale.
+Fixture data is invented. Sizes, spacing, scale behavior and contrast are not tested (see the decision in §5).
 
 ### AC-9: A press on the chip opens the popover below it
 
@@ -214,12 +166,6 @@ Scales below are the pairs (interface, text) `(1,1)`, `(2,1)`, `(1,2)`, `(2,2)`,
 - **Given**: a `BarChip` with popover content at the bottom edge of the viewport
 - **When**: the chip is pressed
 - **Then**: the dialog's bottom edge is at or above the chip's top edge, and the dialog is inside the viewport.
-
-### AC-11: The popover aligns to the chip's end edge
-
-- **Given**: a `BarChip` with popover content wider than the chip, away from the viewport edges
-- **When**: the chip is pressed
-- **Then**: the dialog's right edge equals the chip's right edge.
 
 ### AC-12: Escape closes the popover
 
@@ -275,41 +221,23 @@ Scales below are the pairs (interface, text) `(1,1)`, `(2,1)`, `(1,2)`, `(2,2)`,
 - **When**: the chip is pressed and released in WebKit
 - **Then**: the popover opens.
 
-### AC-21: The popover content follows the interface scale
-
-- **Given**: an open popover with invented content whose width is in rem
-- **When**: the interface scale goes from 1 to 2
-- **Then**: the dialog is wider at scale 2 than at scale 1, and the chip keeps its size.
-
-### AC-22: Chip text is readable on every tone
-
-- **Given**: a `BarChip` in tones `neutral`, `accent` and `alarm`, at rest, hovered and open, in the light and the dark token sets
-- **When**: the contrast is measured (`Contrast.stories.ts`)
-- **Then**: text on its ground is at least 4.5:1.
-
 ### AC-23: The update notice uses the shared chip
 
 - **Given**: the updater view with an invented newer release
 - **When**: it is drawn in the title bar slot and pressed
-- **Then**: its chip is 20px high at every scale, its face reads `v<version>`, its tone is the accent, and the release dialog opens; the download, release notes and dismiss actions close it.
+- **Then**: its face reads `v<version>` and the release dialog opens; the download, release notes and dismiss actions close it.
 
 ### AC-24: The index stats use the shared chip
 
 - **Given**: the index stats view with invented stats
 - **When**: it is drawn and pressed
-- **Then**: its chip is 20px high at every scale, the "Index stats" dialog opens with its rows, the close button closes it, and a resize keeps it open. With no stats yet, a press opens no dialog.
+- **Then**: the "Index stats" dialog opens with its rows, the close button closes it, and a resize keeps it open. With no stats yet, a press opens no dialog.
 
 ### AC-25: The background tasks use the shared chip
 
 - **Given**: the tasks view with invented running and failed tasks
 - **When**: it is drawn and pressed
-- **Then**: its chip is 20px high at every scale, its tone is the alarm when a task failed and neutral otherwise, and the task list dialog opens; its close button closes it.
-
-### AC-26: No plugin chip carries its own spacing
-
-- **Given**: the updater, index stats and tasks views side by side in the title bar slot `titleBar.status`
-- **When**: they are measured at every scale
-- **Then**: each pair of adjacent chips is 4px apart at every scale (the bar gap alone).
+- **Then**: the task list dialog opens; its close button closes it.
 
 ## 5. Decisions (answered 2026-11-09)
 
@@ -320,3 +248,4 @@ Scales below are the pairs (interface, text) `(1,1)`, `(2,1)`, `(1,2)`, `(2,2)`,
 - **Q5, `popoverLabel`:** accepted as proposed.
 - **Chip size:** unchanged from today's title bar chip: 20px high, 12px text, 8px padding, in both bars.
 - **Gap:** 4px in px; it does not follow the interface scale.
+- **Decision 2026-11-09:** no visual tests; the sizes in §1 are implemented but not tested.

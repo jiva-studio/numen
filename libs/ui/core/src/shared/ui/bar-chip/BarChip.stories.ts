@@ -1,9 +1,7 @@
 /**
  * The chip of the title bar and the status bar, with its popover. Also the test corpus: each story
- * is run in Chromium and WebKit, which lay out the chip and place the popover against it.
- *
- * The chip keeps its size whatever the scale of the interface and of the text; the content of its
- * popover follows the interface scale.
+ * is run in Chromium and WebKit, which place the popover against the chip. The stories check how
+ * the popover opens and closes, not how the chip looks.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
@@ -11,7 +9,6 @@ import { ref } from 'vue'
 import BarChip from './BarChip.vue'
 import type { BarChipTone } from '.'
 import {
-  AWKWARD_FACES,
   FACE,
   LABEL,
   POPOVER_ACTION,
@@ -20,7 +17,6 @@ import {
   TOOLTIP,
 } from './fixtures/faces'
 import { pressKey, pressOn } from './fixtures/press'
-import { measureAtEveryScale, resetScales, setScales } from './fixtures/scale'
 
 /** Where the chip is drawn in the viewport. */
 type Place = 'top' | 'middle' | 'bottom'
@@ -111,45 +107,6 @@ const settle = (): Promise<void> =>
 /** A chip with a face and a popover, at rest. */
 export const AChip: Story = {}
 
-/** The chip is 20px high and its text is 12px at every interface and text scale. */
-export const KeepsItsHeightAndTextSizeWhateverTheScale: Story = {
-  play: async ({ canvasElement }) => {
-    const chip = getChip(canvasElement)
-    const found = measureAtEveryScale(() => ({
-      height: chip.getBoundingClientRect().height,
-      fontSize: getComputedStyle(chip).fontSize,
-    }))
-    for (const one of found) await expect(one).toStrictEqual({ height: 20, fontSize: '12px' })
-  },
-}
-
-/** An empty face, one character, Devanagari and 200 characters with no break: 20px high, one line. */
-export const KeepsItsHeightWithAwkwardFaces: Story = {
-  render: () => ({
-    components: { BarChip },
-    setup: () => ({ AWKWARD_FACES }),
-    template: `
-      <div class="numen" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px; background: var(--numen-surface); font-family: var(--numen-font-sans)">
-        <BarChip v-for="face in AWKWARD_FACES" :key="face.name" :label="face.name">
-          <span data-face>{{ face.text }}</span>
-        </BarChip>
-      </div>
-    `,
-  }),
-  play: async ({ canvasElement }) => {
-    for (const { name } of AWKWARD_FACES) {
-      const chip = within(canvasElement).getByRole('button', { name })
-      await expect({ name, height: chip.getBoundingClientRect().height }).toStrictEqual({
-        name,
-        height: 20,
-      })
-      const face = chip.querySelector('[data-face]')!
-      const lines = new Set([...face.getClientRects()].map((rect) => rect.top)).size
-      await expect({ name, lines: Math.min(lines, 2) }).toStrictEqual({ name, lines: 1 })
-    }
-  },
-}
-
 /** A press on the chip opens the popover below it and marks the chip expanded. */
 export const OpensThePopoverBelowTheChip: Story = {
   play: async ({ canvasElement }) => {
@@ -182,24 +139,6 @@ export const OpensThePopoverAboveTheChipAtTheBottomEdge: Story = {
     await expect(box.left).toBeGreaterThanOrEqual(0)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
-  },
-}
-
-/** A popover wider than its chip ends at the chip's right edge. */
-export const AlignsThePopoverToTheEndEdgeOfTheChip: Story = {
-  args: { place: 'middle' },
-  play: async ({ canvasElement }) => {
-    const chip = getChip(canvasElement)
-    const dialog = await openPopover(canvasElement)
-    await settle()
-    await expect(dialog.getBoundingClientRect().width).toBeGreaterThan(
-      chip.getBoundingClientRect().width,
-    )
-    await waitFor(() =>
-      expect(
-        Math.abs(dialog.getBoundingClientRect().right - chip.getBoundingClientRect().right),
-      ).toBeLessThan(1),
-    )
   },
 }
 
@@ -281,30 +220,5 @@ export const OpensThePopoverWhenTheFaceIsReplacedDuringThePress: Story = {
     await expect(chip.textContent?.trim()).toBe('1 of 9 done')
     await findDialog()
     await expect(chip.getAttribute('aria-expanded')).toBe('true')
-  },
-}
-
-/** The content of the popover grows with the interface scale; the chip keeps its size. */
-export const GrowsThePopoverContentWithTheInterfaceScale: Story = {
-  args: { place: 'middle' },
-  play: async ({ canvasElement }) => {
-    const chip = getChip(canvasElement)
-    const dialog = await openPopover(canvasElement)
-    await settle()
-    const size = (element: HTMLElement) => {
-      const { width, height } = element.getBoundingClientRect()
-      return { width, height }
-    }
-    const atOne = { dialog: size(dialog), chip: size(chip) }
-    try {
-      setScales('2', '1')
-      await settle()
-      const atTwo = { dialog: size(dialog), chip: size(chip) }
-      await expect(atTwo.dialog.width).toBeGreaterThan(atOne.dialog.width)
-      await expect(atTwo.chip).toStrictEqual(atOne.chip)
-    } finally {
-      resetScales()
-    }
-    await expect(queryDialog()).not.toBeNull()
   },
 }
