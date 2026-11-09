@@ -75,8 +75,8 @@ vi.mock('@/app/vault', () => ({
       requests.renamed.push(`${path} ${title}`)
       return Promise.resolve(asValue({ path, title, hasFrontmatter: true, moved: null }))
     },
-    remove: (path: string, destroy?: boolean) => {
-      requests.removed.push(`${path} ${destroy ?? false}`)
+    remove: (path: string) => {
+      requests.removed.push(path)
       return Promise.resolve(asValue({ trashed: `.trash/${path}`, dangling: [] }))
     },
     list: (folder: string) => Promise.resolve(folders[folder] ?? []),

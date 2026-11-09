@@ -47,7 +47,4 @@ export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]
   'app:file.open': [
     { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
   ],
-  'app:file.remove': [
-    { name: 'removal', title: 'Removal', type: 'enum', options: ['trash', 'permanent'] },
-  ],
 }

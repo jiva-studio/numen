@@ -161,7 +161,7 @@ A removed note is moved into `.trash/` inside the vault, keeping its path below 
 
 Anything under a dot-folder is not a note, so the note leaves the index, the search and the plex, without being deleted.
 
-Deleting the file permanently is available and must be requested explicitly. It cannot be undone.
+The trash is emptied by the separate command **Empty trash**, which asks for a confirmation and cannot be undone.
 
 The notes whose links pointed at the removed note are reported and not repaired: the link is not wrong, its target is removed, and only the person knows the intended target.
 

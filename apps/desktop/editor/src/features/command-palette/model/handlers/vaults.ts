@@ -49,6 +49,12 @@ export const renameVault = async (
   if (answer.value) on.vaults.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
 
+/** Deletes what the trash holds for good, and reports how many paths stayed. */
+export const emptyTrash = async (on: VaultContext & Voice, words: AnswerWords): Promise<void> => {
+  const undeleted = await on.files.emptyTrash()
+  if (undeleted > 0) on.writeMessage(words.undeleted(undeleted), 'error')
+}
+
 export interface RemoveVaultOptions {
   readonly shouldErase: boolean
   readonly words: AnswerWords

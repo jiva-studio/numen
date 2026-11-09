@@ -7,16 +7,17 @@ import { mapEntry, mapMoveResult, mapNoteType } from './words'
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'
 
-export type FilesCore = Pick<FilePort, 'list' | 'move' | 'createFolder' | 'fileKinds'> &
+export type FilesCore = Pick<FilePort, 'list' | 'move' | 'createFolder' | 'fileKinds' | 'emptyTrash'> &
   Pick<NotePort, 'remove'>
 
 export const filesCore: FilesCore = {
-  remove: async (path, isPermanent) => {
-    const answer = await files.removeFile({ path, destroy: isPermanent ?? false })
+  remove: async (path) => {
+    const answer = await files.removeFile({ path })
     const error = findErrorCode(answer)
     if (error) return asFailure(error)
     return asValue({ trashed: answer.trashed, dangling: answer.dangling })
   },
+  emptyTrash: async () => (await files.emptyTrash({})).undeleted.length,
   list: async (folder) => (await files.listFiles({ path: folder })).entries.map(mapEntry),
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })

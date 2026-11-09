@@ -47,8 +47,12 @@ describe('the input a command of the palette asks for', () => {
     expect(getIdsAsking('items')).toStrictEqual([])
   })
 
-  it('is the name typed again for the command that deletes a note', () => {
-    expect(getIdsAsking('retypedName')).toStrictEqual(['app:file.remove#permanent'])
+  it('is a confirmation for the command that empties the trash', () => {
+    expect(getIdsAsking('confirmation')).toStrictEqual(['app:trash.empty'])
+  })
+
+  it('is the name typed again for no command that runs on a note', () => {
+    expect(getIdsAsking('retypedName')).toStrictEqual([])
   })
 
   it('is a confirmation after the vault, for the command that removes one', () => {

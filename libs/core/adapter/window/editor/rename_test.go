@@ -367,25 +367,35 @@ func TestRemoveFile_TrashesAndReturnsDanglingLinks(t *testing.T) {
 	}
 }
 
-// TestADestroyedNoteLeavesNothingBehind. Nothing brings it back, and the answer
-// names no place in the trash to look.
-func TestADestroyedNotePreservesNothingPrior(t *testing.T) {
-	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+// TestEmptyTrash_DeletesTrashContent. The content is deleted and the
+// trash folder stays for the next removal.
+func TestEmptyTrash_DeletesTrashContent(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{
+		"Entropy.md":        "# Entropy\n",
+		"physics/Heat.md":   "# Heat\n",
+		"physics/Energy.md": "# Energy\n",
+	})
+	waitForScan(t, f)
+	for _, path := range []string{"Entropy.md", "physics"} {
+		if _, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{Path: path})); err != nil {
+			t.Fatal(err)
+		}
+	}
 
-	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
-		Path: "Entropy.md", Destroy: true,
-	}))
+	answer, err := f.client.EmptyTrash(t.Context(), connect.NewRequest(&v1.EmptyTrashRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the note failed: %v", code)
+	if undeleted := answer.Msg.GetUndeleted(); len(undeleted) != 0 {
+		t.Errorf("undeleted: %v", undeleted)
 	}
-	if trashed := answer.Msg.GetTrashed(); trashed != "" {
-		t.Errorf("a destroyed note was said to sit at %q", trashed)
+	for _, path := range []string{".trash/Entropy.md", ".trash/physics/Heat.md", ".trash/physics"} {
+		if !isGone(t, f.root, path) {
+			t.Errorf("%s is still on the disk", path)
+		}
 	}
-	if !isGone(t, f.root, "Entropy.md") || !isGone(t, f.root, ".trash/Entropy.md") {
-		t.Error("the file is still on the disk")
+	if _, err := os.Stat(filepath.Join(f.root, ".trash")); err != nil {
+		t.Errorf("the trash folder is gone: %v", err)
 	}
 }
 

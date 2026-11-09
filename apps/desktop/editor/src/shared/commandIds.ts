@@ -30,6 +30,7 @@ export const COMMAND = {
   renameVault: formatAppCommandId('vault.rename'),
   removeVault: formatAppCommandId('vault.remove'),
   eraseVault: formatAppCommandId('vault.erase'),
+  emptyTrash: formatAppCommandId('trash.empty'),
 } as const
 
 /** What the id of the command of a setting starts with: `setting:<owner>:<key>`. */
@@ -43,13 +44,11 @@ export const ROW = {
   openNoteBeside: `${COMMAND.openFile}#beside`,
   openDocument: `${COMMAND.openFile}#document`,
   goToNote: `${COMMAND.openFile}#note`,
-  destroyFile: `${COMMAND.removeFile}#permanent`,
 } as const
 
-/** The names of the arguments of the command that opens a file and of the command that removes a file. */
+/** The names of the arguments of the command that opens a file. */
 export const ARGUMENT = {
   placement: 'placement',
-  removal: 'removal',
 } as const
 
 /** The welcome row that puts the commands up. It is no command of its own, so it is its own identity. */

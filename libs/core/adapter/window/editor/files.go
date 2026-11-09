@@ -54,6 +54,7 @@ type fileHandler struct {
 	createFolder     *file.CreateFolder
 	move             *vaults.Move
 	remove           *note.Remove
+	emptyTrash       *note.EmptyTrash
 }
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
@@ -228,8 +229,7 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 	return string(noteType)
 }
 
-// RemoveFile removes a file or a folder from the vault. It goes to the trash,
-// and a request with the destroy flag deletes a note permanently.
+// RemoveFile moves a file or a folder of the vault to the trash.
 func (h *fileHandler) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
@@ -242,7 +242,7 @@ func (h *fileHandler) RemoveFile(
 	}
 	defer h.state.Writing.finish()
 
-	removed, err := h.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
+	removed, err := h.remove.Execute(ctx, showing, r.Msg.GetPath())
 	indexOutdated := h.state.isIndexOutdated(err)
 	if err != nil && !indexOutdated {
 		reason, ok := wire.GetErrorCode(err)
@@ -261,16 +261,29 @@ func (h *fileHandler) RemoveFile(
 	}), nil
 }
 
-func (h *fileHandler) removal(
-	ctx context.Context,
-	v domain.Vault,
-	path string,
-	destroy bool,
-) (note.RemoveResult, error) {
-	if destroy {
-		return h.remove.Destroy(ctx, v, path)
+// EmptyTrash deletes everything the trash of the vault holds and answers the
+// paths it could not delete.
+func (h *fileHandler) EmptyTrash(
+	ctx context.Context, _ *connect.Request[v1.EmptyTrashRequest],
+) (*connect.Response[v1.EmptyTrashResponse], error) {
+	showing, err := h.state.getCurrentVault()
+	if err != nil {
+		return nil, err
 	}
-	return h.remove.Execute(ctx, v, path)
+	if h.emptyTrash == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+	}
+	if !h.state.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer h.state.Writing.finish()
+
+	undeleted, err := h.emptyTrash.Execute(ctx, showing)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	h.state.ChangeEvents.publish(change{paths: []string{note.TrashDir}})
+	return connect.NewResponse(&v1.EmptyTrashResponse{Undeleted: undeleted}), nil
 }
 
 func newWireProperties(properties map[string]any) *structpb.Struct {
