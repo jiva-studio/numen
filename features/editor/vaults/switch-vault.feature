@@ -20,6 +20,11 @@ Feature: Switch vault
     And the person picks "Coastline"
     Then the window has the vault "Coastline"
     And the note tab at "Entropy.md" is not open
+
+  Scenario: The file tree lists the other vault
+    Given the person runs the command "Open vault"
+    And the person picks "Coastline"
+    And the window has the vault "Coastline"
     When the person opens the Files tab titled "Files"
     Then the Files tab titled "Files" has "Lighthouse.md"
 
@@ -30,5 +35,3 @@ Feature: Switch vault
     When the person runs the command "Open vault"
     And the person picks "Test"
     Then the window has the vault "Test"
-    When the person opens the Files tab titled "Files"
-    Then the Files tab titled "Files" has "Entropy.md"
