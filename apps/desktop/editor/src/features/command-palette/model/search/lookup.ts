@@ -205,12 +205,12 @@ export interface ResultChoice {
   readonly values?: Readonly<Record<string, string>>
 }
 
-function resolveNoteChoice(hit: SearchHit, action: string): ResultChoice {
-  const place = { path: hit.path, file: hit.path, title: hit.title }
-  const values = hit.actionValues?.[action]
+function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
+  const place = { path: result.path, file: result.path, title: result.title }
+  const values = result.actionValues?.[action]
   return {
-    command: hit.actionCommands?.[action] ?? action,
-    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
+    command: result.actionCommands?.[action] ?? action,
+    over: result.line >= 0 ? { ...place, line: result.line } : place,
     input: '',
     ...(values ? { values } : {}),
   }
@@ -222,26 +222,26 @@ function resolveNoteChoice(hit: SearchHit, action: string): ResultChoice {
  * file and selector, and the row that creates a note by the window and the words typed.
  */
 export function resolveChoice(
-  hit: SearchHit | undefined,
+  result: SearchHit | undefined,
   action: string,
   typed = '',
 ): ResultChoice | null {
-  if (!hit || !hit.actionIds.includes(action)) return null
-  if (hit.isCreation) {
+  if (!result || !result.actionIds.includes(action)) return null
+  if (result.isCreation) {
     return {
       command: action,
       over: null,
       input: typed.trim(),
     }
   }
-  if (hit.type === null) {
+  if (result.type === null) {
     if (action !== ROW.openDocument) return null
-    const place = { path: '', file: hit.path, title: hit.title }
+    const place = { path: '', file: result.path, title: result.title }
     return {
       command: action,
-      over: hit.selector ? { ...place, selector: hit.selector } : place,
+      over: result.selector ? { ...place, selector: result.selector } : place,
       input: '',
     }
   }
-  return resolveNoteChoice(hit, action)
+  return resolveNoteChoice(result, action)
 }

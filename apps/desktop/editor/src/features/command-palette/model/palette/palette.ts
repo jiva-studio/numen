@@ -136,7 +136,8 @@ interface PaletteCommandsDeps {
 }
 
 function isNameOmittable(command: Command, target: CommandTarget): boolean {
-  return command.canOmitNameOverFolder === true && target.isTargetNamed && target.isFolder
+  const isNamedFolder = target.isTargetNamed === true && target.isFolder === true
+  return command.canOmitNameOverFolder === true && isNamedFolder
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
