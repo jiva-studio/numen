@@ -11,7 +11,7 @@ const readLitText = (): string => {
   return ranges ? [...ranges].map((range) => range.toString()).join(' ') : ''
 }
 
-/** Checks that the tab of the file shows a highlight, and in a book that the highlight holds the given text. */
+/** Checks that the tab of the file shows a highlight, and in a book its text. */
 export const expectTabHighlight = async (page: Page, file: string, text?: string): Promise<void> => {
   const panel: Locator = page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })
   await expect(panel).toBeVisible()
