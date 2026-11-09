@@ -1402,7 +1402,7 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
     entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
   )
   const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
-  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename file')
+  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename')
   if (target.path === ROOT) return [NEW_SUBMENU]
   if (target.others.length > 0) {
     const selected = [target.path, ...target.others]
