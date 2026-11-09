@@ -245,7 +245,7 @@ describe('parseTabKind', () => {
 
   it('fails on a word that is not a kind and lists the words', () => {
     expect(() => parseTabKind('chart tab')).toThrow(
-      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Files, Agent, Deck, Card Model, Preset',
+      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Media, Files, Agent, Deck, Card Model, Preset',
     )
   })
 })
