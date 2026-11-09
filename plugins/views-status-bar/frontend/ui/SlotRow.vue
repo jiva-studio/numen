@@ -41,11 +41,7 @@ function markEntry(entry: SlotItem): Record<string, string> {
 </script>
 
 <template>
-  <div
-    class="status-bar__slot"
-    :data-status-bar-slot="place"
-    v-bind="{ [SLOT_ATTRIBUTE]: place }"
-  >
+  <div class="status-bar__slot" :data-status-bar-slot="place" v-bind="{ [SLOT_ATTRIBUTE]: place }">
     <template v-for="entry in entries" :key="entry.key">
       <span v-if="entry.kind === 'separator'" class="status-bar__gap" data-status-bar-gap />
       <SlotMenuButton

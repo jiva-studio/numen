@@ -65,11 +65,7 @@ function markEntry(entry: SlotItem): Record<string, string> {
 </script>
 
 <template>
-  <div
-    class="title-bar__slot"
-    :data-title-bar-slot="name"
-    v-bind="{ [SLOT_ATTRIBUTE]: name }"
-  >
+  <div class="title-bar__slot" :data-title-bar-slot="name" v-bind="{ [SLOT_ATTRIBUTE]: name }">
     <template v-for="entry in entries" :key="getKey(entry)">
       <template v-if="isDrawn(entry)">
         <span

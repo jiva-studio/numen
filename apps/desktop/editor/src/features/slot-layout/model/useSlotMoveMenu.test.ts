@@ -45,8 +45,7 @@ const create = (layout: SlotLayout = {}) => {
   scopes.push(scope)
   const menu = scope.run(() =>
     useSlotMoveMenu({
-      findLayoutKey: (itemKey, slot) =>
-        slot === 'fileTree.context' ? undefined : KEYS[itemKey],
+      findLayoutKey: (itemKey, slot) => (slot === 'fileTree.context' ? undefined : KEYS[itemKey]),
       listEntries: (slot) => DRAWN[slot] ?? [],
       getSlotTitle: (slot) => `title of ${slot}`,
       getLayout: () => layout,
@@ -110,7 +109,10 @@ describe('the right click on a bar entry', () => {
     const left = findItem(menu, 'title of statusBar.left')
     const commands = findItem(menu, 'title of titleBar.commands')
 
-    expect(status?.children?.map((one) => one.text)).toStrictEqual(['Index statistics', 'At the end'])
+    expect(status?.children?.map((one) => one.text)).toStrictEqual([
+      'Index statistics',
+      'At the end',
+    ])
     expect(left?.children?.map((one) => one.text)).toStrictEqual(['Clock', 'At the end'])
     expect(commands?.children?.map((one) => one.text)).toStrictEqual(['At the end'])
   })
