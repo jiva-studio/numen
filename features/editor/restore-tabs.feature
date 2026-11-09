@@ -1,7 +1,11 @@
 Feature: Restore tabs
   A person leaves tabs open. When the window starts again, each tab is restored at the place where the person left it.
 
-  Scenario: A note tab is restored with the text written in it
+  Background:
+    Given the empty vault "Test"
+    And the application "editor" starts
+
+  Scenario: A note keeps its text
     Given the vault has the following:
       | path                   | text |
       | notes/Shopping list.md | tea  |
@@ -11,17 +15,26 @@ Feature: Restore tabs
     When the application "editor" starts
     Then the note titled "Shopping list" has "bread"
 
-  Scenario: A PDF tab is restored on the same page
-    Given the tab at "assets/shore.pdf" is open at page "2"
+  Scenario: A PDF keeps its page
+    Given the vault has the following:
+      | path             | sample    |
+      | assets/shore.pdf | shore.pdf |
+    And the PDF tab at "assets/shore.pdf" is open at page "2"
     When the application "editor" starts
-    Then the tab at "assets/shore.pdf" is at page "2"
+    Then the PDF tab at "assets/shore.pdf" is at page "2"
 
-  Scenario: A book tab is restored on the same page
-    Given the tab at "assets/ledger.epub" is open at page "2"
+  Scenario: A book keeps its page
+    Given the vault has the following:
+      | path               | sample      |
+      | assets/ledger.epub | ledger.epub |
+    And the book tab at "assets/ledger.epub" is open at page "2"
     When the application "editor" starts
-    Then the tab at "assets/ledger.epub" is at page "2"
+    Then the book tab at "assets/ledger.epub" is at page "2"
 
-  Scenario: A recording tab is restored at the same time
-    Given the tab at "assets/talk.mp3" is open at time "2:00"
+  Scenario: A recording keeps its time
+    Given the vault has the following:
+      | path            | sample   |
+      | assets/talk.mp3 | talk.mp3 |
+    And the recording tab at "assets/talk.mp3" is open at time "2:00"
     When the application "editor" starts
-    Then the tab at "assets/talk.mp3" is at time "2:00"
+    Then the recording tab at "assets/talk.mp3" is at time "2:00"
