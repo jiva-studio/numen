@@ -121,7 +121,6 @@ func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.Plug
 		Icon:      entry.Command.Icon,
 		Arguments: arguments,
 		When:      entry.Command.When,
-		Shortcut:  entry.Command.Shortcut,
 		HasItems:  list.HasItems(entry.Command),
 	}
 }

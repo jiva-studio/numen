@@ -39,3 +39,16 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 	}
 	return nil, false
 }
+
+// ListAppKeybindings lists the keys of the application in the order commands.json declares them.
+func ListAppKeybindings() []Keybinding {
+	return []Keybinding{
+		{Key: "mod+n", Command: "app:note.create"},
+		{Key: "mod+shift+n", Command: "app:vault.create"},
+		{Key: "mod+g", Command: "app:file.open"},
+		{Key: "mod+shift+c", Command: "app:note.createChild"},
+		{Key: "mod+shift+w", Command: "app:tab.close"},
+		{Key: "mod+k", Command: "app:vault.search"},
+		{Key: "mod+p", Command: "app:commands.open"},
+	}
+}

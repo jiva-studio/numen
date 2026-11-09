@@ -465,8 +465,6 @@ type PluginCommand struct {
 	Icon string `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	// when is the CEL condition under which the command is available, as the manifest declares it.
 	When string `protobuf:"bytes,10,opt,name=when,proto3" json:"when,omitempty"`
-	// shortcut is the keystroke the plugin suggests for the command.
-	Shortcut string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
 	// has_items is set for a command that offers items, which a place reads
 	// with ListCommandItems and runs with the id of the one picked as the
 	// item_id of RunPluginCommand.
@@ -543,13 +541,6 @@ func (x *PluginCommand) GetIcon() string {
 func (x *PluginCommand) GetWhen() string {
 	if x != nil {
 		return x.When
-	}
-	return ""
-}
-
-func (x *PluginCommand) GetShortcut() string {
-	if x != nil {
-		return x.Shortcut
 	}
 	return ""
 }
@@ -1098,7 +1089,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\thas_items\x18\x03 \x01(\bR\bhasItems\"a\n" +
 	"\x0fPluginSlotEntry\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x121\n" +
-	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xec\x01\n" +
+	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xd6\x01\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -1106,9 +1097,9 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\x12\x12\n" +
 	"\x04icon\x18\a \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\n" +
-	" \x01(\tR\x04when\x12\x1a\n" +
-	"\bshortcut\x18\t \x01(\tR\bshortcut\x12\x1b\n" +
-	"\thas_items\x18\v \x01(\bR\bhasItems\"\\\n" +
+	" \x01(\tR\x04when\x12\x1b\n" +
+	"\thas_items\x18\v \x01(\bR\bhasItemsJ\x04\b\t\x10\n" +
+	"\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +

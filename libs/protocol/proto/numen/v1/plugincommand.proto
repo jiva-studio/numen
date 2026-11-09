@@ -133,8 +133,7 @@ message PluginCommand {
   // when is the CEL condition under which the command is available, as the manifest declares it.
   string when = 10;
 
-  // shortcut is the keystroke the plugin suggests for the command.
-  string shortcut = 9;
+  reserved 9;
 
   // has_items is set for a command that offers items, which a place reads
   // with ListCommandItems and runs with the id of the one picked as the

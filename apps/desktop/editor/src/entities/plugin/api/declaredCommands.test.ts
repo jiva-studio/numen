@@ -167,7 +167,7 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
-  it('are read with their condition, shortcut, destination flag and the parts of their plugin', async () => {
+  it('are read with their condition, destination flag and the parts of their plugin', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
@@ -176,7 +176,6 @@ describe('the commands the plugins declare', () => {
           title: 'Show note in file tree',
           icon: 'folder-open',
           when: 'target.isNote',
-          shortcut: 'mod+shift+e',
           arguments: [],
         },
       ],
@@ -193,7 +192,6 @@ describe('the commands the plugins declare', () => {
       title: 'Show note in file tree',
       icon: 'folder-open',
       when: 'target.isNote',
-      shortcut: 'mod+shift+e',
       arguments: [],
     })
   })

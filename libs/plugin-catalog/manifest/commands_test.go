@@ -86,21 +86,3 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 		})
 	}
 }
-
-func TestAFrontendCommandKeepsItsConditionAndShortcut(t *testing.T) {
-	text := `{"id":"a.b","name":"A","version":"1.0.0","frontend":{},"backend":{"entrypoint":"bin/a"},"contributes":{"commands":[{"id":"tree.open","title":"T","when":"target.isNote","shortcut":"mod+shift+e"}]}}`
-
-	if _, err := manifestjson.Read(strings.NewReader(text)); err != nil {
-		t.Errorf("a plugin with both parts was refused: %v", err)
-	}
-}
-
-func TestACommandOfAPluginWithOnlyABackendDeclaresNoShortcut(t *testing.T) {
-	text := commandManifestHead + `[{"id":"deck.create","title":"T","shortcut":"mod+shift+e"}]}}`
-
-	_, err := manifestjson.Read(strings.NewReader(text))
-
-	if !errors.Is(err, manifest.ErrInvalidCommand) {
-		t.Errorf("error = %v, want an invalid command", err)
-	}
-}

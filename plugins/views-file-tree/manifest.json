@@ -21,7 +21,6 @@
         "id": "tree.open",
         "title": "Open file tree",
         "icon": "folder-tree",
-        "shortcut": "mod+shift+e",
         "when": "window.isVaultOpen"
       },
       {
@@ -68,6 +67,9 @@
         "when": "!target.isRoot && !target.isMultiple"
       },
       { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
+    ],
+    "keybindings": [
+      { "key": "mod+shift+e", "command": "tree.open" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

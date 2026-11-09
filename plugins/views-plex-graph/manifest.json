@@ -21,15 +21,13 @@
         "id": "graph.open",
         "title": "Open plex graph",
         "icon": "waypoints",
-        "shortcut": "mod+shift+x",
         "when": "window.isVaultOpen"
       },
       {
         "id": "graph.showNote",
         "title": "Show note in plex",
         "icon": "waypoints",
-        "when": "target.isNote",
-        "shortcut": "mod+shift+p"
+        "when": "target.isNote"
       }
     ],
     "slots": [
@@ -86,6 +84,10 @@
       },
       { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
       { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
+    ],
+    "keybindings": [
+      { "key": "mod+shift+x", "command": "graph.open" },
+      { "key": "mod+shift+p", "command": "graph.showNote" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

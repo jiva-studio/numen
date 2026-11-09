@@ -18,7 +18,6 @@ interface WireCommand {
   readonly title: string
   readonly icon?: string
   readonly when: string
-  readonly shortcut?: string
   readonly hasItems?: boolean
   readonly arguments: readonly {
     readonly name: string
@@ -116,7 +115,6 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   title: wire.title,
   ...(wire.icon ? { icon: wire.icon } : {}),
   ...(wire.when ? { when: wire.when } : {}),
-  ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   ...(wire.hasItems ? { hasItems: true as const } : {}),
   arguments: wire.arguments.map((one) => ({
     name: one.name,

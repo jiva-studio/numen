@@ -55,10 +55,11 @@ test('a plugin is read with its settings, declared and registered commands', () 
                 title: 'Dim a text',
                 when: "version.plugin == 'md.numen.tools.lantern'",
               },
-              { id: 'lamp.create', title: 'New lamp', shortcut: 'mod+shift+l' },
+              { id: 'lamp.create', title: 'New lamp' },
               { id: 'wick.trim', title: 'Trim the wick', when: 'target.isNote' },
             ],
             handlers: [{ command: 'app:file.createText', title: 'Read the lantern' }],
+            keybindings: [{ key: 'mod+shift+l', command: 'lamp.create' }],
           },
         },
         {
@@ -109,7 +110,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
     },
   ))
 
-test('a shortcut the window cannot draw is refused', () =>
+test('a key the window cannot draw is refused', () =>
   withPlugins(
     (root) =>
       writePlugin(
@@ -121,7 +122,10 @@ test('a shortcut the window cannot draw is refused', () =>
           version: '1.0.0',
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
-          contributes: { commands: [{ id: 'ring.create', title: 'Ring', shortcut: 'alt+f4' }] },
+          contributes: {
+            commands: [{ id: 'ring.create', title: 'Ring' }],
+            keybindings: [{ key: 'alt+f4', command: 'ring.create' }],
+          },
         },
         {
           'index.ts':
@@ -133,7 +137,7 @@ test('a shortcut the window cannot draw is refused', () =>
         assert.ok(error instanceof ReadError)
         assert.equal(
           error.message,
-          "tools-bell declares the shortcut 'alt+f4', which the window draws as nothing",
+          "tools-bell binds the key 'alt+f4', which the window draws as nothing",
         )
         return true
       }),

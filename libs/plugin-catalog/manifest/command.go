@@ -46,7 +46,6 @@ type Command struct {
 	Icon      string
 	When      string
 	Arguments []CommandArgument
-	Shortcut  string
 }
 
 // CommandArgument is one argument a command takes.
@@ -80,9 +79,6 @@ func (m Manifest) listCommandIssues() []error {
 		observed[command.ID] = true
 		if strings.TrimSpace(command.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
-		}
-		if m.Backend != (Backend{}) && !m.HasFrontend() && command.Shortcut != "" {
-			issues = append(issues, fmt.Errorf("%w: %q declares a shortcut, and its plugin has no frontend to run it", ErrInvalidCommand, command.ID))
 		}
 		issues = append(issues, listCommandWhenIssues(command)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
