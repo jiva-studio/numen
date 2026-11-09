@@ -46,6 +46,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     window.removeEventListener('pointerup', drop)
     window.removeEventListener('pointercancel', cancel)
     releaseCapture()
+    dropTarget.value = null
+    position.value = null
   }
 
   function drag(event: PointerEvent): void {
@@ -84,14 +86,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (target.hasMoved) press.cancel?.(target.item)
   }
 
-  function clear(): void {
-    detach()
-    dropTarget.value = null
-    position.value = null
-  }
-
   function end(): void {
-    clear()
+    detach()
     press.getClock().schedule(() => {
       dragging.value = null
     })
@@ -125,7 +121,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function abandon(): void {
-    clear()
+    detach()
     dragging.value = null
   }
 
