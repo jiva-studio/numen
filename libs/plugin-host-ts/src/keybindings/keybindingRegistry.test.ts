@@ -7,7 +7,7 @@ const CTRL_P = press({ code: 'KeyP', ctrlKey: true })
 
 function create(isMac = false) {
   const report = vi.fn()
-  const registry = createKeybindingRegistry({ isMac, whenReader: createWhenReader(), report })
+  const registry = createKeybindingRegistry({ isMac: () => isMac, whenReader: createWhenReader(), report })
   return { registry, report }
 }
 
@@ -57,6 +57,21 @@ describe('the keybinding registry', () => {
     expect(mac.match(CTRL_P, {})).toBeUndefined()
     expect(other.match(CTRL_P, {})).toBeDefined()
     expect(other.match(press({ code: 'KeyP', metaKey: true }), {})).toBeUndefined()
+  })
+
+  it('reads mod as Meta, not Ctrl, when the platform turns out to be macOS after the registration', () => {
+    let isMac = false
+    const registry = createKeybindingRegistry({
+      isMac: () => isMac,
+      whenReader: createWhenReader(),
+    })
+    registry.register('app', [bind('mod+p', 'app:commands.open')])
+    expect(registry.match(CTRL_P, {})).toBeDefined()
+
+    isMac = true
+
+    expect(registry.match(press({ code: 'KeyP', metaKey: true }), {})).toBeDefined()
+    expect(registry.match(CTRL_P, {})).toBeUndefined()
   })
 
   it('matches the Russian layout by the physical key', () => {

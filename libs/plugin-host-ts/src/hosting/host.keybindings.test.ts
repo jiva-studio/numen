@@ -59,6 +59,20 @@ describe('the keys of the plugins', () => {
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, { book: 'main' })
   })
 
+  it('read mod as Meta once the platform of the application turns out to be macOS', async () => {
+    let platform: 'windows' | 'darwin' = 'windows'
+    const app = { name: 'Numen', version: '1.0.0', build: 1, get platform() { return platform } }
+    const { host, handler } = create([LEDGER], { app })
+    host.registerKeybindings('org.example.ledger', [{ key: 'mod+l', command: 'ledger.open' }])
+    platform = 'darwin'
+
+    expect(host.handleShortcut(CTRL_L, async () => NOTE)).toBe(false)
+    expect(host.handleShortcut(press({ code: 'KeyL', metaKey: true }), async () => NOTE)).toBe(true)
+    await settle()
+
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
   it('are read from the keybindings of the manifest', async () => {
     const { host, handler } = create()
     const parsed = parseManifest(

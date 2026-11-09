@@ -4,8 +4,12 @@
  * in any layout, the Russian one included.
  */
 
-/** A chord read once: the modifiers it needs held, and the `code` of its key. */
+/**
+ * A chord read once: the modifiers it needs held, and the `code` of its key. `mod` stands for Meta on
+ * macOS and Ctrl elsewhere; the platform is known when an event is matched, not when the chord is read.
+ */
 export interface ParsedKey {
+  readonly mod: boolean
   readonly ctrl: boolean
   readonly meta: boolean
   readonly alt: boolean
@@ -52,10 +56,10 @@ function getCode(name: string): string | undefined {
 }
 
 /**
- * The chord read for a platform, where `mod` is Meta on macOS and Ctrl elsewhere. Undefined where a
- * part is not a modifier (mod, ctrl, alt, shift, meta) or the last part is not a known key name.
+ * The chord read. Undefined where a part is not a modifier (mod, ctrl, alt, shift, meta) or the last
+ * part is not a known key name.
  */
-export function parseKey(text: string, isMac: boolean): ParsedKey | undefined {
+export function parseKey(text: string): ParsedKey | undefined {
   const parts = text
     .toLowerCase()
     .split('+')
@@ -65,8 +69,9 @@ export function parseKey(text: string, isMac: boolean): ParsedKey | undefined {
   if (code === undefined || parts.some((part) => !MODIFIERS.has(part))) return undefined
   const has = (modifier: string) => parts.includes(modifier)
   return {
-    ctrl: has('ctrl') || (has('mod') && !isMac),
-    meta: has('meta') || (has('mod') && isMac),
+    mod: has('mod'),
+    ctrl: has('ctrl'),
+    meta: has('meta'),
     alt: has('alt'),
     shift: has('shift'),
     code,
@@ -79,12 +84,15 @@ function getEventCode(event: KeyboardEvent): string {
   return getCode(event.key.toLowerCase()) ?? ''
 }
 
-/** Whether the event is the chord: its physical key, with exactly the modifiers the chord needs held. */
-export function isKeyEvent(parsed: ParsedKey, event: KeyboardEvent): boolean {
+/**
+ * Whether the event is the chord: its physical key, with exactly the modifiers the chord needs held,
+ * where `mod` is Meta if `isMac` and Ctrl if not.
+ */
+export function isKeyEvent(parsed: ParsedKey, event: KeyboardEvent, isMac: boolean): boolean {
   return (
     getEventCode(event) === parsed.code &&
-    event.ctrlKey === parsed.ctrl &&
-    event.metaKey === parsed.meta &&
+    event.ctrlKey === (parsed.ctrl || (parsed.mod && !isMac)) &&
+    event.metaKey === (parsed.meta || (parsed.mod && isMac)) &&
     event.altKey === parsed.alt &&
     event.shiftKey === parsed.shift
   )

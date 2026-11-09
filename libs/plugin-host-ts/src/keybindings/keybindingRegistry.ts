@@ -32,7 +32,8 @@ export interface Keybinding {
 }
 
 export interface KeybindingRegistryDeps {
-  readonly isMac: boolean
+  /** Whether the window runs on macOS, asked at each match: the platform may be known after the registry is built. */
+  readonly isMac: () => boolean
   readonly whenReader: WhenReader
   /** Reports an issue of the keybindings of an owner: a key or condition that cannot be read, a conflict. */
   readonly report?: ((owner: string, message: string) => void) | undefined
@@ -83,7 +84,7 @@ export function createKeybindingRegistry(deps: KeybindingRegistryDeps): Keybindi
   }
 
   const read = (owner: string, source: KeybindingSource): Keybinding | undefined => {
-    const parsed = parseKey(source.key, isMac)
+    const parsed = parseKey(source.key)
     if (!parsed) {
       report(owner, `keybindings: the key "${source.key}" cannot be read`)
       return undefined
@@ -131,9 +132,10 @@ export function createKeybindingRegistry(deps: KeybindingRegistryDeps): Keybindi
       keybindings = keybindings.filter((one) => one.owner !== owner)
     },
     match: (event, context, canRun) => {
+      const isMacNow = isMac()
       const candidates = keybindings.filter(
         (one) =>
-          isKeyEvent(one.parsed, event) &&
+          isKeyEvent(one.parsed, event, isMacNow) &&
           one.condition.evaluate(context) &&
           (canRun?.(one) ?? true),
       )

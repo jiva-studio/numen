@@ -264,7 +264,7 @@ function createRegisteredApi(registry: HostRegistry) {
 /** The keybindings of the application, and those the manifests of the plugins declare. */
 function createKeybindingApi(deps: PluginHostDeps & { readonly whenReader: WhenReader }) {
   const keybindings = createKeybindingRegistry({
-    isMac: deps.app?.platform === 'darwin',
+    isMac: () => deps.app?.platform === 'darwin',
     whenReader: deps.whenReader,
     report: (owner, message) => deps.reportSlotIssue?.(owner, message, 'warning'),
   })
