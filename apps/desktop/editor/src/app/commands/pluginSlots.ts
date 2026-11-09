@@ -85,7 +85,7 @@ export function createSlotCommandFinder(
     return {
       title: look.title,
       ...(look.icon ? { icon: getNamedIcon(look.icon) } : {}),
-      shortcut: look.shortcut ?? '',
+      shortcut: hostCommand?.shortcut ?? '',
       hasItems,
     }
   }

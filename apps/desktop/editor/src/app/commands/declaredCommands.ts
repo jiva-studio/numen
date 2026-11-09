@@ -119,7 +119,6 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   title: command.title,
   ...(command.icon ? { icon: command.icon } : {}),
   ...(command.when ? { when: command.when } : {}),
-  ...(command.shortcut ? { shortcut: command.shortcut } : {}),
 })
 
 const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({

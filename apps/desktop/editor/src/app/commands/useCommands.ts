@@ -299,7 +299,7 @@ export function useCommands(options: CommandsDepsOptions) {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
-    if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
+    if (pluginHost?.handleShortcut(event, getNote, getTarget())) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
     if (!command) return

@@ -162,7 +162,7 @@ export interface CommandNote extends CommandTarget {
 }
 
 // CommandRegistration binds the handler of a command the manifest declares under `contributes.commands`.
-// The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
+// The title, icon and scope are read from the declaration. A handler registered for an id the
 // manifest does not declare is never listed. The handler gets the id of the item picked, and the values of
 // the arguments by their declared names, empty when none were given.
 export interface CommandRegistration {

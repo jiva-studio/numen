@@ -83,12 +83,15 @@ function listUndeclared(registry: HostRegistry, declaredIds: ReadonlySet<string>
     .map(([, entry]) => ({ pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' }))
 }
 
-/** The palette's view of an listed command. */
-export function createPaletteCommand({ id, declaration }: AvailableCommand): PluginPaletteCommand {
+/** The palette's view of a listed command; `key` is the key bound to it, which the palette draws. */
+export function createPaletteCommand(
+  { id, declaration }: AvailableCommand,
+  key?: string,
+): PluginPaletteCommand {
   return {
     id,
     title: declaration.title,
-    ...(declaration.shortcut ? { shortcut: declaration.shortcut } : {}),
+    ...(key ? { shortcut: key } : {}),
     ...(declaration.when ? { when: declaration.when } : {}),
     ...(declaration.icon ? { icon: declaration.icon } : {}),
   }

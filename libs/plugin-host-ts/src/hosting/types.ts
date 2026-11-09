@@ -61,7 +61,6 @@ export interface CommandDeclaration {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  readonly shortcut?: string
   readonly when?: string
 }
 
@@ -96,6 +95,7 @@ export interface CommandRun {
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
+  /** The key bound to the command by a keybinding, such as `mod+shift+e`. */
   readonly shortcut?: string
   readonly when?: string
   readonly icon?: string

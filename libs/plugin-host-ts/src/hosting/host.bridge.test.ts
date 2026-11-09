@@ -3,7 +3,6 @@ import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
-import { matchesShortcut } from './shortcuts'
 import type { PluginHostDeps } from './types'
 
 function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
@@ -95,11 +94,11 @@ describe('command handlers', () => {
             pluginId: 'cmd.plugin',
             id: 'run',
             title: 'run',
-            shortcut: 'ctrl+k',
           },
         ],
       }),
     )
+    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+k', command: 'run' }])
     const fault = new Error('boom')
     host.createContext('cmd.plugin').registerCommand({
       id: 'run',
@@ -190,12 +189,12 @@ describe('a command over a note', () => {
             pluginId: 'cmd.plugin',
             id: 'summary',
             title: 'Open summary',
-            shortcut: 'ctrl+p',
             when: 'target.isNote',
           },
         ],
       }),
     )
+    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+p', command: 'summary' }])
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
@@ -266,7 +265,6 @@ describe('a tab kind component', () => {
           pluginId: 'reader.plugin',
           id: 'rich',
           title: 'Rich',
-          shortcut: 'ctrl+b',
           when: 'target.isNote',
           icon: 'star',
         },
@@ -283,6 +281,7 @@ describe('a tab kind component', () => {
     })
     const host = createPluginHost(deps)
     host.registerManifest('reader.plugin', READ_WRITE)
+    host.registerKeybindings('reader.plugin', [{ key: 'ctrl+b', command: 'rich' }])
     const ctx = host.createContext('reader.plugin')
     expect(host.createContext('reader.plugin')).toBe(ctx)
     expect(ctx.hasPermission?.('vault:read')).toBe(true)
@@ -383,58 +382,5 @@ describe('a tab kind component', () => {
         tab: '',
       }),
     ).resolves.toBe(true)
-  })
-})
-
-describe('matchesShortcut', () => {
-  it('matches modifier combinations and key names accurately', () => {
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k' }))).toBe(false)
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k' }), '')).toBe(false)
-
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'K', ctrlKey: true }), 'ctrl + k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'control+k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'mod+k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'cmd+k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', ctrlKey: false }), 'ctrl+k'),
-    ).toBe(false)
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }), 'k')).toBe(
-      false,
-    )
-
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'alt+k')).toBe(
-      true,
-    )
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'option+k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: false }), 'alt+k'),
-    ).toBe(false)
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'k')).toBe(
-      false,
-    )
-
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: true }), 'shift+k'),
-    ).toBe(true)
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: false }), 'shift+k'),
-    ).toBe(false)
-    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: true }), 'k')).toBe(
-      false,
-    )
-
-    expect(
-      matchesShortcut(new KeyboardEvent('keydown', { key: 'x', ctrlKey: true }), 'ctrl+k'),
-    ).toBe(false)
   })
 })

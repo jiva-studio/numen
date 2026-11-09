@@ -22,7 +22,6 @@ const openPreset: DeclaredCommand = {
   id: 'preset.open',
   title: 'Open preset',
   when: 'target.isNote',
-  shortcut: 'mod+shift+o',
 }
 const openTree: DeclaredCommand = {
   ...base,
@@ -74,7 +73,7 @@ describe('the declared commands the palette runs in a backend', () => {
 })
 
 describe('the declarations for the plugin host', () => {
-  it('carry every declared command with its title, icon, condition and shortcut', async () => {
+  it('carry every declared command with its title, icon and condition', async () => {
     const declared = await load(() => false)
 
     expect(declared.declarations.value).toStrictEqual([
@@ -88,7 +87,6 @@ describe('the declarations for the plugin host', () => {
         id: 'preset.open',
         title: 'Open preset',
         when: 'target.isNote',
-        shortcut: 'mod+shift+o',
       },
       {
         pluginId: 'md.tree',

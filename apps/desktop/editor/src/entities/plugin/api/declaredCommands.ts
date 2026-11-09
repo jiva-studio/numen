@@ -85,7 +85,6 @@ export interface DeclaredCommand {
   readonly title: string
   readonly icon?: string
   readonly when?: string
-  readonly shortcut?: string
   readonly hasItems?: true
   readonly arguments: readonly DeclaredArgument[]
 }

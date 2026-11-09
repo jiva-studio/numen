@@ -18,7 +18,6 @@ function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration 
     id: 'tree.open',
     title: 'Open file tree',
     icon: 'folder-tree',
-    shortcut: 'mod+shift+e',
     ...changes,
   }
 }
@@ -36,7 +35,7 @@ function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHos
 }
 
 describe('the commands a plugin declares in its manifest', () => {
-  it('are listed with the title, icon, condition and shortcut of the declaration once the handler is registered', () => {
+  it('are listed with the title, icon and condition of the declaration, and the key bound to them, once the handler is registered', () => {
     const { host } = createHost([
       declare({
         id: 'tree.revealNote',
@@ -45,6 +44,7 @@ describe('the commands a plugin declares in its manifest', () => {
       }),
     ])
 
+    host.registerKeybindings('md.tree', [{ key: 'mod+shift+e', command: 'tree.revealNote' }])
     host.createContext('md.tree').registerCommand({ id: 'tree.revealNote', handler: vi.fn() })
 
     expect(host.getPaletteCommands()).toStrictEqual([
@@ -124,19 +124,17 @@ describe('the commands a plugin declares in its manifest', () => {
   it('are gone with a disabled plugin, bind no shortcut, and return with the plugin', () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
+    const keys = [{ key: 'mod+shift+e', command: 'tree.open' }]
+    host.registerKeybindings('md.tree', keys)
     host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
-    const event = new KeyboardEvent('keydown', {
-      key: 'e',
-      shiftKey: true,
-      ctrlKey: true,
-      metaKey: true,
-    })
+    const event = new KeyboardEvent('keydown', { code: 'KeyE', shiftKey: true, ctrlKey: true })
 
     host.disposePlugin('md.tree')
 
     expect(host.getPaletteCommands()).toStrictEqual([])
     expect(host.handleShortcut(event, async () => note)).toBe(false)
 
+    host.registerKeybindings('md.tree', keys)
     host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
