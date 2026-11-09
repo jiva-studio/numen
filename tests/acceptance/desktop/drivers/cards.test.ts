@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  assertCardFileIsFree,
+  assertCardFileKind,
+  assertTemplatesAreNew,
   countCards,
   createCardId,
   createCardModelText,
@@ -130,5 +133,40 @@ describe('the settings of a preset', () => {
     expect(() => parsePresetSettings([['Setting', 'Value'], ['Budget unit', 'Words']])).toThrow(
       'the setting "Budget unit": "Words" is not one of Cards, Reviews',
     )
+  })
+})
+
+describe('the rules of a card file', () => {
+  const model = createCardModelText('Animal', ['Name'])
+  const deck = createDeckText('Animal')
+
+  it('refuses a second file with one title, a model and a deck alike', () => {
+    expect(() => assertCardFileIsFree('Test', 'Animal', deck)).toThrow(
+      'the vault Test already has cards/Animal.md: a card model, a deck and a preset need different titles',
+    )
+    expect(() => assertCardFileIsFree('Test', 'Animal', undefined)).not.toThrow()
+  })
+
+  it('gives the text of the file to add to', () => {
+    expect(assertCardFileKind(model, 'Animal', 'card model')).toBe(model)
+    expect(assertCardFileKind(deck, 'Animal', 'deck')).toBe(deck)
+  })
+
+  it('refuses a missing file', () => {
+    expect(() => assertCardFileKind(undefined, 'Animal', 'card model')).toThrow(
+      'the vault has no card model "Animal": make it with its fields first',
+    )
+    expect(() => assertCardFileKind(undefined, 'Zoo', 'deck')).toThrow('the vault has no deck "Zoo": make it first')
+  })
+
+  it('refuses a file of another type', () => {
+    expect(() => assertCardFileKind(deck, 'Animal', 'card model')).toThrow('the vault has a deck "Animal", not a card model')
+    expect(() => assertCardFileKind(model, 'Animal', 'deck')).toThrow('the vault has a card model "Animal", not a deck')
+  })
+
+  it('refuses templates given twice', () => {
+    expect(() => assertTemplatesAreNew(model, 'Animal')).not.toThrow()
+    const given = model + createTemplatesText([{ name: 'A', front: 'f', back: 'b' }])
+    expect(() => assertTemplatesAreNew(given, 'Animal')).toThrow('already has its templates')
   })
 })

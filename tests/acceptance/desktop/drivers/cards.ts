@@ -27,6 +27,33 @@ export const getCardFile = (title: string): string => {
   return `${CARDS_FOLDER}/${title.trim()}.md`
 }
 
+/** The type a card file declares in its frontmatter: card-model, deck or preset. */
+export const readCardType = (text: string): string | undefined => {
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? ''
+  return /^type:\s*(\S+)\s*$/m.exec(frontmatter)?.[1]
+}
+
+export const assertCardFileIsFree = (vault: string, title: string, existing: string | undefined): void => {
+  if (existing !== undefined) {
+    throw new Error(`the vault ${vault} already has ${getCardFile(title)}: a card model, a deck and a preset need different titles`)
+  }
+}
+
+const CARD_KIND_NAMES: Readonly<Record<string, string>> = { 'card-model': 'card model', deck: 'deck', preset: 'preset' }
+
+/** The text of the card file to add to; fails when the file is missing or is not of the kind named. */
+export const assertCardFileKind = (existing: string | undefined, title: string, kind: 'card model' | 'deck'): string => {
+  const hint = kind === 'card model' ? 'make it with its fields first' : 'make it first'
+  if (existing === undefined) throw new Error(`the vault has no ${kind} "${title}": ${hint}`)
+  const found = CARD_KIND_NAMES[readCardType(existing) ?? ''] ?? 'file of another type'
+  if (found !== kind) throw new Error(`the vault has a ${found} "${title}", not a ${kind}`)
+  return existing
+}
+
+export const assertTemplatesAreNew = (modelText: string, title: string): void => {
+  if (/^## /m.test(modelText)) throw new Error(`the card model "${title}" already has its templates: they are given once`)
+}
+
 const quote = (text: string): string => (/^[\w][\w ]*$/u.test(text) ? text : JSON.stringify(text))
 
 const assertHeader = (rows: readonly string[][], header: readonly string[], what: string): string[][] => {
