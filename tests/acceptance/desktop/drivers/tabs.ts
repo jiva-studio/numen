@@ -12,6 +12,7 @@ import {
   getTitlePattern,
   parseReference,
   pickKindTab,
+  type Place,
   type TabKindChoice,
 } from './rules.js'
 import type { Scenario } from './scenario.js'
@@ -180,13 +181,13 @@ export class TabDriver {
     await expect(await this.getTab(kind, reference, name)).toHaveAttribute('aria-selected', 'true')
   }
 
-  async openAt(kind: TabKindChoice, reference: string, name: string, place: { position: string; where: string }): Promise<void> {
+  async openAt(kind: TabKindChoice, reference: string, name: string, place: Place): Promise<void> {
     await this.scenario.ensureWorkspace()
     await this.requireKindIfNamed(kind, reference, name)
     await openTabAt(this.scenario.page, await this.scenario.getPath(reference, name), place.position, place.where)
   }
 
-  async expectAt(kind: TabKindChoice, reference: string, name: string, place: { position: string; where: string }): Promise<void> {
+  async expectAt(kind: TabKindChoice, reference: string, name: string, place: Place): Promise<void> {
     await this.requireKindIfNamed(kind, reference, name)
     await expectTabAt(this.scenario.page, await this.scenario.getPath(reference, name), place.position, place.where)
   }

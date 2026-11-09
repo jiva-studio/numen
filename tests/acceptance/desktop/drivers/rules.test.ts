@@ -13,6 +13,7 @@ import {
   getPaletteField,
   parseCount,
   parseReference,
+  parsePlace,
   parseTabKind,
   parseTime,
   pickKindTab,
@@ -252,5 +253,16 @@ describe('pickKindTab', () => {
     expect(() => pickKindTab('note', [note, { id: 'note:2', kind: 'note' }], 'titled', 'A')).toThrow(
       '2 Note tabs match "A": use "at" with the path',
     )
+  })
+})
+
+describe('parsePlace', () => {
+  it('takes a page or a time with its value', () => {
+    expect(parsePlace('page "2"')).toEqual({ position: 'page', where: '2' })
+    expect(parsePlace('time "2:00"')).toEqual({ position: 'time', where: '2:00' })
+  })
+
+  it('fails on anything else', () => {
+    expect(() => parsePlace('line "2"')).toThrow('"line "2"" is not a place: write page "2" or time "2:00"')
   })
 })

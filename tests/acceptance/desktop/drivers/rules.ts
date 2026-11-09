@@ -204,3 +204,15 @@ export const pickKindTab = <T extends KindedTab>(
   const kinds = [...new Set(candidates.map((one) => `${getKindTitle(one.kind)} tab`))].join(' and a ')
   throw new Error(`the tab ${reference} "${name}" is a ${kinds}, not a ${TAB_KINDS[kind].title} tab`)
 }
+
+export interface Place {
+  position: string
+  where: string
+}
+
+/** The place a step names in `page "2"` or `time "2:00"`: the kind of position and the value of it. */
+export const parsePlace = (text: string): Place => {
+  const match = /^(page|time) "([^"]+)"$/.exec(text)
+  if (!match) throw new Error(`"${text}" is not a place: write page "2" or time "2:00"`)
+  return { position: match[1], where: match[2] }
+}

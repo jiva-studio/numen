@@ -1,4 +1,4 @@
-import type { TabKindChoice } from '../drivers/rules.js'
+import type { Place, TabKindChoice } from '../drivers/rules.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 When('the person closes the {tab} {reference} {string}', async ({ person }, kind: TabKindChoice, reference: string, name: string) => {
@@ -10,16 +10,16 @@ Then('the {tab} {reference} {string} is active', async ({ person }, kind: TabKin
 })
 
 Given(
-  'the {tab} {reference} {string} is open at {position} {string}',
-  async ({ person }, ...[kind, reference, name, position, where]: [TabKindChoice, string, string, string, string]) => {
-    await person.tab.openAt(kind, reference, name, { position, where })
+  'the {tab} {reference} {string} is open at {place}',
+  async ({ person }, kind: TabKindChoice, reference: string, name: string, place: Place) => {
+    await person.tab.openAt(kind, reference, name, place)
   },
 )
 
 Then(
-  'the {tab} {reference} {string} is at {position} {string}',
-  async ({ person }, ...[kind, reference, name, position, where]: [TabKindChoice, string, string, string, string]) => {
-    await person.tab.expectAt(kind, reference, name, { position, where })
+  'the {tab} {reference} {string} is at {place}',
+  async ({ person }, kind: TabKindChoice, reference: string, name: string, place: Place) => {
+    await person.tab.expectAt(kind, reference, name, place)
   },
 )
 

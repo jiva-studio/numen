@@ -1,5 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parseTabKind, parseVaultName } from '../drivers/rules.js'
+import { parsePlace, parseTabKind, parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -14,9 +14,9 @@ defineParameterType({
 })
 
 defineParameterType({
-  name: 'position',
-  regexp: /page|time/,
-  transformer: (position: string) => position,
+  name: 'place',
+  regexp: /(?:page|time) "[^"]+"/,
+  transformer: (place: string) => parsePlace(place),
 })
 
 defineParameterType({
