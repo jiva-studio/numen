@@ -42,6 +42,7 @@ function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
     rename: (path, title) => core.rename(path, title),
     remove: (path, isPermanent) => core.remove(path, isPermanent),
     move: (from, to) => core.move(from, to),
+    listNames: async (folder) => (await core.list(folder)).map((one) => one.name),
     createFolder: (path) => core.createFolder(path),
   }
 }

@@ -13,7 +13,6 @@ export const WORDS = {
   /** The row of a submenu of items while they are read. */
   loadingItems: 'Loading…',
   /** The name a folder is made under, which renaming it is what changes. */
-  folder: 'New folder',
   /** How many rows are being dragged, shown at the pointer while they are. */
   dragging: (files: number) => `${files} files`,
   /** The rows that kept their positions, because the folder holds those names. */

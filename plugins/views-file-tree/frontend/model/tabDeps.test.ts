@@ -121,14 +121,13 @@ describe('the menu of a row', () => {
 })
 
 describe('what else a files tab asks of the window', () => {
-  it('makes and moves through the files of the vault', async () => {
+  it('moves through the files of the vault', async () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     await deps.movePath('a.md', 'dir/a.md')
-    await deps.createFolder('dir')
 
-    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir'])
+    expect(recorded.made).toStrictEqual(['move a.md dir/a.md'])
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {
