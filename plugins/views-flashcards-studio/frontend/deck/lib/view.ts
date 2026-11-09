@@ -1,7 +1,7 @@
 /**
  * UI representation mappings and comparisons for decks and card models.
  */
-import type { DeckCard, DeckSection, CardModel } from '../../ui/cards'
+import type { DeckCard, DeckSection, CardModel } from '../../lib/cards'
 import type { CardModelSummary, VaultCard } from '../../cards'
 import type { BufferDeck } from '../types'
 import {

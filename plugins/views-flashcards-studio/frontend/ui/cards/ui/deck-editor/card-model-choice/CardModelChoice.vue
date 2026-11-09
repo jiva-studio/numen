@@ -4,8 +4,8 @@
  * for each, under the question they answer.
  */
 import { Button } from '@numen/ui'
-import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
-import type { CardModel } from '../../../lib/card'
+import { DECK_WORDS, type DeckWords } from '../../../../../lib/cards'
+import type { CardModel } from '../../../../../lib/cards'
 
 withDefaults(
   defineProps<{

@@ -8,7 +8,7 @@
  * the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/stop'
 import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 

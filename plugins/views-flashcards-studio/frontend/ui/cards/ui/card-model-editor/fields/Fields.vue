@@ -13,8 +13,8 @@ import {
   type Problems,
   type InsertionPoint,
   type Objection,
-} from '../../../lib/order'
-import { fieldRows, CARD_MODEL_WORDS, type CardModelWords } from '../../../lib/card-model'
+} from '../../../../../lib/cards'
+import { fieldRows, CARD_MODEL_WORDS, type CardModelWords } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

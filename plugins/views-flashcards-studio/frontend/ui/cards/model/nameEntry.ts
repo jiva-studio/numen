@@ -2,7 +2,7 @@
  * In-progress name editing for items identified by target ID.
  */
 import { shallowRef } from 'vue'
-import type { NameCheckResult, Objection } from '../lib/order'
+import type { NameCheckResult, Objection } from '../../../lib/cards'
 
 /** In-progress name draft. */
 interface Draft {

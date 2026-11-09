@@ -1,7 +1,7 @@
 /**
  * Buffer parsing, marks caching, and field/template editing actions for card model tabs.
  */
-import type { Half } from '../../ui/cards'
+import type { Half } from '../../lib/cards'
 import {
   addTemplate,
   addField,

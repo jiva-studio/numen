@@ -1,7 +1,7 @@
-import type { CardModel } from '../../lib/card'
-import type { DeckProblems, DeckWords } from '../../lib/deck'
-import type { Run } from '../../lib/grid'
-import type { InsertionPoint } from '../../lib/order'
+import type { CardModel } from '../../../../lib/cards'
+import type { DeckProblems, DeckWords } from '../../../../lib/cards'
+import type { Run } from '../../../../lib/cards'
+import type { InsertionPoint } from '../../../../lib/cards'
 
 export interface DeckRunProps {
   run: Run

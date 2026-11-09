@@ -8,9 +8,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { getBlanks, HEAD, type DeckSection, type DeckCard, type DeckProblems } from '../../lib/deck'
-import { getDeclaredFields, type InsertionPoint } from '../../lib/order'
-import type { CardModel } from '../../lib/card'
+import {
+  getBlanks,
+  HEAD,
+  type DeckSection,
+  type DeckCard,
+  type DeckProblems,
+} from '../../../../lib/cards'
+import { getDeclaredFields, type InsertionPoint } from '../../../../lib/cards'
+import type { CardModel } from '../../../../lib/cards'
 
 interface Corpus {
   readonly cards: readonly DeckCard[]

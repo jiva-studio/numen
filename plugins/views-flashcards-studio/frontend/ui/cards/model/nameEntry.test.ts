@@ -5,7 +5,7 @@ import {
   checkHeadingName,
   type Objection,
   type HeadingObjection,
-} from '../lib/order'
+} from '../../../lib/cards'
 
 const overFields = (fields: readonly string[]) => {
   const renamedPairs: (readonly [string, string])[] = []

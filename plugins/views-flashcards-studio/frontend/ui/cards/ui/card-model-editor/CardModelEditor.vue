@@ -4,7 +4,12 @@ import { CardTemplate } from './template'
 import { Fields } from './fields'
 import { AddTemplate } from './add-template'
 import { useDrag } from '../../model/drag'
-import { getDeclaredFields, getFreeName, type Half, type InsertionPoint } from '../../lib/order'
+import {
+  getDeclaredFields,
+  getFreeName,
+  type Half,
+  type InsertionPoint,
+} from '../../../../lib/cards'
 import {
   templateRows,
   NO_CARD_MODEL_PROBLEMS,
@@ -12,8 +17,8 @@ import {
   type CardModelTemplate,
   type CardModelWords,
   type CardModelProblems,
-} from '../../lib/card-model'
-import { sampleValues } from '../../lib/fill'
+} from '../../../../lib/cards'
+import { sampleValues } from '../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

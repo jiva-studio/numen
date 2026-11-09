@@ -12,7 +12,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CardModel from './CardModelEditor.vue'
-import type { CardModelTemplate } from '../../lib/card-model'
+import type { CardModelTemplate } from '../../../../lib/cards'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 

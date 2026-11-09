@@ -10,8 +10,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { createRunEnd, HEAD, type DeckSection, type DeckCard } from '../../lib/deck'
-import type { CardModel } from '../../lib/card'
+import { createRunEnd, HEAD, type DeckSection, type DeckCard } from '../../../../lib/cards'
+import type { CardModel } from '../../../../lib/cards'
 
 const CUTS: readonly CardModel[] = [
   { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },

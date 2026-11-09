@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useDrag, type DragDeps } from './drag'
-import type { InsertionPoint } from '../lib/order'
+import type { InsertionPoint } from '../../../lib/cards'
 
 const dragEvent = (): {
   readonly press: DragEvent

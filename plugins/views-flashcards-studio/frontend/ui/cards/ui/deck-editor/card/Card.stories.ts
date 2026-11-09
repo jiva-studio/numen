@@ -9,9 +9,9 @@ import { expect, userEvent } from 'storybook/test'
 import { provide, ref, watch } from 'vue'
 import Card from './Card.vue'
 import { DECK_CONTEXT } from '../../../model/context'
-import type { DeckCard } from '../../../lib/deck'
-import { getGrid, type Tile } from '../../../lib/grid'
-import type { CardModel } from '../../../lib/card'
+import type { DeckCard } from '../../../../../lib/cards'
+import { getGrid, type Tile } from '../../../../../lib/cards'
+import type { CardModel } from '../../../../../lib/cards'
 
 interface Corpus {
   readonly card: DeckCard

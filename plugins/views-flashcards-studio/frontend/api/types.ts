@@ -7,6 +7,9 @@
  * An enumeration is a string; the empty string is the unspecified value. A response that can fail
  * on a note carries the failure in `error`.
  */
+import { BudgetName, StopReason } from '../lib/stop'
+
+export { BudgetName, StopReason }
 
 /** ErrorCode names why a read or a write of a note failed. It is carried in the `error` field of a response; an empty value is no error. */
 export const ErrorCode = {
@@ -273,31 +276,6 @@ export const BudgetUnit = {
   SHOWS: 'shows',
 } as const
 export type BudgetUnit = (typeof BudgetUnit)[keyof typeof BudgetUnit]
-
-/** StopReason is why a preset schedules no card for the day. */
-export const StopReason = {
-  UNSPECIFIED: '',
-  NOTHING: 'nothing',
-  NO_MINUTES: 'no_minutes',
-  NO_CARDS: 'no_cards',
-  NO_DAY: 'no_day',
-  PAST_DAY: 'past_day',
-  NO_LOAD: 'no_load',
-  NO_WEEK: 'no_week',
-} as const
-export type StopReason = (typeof StopReason)[keyof typeof StopReason]
-
-/** BudgetName is a limit that closes a day of review. */
-export const BudgetName = {
-  UNSPECIFIED: '',
-  MINUTES_A_DAY: 'minutes_a_day',
-  NEW_A_DAY: 'new_a_day',
-  REVIEWS_A_DAY: 'reviews_a_day',
-  BY_DATE: 'by_date',
-  BACKLOG: 'backlog',
-  PAUSED: 'paused',
-} as const
-export type BudgetName = (typeof BudgetName)[keyof typeof BudgetName]
 
 /** Settings is the scheduling settings of a preset. Load maps a weekday name to the cards due that day. */
 export interface Settings {

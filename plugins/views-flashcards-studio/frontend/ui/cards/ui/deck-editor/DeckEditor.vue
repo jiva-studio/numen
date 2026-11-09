@@ -14,10 +14,10 @@ import {
   type DeckWords,
   type DeckCard,
   type DeckProblems,
-} from '../../lib/deck'
-import { getGrid, isMoved, type Run } from '../../lib/grid'
-import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
-import type { CardModel } from '../../lib/card'
+} from '../../../../lib/cards'
+import { getGrid, isMoved, type Run } from '../../../../lib/cards'
+import { getFreeName, type InsertionPoint, type StepDirection } from '../../../../lib/cards'
+import type { CardModel } from '../../../../lib/cards'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
