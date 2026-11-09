@@ -9,8 +9,8 @@ inputs:
     required: true
 outputs:
   cache-key:
-    description: "The key save-go-cache saves under"
-    value: ${{ steps.key.outputs.key }}
+    description: "The key save-go-cache saves under; empty when the exact key was restored"
+    value: ${{ steps.restore.outputs.cache-hit != 'true' && steps.key.outputs.key || '' }}
 runs:
   using: "composite"
   steps:
@@ -47,6 +47,3 @@ runs:
         restore-keys: |
           ${{ steps.key.outputs.prefix }}
           go-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.setup.outputs.go-version }}-
-
-    - shell: bash
-      run: echo "GO_CACHE_HIT=${{ steps.restore.outputs.cache-hit }}" >> "$GITHUB_ENV"

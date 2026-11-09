@@ -3,6 +3,9 @@ name: Checks
 # Checks over the whole repository, called by ci.yml with the areas a change touches.
 on:
   workflow_call:
+    secrets:
+      GITLEAKS_LICENSE:
+        required: false
     inputs:
       workflows:
         type: boolean

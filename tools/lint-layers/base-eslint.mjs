@@ -125,8 +125,14 @@ export function createStrictRules({ isTyped = true } = {}) {
     'no-empty': ['error', { allowEmptyCatch: false }],
     'no-empty-function': 'off',
     '@typescript-eslint/no-empty-function': 'error',
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/no-non-null-assertion': 'error',
     ...(isTyped
       ? {
+          '@typescript-eslint/no-unnecessary-condition': 'error',
+          '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+          '@typescript-eslint/require-await': 'error',
+          '@typescript-eslint/unbound-method': 'error',
           '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
           '@typescript-eslint/no-misused-promises': 'error',
           '@typescript-eslint/await-thenable': 'error',
@@ -1113,6 +1119,10 @@ export function createBaseConfig(dirname, options = {}) {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-unnecessary-condition': 'off',
+        '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/unbound-method': 'off',
         'no-console': 'off',
         'no-restricted-globals': 'off',
         'require-yield': 'off',
@@ -1214,6 +1224,10 @@ export function createPlainLibraryConfig(dirname) {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-unnecessary-condition': 'off',
+        '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/unbound-method': 'off',
         'no-console': 'off',
       },
     },

@@ -24,6 +24,18 @@ export default tseslint.config(
   },
 
   {
+    // A spec reads callbacks and locators the way Playwright hands them over.
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+
+  {
     // The runners print to the terminal that started them.
     files: ['scripts/**'],
     rules: { 'no-console': 'off' },

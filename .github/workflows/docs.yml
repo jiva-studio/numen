@@ -4,6 +4,11 @@ name: Docs
 # a push to main that changes them.
 on:
   workflow_call:
+    secrets:
+      BUNNY_DOCS_STORAGE_KEY:
+        required: false
+      BUNNY_API_KEY:
+        required: false
     inputs:
       docs:
         type: boolean
