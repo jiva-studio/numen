@@ -1,15 +1,18 @@
-import { runTool } from '../../shared/tools.mjs'
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { readPluginManifests } from '../../shared/manifests.mjs'
+import { parse as parseYaml } from 'yaml'
+import { listPluginNames, readPluginManifests } from '../../shared/manifests.mjs'
 import { findPluginCommandMismatches } from '../../shared/registrations.mjs'
+import { createDeterminismSelectors } from '../base-eslint.mjs'
 import { writePluginIndex } from './core.mjs'
 import {
+  GO_MODULE_ROOT,
   MODULES_DIR,
   REPO_ROOT,
   exec,
   failOnFindings,
+  getGoModReferences,
   getGoReferences,
   getModuleSpecifiers,
   parsePackageJson,
@@ -17,6 +20,8 @@ import {
   readSource,
   requireMatches,
 } from './helpers.mjs'
+
+const CORE_MODULE = `${GO_MODULE_ROOT}libs/core`
 
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, 'plugins')
@@ -33,16 +38,18 @@ export function verifyPluginsStatic() {
     throw new Error('plugins/shared exists: a plugin shares code only through the SDK')
   }
 
-  const coreLeak = runTool(
-    'git',
-    ['grep', '-rn', 'github.com/jiva-studio/numen/libs/core', 'plugins/'],
-    { cwd: REPO_ROOT },
-  )
-  const lines = (coreLeak.stdout ? coreLeak.stdout.toString() : '').split('\n').filter(Boolean)
-  const nonCommentLeaks = lines.filter((l) => !l.includes('.golangci.yml') && !l.includes('README'))
-  if (nonCommentLeaks.length > 0) {
-    throw new Error('Plugin imports core package:\n' + nonCommentLeaks.join('\n'))
+  const leaks = []
+  for (const file of listShippedFiles(['plugins'])) {
+    if (!file.endsWith('.go') && path.basename(file) !== 'go.mod') continue
+    const text = fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')
+    const { imports } = file.endsWith('.go') ? getGoReferences(text) : getGoModReferences(text)
+    for (const { line, value } of imports) {
+      if (value === CORE_MODULE || value.startsWith(`${CORE_MODULE}/`)) {
+        leaks.push({ file, line, symbol: value })
+      }
+    }
   }
+  failOnFindings('Plugin imports core package', leaks)
 }
 
 /** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
@@ -128,22 +135,23 @@ export function verifyPluginsUseMainEntry() {
   )
 }
 
+const OUTER_BACKEND_PACKAGES = ['service', 'engine']
+const NON_INNER_BACKEND_PACKAGES = ['cmd', ...OUTER_BACKEND_PACKAGES, 'testsupport']
+
 /** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
 function findPluginBackendLayerInversions() {
   const found = []
   for (const file of listShippedFiles(['plugins/*.go'])) {
-    const m = file.match(/^plugins\/([^/]+)\/backend\/([^/]+)\//)
-    if (!m) continue
-    const [, plugin, subpkg] = m
-    if (['cmd', 'service', 'engine', 'testsupport'].includes(subpkg)) continue
+    const [root, plugin, tier, subpkg] = file.split('/')
+    if (root !== 'plugins' || tier !== 'backend' || !subpkg || subpkg.endsWith('.go')) continue
+    if (NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
     const text = fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')
     const { imports } = getGoReferences(text)
     for (const { line, value } of imports) {
       if (
-        value.endsWith('/backend/service') ||
-        value.includes('/backend/service/') ||
-        value.endsWith('/backend/engine') ||
-        value.includes('/backend/engine/')
+        OUTER_BACKEND_PACKAGES.some(
+          (outer) => value.endsWith(`/backend/${outer}`) || value.includes(`/backend/${outer}/`),
+        )
       ) {
         found.push({
           file,
@@ -166,18 +174,8 @@ export function verifyPluginBackendInternalLayers() {
 /**
  * Golden Template & Config Drift Verification for Standalone Plugins.
  */
-function parseEnabledGoLinters(yamlText) {
-  const lines = yamlText.split('\n')
-  const start = lines.findIndex((l) => /enable:\s*$/.test(l))
-  if (start < 0) return []
-  const linters = []
-  for (const line of lines.slice(start + 1)) {
-    if (line.trim() === '') continue
-    const item = /^\s*-\s*([\w-]+)\s*$/.exec(line)
-    if (!item) break
-    linters.push(item[1])
-  }
-  return linters.sort((a, b) => a.localeCompare(b))
+export function parseEnabledGoLinters(yamlText) {
+  return [...(parseYaml(yamlText)?.linters?.enable ?? [])].sort((a, b) => a.localeCompare(b))
 }
 
 function findPluginConfigDrift() {
@@ -213,28 +211,28 @@ function findPluginConfigDrift() {
 
   if (fs.existsSync(baseEslint) && fs.existsSync(exampleEslint)) {
     const exText = fs.readFileSync(exampleEslint, 'utf8')
-    const requiredSelectors = [
-      'Date',
-      'Math',
-      'getBoundingClientRect',
-      'matchMedia',
-      'lib/',
-      'model/',
-      'api/wire',
-    ]
-    for (const token of requiredSelectors) {
-      if (!exText.includes(token)) {
+    const literals = new Set(
+      readSource('plugins/.example/eslint.config.js')?.literals.map((one) => one.value) ?? [],
+    )
+    const requiredSelectors = createDeterminismSelectors()
+      .map((one) => one.selector)
+      .filter((selector) => !selector.includes('performance'))
+    for (const selector of [
+      ...requiredSelectors,
+      '**/lib/**/*.ts',
+      '**/model/**/*.ts',
+      '**/api/wire*',
+    ]) {
+      if (!literals.has(selector)) {
         found.push({
           file: 'plugins/.example/eslint.config.js',
           line: 1,
-          symbol: `missing rule selector '${token}' from base-eslint.mjs`,
+          symbol: `missing rule selector '${selector}' from base-eslint.mjs`,
         })
       }
     }
-    if (
-      getModuleSpecifiers(exampleEslint, exText).some((s) => s.startsWith('.')) ||
-      exText.includes('@numen/plugin-sdk/eslint')
-    ) {
+    const specifiers = getModuleSpecifiers(exampleEslint, exText)
+    if (specifiers.some((s) => s.startsWith('.') || s.startsWith('@numen/'))) {
       found.push({
         file: 'plugins/.example/eslint.config.js',
         line: 1,
@@ -244,17 +242,15 @@ function findPluginConfigDrift() {
     }
   }
 
-  const goConfigCopies = ['plugins/.example', 'libs/plugin-sdk-go']
-  const pluginsRoot = path.join(REPO_ROOT, 'plugins')
-  for (const entry of fs.readdirSync(pluginsRoot, { withFileTypes: true })) {
-    if (
-      entry.isDirectory() &&
-      !entry.name.startsWith('.') &&
-      fs.existsSync(path.join(pluginsRoot, entry.name, 'go.mod'))
-    ) {
-      goConfigCopies.push(`plugins/${entry.name}`)
-    }
-  }
+  const pluginsDir = path.join(REPO_ROOT, 'plugins')
+  const pluginNames = listPluginNames(pluginsDir)
+  const goConfigCopies = [
+    'plugins/.example',
+    'libs/plugin-sdk-go',
+    ...pluginNames
+      .filter((name) => fs.existsSync(path.join(pluginsDir, name, 'go.mod')))
+      .map((name) => `plugins/${name}`),
+  ]
   for (const name of ['.golangci.yml', '.golangci-structure.yml']) {
     const rootFile = path.join(REPO_ROOT, name)
     if (!fs.existsSync(rootFile)) {
@@ -284,13 +280,6 @@ function findPluginConfigDrift() {
       })
     }
   }
-
-  const pluginsDir = path.join(REPO_ROOT, 'plugins')
-  const pluginNames = fs
-    .readdirSync(pluginsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules')
-    .map((e) => e.name)
-    .sort()
 
   const checkGoldenFile = (plugin, fileName) => {
     const goldenPath = path.join(exampleDir, fileName)
@@ -346,17 +335,9 @@ export function verifyPluginsFrontend() {
     throw new Error('Missing golden frontend config: plugins/.example/eslint.config.js')
   }
   const eslintBin = path.join(REPO_ROOT, 'node_modules/.bin/eslint')
-  const frontendPlugins = fs
-    .readdirSync(pluginsDir, { withFileTypes: true })
-    .filter(
-      (e) =>
-        e.isDirectory() &&
-        !e.name.startsWith('.') &&
-        e.name !== 'node_modules' &&
-        fs.existsSync(path.join(pluginsDir, e.name, 'frontend')),
-    )
-    .map((e) => e.name)
-    .sort()
+  const frontendPlugins = listPluginNames(pluginsDir).filter((name) =>
+    fs.existsSync(path.join(pluginsDir, name, 'frontend')),
+  )
 
   const failures = []
   for (const plugin of frontendPlugins) {

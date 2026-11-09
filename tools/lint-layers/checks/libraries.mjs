@@ -8,6 +8,7 @@ import {
   getGoModReferences,
   getGoReferences,
   listShippedFiles,
+  parseGoMod,
   requireMatches,
 } from "./helpers.mjs";
 
@@ -93,7 +94,7 @@ export function readLibraries() {
   const libraries = dirs.map((dir) => {
     const modFile = `${dir}/go.mod`;
     const modSource = fs.readFileSync(path.join(REPO_ROOT, modFile), "utf8");
-    const module = /^[ \t]*module\s+(\S+)/m.exec(modSource)?.[1];
+    const module = parseGoMod(modSource).Module?.Path;
     return { dir, module, references: [] };
   });
   const ownerOf = (file) =>

@@ -7,6 +7,7 @@
  */
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 import { ManifestError, readPluginManifests } from '../shared/manifests.mjs'
 import { listRegistrations } from '../shared/registrations.mjs'
 
@@ -66,6 +67,26 @@ export const readBracketed = (source, at) => {
   return null
 }
 
+const unwrapExpression = (node) =>
+  node &&
+  (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node))
+    ? unwrapExpression(node.expression)
+    : node
+
+/** The `WORDS` object literal declared in `sourceFile`, or the first object literal when none is named `WORDS`. */
+const findWordsObject = (sourceFile) => {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    for (const declaration of statement.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.name.text === 'WORDS') {
+        const initializer = unwrapExpression(declaration.initializer)
+        if (initializer && ts.isObjectLiteralExpression(initializer)) return initializer
+      }
+    }
+  }
+  return null
+}
+
 /**
  * What one entry of the words says. `at` is the file the words stand in. An
  * entry standing for another module's is followed there, which is where the
@@ -73,36 +94,79 @@ export const readBracketed = (source, at) => {
  * is written with that name in italics, where the window puts what it names.
  */
 export const readWords = async (whole, name, at, seen = new Set()) => {
-  // The words a person reads are one object. What is above it says what a
-  // refusal is called, under names a command has too.
-  const from = whole.indexOf('export const WORDS')
-  const words = from < 0 ? whole : whole.slice(from)
-
-  const literal = words.match(new RegExp(`^\\s*${name}:\\s*'([^']+)',`, 'm'))
-  if (literal) return literal[1]
-
-  const formed = words.match(
-    new RegExp(`^\\s*${name}:\\s*\\((\\w+)[^)]*\\)\\s*=>\\s*\`([^\`]*)\`,`, 'm'),
+  const sourceFile = ts.createSourceFile('words.ts', whole, ts.ScriptTarget.Latest, true)
+  const words = findWordsObject(sourceFile)
+  const property = words?.properties.find(
+    (one) =>
+      ts.isPropertyAssignment(one) &&
+      (ts.isIdentifier(one.name) || ts.isStringLiteral(one.name)) &&
+      one.name.text === name,
   )
-  if (formed) return formed[2].replaceAll(`\${${formed[1]}}`, `*${formed[1]}*`)
+  const value = unwrapExpression(property?.initializer)
+  if (!value) fail(`the words say nothing under '${name}'`)
 
-  const elsewhere = words.match(new RegExp(`^\\s*${name}:\\s*([a-z]+)\\.([A-Za-z]+),`, 'm'))
-  if (!elsewhere) fail(`the words say nothing under '${name}'`)
-  const [, module, key] = elsewhere
-  if (seen.has(module)) fail(`the words under '${name}' point at themselves`)
+  if (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value)) {
+    return value.text
+  }
 
-  // The file names where it took the module from, so a part that moved is
-  // followed without this knowing where any part stands.
-  const path = getWordsFile(whole, module, at)
-  return readWords(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
+  if (
+    ts.isArrowFunction(value) &&
+    value.parameters.length > 0 &&
+    ts.isIdentifier(value.parameters[0].name)
+  ) {
+    const parameter = value.parameters[0].name.text
+    const body = unwrapExpression(value.body)
+    if (body && (ts.isStringLiteral(body) || ts.isNoSubstitutionTemplateLiteral(body))) {
+      return body.text
+    }
+    if (body && ts.isTemplateExpression(body)) {
+      return (
+        body.head.text +
+        body.templateSpans
+          .map((span) => {
+            const expression = unwrapExpression(span.expression)
+            const piece =
+              ts.isIdentifier(expression) && expression.text === parameter
+                ? `*${parameter}*`
+                : `\${${span.expression.getText(sourceFile)}}`
+            return piece + span.literal.text
+          })
+          .join('')
+      )
+    }
+  }
+
+  if (
+    ts.isPropertyAccessExpression(value) &&
+    ts.isIdentifier(value.expression) &&
+    ts.isIdentifier(value.name)
+  ) {
+    const module = value.expression.text
+    const key = value.name.text
+    if (seen.has(module)) fail(`the words under '${name}' point at themselves`)
+
+    const path = getWordsFile(sourceFile, module, at)
+    return readWords(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
+  }
+
+  return fail(`the words say nothing under '${name}'`)
 }
 
 /** The file a module takes one set of words in from, as `WORDS` or `WORDS as <module>`. */
-const getWordsFile = (source, module, at) => {
-  const named = module === 'WORDS' ? 'WORDS' : `WORDS as ${module}`
-  const imported = source.match(new RegExp(`^import \\{ ${named} \\} from '([^']+)'`, 'm'))
-  if (!imported) fail(`the words take nothing in as '${module}'`)
-  return new URL(`${imported[1]}.ts`, at)
+const getWordsFile = (sourceFile, module, at) => {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier))
+      continue
+    const bindings = statement.importClause?.namedBindings
+    if (!bindings || !ts.isNamedImports(bindings)) continue
+    const matches = bindings.elements.some(
+      (specifier) =>
+        (specifier.propertyName ?? specifier.name).text === 'WORDS' &&
+        specifier.name.text === module,
+    )
+    if (matches) return new URL(`${statement.moduleSpecifier.text}.ts`, at)
+  }
+  return fail(`the words take nothing in as '${module}'`)
 }
 
 /**

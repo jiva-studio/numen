@@ -1,6 +1,8 @@
 import { execSync } from "node:child_process";
 import { runTool } from "../../shared/tools.mjs";
+import { parse as parseVue } from "@vue/compiler-sfc";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import ts from "typescript";
 
@@ -43,151 +45,87 @@ export function failOnFindings(title, findings) {
 }
 
 /**
- * Lists every string literal of a script with its line, and returns the script with its comments,
- * regular expressions and literals blanked so lines keep their numbers. A template literal is read
- * up to its first substitution.
+ * Lists every string literal of a script with its line, read from its TypeScript syntax tree. A
+ * template literal is read up to its first substitution.
  */
-function readScript(source) {
+function readScriptLiterals(file, source, lineOffset = 0) {
+  const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
   const literals = [];
-  const blanked = [];
-  let line = 1;
-  let i = 0;
-  let previous = "";
-  while (i < source.length) {
-    const c = source[i];
-    const next = source[i + 1];
-    if (c === "\n") {
-      line++;
-      i++;
-      continue;
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 + lineOffset;
+      literals.push({ line, value: node.text });
+    } else if (ts.isTemplateExpression(node)) {
+      const line = sourceFile.getLineAndCharacterOfPosition(node.head.getStart(sourceFile)).line + 1 + lineOffset;
+      literals.push({ line, value: node.head.text });
     }
-    const from = i;
-    if (c === "/" && next === "/") {
-      while (i < source.length && source[i] !== "\n") i++;
-      blanked.push([from, i]);
-      continue;
-    }
-    if (c === "/" && next === "*") {
-      i += 2;
-      while (i < source.length && !(source[i] === "*" && source[i + 1] === "/")) {
-        if (source[i] === "\n") line++;
-        i++;
-      }
-      i += 2;
-      blanked.push([from, i]);
-      continue;
-    }
-    if (c === "/" && (previous === "" || "(,=:[!&|?{};+-*%<>~^".includes(previous))) {
-      i++;
-      let inClass = false;
-      while (i < source.length && source[i] !== "\n") {
-        if (source[i] === "\\") i++;
-        else if (source[i] === "[") inClass = true;
-        else if (source[i] === "]") inClass = false;
-        else if (source[i] === "/" && !inClass) break;
-        i++;
-      }
-      i++;
-      previous = "/";
-      blanked.push([from, i]);
-      continue;
-    }
-    if (c === "'" || c === '"' || c === "`") {
-      const start = line;
-      let value = "";
-      let isOpen = true;
-      i++;
-      while (i < source.length && source[i] !== c) {
-        if (source[i] === "\\") {
-          value += source[i + 1] ?? "";
-          i += 2;
-          continue;
-        }
-        if (c === "`" && source[i] === "$" && source[i + 1] === "{") isOpen = false;
-        if (source[i] === "\n") line++;
-        if (isOpen) value += source[i];
-        i++;
-      }
-      i++;
-      literals.push({ line: start, value });
-      previous = "'";
-      blanked.push([from, i]);
-      continue;
-    }
-    if (!/\s/.test(c)) previous = c;
-    i++;
-  }
-  let code = "";
-  let at = 0;
-  for (const [from, to] of blanked) {
-    code += source.slice(at, from) + source.slice(from, to).replace(/[^\n]/g, " ");
-    at = to;
-  }
-  return { literals, code: code + source.slice(at) };
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return { literals };
 }
 
-/** The `<script>` blocks of a single-file component, blanked elsewhere so lines keep their numbers. */
-function getVueScript(source) {
-  return source.replace(/(^|<\/script>)([\s\S]*?)(<script\b[^>]*>|$)/g, (_, open, between, close) =>
-    open + between.replace(/[^\n]/g, " ") + close.replace(/[^\n]/g, " "),
-  );
+/** Runs `go <subcommand> edit -json` on `source` written to a temporary file, and returns the parsed JSON. */
+function runGoFileJson(subcommand, source) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `numen-go-${subcommand}-`));
+  const file = path.join(dir, `go.${subcommand}`);
+  try {
+    fs.writeFileSync(file, source, "utf8");
+    const run = runTool("go", [subcommand, "edit", "-json", file], { cwd: dir, encoding: "utf8" });
+    if (run.status !== 0) {
+      throw new Error(`go ${subcommand} edit -json failed: ${(run.stderr || run.stdout || "").trim()}`);
+    }
+    return JSON.parse(run.stdout);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
-/** Returns the part of a line before its first `//`. */
-export function removeLineComment(text) {
-  const start = text.indexOf("//");
-  return start === -1 ? text : text.slice(0, start);
+/** The parsed JSON structure of a `go.mod` file, read via `go mod edit -json`. */
+export function parseGoMod(source) {
+  return runGoFileJson("mod", source);
+}
+
+/** The parsed JSON structure of a `go.work` file, read via `go work edit -json`. */
+export function parseGoWork(source) {
+  return runGoFileJson("work", source);
 }
 
 /** Lists the import paths of a Go file with their lines, and its other string literals. */
 export function getGoReferences(source) {
-  const imports = [];
-  const literals = [];
-  const stripped = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
-  const lines = stripped.split("\n");
-  let inImportBlock = false;
-  lines.forEach((text, index) => {
-    const code = removeLineComment(text);
-    const line = index + 1;
-    if (/^import\s*\($/.test(code.trim())) {
-      inImportBlock = true;
-      return;
-    }
-    if (inImportBlock && code.trim() === ")") {
-      inImportBlock = false;
-      return;
-    }
-    const single = /^import\s+(?:[\w.]+\s+)?"([^"]+)"/.exec(code.trim());
-    if (single) {
-      imports.push({ line, value: single[1] });
-      return;
-    }
-    if (inImportBlock) {
-      const spec = /"([^"]+)"/.exec(code);
-      if (spec) imports.push({ line, value: spec[1] });
-      return;
-    }
-    for (const match of code.matchAll(/"((?:[^"\\]|\\.)*)"|`([^`]*)`/g)) {
-      literals.push({ line, value: match[1] ?? match[2] });
-    }
-  });
+  const { imports, literals } = readGo(source);
   return { imports, literals };
 }
 
-/** Lists the module paths and local replacement paths a `go.mod` names. */
+/** Lists the module paths and local replacement paths a `go.mod` names, read via `go mod edit -json`. */
 export function getGoModReferences(source) {
+  const parsed = parseGoMod(source);
+  const codeLines = readGo(source).code.split("\n");
+  const findLine = (token, fromIndex = 0) => {
+    for (let i = fromIndex; i < codeLines.length; i++) {
+      if (codeLines[i].includes(token)) return i + 1;
+    }
+    return 1;
+  };
   const imports = [];
   const literals = [];
-  source.split("\n").forEach((text, index) => {
-    const line = index + 1;
-    const code = removeLineComment(text);
-    if (/^\s*module\s/.test(code)) return;
-    for (const match of code.matchAll(/github\.com\/jiva-studio\/numen\/[\w./-]+/g)) {
-      imports.push({ line, value: match[0] });
+  for (const req of parsed.Require ?? []) {
+    if (req.Path?.startsWith(GO_MODULE_ROOT)) {
+      imports.push({ line: findLine(req.Path), value: req.Path });
     }
-    const replacement = /=>\s*(\.{1,2}\/\S*)/.exec(code);
-    if (replacement) literals.push({ line, value: replacement[1] });
-  });
+  }
+  for (const rep of parsed.Replace ?? []) {
+    const line = findLine(rep.Old?.Path ?? "=>");
+    for (const candidate of [rep.Old?.Path, rep.New?.Path]) {
+      if (candidate?.startsWith(GO_MODULE_ROOT)) {
+        imports.push({ line, value: candidate });
+      }
+    }
+    if (rep.New?.Path && (rep.New.Path.startsWith("./") || rep.New.Path.startsWith("../"))) {
+      literals.push({ line, value: rep.New.Path });
+    }
+  }
   return { imports, literals };
 }
 
@@ -215,15 +153,17 @@ function readGoLiteral(source, start) {
 }
 
 /**
- * Lists every string literal of a Go or proto source with its line, and returns the source with its
- * comments and literals blanked so lines keep their numbers.
+ * Lists the import paths, other string literals and comments of a Go or proto source with their lines,
+ * and returns the source with its comments and literals blanked so lines keep their numbers.
  */
 export function readGo(source) {
+  const imports = [];
   const literals = [];
   const comments = [];
   let code = "";
   let line = 1;
   let i = 0;
+  let importState = "none";
   const blank = (text) => text.replace(/[^\n]/g, " ");
   while (i < source.length) {
     const c = source[i];
@@ -244,19 +184,37 @@ export function readGo(source) {
       continue;
     }
     if (c === '"' || c === "'" || c === "`") {
+      const startLine = line;
       const literal = readGoLiteral(source, i);
       i = literal.end;
-      literals.push({ line, value: literal.value });
+      if (importState === "afterKeyword") {
+        imports.push({ line: startLine, value: literal.value });
+        importState = "none";
+      } else if (importState === "inBlock") {
+        imports.push({ line: startLine, value: literal.value });
+      } else {
+        literals.push({ line: startLine, value: literal.value });
+      }
       const text = source.slice(from, i);
       line += text.split("\n").length - 1;
       code += blank(text);
       continue;
     }
+    if (/[A-Za-z_]/.test(c)) {
+      while (i < source.length && /[A-Za-z0-9_]/.test(source[i])) i++;
+      const word = source.slice(from, i);
+      if (word === "import" && importState === "none") importState = "afterKeyword";
+      code += word;
+      continue;
+    }
+    if (c === "(" && importState === "afterKeyword") importState = "inBlock";
+    else if (c === ")" && importState === "inBlock") importState = "none";
+    else if ((c === "\n" || c === ";") && importState === "afterKeyword") importState = "none";
     if (c === "\n") line++;
     code += c;
     i++;
   }
-  return { literals, comments, code };
+  return { imports, literals, comments, code };
 }
 
 /** The parsed `package.json` text of a package. */
@@ -267,9 +225,19 @@ export function parsePackageJson(text) {
 /** Reads a tracked source file as literals and code, by its extension; null for any other file. */
 export function readSource(file) {
   const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-  if (/\.(go|proto)$/.test(file)) return readGo(text);
-  if (file.endsWith(".vue")) return readScript(getVueScript(text));
-  if (/\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(file)) return readScript(text);
+  if (/\.(go|proto)$/.test(file)) {
+    const { imports, literals, comments, code } = readGo(text);
+    return { literals: [...imports, ...literals], comments, code };
+  }
+  if (file.endsWith(".vue")) {
+    const { descriptor } = parseVue(text);
+    const scripts = [descriptor.script, descriptor.scriptSetup].filter(Boolean);
+    const literals = scripts.flatMap(
+      (block) => readScriptLiterals(file.replace(/\.vue$/, ".ts"), block.content, block.loc.start.line - 1).literals,
+    );
+    return { literals };
+  }
+  if (/\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(file)) return readScriptLiterals(file, text);
   return null;
 }
 
