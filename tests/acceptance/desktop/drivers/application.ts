@@ -122,7 +122,7 @@ export class ApplicationDriver {
           path: notePath,
           commands: [{ command: DELETE_TEXT_ID }],
         })
-        const [list] = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
+        const [list] = (answer['lists'] as ({ items?: unknown[] } | undefined)[] | undefined) ?? []
         return list?.items?.length ?? 0
       })
       .toBeGreaterThan(0)

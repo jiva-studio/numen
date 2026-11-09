@@ -101,7 +101,7 @@ export const pickByTitle = (title: string, paths: readonly string[]): string => 
   const found = paths.filter((one) => getStem(one) === title)
   if (found.length === 0) throw new Error(`no tab is titled "${title}": use "at" with its path`)
   if (found.length > 1) throw new Error(`more than one tab is titled "${title}": use "at" with its path`)
-  return found[0] as string
+  return found[0]
 }
 
 export const assertSingleTab = (title: string, count: number): void => {
