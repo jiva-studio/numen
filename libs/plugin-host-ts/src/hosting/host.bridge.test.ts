@@ -98,7 +98,7 @@ describe('command handlers', () => {
         ],
       }),
     )
-    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+k', command: 'run' }])
+    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+x', command: 'run' }])
     const fault = new Error('boom')
     host.createContext('cmd.plugin').registerCommand({
       id: 'run',
@@ -108,7 +108,7 @@ describe('command handlers', () => {
     })
 
     const handled = host.handleShortcut(
-      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
+      new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, shiftKey: true }),
       async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [], tab: '' }),
     )
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -194,10 +194,10 @@ describe('a command over a note', () => {
         ],
       }),
     )
-    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+p', command: 'summary' }])
+    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+y', command: 'summary' }])
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
-    const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
+    const event = new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, shiftKey: true })
 
     const NO_NOTE = { path: '', title: '', isFolder: false, others: [], tab: '' }
 
