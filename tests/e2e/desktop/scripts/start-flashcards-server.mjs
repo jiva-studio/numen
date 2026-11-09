@@ -92,6 +92,9 @@ const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-v
     XDG_CACHE_HOME: cacheDir,
     XDG_DATA_HOME: dataDir,
     XDG_STATE_HOME: stateDir,
+    // The run has no session bus and no Secret Service, so the keys of its connections are kept in a file.
+    XDG_RUNTIME_DIR: path.join(homeDir, 'run'),
+    DBUS_SESSION_BUS_ADDRESS: '',
     NUMEN_PLUGINS_PATH: pluginsPath,
     NUMEN_DEBUG_TLS_CERT: certificateFile,
   },
