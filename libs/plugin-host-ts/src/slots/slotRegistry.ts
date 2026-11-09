@@ -212,18 +212,21 @@ function toSubmenuItem(
   }
 }
 
-export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
+/** Reports each issue once, however often the entries are read. */
+function createReport(deps: SlotRegistryDeps): Report {
   const reported = new Set<string>()
-  const report: Report = (pluginId, message, severity) => {
+  return (pluginId, message, severity) => {
     const key = `${pluginId}\n${message}`
     if (reported.has(key)) return
     reported.add(key)
     deps.reportIssue?.(pluginId, message, severity)
   }
-  const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
+}
 
+/** Whether the condition of an entry holds over a target; a condition that cannot be read is reported. */
+function createWhenCheck(deps: SlotRegistryDeps, report: Report) {
   const whenReader = deps.whenReader ?? createWhenReader()
-  const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
+  return (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
     if (!entry.when) return true
     const parsed = whenReader.read(entry.when)
     if (!parsed.ok) {
@@ -237,6 +240,12 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
     }
     return parsed.value.evaluate(deps.getWhenValues?.(target) ?? getTargetValues(target, {}))
   }
+}
+
+export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
+  const report = createReport(deps)
+  const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
+  const isDrawnOver = createWhenCheck(deps, report)
 
   const toItem = (
     entry: DeclaredSlotEntry,
