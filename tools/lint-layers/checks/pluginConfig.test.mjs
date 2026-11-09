@@ -47,12 +47,15 @@ describe("the golden plugin configuration", () => {
         "import type { Deck } from '../types'",
         "import Badge from './Badge.vue'",
         "import { stats } from './api/stats'",
-        "export const all = [cardSize, kinds, Button, order, day, Badge, stats]",
+        "import { deep } from '../../../deck/x/model/deep'",
+        "import { tab } from '../../../../ui/tab'",
+        "import { kind } from '../../../lib/kind'",
+        "export const all = [cardSize, kinds, Button, order, day, Badge, stats, deep, tab, kind]",
         "export type Both = Preset | Deck",
         "",
       ].join("\n"),
     });
-    assert.deepEqual(findLines(results, "frontend/deck/lib/cards.ts", "no-restricted-imports"), [1, 2, 3, 8, 9]);
+    assert.deepEqual(findLines(results, "frontend/deck/lib/cards.ts", "no-restricted-imports"), [1, 2, 3, 8, 9, 10, 11]);
   });
 
   it("applies the component rules of the base config to a plugin component", async () => {
