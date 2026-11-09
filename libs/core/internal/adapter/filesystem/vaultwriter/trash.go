@@ -47,14 +47,10 @@ func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err e
 }
 
 func deleteFolderContent(ctx context.Context, root *os.Root, dir, display string) ([]string, error) {
-	entries, err := readFolder(root, dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
+	entries, undeleted := listFolder(root, dir, display)
+	if len(entries) == 0 {
+		return undeleted, nil
 	}
-	if err != nil {
-		return []string{display}, nil
-	}
-	var undeleted []string
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
 			return undeleted, err
@@ -81,6 +77,18 @@ func deleteEntry(ctx context.Context, root *os.Root, name, display string, isDir
 	return []string{display}, nil
 }
 
+func listFolder(root *os.Root, dir, display string) ([]fs.DirEntry, []string) {
+	entries, err := readFolder(root, dir)
+	switch {
+	case err == nil:
+		return entries, nil
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, nil
+	default:
+		return nil, []string{display}
+	}
+}
+
 func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, err error) {
 	folder, err := root.Open(dir)
 	if err != nil {
@@ -91,8 +99,6 @@ func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, err error) {
 	return entries, err
 }
 
-// isSameFolder reports whether the opened root is the folder that was checked,
-// so a link swapped in between the check and the open is never walked.
 func isSameFolder(checked fs.FileInfo, opened *os.Root) bool {
 	current, err := opened.Stat(".")
 	return err == nil && os.SameFile(checked, current)
