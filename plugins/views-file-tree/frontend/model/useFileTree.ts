@@ -94,6 +94,7 @@ interface TreeRefreshDeps {
   entriesByFolder: ShallowRef<ReadonlyMap<string, readonly Entry[]>>
   open: ShallowRef<ReadonlySet<string>>
   errorMessage: Ref<string>
+  isLoaded: Ref<boolean>
   selectedPaths: ShallowRef<readonly string[]>
   isFolderOpen: (folder: string) => boolean
   getEntryAt: (path: string) => Entry | null
@@ -106,6 +107,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     entriesByFolder,
     open,
     errorMessage,
+    isLoaded,
     selectedPaths,
     isFolderOpen,
     getEntryAt,
@@ -126,6 +128,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     const merged = mergeFolderListings(entriesByFolder.value, listings)
     if (merged.isChanged) entriesByFolder.value = merged.next
     errorMessage.value = merged.error
+    if (folders.includes(ROOT)) isLoaded.value = true
   }
 
   const loadFolder = (folder: string) => loadFolders([folder])
@@ -189,7 +192,8 @@ function initTreeState() {
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
-  return { entriesByFolder, open, selectedPaths, errorMessage }
+  const isLoaded = ref(false)
+  return { entriesByFolder, open, selectedPaths, errorMessage, isLoaded }
 }
 
 function createTreeQueries(
@@ -246,6 +250,7 @@ export function createFileTree(core: Folders): FileTree {
     ...queries,
     selectedPaths: state.selectedPaths,
     errorMessage: state.errorMessage,
+    isLoaded: state.isLoaded,
     loadFolder: refreshControl.loadFolder,
     openFolder: folderOps.openFolder,
     closeFolder: folderOps.closeFolder,

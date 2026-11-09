@@ -74,6 +74,8 @@ export interface FileTree {
   readonly openRows: Ref<readonly string[]>
   readonly selectedPaths: Ref<readonly string[]>
   readonly errorMessage: Ref<string>
+  /** Whether the root listing has come back once, with entries or none. */
+  readonly isLoaded: Ref<boolean>
   getEntriesInFolder(folder: string): readonly Entry[]
   isFolderOpen(folder: string): boolean
   getEntryAt(path: string): Entry | null
