@@ -41,7 +41,7 @@ export class ApplicationDriver {
     await expect(field).toBeVisible()
     await field.fill(label)
     await expect(command).toHaveAttribute('data-here', 'true')
-    await page.keyboard.press('Enter')
+    await command.click()
   }
 
   async enter(value: string): Promise<void> {
