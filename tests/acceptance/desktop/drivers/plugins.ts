@@ -20,8 +20,11 @@ export class PluginDriver {
 
   private async setEnabled(name: string, isEnabled: boolean): Promise<void> {
     const { page } = this.scenario
+    const field = page.getByRole('combobox', { name: 'Search the vault' })
+    for (let press = 0; press < 2 && (await field.isVisible()); press += 1) await page.keyboard.press('Escape')
+    await expect(field).toBeHidden()
     await page.keyboard.press('Control+p')
-    await page.getByRole('combobox', { name: 'Search the vault' }).fill('Open settings')
+    await field.fill('Open settings')
     await page.getByRole('option', { name: /^Open settings$/ }).first().click()
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
     await settings.getByRole('button', { name: new RegExp(name) }).click()
