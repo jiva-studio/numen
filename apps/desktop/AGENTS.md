@@ -2,22 +2,21 @@
 
 The conventions shared across all languages in this repository are in `AGENTS.md` at
 the root. The frontend sections apply to every `.ts` and `.vue` file.
-This file defines rules for `apps/desktop/editor` and `apps/desktop/flashcards`.
+This file defines rules for `apps/desktop/editor` and `apps/desktop/flashcards`. Where a piece of window code goes and how a slice is shaped is the skill [`nm-place-window`](../../.agents/skills/nm-place-window/SKILL.md); the Go side of `apps/desktop` follows [`nm-place-core`](../../.agents/skills/nm-place-core/SKILL.md).
 
 ## Layer hierarchy
 
-Files in the desktop application belong to one of six architectural layers and may only import from lower layers.
+Files in the desktop application belong to one of five architectural layers and may only import from lower layers.
 
 | Layer      | Contains                                           |
 | ---------- | -------------------------------------------------- |
 | `shared`   | system types, paths, transport, base components    |
 | `entities` | a business thing: note, deck, media, settings, tab |
 | `features` | one user scenario, whole                           |
-| `widgets`  | a composite block a page puts together             |
 | `pages`    | one tab, whole                                     |
 | `app`      | mounting, wiring, providers                        |
 
-A slice's segments are `ui`, `api`, `model`, `lib`, `config`. A slice imports no
+There is no `widgets` layer: a part that two pages use is a feature or an entity. A slice's segments are `ui`, `api`, `model`, `lib`, `config`. A slice imports no
 sibling slice of its own layer, and there is no `@x` cross-import: the rule
 `no-cross-slice-entry` of `tools/lint-layers` fails on any import of an `@x`
 path. Code that two slices share is in a lower layer.

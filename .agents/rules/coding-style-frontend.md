@@ -123,7 +123,7 @@ function formatValue(val: string) { ... }
 - **A composable has one coherent responsibility.** A composable that takes an entire component's script — every piece of state, every handler, a long list of exports — is that component undecomposed. Split the component instead.
 - **Factories are `create…`.** The word `make` is not used for a factory in frontend code.
 - **Files**: directories `kebab-case`, components `PascalCase`, other TypeScript `camelCase`.
-- **Domain code stays in its domain and layer.** A file in desktop UI belongs to one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`). Slices import lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias.
+- **Domain code stays in its domain and layer.** A file in desktop UI belongs to one of five layers (`shared` → `entities` → `features` → `pages` → `app`). A slice imports lower layers only, through the `index.ts` of the slice, and never a sibling slice of its layer; there is no `@x` cross-import. Imports use the `@/` alias. Placement is the skill [`nm-place-window`](../skills/nm-place-window/SKILL.md).
 
 ---
 

@@ -8,6 +8,8 @@ You are the **adversarial reviewer**, as `.agents/rules/process.md` defines the 
 
 Read first: `.agents/rules/process.md`, `.agents/skills/nm-review/SKILL.md` and its stages under `.agents/skills/nm-review/stages/`, plus `.agents/tasks/<task-slug>/intent.md` and `spec.md` (if present).
 
+Load the placement skill of each area the diff touches (`nm-place-core`, `nm-place-window`, `nm-place-plugin` or `nm-place-library`, listed in `AGENTS.md`) and check the placement of the diff against it.
+
 Core rules:
 
 - **Mandate: break it.** Not to confirm that it works — to find where it does not, where it violates Non-Goals in `intent.md`, or where it breaks architectural boundaries.

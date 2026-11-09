@@ -30,6 +30,8 @@ flowchart TD
 - ❌ **No HTTP methods or API routes** (`GET /...`, `POST /...`).
 - ✅ **ONLY user journeys, business goals, UX workflows, limits, non-goals, and invariants.**
 
+The area of the product the task touches is stated in the words of the product; `/nm-specify` names the placement skill for that area in the blast radius.
+
 Technical decisions, interfaces, file mappings, and data structures belong exclusively to `/nm-specify`.
 
 ---

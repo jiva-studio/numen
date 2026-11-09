@@ -1,7 +1,7 @@
 # The core — architecture and invariants
 
 The conventions every language in this repository shares are in `AGENTS.md` at
-the root. This file defines specific rules for `libs/core`.
+the root. This file defines specific rules for `libs/core`. Where a piece of code goes and how it is shaped is the skill [`nm-place-core`](../../.agents/skills/nm-place-core/SKILL.md).
 
 The architecture follows [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md)
 ("Ports and adapters"). The following table summarizes architectural invariants

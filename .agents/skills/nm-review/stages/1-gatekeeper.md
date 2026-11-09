@@ -63,6 +63,10 @@ Never run blanket checks over untouched parts of the monorepo.
 
 Read `AGENTS.md` at the root and in the touched module, and the rules summarized in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
 
+### Placement
+
+Load the placement skill of each area the diff touches ([`nm-place-core`](../../nm-place-core/SKILL.md), [`nm-place-window`](../../nm-place-window/SKILL.md), [`nm-place-plugin`](../../nm-place-plugin/SKILL.md), [`nm-place-library`](../../nm-place-library/SKILL.md)) and check where the diff put its code against it: layer, slice, segment, package and library. Quote the skill when a file is in the wrong place.
+
 ### Go — core, adapters, the desktop host
 
 - **Dependencies point inward, and the compiler proves it.** `domain/`, `port/` and `usecase/` import nothing from `adapter/` and nothing that is a driver, a framework or a transport. An import going the wrong way is a finding whatever it is for; it is always visible in an import block.

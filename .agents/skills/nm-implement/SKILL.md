@@ -47,7 +47,7 @@ flowchart TD
 
 ### Step 2: Implement Code (Fast Inner Loop)
 - Match the style of surrounding files.
-- Place files on their correct architectural layer.
+- Place files on their correct architectural layer. Load the placement skill the spec names for each area ([`nm-place-core`](../nm-place-core/SKILL.md), [`nm-place-window`](../nm-place-window/SKILL.md), [`nm-place-plugin`](../nm-place-plugin/SKILL.md) or [`nm-place-library`](../nm-place-library/SKILL.md)) before writing code, and place every file as it says.
 - Use imperative verb phrases for function names and predicate phrases (`is...`, `has...`) for booleans.
 - **Fast feedback loop during edits:**
   - **Frontend:** `npx vitest related <changed-file> --run --project unit` or `npx vitest run --changed --project unit` (without `--run`, vitest waits in watch mode)

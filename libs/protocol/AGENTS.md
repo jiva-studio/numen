@@ -1,7 +1,7 @@
 # Protocol Schemas and Contracts
 
 The conventions shared across all languages in this repository are in `AGENTS.md` at
-the root. This file defines specific rules for `libs/protocol`.
+the root. This file defines specific rules for `libs/protocol`. Where wire types and clients belong, and which library a client goes to, is the skill [`nm-place-library`](../../.agents/skills/nm-place-library/SKILL.md).
 
 Protocol architecture requires one service per subject domain, with clients
 generated automatically from `.proto` definitions.

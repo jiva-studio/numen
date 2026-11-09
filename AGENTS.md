@@ -10,28 +10,22 @@ Gemini, or any other) must follow them.
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
 - **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui/core`, `libs/protocol`, `apps/desktop`.
+- **Placement skills**: the next section.
 
-## Code review protocol: the 3-stage pipeline (`/nm-review`)
+## Placement skills
 
-When asked to review code or a pull request, run the pipeline in
-[`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md):
+Before adding or moving code, load the skill of the area. Each says which layer, slice or package the code goes to and how it is shaped; the rules it rests on are in `.agents/rules/`.
 
-```mermaid
-flowchart LR
-    Request["Review request"] --> Stage1["1. gatekeeper"]
-    Stage1 -->|"Fail"| Stop["STOP (fail-fast)"]
-    Stage1 -->|"Pass"| Stage2["2. bug-hunter"]
-    Stage2 --> Stage3["3. adversary"]
-    Stage3 --> Report["Unified report"]
-```
+- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core`, `libs/notes`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
+- [`nm-place-window`](.agents/skills/nm-place-window/SKILL.md): `apps/desktop/editor`, `apps/desktop/flashcards` and the other windows under `apps/`. FSD layers, slices, segments.
+- [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md): `plugins/`, `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/plugin-host-ts`. Manifest, backend packages, frontend slices, what is copied and what is in the SDK.
+- [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core-client`, `libs/protocol`, `libs/plugin-manager`, `libs/plugin-host-ts`. Which library shared code belongs to, or whether it stays in a window or a plugin.
 
-1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target).
-2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md): the blast radius, and every defect proven with _Given → When → Then_.
-3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
-4. **Report** — the review report as templated in the skill: verdict and findings first, only the checks that ran.
+A red check is fixed in the code. Never loosen the check, add an exclusion or move code to a place the check does not look at (rule 11 of section 15, and §9 and §10 of the architecture rules).
 
-One pipeline covers Go and Vue. A reviewer reports findings and does not fix
-them.
+## Code review protocol
+
+A review is the 3-stage pipeline of [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md): gatekeeper ([`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md)), bug hunter ([`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md)), adversary ([`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md)), and the report templated in the skill. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target). One pipeline covers Go and Vue. A reviewer reports findings and does not fix them.
 
 ---
 
@@ -304,18 +298,7 @@ Specific term rules:
 
 ## 10. File placement — domain code stays in its domain
 
-Code that serves one domain is in that domain's folder under
-`apps/desktop/editor/src/` (or its respective plugin under `plugins/`):
-
-| File                                             | Belongs in |
-| ------------------------------------------------ | ---------- |
-| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/`    |
-| File-manager entries (`FileEntry`, `MoveResult`) | `files/`   |
-| Flashcard review settings                        | `cards/`   |
-
-There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
-use is at the top of `src/` under the word for what it is — `transport.ts`,
-`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
+Code that serves one domain is in the slice of that domain: in a window under `apps/desktop/<window>/src/<layer>/<slice>/` (note types in `entities/note`, file entries in `entities/file`), or in its plugin under `plugins/`. What two or more slices use is in a lower layer, at the bottom `shared`, under the word for what it is. A type only one domain reads never moves down. Layers, slices and segments are in [`nm-place-window`](.agents/skills/nm-place-window/SKILL.md) and [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §4.
 
 ---
 
@@ -419,15 +402,8 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 
 The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
 
-1. A window (editor, flashcards, mobile) calls the core only through `@numen/core-client`. A plugin frontend calls it only through `@numen/plugin-sdk`, a plugin backend only through `libs/plugin-sdk-go`. The core routes every call; windows and plugins never call each other directly.
-2. A plugin depends on the SDK and third-party code, and its frontend also on `@numen/ui`. Never add a direct import or require of `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library to a plugin. `// indirect` lines in a plugin's `go.mod` come from the SDK and are allowed.
-3. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it. Never propose a third shared library for plugins.
-4. An SDK type may be an alias of a `libs/notes` type. Each type has one name; never add a second set of names.
-5. A plugin has no `.proto` file and no protobuf code. Its backend exposes JSON methods to its frontend. A plugin's own service is named after its plugin id; shared services such as `numen.v1.AgentService` are declared by the core.
-6. Code may be duplicated between plugins. Never add or keep a check that pushes code into the SDK or `@numen/ui`.
-7. Logic that depends on time takes a clock as a port. A plugin takes the SDK clock or declares its own.
-8. Size and complexity limits are rules, with one set for Go, TypeScript and Vue ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §8).
-9. Nothing is published for now. Publishing, API compatibility tooling and iframe isolation come later, when the SDK is released.
+The plugin model, the SDK rules and the import rules for windows, plugins and libraries are [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11 (a) to (k); placement within a plugin is [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md) and placement of shared code is [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md). Time is a port (§5, §11 (i)). Size and complexity limits are one set for Go, TypeScript and Vue (§8). The numbered rules continue from 10.
+
 10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
 11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
 12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.

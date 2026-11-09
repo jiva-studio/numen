@@ -12,6 +12,8 @@ Before writing code, read:
 2. `.agents/rules/architecture.md`, `.agents/rules/process.md`, and the coding-style rule for the language you touch (`coding-style-backend.md` or `coding-style-frontend.md`).
 3. `.agents/tasks/<task-slug>/spec.md` if an active task exists — the spec is the contract: its acceptance criteria define done, its non-goals define where to stop.
 
+4. The placement skill of the area you work in (`nm-place-core`, `nm-place-window`, `nm-place-plugin` or `nm-place-library`, listed in `AGENTS.md`) — it says where each file goes.
+
 Core rules:
 
 - **You do not touch the acceptance tests.** If a test looks wrong or fails unexpectedly, report it. Editing acceptance tests destroys the independent verification check.

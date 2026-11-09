@@ -53,7 +53,8 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 ## 1. Target Architecture & Interfaces
 
 - Type signatures, interface definitions, or component prop/event contracts.
-- Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `widgets`, `pages`).
+- Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `pages`, `app`).
+- Name the placement skill of each area the work touches in the blast radius ([`nm-place-core`](../nm-place-core/SKILL.md), [`nm-place-window`](../nm-place-window/SKILL.md), [`nm-place-plugin`](../nm-place-plugin/SKILL.md) or [`nm-place-library`](../nm-place-library/SKILL.md)), and take the placement of every file from it.
 
 ## 2. Blast Radius Matrix
 

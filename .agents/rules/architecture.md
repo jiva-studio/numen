@@ -56,6 +56,8 @@ numen/
 
 ## 3. Ports and adapters
 
+Where a piece of Go code goes and how a port, a use case and an adapter are shaped: [`nm-place-core`](../skills/nm-place-core/SKILL.md).
+
 - A **port is named after the need**, an **adapter after the technology**. The core requires a place to read a vault from. That the place is a filesystem and that the index is SQLite is known only in `adapter/` and `container/`.
 - **The consumer of an interface declares it.** The implementation never names the interface. An adapter that imports the port package to declare that it satisfies the port adds nothing.
 - **Driving and driven adapters are both adapters.** A CLI, a window and an MCP server drive the core; a database, a filesystem and a clock are driven by it. The core must not depend on which kind of adapter is used.
@@ -66,7 +68,7 @@ numen/
 
 ## 4. The interface hexagon & Feature-Sliced Design (FSD)
 
-The window frontends (`apps/desktop/editor`, `apps/desktop/flashcards`) are structured into **five FSD layers**. There is no `widgets` layer; a part that two pages use is a feature or an entity.
+The window frontends (`apps/desktop/editor`, `apps/desktop/flashcards`) are structured into **five FSD layers**. There is no `widgets` layer; a part that two pages use is a feature or an entity. Where each kind of window code goes and how a slice is shaped: [`nm-place-window`](../skills/nm-place-window/SKILL.md).
 
 $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{pages (3)} \longrightarrow \text{app (4)}$$
 
@@ -164,6 +166,8 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 Outside `tools/lint-layers`, `host_permission_test.go` contains the permission rule: the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
 
 ## 11. Plugin model
+
+Where a plugin's code goes and how a plugin is cut: [`nm-place-plugin`](../skills/nm-place-plugin/SKILL.md). Which library shared code belongs to: [`nm-place-library`](../skills/nm-place-library/SKILL.md).
 
 These rules apply to every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/core-client`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core`, `apps/*` and `plugins/`.
 
