@@ -395,7 +395,9 @@ describe('createModelClient chat', () => {
           expect.objectContaining({ role: 'user', text: 'list' }),
           expect.objectContaining({
             role: 'assistant',
-            toolCalls: [expect.objectContaining({ id: 'c0', name: 'list_notes', argumentsJson: '{}' })],
+            toolCalls: [
+              expect.objectContaining({ id: 'c0', name: 'list_notes', argumentsJson: '{}' }),
+            ],
           }),
           expect.objectContaining({ role: 'tool', text: 'a, b', toolCallId: 'c0' }),
         ],
@@ -467,8 +469,8 @@ describe('createModelClient chat', () => {
       createRpc({ chat: () => streamOf({ event: { case: 'textDelta', value: 'cut' } }) }),
     )
 
-    await expect(
-      readChat(client.chat('md.numen.agents.numen', { messages: [] })),
-    ).rejects.toThrow('before the turn did')
+    await expect(readChat(client.chat('md.numen.agents.numen', { messages: [] }))).rejects.toThrow(
+      'before the turn did',
+    )
   })
 })

@@ -221,7 +221,11 @@ const readFinishReason = (reason: HostModelChatFinishReason): ModelChatFinishRea
   }
 }
 
-const writeChatRequest = (pluginId: string, request: ModelChatInput, options?: ModelCallOptions) => ({
+const writeChatRequest = (
+  pluginId: string,
+  request: ModelChatInput,
+  options?: ModelCallOptions,
+) => ({
   pluginId,
   messages: request.messages.map((one) => ({
     role: one.role,
@@ -268,7 +272,11 @@ async function* streamChat(
         return null
       case 'failure': {
         const failure = answer.event.value
-        const read = readCallFailure(failure.error, failure.detail, readRowFailures(failure.failures))
+        const read = readCallFailure(
+          failure.error,
+          failure.detail,
+          readRowFailures(failure.failures),
+        )
         if (read) return read
         throw new Error('ModelService ended a turn with a failure that holds no error')
       }
@@ -284,7 +292,8 @@ const writePriority = (priority: ModelCallPriority | undefined): Priority =>
 
 /** The lists asked through a ModelService client. */
 export const createModelClient = (rpc: ModelRpc): ModelClient => ({
-  chat: (pluginId, request, options) => streamChat(rpc, writeChatRequest(pluginId, request, options), options),
+  chat: (pluginId, request, options) =>
+    streamChat(rpc, writeChatRequest(pluginId, request, options), options),
   listModels: async (connectionId, operation) => {
     const answer = await rpc.listModels({ connectionId, operation })
     const failure = readFailure(answer.error, answer.detail)

@@ -2,14 +2,7 @@
  * The calls on models of a plugin, carried out over ModelService for the rows of that plugin.
  */
 import type { ModelCallFailure, ModelClient } from '@numen/core-client'
-import type {
-  ChatEvent,
-  ChatRequest,
-  ModelCallOptions,
-  ModelError,
-  ModelHost,
-  Result,
-} from '@numen/plugin-sdk'
+import type { ChatEvent, ModelCallOptions, ModelError, ModelHost, Result } from '@numen/plugin-sdk'
 
 const readError = (failure: ModelCallFailure): ModelError => ({
   error: failure.errorCode,

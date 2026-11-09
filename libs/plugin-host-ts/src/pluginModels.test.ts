@@ -234,7 +234,11 @@ describe('the chat of a plugin', () => {
     const { events, end } = await drain(models.chat({ messages: [] }))
 
     expect(events).toStrictEqual([{ textDelta: 'partial' }])
-    expect(end).toStrictEqual({ error: 'all_failed', message: 'Ollama: unreachable', failures: rows })
+    expect(end).toStrictEqual({
+      error: 'all_failed',
+      message: 'Ollama: unreachable',
+      failures: rows,
+    })
   })
 
   it('returns a turn whose signal aborted as canceled', async () => {
