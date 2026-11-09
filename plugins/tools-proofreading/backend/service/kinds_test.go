@@ -50,7 +50,7 @@ func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	if live.Kind != proofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
 		t.Errorf("the live version %+v reads %+v", live, parts)
 	}
-	if instruction := s.model.questions[0].GetMessages()[0].GetText(); instruction != speechInstruction {
+	if instruction := s.model.requests[0].Messages[0].Text; instruction != speechInstruction {
 		t.Errorf("timed text was not asked about as speech: %q", instruction)
 	}
 }

@@ -309,6 +309,43 @@ describe('the settings tab', () => {
     expect(tab.find('.system-row').exists()).toBe(true)
   })
 
+  it('opens the Connections page from the rows of a plugin that has none', async () => {
+    const proofreading: PluginInfo = {
+      id: 'md.test.proofreading',
+      name: 'Test Proofreading',
+      version: '1.0.0',
+      description: '',
+      isActive: true,
+      capabilities: [],
+      secrets: [],
+      hasFrontend: false,
+      hasBackend: true,
+      settings: [
+        {
+          key: 'connections',
+          type: 'connections',
+          title: 'Connections',
+          description: '',
+          default: undefined,
+          operation: 'complete',
+          max: 5,
+          isShown: true,
+        },
+      ],
+    }
+    const { tab } = createTab({}, [proofreading])
+    await tab.findAll('.plugin-row')[3]!.trigger('click')
+    await nextTick()
+    expect(tab.find('.connections-page').exists()).toBe(false)
+
+    const open = tab.findAll('button').find((one) => one.text() === 'Open Connections')
+    await open!.trigger('click')
+    await nextTick()
+
+    expect(tab.find('.connections-page').exists()).toBe(true)
+    expect(tab.find('.plugin-detail').exists()).toBe(false)
+  })
+
   it('keeps the cleared search query when navigating into a plugin detail and back', async () => {
     const samplePlugin: PluginInfo = {
       id: 'md.numen.views.agent-chat',

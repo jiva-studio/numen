@@ -2,19 +2,16 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"net/http"
-	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 const (
@@ -41,19 +38,19 @@ type scene struct {
 	run      *Proofreading
 }
 
-// modelHost is a completer that answers every prompt through its script and records the prompts.
+// modelHost is a completer that answers every prompt through its script and records the requests.
 type modelHost struct {
-	script    func(prompt string) string
-	failure   error
-	questions []*ai.Question
+	script   func(prompt string) string
+	failure  error
+	requests []connection.CompleteRequest
 }
 
-func (m *modelHost) complete(_ context.Context, question *ai.Question) (string, error) {
-	m.questions = append(m.questions, question)
+func (m *modelHost) complete(_ context.Context, request connection.CompleteRequest) (connection.CompleteResult, error) {
+	m.requests = append(m.requests, request)
 	if m.failure != nil {
-		return "", m.failure
+		return connection.CompleteResult{}, m.failure
 	}
-	return m.script(question.GetMessages()[1].GetText()), nil
+	return connection.CompleteResult{Text: m.script(request.Messages[1].Text)}, nil
 }
 
 func newScene(t *testing.T) *scene {
@@ -70,7 +67,7 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
 	s.texts.SetStore(PluginID, s.store)
-	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, getProofreadKinds(), newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
+	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, getProofreadKinds(), newAskModel(s.model.complete), s.settings.getConfig)
 	return s
 }
 
@@ -166,8 +163,8 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	if parts[0].Heading != "Storage" || parts[2].Selector != `{"page":2,"boxes":[[0.1,0.1,0.9,0.2]]}` || parts[1].Selector != `{"page":1,"boxes":[[0.1,0.1,0.9,0.2]]}` {
 		t.Errorf("the places were not kept: %+v", parts)
 	}
-	if len(s.model.questions) != 2 {
-		t.Errorf("asked %d times, want once a page", len(s.model.questions))
+	if len(s.model.requests) != 2 {
+		t.Errorf("asked %d times, want once a page", len(s.model.requests))
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks left %+v", tasks)
@@ -303,18 +300,17 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 	}
 }
 
-func TestNewAskModel_SetsProofreadingPurpose(t *testing.T) {
+func TestNewAskModel_AsksTheInstructionAndThePromptAtTheInteractivePriority(t *testing.T) {
 	m := &modelHost{script: func(string) string { return "" }}
 
 	if _, err := newAskModel(m.complete)(t.Context(), "be careful", "the prompt"); err != nil {
 		t.Fatal(err)
 	}
 
-	q := m.questions[0]
-	if q.GetPurpose() != "proofreading" || len(q.GetMessages()) != 2 ||
-		q.GetMessages()[0].GetRole() != "system" || q.GetMessages()[0].GetText() != "be careful" ||
-		q.GetMessages()[1].GetRole() != "user" || q.GetMessages()[1].GetText() != "the prompt" {
-		t.Errorf("question %v", q)
+	request := m.requests[0]
+	want := []connection.Message{{Role: "system", Text: "be careful"}, {Role: "user", Text: "the prompt"}}
+	if !slices.Equal(request.Messages, want) || request.Priority != connection.PriorityInteractive {
+		t.Errorf("request = %+v, want messages %v at the interactive priority", request, want)
 	}
 }
 
@@ -339,7 +335,7 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 }
 
 func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
-	question := &ai.Question{Messages: []ai.Message{
+	question := connection.CompleteRequest{Messages: []connection.Message{
 		{Role: "system", Text: speechInstruction},
 		{Role: "user", Text: "What it holds\n\n" + buildPrompt(Batch{Lines: []Line{{Number: 4, Text: "one"}, {Number: 5, Text: "two"}}})},
 	}}
@@ -353,7 +349,7 @@ func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := "4|one " + MockMark + "\n5|two " + MockMark; first != want || second != want {
+	if want := "4|one " + MockMark + "\n5|two " + MockMark; first.Text != want || second.Text != want {
 		t.Errorf("the mock answered %q and %q, want %q", first, second, want)
 	}
 }
@@ -399,68 +395,5 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
-	}
-}
-
-func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
-	var gotAuth, gotModel, gotSystem, gotPrompt string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/chat/completions" {
-			http.NotFound(w, r)
-			return
-		}
-		gotAuth = r.Header.Get("Authorization")
-		var req chatCompletionRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		gotModel = req.Model
-		if len(req.Messages) == 2 {
-			gotSystem = req.Messages[0].Content
-			gotPrompt = req.Messages[1].Content
-		}
-		reply := getRows(gotPrompt, func(_, text string) string {
-			return strings.NewReplacer("spinnig", "spinning", "vacum", "vacuum").Replace(text)
-		})
-		if err := json.NewEncoder(w).Encode(map[string]any{
-			"choices": []map[string]any{
-				{"message": map[string]any{"role": "assistant", "content": reply}},
-			},
-		}); err != nil {
-			t.Errorf("encode the response: %v", err)
-		}
-	}))
-	defer srv.Close()
-
-	s := newScene(t)
-	s.settings.updateConfig(map[string]string{
-		"provider": "custom",
-		"baseUrl":  srv.URL,
-		"model":    "google/gemini-2.5-flash",
-	}, server.Secrets{server.SecretAPIKey: {
-		{ID: "s00000001", Name: "Work", Group: "", Value: "secret-key"},
-		{ID: "s00000002", Name: "Home", Group: "", Value: "other-key"},
-	}})
-	scan := s.holdScan(t)
-
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Corrected != 1 {
-		t.Errorf("corrected = %d, want 1", res.Corrected)
-	}
-	if len(s.model.questions) != 0 {
-		t.Errorf("agent completer was called %d times, want 0", len(s.model.questions))
-	}
-	if gotAuth != "Bearer secret-key" {
-		t.Errorf("Authorization = %q, want Bearer secret-key", gotAuth)
-	}
-	if gotModel != "google/gemini-2.5-flash" {
-		t.Errorf("model = %q, want google/gemini-2.5-flash", gotModel)
-	}
-	if gotSystem != scanInstruction {
-		t.Errorf("system instruction mismatch")
 	}
 }

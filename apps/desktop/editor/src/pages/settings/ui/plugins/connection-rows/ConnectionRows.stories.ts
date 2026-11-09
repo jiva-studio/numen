@@ -207,6 +207,15 @@ export const NoConnectionToChoose: Story = {
   },
 }
 
+/** With no row the page offers a way to the Connections page, and asks to open it. */
+export const EmptyPageLinksToConnections: Story = {
+  render: render({ rows: [] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Open Connections' })).toBeEnabled()
+  },
+}
+
 /** A connection that cannot do the operation is dimmed with its reason, after the usable ones. */
 export const DimmedConnection: Story = {
   render: render({ rows: [row(WORK.id, 'google/gemini-2.5-flash')] }),

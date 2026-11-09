@@ -161,6 +161,24 @@ describe('the rows of a setting of connections', () => {
     dispose(wrapper)
   })
 
+  it('offers a way to the Connections page while no row is set, and asks to open it', async () => {
+    const { wrapper } = mountRows()
+    await flushPromises()
+
+    await click(findButton(/open connections/i))
+
+    expect(wrapper.emitted('open-connections')).toHaveLength(1)
+    dispose(wrapper)
+  })
+
+  it('offers no way to the Connections page once a row is set', async () => {
+    const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    expect(root().textContent).not.toContain('Open Connections')
+    dispose(wrapper)
+  })
+
   it('reads the connections when it opens', async () => {
     const { wrapper, installation } = mountRows()
     await flushPromises()

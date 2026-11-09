@@ -23,8 +23,8 @@ func secretGroups(t *testing.T, pluginID string) []string {
 	return nil
 }
 
-func TestThePluginsThatCallARemoteServiceDeclareOneKeyForEachProviderGroup(t *testing.T) {
-	for _, id := range []string{"md.numen.engines.embeddings", "md.numen.tools.proofreading"} {
+func TestThePluginThatCallsARemoteServiceDeclaresOneKeyForEachProviderGroup(t *testing.T) {
+	for _, id := range []string{"md.numen.engines.embeddings"} {
 		t.Run(id, func(t *testing.T) {
 			groups := secretGroups(t, id)
 			slices.Sort(groups)

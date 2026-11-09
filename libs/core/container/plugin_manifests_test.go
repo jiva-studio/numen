@@ -359,10 +359,13 @@ func isReadByCondition(manifest pluginport.PluginManifest, key string) bool {
 	return slices.ContainsFunc(conditions, func(condition string) bool { return strings.Contains(condition, name) })
 }
 
-func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
+func listUnreadSettings(declaring pluginport.PluginManifest, sources []string) []string {
 	var unread []string
-	for _, setting := range manifest.Settings {
-		if isReadByCondition(manifest, setting.Key) {
+	for _, setting := range declaring.Settings {
+		if setting.Type == manifest.SettingTypeConnections {
+			continue
+		}
+		if isReadByCondition(declaring, setting.Key) {
 			continue
 		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
@@ -407,6 +410,10 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	}
 	if got := listUnreadSettings(scans, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
+	}
+	rows := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{{Key: "connections", Type: manifest.SettingTypeConnections}}}
+	if got := listUnreadSettings(rows, nil); len(got) != 0 {
+		t.Errorf("a setting of rows, which the host reads, is found unread: %v", got)
 	}
 	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
 	triggered.Contributes.Triggers = []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
