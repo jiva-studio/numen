@@ -136,7 +136,7 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   try {
     fs.rmSync(path.join(getVaultPath(), trashed), { recursive: true, force: true })
   } catch (failure) {
-    throw new Error(`the trashed copy ${trashed} of ${notePath} stayed: ${String(failure)}`)
+    throw new Error(`the trashed copy ${trashed} of ${notePath} stayed`, { cause: failure })
   }
 }
 
