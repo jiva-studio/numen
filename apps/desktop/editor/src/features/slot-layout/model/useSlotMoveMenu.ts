@@ -32,7 +32,7 @@ export interface SlotMoveMenuState {
   readonly at: Position
 }
 
-export interface SlotMoveMenu {
+export interface SlotMoveMenuControl {
   readonly menu: ComputedRef<SlotMoveMenuState | null>
   /** Chooses an item: an item that moves the entry writes the move and closes the menu. */
   readonly choose: (id: string) => void
@@ -56,13 +56,14 @@ const findEntry = (target: EventTarget | null): { itemKey: string; slot: SlotNam
   return { itemKey, slot }
 }
 
-export function useSlotMoveMenu(deps: SlotMoveMenuDeps): SlotMoveMenu {
+export function useSlotMoveMenu(deps: SlotMoveMenuDeps): SlotMoveMenuControl {
   const open = shallowRef<OpenMenu | null>(null)
 
   const onContextMenu = (event: MouseEvent): void => {
     const entry = findEntry(event.target)
-    const key = entry && deps.findLayoutKey(entry.itemKey, entry.slot)
-    if (!entry || key === undefined) return
+    if (!entry) return
+    const key = deps.findLayoutKey(entry.itemKey, entry.slot)
+    if (key === undefined) return
     event.preventDefault()
     open.value = {
       key,

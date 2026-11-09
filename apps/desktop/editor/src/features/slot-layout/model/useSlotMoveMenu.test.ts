@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import type { LayoutEntry, SlotLayout, SlotName } from '@numen/plugin-host'
-import { useSlotMoveMenu, type SlotMoveMenu } from './useSlotMoveMenu'
+import { useSlotMoveMenu, type SlotMoveMenuControl } from './useSlotMoveMenu'
 
 const TIDE = 'titleBar.status|org.example.tide/status'
 const REEF = 'titleBar.status|org.example.reef/stats'
@@ -53,7 +53,7 @@ const create = (layout: SlotLayout = {}) => {
       writeLayout,
       words: { moveTo: 'Move to', atTheEnd: 'At the end' },
     }),
-  ) as SlotMoveMenu
+  ) as SlotMoveMenuControl
   return { menu, writeLayout }
 }
 
@@ -63,7 +63,7 @@ const rightClick = (id: string, at = { clientX: 40, clientY: 12 }): MouseEvent =
   return event
 }
 
-const findItem = (menu: SlotMoveMenu, ...path: string[]) => {
+const findItem = (menu: SlotMoveMenuControl, ...path: string[]) => {
   let items = menu.menu.value?.items ?? []
   let found = items[0]
   for (const text of ['Move to', ...path]) {

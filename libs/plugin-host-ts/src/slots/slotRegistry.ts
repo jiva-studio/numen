@@ -261,6 +261,15 @@ const findDrawnSlot = (
   return (key === undefined ? undefined : places.get(key)?.slot) ?? entry.slot
 }
 
+/** The commands and views among the placed entries, each with its layout key and title. */
+const toLayoutEntries = (placed: readonly Placed[]): LayoutEntry[] =>
+  placed.flatMap(({ entry, item }) => {
+    const key = getLayoutKey(entry)
+    if (key === undefined) return []
+    const title = item.kind === 'command' ? item.title : entry.title
+    return [{ key, title: title || key }]
+  })
+
 export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
   const report = createReport(deps)
   const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
@@ -320,13 +329,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
   return {
     getEntries: (slot: SlotPlace, target?: CommandTarget) => resolve(slot, target),
     findLayoutKey,
-    listLayoutEntries: (slot) =>
-      sortEntries(slot, undefined).flatMap(({ entry, item }) => {
-        const key = getLayoutKey(entry)
-        if (key === undefined) return []
-        const title = item.kind === 'command' ? item.title : entry.title
-        return [{ key, title: title || key }]
-      }),
+    listLayoutEntries: (slot) => toLayoutEntries(sortEntries(slot, undefined)),
     watchEntries: (slot, handler, target): Disposable => {
       const stop = watch(() => resolve(slot, target), handler, { immediate: true })
       return { dispose: stop }

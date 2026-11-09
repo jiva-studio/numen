@@ -7,7 +7,7 @@ import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
 import type { CommandTarget } from '../commands/commands'
 
-export { SLOT, type SlotName } from './slotNames'
+export { SLOT, isUserArrangedSlot, listUserArrangedSlots, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'
 
 // SLOT_ATTRIBUTE names the element that draws a slot; its value is the slot name.
