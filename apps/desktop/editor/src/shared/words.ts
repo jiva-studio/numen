@@ -56,6 +56,9 @@ export const WORDS = {
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'Create note',
+  newFolder: 'Create folder',
+  /** The name a folder is made under where none was typed. */
+  untitledFolder: 'New folder',
   /** The note that points at a web address. */
   close: 'Close tab',
   byDefault: 'default',

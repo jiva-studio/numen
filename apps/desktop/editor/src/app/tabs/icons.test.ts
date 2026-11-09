@@ -39,7 +39,6 @@ describe('the icon a command is drawn with', () => {
 
   it('is nothing for a command of the window that no icon is kept for', () => {
     expect(findIcon(COMMAND.moveFile)).toBeNull()
-    expect(findIcon(COMMAND.createFolder)).toBeNull()
     expect(findIcon('mode:dark')).toBeNull()
   })
 

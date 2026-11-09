@@ -68,6 +68,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['newFolder', FolderPlus],
   ['rename', PenLine],
   [COMMAND.createNote, FilePlus],
+  [COMMAND.createFolder, FolderPlus],
   [COMMAND.searchVault, Search],
   ['commands', Command],
   [COMMAND.closeTab, SquareX],

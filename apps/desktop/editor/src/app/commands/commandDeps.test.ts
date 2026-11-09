@@ -17,6 +17,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
       remove: record('app:file.remove', 'removed'),
       emptyTrash: record('app:trash.empty', 3),
       move: record('app:file.move', 'moved'),
+      list: record('list', [{ name: 'heat' }, { name: 'Entropy.md' }]),
       createFolder: record('app:folder.create', 'folded'),
     } as never,
     windowTabs: {
@@ -83,6 +84,7 @@ describe('the commands reach the window', () => {
     expect(await deps.files.remove('Llama.md')).toBe('removed')
     expect(await deps.files.emptyTrash()).toBe(3)
     expect(await deps.files.move('Llama.md', 'zoo/Llama.md')).toBe('moved')
+    expect(await deps.files.listNames('zoo')).toStrictEqual(['heat', 'Entropy.md'])
     expect(await deps.files.createFolder('zoo')).toBe('folded')
     expect(calls).toStrictEqual([
       ['createWithTitle', 'Llama', 'Animals.md', null],
@@ -91,6 +93,7 @@ describe('the commands reach the window', () => {
       ['app:file.remove', 'Llama.md'],
       ['app:trash.empty'],
       ['app:file.move', 'Llama.md', 'zoo/Llama.md'],
+      ['list', 'zoo'],
       ['app:folder.create', 'zoo'],
     ])
   })

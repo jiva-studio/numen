@@ -38,18 +38,6 @@ const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[
   one.length === other.length &&
   one.every((entry, index) => isSameEntry(entry, other[index]!))
 
-/**
- * Generates a name not taken in the folder.
- */
-export const generateUniqueName = (names: readonly string[], word: string): string => {
-  const existingNames = new Set(names)
-  if (!existingNames.has(word)) return word
-  for (let count = 2; ; count++) {
-    const name = `${word} ${count}`
-    if (!existingNames.has(name)) return name
-  }
-}
-
 function getRowsInFolder(
   entriesByFolder: ReadonlyMap<string, readonly Entry[]>,
   isFolderOpen: (folder: string) => boolean,
@@ -268,11 +256,6 @@ export function createFileTree(core: Folders): FileTree {
     revealPath,
     refresh: refreshControl.refresh,
     refreshChanged: refreshControl.refreshChanged,
-    getUniqueNameInFolder: (folder: string, word: string): string =>
-      generateUniqueName(
-        queries.getEntriesInFolder(folder).map((one) => one.name),
-        word,
-      ),
     close,
   }
 }

@@ -23,6 +23,7 @@ export interface AnswerWords {
   readonly errors: Record<ErrorCode, string>
   readonly vaultErrors: Record<VaultErrorCode, string>
   readonly folder: string
+  readonly untitledFolder: string
   readonly dangling: string
   readonly undeleted: (count: number) => string
   readonly nowhere: string
@@ -59,6 +60,7 @@ export interface Words extends EmptyWords {
   readonly remove: string
   readonly copy: string
   readonly newNote: string
+  readonly newFolder: string
   readonly close: string
   readonly settings: string
   readonly find: string

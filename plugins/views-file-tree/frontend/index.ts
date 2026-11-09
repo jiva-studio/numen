@@ -55,10 +55,6 @@ export function activate(context: PluginContext): void {
       if (path !== ROOT) state.setRenamingPath(path)
     }),
   })
-  context.registerCommand({
-    id: 'tree.createFolder',
-    handler: runOnTab((state, path) => state.createFolder(path === ROOT ? null : path)),
-  })
 }
 
 export default definePlugin({

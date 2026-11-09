@@ -53,9 +53,6 @@ const mountFiles = async (open: readonly string[] = []) => {
     setDraggedPaths: (paths) => {
       isDone.push(`drags ${paths.join(' ') || '—'}`)
     },
-    createFolder: async (path) => {
-      isDone.push(`makes ${path}`)
-    },
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
       isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
@@ -298,7 +295,6 @@ describe('a folder that could not be read', () => {
       runCommand: async () => '',
       movePath: async () => undefined,
       setDraggedPaths: () => undefined,
-      createFolder: async () => undefined,
       canDropData: () => false,
       dropData: async () => [],
       showError: () => undefined,

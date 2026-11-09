@@ -37,6 +37,8 @@ export interface VaultWriter {
    * it is called from now on.
    */
   move(from: string, to: string): Promise<Movement>
+  /** The names of what one folder holds. The root is the empty path. */
+  listNames(folder: string): Promise<readonly string[]>
   /** An empty folder. The folders above it are made with it. */
   createFolder(path: string): Promise<ErrorCode | null>
 }
@@ -107,7 +109,7 @@ export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice
   readonly emitEvent?: (event: string) => void
 }
 
-/** One command, carried out. A command that made a note answers with its path. */
+/** One command, carried out. A command that made a note or a folder answers with its path. */
 export type CommandHandler = (
   invocation: CommandInvocation,
   on: CommandDeps,

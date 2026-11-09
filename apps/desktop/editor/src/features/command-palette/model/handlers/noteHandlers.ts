@@ -6,6 +6,7 @@ import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
 import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'
 import { NOTE } from '@/entities/tab'
+import { generateUniqueName } from '@/shared/paths'
 
 /** The result of a flush request on a tab: which tab it was, and whether it is still waiting. */
 export interface FlushResult {
@@ -109,14 +110,29 @@ export const moveFileCommand = async (
   on.writeMessage(words.errors[answer.error], 'error')
 }
 
-/** An empty folder, made under the path that was typed. */
+/**
+ * An empty folder, made under the path that was typed. Over a folder and without a path it is
+ * made in that folder under a name nothing there carries. Answers the path of the folder made.
+ */
 export const createFolderCommand = async (
   invocation: CommandInvocation,
   on: VaultContext & Voice,
   words: AnswerWords,
-): Promise<void> => {
-  if (!invocation.name) return
-  const error = await on.files.createFolder(invocation.name)
+): Promise<string | void> => {
+  const path = invocation.name || (await getUntitledFolderPath(invocation, on, words))
+  if (!path) return
+  const error = await on.files.createFolder(path)
   if (error === 'alreadyExists') return on.writeMessage(words.alreadyExists, 'error')
-  if (error) on.writeMessage(words.errors[error], 'error')
+  if (error) return on.writeMessage(words.errors[error], 'error')
+  return path
+}
+
+const getUntitledFolderPath = async (
+  invocation: CommandInvocation,
+  on: VaultContext,
+  words: AnswerWords,
+): Promise<string> => {
+  if (!invocation.isFolder) return ''
+  const name = generateUniqueName(await on.files.listNames(invocation.path), words.untitledFolder)
+  return invocation.path ? `${invocation.path}/${name}` : name
 }
