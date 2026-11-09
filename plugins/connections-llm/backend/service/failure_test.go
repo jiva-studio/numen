@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
@@ -47,11 +48,14 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 
 func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
-	fake.Fail("/chat/completions", http.StatusTooManyRequests, time.Now().Add(90*time.Second).UTC().Format(http.TimeFormat))
-	_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+	now := time.Date(2026, time.March, 4, 10, 0, 0, 0, time.UTC)
+	fake.Fail("/chat/completions", http.StatusTooManyRequests, now.Add(90*time.Second).Format(http.TimeFormat))
+	svc := New()
+	svc.clock = clock.NewFake(now)
+	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 	retryAfter, ok := connection.IsTryNext(err)
-	if !ok || retryAfter < 60*time.Second || retryAfter > 90*time.Second {
-		t.Errorf("retryAfter = %v, ok = %v, want about 90 s", retryAfter, ok)
+	if !ok || retryAfter != 90*time.Second {
+		t.Errorf("retryAfter = %v, ok = %v, want 90 s", retryAfter, ok)
 	}
 }
 
@@ -158,9 +162,8 @@ func TestAFailureShowsNeitherTheKeyNorTheTextOfTheService(t *testing.T) {
 
 func waitForRequest(t *testing.T, fake *fakeopenai.Server) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for len(fake.Requests()) == 0 {
-		if time.Now().After(deadline) {
+	for attempt := 0; len(fake.Requests()) == 0; attempt++ {
+		if attempt == 1000 {
 			t.Fatal("the service received no request")
 		}
 		time.Sleep(5 * time.Millisecond)

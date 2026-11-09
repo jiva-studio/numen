@@ -52,7 +52,7 @@ func (s *Service) send(ctx context.Context, call connection.Call, target endpoin
 	}
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return mapStatus(response)
+		return s.mapStatus(response)
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
@@ -110,14 +110,14 @@ func classifyTransportError(parent, limit context.Context, err error) error {
 	return connection.NewTryNextError(connection.ReasonUnreachable, 0)
 }
 
-func mapStatus(response *http.Response) error {
+func (s *Service) mapStatus(response *http.Response) error {
 	switch status := response.StatusCode; {
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
 		return connection.NewTryNextError(connection.ReasonKeyRejected, 0)
 	case status == http.StatusPaymentRequired:
 		return connection.NewTryNextError(connection.ReasonPaymentRequired, 0)
 	case status == http.StatusTooManyRequests:
-		return connection.NewTryNextError(connection.ReasonRateLimited, parseRetryAfter(response.Header.Get("Retry-After"), time.Now()))
+		return connection.NewTryNextError(connection.ReasonRateLimited, parseRetryAfter(response.Header.Get("Retry-After"), s.clock.Now()))
 	case status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout:
 		return connection.NewTryNextError(connection.ReasonUnreachable, 0)
 	case status >= 400 && status < 500:

@@ -1,6 +1,7 @@
 package fakeopenai
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -158,18 +159,17 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body
 }
 
 func (s *Server) wait(r *http.Request, wait time.Duration) bool {
-	timer := time.NewTimer(wait)
-	defer timer.Stop()
-	select {
-	case <-timer.C:
+	waiting, stop := context.WithTimeout(r.Context(), wait)
+	defer stop()
+	<-waiting.Done()
+	if r.Context().Err() == nil {
 		return true
-	case <-r.Context().Done():
-		select {
-		case s.aborted <- struct{}{}:
-		default:
-		}
-		return false
 	}
+	select {
+	case s.aborted <- struct{}{}:
+	default:
+	}
+	return false
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

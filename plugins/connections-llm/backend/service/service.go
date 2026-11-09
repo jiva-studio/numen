@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -45,11 +46,12 @@ type Service struct {
 	timeout time.Duration
 	served  map[string]struct{}
 	clients clients
+	clock   timeSource
 }
 
 // New creates a service with the default limits.
 func New() *Service {
-	return &Service{mu: sync.Mutex{}, timeout: 0, served: map[string]struct{}{}, clients: newClients()}
+	return &Service{mu: sync.Mutex{}, timeout: 0, served: map[string]struct{}{}, clients: newClients(), clock: clock.System{}}
 }
 
 // Provider returns the roles the service fills.
@@ -107,4 +109,9 @@ func (s *Service) markServed(call connection.Call) {
 
 func servedKey(call connection.Call) string {
 	return call.Fields[fieldBaseURL] + "\x00" + call.Model
+}
+
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
 }
