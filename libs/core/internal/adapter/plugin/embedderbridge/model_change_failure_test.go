@@ -101,7 +101,7 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 	}
 }
 
-// A read that succeeds reports no error.
+// A read that succeeds is reported once, with no error.
 func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 	host, bridge, mock, _ := openConfigurable(t)
 	reports := failureReports(bridge)
@@ -112,8 +112,11 @@ func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 	}
 	settle(t, bridge, mock, reads)
 
-	if len(reports) != 0 {
-		t.Errorf("a successful read reported %v", <-reports)
+	if len(reports) != 1 {
+		t.Fatalf("%d reports for one successful read, want 1", len(reports))
+	}
+	if err := <-reports; err != nil {
+		t.Errorf("a successful read reported %v", err)
 	}
 }
 
