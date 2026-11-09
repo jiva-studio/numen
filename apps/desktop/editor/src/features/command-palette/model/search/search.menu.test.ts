@@ -343,6 +343,18 @@ describe('the row that creates a note, in a search that found nothing', () => {
     expect(getRow(palette)).toBeUndefined()
   })
 
+  it('is absent while the search waits to run', async () => {
+    const palette = useSearch(createCore([]), WORDS, {
+      wait: () => new Promise(() => undefined),
+      getTarget: () => front(),
+    })
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+
+    expect(getRow(palette)).toBeUndefined()
+  })
+
   it('is absent where a group found something', async () => {
     const palette = useSearch(createCore([nameMatch]), WORDS, {
       wait: now,

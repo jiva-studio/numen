@@ -45,6 +45,7 @@ function createPlexTabs() {
       tabs.delete(id)
       tabs.set(id, state)
     },
+    find: (id: string): PlexTabState | undefined => tabs.get(id),
     getAll: (): readonly PlexTabState[] => [...tabs.values()],
     getCurrentPath: (): string => getLast()?.view.here.value ?? '',
   }
@@ -121,5 +122,12 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
 
   const refresh = (event: VaultChangeEvent) => refreshTabs(host, tabs.getAll(), event)
 
-  return { kind, refresh }
+  /** Makes a note and shows it in the plex of the tab `id`. */
+  const createNote = async (id: string): Promise<void> => {
+    const state = tabs.find(id)
+    if (!state) throw new Error(`no plex is open in the tab ${id}`)
+    await state.createNote()
+  }
+
+  return { kind, refresh, createNote }
 }

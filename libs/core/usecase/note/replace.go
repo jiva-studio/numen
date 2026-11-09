@@ -115,8 +115,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		var tellErr error
-		ends, err = u.Drawing.beginChange(ctx, u.now, domain.Edit{
+		finish, tellErr := u.Drawing.beginChange(ctx, u.now, domain.Edit{
 			Path: path,
 			From: markdown.CountUTF16(body, span.Start),
 			To:   markdown.CountUTF16(body, span.End),
@@ -125,6 +124,7 @@ func (u Replace) Execute(
 		if tellErr != nil {
 			return tellErr
 		}
+		ends = finish
 
 		isDone.Range = markdown.Range{Start: span.Start, End: span.Start + len(becomes)}
 		isDone.Matched = body[span.Start:span.End]

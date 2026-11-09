@@ -51,6 +51,7 @@ type Config struct {
 	Watches                   *vaultwatch.Hub
 	SettingsFiles             *settingsadapter.Files
 	SettingEvents             *settingevents.Events
+	Programs                  *settingsadapter.ProgramList
 	SecretGate                *secret.Gate
 	SubscribedHosts           *sync.Map
 	PluginChanges             *pluginchanges.Signals
@@ -354,7 +355,22 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 			values[settingevents.JoinPath([]string{settingKeySecrets})] = content
 		}
 	}
+	if c.Programs != nil {
+		if late := c.Programs.GetLate(); len(late) > 0 {
+			add([]string{settingsadapter.OwnerApp, AgentAt, "use"}, getAgentUseValue(target.Agent, late))
+		}
+	}
 	return values, errors.Join(failures...)
+}
+
+func getAgentUseValue(target settingsadapter.Agent, programs []agentport.AgentProgram) string {
+	if use := target.GetUse(); use != "" {
+		return use
+	}
+	if def, ok := agentport.GetDefaultProgram(programs); ok {
+		return def.Name
+	}
+	return programs[0].Name
 }
 
 func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]string, any), values settingevents.Values) {

@@ -208,6 +208,9 @@ async function executeSearchQuery(
   },
   state: SearchRefs,
 ) {
+  state.names.value = []
+  state.texts.value = []
+  state.meanings.value = []
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
   const onFailed = (g: SearchGroup) => {
@@ -253,13 +256,11 @@ async function executeSearchQuery(
 }
 
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
-  /** The tab kind of the note a hit is in; null for a hit in a file that is no note, or no hit. */
   const findTabKind = (item: string): string | null => {
     const searchHit = getHits().get(item)
     return searchHit && searchHit.type !== null ? (searchHit.tabKind ?? '') : null
   }
 
-  /** The path of a hit in a file that is no note, and null for a note. */
   const findHitFile = (item: string): string | null => {
     const searchHit = getHits().get(item)
     return searchHit && searchHit.type === null ? searchHit.path : null
@@ -277,6 +278,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
+  const isWaiting = ref(false)
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
   const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages }
@@ -284,6 +286,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
   const drop = () => {
+    isWaiting.value = false
     names.value = []
     texts.value = []
     meanings.value = []
@@ -291,12 +294,21 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     failureMessages.value = {}
   }
 
-  const ask = (query: string, mine: InFlightRequest) =>
-    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
+  const ask = (query: string, mine: InFlightRequest) => {
+    isWaiting.value = false
+    return executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
+  }
 
   const setTyped = async (text: string) => {
     inputValue.value = text
-    await debounced.search(text, { blank: drop, run: ask })
+    await debounced.search(text, {
+      blank: drop,
+      pending: () => {
+        drop()
+        isWaiting.value = true
+      },
+      run: ask,
+    })
   }
 
   const setOpen = (now: boolean) => {
@@ -322,12 +334,13 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
-    return appendCreateNoteRow(base, inputValue.value, words, how.getTarget)
+    return isWaiting.value
+      ? base
+      : appendCreateNoteRow(base, inputValue.value, words, how.getTarget)
   })
 
   const groups = computed(() => searchGroups.value.groups)
 
-  /** What choosing an action of a row runs, with the words typed as the input of the row that creates a note. */
   const chooseResult = (item: string, action: string): ResultChoice | null =>
     resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)
 

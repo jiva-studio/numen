@@ -48,7 +48,7 @@ func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settin
 	if c.Programs == nil {
 		return list()
 	}
-	return c.Programs.Get(programsWait, list)
+	return c.Programs.Get(programsWait, list, c.RefreshSettingEvents)
 }
 
 var errNoCompletionProvider = errors.New("no plugin host runs agent programs")

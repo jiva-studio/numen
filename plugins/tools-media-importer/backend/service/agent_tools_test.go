@@ -395,8 +395,8 @@ func TestURLImportStartsTheDownloadAndReturnsBeforeItEnds(t *testing.T) {
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
 
-	if out.DownloadTaskID != "copy:"+out.Path || out.DownloadError != "" {
-		t.Errorf("url_import returned %+v, want the copy task copy:%s", out, out.Path)
+	if out.DownloadTaskID != "copy:Mills:"+out.Path || out.DownloadError != "" {
+		t.Errorf("url_import returned %+v, want the copy task copy:Mills:%s", out, out.Path)
 	}
 	if hasCopy(t, s.store) {
 		t.Error("the copy is in the plugin's folder before the download was let through")
@@ -405,6 +405,27 @@ func TestURLImportStartsTheDownloadAndReturnsBeforeItEnds(t *testing.T) {
 	s.links.Wait()
 	if !hasCopy(t, s.store) {
 		t.Error("the copy is not in the plugin's folder once the background copy ended")
+	}
+}
+
+func TestURLImportDownloadsInTwoVaultsOnTheSamePath(t *testing.T) {
+	release := make(chan struct{})
+	s := newImportFixture(t, release)
+
+	inMills := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
+	inChemistry := s.importURL(t, "Chemistry", importArguments{URL: videoAddress, DownloadVideo: true})
+
+	if inMills.Path != inChemistry.Path {
+		t.Fatalf("paths %q and %q, want the same path in both vaults", inMills.Path, inChemistry.Path)
+	}
+	if inMills.DownloadTaskID != "copy:Mills:"+inMills.Path || inChemistry.DownloadTaskID != "copy:Chemistry:"+inChemistry.Path {
+		t.Errorf("task ids %q and %q, want copy:Mills:%s and copy:Chemistry:%s",
+			inMills.DownloadTaskID, inChemistry.DownloadTaskID, inMills.Path, inChemistry.Path)
+	}
+	close(release)
+	s.links.Wait()
+	if !hasCopy(t, s.store) || !hasCopy(t, s.chemistry.Store()) {
+		t.Error("one of the two vaults has no copy after both downloads ended")
 	}
 }
 

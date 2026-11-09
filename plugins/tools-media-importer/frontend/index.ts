@@ -5,14 +5,14 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { createLinks, links as servedLinks } from './api/wire'
 import { getUrls, URI_LIST } from './lib/uriList'
-import type { Links, Outcome } from './types'
+import type { DroppedLinks, Links, Outcome } from './types'
 import { WORDS as words } from './words'
 
 /** Makes link notes of the addresses in a folder, as the plugin's backend does. */
 export type CreateLinks = (
   folder: string,
   urls: readonly string[],
-) => Promise<Outcome<readonly string[]>>
+) => Promise<Outcome<DroppedLinks>>
 
 /** The items of app:link.downloadMedia: the video of a link, or its sound alone. */
 const MEDIA = ['video', 'audio'] as const
@@ -29,9 +29,14 @@ export const activate = (
     types: [URI_LIST],
     drop: async (folder, data) => {
       const made = await create(folder, getUrls(data[URI_LIST] ?? ''))
-      if (made.ok) return made.value
-      context.workspace?.showError(made.error)
-      return []
+      if (!made.ok) {
+        context.workspace?.showError(made.error)
+        return []
+      }
+      if (made.value.failed.length > 0) {
+        context.workspace?.showError(`${words.notCreated} ${made.value.failed.join(', ')}`)
+      }
+      return made.value.paths
     },
   })
   context.registerCommand({
