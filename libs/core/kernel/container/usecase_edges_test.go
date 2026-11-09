@@ -4,30 +4,12 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
 )
-
-func getUseCaseEdges() map[string][]string {
-	return map[string][]string{
-		"note":          nil,
-		"settings":      nil,
-		"run":           nil,
-		"filetext":      nil,
-		"vectors":       nil,
-		"file":          nil,
-		"search":        nil,
-		"vault":         nil,
-		"indexing":      nil,
-		"completion":    nil,
-		"plugincommand": nil,
-		"plugintheme":   nil,
-		"textversion":   nil,
-	}
-}
 
 func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	rest, found := strings.CutPrefix(pkg, "usecase/")
@@ -44,18 +26,15 @@ func getUseCaseEdgeRefusal(from, to string) string {
 	if !isSource || !isTarget || source == target {
 		return ""
 	}
-	if slices.Contains(getUseCaseEdges()[source], target) {
-		return ""
-	}
-	return "a use case builds only on the use cases useCaseEdges lists for it"
+	return "a use case imports no other use case"
 }
 
-// A use case imports another only along an edge useCaseEdges declares.
+// No use case imports another use case; a package below a use case is that use case.
 //
 // Test files are not walked.
-func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
+func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
 	var violations []string
-	var importsRead, useCaseImportsRead int
+	var importsRead int
 	visited := map[string]bool{}
 	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
@@ -79,9 +58,6 @@ func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
 			}
 			to = strings.TrimPrefix(to, module)
 			importsRead++
-			if _, ok := getUseCaseName(to); ok {
-				useCaseImportsRead++
-			}
 			if reason := getUseCaseEdgeRefusal(from, to); reason != "" {
 				violations = append(violations, from+" reaches "+to+": "+reason)
 			}
@@ -100,32 +76,34 @@ func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
 	if importsRead < 50 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", importsRead)
 	}
-	_ = useCaseImportsRead
-	for name := range getUseCaseEdges() {
-		if !visited[name] {
+	folders, err := os.ReadDir("../usecase")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, folder := range folders {
+		if name := folder.Name(); folder.IsDir() && !visited[name] {
 			t.Errorf("usecase/%s has no file the walk read: the rule stops at that use case", name)
 		}
 	}
 }
 
-// The edge rule is called directly on declared and undeclared edges.
-func TestUseCaseEdgeRule_RejectsUndeclaredEdges(t *testing.T) {
+// The edge rule is called directly on imports between use cases and imports within one.
+func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 	for _, tc := range []struct {
 		from, to  string
 		isRefused bool
 	}{
-		// Cross-use-case edges are refused.
+		// Imports between two use cases are refused.
 		{"usecase/vault", "usecase/note", true},
 		{"usecase/vault", "usecase/filetext", true},
 		{"usecase/vault", "usecase/vectors", true},
 
-		// The same edges reversed, and the edges skipping the declaration.
+		// The same imports reversed.
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/filetext", "usecase/vault", true},
 		{"usecase/filetext", "usecase/run", true},
 		{"usecase/vectors", "usecase/vault", true},
 
-		// A use case that builds on none.
 		{"usecase/vectors", "usecase/note", true},
 		{"usecase/file", "usecase/note", true},
 		{"usecase/search", "usecase/note", true},

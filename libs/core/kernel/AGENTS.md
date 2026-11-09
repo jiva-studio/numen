@@ -16,7 +16,7 @@ Each test verifies adherence to structural rules.
 | ----------------------------------------------------------------------------- | -------------------------------------------------- |
 | A package is on the layer its path states, and imports only from lower layers | `TestTheLayersAreWhatTheyAre`                      |
 | No package that the core is compiled from imports an adapter                  | `TestNothingTheCoreIsCompiledFromReachesOutward`   |
-| A use case imports no other use case (use cases are isolated)                 | `TestUseCaseImportsFollowDeclaredEdges`            |
+| A use case imports no other use case (use cases are isolated)                 | `TestNoUseCaseImportsAnotherUseCase`               |
 | An adapter does not name the port it implements                               | `TestNoAdapterNamesThePortItSatisfies`             |
 | The composition root returns no adapter type                                  | `TestTheRootPassesOutNoAdapterTheCompilerContains` |
 | A package is imported under the name its layer gives it                       | `TestNoPackageIsImportedBelowItsLayer`             |
@@ -24,6 +24,8 @@ Each test verifies adherence to structural rules.
 | An adapter that references a use case is driving, one with a type that implements a port is driven, and none is both | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/AnAdapterIsDrivingOrDrivenNotBoth` |
 | A driving adapter references no type, function, variable, constant or method declared under `port/`, aliases resolved | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/ADrivingAdapterReferencesNoPort` |
 | The composition root is the one package `container`; no package lies below it | `TestTheTypeCheckedWorkspaceObeysItsRules/TheCompositionRootIsOnePackage` |
+| No struct holds more than five use cases | `TestTheTypeCheckedWorkspaceObeysItsRules/NoStructHoldsMoreThanFiveUseCases` |
+| No wiring package exists outside `container` | `TestTheTypeCheckedWorkspaceObeysItsRules/NoWiringPackageExistsOutsideTheContainer` |
 
 ## What the core may not do
 
@@ -45,7 +47,7 @@ outside `port/`.
 | Every port method is called from outside `port/`   | `TestEveryPortMethodIsCalledSomewhereElse`      |
 | Every adapter serving the schema is a driving one  | `TestEveryAdapterServingTheSchemaIsDriving`     |
 | No function or method of a port calls a method of an interface value | `TestTheTypeCheckedWorkspaceObeysItsRules/APortDeclaresAndDoesNotOrchestrate` |
-| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in every module that configuration covers | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
+| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in the kernel, the notes library, the SDK and the applications, not in a plugin or a tool | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
 
 ## Names in the core
 
@@ -54,7 +56,7 @@ outside `port/`.
 | An identity is named with the core's own term, in fields and in signatures                    | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn`           |
 | An instant is a `time.Time`                                                                   | `TestEveryInstantTheCoreCarriesIsATime`                                                    |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
-| The machine clock is read only inside a clock port implementation; timers and randomness are not restricted | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
+| The machine clock (`time.Now`, `Since`, `Until`) is read only inside a clock port implementation; timers and randomness are not restricted | `TestNothingOfTheCoreReadsTheMachinesClock`, `TestNothingOutsideAdaptersReadsTheMachineClock`, `TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation` |
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 
