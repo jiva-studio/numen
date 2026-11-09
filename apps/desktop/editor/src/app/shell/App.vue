@@ -18,7 +18,7 @@ import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
-import { useWindow } from '../window/useWindow'
+import { createWindow } from '../window/createWindow'
 import { useWindowTabMenu } from '../tabs/useTabMenu'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
@@ -33,40 +33,27 @@ const unsaved = {
   later: words.later,
 }
 
+const parts = createWindow()
+const { frame } = parts
+const { windowTabs, layout, closeTab, getTabIcon, tabLinks, isHighlighted, moves } = parts.tabs
+const { highlightWindow, detachTab } = moves
 const {
-  runCommand,
-  slots,
-  runChoice,
-  openCurrentVault,
-  readNoteKind,
-  isLayoutReady,
-  bootstrapFailure,
-  isStarted,
-  titleBarView,
-  retryBootstrap,
-  openSettings,
   commands,
-  pluginWays,
+  search,
   commandDeps,
-  failure,
-  fileFlush,
-  windowTabs,
-  layout,
-  vaultList,
-  statusBarView,
-  palette,
+  pluginWays,
   destinations,
-  closeTab,
-  getTabIcon,
-  getTitle,
+  runCommand,
+  runChoice,
   getTarget,
-  tabLinks,
-  windowCommands,
-  isHighlighted,
-  highlightWindow,
-  detachTab,
-  frame,
-} = useWindow()
+} = parts.palette
+const { slots, windowCommands } = parts.plugins
+const { titleBarView, statusBarView } = parts.plugins.views
+const { failure, fileFlush, getTitle } = parts.notices
+const { vaultList, readNoteKind } = parts.display
+const { openSettings } = parts.settings
+const { isStarted, isLayoutReady, bootstrapFailure, retryBootstrap, openCurrentVault } =
+  parts.lifecycle
 
 const tabMenu = useWindowTabMenu({
   windowTabs,
@@ -167,7 +154,7 @@ function onShowTab(id: string) {
           :vault-list="vaultList"
           :tabs="windowTabs.tabs.value"
           :commands="commands"
-          :search="palette"
+          :search="search"
           :doing="commandDeps"
           :get-target="getTarget"
           :plugin-ways="pluginWays"
@@ -188,7 +175,7 @@ function onShowTab(id: string) {
 
     <CommandPalette
       :commands="commands"
-      :search="palette"
+      :search="search"
       :doing="commandDeps"
       :get-target="getTarget"
       :places="destinations"
