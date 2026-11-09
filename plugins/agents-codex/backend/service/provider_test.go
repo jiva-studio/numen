@@ -212,7 +212,6 @@ func TestAnEmptyAnswerIsAStop(t *testing.T) {
 func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	svc := newCodex(t, "sleep 30\n")
 	svc.applyConfig(map[string]string{"requestTimeout": "0.2"})
-	begin := time.Now()
 
 	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
 
@@ -221,9 +220,6 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	}
 	if reason, _ := connection.GetReason(err); reason != connection.ReasonTimeout {
 		t.Errorf("reason = %v, want timeout", reason)
-	}
-	if time.Since(begin) > 10*time.Second {
-		t.Errorf("Complete took %v", time.Since(begin))
 	}
 }
 

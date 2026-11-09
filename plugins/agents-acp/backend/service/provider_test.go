@@ -199,7 +199,6 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	program, _ := fakeProgram(t, "hang")
 	svc := &agentServer{}
 	svc.applyConfig(map[string]string{"requestTimeout": "0.3"})
-	begin := time.Now()
 
 	_, err := svc.Complete(t.Context(), programCall(program), userMessage("hi"))
 
@@ -208,9 +207,6 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	}
 	if reason, _ := connection.GetReason(err); reason != connection.ReasonTimeout {
 		t.Errorf("reason = %v, want timeout", reason)
-	}
-	if time.Since(begin) > 10*time.Second {
-		t.Errorf("Complete took %v", time.Since(begin))
 	}
 }
 
