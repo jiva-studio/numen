@@ -636,17 +636,21 @@ func isMatchingActivationEvent(declared, event string) bool {
 		return event == ActivationEventVectorsReady ||
 			(strings.HasPrefix(event, ActivationEventVectorsReady+":") && len(event) > len(ActivationEventVectorsReady)+1)
 	default:
-		ext, ok := strings.CutPrefix(declared, ActivationEventFilePrefix)
-		if !ok || ext == "" || strings.Contains(ext, "*") {
-			return false
-		}
-		target, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
-		if !ok || target == "" {
-			return false
-		}
-		if dot := strings.LastIndexByte(target, '.'); dot >= 0 {
-			target = target[dot+1:]
-		}
-		return target != "" && strings.EqualFold(ext, target)
+		return isMatchingFileEvent(declared, event)
 	}
+}
+
+func isMatchingFileEvent(declared, event string) bool {
+	ext, ok := strings.CutPrefix(declared, ActivationEventFilePrefix)
+	if !ok || ext == "" || strings.Contains(ext, "*") {
+		return false
+	}
+	target, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
+	if !ok || target == "" {
+		return false
+	}
+	if dot := strings.LastIndexByte(target, '.'); dot >= 0 {
+		target = target[dot+1:]
+	}
+	return target != "" && strings.EqualFold(ext, target)
 }
