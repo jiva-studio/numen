@@ -43,9 +43,11 @@ const (
 	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
 	PermissionWindowFocus     = manifest.PermissionWindowFocus
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
-	RuntimeONNX               = "onnxruntime"
-	ActivationEventAll        = manifest.ActivationEventAll
-	ConditionTrue             = when.True
+	RuntimeONNX                 = "onnxruntime"
+	ActivationEventStartup      = manifest.ActivationEventStartup
+	ActivationEventVectorsReady = manifest.ActivationEventVectorsReady
+	ActivationEventFilePrefix   = manifest.ActivationEventFilePrefix
+	ConditionTrue               = when.True
 	ConditionFalse            = when.False
 	ConditionUnknown          = when.Unknown
 	PluginProtocolVersion     = manifest.ProtocolVersion
@@ -99,6 +101,8 @@ func FormatSettingValue(value any) string { return manifest.FormatSettingValue(v
 func GetDependencyKinds() []manifest.DependencyKind { return manifest.GetDependencyKinds() }
 
 func NormalizePermission(permission string) string { return manifest.NormalizePermission(permission) }
+
+func PluginActivationEvents() []string { return manifest.PluginActivationEvents() }
 
 func PluginCapabilities() []string { return manifest.PluginCapabilities() }
 

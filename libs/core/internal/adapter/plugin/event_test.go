@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/protocol"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -24,9 +26,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 // eventRecorder serves numen.v1.PluginEventService and records every event it receives.
@@ -81,7 +83,12 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 
 func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
 	t.Helper()
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	return newEventHostWithClock(t, testsupport.GetMachine(), manifests, ports)
+}
+
+func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
+	t.Helper()
+	host := NewHost(clock, "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
@@ -116,10 +123,13 @@ func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, 
 	return host
 }
 
-func TestAFileEventReachesOnlyThePluginsReadingItsType(t *testing.T) {
+func TestAFileEventReachesOnlyThePluginsDeclaringItsExtension(t *testing.T) {
 	pdf, notes := &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.pdf": readingType("application/pdf"), "md.test.notes": readingType("text/markdown")},
+		map[string]pluginport.PluginManifest{
+			"md.test.pdf":   {ActivationEvents: []string{"onFile:pdf"}},
+			"md.test.notes": {ActivationEvents: []string{"onFile:md"}},
+		},
 		map[string]int{"md.test.pdf": servePlugin(t, pdf), "md.test.notes": servePlugin(t, notes)},
 	)
 
@@ -139,10 +149,110 @@ func TestAFileEventReachesOnlyThePluginsReadingItsType(t *testing.T) {
 	}
 }
 
+func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
+	startup, vectors, pdf, onDemand := &eventRecorder{}, &eventRecorder{}, &eventRecorder{}, &eventRecorder{}
+	host := newEventHost(t,
+		map[string]pluginport.PluginManifest{
+			"md.test.startup":  {ActivationEvents: []string{pluginport.ActivationEventStartup}},
+			"md.test.vectors":  {ActivationEvents: []string{pluginport.ActivationEventVectorsReady}},
+			"md.test.pdf":      {ActivationEvents: []string{"onFile:pdf"}},
+			"md.test.ondemand": {},
+		},
+		map[string]int{
+			"md.test.startup":  servePlugin(t, startup),
+			"md.test.vectors":  servePlugin(t, vectors),
+			"md.test.pdf":      servePlugin(t, pdf),
+			"md.test.ondemand": servePlugin(t, onDemand),
+		},
+	)
+
+	activated, err := host.TriggerEvent(t.Context(), "onFile:notes.txt")
+	if err != nil {
+		t.Fatalf("TriggerEvent failed: %v", err)
+	}
+	if len(activated) != 0 {
+		t.Fatalf("activated %v on undeclared event, want none", activated)
+	}
+
+	activated, err = host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	if err != nil {
+		t.Fatalf("TriggerEvent failed: %v", err)
+	}
+	if !slices.Equal(activated, []string{"md.test.startup"}) {
+		t.Fatalf("activated %v on startup, want [md.test.startup]", activated)
+	}
+
+	activated, err = host.TriggerEvent(t.Context(), protocol.GetVectorsReadyEvent("vault-1"))
+	if err != nil {
+		t.Fatalf("TriggerEvent failed: %v", err)
+	}
+	if !slices.Equal(activated, []string{"md.test.vectors"}) {
+		t.Fatalf("activated %v on vectors ready, want [md.test.vectors]", activated)
+	}
+
+	if got := onDemand.getEvents(); len(got) != 0 {
+		t.Fatalf("on-demand plugin received %v, want nothing", got)
+	}
+}
+
+func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "plugins", "tools-search-relevance", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := manifestjson.Read(strings.NewReader(string(raw)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := testsupport.NewClock()
+	recorder := &eventRecorder{}
+	host := newEventHostWithClock(t, clock,
+		map[string]pluginport.PluginManifest{parsed.ID: parsed},
+		map[string]int{parsed.ID: servePlugin(t, recorder)},
+	)
+
+	for _, event := range []string{pluginport.ActivationEventStartup, "onFile:md"} {
+		activated, triggerErr := host.TriggerEvent(t.Context(), event)
+		if triggerErr != nil {
+			t.Fatalf("TriggerEvent(%q) failed: %v", event, triggerErr)
+		}
+		if len(activated) != 0 {
+			t.Fatalf("TriggerEvent(%q) activated %v, want none", event, activated)
+		}
+	}
+	if status, ok := host.GetPluginStatus(parsed.ID); !ok || status.IsActive {
+		t.Fatalf("status after startup and file listing = %+v (ok=%v), want inactive", status, ok)
+	}
+
+	readyEvent := protocol.GetVectorsReadyEvent("vault-1")
+	activated, err := host.TriggerEvent(t.Context(), readyEvent)
+	if err != nil {
+		t.Fatalf("TriggerEvent(%q) failed: %v", readyEvent, err)
+	}
+	if !slices.Equal(activated, []string{parsed.ID}) {
+		t.Fatalf("activated %v, want [%s]", activated, parsed.ID)
+	}
+	if status, ok := host.GetPluginStatus(parsed.ID); !ok || !status.IsActive {
+		t.Fatalf("status after vectors ready = %+v (ok=%v), want active", status, ok)
+	}
+	if got := recorder.getEvents(); !slices.Equal(got, []string{readyEvent}) {
+		t.Fatalf("received events %v, want [%s]", got, readyEvent)
+	}
+
+	clock.Advance(idleThreshold + time.Second)
+	evicted := host.EvictIdle(t.Context(), idleThreshold, 50*time.Millisecond)
+	if !slices.Equal(evicted, []string{parsed.ID}) {
+		t.Fatalf("evicted %v, want [%s]", evicted, parsed.ID)
+	}
+	if status, ok := host.GetPluginStatus(parsed.ID); !ok || status.IsActive {
+		t.Fatalf("status after idle eviction = %+v (ok=%v), want inactive", status, ok)
+	}
+}
+
 func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 	pdf := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.pdf": readingType("application/pdf")},
+		map[string]pluginport.PluginManifest{"md.test.pdf": {ActivationEvents: []string{"onFile:pdf"}}},
 		map[string]int{"md.test.pdf": servePlugin(t, pdf)},
 	)
 
@@ -158,11 +268,11 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{pluginport.ActivationEventStartup}}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
-	activated, err := host.TriggerEvent(t.Context(), "onOpen")
+	activated, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
 	if err != nil {
 		t.Fatalf("TriggerEvent() = %v, want no error for a plugin that takes no events", err)
 	}
@@ -175,28 +285,31 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"a.refusing": {ActivationEvents: []string{pluginport.ActivationEventAll}}, "b.working": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{
+			"a.refusing": {ActivationEvents: []string{pluginport.ActivationEventStartup}},
+			"b.working":  {ActivationEvents: []string{pluginport.ActivationEventStartup}},
+		},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), "onOpen")
+	_, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
 
-	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
+	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onStartup to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
-	if got := working.getEvents(); !slices.Equal(got, []string{"onOpen"}) {
-		t.Fatalf("the working plugin received %v, want [onOpen]", got)
+	if got := working.getEvents(); !slices.Equal(got, []string{pluginport.ActivationEventStartup}) {
+		t.Fatalf("the working plugin received %v, want [onStartup]", got)
 	}
 }
 
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{pluginport.ActivationEventStartup}}},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), "onOpen")
+	_, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
 
 	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)
@@ -214,10 +327,4 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	if err := transport.ConvertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
 		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
-}
-
-func readingType(contentType domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Readers: []pluginport.PluginReader{
-		{ID: "reader", ContentTypes: []domain.ContentType{contentType}},
-	}}}
 }

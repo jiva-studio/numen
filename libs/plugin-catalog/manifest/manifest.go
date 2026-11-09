@@ -54,8 +54,25 @@ func PluginPermissions() []string {
 	}
 }
 
-// ActivationEventAll is the activation event that matches every event the host emits.
-const ActivationEventAll = "*"
+const (
+	// ActivationEventStartup is the event the host emits when it starts.
+	ActivationEventStartup = "onStartup"
+
+	// ActivationEventVectorsReady is the event the host emits when the vectors of a vault are ready.
+	ActivationEventVectorsReady = "onVectorsReady"
+
+	// ActivationEventFilePrefix starts the event the host emits when a file is opened or listed.
+	ActivationEventFilePrefix = "onFile:"
+)
+
+// PluginActivationEvents is every activation event pattern a manifest may declare.
+func PluginActivationEvents() []string {
+	return []string{
+		ActivationEventStartup,
+		ActivationEventVectorsReady,
+		ActivationEventFilePrefix + "<ext>",
+	}
+}
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
 // a plugin by.
@@ -398,11 +415,19 @@ func (m Manifest) listCapabilityIssues() []error {
 func (m Manifest) listActivationEventIssues() []error {
 	var issues []error
 	for _, e := range m.ActivationEvents {
-		if e != ActivationEventAll {
+		if !isValidActivationEvent(e) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidActivationEvent, e))
 		}
 	}
 	return issues
+}
+
+func isValidActivationEvent(event string) bool {
+	if event == ActivationEventStartup || event == ActivationEventVectorsReady {
+		return true
+	}
+	ext, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
+	return ok && ext != "" && strings.TrimSpace(ext) == ext && !strings.Contains(ext, "*")
 }
 
 // maxSecretGroupLength is the longest group name of a secret declaration, in characters.
@@ -593,8 +618,35 @@ func (m Manifest) HasService(service string) bool {
 	return slices.Contains(m.Services, service)
 }
 
-// IsActivatedByAnyEvent reports whether the plugin declares the activation event `*`: the host
-// starts it for every event it emits and delivers the event to it.
-func (m Manifest) IsActivatedByAnyEvent() bool {
-	return slices.Contains(m.ActivationEvents, ActivationEventAll)
+// IsActivatedBy reports whether the plugin declares an activation event that matches event.
+func (m Manifest) IsActivatedBy(event string) bool {
+	for _, declared := range m.ActivationEvents {
+		if isMatchingActivationEvent(declared, event) {
+			return true
+		}
+	}
+	return false
+}
+
+func isMatchingActivationEvent(declared, event string) bool {
+	switch declared {
+	case ActivationEventStartup:
+		return event == ActivationEventStartup
+	case ActivationEventVectorsReady:
+		return event == ActivationEventVectorsReady ||
+			(strings.HasPrefix(event, ActivationEventVectorsReady+":") && len(event) > len(ActivationEventVectorsReady)+1)
+	default:
+		ext, ok := strings.CutPrefix(declared, ActivationEventFilePrefix)
+		if !ok || ext == "" || strings.Contains(ext, "*") {
+			return false
+		}
+		target, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
+		if !ok || target == "" {
+			return false
+		}
+		if dot := strings.LastIndexByte(target, '.'); dot >= 0 {
+			target = target[dot+1:]
+		}
+		return target != "" && strings.EqualFold(ext, target)
+	}
 }
