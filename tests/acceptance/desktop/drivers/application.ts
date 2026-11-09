@@ -12,8 +12,6 @@ import type { Scenario } from './scenario.js'
 
 /** A text made by a plugin may take this long before the commands that work on it are listed. */
 const TEXT_LIMIT_MS = 90_000
-/** The placeholder of the palette while it lists the commands, before one asks for a name or an item. */
-const ROOT_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
 const DELETE_TEXT_ID = 'app:version.delete'
 
@@ -49,7 +47,8 @@ export class ApplicationDriver {
       await expect(command).toHaveAttribute('data-here', 'true', { timeout: 3_000 })
     }).toPass({ timeout: TEXT_LIMIT_MS })
     await page.keyboard.press('Enter')
-    await expect(field).not.toHaveAttribute('placeholder', ROOT_PLACEHOLDER)
+    const crumb = page.locator('[data-palette="crumb"]')
+    await expect.poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label)).toBe(true)
   }
 
   async enter(value: string): Promise<void> {
