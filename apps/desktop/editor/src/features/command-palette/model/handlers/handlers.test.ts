@@ -64,6 +64,7 @@ const window = (
     turnedDown?: VaultErrorCode
     movement?: Movement
     folderError?: ErrorCode
+    undeleted?: number
     names?: readonly string[]
   } = {},
 ) => {
@@ -91,9 +92,13 @@ const window = (
         isDone.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
       },
-      remove: async (path, isPermanent) => {
-        isDone.push(`remove ${path} ${isPermanent}`)
+      remove: async (path) => {
+        isDone.push(`remove ${path}`)
         return answers.removed ?? createRemoveResult()
+      },
+      emptyTrash: async () => {
+        isDone.push('emptyTrash')
+        return answers.undeleted ?? 0
       },
       move: async (from, to) => {
         isDone.push(`move ${from} ${to}`)
@@ -545,11 +550,11 @@ describe('a note removed', () => {
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
-      'remove physics/Ontology.md false',
+      'remove physics/Ontology.md',
     ])
   })
 
-  it('goes off the disk where destroying was what was requested', async () => {
+  it('goes to the trash and never off the disk, whatever argument it is given', async () => {
     const one = window()
 
     await carry(
@@ -560,7 +565,9 @@ describe('a note removed', () => {
       one.on,
     )
 
-    expect(one.actions[1]).toBe('remove physics/Ontology.md true')
+    expect(one.actions.filter((one) => one.startsWith('remove'))).toStrictEqual([
+      'remove physics/Ontology.md',
+    ])
   })
 
   /** The row is removed from the tree, which is all the user needs to see. */
@@ -623,7 +630,7 @@ describe('a note removed', () => {
     await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
-    expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
+    expect(one.actions.at(-1)).toBe('remove physics/Ontology.md')
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -645,8 +652,8 @@ describe('several files removed at once', () => {
     await carry(createInvocation('app:file.remove', both), one.on)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
-      'remove physics/Ontology.md false',
-      'remove physics/Heat.pdf false',
+      'remove physics/Ontology.md',
+      'remove physics/Heat.pdf',
     ])
   })
 
@@ -675,8 +682,8 @@ describe('several files removed at once', () => {
       ...one.on,
       files: {
         ...one.on.files,
-        remove: async (path, destroy) => {
-          one.actions.push(`remove ${path} ${destroy}`)
+        remove: async (path) => {
+          one.actions.push(`remove ${path}`)
           return path === 'physics/Ontology.md'
             ? asFailure('notFound' as const)
             : createRemoveResult()
@@ -687,8 +694,8 @@ describe('several files removed at once', () => {
     await carry(createInvocation('app:file.remove', both), picky)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
-      'remove physics/Ontology.md false',
-      'remove physics/Heat.pdf false',
+      'remove physics/Ontology.md',
+      'remove physics/Heat.pdf',
     ])
     expect(one.notices).toStrictEqual([words.errors.notFound])
   })
@@ -858,7 +865,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
-      'remove physics/Being.md false',
+      'remove physics/Being.md',
     ])
   })
 
@@ -867,7 +874,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(createInvocation('app:file.remove', front()), one.on)
 
-    expect(one.actions[0]).toBe('remove physics/Ontology.md false')
+    expect(one.actions[0]).toBe('remove physics/Ontology.md')
   })
 })
 
@@ -1250,16 +1257,51 @@ describe('what the voice says in which severity', () => {
   })
 })
 
+describe('the trash emptied', () => {
+  it('is deleted through the vault and says nothing when every path went', async () => {
+    const one = window()
+
+    await carry(createInvocation('app:trash.empty', front()), one.on)
+
+    expect(one.actions).toStrictEqual(['emptyTrash'])
+    expect(one.notices).toStrictEqual([])
+  })
+
+  it('says as one error how many paths stayed', async () => {
+    const one = window({ undeleted: 2 })
+
+    await carry(createInvocation('app:trash.empty', front()), one.on)
+
+    expect(one.notices).toStrictEqual([words.undeleted(2)])
+    expect(one.severities).toStrictEqual(['error'])
+  })
+
+  it('says as an error why the vault refused', async () => {
+    const one = window()
+    const failing: CommandDeps = {
+      ...one.on,
+      files: {
+        ...one.on.files,
+        emptyTrash: async () => {
+          throw new Error('trash is locked')
+        },
+      },
+    }
+
+    await carry(createInvocation('app:trash.empty', front()), failing)
+
+    expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
+    expect(one.severities).toStrictEqual(['error'])
+  })
+})
+
 describe('a file removed that no tab holds', () => {
   it('closes no tab', async () => {
     const one = window()
 
     await carry(createInvocation('app:file.remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
-    expect(one.actions).toStrictEqual([
-      'remove physics/Heat.pdf false',
-      'leave physics/Heat.pdf Root.md',
-    ])
+    expect(one.actions).toStrictEqual(['remove physics/Heat.pdf', 'leave physics/Heat.pdf Root.md'])
   })
 })
 

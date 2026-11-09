@@ -21,6 +21,7 @@ const { requestLog } = vi.hoisted(() => {
     listHeadings: vi.fn(),
     resolveAddresses: vi.fn(),
     removeFile: vi.fn(),
+    emptyTrash: vi.fn(),
     listFiles: vi.fn(),
     moveFile: vi.fn(),
     createFolder: vi.fn(),
@@ -116,17 +117,20 @@ describe('a note requested for', () => {
 })
 
 describe('a file requested for', () => {
-  it('is removed to the trash unless it is to be destroyed, and rejected with error', async () => {
+  it('is removed to the trash, and rejected with error', async () => {
     requestLog.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     await core.remove('a.md')
-    expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: false })
-    await core.remove('a.md', false)
-    expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: false })
-    await core.remove('a.md', true)
-    expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: true })
+    expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
 
     requestLog.removeFile.mockResolvedValue({ error: NOTE_ERROR_CODE.NOT_FOUND })
     expect(await core.remove('a.md')).toEqual({ ok: false, error: 'notFound' })
+  })
+
+  it('is the count of the paths the trash could not delete, when it is emptied', async () => {
+    requestLog.emptyTrash.mockResolvedValue({ undeleted: ['.trash/a.md', '.trash/b/c.md'] })
+
+    expect(await core.emptyTrash()).toBe(2)
+    expect(requestLog.emptyTrash).toHaveBeenCalledWith({})
   })
 
   it('is listed under its folder', async () => {

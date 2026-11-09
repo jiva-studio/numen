@@ -239,24 +239,23 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 // else the file holds and however many lines take it back.
 func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	t.Parallel()
-	var took, twice int
 	rapid.Check(t, func(t *rapid.T) {
 		answers := session(t)
 
 		expectedAnswers := make([]review.Answer, 0, len(answers))
 		with := make([]review.Answer, 0, 2*len(answers))
-		for _, a := range answers {
+		for index, a := range answers {
 			with = append(with, a)
-			if !rapid.Bool().Draw(t, "taken back") {
+			// The first answer is always taken back twice, so every run exercises the rule.
+			if index > 0 && !rapid.Bool().Draw(t, "taken back") {
 				expectedAnswers = append(expectedAnswers, a)
 				continue
 			}
-			took++
 			// A line taking an answer back is placed after the answer and before whatever
 			// followed.
 			lines := 1
-			if rapid.Bool().Draw(t, "taken back twice") {
-				lines, twice = 2, twice+1
+			if index == 0 || rapid.Bool().Draw(t, "taken back twice") {
+				lines = 2
 			}
 			for i := range lines {
 				with = append(with, review.Answer{
@@ -271,14 +270,10 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 		want := review.OrderAnswers(expectedAnswers).Replay(getAhead(), review.ScheduleBy(delta))
 		got := review.OrderAnswers(with).Replay(getAhead(), review.ScheduleBy(delta))
 		if !maps.Equal(got, want) {
-			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",
-				took, len(answers), got, want)
+			t.Fatalf("%d answers with some taken back gave %+v, want %+v",
+				len(answers), got, want)
 		}
 	})
-	// A run in which nothing was taken back does not exercise the rule.
-	if took < 200 || twice < 50 {
-		t.Fatalf("%d answers were taken back and %d of those twice over", took, twice)
-	}
 }
 
 func order(n int) []int {

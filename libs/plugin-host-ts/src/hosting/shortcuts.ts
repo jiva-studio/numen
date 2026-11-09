@@ -1,9 +1,3 @@
-    if (!binding) return false
-    if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) {
-      if (!runApp) return false
-      runApp(binding.command, binding.values)
-      return true
-    }
 /**
  * The keys of the plugins as the window handles them: a key event is matched against the keybindings
  * of the registry, and the command of the winner is run over the note in front.

@@ -187,6 +187,7 @@ describe('the commands as they open', () => {
         'app:vault.rename',
         'app:vault.remove',
         'app:vault.erase',
+        'app:trash.empty',
       ],
     })
   })
@@ -200,7 +201,7 @@ describe('the commands as they open', () => {
     ).toStrictEqual(['app:file.open', 'app:file.open#beside'])
     expect(
       items.find((item) => item.id === 'app:file.remove')?.actions?.map((one) => one.id),
-    ).toStrictEqual(['app:file.remove', 'app:file.remove#permanent'])
+    ).toStrictEqual(['app:file.remove'])
   })
 
   it('says which key reaches a command away from the palette', () => {
@@ -472,32 +473,6 @@ describe('removing a note', () => {
   })
 })
 
-describe('destroying a note', () => {
-  it('waits for the name of the note, and is not reachable before it', () => {
-    const { commands } = createPalette()
-    commands.startCommand('app:file.remove#permanent', front())
-
-    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(chooseRow(commands)).toBeNull()
-
-    commands.setTyped('Ontolog').catch(rethrow)
-
-    expect(chooseRow(commands)).toBeNull()
-  })
-
-  it('submits once the name of the note is what was typed', () => {
-    const { commands } = createPalette()
-    commands.startCommand('app:file.remove#permanent', front())
-    commands.setTyped('Ontology').catch(rethrow)
-
-    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(chooseRow(commands)).toMatchObject({
-      id: 'app:file.remove',
-      values: { removal: 'permanent' },
-    })
-  })
-})
-
 /**
  * The vault changes while a step is active. A step targets the note the user
  * named, and the note's path differs from the original.
@@ -511,23 +486,6 @@ describe('a note that moves under an open step', () => {
 
     commands.setTyped('Substance').catch(rethrow)
 
-    expect(chooseRow(commands)?.path).toBe('physics/Being.md')
-  })
-
-  it('is not destroyed by the name it had, and is by the name it has', () => {
-    const { commands, moveNote } = createPalette()
-    commands.startCommand('app:file.remove#permanent', front())
-    moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
-    commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
-
-    commands.setTyped('Ontology').catch(rethrow)
-
-    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(chooseRow(commands)).toBeNull()
-
-    commands.setTyped('Being').catch(rethrow)
-
-    expect(commands.groups.value[0]?.items[0]?.title).toBe('Destroy “Being”')
     expect(chooseRow(commands)?.path).toBe('physics/Being.md')
   })
 
@@ -862,7 +820,36 @@ describe('the commands over the vaults an installation holds', () => {
       'app:vault.create',
       'app:vault.remove',
       'app:vault.erase',
+      'app:trash.empty',
     ])
+  })
+})
+
+describe('the trash emptied', () => {
+  it('is confirmed over the vault in front, saying it cannot be undone', () => {
+    const { commands } = createPalette()
+
+    commands.startCommand('app:trash.empty', front())
+
+    expect(commands.groups.value[0]?.items.map((item) => item.title)).toStrictEqual([
+      words.keepsTrash,
+      'Empty the trash of “Physics”',
+    ])
+    expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.exactly)
+  })
+
+  it('is carried out once the question is answered with yes', () => {
+    const { commands } = createPalette()
+    commands.startCommand('app:trash.empty', front())
+
+    expect(chooseRow(commands, 1)).toMatchObject({ id: 'app:trash.empty' })
+  })
+
+  it('is left alone when answered with no', () => {
+    const { commands } = createPalette()
+    commands.startCommand('app:trash.empty', front())
+
+    expect(chooseRow(commands, 0)).toBeNull()
   })
 })
 
@@ -1528,19 +1515,6 @@ describe('what a step draws', () => {
     ])
   })
 
-  it('takes the name typed back around spaces, under the one action that destroys', () => {
-    const { commands } = createPalette()
-    commands.startCommand('app:file.remove#permanent', front())
-
-    commands.setTyped('  Ontology  ').catch(rethrow)
-
-    expect(commands.groups.value[0]?.id).toBe('exactly')
-    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(commands.groups.value[0]?.items[0]?.actions?.map((action) => action.text)).toStrictEqual(
-      [words.destroys],
-    )
-    expect(chooseRow(commands)?.name).toBe('Ontology')
-  })
 })
 
 describe('a row of a list the window holds', () => {

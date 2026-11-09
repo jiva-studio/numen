@@ -66,7 +66,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameNote, Type],
   [COMMAND.copyFilePath, Copy],
   [COMMAND.removeFile, Trash2],
-  [ROW.destroyFile, Trash2],
   [COMMAND.deleteText, FileX],
   // tab
   [COMMAND.closeTab, SquareX],
@@ -80,6 +79,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameVault, PenLine],
   [COMMAND.removeVault, X],
   [COMMAND.eraseVault, Trash2],
+  [COMMAND.emptyTrash, Trash2],
   // shared commands: their ids are not constants
   ['app:file.createText', FileText],
   ['app:link.import', Link],

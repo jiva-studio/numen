@@ -34,6 +34,11 @@ service FileService {
   // written: a link is not wrong because the note it names is gone.
   rpc RemoveFile(RemoveFileRequest) returns (RemoveFileResponse);
 
+  // EmptyTrash deletes everything the vault's trash holds. Nothing brings it
+  // back. An entry that cannot be deleted is named in the answer and does not
+  // stop the others.
+  rpc EmptyTrash(EmptyTrashRequest) returns (EmptyTrashResponse);
+
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
 }
@@ -148,10 +153,13 @@ message MoveResult {
 message RemoveFileRequest {
   // The file or folder to remove.
   string path = 1;
+}
 
-  // Destroy takes the file off the disk. Nothing brings it back, and only a
-  // note is destroyed.
-  bool destroy = 2;
+message EmptyTrashRequest {}
+
+message EmptyTrashResponse {
+  // The paths in the trash that could not be deleted. Empty when all went.
+  repeated string undeleted = 1;
 }
 
 message RemoveFileResponse {

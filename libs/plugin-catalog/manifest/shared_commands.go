@@ -36,10 +36,6 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 		return []AppCommandArgument{
 			{Name: "kind", Title: "Place", Type: "enum", Options: []string{"plex", "files"}},
 		}, true
-	case "app:file.remove":
-		return []AppCommandArgument{
-			{Name: "removal", Title: "Removal", Type: "enum", Options: []string{"trash", "permanent"}},
-		}, true
 	}
 	return nil, false
 }

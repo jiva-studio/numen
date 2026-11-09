@@ -13,15 +13,16 @@ import (
 // agent tools use the same set, so both enforce the same rules and a dependency
 // is configured once for both.
 type Scenarios struct {
-	Read     Read
-	Write    Write
-	Create   Create
-	Replace  Replace
-	Linking  EditLinks
-	AddLinks AddLinks
-	Move     Move
-	Rename   Rename
-	Remove   Remove
+	Read       Read
+	Write      Write
+	Create     Create
+	Replace    Replace
+	Linking    EditLinks
+	AddLinks   AddLinks
+	Move       Move
+	Rename     Rename
+	Remove     Remove
+	EmptyTrash EmptyTrash
 
 	SaveConnection   SaveConnection
 	RemoveSide       RemoveSide

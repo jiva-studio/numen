@@ -15,6 +15,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     core: {
       rename: record('rename', 'renamed'),
       remove: record('app:file.remove', 'removed'),
+      emptyTrash: record('app:trash.empty', 3),
       move: record('app:file.move', 'moved'),
       list: record('list', [{ name: 'heat' }, { name: 'Entropy.md' }]),
       createFolder: record('app:folder.create', 'folded'),
@@ -80,7 +81,8 @@ describe('the commands reach the window', () => {
     expect(await deps.files.createNote('Llama', 'Animals.md', null)).toBe('created')
     expect(await deps.files.createUntitled('zoo')).toBe('physics/Untitled note 1.md')
     expect(await deps.files.rename('Llama.md', 'Alpaca')).toBe('renamed')
-    expect(await deps.files.remove('Llama.md', true)).toBe('removed')
+    expect(await deps.files.remove('Llama.md')).toBe('removed')
+    expect(await deps.files.emptyTrash()).toBe(3)
     expect(await deps.files.move('Llama.md', 'zoo/Llama.md')).toBe('moved')
     expect(await deps.files.listNames('zoo')).toStrictEqual(['heat', 'Entropy.md'])
     expect(await deps.files.createFolder('zoo')).toBe('folded')
@@ -88,7 +90,8 @@ describe('the commands reach the window', () => {
       ['createWithTitle', 'Llama', 'Animals.md', null],
       ['createUntitled', 'zoo'],
       ['rename', 'Llama.md', 'Alpaca'],
-      ['app:file.remove', 'Llama.md', true],
+      ['app:file.remove', 'Llama.md'],
+      ['app:trash.empty'],
       ['app:file.move', 'Llama.md', 'zoo/Llama.md'],
       ['list', 'zoo'],
       ['app:folder.create', 'zoo'],

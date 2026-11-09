@@ -54,18 +54,6 @@
           "options": ["plex", "files"]
         }
       ]
-    },
-    {
-      "id": "app:file.remove",
-      "arguments": [
-        {
-          "name": "removal",
-          "title": "Removal",
-          "type": "enum",
-          "required": false,
-          "options": ["trash", "permanent"]
-        }
-      ]
     }
   ],
   "keybindings": [

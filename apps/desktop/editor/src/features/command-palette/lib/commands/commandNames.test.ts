@@ -20,7 +20,6 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:note.createJump': 'Create jump note',
   'app:note.rename': 'Rename note',
   'app:file.remove': 'Move note to trash',
-  'app:file.remove#permanent': 'Delete note permanently',
   'app:file.copyPath': 'Copy note path',
   'app:file.open#note': 'Go to note',
   'app:file.open#document': 'Open the document here',
@@ -32,6 +31,7 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:vault.rename': 'Rename vault',
   'app:vault.remove': 'Remove vault from list',
   'app:vault.erase': 'Erase vault',
+  'app:trash.empty': 'Empty trash',
 }
 
 describe('the commands of the editor', () => {

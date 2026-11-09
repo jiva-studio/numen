@@ -192,7 +192,7 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(getRow(window, 'app:file.remove#permanent')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:trash.empty')?.keys).toBeUndefined()
     expect(getRow(window, 'app:vault.erase')?.keys).toBeUndefined()
   })
 

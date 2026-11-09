@@ -19,7 +19,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImcKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSDwoHaXNfbm90ZRgGIAEoCBIMCgR0eXBlGAUgASgJEhAKCHRhYl9raW5kGAcgASgJIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kInYKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJEisKCnByb3BlcnRpZXMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRhYl9raW5kGAcgASgJIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIpQBChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESGQoRaXNfaW5kZXhfb3V0ZGF0ZWQYAyABKAhCCAoGX21vdmVkQggKBl9lcnJvciJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiMgoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIIoUBChJSZW1vdmVGaWxlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAQgASgIQggKBl9lcnJvciIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiSQoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IygAMKC0ZpbGVTZXJ2aWNlEkQKCUxpc3RGaWxlcxIaLm51bWVuLnYxLkxpc3RGaWxlc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0RmlsZXNSZXNwb25zZRJQCg1MaXN0RmlsZUtpbmRzEh4ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1JlcXVlc3QaHy5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVzcG9uc2USQQoITW92ZUZpbGUSGS5udW1lbi52MS5Nb3ZlRmlsZVJlcXVlc3QaGi5udW1lbi52MS5Nb3ZlRmlsZVJlc3BvbnNlEkcKClJlbW92ZUZpbGUSGy5udW1lbi52MS5SZW1vdmVGaWxlUmVxdWVzdBocLm51bWVuLnYxLlJlbW92ZUZpbGVSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImcKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSDwoHaXNfbm90ZRgGIAEoCBIMCgR0eXBlGAUgASgJEhAKCHRhYl9raW5kGAcgASgJIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kInYKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJEisKCnByb3BlcnRpZXMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRhYl9raW5kGAcgASgJIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIpQBChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESGQoRaXNfaW5kZXhfb3V0ZGF0ZWQYAyABKAhCCAoGX21vdmVkQggKBl9lcnJvciJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiIQoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSITChFFbXB0eVRyYXNoUmVxdWVzdCInChJFbXB0eVRyYXNoUmVzcG9uc2USEQoJdW5kZWxldGVkGAEgAygJIoUBChJSZW1vdmVGaWxlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAQgASgIQggKBl9lcnJvciIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiSQoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IyyQMKC0ZpbGVTZXJ2aWNlEkQKCUxpc3RGaWxlcxIaLm51bWVuLnYxLkxpc3RGaWxlc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0RmlsZXNSZXNwb25zZRJQCg1MaXN0RmlsZUtpbmRzEh4ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1JlcXVlc3QaHy5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVzcG9uc2USQQoITW92ZUZpbGUSGS5udW1lbi52MS5Nb3ZlRmlsZVJlcXVlc3QaGi5udW1lbi52MS5Nb3ZlRmlsZVJlc3BvbnNlEkcKClJlbW92ZUZpbGUSGy5udW1lbi52MS5SZW1vdmVGaWxlUmVxdWVzdBocLm51bWVuLnYxLlJlbW92ZUZpbGVSZXNwb25zZRJHCgpFbXB0eVRyYXNoEhsubnVtZW4udjEuRW1wdHlUcmFzaFJlcXVlc3QaHC5udW1lbi52MS5FbXB0eVRyYXNoUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -325,14 +325,6 @@ export type RemoveFileRequest = Message<"numen.v1.RemoveFileRequest"> & {
    * @generated from field: string path = 1;
    */
   path: string;
-
-  /**
-   * Destroy takes the file off the disk. Nothing brings it back, and only a
-   * note is destroyed.
-   *
-   * @generated from field: bool destroy = 2;
-   */
-  destroy: boolean;
 };
 
 /**
@@ -341,6 +333,38 @@ export type RemoveFileRequest = Message<"numen.v1.RemoveFileRequest"> & {
  */
 export const RemoveFileRequestSchema: GenMessage<RemoveFileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 9);
+
+/**
+ * @generated from message numen.v1.EmptyTrashRequest
+ */
+export type EmptyTrashRequest = Message<"numen.v1.EmptyTrashRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.EmptyTrashRequest.
+ * Use `create(EmptyTrashRequestSchema)` to create a new message.
+ */
+export const EmptyTrashRequestSchema: GenMessage<EmptyTrashRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 10);
+
+/**
+ * @generated from message numen.v1.EmptyTrashResponse
+ */
+export type EmptyTrashResponse = Message<"numen.v1.EmptyTrashResponse"> & {
+  /**
+   * The paths in the trash that could not be deleted. Empty when all went.
+   *
+   * @generated from field: repeated string undeleted = 1;
+   */
+  undeleted: string[];
+};
+
+/**
+ * Describes the message numen.v1.EmptyTrashResponse.
+ * Use `create(EmptyTrashResponseSchema)` to create a new message.
+ */
+export const EmptyTrashResponseSchema: GenMessage<EmptyTrashResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 11);
 
 /**
  * @generated from message numen.v1.RemoveFileResponse
@@ -381,7 +405,7 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
  * Use `create(RemoveFileResponseSchema)` to create a new message.
  */
 export const RemoveFileResponseSchema: GenMessage<RemoveFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_file, 10);
+  messageDesc(file_numen_v1_file, 12);
 
 /**
  * @generated from message numen.v1.CreateFolderRequest
@@ -401,7 +425,7 @@ export type CreateFolderRequest = Message<"numen.v1.CreateFolderRequest"> & {
  * Use `create(CreateFolderRequestSchema)` to create a new message.
  */
 export const CreateFolderRequestSchema: GenMessage<CreateFolderRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_file, 11);
+  messageDesc(file_numen_v1_file, 13);
 
 /**
  * @generated from message numen.v1.CreateFolderResponse
@@ -420,7 +444,7 @@ export type CreateFolderResponse = Message<"numen.v1.CreateFolderResponse"> & {
  * Use `create(CreateFolderResponseSchema)` to create a new message.
  */
 export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_file, 12);
+  messageDesc(file_numen_v1_file, 14);
 
 /**
  * FileService answers what the vault holds at a path, and moves it about.
@@ -475,6 +499,18 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof RemoveFileRequestSchema;
     output: typeof RemoveFileResponseSchema;
+  },
+  /**
+   * EmptyTrash deletes everything the vault's trash holds. Nothing brings it
+   * back. An entry that cannot be deleted is named in the answer and does not
+   * stop the others.
+   *
+   * @generated from rpc numen.v1.FileService.EmptyTrash
+   */
+  emptyTrash: {
+    methodKind: "unary";
+    input: typeof EmptyTrashRequestSchema;
+    output: typeof EmptyTrashResponseSchema;
   },
   /**
    * CreateFolder makes an empty folder. The folders above it are made with it.

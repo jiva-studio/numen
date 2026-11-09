@@ -62,4 +62,17 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     ...withWhen(''),
     warns: { action: words.erases, detail: words.binned, back: words.typeVaultBack },
   },
+  {
+    id: COMMAND.emptyTrash,
+    text: words.emptyTrash,
+    group: 'vault',
+    input: 'confirmation',
+    ...withWhen('window.isVaultReady'),
+    answers: {
+      keeps: words.keepsTrash,
+      retainedNotice: words.retainedNotice,
+      action: words.emptiesTrash,
+      detail: words.exactly,
+    },
+  },
 ]
