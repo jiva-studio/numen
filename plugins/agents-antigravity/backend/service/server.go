@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
@@ -17,6 +18,7 @@ type agentServer struct {
 	agentrun.Service
 	mu             sync.RWMutex
 	executablePath string
+	requestTimeout time.Duration
 	models         *cache.Cache[[]antigravityModel]
 }
 
@@ -43,6 +45,9 @@ func (s *agentServer) applyConfig(values map[string]string) {
 	defer s.mu.Unlock()
 	if execPath, ok := values["executablePath"]; ok {
 		s.executablePath = strings.TrimSpace(execPath)
+	}
+	if timeout, ok := values[settingRequestTimeout]; ok {
+		s.requestTimeout = parseRequestTimeout(timeout)
 	}
 }
 

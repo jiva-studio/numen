@@ -55,3 +55,11 @@ A connection runs at most `parallelRequests` calls at once: the value stored on 
 ### From TypeScript
 
 A plugin view gets `context.models`, a `ModelHost` with `complete`, `embed` and `getEmbeddingProfile`. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.
+
+## Agent programs as providers
+
+The agent plugins (`agents-claude`, `agents-codex`, `agents-antigravity` and `agents-acp`) provide one type each, with the operation `complete`. A type of Claude Code, OpenAI Codex or Antigravity has no key and no program field: the program is the plugin, and the model and the reasoning level are chosen in the row. The type of `agents-acp` has a required `program` field, the executable to run. Every type has the field `parallelRequests`, from 1 to 8 with the default 1, and every agent plugin has the setting `requestTimeout`, the seconds to wait for the program, 120 when it has no value.
+
+A `complete` call runs the program once, with no tool of the vault and no write to disk. Each plugin sets the flags of its program: Claude Code starts with its tools turned off, Codex with a read-only sandbox, and Antigravity without the option that approves every permission request. Codex, Antigravity and `agents-acp` run in an empty temporary folder, and `agents-acp` offers its program no file system, no terminal and no server of tools and refuses every permission request. A program that cannot be found, and a run that outlasts the timeout, are try-next failures (`ReasonUnreachable`, `ReasonTimeout`); any other failed run, and an empty answer, is a stop of unknown reason. The text the program wrote never leaves the plugin.
+
+The plugins run in desktop windows alone (`targets`), so their types are not offered on a phone.

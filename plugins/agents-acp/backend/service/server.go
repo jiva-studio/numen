@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
@@ -17,6 +18,7 @@ type agentServer struct {
 
 	mu              sync.RWMutex
 	executablePaths []string
+	requestTimeout  time.Duration
 	commands        map[string][]string
 }
 
@@ -32,6 +34,9 @@ func (s *agentServer) applyConfig(values map[string]string) {
 			}
 		}
 		s.executablePaths = paths
+	}
+	if timeout, ok := values[settingRequestTimeout]; ok {
+		s.requestTimeout = parseRequestTimeout(timeout)
 	}
 	s.found = findACPAgents(s.lookPath)
 }

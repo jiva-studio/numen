@@ -81,6 +81,7 @@ func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 		return 2
 	}
 	agent := &fakeAgent{behavior: behavior, out: out, lines: bufio.NewScanner(in), record: recording}
+	agent.recordFolder()
 	agent.lines.Buffer(nil, 4<<20)
 	for agent.lines.Scan() {
 		agent.handle()
@@ -98,6 +99,17 @@ type fakeAgent struct {
 	lines    *bufio.Scanner
 	record   io.Writer
 	err      error
+}
+
+func (a *fakeAgent) recordFolder() {
+	folder, err := os.Getwd()
+	a.fail(err)
+	entries, err := os.ReadDir(folder)
+	a.fail(err)
+	raw, err := json.Marshal(map[string]any{"method": "folder", "path": folder, "entries": len(entries)})
+	a.fail(err)
+	_, err = fmt.Fprintf(a.record, "%s\n", raw)
+	a.fail(err)
 }
 
 func (a *fakeAgent) fail(err error) {
@@ -197,6 +209,9 @@ func (a *fakeAgent) answerPrompt(id any) {
 	if a.behavior == "tools" {
 		a.callTools()
 	}
+	if a.behavior == "write" {
+		a.requestWrites()
+	}
 	a.send(map[string]any{"id": "p1", "method": "session/request_permission", "params": map[string]any{
 		"sessionId": "s1", "toolCall": map[string]any{"toolCallId": "t1"},
 		"options": []map[string]any{{"optionId": "yes", "name": "Allow", "kind": "allow_once"}},
@@ -217,6 +232,12 @@ func (a *fakeAgent) answerPrompt(id any) {
 		stopReason = "rejected"
 	}
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})
+}
+
+func (a *fakeAgent) requestWrites() {
+	a.askPermission("w1", map[string]any{"toolCallId": "w1", "name": "write_file", "title": "Write note.md", "kind": "edit"})
+	a.send(map[string]any{"id": "w2", "method": "fs/write_text_file", "params": map[string]any{"sessionId": "s1", "path": "note.md", "content": "x"}})
+	a.read()
 }
 
 func (a *fakeAgent) callTools() {

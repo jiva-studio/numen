@@ -12,12 +12,14 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
@@ -43,6 +45,8 @@ type agentServer struct {
 	executablePath string
 
 	mayReadHooks bool
+
+	requestTimeout time.Duration
 
 	environ []string
 
@@ -71,6 +75,9 @@ func (s *agentServer) applyConfig(values map[string]string) {
 	}
 	if reads, ok := values[readsHooksSetting]; ok {
 		s.mayReadHooks = reads == "true"
+	}
+	if timeout, ok := values[settingRequestTimeout]; ok {
+		s.requestTimeout = parseRequestTimeout(timeout)
 	}
 }
 
@@ -363,6 +370,7 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agentSvc.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agentSvc, s.HandlerOptions()...))
+	connection.Mount(s, agentSvc.Provider())
 	s.OnClose(agentSvc.registry.Close)
 	return nil
 }
