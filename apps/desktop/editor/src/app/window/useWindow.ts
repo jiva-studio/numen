@@ -411,7 +411,6 @@ interface WindowContext {
   versionCommands?: ReturnType<typeof createVersionCommands>
 }
 
-/** Whether the search or the command palette is open; false until the window commands exist. */
 function isPaletteOpen(ctx: WindowContext): boolean {
   const { commands } = ctx
   return commands ? commands.palette.open.value || commands.commands.open.value : false

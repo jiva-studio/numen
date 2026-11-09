@@ -14,6 +14,12 @@ import type { CommandRun, HostDeps } from './types'
 /** Runs a command of the application a key is bound to, with the values of the keybinding. */
 export type RunAppKey = (command: string, values: Readonly<Record<string, string>>) => void
 
+/** What a key is judged and run over: the target of the note in front, and the runner of the application keys. */
+export interface KeyContext {
+  readonly target?: CommandTarget | undefined
+  readonly runApp?: RunAppKey | undefined
+}
+
 export interface ShortcutParts {
   readonly deps: HostDeps
   readonly keybindings: KeybindingRegistry
@@ -21,7 +27,6 @@ export interface ShortcutParts {
   readonly executeCommand: (id: string, note: CommandNote, run?: CommandRun) => Promise<boolean>
 }
 
-/** The values the conditions of a key are judged over: those a slot is judged over, with the window's. */
 function getContext(deps: HostDeps, target: CommandTarget | undefined): WhenValues {
   return (
     deps.getSlotWhenValues?.(target) ??
@@ -45,9 +50,9 @@ export function createShortcutHandler(parts: ShortcutParts) {
   return (
     event: KeyboardEvent,
     getNote: () => Promise<CommandNote>,
-    target?: CommandTarget,
-    runApp?: RunAppKey,
+    keyContext: KeyContext = {},
   ): boolean => {
+    const { target, runApp } = keyContext
     const context = getContext(deps, target)
     const available = new Map(parts.getAvailable().map((one) => [one.id, one]))
     const canRun = (binding: Keybinding): boolean => {

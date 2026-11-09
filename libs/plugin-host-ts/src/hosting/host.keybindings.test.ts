@@ -113,7 +113,7 @@ describe('the keys of the plugins', () => {
     const getNote = vi.fn(async () => NOTE)
     windowValues['window.isFieldFocused'] = true
 
-    expect(host.handleShortcut(CTRL_L, getNote, TARGET)).toBe(false)
+    expect(host.handleShortcut(CTRL_L, getNote, { target: TARGET })).toBe(false)
     await settle()
 
     expect(getNote).not.toHaveBeenCalled()
@@ -121,7 +121,7 @@ describe('the keys of the plugins', () => {
 
     windowValues['window.isFieldFocused'] = false
 
-    expect(host.handleShortcut(CTRL_L, getNote, TARGET)).toBe(true)
+    expect(host.handleShortcut(CTRL_L, getNote, { target: TARGET })).toBe(true)
   })
 
   it('are not handled while the condition of the command is false over the target', async () => {
@@ -129,9 +129,9 @@ describe('the keys of the plugins', () => {
     host.registerKeybindings('org.example.ledger', [{ key: 'mod+l', command: 'ledger.open' }])
     const folder = { ...TARGET, path: 'Books', isFolder: true }
 
-    expect(host.handleShortcut(CTRL_L, async () => NOTE, folder)).toBe(false)
+    expect(host.handleShortcut(CTRL_L, async () => NOTE, { target: folder })).toBe(false)
     expect(handler).not.toHaveBeenCalled()
-    expect(host.handleShortcut(CTRL_L, async () => NOTE, TARGET)).toBe(true)
+    expect(host.handleShortcut(CTRL_L, async () => NOTE, { target: TARGET })).toBe(true)
   })
 
   it('leave a weaker keybinding free when the command of the stronger one is not available', async () => {
@@ -144,7 +144,7 @@ describe('the keys of the plugins', () => {
     ])
     windowValues['window.isFieldFocused'] = true
 
-    expect(host.handleShortcut(CTRL_L, async () => NOTE, TARGET)).toBe(true)
+    expect(host.handleShortcut(CTRL_L, async () => NOTE, { target: TARGET })).toBe(true)
     await settle()
 
     expect(handler).toHaveBeenCalledOnce()
@@ -168,7 +168,7 @@ describe('the keys of the plugins', () => {
     const runApp = vi.fn()
     const getNote = vi.fn(async () => NOTE)
 
-    expect(host.handleShortcut(press({ code: 'KeyG' }), getNote, TARGET, runApp)).toBe(true)
+    expect(host.handleShortcut(press({ code: 'KeyG' }), getNote, { target: TARGET, runApp })).toBe(true)
     expect(runApp).toHaveBeenCalledExactlyOnceWith('app:file.open', { placement: 'split' })
     expect(getNote).not.toHaveBeenCalled()
     expect(handler).not.toHaveBeenCalled()
@@ -178,9 +178,9 @@ describe('the keys of the plugins', () => {
     const { host } = create()
     const runApp = vi.fn()
 
-    expect(host.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE, TARGET, runApp)).toBe(true)
+    expect(host.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE, { target: TARGET, runApp })).toBe(true)
     expect(runApp).toHaveBeenCalledExactlyOnceWith('app:commands.open', {})
-    expect(host.handleShortcut(press({ code: 'KeyQ', ctrlKey: true }), async () => NOTE, TARGET, runApp)).toBe(false)
+    expect(host.handleShortcut(press({ code: 'KeyQ', ctrlKey: true }), async () => NOTE, { target: TARGET, runApp })).toBe(false)
     expect(runApp).toHaveBeenCalledOnce()
   })
 
@@ -192,7 +192,7 @@ describe('the keys of the plugins', () => {
     const runApp = vi.fn()
     windowValues['window.isFieldFocused'] = true
 
-    expect(host.handleShortcut(press({ code: 'KeyG' }), async () => NOTE, TARGET, runApp)).toBe(false)
+    expect(host.handleShortcut(press({ code: 'KeyG' }), async () => NOTE, { target: TARGET, runApp })).toBe(false)
     expect(runApp).not.toHaveBeenCalled()
   })
 

@@ -316,7 +316,8 @@ export function useCommands(options: CommandsDepsOptions) {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
-    if (pluginHost?.handleShortcut(event, getNote, toRunTarget(getTarget()), runAppKey)) event.preventDefault()
+    const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
+    if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
   }
 
   return {

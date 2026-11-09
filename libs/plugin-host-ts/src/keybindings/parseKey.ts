@@ -47,7 +47,6 @@ const CODES: Readonly<Record<string, string>> = {
 
 const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'alt', 'shift', 'meta'])
 
-/** The `code` of a key name: `p` is KeyP, `5` is Digit5, `f3` is F3; undefined for a name not known. */
 function getCode(name: string): string | undefined {
   if (/^[a-z]$/.test(name)) return `Key${name.toUpperCase()}`
   if (/^[0-9]$/.test(name)) return `Digit${name}`
@@ -78,7 +77,6 @@ export function parseKey(text: string): ParsedKey | undefined {
   }
 }
 
-/** The `code` of an event; for an event that carries none, the one the letter or digit of its `key` has. */
 function getEventCode(event: KeyboardEvent): string {
   if (event.code) return event.code
   return getCode(event.key.toLowerCase()) ?? ''

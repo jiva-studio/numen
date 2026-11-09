@@ -32,10 +32,8 @@ export interface Keybinding {
 }
 
 export interface KeybindingRegistryDeps {
-  /** Whether the window runs on macOS, asked at each match: the platform may be known after the registry is built. */
   readonly isMac: () => boolean
   readonly whenReader: WhenReader
-  /** Reports an issue of the keybindings of an owner: a key or condition that cannot be read, a conflict. */
   readonly report?: ((owner: string, message: string) => void) | undefined
 }
 
@@ -53,8 +51,10 @@ export interface KeybindingRegistry {
     context: WhenValues,
     canRun?: (keybinding: Keybinding) => boolean,
   ): Keybinding | undefined
-  /** The key of the first keybinding of the command with exactly these values, as declared; undefined where none. */
-  getKeyFor(command: string, values?: Readonly<Record<string, string>>): string | undefined
+  readonly getKeyFor: (
+    command: string,
+    values?: Readonly<Record<string, string>>,
+  ) => string | undefined
 }
 
 const getValuesKey = (values: Readonly<Record<string, string>>): string =>
@@ -65,67 +65,74 @@ const isSameRun = (a: Keybinding, b: Keybinding): boolean =>
 
 const getSpecificity = (one: Keybinding): number => one.condition.names.length
 
-/** Whether a wins over b: the narrower condition, then the application over a plugin. */
 function isStronger(a: Keybinding, b: Keybinding): boolean {
   const byCondition = getSpecificity(a) - getSpecificity(b)
   if (byCondition !== 0) return byCondition > 0
   return a.owner === APP_COMMAND_OWNER && b.owner !== APP_COMMAND_OWNER
 }
 
-export function createKeybindingRegistry(deps: KeybindingRegistryDeps): KeybindingRegistry {
-  const { isMac, whenReader } = deps
-  let keybindings: readonly Keybinding[] = []
+type Report = (owner: string, message: string) => void
+
+function createReport(sink: Report | undefined): Report {
   const reported = new Set<string>()
-  const report = (owner: string, message: string) => {
+  return (owner, message) => {
     const key = `${owner}\n${message}`
     if (reported.has(key)) return
     reported.add(key)
-    deps.report?.(owner, message)
+    sink?.(owner, message)
   }
+}
 
-  const read = (owner: string, source: KeybindingSource): Keybinding | undefined => {
-    const parsed = parseKey(source.key)
-    if (!parsed) {
-      report(owner, `keybindings: the key "${source.key}" cannot be read`)
-      return undefined
-    }
-    const when = source.when ?? ''
-    const condition = whenReader.read(when)
-    if (!condition.ok) {
-      report(
-        owner,
-        `keybindings: the condition "${when}" of "${source.key}" cannot be read: ${condition.error}`,
-      )
-      return undefined
-    }
-    return {
+function readKeybinding(
+  owner: string,
+  source: KeybindingSource,
+  env: { readonly whenReader: WhenReader; readonly report: Report },
+): Keybinding | undefined {
+  const parsed = parseKey(source.key)
+  if (!parsed) {
+    env.report(owner, `keybindings: the key "${source.key}" cannot be read`)
+    return undefined
+  }
+  const when = source.when ?? ''
+  const condition = env.whenReader.read(when)
+  if (!condition.ok) {
+    env.report(
       owner,
-      key: source.key,
-      parsed,
-      command: source.command.includes(':')
-        ? source.command
-        : formatCommandId(owner, source.command),
-      values: source.values ?? {},
-      when,
-      condition: condition.value,
-    }
+      `keybindings: the condition "${when}" of "${source.key}" cannot be read: ${condition.error}`,
+    )
+    return undefined
   }
+  return {
+    owner,
+    key: source.key,
+    parsed,
+    command: source.command.includes(':') ? source.command : formatCommandId(owner, source.command),
+    values: source.values ?? {},
+    when,
+    condition: condition.value,
+  }
+}
 
-  const reportConflict = (winner: Keybinding, others: readonly Keybinding[]) => {
-    const rivals = others.filter(
-      (one) => getSpecificity(one) === getSpecificity(winner) && !isSameRun(one, winner),
-    )
-    if (rivals.length === 0) return
-    const names = rivals.map((one) => `${one.command} (${one.owner})`).join(', ')
-    report(
-      winner.owner,
-      `keybindings: the key "${winner.key}" is bound to ${winner.command} and to ${names} under conditions of the same width; ${winner.command} wins`,
-    )
-  }
+function reportConflict(winner: Keybinding, others: readonly Keybinding[], report: Report): void {
+  const rivals = others.filter(
+    (one) => getSpecificity(one) === getSpecificity(winner) && !isSameRun(one, winner),
+  )
+  if (rivals.length === 0) return
+  const names = rivals.map((one) => `${one.command} (${one.owner})`).join(', ')
+  report(
+    winner.owner,
+    `keybindings: the key "${winner.key}" is bound to ${winner.command} and to ${names} under conditions of the same width; ${winner.command} wins`,
+  )
+}
+
+export function createKeybindingRegistry(deps: KeybindingRegistryDeps): KeybindingRegistry {
+  const { isMac, whenReader } = deps
+  let keybindings: readonly Keybinding[] = []
+  const report = createReport(deps.report)
 
   return {
     register: (owner, sources) => {
-      const added = sources.flatMap((source) => read(owner, source) ?? [])
+      const added = sources.flatMap((source) => readKeybinding(owner, source, { whenReader, report }) ?? [])
       keybindings = [...keybindings.filter((one) => one.owner !== owner), ...added]
     },
     unregister: (owner) => {
@@ -143,7 +150,7 @@ export function createKeybindingRegistry(deps: KeybindingRegistryDeps): Keybindi
         (best, one) => (best === undefined || isStronger(one, best) ? one : best),
         undefined,
       )
-      if (winner) reportConflict(winner, candidates)
+      if (winner) reportConflict(winner, candidates, report)
       return winner
     },
     getKeyFor: (command, values = {}) => {

@@ -42,7 +42,6 @@ export interface SlotCommandLook {
 }
 
 export interface SlotRegistryDeps {
-  /** The key bound to the command with these values, such as `mod+shift+p`; the item carries it. */
   readonly getKeyFor?: (
     command: string,
     values?: Readonly<Record<string, string>>,
@@ -208,9 +207,9 @@ const getValuesKey = (values: DeclaredSlotEntry['values']): string => {
 function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
-  look: SlotCommandLook | undefined,
-  key: string | undefined,
+  found: { readonly look: SlotCommandLook | undefined; readonly key: string | undefined },
 ): SlotItem | undefined {
+  const { look, key } = found
   if (!look) return undefined
   const icon = entry.icon ?? look.icon
   return {
@@ -258,14 +257,18 @@ function toSubmenuItem(
   }
 }
 
-export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
+function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
   const reported = new Set<string>()
-  const report: Report = (pluginId, message, severity) => {
+  return (pluginId, message, severity) => {
     const key = `${pluginId}\n${message}`
     if (reported.has(key)) return
     reported.add(key)
-    deps.reportIssue?.(pluginId, message, severity)
+    sink?.(pluginId, message, severity)
   }
+}
+
+export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
+  const report = createReport(deps.reportIssue)
   const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
 
   const whenReader = deps.whenReader ?? createWhenReader()
@@ -291,12 +294,10 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     if (!isDrawnOver(entry, target)) return undefined
     if (entry.command) {
       const command = getFullCommand(entry, entry.command)
-      return toCommandItem(
-        entry,
-        command,
-        deps.findCommand(command, target),
-        deps.getKeyFor?.(command, entry.values),
-      )
+      return toCommandItem(entry, command, {
+        look: deps.findCommand(command, target),
+        key: deps.getKeyFor?.(command, entry.values),
+      })
     }
     if (entry.view) return toViewItem(entry, entry.view, deps.findView(entry.pluginId, entry.view))
     const { owners, inCycle } = declared.value

@@ -233,8 +233,8 @@ describe('a key press', () => {
     isSharedCommand: () => false,
     executeCommand: vi.fn(),
     handleShortcut: vi.fn(
-      (_event: KeyboardEvent, _getNote: unknown, _target: unknown, runApp: RunAppKey) => {
-        if (match) runApp(match.command, match.values ?? {})
+      (_event: KeyboardEvent, _getNote: unknown, keyContext: { runApp: RunAppKey }) => {
+        if (match) keyContext.runApp(match.command, match.values ?? {})
         return match !== undefined
       },
     ),
@@ -250,8 +250,7 @@ describe('a key press', () => {
     expect(host.handleShortcut).toHaveBeenCalledExactlyOnceWith(
       event,
       expect.any(Function),
-      target,
-      expect.any(Function),
+      { target, runApp: expect.any(Function) },
     )
   })
 
