@@ -53,7 +53,7 @@ describe('createSampleWav', () => {
 })
 
 describe('createPagedPdf', () => {
-  it('counts the pages it is asked for', () => {
+  it('has the number of pages it is given', () => {
     expect(createPagedPdf(3).toString('latin1')).toContain('/Count 3')
   })
 })
