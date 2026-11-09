@@ -5,7 +5,7 @@
  *
  * Without a `popover` slot a press opens nothing.
  */
-import { onBeforeUnmount, useSlots } from 'vue'
+import { onBeforeUnmount, useId, useSlots, watch } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
 
@@ -34,25 +34,34 @@ function onUpdateOpen(value: boolean): void {
 }
 
 // reka-ui labels its content by the trigger and writes that attribute again whenever the trigger id
-// changes, which wins over `aria-label`. The dialog is named by `popoverLabel`, so the attribute is
-// removed as often as it appears.
+// changes, which wins over `aria-label`. While the popover is open and `popoverLabel` is given, the
+// attribute is removed as often as it appears, so the dialog is named by `popoverLabel`.
+const chipId = useId()
 let observer: MutationObserver | null = null
 
-function nameDialog(instance: unknown): void {
-  console.log("NAMEDIALOG", instance === null ? "null" : String((instance as {$el?: Element}).$el?.outerHTML?.slice(0, 80) ?? (instance as {$el?: Node}).$el?.nodeName))
-  observer?.disconnect()
-  observer = null
-  const element = (instance as { $el?: Element } | null)?.$el
-  if (!(element instanceof Element)) return
-  const dialog = element.matches('[role="dialog"]')
-    ? element
-    : element.querySelector('[role="dialog"]')
-  if (!dialog) return
-  const removeLabelledby = (): void => dialog.removeAttribute('aria-labelledby')
-  removeLabelledby()
-  observer = new MutationObserver(removeLabelledby)
-  observer.observe(dialog, { attributes: true, attributeFilter: ['aria-labelledby'] })
+function removeLabelledby(): void {
+  document
+    .querySelector(`[data-bar-chip-popover="${chipId}"]`)
+    ?.removeAttribute('aria-labelledby')
 }
+
+watch(
+  () => isOpen.value && hasPopover() && props.popoverLabel !== undefined,
+  (isNamed) => {
+    observer?.disconnect()
+    observer = null
+    if (!isNamed) return
+    removeLabelledby()
+    observer = new MutationObserver(removeLabelledby)
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['aria-labelledby'],
+    })
+  },
+  { immediate: true, flush: 'post' },
+)
 
 onBeforeUnmount(() => observer?.disconnect())
 </script>
@@ -81,7 +90,7 @@ onBeforeUnmount(() => observer?.disconnect())
         :side-offset="4"
         :avoid-collisions="true"
         :aria-label="props.popoverLabel"
-        :ref="nameDialog"
+        :data-bar-chip-popover="chipId"
       >
         <slot name="popover" />
       </PopoverContent>
