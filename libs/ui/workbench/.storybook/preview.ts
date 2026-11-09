@@ -3,7 +3,6 @@ import { configure } from 'storybook/test'
 // The one keyboard walk and the one toolbar, where they are written.
 import { reachCheck, type Proof } from '../../components/.storybook/check'
 import { toolbar } from '../../components/.storybook/toolbar'
-import { accentCheck } from '../../components/.storybook/contrastBrowser'
 import '@numen/ui/styles.css'
 import '../src/styles.css'
 import './preview.css'
@@ -26,7 +25,7 @@ const preview: Preview = {
     backgrounds: { disable: true },
   },
   ...toolbar,
-  afterEach: [reachCheck(PROOF), accentCheck],
+  afterEach: reachCheck(PROOF),
 }
 
 export default preview

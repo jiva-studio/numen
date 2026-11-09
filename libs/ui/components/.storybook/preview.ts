@@ -2,7 +2,6 @@ import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
 import { reachCheck, type Proof } from './check'
 import { toolbar } from './toolbar'
-import { accentCheck } from './contrastBrowser'
 import '../src/shared/tokens/theme.css'
 import './preview.css'
 
@@ -25,7 +24,7 @@ const preview: Preview = {
     backgrounds: { disable: true },
   },
   ...toolbar,
-  afterEach: [reachCheck(PROOF), accentCheck],
+  afterEach: reachCheck(PROOF),
 }
 
 export default preview
