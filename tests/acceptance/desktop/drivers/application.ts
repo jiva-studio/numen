@@ -41,8 +41,10 @@ export class ApplicationDriver {
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     // A command that works on a text is listed once the file has one, so the label is typed again until it shows.
+    let isRetry = false
     await expect(async () => {
-      await field.fill('')
+      if (isRetry) await field.fill('')
+      isRetry = true
       await field.fill(label)
       await expect(command).toHaveAttribute('data-here', 'true', { timeout: 3_000 })
     }).toPass({ timeout: TEXT_LIMIT_MS })
