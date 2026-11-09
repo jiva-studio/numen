@@ -108,7 +108,6 @@ describe('what else a plex tab asks of the window', () => {
       ok: true,
       value: undefined,
     })
-    expect(await deps.createUntitledNote()).toBe('Untitled.md')
 
     expect(recorded.made).toStrictEqual([
       ['One.md', 'child'],

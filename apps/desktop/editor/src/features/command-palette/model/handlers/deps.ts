@@ -24,6 +24,8 @@ export interface NewNote {
 export interface VaultWriter {
   /** A note made under the name it is given, in a relation of another one. */
   createNote(title: string, from: string, relation: ConnectionRole | null): Promise<NewNote | null>
+  /** A note named "Untitled note N" made in the folder; its path, empty where none was made. */
+  createUntitled(folder: string): Promise<string>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   rename(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */
@@ -103,9 +105,9 @@ export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice
   readonly emitEvent?: (event: string) => void
 }
 
-/** One command, carried out. */
+/** One command, carried out. A command that made a note answers with its path. */
 export type CommandHandler = (
   invocation: CommandInvocation,
   on: CommandDeps,
   words: AnswerWords,
-) => Promise<void> | void
+) => Promise<string | void> | string | void

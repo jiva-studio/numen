@@ -106,22 +106,24 @@ export async function runInvocation(
   invocation: CommandInvocation | null,
   on: CommandDeps,
   words: AnswerWords,
-): Promise<void> {
-  if (!invocation) return
+): Promise<string> {
+  if (!invocation) return ''
   const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
   const handler = commandRegistry.get(invocation.id) ?? HANDLERS[invocation.id]
-  if (!isSetting && !handler) return
+  if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
     if (isSetting) {
       await runSetting(invocation, on)
     } else if (handler) {
-      await handler(withCurrentNotePath(invocation, on), on, words)
+      const made = await handler(withCurrentNotePath(invocation, on), on, words)
+      return made || ''
     }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')
   }
+  return ''
 }
 
 const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [

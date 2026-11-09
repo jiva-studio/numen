@@ -54,11 +54,11 @@ const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
     },
     runCommand: async (command, target, choice) => {
       runs.push([command, target, choice])
+      return ''
     },
     movePath: async () => undefined,
     setDraggedPaths: () => undefined,
     createFolder: async () => undefined,
-    createNote: async () => '',
     canDropData: () => false,
     dropData: async () => [],
     showError: (text) => {

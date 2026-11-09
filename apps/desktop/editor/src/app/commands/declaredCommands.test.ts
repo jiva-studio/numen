@@ -270,6 +270,35 @@ describe('a run of a declared command', () => {
   })
 })
 
+describe('a run that opens a file', () => {
+  it('answers the path it opened', async () => {
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [createSample], slots: [] }),
+      run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
+    })
+    await declared.load()
+
+    const path = await commands.get(getPaletteId(createSample))?.(
+      {
+        id: getPaletteId(createSample),
+        path: '',
+        vault: { id: 'v', name: 'V' },
+        note: null,
+        title: '',
+        file: '',
+        others: [],
+        name: '',
+        kind: null,
+        tab: 'tab',
+      },
+      { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+
+    expect(path).toBe('Verbs.md')
+  })
+})
+
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
     const declared = useDeclaredCommands({

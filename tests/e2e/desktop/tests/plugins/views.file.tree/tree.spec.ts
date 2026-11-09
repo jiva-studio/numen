@@ -65,7 +65,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     await createFolder(request, 'Saltpans')
     try {
-      await nameNewItem(page, 'Saltpans', 'Create note here', 'Evaporation pans')
+      await nameNewItem(page, 'Saltpans', 'New note', 'Evaporation pans')
 
       await expect
         .poll(async () => listPaths(request, 'Saltpans'))

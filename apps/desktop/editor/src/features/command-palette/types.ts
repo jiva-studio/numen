@@ -89,6 +89,7 @@ export interface Command {
   readonly icon?: Component
   readonly iconName?: string
   readonly input?: PromptStep
+  readonly canOmitNameOverFolder?: boolean
   readonly next?: PromptStep
   readonly prompts?: readonly CommandPrompt[]
   readonly group: CommandGroup

@@ -26,11 +26,10 @@ const createDeps = (
   getMenuEntries: () => [],
   listItems: async () => [],
   getNoteIcon: () => null,
-  runCommand: async () => undefined,
+  runCommand: async () => '',
   openingPath: ref(''),
   dragged: ref([]),
   showMessage: () => undefined,
-  createUntitledNote: async () => '',
   readOpeningPath: async () => '',
   creatable: [],
 })

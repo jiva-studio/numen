@@ -147,6 +147,9 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
     if (!command.input) return deps.invocation(command.id, target)
     const name = input?.trim() ?? ''
     if (command.input === 'name' && name !== '') return deps.invocation(command.id, target, name)
+    if (command.canOmitNameOverFolder && target.isTargetNamed && target.isFolder) {
+      return deps.invocation(command.id, target)
+    }
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true

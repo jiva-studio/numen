@@ -19,6 +19,11 @@ describe('an invocation made from a target', () => {
     expect(createInvocation('x', { ...TARGET, isTargetNamed: true }).isTargetNamed).toBe(true)
   })
 
+  it('is over a folder where the target is one', () => {
+    expect(createInvocation('x', TARGET).isFolder).toBe(true)
+    expect(createInvocation('x', { ...TARGET, isFolder: false }).isFolder).toBeUndefined()
+  })
+
   it('is not marked where the target is the tab in front', () => {
     expect(createInvocation('x', TARGET).isTargetNamed).toBeUndefined()
   })

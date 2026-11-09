@@ -127,14 +127,16 @@ export interface PlexTabDeps {
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the note of a node. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
-  /** Runs a command of the menu over the note of a node; with `itemId`, the item picked. */
-  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
+  /**
+   * Runs a command of the menu over the note of a node; with `itemId`, the item picked. Answers
+   * the path of the note it made, empty where none.
+   */
+  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<string>
   /** The icon the window draws a type of note with. */
   getNoteIcon(tabKind: string): Component | null
   readonly openingPath: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
   showMessage(text: string): void
-  createUntitledNote(): Promise<string>
   readOpeningPath(): Promise<string>
   readonly creatable: readonly ConnectionRole[]
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
@@ -179,7 +181,6 @@ export interface PlexNodeActions {
   joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
-  createNote(): Promise<void>
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }

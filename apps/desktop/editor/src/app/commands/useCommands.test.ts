@@ -179,6 +179,25 @@ describe('a run to its end, as a plugin awaits it', () => {
     expect(messages).toStrictEqual([['', 'info']])
   })
 
+  it('resolves with the path of the note the invocation made', async () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    h.runInvocation.mockResolvedValueOnce('Untitled note 1.md' as never)
+    const { runner } = setupRunner()
+
+    expect(await runner.runCommandToEnd('save', target)).toBe('Untitled note 1.md')
+  })
+
+  it('resolves with an empty path for a plugin command, which makes no note', async () => {
+    const executeCommand = vi.fn(async () => true)
+    const { runner } = setupRunner({
+      hasCommand: () => true,
+      isSharedCommand: () => false,
+      executeCommand,
+    })
+
+    expect(await runner.runCommandToEnd('summary', target)).toBe('')
+  })
+
   it('rejects with the objection to a command that cannot start, and writes it nowhere', async () => {
     h.startCommand.mockReturnValue(null)
     h.getObjection.mockReturnValue('Nothing to save')

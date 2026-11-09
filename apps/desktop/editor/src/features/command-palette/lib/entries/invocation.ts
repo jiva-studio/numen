@@ -18,5 +18,6 @@ export const createInvocation = (
   name,
   kind: target.kind,
   tab: target.tab,
+  ...(target.isFolder ? { isFolder: true } : {}),
   ...(target.isTargetNamed ? { isTargetNamed: true } : {}),
 })

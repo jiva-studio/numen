@@ -56,10 +56,6 @@ export function activate(context: PluginContext): void {
     }),
   })
   context.registerCommand({
-    id: 'tree.createNote',
-    handler: runOnTab((state, path) => state.createNote(path === ROOT ? null : path)),
-  })
-  context.registerCommand({
     id: 'tree.createFolder',
     handler: runOnTab((state, path) => state.createFolder(path === ROOT ? null : path)),
   })

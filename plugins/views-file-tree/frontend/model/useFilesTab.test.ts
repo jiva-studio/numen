@@ -8,6 +8,7 @@ import { getFolderPath, ROOT, createFileTree } from './useFileTree'
 import type { CommandTarget } from '@numen/plugin-sdk'
 import { NEW_MENU, ROW_MENU, TRASH } from '../fixtures/host'
 import { WORDS as words } from '../words'
+import { CREATE_NOTE } from '../lib/menu'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
@@ -75,6 +76,10 @@ const tab = (
       runs.push(menuTarget)
       isDone.push(describeRun(command, menuTarget))
       if (fails) throw new Error('the window is gone')
+      if (command !== CREATE_NOTE) return ''
+      return menuTarget.path === ROOT
+        ? 'Untitled note 1.md'
+        : `${menuTarget.path}/Untitled note 1.md`
     },
     movePath: async (from, to) => {
       isDone.push(`moves ${from} ${to}`)
@@ -88,13 +93,6 @@ const tab = (
       const into = getFolderPath(path)
       vault[into] = [...(vault[into] ?? []), folder(path)]
       vault[path] = []
-    },
-    createNote: async (folderPath) => {
-      const createdItem =
-        folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
-      isDone.push(`writes ${createdItem}`)
-      if (fails) return ''
-      return createdItem
     },
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
@@ -371,11 +369,10 @@ describe('rows release', () => {
       openEntry: () => undefined,
       listItems: async () => [],
       getMenuEntries: () => [],
-      runCommand: async () => undefined,
+      runCommand: async () => '',
       movePath: async () => undefined,
       setDraggedPaths: () => undefined,
       createFolder: async () => undefined,
-      createNote: async () => '',
       canDropData: () => false,
       dropData: async () => [],
       showError: () => undefined,
@@ -519,7 +516,7 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(NEW_MENU.entries[0]!.key)
 
-    expect(recorded).toStrictEqual(['runs md.numen.views.file.tree:tree.createNote  '])
+    expect(recorded).toStrictEqual(['runs app:note.create  '])
   })
 
   it('passes the whole selection, on a row standing in it', async () => {
@@ -624,30 +621,48 @@ describe('a folder or a note made at a row', () => {
     expect(one.renamingPath.value).toBeNull()
   })
 
-  it('makes a note alongside the row, and puts its name in a field', async () => {
+  it('makes a folder at the root', async () => {
     const { recorded, one } = await setUp()
 
-    await one.createNote('Entropy.md')
-
-    expect(recorded).toStrictEqual(['writes Untitled note.md'])
-    expect(one.renamingPath.value).toBe('Untitled note.md')
-  })
-
-  it('makes a note inside the row where the row is a folder', async () => {
-    const { recorded, one } = await setUp()
-
-    await one.createNote('physics')
-
-    expect(recorded).toStrictEqual(['writes physics/Untitled note.md'])
-  })
-
-  it('makes a note and a folder at the root', async () => {
-    const { recorded, one } = await setUp()
-
-    await one.createNote(null)
     await one.createFolder(null)
 
-    expect(recorded).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
+    expect(recorded).toStrictEqual(['makes New folder'])
+  })
+})
+
+describe('a note made by the New note entry of the menu', () => {
+  const choose = async (path: string | null, fails = false) => {
+    const pendingState = tab(fails)
+    await pendingState.list.openFolder(ROOT)
+    pendingState.one.openMenu({ path, at: { x: 0, y: 0 } })
+    pendingState.one.chooseMenuItem(NEW_MENU.entries[0]!.key)
+    await settle()
+    return pendingState
+  }
+
+  it('runs the command of the window over the folder and puts the name of the new note in a field', async () => {
+    const { recorded, one } = await choose('physics')
+
+    expect(recorded).toStrictEqual(['runs app:note.create physics physics'])
+    expect(one.renamingPath.value).toBe('physics/Untitled note 1.md')
+  })
+
+  it('opens the folder the note was made in', async () => {
+    const { list } = await choose('physics')
+
+    expect(list.isFolderOpen('physics')).toBe(true)
+  })
+
+  it('makes the note at the root where the menu was requested off every row', async () => {
+    const { one } = await choose(null)
+
+    expect(one.renamingPath.value).toBe('Untitled note 1.md')
+  })
+
+  it('puts no name in a field where the run failed', async () => {
+    const { one } = await choose('physics', true)
+
+    expect(one.renamingPath.value).toBeNull()
   })
 })
 
@@ -676,19 +691,14 @@ describe('useFilesTab helper and interaction methods', () => {
 })
 
 describe('a field already holding a name, and a file rejected', () => {
-  const refuse = async (create: 'createFolder' | 'createNote') => {
+  it('leaves the field alone where the folder failed', async () => {
     const { one, list } = tab(true)
     await list.openFolder(ROOT)
     one.setRenamingPath('Cover.png')
-    await one[create]('Entropy.md')
-    return one.renamingPath.value
-  }
 
-  it.each([
-    ['folder', 'createFolder'],
-    ['note', 'createNote'],
-  ] as const)('leaves the field alone where the %s failed', async (_kind, create) => {
-    expect(await refuse(create)).toBe('Cover.png')
+    await one.createFolder('Entropy.md')
+
+    expect(one.renamingPath.value).toBe('Cover.png')
   })
 })
 
@@ -787,33 +797,6 @@ describe('a name given to a row, in more detail', () => {
     await one.rename('ghost/Note.md', 'Other')
 
     expect(recorded).toStrictEqual(['moves ghost/Note.md ghost/Other.md'])
-  })
-})
-
-describe('a file rejected in a folder that is shut', () => {
-  it('leaves the folder shut where the note failed', async () => {
-    const { one, list } = tab(true)
-    await list.openFolder(ROOT)
-
-    await one.createNote('physics')
-
-    expect(list.isFolderOpen('physics')).toBe(false)
-  })
-
-  it('leaves the folder shut where the note failed on a row the tree does not hold', async () => {
-    const { one, list } = tab(true)
-
-    await one.createNote('ghost/Note.md')
-
-    expect(list.isFolderOpen('ghost')).toBe(false)
-  })
-
-  it('makes a note alongside a row the tree does not hold', async () => {
-    const { one, recorded } = tab()
-
-    await one.createNote('ghost/Note.md')
-
-    expect(recorded).toStrictEqual(['writes ghost/Untitled note.md'])
   })
 })
 

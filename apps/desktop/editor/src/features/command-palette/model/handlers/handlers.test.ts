@@ -82,6 +82,10 @@ const window = (
         isDone.push(`createNote ${title} ${from || '—'} ${relation ?? '—'}`)
         return answers.wasMade === false ? null : { path: `${title}.md`, title }
       },
+      createUntitled: async (folder) => {
+        isDone.push(`createUntitled ${folder || '—'}`)
+        return answers.wasMade === false ? '' : `${folder ? `${folder}/` : ''}Untitled note 1.md`
+      },
       rename: async (path, title) => {
         isDone.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
@@ -329,6 +333,72 @@ describe('a note made', () => {
 
     await carry(createInvocation('app:note.createChild', front(), ''), one.on)
 
+    expect(one.actions).toStrictEqual([])
+  })
+})
+
+describe('a note made over a folder', () => {
+  const folder = (path: string) => front({ path, file: path, isFolder: true, isTargetNamed: true })
+
+  it('is untitled, filed in the folder, and answers its path', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:note.create', folder('physics')), one.on)
+
+    expect(made).toBe('physics/Untitled note 1.md')
+    expect(one.actions).toStrictEqual(['createUntitled physics'])
+  })
+
+  it('is filed at the root where the folder is the root', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:note.create', folder('')), one.on)
+
+    expect(made).toBe('Untitled note 1.md')
+    expect(one.actions).toStrictEqual(['createUntitled —'])
+  })
+
+  it('opens nothing and takes the person nowhere', async () => {
+    const one = window()
+
+    await carry(createInvocation('app:note.create', folder('physics')), one.on)
+
+    expect(one.actions).toStrictEqual(['createUntitled physics'])
+  })
+
+  it('answers nothing where the vault made no note', async () => {
+    const one = window({ wasMade: false })
+
+    expect(await carry(createInvocation('app:note.create', folder('physics')), one.on)).toBe('')
+  })
+
+  it('keeps the typed name when one is given', async () => {
+    const one = window()
+
+    const made = await carry(
+      createInvocation('app:note.create', folder('physics'), 'Entropy'),
+      one.on,
+    )
+
+    expect(made).toBe('Entropy.md')
+    expect(one.actions[0]).toBe('createNote Entropy — —')
+  })
+
+  it('answers the path of a note made under a typed name over a note', async () => {
+    const one = window()
+
+    expect(await carry(createInvocation('app:note.create', front(), 'Entropy'), one.on)).toBe(
+      'Entropy.md',
+    )
+    expect(await carry(createInvocation('app:note.createChild', front(), 'Heat'), one.on)).toBe(
+      'Heat.md',
+    )
+  })
+
+  it('answers nothing over a note without a name', async () => {
+    const one = window()
+
+    expect(await carry(createInvocation('app:note.create', front()), one.on)).toBe('')
     expect(one.actions).toStrictEqual([])
   })
 })

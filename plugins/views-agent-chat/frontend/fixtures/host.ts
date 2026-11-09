@@ -87,6 +87,7 @@ export function createHost({
     listItems: async () => [],
     run: async (id, target) => {
       recorded.commands.push([id, target])
+      return ''
     },
   }
 

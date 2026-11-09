@@ -56,7 +56,7 @@ export function createPlexTabDeps(
     getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     runCommand: (command, target, itemId) =>
-      commands?.run(command, target, itemId) ?? Promise.resolve(),
+      commands?.run(command, target, itemId) ?? Promise.resolve(''),
     getNoteIcon: (tabKind) =>
       workspace.getEntryIcon(
         { path: '', name: '', isFolder: false, isNote: true, type: '', tabKind },
@@ -66,7 +66,6 @@ export function createPlexTabDeps(
     readOpeningPath: () => workspace.readOpeningPath(),
     dragged: workspace.draggedPaths,
     showMessage: (text) => workspace.showError(text),
-    createUntitledNote: () => notes.createUntitledNote(),
     creatable: relations.roles,
     searchNames: (query, limit) => notes.findNotes(query, limit),
   }

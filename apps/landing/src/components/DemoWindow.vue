@@ -1243,7 +1243,6 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.openFiles]: FolderTree,
   [DEMO_COMMAND.openAgent]: Bot,
   [DEMO_COMMAND.askAgent]: Bot,
-  [DEMO_COMMAND.newTreeNote]: FilePlus,
   [DEMO_COMMAND.newTreeFolder]: FolderPlus,
   [DEMO_COMMAND.renameTreeEntry]: PenLine,
 }
@@ -1291,7 +1290,7 @@ const NEW_SUBMENU: SlotItem = {
   title: 'New',
   icon: Plus,
   entries: [
-    createMenuCommand(DEMO_COMMAND.newTreeNote, 'Create note here'),
+    createMenuCommand(DEMO_COMMAND.createNote, 'New note'),
     createMenuCommand(DEMO_COMMAND.newTreeFolder, 'Create folder'),
   ],
 }
@@ -1436,9 +1435,12 @@ function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
   ]
 }
 
-async function runMenuCommand(command: string, target: RowTarget): Promise<void> {
+async function runMenuCommand(command: string, target: RowTarget): Promise<string> {
+  if (command === DEMO_COMMAND.createNote && target.isFolder)
+    return createUntitledInVault(target.path)
   const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')
+  return ''
 }
 
 const fileTree = createFileTree({
@@ -1496,6 +1498,21 @@ function rekeySingleNotePath(from: string, to: string) {
   }
 }
 
+async function createUntitledInVault(folder: string): Promise<string> {
+  const title = getNextUntitledTitle(folder)
+  const path = folder ? `${folder}/${title}.md` : `${title}.md`
+  notesByPath[path] = {
+    path,
+    title,
+    folder,
+    parents: [],
+    jumps: [],
+    body: `Write Markdown here — headings, lists, math, and [[wikilinks]] format live as you move the caret.\n`,
+  }
+  await fileTree.refresh()
+  return path
+}
+
 const filesState: FilesTabState = useFilesTab(fileTree, {
   openEntry: ({ path }) => {
     openVaultFile(path, 'current')
@@ -1538,20 +1555,6 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
     if (!customFolders.value.includes(folderPath)) {
       customFolders.value = [...customFolders.value, folderPath]
     }
-  },
-  createNote: async (folder) => {
-    const title = getNextUntitledTitle(folder)
-    const path = folder ? `${folder}/${title}.md` : `${title}.md`
-    notesByPath[path] = {
-      path,
-      title,
-      folder,
-      parents: [],
-      jumps: [],
-      body: `Write Markdown here — headings, lists, math, and [[wikilinks]] format live as you move the caret.\n`,
-    }
-    await fileTree.refresh()
-    return path
   },
   canDropData: () => false,
   dropData: async () => [],
@@ -1832,20 +1835,13 @@ const plexState = createPlexTab(plexView, {
   listItems: async () => [],
   runCommand: async (command, target) => {
     runVaultCommand(command, target.path, 'plex')
+    return ''
   },
   getNoteIcon: (tabKind) => (tabKind === 'deck' ? Layers : FileText),
   openingPath: ref('physics/Entropy.md'),
   readOpeningPath: async () => 'physics/Entropy.md',
   dragged: draggedPaths,
   showMessage: () => {},
-  createUntitledNote: async () => {
-    const created = createNoteInRelationInVault(
-      '',
-      plexView.here.value || 'physics/Entropy.md',
-      'child',
-    )
-    return created.path
-  },
   creatable: ['parent', 'child', 'jump'],
   searchNames: async (query) => {
     const q = query.trim().toLowerCase()
@@ -2499,9 +2495,7 @@ function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' |
 
 function runVaultCommand(command: string, targetPath: string, source: 'files' | 'plex' = 'plex') {
   const folder = targetPath === ROOT ? null : targetPath
-  if (command === DEMO_COMMAND.newTreeNote) {
-    void filesState.createNote(folder)
-  } else if (command === DEMO_COMMAND.newTreeFolder) {
+  if (command === DEMO_COMMAND.newTreeFolder) {
     void filesState.createFolder(folder)
   } else if (command === DEMO_COMMAND.renameTreeEntry) {
     if (folder !== null) filesState.setRenamingPath(targetPath)
@@ -2527,7 +2521,10 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
       openNamingStep(role, targetPath)
     }
   } else if (command === DEMO_COMMAND.createNote) {
-    void filesState.createNote('physics')
+    void createUntitledInVault('physics').then(async (path) => {
+      await fileTree.openFolder('physics')
+      filesState.setRenamingPath(path)
+    })
   } else if (command === DEMO_COMMAND.renameNote) {
     if (source === 'files') {
       if (notesByPath[targetPath]) {

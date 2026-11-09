@@ -38,6 +38,7 @@ export interface CommandDepsOptions {
 function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
   return {
     createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
+    createUntitled: (folder) => making.createUntitled(folder),
     rename: (path, title) => core.rename(path, title),
     remove: (path, isPermanent) => core.remove(path, isPermanent),
     move: (from, to) => core.move(from, to),
