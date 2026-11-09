@@ -131,7 +131,7 @@ export class VaultDriver {
   private writeNewCards(vault: string, title: string, text: string): void {
     const world = this.scenario.getWorld()
     const name = this.scenario.getVault(vault)
-    assertCardFileIsFree(vault, title, world.readText(name, getCardFile(title)))
+    assertCardFileIsFree(name, title, world.readText(name, getCardFile(title)))
     world.writeText(name, getCardFile(title), text)
   }
 
